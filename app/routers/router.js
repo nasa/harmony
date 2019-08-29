@@ -3,35 +3,24 @@ const expressWinston = require('express-winston');
 
 // Middleware requires in outside-in order
 const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authorizer');
-const contentNegotiator = require('../middleware/content-negotiator');
-const requestValidator = require('../middleware/request-validator');
-const backendResolver = require('../middleware/backend-resolver');
+const wmsFrontend = require('../frontends/wms');
+const wcsFrontend = require('../frontends/wcs');
+const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
-const asyncifier = require('../middleware/asyncifier');
-const serviceInvoker = require('../middleware/service-invoker');
 
-const middleware = [
-    earthdataLoginAuthorizer,
-    contentNegotiator,
-    requestValidator,
-    backendResolver,
-    cmrGranuleLocator,
-    asyncifier,
-    serviceInvoker
-];
-
-const addMiddlewareLogging = (fn) => {
+const logged = (fn) => {
     const scope = `middleware.${fn.name}`;
-    return (req, res, next) => {
+    return async (req, res, next) => {
         const logger = req.logger;
+        req.logger = req.logger.child({component: scope});
+        const profiler = req.logger.startTimer();
         try {
-            req.logger.profile(scope);
-            req.logger = req.logger.child({component: scope});
-            return fn(req, res, next);
+            req.logger.info('Invoking middleware');
+            return await fn(req, res, next);
         }
         finally {
+            profiler.done({ message: 'Completed middleware' });
             req.logger = logger;
-            req.logger.profile(scope);
         }
     };
 };
@@ -39,16 +28,30 @@ const addMiddlewareLogging = (fn) => {
 module.exports = function (logger) {
     const router = express.Router();
 
-    router.use(expressWinston.logger({ winstonInstance: logger }));
-    router.use(function(req, res, next) {
-        req.logger = logger.child({ requestId: Math.floor(Math.random() * 1000000)});
-        next();
+    // TODO: Root-level stuff that should be moved out
+    const addRequestLogger = expressWinston.logger({
+        winstonInstance: logger,
+        dynamicMeta: function(req, res) { return { requestId: req.id }; }
     });
 
-    for (const middlewareFn of middleware) {
-        router.use(addMiddlewareLogging(middlewareFn));
+    function addRequestId(req, res, next) {
+        req.id = Math.floor(Math.random() * 1000000);;
+        req.logger = logger.child({ requestId: req.id });
+        next();
     }
-    
-    router.get('/', (req, res) => res.send("Hi!"));
+
+    router.use(addRequestId);
+    router.use(addRequestLogger);
+    // TODO: Root-level stuff that should be moved out
+
+    router.use(logged(earthdataLoginAuthorizer));
+    router.use(logged(cmrCollectionReader))
+
+    router.use("/wcs", logged(wcsFrontend));
+    router.use("/wms", logged(wmsFrontend));
+
+    router.use(logged(cmrGranuleLocator));
+
+    router.get('/*', (req, res) => res.send("Hi!"));
     return router;
 };

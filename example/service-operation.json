@@ -1,0 +1,39 @@
+{
+  "version": 0,
+  "sources": [
+    {
+      "collection": "C1215669046-GES_DISC",
+      "variables": [
+        {
+          "id": "V1224729877-GES_DISC",
+          "name": "CloudFrc_A"
+        }
+      ],
+      "granules": [
+        {
+          "id": "G1224343298-GES_DISC",
+          "url": "tmp/AIRS.2002.08.31.L3.RetStd001.v6.0.9.0.G13208034313.hdf"
+        }
+      ]
+    }
+  ],
+  "format": {
+    "crs": "CRS:84",
+    "isTransparent": true,
+    "mime": "image/tiff",
+    "width": "881",
+    "height": "393",
+    "dpi": 72,
+    "styles": [
+      ""
+    ]
+  },
+  "subset": {
+    "bbox": [
+      -97.05928348690169,
+      40.46108325823108,
+      -80.46305347517998,
+      59.72697747022849
+    ]
+  }
+}

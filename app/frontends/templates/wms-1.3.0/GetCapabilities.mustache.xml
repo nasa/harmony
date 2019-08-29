@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WMS_Capabilities version="1.3.0"
+                  xmlns:xlink="http://www.w3.org/1999/xlink"
+                  xmlns:ogc="http://www.opengis.net/ogc"
+                  xmlns:ows="http://www.opengis.net/ows/1.1"
+                  xmlns:gml="http://www.opengis.net/gml"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.opengis.net/wms http://schemas.opengis.net/wms/1.3.0/capabilities_1_3_0.xsd">
+  <Service>
+    <Name>WMS</Name>
+    <Title>Harmony WMS Service</Title>
+    <Abstract>Harmony WMS Service</Abstract>
+    <KeywordList>
+      <Keyword>mapinfo</Keyword>
+      <Keyword>geographic</Keyword>
+      <Keyword>wms</Keyword>
+    </KeywordList>
+    <OnlineResource xlink:href="{{url}}" />
+    <ContactInformation>
+      <ContactPersonPrimary />
+      <ContactAddress />
+    </ContactInformation>
+    <Fees>NONE</Fees>
+    <AccessConstraints>NONE</AccessConstraints>
+  </Service>
+  <Capability>
+    <Request>
+      <GetCapabilities>
+        <Format>application/vnd.ogc.wms_xml</Format>
+        <Format>text/xml</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xlink:href="{{url}}" />
+            </Get>
+          </HTTP>
+        </DCPType>
+      </GetCapabilities>
+      <GetMap>
+        <Format>image/tiff</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xlink:href="{{url}}" />
+            </Get>
+          </HTTP>
+        </DCPType>
+      </GetMap>
+      <GetFeatureInfo>
+        <Format>text/xml</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xlink:href="{{url}}" />
+            </Get>
+          </HTTP>
+        </DCPType>
+      </GetFeatureInfo>
+    </Request>
+    <Exception>
+      <Format>INIMAGE</Format>
+      <Format>BLANK</Format>
+      <Format>XML</Format>
+    </Exception>
+    {{#collections}}
+    <Layer queryable="false"
+           opaque="false"
+           noSubsets="false"
+           fixedWidth="0"
+           fixedHeight="0">
+      <Title>{{label}}</Title>
+      <CRS>CRS:84</CRS>
+      <EX_GeographicBoundingBox>
+        <westBoundLongitude>{{bbox.west}}</westBoundLongitude>
+        <eastBoundLongitude>{{bbox.east}}</eastBoundLongitude>
+        <southBoundLatitude>{{bbox.south}}</southBoundLatitude>
+        <northBoundLatitude>{{bbox.north}}</northBoundLatitude>
+      </EX_GeographicBoundingBox>
+      <BoundingBox CRS="CRS:84"
+                   minx="{{bbox.west}}"
+                   miny="{{bbox.south}}"
+                   maxx="{{bbox.east}}"
+                   maxy="{{bbox.north}}" />
+      {{#variables}}
+      <Layer queryable="true"
+             opaque="false"
+             noSubsets="false"
+             fixedWidth="0"
+             fixedHeight="0">
+        <Name>{{name}}</Name>
+        <Title>{{label}}</Title>
+        <CRS>CRS:84</CRS>
+        <EX_GeographicBoundingBox>
+          <westBoundLongitude>{{bbox.west}}</westBoundLongitude>
+          <eastBoundLongitude>{{bbox.east}}</eastBoundLongitude>
+          <southBoundLatitude>{{bbox.south}}</southBoundLatitude>
+          <northBoundLatitude>{{bbox.north}}</northBoundLatitude>
+        </EX_GeographicBoundingBox>
+        <BoundingBox CRS="CRS:84"
+                    minx="{{bbox.west}}"
+                    miny="{{bbox.south}}"
+                    maxx="{{bbox.east}}"
+                    maxy="{{bbox.north}}" />
+      </Layer>
+      {{/variables}}
+    </Layer>
+    {{/collections}}
+  </Capability>
+</WMS_Capabilities>
