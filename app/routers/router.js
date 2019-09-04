@@ -1,5 +1,4 @@
 const express = require('express');
-const expressWinston = require('express-winston');
 
 // Middleware requires in outside-in order
 const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authorizer');
@@ -8,50 +7,35 @@ const wcsFrontend = require('../frontends/wcs');
 const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
 
+const serviceInvoker = require('../backends/service-invoker');
+
 const logged = (fn) => {
-    const scope = `middleware.${fn.name}`;
-    return async (req, res, next) => {
-        const logger = req.logger;
-        req.logger = req.logger.child({component: scope});
-        const profiler = req.logger.startTimer();
-        try {
-            req.logger.info('Invoking middleware');
-            return await fn(req, res, next);
-        }
-        finally {
-            profiler.done({ message: 'Completed middleware' });
-            req.logger = logger;
-        }
-    };
+  const scope = `middleware.${fn.name}`;
+  return async (req, res, next) => {
+    const { logger } = req;
+    req.logger = req.logger.child({ component: scope });
+    const profiler = req.logger.startTimer();
+    try {
+      req.logger.info('Invoking middleware');
+      return await fn(req, res, next);
+    } finally {
+      profiler.done({ message: 'Completed middleware' });
+      req.logger = logger;
+    }
+  };
 };
 
-module.exports = function (logger) {
-    const router = express.Router();
+module.exports = function router() {
+  const result = express.result();
 
-    // TODO: Root-level stuff that should be moved out
-    const addRequestLogger = expressWinston.logger({
-        winstonInstance: logger,
-        dynamicMeta: function(req, res) { return { requestId: req.id }; }
-    });
+  result.use(logged(earthdataLoginAuthorizer));
+  result.use(logged(cmrCollectionReader));
 
-    function addRequestId(req, res, next) {
-        req.id = Math.floor(Math.random() * 1000000);;
-        req.logger = logger.child({ requestId: req.id });
-        next();
-    }
+  result.use('/wcs', logged(wcsFrontend));
+  result.use('/wms', logged(wmsFrontend));
 
-    router.use(addRequestId);
-    router.use(addRequestLogger);
-    // TODO: Root-level stuff that should be moved out
+  result.use(logged(cmrGranuleLocator));
 
-    router.use(logged(earthdataLoginAuthorizer));
-    router.use(logged(cmrCollectionReader))
-
-    router.use("/wcs", logged(wcsFrontend));
-    router.use("/wms", logged(wmsFrontend));
-
-    router.use(logged(cmrGranuleLocator));
-
-    router.get('/*', (req, res) => res.send("Hi!"));
-    return router;
+  result.get('/*', serviceInvoker);
+  return result;
 };

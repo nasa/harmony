@@ -1,0 +1,16 @@
+plugins:
+  - import
+  - jsdoc
+  - node
+extends:
+  - airbnb-base
+  - plugin:import/errors
+  - plugin:import/warnings
+  - plugin:node/recommended
+env:
+  jasmine: true
+  mocha: true
+  node: true
+rules:
+  indent: ["error", 2]
+  no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]

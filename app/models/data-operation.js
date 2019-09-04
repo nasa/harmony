@@ -1,11 +1,9 @@
 class DataOperation {
   constructor(model = null) {
-
     this.model = model || {
-      version: 0,
       sources: [],
       format: {},
-      subset: {}
+      subset: {},
     };
   }
 
@@ -14,7 +12,7 @@ class DataOperation {
   }
 
   addSource(collection, variables) {
-    this.model.sources.push({ collection: collection, variables: variables });
+    this.model.sources.push({ collection, variables });
   }
 
   get crs() {
@@ -63,7 +61,7 @@ class DataOperation {
   }
 
   get temporal() {
-    const temporal = this.model.temporal;
+    const { temporal } = this.model;
     if (!temporal) return null;
     return [temporal.start, temporal.end];
   }
@@ -71,8 +69,8 @@ class DataOperation {
   set temporal([startTime, endTime]) {
     this.model.temporal = {
       start: startTime,
-      end: endTime
-    }
+      end: endTime,
+    };
   }
 
   get outputWidth() {
@@ -91,8 +89,16 @@ class DataOperation {
     this.model.format.height = height;
   }
 
+  get callback() {
+    return this.model.callback;
+  }
+
+  set callback(value) {
+    this.model.callback = value;
+  }
+
   serialize(version = 0) {
-    return this.model;
+    return JSON.stringify(Object.assign(this.model, { version }));
   }
 }
 
