@@ -2,7 +2,7 @@ const axios = require('axios');
 const querystring = require('querystring');
 
 const cmrApi = axios.create({
-  baseURL: 'https://cmr.uat.earthdata.nasa.gov/'
+  baseURL: 'https://cmr.uat.earthdata.nasa.gov/',
 });
 
 async function cmrSearch(path, query) {
@@ -14,7 +14,6 @@ async function cmrSearch(path, query) {
 
 async function queryVariables(query) {
   const variablesResponse = await cmrSearch('/search/variables.json', query);
-  console.log(variablesResponse);
   return variablesResponse.items;
 }
 
@@ -30,11 +29,11 @@ async function queryGranules(query) {
 }
 
 function getCollectionsByIds(ids) {
-  return queryCollections({concept_id: ids});
+  return queryCollections({ concept_id: ids });
 }
 
 function getVariablesByIds(ids) {
-  return queryVariables({concept_id: ids});
+  return queryVariables({ concept_id: ids });
 }
 
 async function getVariablesForCollection(collection) {
@@ -42,22 +41,21 @@ async function getVariablesForCollection(collection) {
   if (varIds) {
     return getVariablesByIds(varIds);
   }
-  else {
-    return [];
-  }
+
+  return [];
 }
 
-function queryGranulesForCollection(collectionId, query, limit=10) {
+function queryGranulesForCollection(collectionId, query, limit = 10) {
   const baseQuery = {
     collection_concept_id: collectionId,
-    page_size: limit
+    page_size: limit,
   };
   return queryGranules(Object.assign(baseQuery, query));
 }
 
 module.exports = {
-  getCollectionsByIds: getCollectionsByIds,
-  getVariablesByIds: getVariablesByIds,
-  getVariablesForCollection: getVariablesForCollection,
-  queryGranulesForCollection: queryGranulesForCollection
+  getCollectionsByIds,
+  getVariablesByIds,
+  getVariablesForCollection,
+  queryGranulesForCollection,
 };
