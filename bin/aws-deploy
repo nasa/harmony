@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+
+if [ $# -ne 1 ]; then
+  if [ -z ${HARMONY_STACK+x} ]; then
+    echo "Stack name parameter must be supplied or variable HARMONY_STACK set"
+    exit 1
+  else
+    stack=${HARMONY_STACK}
+  fi
+else
+  stack=$1
+fi
+
+aws cloudformation deploy \
+  --template-file deployment/cloudformation.yml \
+  --stack-name $STACK_NAME \
+  --capabilities CAPABILITY_IAM \
+  --parameter-overrides \
+    HarmonyImage=$HARMONY_IMAGE:${HARMONY_VERSION:-latest} \
+    VpcId=$VPC_ID \
+    Subnet1Id=$SUBNET_1_ID \
+    Subnet2Id=$SUBNET_2_ID \
+    PermissionsBoundaryArn=$PERMISSIONS_BOUNDARY_ARN

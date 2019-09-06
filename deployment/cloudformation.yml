@@ -1,0 +1,184 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Outputs:
+  ALBURL:
+    Description: URL of the ALB
+    Value: !Join
+      - ''
+      - - http://
+        - !GetAtt 'ALB.DNSName'
+Parameters:
+  HarmonyImage:
+    Description: The harmony container image to run
+    Type: String
+  VpcId:
+    Description: ID of the VPC being deployed into
+    Type: String
+  Subnet1Id:
+    Description: ID of the first subnet to be used for the service
+    Type: String
+  Subnet2Id:
+    Description: ID of the second subnet to be used for the service
+    Type: String
+  PermissionsBoundaryArn:
+    Description: ARN of the permissions boundary under which IAM roles are to be created
+    Type: String
+
+Resources:
+  ALB:
+    Properties:
+      Scheme: internal
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Subnets:
+        - !Ref Subnet1Id
+        - !Ref Subnet2Id
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+
+  ALBListener:
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref ALBTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+    Type: AWS::ElasticLoadBalancingV2::Listener
+
+  ALBSecurityGroup:
+    Properties:
+      GroupDescription: ALB Security Group
+      SecurityGroupIngress:
+        - CidrIp: '0.0.0.0/0'
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+      VpcId: !Ref VpcId
+    Type: AWS::EC2::SecurityGroup
+
+  ALBTargetGroup:
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 4
+      Matcher:
+        HttpCode: "200"
+      UnhealthyThresholdCount: 3
+      Port: 3000
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref VpcId
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+
+  CWLogGroup:
+    Type: AWS::Logs::LogGroup
+
+  ECSCluster:
+    Properties:
+      ClusterName: Harmony
+    Type: AWS::ECS::Cluster
+
+  Service:
+    DependsOn: ALBListener
+    Properties:
+      Cluster: !Ref ECSCluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: harmony
+          ContainerPort: 3000
+          TargetGroupArn: !Ref ALBTargetGroup
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref TaskSecurityGroup
+          Subnets:
+            - !Ref Subnet1Id
+            - !Ref Subnet2Id
+      TaskDefinition: !Ref TaskDefinition
+    Type: AWS::ECS::Service
+
+  TaskDefinition:
+    DependsOn: TaskExecutionPolicy
+    Properties:
+      ContainerDefinitions:
+        - Essential: true
+          Image: !Ref HarmonyImage
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CWLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: harmony
+          Name: harmony
+          PortMappings:
+            - ContainerPort: 3000
+            - ContainerPort: 3001
+      Cpu: 512
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      Memory: 1GB
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+    Type: AWS::ECS::TaskDefinition
+
+  TaskExecutionPolicy:
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ecr:GetAuthorizationToken
+              - ecr:BatchCheckLayerAvailability
+              - ecr:GetDownloadUrlForLayer
+              - ecr:BatchGetImage
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource:
+              - '*'
+        Version: '2012-10-17'
+      PolicyName: fargate-execution
+      Roles:
+        - !Ref TaskExecutionRole
+    Type: AWS::IAM::Policy
+
+  TaskExecutionRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+      PermissionsBoundary: arn:aws:iam::351098154851:policy/NGAPShNonProdRoleBoundary
+    Type: AWS::IAM::Role
+
+     #!Ref PermissionsBoundaryArn
+
+  TaskSecurityGroup:
+    Properties:
+      GroupDescription: Task Security Group
+      SecurityGroupIngress:
+        - FromPort: 3000
+          IpProtocol: tcp
+          SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+          ToPort: 3000
+        - FromPort: 3001
+          IpProtocol: tcp
+          SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+          ToPort: 3001
+        - CidrIp: '0.0.0.0/0'
+          FromPort: 3000
+          IpProtocol: tcp
+          ToPort: 3000
+        - CidrIp: '0.0.0.0/0'
+          FromPort: 3001
+          IpProtocol: tcp
+          ToPort: 3001
+
+      VpcId: !Ref VpcId
+    Type: AWS::EC2::SecurityGroup
