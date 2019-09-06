@@ -26,7 +26,7 @@ const logged = (fn) => {
 };
 
 module.exports = function router() {
-  const result = express.result();
+  const result = express.Router();
 
   result.use(logged(earthdataLoginAuthorizer));
   result.use(logged(cmrCollectionReader));
@@ -36,6 +36,7 @@ module.exports = function router() {
 
   result.use(logged(cmrGranuleLocator));
 
+  result.get('/', (req, res) => res.status(200).send('ok'));
   result.get('/*', serviceInvoker);
   return result;
 };

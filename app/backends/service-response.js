@@ -8,12 +8,24 @@ const config = {
 // We will need to clean these up or risk leaks.
 const idsToCallbacks = new Map();
 
+/**
+ * Removes a callback URL / function binding.  Does nothing if url is null
+ *
+ * @param {string} url The URL of the response to forget
+ * @returns {undefined}
+ */
 function unbindResponseUrl(url) {
   if (url) {
     idsToCallbacks.delete(url.split('/').last);
   }
 }
 
+/**
+ * Binds a function to be run when a unique URL is called from a backend service
+ *
+ * @param {function} responseCallback A callback run when the URL is loaded
+ * @returns {string} The url the backend should call to invoke the function
+ */
 function bindResponseUrl(responseCallback) {
   if (!config.baseUrl) {
     throw new Error('Call configure({ baseUrl }) before calling createResponseUrl');
@@ -27,6 +39,14 @@ function bindResponseUrl(responseCallback) {
   return config.baseUrl + callbackUUID;
 }
 
+/**
+ * Express.js handler on a service-facing endpoint that receives responses
+ * from backends and calls the registered callback for those responses
+ *
+ * @param {http.IncomingMessage} req The request sent by the service
+ * @param {http.ServerResponse} res The response to send to the service
+ * @returns {undefined}
+ */
 function responseHandler(req, res) {
   const id = req.params.uuid;
   const callback = idsToCallbacks.get(id).response;
@@ -41,6 +61,14 @@ function responseHandler(req, res) {
   }
 }
 
+/**
+ * Provides global configuration to service responses.  Only call this once.
+ * Configuration:
+ *   baseUrl: The base URL of the internal-facing endpoint that unique paths are appended to
+ *
+ * @param {{baseUrl: string}} config Configuration containing the base URL of the endpoint
+ * @returns {undefined}
+ */
 function configure({ baseUrl }) {
   if (baseUrl) {
     if (config.baseUrl) {

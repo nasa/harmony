@@ -9,6 +9,15 @@ const readFile = promisify(fs.readFile);
 
 class RequestValidationError extends Error {}
 
+/**
+ * Validates that the given parameters are present in the map, throwing
+ * a RequestValidationError if any are missing
+ *
+ * @param {object} lowercasedParamMap A map of all-lowercase request params to values
+ * @param  {...string} paramNames Names of parameters to check
+ * @returns {boolean} true
+ * @throws {RequestValidationError} If any parameter is missing
+ */
 function validateParamExists(lowercasedParamMap, ...paramNames) {
   const failures = [];
 
@@ -27,6 +36,17 @@ function validateParamExists(lowercasedParamMap, ...paramNames) {
   return true;
 }
 
+/**
+ * Validates that the given parameter has one of the values given by the values array,
+ * throwing a RequestValidationError if not
+ *
+ * @param {object} lowercasedParamMap A map of all-lowercase request params to values
+ * @param {string} paramName The name of the parameter to check
+ * @param {Array<string>} values The list of acceptable values
+ * @param {boolean} allowNull Whether a null value for the parameter should be accepted
+ * @returns {boolean} true
+ * @throws {RequestValidationError} If any parameter has an invalid value
+ */
 function validateParamIn(lowercasedParamMap, paramName, values, allowNull = false) {
   const value = lowercasedParamMap[paramName];
   if (allowNull && !Object.prototype.hasOwnProperty.call(lowercasedParamMap, paramName)) {
@@ -43,21 +63,48 @@ function validateParamIn(lowercasedParamMap, paramName, values, allowNull = fals
   return true;
 }
 
-// TODO This could / should be cached
+/**
+ * Returns a mustache template for the given request type, e.g. REQUEST=GetCapabilities
+ *
+ * @param {string} requestParam The WMS REQUEST parameter
+ * @returns {string} the mustache template for the given request type for WMS 1.3.0
+ */
 async function getWmsResponseTemplate(requestParam) {
+  // TODO This could / should be cached
   const templatePath = path.join(__dirname, `templates/wms-1.3.0/${requestParam}.mustache.xml`);
   return readFile(templatePath, { encoding: 'utf8' });
 }
 
+/**
+ * Renders the XML response for the given context and request type,
+ * e.g. REQUEST=GetCapabilities
+ *
+ * @param {string} requestParam The WMS REQUEST parameter
+ * @param {object} context A context object that fills in the mustache template values
+ * @returns{string} The response document
+ */
 async function renderToTemplate(requestParam, context) {
   const template = await getWmsResponseTemplate(requestParam);
   return mustache.render(template, context);
 }
 
+/**
+ * Renders a JSON (TODO: XML) response to the client with status 400 containing the given message
+ *
+ * @param {http.ServerResponse} res The response object being built for the client
+ * @param {string} message The error message to send
+ * @returns {undefined}
+ */
 function requestError(res, message) {
-  return res.status(400).json(message);
+  res.status(400).json(message);
 }
 
+/**
+ * Express.js handler that responds to WMS GetCapabilities requests
+ *
+ * @param {*} req
+ * @param {*} res
+ */
 async function getCapabilities(req, res /* , next */) {
   const collections = [];
 
@@ -102,7 +149,7 @@ async function getCapabilities(req, res /* , next */) {
 
   res.status(200);
   res.set('Content-Type', 'text/xml');
-  return res.send(await renderToTemplate('GetCapabilities', capabilities));
+  res.send(await renderToTemplate('GetCapabilities', capabilities));
 }
 
 function getMap(req, res, next) {
