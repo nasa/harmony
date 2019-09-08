@@ -33,8 +33,7 @@ async function cmrGranuleLocator(req, res, next) {
             link.href = `${process.env.staging_path}/${linkParts[linkParts.length - 1]}`;
           }
           granules.push({ id: granule.id, name: granule.title, url: link.href });
-        }
-        else {
+        } else {
           // Uncomment for local testing
           const linkParts = link.href.split('/');
           link.href = `tmp/${linkParts[linkParts.length - 1]}`;
