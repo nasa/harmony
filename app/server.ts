@@ -44,7 +44,7 @@ function buildServer(name, port, setupFn) {
     setupFn(app);
   }
 
-  app.listen(port, () => logger.info(`Application "${name}" listening on port ${port}`));
+  app.listen(port, '0.0.0.0', () => logger.info(`Application "${name}" listening on port ${port}`));
 }
 
 buildServer('frontend', appPort, (app) => {

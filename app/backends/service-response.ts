@@ -34,7 +34,6 @@ function bindResponseUrl(responseCallback) {
   idsToCallbacks.set(callbackUUID, {
     response: responseCallback,
   });
-  // TODO: Implement util/log to use winston
   log.info('Callbacks size', idsToCallbacks.size);
   return config.baseUrl + callbackUUID;
 }

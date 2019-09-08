@@ -4,3 +4,4 @@ test
 spec
 **/*.log
 **/tmp
+.env

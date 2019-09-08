@@ -6,3 +6,5 @@ node_modules
 
 # Temp and log files
 *.log
+
+.env

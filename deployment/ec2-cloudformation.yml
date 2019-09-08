@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Runs Harmony on an EC2 instance
+
+Parameters:
+  AMI:
+    Description: The AMI to use
+    Type: String
+  CodePath:
+    Description: The gdal Harmony service image
+    Type: String
+  GdalImage:
+    Description: The gdal Harmony service image
+    Type: String
+  VpcId:
+    Description: ID of the VPC being deployed into
+    Type: String
+  Subnet1Id:
+    Description: ID of the first subnet to be used for the service
+    Type: String
+  Subnet2Id:
+    Description: ID of the second subnet to be used for the service
+    Type: String
+  PermissionsBoundaryArn:
+    Description: ARN of the permissions boundary under which IAM roles are to be created
+    Type: String
+  SSHKeyName:
+    Description: 'Name of the ec2 key used to log in'
+    Type: 'AWS::EC2::KeyPair::KeyName'
+
+Resources:
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'SSH and Port 80'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: 22
+            ToPort: 22
+            CidrIp: 0.0.0.0/0
+          - IpProtocol: tcp
+            FromPort: 3000
+            ToPort: 3000
+            CidrIp: 0.0.0.0/0
+          - IpProtocol: tcp
+            FromPort: 3001
+            ToPort: 3001
+            CidrIp: 0.0.0.0/0
+
+  HarmonyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMI
+      InstanceInitiatedShutdownBehavior: stop
+      InstanceType: t2.medium
+      KeyName:
+        Ref: 'SSHKeyName'
+      IamInstanceProfile:
+        Ref: 'HarmonyInstanceProfile'
+      Monitoring: 'true'
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: 'false'
+        DeviceIndex: '0'
+        GroupSet:
+        - !Ref EC2SecurityGroup
+        SubnetId:
+          Ref: Subnet1Id
+      Tenancy: default
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum install -y docker
+          chmod a+rw /var/rundocker.sock
+          /opt/aws/bin/cfn-signal \
+            -e $? \
+            --stack ${AWS::StackName} \
+            --resource HarmonyInstance \
+            --region ${AWS::Region}
+
+  HarmonyInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: '/'
+      Roles:
+        - !Ref HarmonyRole
+
+  HarmonyPolicy:
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+            - s3:*
+            - ecr:GetAuthorizationToken
+            - ecr:BatchCheckLayerAvailability
+            - ecr:GetDownloadUrlForLayer
+            - ecr:GetRepositoryPolicy
+            - ecr:DescribeRepositories
+            - ecr:ListImages
+            - ecr:DescribeImages
+            - ecr:BatchGetImage
+            Effect: Allow
+            Resource:
+              - '*'
+        Version: '2012-10-17'
+      PolicyName: fargate-execution
+      Roles:
+        - !Ref HarmonyRole
+    Type: AWS::IAM::Policy
+
+  HarmonyRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                -  ec2.amazonaws.com
+      PermissionsBoundary: arn:aws:iam::351098154851:policy/NGAPShNonProdRoleBoundary
+    Type: AWS::IAM::Role
+
+Outputs:
+    EC2Instance:
+        Description: 'Harmony Instance'
+        Value :
+          "Fn::GetAtt":
+            - HarmonyInstance
+            - PrivateIp
