@@ -37,7 +37,7 @@
         </DCPType>
       </GetCapabilities>
       <GetMap>
-        <Format>image/tiff</Format>
+        <Format>image/png</Format>
         <DCPType>
           <HTTP>
             <Get>
@@ -82,9 +82,9 @@
                    maxx="{{bbox.east}}"
                    maxy="{{bbox.north}}" />
       {{#variables}}
-      <Layer queryable="true"
-             opaque="false"
-             noSubsets="false"
+      <Layer queryable="1"
+             opaque="0"
+             noSubsets="0"
              fixedWidth="0"
              fixedHeight="0">
         <Name>{{name}}</Name>

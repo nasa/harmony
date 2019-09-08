@@ -1,5 +1,6 @@
 const process = require('process');
 const { spawn } = require('child_process');
+const request = require('request');
 // const aws = process.env.aws ? require('aws-sdk') : null;
 const serviceResponse = require('./service-response');
 const log = require('../util/log');
@@ -56,7 +57,7 @@ function invoke(operation) {
   // if (aws) {
   // invokeFargateDockerService('harmony/gdal');
   // } else {
-  invokeLocalDockerService(process.env.gdalTaskDefinition, operation);
+  invokeLocalDockerService(process.env.gdalTaskDefinition || 'harmony/gdal', operation);
   // }
 }
 
@@ -90,7 +91,8 @@ function translateServiceResponse(req, res) {
   if (query.error) {
     res.status(400).send(query.error);
   } else if (query.redirect) {
-    res.redirect(query.redirect);
+    const result = request(query.redirect);
+    result.pipe(res);
   } else {
     copyHeader(req, res, 'Content-Type');
     copyHeader(req, res, 'Content-Length');

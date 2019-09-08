@@ -29,11 +29,11 @@ async function queryGranules(query) {
 }
 
 function getCollectionsByIds(ids) {
-  return queryCollections({ concept_id: ids });
+  return queryCollections({ concept_id: ids, page_size: 2000 });
 }
 
 function getVariablesByIds(ids) {
-  return queryVariables({ concept_id: ids });
+  return queryVariables({ concept_id: ids, page_size: 2000 });
 }
 
 async function getVariablesForCollection(collection) {
