@@ -27,6 +27,14 @@ async function cmrGranuleLocator(req, res, next) {
       for (const granule of atomGranules) {
         const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);
         if (link) {
+          if (process.env.staging_path) {
+            // Testing with staged data in S3 or a local path
+            const linkParts = link.href.split('/');
+            link.href = `${process.env.staging_path}/${linkParts[linkParts.length - 1]}`;
+          }
+          granules.push({ id: granule.id, name: granule.title, url: link.href });
+        }
+        else {
           // Uncomment for local testing
           const linkParts = link.href.split('/');
           link.href = `tmp/${linkParts[linkParts.length - 1]}`;

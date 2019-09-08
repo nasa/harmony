@@ -2,7 +2,7 @@ const process = require('process');
 const { spawn } = require('child_process');
 // const aws = process.env.aws ? require('aws-sdk') : null;
 const serviceResponse = require('./service-response');
-const { log } = require('../util/log');
+const log = require('../util/log');
 
 /**
  * Sets up logging of stdin / stderr and the return code of child.
@@ -35,11 +35,9 @@ function logProcessOutput(child) {
  */
 function invokeLocalDockerService(image, operation) {
   const op = operation; // We are mutating the operation
-  op.callback = op.callback.replace('localhost', 'host.docker.internal');
+  op.callback = op.callback.replace('localhost', process.env.callback_host || 'host.docker.internal');
   const child = spawn('docker', [
     'run', '--rm', '-t',
-    '-v', '/Users/pquinn/earthdata/harmony/harmony-gdal:/home', // DELETEME
-    //    '-v', `${process.cwd()}:/home`,
     image, 'invoke', op.serialize(),
   ]);
   logProcessOutput(child);
@@ -83,9 +81,11 @@ function copyHeader(req, res, header) {
  * @returns {undefined}
  */
 function translateServiceResponse(req, res) {
-  Object.keys
-    .filter((k) => k.startsWith('Harmony'))
-    .forEach((k) => copyHeader(req, res, k));
+  for (const k of Object.keys(req.headers)) {
+    if (k.startsWith('Harmony')) {
+      copyHeader(req, res, k);
+    }
+  }
   const { query } = req;
   if (query.error) {
     res.status(400).send(query.error);

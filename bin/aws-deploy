@@ -2,6 +2,10 @@
 
 set -e
 
+set -a
+[ -f .env ] && . .env
+set +a
+
 if [ $# -ne 1 ]; then
   if [ -z ${HARMONY_STACK+x} ]; then
     echo "Stack name parameter must be supplied or variable HARMONY_STACK set"
@@ -13,13 +17,20 @@ else
   stack=$1
 fi
 
+set +e
 aws cloudformation deploy \
-  --template-file deployment/cloudformation.yml \
-  --stack-name $STACK_NAME \
+  --template-file deployment/ec2-cloudformation.yml \
+  --stack-name $stack \
   --capabilities CAPABILITY_IAM \
   --parameter-overrides \
     HarmonyImage=$HARMONY_IMAGE:${HARMONY_VERSION:-latest} \
     VpcId=$VPC_ID \
     Subnet1Id=$SUBNET_1_ID \
     Subnet2Id=$SUBNET_2_ID \
-    PermissionsBoundaryArn=$PERMISSIONS_BOUNDARY_ARN
+    PermissionsBoundaryArn=$PERMISSIONS_BOUNDARY_ARN \
+    GdalImage=$GDAL_IMAGE \
+    AMI=$AMI \
+    CodePath=$CODE_PATH \
+    SSHKeyName=$SSH_KEY_NAME
+set -e
+
