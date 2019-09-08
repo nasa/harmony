@@ -98,7 +98,6 @@ class DataOperation {
   }
 
   serialize(version = 0) {
-    console.log( JSON.stringify(Object.assign(this.model, { version }), null, 2))
     return JSON.stringify(Object.assign(this.model, { version }));
   }
 }
