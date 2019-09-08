@@ -4,10 +4,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Outputs:
   ALBURL:
     Description: URL of the ALB
-    Value: !Join
-      - ''
-      - - http://
-        - !GetAtt 'ALB.DNSName'
+    Value: !Sub 'http://${ALB.DNSName}'
 Parameters:
   HarmonyImage:
     Description: The harmony container image to run
