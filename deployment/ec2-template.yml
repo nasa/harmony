@@ -26,6 +26,9 @@ Parameters:
   SSHKeyName:
     Description: 'Name of the ec2 key used to log in'
     Type: 'AWS::EC2::KeyPair::KeyName'
+  SSMTestRole:
+    Description: ARN of the role to be used for SSM until we are allowed to use / create our own
+    Type: String
 
 Resources:
   EC2SecurityGroup:
@@ -69,7 +72,11 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          yum install -y docker
+          echo "" >> /etc/hosts.allow
+          echo "sshd: 127.0.0.1" >> /etc/hosts.allow
+          curl -sL https://rpm.nodesource.com/setup_10.x | bash -
+          yum install -y docker gcc-c++ make nodejs
+          touch /var/rundocker.sock
           chmod a+rw /var/rundocker.sock
           /opt/aws/bin/cfn-signal \
             -e $? \
@@ -82,9 +89,9 @@ Resources:
     Properties:
       Path: '/'
       Roles:
-        - !Ref HarmonyRole
+        - !Ref SSMTestRole
 
-  HarmonyPolicy:
+  HarmonyPolicy: # Currently unused due to using role provided by NGAP for SSM beta
     Properties:
       PolicyDocument:
         Statement:
@@ -107,7 +114,7 @@ Resources:
         - !Ref HarmonyRole
     Type: AWS::IAM::Policy
 
-  HarmonyRole:
+  HarmonyRole: # Currently unused due to using role provided by NGAP for SSM beta
     Properties:
       AssumeRolePolicyDocument:
         Statement:
