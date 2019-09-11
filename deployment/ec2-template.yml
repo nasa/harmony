@@ -76,8 +76,8 @@ Resources:
           echo "sshd: 127.0.0.1" >> /etc/hosts.allow
           curl -sL https://rpm.nodesource.com/setup_10.x | bash -
           yum install -y docker gcc-c++ make nodejs
-          touch /var/rundocker.sock
-          chmod a+rw /var/rundocker.sock
+          touch /var/run/docker.sock
+          chmod a+rw /var/run/docker.sock
           /opt/aws/bin/cfn-signal \
             -e $? \
             --stack ${AWS::StackName} \
