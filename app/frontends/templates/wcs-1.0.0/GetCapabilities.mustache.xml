@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wcs:WCS_Capabilities version="1.0.0"
+                      xmlns:wcs="http://www.opengis.net/wcs"
+                      xmlns:xlink="http://www.w3.org/1999/xlink"
+                      xmlns:ogc="http://www.opengis.net/ogc"
+                      xmlns:ows="http://www.opengis.net/ows/1.1"
+                      xmlns:gml="http://www.opengis.net/gml"
+                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                      xsi:schemaLocation="http://www.opengis.net/wcs"
+                      updateSequence="{{sequenceId}}">
+  <wcs:Service>
+    <wcs:metadataLink about="http://geoserver.sourceforge.net/html/index.php"
+                      xlink:type="simple"
+                      metadataType="other" />
+    <wcs:description>Harmony server</wcs:description>
+    <wcs:name>WCS</wcs:name>
+    <wcs:label>Web Coverage Service</wcs:label>
+    <wcs:keywords>
+      <wcs:keyword>WCS</wcs:keyword>
+      <wcs:keyword>NASA</wcs:keyword>
+      <wcs:keyword>EOSDIS</wcs:keyword>
+      <wcs:keyword>Harmony</wcs:keyword>
+    </wcs:keywords>
+    <wcs:fees>NONE</wcs:fees>
+    <wcs:accessConstraints>NONE</wcs:accessConstraints> {{! FIXME for Earthdata Login }}
+  </wcs:Service>
+  <wcs:Capability>
+    <wcs:Request>
+      <wcs:GetCapabilities>
+        <wcs:DCPType>
+          <wcs:HTTP>
+            <wcs:Get>
+              <wcs:OnlineResource xlink:href="{{url}}" />
+            </wcs:Get>
+          </wcs:HTTP>
+        </wcs:DCPType>
+        <wcs:DCPType>
+          <wcs:HTTP>
+            <wcs:Post>
+              <wcs:OnlineResource xlink:href="{{url}}" />
+            </wcs:Post>
+          </wcs:HTTP>
+        </wcs:DCPType>
+      </wcs:GetCapabilities>
+      <wcs:DescribeCoverage>
+        <wcs:DCPType>
+          <wcs:HTTP>
+            <wcs:Get>
+              <wcs:OnlineResource xlink:href="{{url}}" />
+            </wcs:Get>
+          </wcs:HTTP>
+        </wcs:DCPType>
+        <wcs:DCPType>
+          <wcs:HTTP>
+            <wcs:Post>
+              <wcs:OnlineResource xlink:href="{{url}}" />
+            </wcs:Post>
+          </wcs:HTTP>
+        </wcs:DCPType>
+      </wcs:DescribeCoverage>
+      <wcs:GetCoverage>
+        <wcs:DCPType>
+          <wcs:HTTP>
+            <wcs:Get>
+              <wcs:OnlineResource xlink:href="{{url}}" />
+            </wcs:Get>
+          </wcs:HTTP>
+        </wcs:DCPType>
+        <wcs:DCPType>
+          <wcs:HTTP>
+            <wcs:Post>
+              <wcs:OnlineResource xlink:href="{{url}}" />
+            </wcs:Post>
+          </wcs:HTTP>
+        </wcs:DCPType>
+      </wcs:GetCoverage>
+    </wcs:Request>
+    <wcs:Exception>
+      <wcs:Format>application/vnd.ogc.se_xml</wcs:Format>
+    </wcs:Exception>
+  </wcs:Capability>
+  <wcs:ContentMetadata>
+   {{#coverages}}
+    <wcs:CoverageOfferingBrief>
+      <wcs:description>{{description}}</wcs:description>
+      <wcs:name>{{name}}</wcs:name>
+      <wcs:label>{{label}}</wcs:label>
+      <wcs:lonLatEnvelope srsName="{{crs}}{{^crs}}urn:ogc:def:crs:OGC:1.3:CRS84{{/crs}}">
+        <gml:pos>{{bbox.west}} {{bbox.south}}</gml:pos>
+        <gml:pos>{{bbox.east}} {{bbox.north}}</gml:pos>
+      </wcs:lonLatEnvelope>
+      <wcs:keywords>
+        <wcs:keyword>WCS</wcs:keyword>
+        {{#keywords}}
+        <wcs:keyword>{{.}}</wcs:keyword>
+        {{/keywords}}
+      </wcs:keywords>
+    </wcs:CoverageOfferingBrief>
+   {{/coverages}}
+  </wcs:ContentMetadata>
+</wcs:WCS_Capabilities>
