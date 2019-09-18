@@ -1,3 +1,4 @@
+const dotenvResult = require('dotenv').config();
 const express = require('express');
 const winston = require('winston');
 const expressWinston = require('express-winston');
@@ -14,9 +15,27 @@ const backendPort = process.env.backendPort || 3001;
 const backendHost = process.env.backendHost || 'localhost';
 const backendProtocol = (process.env.useHttps || backendHost !== 'localhost') ? 'https' : 'http';
 
+if (dotenvResult.error) {
+  winston.logger.warn('Did not read a .env file');
+}
+
+function optionalTag(tag) {
+  return tag ? ` [${tag}]` : '';
+}
+
+const textformat = winston.format.printf(
+  (info) => `[${info.level}]${optionalTag(info.application)}${optionalTag(info.requestId)}${optionalTag(info.component)}: ${info.message}`,
+);
+
 function buildServer(name, port, setupFn) {
   const logger = winston.createLogger({
     defaultMeta: { application: name },
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.prettyPrint(),
+      winston.format.colorize({ colors: { error: 'red', info: 'blue' } }),
+      textformat,
+    ),
     transports: [
       new winston.transports.Console(),
     ],

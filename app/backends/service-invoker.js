@@ -1,65 +1,5 @@
-const process = require('process');
-const { spawn } = require('child_process');
 const request = require('request');
-// const aws = process.env.aws ? require('aws-sdk') : null;
-const serviceResponse = require('./service-response');
-const log = require('../util/log');
-
-/**
- * Sets up logging of stdin / stderr and the return code of child.
- *
- * @param {*} child The child process
- * @returns {undefined}
- */
-function logProcessOutput(child) {
-  child.stdout.setEncoding('utf8');
-  child.stdout.on('data', (data) => {
-    process.stdout.write(`child stdout: ${data}`);
-  });
-
-  child.stderr.setEncoding('utf8');
-  child.stderr.on('data', (data) => {
-    process.stderr.write(`child stderr: ${data}`);
-  });
-
-  child.on('close', (code) => {
-    log.info(`closing code: ${code}`);
-  });
-}
-
-/**
- * Invokes the given docker image name to run the given operation
- *
- * @param {string} image The name of the docker image (possibly with version) to invoke
- * @param {DataOperation} operation The operation being run
- * @returns {undefined}
- */
-function invokeLocalDockerService(image, operation) {
-  const op = operation; // We are mutating the operation
-  op.callback = op.callback.replace('localhost', process.env.callback_host || 'host.docker.internal');
-  const child = spawn('docker', [
-    'run', '--rm', '-t',
-    image, 'invoke', op.serialize(),
-  ]);
-  logProcessOutput(child);
-}
-
-
-/**
- * Invokes the given data operation.
- *
- * @param {DataOperation} operation The operation to invoke
- * @returns {undefined}
- */
-function invoke(operation) {
-  // Cheat for now, because gdal is the only valid backend.  We will have to add more
-  // and then add service selection in the future
-  // if (aws) {
-  // invokeFargateDockerService('harmony/gdal');
-  // } else {
-  invokeLocalDockerService(process.env.gdalTaskDefinition || 'harmony/gdal', operation);
-  // }
-}
+const services = require('../models/services');
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -108,21 +48,14 @@ function translateServiceResponse(req, res) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<undefined>} Resolves when the request is complete
  */
-function serviceInvoker(req, res) {
-  return new Promise((resolve, reject) => {
-    try {
-      req.operation.callback = serviceResponse.bindResponseUrl((sreq, sres) => {
-        translateServiceResponse(sreq, res);
-        sres.status(200);
-        sres.send('Ok');
-        resolve();
-      });
-      invoke(req.operation);
-    } catch (e) {
-      serviceResponse.unbindResponseUrl(req.operation.callback);
-      reject(e);
-    }
-  });
+async function serviceInvoker(req, res) {
+  const service = services.forOperation(req.operation);
+  const result = await service.invoke();
+
+  console.log(req);
+  translateServiceResponse(result.req, res);
+  result.res.status(200);
+  result.res.send('Ok');
 }
 
 module.exports = serviceInvoker;
