@@ -1,0 +1,49 @@
+- name: podaac-cloud/l2-subsetter-service
+  type:
+    name: docker
+    params:
+      image: !Env ${PO_L2_IMAGE}
+      env:
+        USE_LOCALSTACK: true
+        AWS_DEFAULT_REGION: us-east-1
+        EDL_USERNAME: !Env ${EDL_USERNAME}
+        EDL_PASSWORD: !Env ${EDL_PASSWORD}
+        EDL_ENDPOINT: https://urs.earthdata.nasa.gov
+        STAGING_BUCKET: !Env ${STAGING_BUCKET}
+        STAGING_PATH: podaac-cloud/l2-subsetter-service
+  collections:
+    - C1225996408-POCUMULUS
+  capabilities:
+    subsetting:
+      bounding_box: true
+      variable: false # Default
+    output_formats:
+      - application/x-netcdf4
+    output_projections:
+      - CRS:84
+
+- name: harmony/gdal
+  type:
+    name: docker
+    params:
+      image: !Env ${GDAL_IMAGE}
+      env:
+        USE_LOCALSTACK: true
+        AWS_DEFAULT_REGION: us-east-1
+        EDL_USERNAME: !Env ${EDL_USERNAME}
+        EDL_PASSWORD: !Env ${EDL_PASSWORD}
+        EDL_ENDPOINT: https://urs.earthdata.nasa.gov
+        STAGING_BUCKET: !Env ${STAGING_BUCKET}
+        STAGING_PATH: harmony/gdal
+  collections:
+    - C1215669046-GES_DISC
+  capabilities:
+    subsetting:
+      bounding_box: true
+      variable: true # Default
+      multiple_variable: true
+    output_formats:
+      - image/tiff
+      - image/png
+      - image/gif
+    projection_to_wkt: true

@@ -58,16 +58,20 @@
       </GetFeatureInfo>
     </Request>
     <Exception>
+      <!-- Exceptions not yet implemented, making this non-conformant -->
       <Format>INIMAGE</Format>
       <Format>BLANK</Format>
       <Format>XML</Format>
     </Exception>
     {{#collections}}
-    <Layer queryable="false"
-           opaque="false"
-           noSubsets="false"
+    <Layer queryable="0"
+           opaque="0"
+           noSubsets="0"
            fixedWidth="0"
            fixedHeight="0">
+      {{#name}}
+      <Name>{{name}}</Name>
+      {{/name}}
       <Title>{{label}}</Title>
       <CRS>CRS:84</CRS>
       <EX_GeographicBoundingBox>
@@ -82,7 +86,7 @@
                    maxx="{{bbox.east}}"
                    maxy="{{bbox.north}}" />
       {{#variables}}
-      <Layer queryable="1"
+      <Layer queryable="0"
              opaque="0"
              noSubsets="0"
              fixedWidth="0"

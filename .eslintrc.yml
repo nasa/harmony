@@ -14,7 +14,7 @@ env:
 rules:
   indent: ["error", 2]
   no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]
-  require-jsdoc:
-    - warn
-  valid-jsdoc:
-    - warn
+  class-methods-use-this: "off"
+  no-underscore-dangle: "off"
+  require-jsdoc: ["warn"]
+  valid-jsdoc: ["warn"]
