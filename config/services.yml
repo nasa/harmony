@@ -15,7 +15,7 @@
     - C1225996408-POCUMULUS
   capabilities:
     subsetting:
-      bounding_box: true
+      bbox: true
       variable: false # Default
     output_formats:
       - application/x-netcdf4
@@ -39,7 +39,7 @@
     - C1215669046-GES_DISC
   capabilities:
     subsetting:
-      bounding_box: true
+      bbox: true
       variable: true # Default
       multiple_variable: true
     output_formats:
@@ -47,3 +47,15 @@
       - image/png
       - image/gif
     projection_to_wkt: true
+
+- name: chained-swot-l2
+  type:
+    name: chain
+    params:
+      services:
+        - name: podaac-cloud/l2-subsetter-service
+          updates:
+            spatial.bbox: null
+        - name: harmony/gdal
+  collections:
+    - C1225996408-POCUMULUS

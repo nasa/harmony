@@ -30,6 +30,7 @@
     "express-validator": "^6.1.1",
     "express-winston": "^3.2.1",
     "js-yaml": "^3.13.1",
+    "lodash.set": "^4.3.2",
     "mustache": "^3.0.1",
     "request": "^2.88.0",
     "serve-favicon": "^2.5.0",

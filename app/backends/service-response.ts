@@ -49,8 +49,6 @@ function bindResponseUrl(responseCallback) {
 function responseHandler(req, res) {
   const id = req.params.uuid;
   if (!idsToCallbacks.get(id)) {
-    res.status(200).send('Ok');
-    return;
     throw new Error(`Could not find response callback for UUID ${id}`);
   }
   const callback = idsToCallbacks.get(id).response;

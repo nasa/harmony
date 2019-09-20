@@ -18,8 +18,10 @@ class BaseService {
     return new Promise((resolve, reject) => {
       try {
         this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
+          console.log(`Completed ${this.config.name}`);
           resolve({ req, res });
         });
+        console.log(`Invoking ${this.config.name}`);
         this._invokeAsync();
       } catch (e) {
         serviceResponse.unbindResponseUrl(this.operation.callback);
