@@ -29,6 +29,12 @@ function logProcessOutput(child) {
 
 class LocalDockerService extends BaseService {
   _invokeAsync() {
+    // DELETE ME: Hacks for PO.DAAC having granule metadata with missing files.  They will fix.
+    if (this.config.name === 'podaac-cloud/l2-subsetter-service') {
+      this.operation.sources[0].granules = this.operation.sources[0].granules.slice(5);
+    }
+    // END DELETE ME
+
     console.log(this.params);
     this.operation.callback = this.operation.callback.replace('localhost', process.env.callback_host || 'host.docker.internal');
     let dockerParams = ['run', '--rm', '-t'];

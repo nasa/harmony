@@ -52,7 +52,6 @@ async function serviceInvoker(req, res) {
   const service = services.forOperation(req.operation);
   const result = await service.invoke();
 
-  console.log(req);
   translateServiceResponse(result.req, res);
   result.res.status(200);
   result.res.send('Ok');

@@ -3,6 +3,7 @@ const path = require('path');
 const yaml = require('js-yaml');
 
 const LocalDockerService = require('./local-docker-service');
+const ChainService = require('./chain-service');
 
 let serviceConfigs = null;
 
@@ -32,6 +33,7 @@ loadServiceConfigs();
 
 const serviceTypesToServiceClasses = {
   docker: LocalDockerService,
+  chain: ChainService,
 };
 
 /**
@@ -81,6 +83,14 @@ function forOperation(operation) {
   return buildService(matches[0], operation);
 }
 
-module.exports = {
-  forOperation,
-};
+function forName(name, operation) {
+  const match = serviceConfigs.find((config) => config.name === name);
+  if (!match) {
+    throw new Error(`Could not find service with name ${name}`);
+  }
+  return buildService(match, operation);
+}
+
+// Don't set module.exports or ChainService breaks
+exports.forOperation = forOperation;
+exports.forName = forName;

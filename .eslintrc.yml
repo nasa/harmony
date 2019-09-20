@@ -18,3 +18,4 @@ rules:
   no-underscore-dangle: "off"
   require-jsdoc: ["warn"]
   valid-jsdoc: ["warn"]
+  no-await-in-loop: ["off"]
