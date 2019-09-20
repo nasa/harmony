@@ -4,7 +4,7 @@
     params:
       image: !Env ${PO_L2_IMAGE}
       env:
-        USE_LOCALSTACK: true
+        USE_LOCALSTACK: false
         AWS_DEFAULT_REGION: us-east-1
         EDL_USERNAME: !Env ${EDL_USERNAME}
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
@@ -28,7 +28,7 @@
     params:
       image: !Env ${GDAL_IMAGE}
       env:
-        USE_LOCALSTACK: true
+        USE_LOCALSTACK: false
         AWS_DEFAULT_REGION: us-east-1
         EDL_USERNAME: !Env ${EDL_USERNAME}
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
