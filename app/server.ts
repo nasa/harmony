@@ -16,7 +16,7 @@ const backendHost = process.env.backendHost || 'localhost';
 const backendProtocol = (process.env.useHttps || backendHost !== 'localhost') ? 'https' : 'http';
 
 if (dotenvResult.error) {
-  winston.logger.warn('Did not read a .env file');
+  console.log('Did not read a .env file');
 }
 
 function optionalTag(tag) {
