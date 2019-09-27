@@ -1,5 +1,6 @@
 {
   "version": 0,
+  "callback": "http://localhost/some-path",
   "sources": [
     {
       "collection": "C1215669046-GES_DISC",

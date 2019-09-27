@@ -139,6 +139,9 @@ async function getCapabilities(req, res /* , next */) {
         bbox,
       });
     }
+    if (collectionData.variables.length === 0) {
+      collectionData.name = collection.id;
+    }
     collections.push(collectionData);
   }
 
@@ -152,6 +155,14 @@ async function getCapabilities(req, res /* , next */) {
   res.send(await renderToTemplate('GetCapabilities', capabilities));
 }
 
+/**
+ * Express.js handler that handles calls to WMS GetMap requests
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @param {function} next The next function in the chain
+ * @returns {undefined}
+ */
 function getMap(req, res, next) {
   // http://portal.opengeospatial.org/files/?artifact_id=14416
   // Section 7.3
@@ -184,14 +195,16 @@ function getMap(req, res, next) {
       throw new RequestValidationError(`Invalid layer: ${collectionVariableStr}`);
     }
 
-    const variable = collection.variables.find((v) => v.concept_id === variableId);
-    if (!variable) {
-      throw new RequestValidationError(`Invalid layer: ${collectionVariableStr}`);
-    }
     if (!variablesByCollection[collectionId]) {
       variablesByCollection[collectionId] = [];
     }
-    variablesByCollection[collectionId].push({ id: variable.concept_id, name: variable.name });
+    if (variableId) {
+      const variable = collection.variables.find((v) => v.concept_id === variableId);
+      if (!variable) {
+        throw new RequestValidationError(`Invalid layer: ${collectionVariableStr}`);
+      }
+      variablesByCollection[collectionId].push({ id: variable.concept_id, name: variable.name });
+    }
   }
   for (const collectionId of Object.keys(variablesByCollection)) {
     operation.addSource(collectionId, variablesByCollection[collectionId]);
@@ -246,6 +259,7 @@ async function wmsFrontend(req, res, next) {
   } catch (e) {
     // FIXME: Handle 'exceptions' param
     if (e instanceof RequestValidationError) {
+      req.logger.error(e.message);
       return requestError(res, e.message);
     }
 
