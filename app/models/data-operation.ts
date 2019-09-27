@@ -11,6 +11,10 @@ class DataOperation {
     return this.model.sources;
   }
 
+  set sources(sources) {
+    this.model.sources = sources;
+  }
+
   addSource(collection, variables) {
     this.model.sources.push({ collection, variables });
   }

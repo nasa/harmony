@@ -14,12 +14,11 @@ const logged = (fn) => {
   return async (req, res, next) => {
     const { logger } = req;
     req.logger = req.logger.child({ component: scope });
-    const profiler = req.logger.startTimer();
     try {
       req.logger.info('Invoking middleware');
       return await fn(req, res, next);
     } finally {
-      profiler.done({ message: 'Completed middleware' });
+      req.logger.info('Completed middleware');
       req.logger = logger;
     }
   };
