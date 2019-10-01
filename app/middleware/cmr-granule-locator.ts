@@ -1,9 +1,25 @@
 const cmr = require('../util/cmr');
 
+/**
+ * Converts a Date object into an ISO String representation (truncates milliseconds)
+ *
+ * @param {Date} date The date to convert
+ * @returns {string} An ISO string representation of the date, with milliseconds truncated
+ */
 function toISODateTime(date) {
   return date.toISOString().replace(/\.\d{3}/g, '');
 }
 
+/**
+ * Express.js middleware which extracts parameters from the Harmony operation
+ * and performs a granule query on them, determining which files are applicable
+ * to the given operation.
+ *
+ * @param {http.IncomingMessage} req The client request, containing an operation
+ * @param {http.ServerResponse} res The client response
+ * @param {function} next The next function in the middleware chain
+ * @returns {void}
+ */
 async function cmrGranuleLocator(req, res, next) {
   const { operation } = req;
 

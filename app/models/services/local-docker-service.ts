@@ -8,8 +8,8 @@ const log = require('../../util/log');
 /**
  * Sets up logging of stdin / stderr and the return code of child.
  *
- * @param {*} child The child process
- * @returns {undefined}
+ * @param {Process} child The child process
+ * @returns {void}
  */
 function logProcessOutput(child) {
   child.stdout.setEncoding('utf8');
@@ -27,7 +27,20 @@ function logProcessOutput(child) {
   });
 }
 
+/**
+ * Represents a service that is invoked using the Docker CLI on the Node process' machine
+ *
+ * @class LocalDockerService
+ * @extends {BaseService}
+ */
 class LocalDockerService extends BaseService {
+  /**
+   * Invoke the service at the local command line, passing --harmony-action and --harmony-input
+   * parameters to the Docker container
+   *
+   * @memberof LocalDockerService
+   * @returns {void}
+   */
   _invokeAsync() {
     // DELETE ME: Hacks for PO.DAAC having granule metadata with missing files.  They will fix.
     if (this.config.name === 'podaac-cloud/l2-subsetter-service') {
@@ -35,7 +48,7 @@ class LocalDockerService extends BaseService {
     }
     // END DELETE ME
 
-    console.log(this.params);
+    log.info(this.params);
     this.operation.callback = this.operation.callback.replace('localhost', process.env.callback_host || 'host.docker.internal');
     let dockerParams = ['run', '--rm', '-t'];
 
@@ -48,7 +61,7 @@ class LocalDockerService extends BaseService {
       '--harmony-action', 'invoke',
       '--harmony-input', this.operation.serialize(),
     );
-    console.log(dockerParams);
+    log.info(dockerParams);
     const child = spawn('docker', dockerParams);
     logProcessOutput(child);
   }

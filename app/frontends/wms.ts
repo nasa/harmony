@@ -93,17 +93,21 @@ async function renderToTemplate(requestParam, context) {
  *
  * @param {http.ServerResponse} res The response object being built for the client
  * @param {string} message The error message to send
- * @returns {undefined}
+ * @returns {void}
  */
 function requestError(res, message) {
   res.status(400).json(message);
 }
 
 /**
- * Express.js handler that responds to WMS GetCapabilities requests
+ * Express.js-style handler that responds to WMS GetCapabilities requests.  Called when the
+ * incoming request is determined to be this request type by #wmsFrontend(...).
+ * Note: This does not call the next() parameter.  It returns a GetCapabilities response rather
+ * than fulfilling a service request.
  *
- * @param {*} req
- * @param {*} res
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @returns {Promise<void>} Resolves when the request is complete
  */
 async function getCapabilities(req, res /* , next */) {
   const collections = [];
@@ -130,7 +134,6 @@ async function getCapabilities(req, res /* , next */) {
       variables: [],
     };
 
-    // TODO: What if a collection has no variables?
     for (const variable of collection.variables) {
       collectionData.variables.push({
         name: `${collection.id}/${variable.concept_id}`,
@@ -156,12 +159,12 @@ async function getCapabilities(req, res /* , next */) {
 }
 
 /**
- * Express.js handler that handles calls to WMS GetMap requests
+ * Express.js-style handler that handles calls to WMS GetMap requests
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
  * @param {function} next The next function in the chain
- * @returns {undefined}
+ * @returns {void}
  */
 function getMap(req, res, next) {
   // http://portal.opengeospatial.org/files/?artifact_id=14416
@@ -223,19 +226,18 @@ function getMap(req, res, next) {
   const [west, south, east, north] = query.bbox.split(',').map((c) => parseFloat(c));
   operation.boundingRectangle = [west, south, east, north];
 
-  // FIXME: Temporal (time param)
-  // operation.setTime(start, end);
-
-  // TODO: Optional WMS "elevation" param (someday)
-
-  // If a request is for a graphic element format that does not have explicit width and height,
-  // the client shall include the WIDTH and HEIGHT values in the request and a server may use
-  // them as helpful information in constructing the output map.
-
   req.operation = operation;
   next();
 }
 
+/**
+ * Express.js handler that handles calls to the WMS endpoint
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @param {function} next The next function in the chain
+ * @returns {void}
+ */
 async function wmsFrontend(req, res, next) {
   const query = {};
   for (const k of Object.keys(req.query)) {
@@ -257,7 +259,7 @@ async function wmsFrontend(req, res, next) {
     }
     throw new Error(`Unrecognized operation: ${wmsRequest}`);
   } catch (e) {
-    // FIXME: Handle 'exceptions' param
+    // TODO: Handle 'exceptions' param (HARMONY-40)
     if (e instanceof RequestValidationError) {
       req.logger.error(e.message);
       return requestError(res, e.message);

@@ -7,7 +7,7 @@ const services = require('../models/services');
  * @param {http.IncomingMessage} req The request to copy from
  * @param {http.ServerResponse} res The response to copy to
  * @param {string} header The name of the header to set
- * @returns {undefined}
+ * @returns {void}
  */
 function copyHeader(req, res, header) {
   res.set(header, req.get(header));
@@ -19,7 +19,7 @@ function copyHeader(req, res, header) {
  *
  * @param {http.IncomingMessage} req The request sent by the backend
  * @param {http.ServerResponse} res The response to send to the client
- * @returns {undefined}
+ * @returns {void}
  */
 function translateServiceResponse(req, res) {
   for (const k of Object.keys(req.headers)) {
@@ -46,7 +46,7 @@ function translateServiceResponse(req, res) {
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
- * @returns {Promise<undefined>} Resolves when the request is complete
+ * @returns {Promise<void>} Resolves when the request is complete
  */
 async function serviceInvoker(req, res) {
   const service = services.forOperation(req.operation);
