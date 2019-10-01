@@ -12,7 +12,7 @@ const idsToCallbacks = new Map();
  * Removes a callback URL / function binding.  Does nothing if url is null
  *
  * @param {string} url The URL of the response to forget
- * @returns {undefined}
+ * @returns {void}
  */
 function unbindResponseUrl(url) {
   if (url) {
@@ -44,7 +44,7 @@ function bindResponseUrl(responseCallback) {
  *
  * @param {http.IncomingMessage} req The request sent by the service
  * @param {http.ServerResponse} res The response to send to the service
- * @returns {undefined}
+ * @returns {void}
  */
 function responseHandler(req, res) {
   const id = req.params.uuid;
@@ -66,7 +66,7 @@ function responseHandler(req, res) {
  *   baseUrl: The base URL of the internal-facing endpoint that unique paths are appended to
  *
  * @param {{baseUrl: string}} config Configuration containing the base URL of the endpoint
- * @returns {undefined}
+ * @returns {void}
  */
 function configure({ baseUrl }) {
   if (baseUrl) {
