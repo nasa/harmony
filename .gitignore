@@ -6,5 +6,7 @@ node_modules
 
 # Temp and log files
 *.log
+tmp
+.DS_Store
 
 .env
