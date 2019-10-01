@@ -2,7 +2,6 @@ const { expect } = require('chai');
 const DataOperation = require('../app/models/data-operation');
 
 describe('DataOperation', () => {
-
   describe('#serialize', () => {
     describe('when its serialized JSON fails schema validation', () => {
       const operation = new DataOperation({
