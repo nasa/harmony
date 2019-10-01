@@ -133,30 +133,6 @@ class DataOperation {
   }
 
   /**
-   * Sets the (currently unused / undefined) styles to be used when returning imagery.
-   * This will eventually be string identifiers for colormaps, should that be supported.
-   *
-   * @param {Array<string>} styles An array of valid styles
-   * @returns {void}
-   * @memberof DataOperation
-   */
-  set styles(styles) {
-    this.model.format.styles = styles;
-  }
-
-  /**
-   * Sets the color value to be used where there is no data, in services where images are
-   * returned.  This only applies when `isTransparent` is false.  Currently unused by services.
-   *
-   * @param {string} color The hexadecimal color for image areas where there is no data
-   * @returns {void}
-   * @memberof DataOperation
-   */
-  set noDataColor(color) {
-    this.model.format.noDataColor = color;
-  }
-
-  /**
    * Gets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
    *   [ East, South, West, North ]
    *
