@@ -19,3 +19,8 @@ rules:
   require-jsdoc: ["warn"]
   valid-jsdoc: ["warn"]
   no-await-in-loop: ["off"]
+overrides:
+  - files: [ "test/**/*" ]
+    rules:
+      import/no-extraneous-dependencies: ["off"]
+      node/no-unpublished-require: ["off"]
