@@ -10,7 +10,7 @@ let serviceConfigs = null;
 /**
  * Loads the subsetter-config.yml configuration file.
  *
- * @returns {undefined}
+ * @returns {void}
  */
 function loadServiceConfigs() {
   // Setup a type, !Env, that when placed in front of a string resolves substrings like
@@ -83,6 +83,13 @@ function forOperation(operation) {
   return buildService(matches[0], operation);
 }
 
+/**
+ * Constructs and returns a service instance whose config has the given name in services.yml
+ *
+ * @param {*} name The name of the service as it appears in services.yml
+ * @param {*} operation The operation the service instance is serving
+ * @returns {BaseService} The constructed service
+ */
 function forName(name, operation) {
   const match = serviceConfigs.find((config) => config.name === name);
   if (!match) {

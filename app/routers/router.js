@@ -9,7 +9,16 @@ const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
 
 const serviceInvoker = require('../backends/service-invoker');
 
-const logged = (fn) => {
+/**
+ * Given an Express.js middleware handler function, returns another
+ * Express.js handler that wraps the input function with logging
+ * information and ensures the logger accessed by the input function
+ * describes the middleware that produced it.
+ *
+ * @param {Function} fn The middleware handler to wrap with logging
+ * @returns {Function} The handler wrapped with logging information
+ */
+function logged(fn) {
   const scope = `middleware.${fn.name}`;
   return async (req, res, next) => {
     const { logger } = req;
@@ -22,9 +31,15 @@ const logged = (fn) => {
       req.logger = logger;
     }
   };
-};
+}
 
-module.exports = function router() {
+/**
+ * Creates and returns an express.Router instance that has the middleware
+ * and handlers necessary to respond to frontend service requests
+ *
+ * @returns {express.Router} A router which can respond to frontend service requests
+ */
+function router() {
   const result = express.Router();
 
   result.use(logged(earthdataLoginAuthorizer));
@@ -38,4 +53,6 @@ module.exports = function router() {
   result.get('/', (req, res) => res.status(200).send('ok'));
   result.get('/*', serviceInvoker);
   return result;
-};
+}
+
+module.exports = router;

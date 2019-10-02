@@ -16,18 +16,33 @@ const backendHost = process.env.backendHost || 'localhost';
 const backendProtocol = (process.env.useHttps || backendHost !== 'localhost') ? 'https' : 'http';
 
 if (dotenvResult.error) {
-  console.log('Did not read a .env file');
+  winston.warn('Did not read a .env file');
 }
 
+/**
+ * Helper method that formats a string as a log tag only if it is provided
+ *
+ * @param {string} tag The tag string to add
+ * @returns {string} The input string in tag format, or the empty string if tag does not exist
+ */
 function optionalTag(tag) {
   return tag ? ` [${tag}]` : '';
 }
 
-const textformat = winston.format.printf(
-  (info) => `[${info.level}]${optionalTag(info.application)}${optionalTag(info.requestId)}${optionalTag(info.component)}: ${info.message}`,
-);
-
+/**
+ * Builds an express server with appropriate logging and default routing and starts the server
+ * listening on the provided port.
+ *
+ * @param {string} name The name of the server, as identified in logs
+ * @param {number} port The port the server should listen on
+ * @param {Function} setupFn A function that takes an express app and adds non-default behavior
+ * @returns {void}
+ */
 function buildServer(name, port, setupFn) {
+  const textformat = winston.format.printf(
+    (info) => `[${info.level}]${optionalTag(info.application)}${optionalTag(info.requestId)}${optionalTag(info.component)}: ${info.message}`,
+  );
+
   const logger = winston.createLogger({
     defaultMeta: { application: name },
     format: winston.format.combine(
@@ -66,10 +81,12 @@ function buildServer(name, port, setupFn) {
   app.listen(port, '0.0.0.0', () => logger.info(`Application "${name}" listening on port ${port}`));
 }
 
+// Setup the frontend server to handle client requests
 buildServer('frontend', appPort, (app) => {
   app.use('/', router());
 });
 
+// Setup the backend server to acccept callbacks from backend services
 buildServer('backend', backendPort, (app) => {
   app.use('/service', serviceResponseRouter());
 
