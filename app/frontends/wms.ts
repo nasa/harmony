@@ -216,12 +216,11 @@ function getMap(req, res, next) {
   operation.crs = query.crs;
   operation.isTransparent = query.transparent === 'TRUE';
   operation.outputFormat = query.format;
-  operation.outputWidth = query.width;
-  operation.outputHeight = query.height;
+  operation.outputWidth = parseInt(query.width, 10);
+  operation.outputHeight = parseInt(query.height, 10);
   if (dpi) {
     operation.outputDpi = parseInt(dpi, 10);
   }
-  operation.styles = query.styles.split(',');
 
   const [west, south, east, north] = query.bbox.split(',').map((c) => parseFloat(c));
   operation.boundingRectangle = [west, south, east, north];
