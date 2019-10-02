@@ -1,3 +1,24 @@
+const fs = require('fs');
+const path = require('path');
+const Ajv = require('ajv');
+const schemaV6 = require('ajv/lib/refs/json-schema-draft-06.json');
+
+/**
+ * Synchronously reads and parses the JSON Schema at the given path
+ *
+ * @param {number} version The version number of the schema to read
+ * @returns {object} The parsed JSON Schema object
+ * @private
+ */
+function readSchema(version) {
+  const schemaPath = path.join(__dirname, '..', 'schemas', `data-operation-v${version}.json`);
+  return JSON.parse(fs.readFileSync(schemaPath));
+}
+
+const validator = new Ajv();
+validator.addMetaSchema(schemaV6);
+validator.addSchema(readSchema(0), 'v0');
+
 /**
  * Encapsulates an operation to be performed against a backend.  Currently the
  * class is largely getters and setters.  The eventual intent is to allow us
@@ -133,30 +154,6 @@ class DataOperation {
   }
 
   /**
-   * Sets the (currently unused / undefined) styles to be used when returning imagery.
-   * This will eventually be string identifiers for colormaps, should that be supported.
-   *
-   * @param {Array<string>} styles An array of valid styles
-   * @returns {void}
-   * @memberof DataOperation
-   */
-  set styles(styles) {
-    this.model.format.styles = styles;
-  }
-
-  /**
-   * Sets the color value to be used where there is no data, in services where images are
-   * returned.  This only applies when `isTransparent` is false.  Currently unused by services.
-   *
-   * @param {string} color The hexadecimal color for image areas where there is no data
-   * @returns {void}
-   * @memberof DataOperation
-   */
-  set noDataColor(color) {
-    this.model.format.noDataColor = color;
-  }
-
-  /**
    * Gets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
    *   [ East, South, West, North ]
    *
@@ -275,11 +272,23 @@ class DataOperation {
    * to the provided JSON schema version ID (default: highest available)
    *
    * @param {number} [version=0] The version to serialize
+   * @param {bool} [validate=true] true if the serialized output should be JSON Schema validated
+   *   before returning
    * @returns {string} The serialized data operation in the requested version
+   * @throws {TypeError} If validate is `true` and validation fails
    * @memberof DataOperation
    */
-  serialize(version = 0) {
-    return JSON.stringify(Object.assign(this.model, { version }));
+  serialize(version = 0, validate = true) {
+    const toWrite = Object.assign(this.model, { version });
+
+    if (validate) {
+      const valid = validator.validate(`v${version}`, toWrite);
+      if (!valid) {
+        throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validator.errors)}`);
+      }
+    }
+
+    return JSON.stringify(toWrite);
   }
 }
 
