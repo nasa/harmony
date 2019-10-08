@@ -14,7 +14,7 @@ describe('WMS GetCapabilities', function () {
     hookGetCapabilities(collection);
 
     it('completes successfully', function () {
-      expect(this.res).to.have.status(200);
+      expect(this.res.status).to.equal(200);
     });
 
     it('returns the variables as layers in the capabilities response', function () {
@@ -35,7 +35,7 @@ describe('WMS GetCapabilities', function () {
     hookGetCapabilities(collection);
 
     it('completes successfully', function () {
-      expect(this.res).to.have.status(200);
+      expect(this.res.status).to.equal(200);
     });
 
     it('returns a single layer for the entire collection in the capabilities response', function () {
