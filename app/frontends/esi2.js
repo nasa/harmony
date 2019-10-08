@@ -1,5 +1,3 @@
-// Add some code
-const express = require('express');
 const { initialize } = require('express-openapi');
 const fs = require('fs');
 const path = require('path');
@@ -8,20 +6,38 @@ const version = 0;
 const openApiPath = path.join(__dirname, '..', 'schemas', `esi2-v${version}.yml`);
 const openApiContent = fs.readFileSync(openApiPath);
 
-const app = express();
-
-initialize({
-  app,
-  apiDoc: openApiPath,
-  operations: {
-    getLandingPage: function (req, res) {
-      res.append('Content-type', 'text/x-yaml');
-      res.send(openApiContent);
+/**
+ * Sets up the express application with the OpenAPI routes
+ *
+ * @param {express.Application} app The express application
+ * @returns {void}
+ */
+function addOpenApiRoutes(app) {
+  initialize({
+    app,
+    apiDoc: openApiPath,
+    operations: {
+      getLandingPage(req, res) {
+        res.append('Content-type', 'text/html');
+        res.send('<p>A fine landing page for now.<p>');
+      },
+      getSpecification(req, res) {
+        res.append('Content-type', 'text/x-yaml');
+        res.send(openApiContent);
+      },
+      getGranule(req, res) {
+        res.send('Called getGranule\n');
+      },
     },
-    getGranule: function (req, res) {
-      res.send('Called getGranule\n');
-    },
-  },
-});
+  });
 
-app.listen(3002);
+  // Handles returning errors formatted as JSON
+  app.use((err, req, res, _next) => {
+    res.status(err.status).json({
+      message: err.message,
+      errors: err.errors,
+    });
+  });
+}
+
+module.exports = { addOpenApiRoutes };
