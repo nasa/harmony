@@ -1,7 +1,5 @@
 const { before } = require('mocha');
 const winston = require('winston');
-const chai = require('chai');
-const chaiHttp = require('chai-http');
 
 const logger = require('../../app/util/log');
 
@@ -12,6 +10,4 @@ before(() => {
     logger.remove(logger.transports[0]);
   }
   logger.add(fileTransport);
-
-  chai.use(chaiHttp);
 });
