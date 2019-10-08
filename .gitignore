@@ -13,3 +13,4 @@ coverage
 logs
 
 .env
+.vscode

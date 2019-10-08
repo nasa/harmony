@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const Ajv = require('ajv');
-const schemaV6 = require('ajv/lib/refs/json-schema-draft-06.json');
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -15,8 +14,7 @@ function readSchema(version) {
   return JSON.parse(fs.readFileSync(schemaPath));
 }
 
-const validator = new Ajv();
-validator.addMetaSchema(schemaV6);
+const validator = new Ajv({ schemaId: 'auto' });
 validator.addSchema(readSchema(0), 'v0');
 
 /**
