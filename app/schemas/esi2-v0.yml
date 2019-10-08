@@ -1,0 +1,175 @@
+openapi: 3.0.1
+info:
+  title: EOSDIS Service API modeled on WFS3 
+  version: 0.1.0
+  description: 'This is an OpenAPI definition to support basic spatial subsetting and reprojection'
+  contact:
+    name: Christopher Lynnes
+    email: christopher.s.lynnes@nasa.gov
+servers:
+  - url: 'http://localhost:3002/esi2'
+    description: Development server
+paths:
+  /:
+    get:
+      summary: landing page of this API
+      description: 'The landing page provides links to the API definition'
+      operationId: getLandingPage
+      tags:
+        - Capabilities
+      responses:
+        '200':
+          description: links to the API capabilities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/root'
+            text/html:
+              schema:
+                type: string
+  '/collections/{collectionId}/items/{granuleId}':
+    get:
+      summary: "In theory, retrieve a granule with content negotiation to request metadata format, browse or actual data file (CMR Restification lives!!!). But initially this is just the resource path to the granule to be subsetted and reprojected, based on Parameters added to this path."
+      operationId: getGranule
+      tags:
+        - Granule Services
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/granuleId'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/rangeSubset'
+
+      responses:
+        '200':
+          description: "Synchronous streaming: GeoTIFF. Synchronous staging: the plain text of the URL. Asynchronous staging: TBD"
+          content:
+            image/tiff;application=geotiff:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+                format: url
+        default:
+          description: An error occured.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/exception'
+            text/html:
+              schema:
+                type: string
+components:
+  parameters:
+    bbox:
+      name: bbox
+      in: query
+      description: |
+        Only data grid ranges that intersect the bounding box are returned. The bounding box is provided as four or six numbers, depending on whether the coordinate reference system includes a vertical axis (elevation or depth):
+        * Lower left corner, coordinate axis 1 * Lower left corner, coordinate axis 2 * Lower left corner, coordinate axis 3 (optional) * Upper right corner, coordinate axis 1 * Upper right corner, coordinate axis 2 * Upper right corner, coordinate axis 3 (optional)
+        The coordinate reference system of the values is WGS84 longitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate reference system is specified in the parameter `bbox-crs`. Coordinates are in the order lat,long.
+        For WGS84 longitude/latitude the values are in most cases the sequence of minimum longitude, minimum latitude, maximum longitude and maximum latitude. However, in cases where the box spans the antimeridian the first value (west-most box edge) is larger than the third value (east-most box edge).
+        If a granule has multiple spatial geometry properties, it is the decision of the server whether only a single spatial geometry property is used to determine the extent or all relevant geometries.
+      required: false
+      schema:
+        type: array
+        minItems: 4
+        maxItems: 6
+        items:
+          type: number
+      style: form
+      explode: false
+    format:
+      name: format
+      in: query
+      schema:
+        type: string
+        enum:
+          - 'geotiff'
+          - 'netcdf'
+    crs:
+      name: crs
+      in: query
+      description: 'The coordinate reference systems in which data may be reprojected. Coordinate reference systems are identified by a common name, EPSG code, or URI. If no CRS is specified, the data are not reprojected. Enum is for prototyping, only one UTM zone is represented. (N.B.: current WCS uses outputCRS.)'
+      schema:
+        type: string
+        enum:
+          - 'geographic'
+          - 'EPSG:32611'  # UTM zone 11
+          - 'cylindrical_equal_area'
+        
+      
+    collectionId:
+      name: collectionId
+      in: path
+      required: true
+      description: CMR Concept ID of a specific collection
+      schema:
+        type: string
+    granuleId:
+      name: granuleId
+      in: path
+      description: CMR Concept ID of a specific granule
+      required: true
+      schema:
+        type: string
+    rangeSubset:
+      name: rangeSubset
+      in: query
+      description:  comma separated list of variables to extract from granule.
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+  schemas:
+    exception:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+    root:
+      type: object
+      required:
+        - links
+      properties:
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+          example:
+            - href: 'http://data.example.org/'
+              rel: self
+              type: application/json
+              title: this document
+            - href: 'http://data.example.org/api'
+              rel: service
+              type: application/openapi+json;version=3.0
+              title: the API definition
+    link:
+      type: object
+      required:
+        - href
+      properties:
+        href:
+          type: string
+        rel:
+          type: string
+          example: prev
+        type:
+          type: string
+          example: application/geo+json
+        hreflang:
+          type: string
+          example: en
+tags:
+  - name: Capabilities
+    description: Essential characteristics of this API including information about the data.
+  - name: Granule Services
+    description: Access to subsetted, reprojected granules.
