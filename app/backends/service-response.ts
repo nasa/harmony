@@ -70,10 +70,11 @@ function responseHandler(req, res) {
  */
 function configure({ baseUrl }) {
   if (baseUrl) {
-    if (config.baseUrl) {
+    const newUrl = baseUrl + (baseUrl.endsWith('/') ? '' : '/');
+    if (config.baseUrl && config.baseUrl !== newUrl) {
       throw new Error(`ServiceResponse baseUrl ${config.baseUrl} would be overwritten by ${baseUrl}`);
     }
-    config.baseUrl = baseUrl + (baseUrl.endsWith('/') ? '' : '/');
+    config.baseUrl = baseUrl;
   }
 }
 
