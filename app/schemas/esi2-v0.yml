@@ -8,7 +8,7 @@ info:
     email: christopher.s.lynnes@nasa.gov
 servers:
   - url: 'http://localhost:3002/esi2'
-    description: Development server
+    description: Local server
 paths:
   /:
     get:
@@ -25,6 +25,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/root'
             text/html:
+              schema:
+                type: string
+  '/docs/spec':
+    get:
+      summary: API definition
+      description: 'Returns the API definition'
+      operationId: getSpecification
+      tags:
+        - Capabilities
+      responses:
+        '200':
+          description: API definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/root'
+            text/x-yaml:
               schema:
                 type: string
   '/collections/{collectionId}/items/{granuleId}':
@@ -99,8 +116,6 @@ components:
           - 'geographic'
           - 'EPSG:32611'  # UTM zone 11
           - 'cylindrical_equal_area'
-        
-      
     collectionId:
       name: collectionId
       in: path
