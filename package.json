@@ -4,7 +4,8 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "eslint . && mocha test",
+    "test": "eslint . && mocha",
+    "coverage": "nyc mocha",
     "start": "node app/server.js",
     "start-dev": "supervisor app/server.js",
     "build-image": "bin/build-image",
@@ -19,6 +20,15 @@
   ],
   "engines": {
     "node": ">=10.16.1"
+  },
+  "nyc": {
+    "all": true,
+    "check-coverage": true,
+    "lines": 80,
+    "reporter": [
+      "lcov",
+      "text"
+    ]
   },
   "author": "Patrick Quinn",
   "license": "UNLICENSED",
@@ -39,6 +49,9 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
+    "@pollyjs/adapter-node-http": "^2.6.3",
+    "@pollyjs/core": "^2.6.3",
+    "@pollyjs/persister-fs": "^2.6.3",
     "@types/express": "^4.17.0",
     "chai": "^4.2.0",
     "eslint": "^6.1.0",
@@ -47,7 +60,11 @@
     "eslint-plugin-jsdoc": "^15.9.1",
     "eslint-plugin-node": "^9.2.0",
     "mocha": "^6.2.1",
+    "moxios": "^0.4.0",
+    "nyc": "^14.1.1",
+    "replayer": "^2.2.3",
     "sinon": "^7.5.0",
+    "supertest": "^4.0.2",
     "supervisor": "^0.12.0"
   }
 }
