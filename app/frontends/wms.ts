@@ -56,8 +56,8 @@ function validateParamIn(lowercasedParamMap, paramName, values, allowNull = fals
     throw new RequestValidationError(`Query parameter "${paramName}" has no valid values`);
   }
   if (values.indexOf(value) === -1) {
-    const quoted = values.map((v) => `"${v}"`).join(',');
-    const containsText = values.length === 1 ? ' one of' : '';
+    const quoted = values.map((v) => `"${v}"`).join(', ');
+    const containsText = values.length === 1 ? '' : ' one of';
     throw new RequestValidationError(`Query parameter "${paramName}" must be${containsText} ${quoted}`);
   }
   return true;

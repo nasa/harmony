@@ -1,4 +1,3 @@
-const request = require('request');
 const services = require('../models/services');
 
 /**
@@ -31,8 +30,7 @@ function translateServiceResponse(req, res) {
   if (query.error) {
     res.status(400).send(query.error);
   } else if (query.redirect) {
-    const result = request(query.redirect);
-    result.pipe(res);
+    res.redirect(query.redirect);
   } else {
     copyHeader(req, res, 'Content-Type');
     copyHeader(req, res, 'Content-Length');
@@ -51,7 +49,6 @@ function translateServiceResponse(req, res) {
 async function serviceInvoker(req, res) {
   const service = services.forOperation(req.operation);
   const result = await service.invoke();
-
   translateServiceResponse(result.req, res);
   result.res.status(200);
   result.res.send('Ok');
