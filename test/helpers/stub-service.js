@@ -1,6 +1,6 @@
 const { before, after } = require('mocha');
-const axios = require('axios');
 const sinon = require('sinon');
+const request = require('superagent');
 const BaseService = require('../../app/models/services/base-service');
 const services = require('../../app/models/services');
 
@@ -15,7 +15,7 @@ class StubService extends BaseService {
    * Creates an instance of StubService.
    *
    * @param {DataOperation} operation The data operation being requested of the service
-   * @param {object} callbackOptions The axios options to be used for the callback (merged with
+   * @param {object} callbackOptions The request options to be used for the callback (merged with
    *   request method and URL)
    * @memberof StubService
    */
@@ -32,11 +32,19 @@ class StubService extends BaseService {
    * @returns {void}
    */
   async _invokeAsync() {
-    await axios({
-      method: 'post',
-      url: `${this.operation.callback}/response`,
-      ...this.callbackOptions,
-    });
+    const responseUrl = `${this.operation.callback}/response`;
+    const { params, body, headers } = this.callbackOptions;
+    let req = request.post(responseUrl);
+    if (headers) {
+      req = req.set(headers);
+    }
+    if (params) {
+      req = req.query(params);
+    }
+    if (body) {
+      req = req.send(body);
+    }
+    await req;
   }
 
   /**

@@ -4,7 +4,7 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "eslint . && mocha",
+    "test": "eslint . && nyc mocha",
     "coverage": "nyc mocha",
     "start": "node app/server.js",
     "start-dev": "supervisor app/server.js",
@@ -24,7 +24,7 @@
   "nyc": {
     "all": true,
     "check-coverage": true,
-    "lines": 80,
+    "lines": 70,
     "reporter": [
       "lcov",
       "text"
@@ -64,6 +64,7 @@
     "nyc": "^14.1.1",
     "replayer": "^2.2.3",
     "sinon": "^7.5.0",
+    "superagent": "^5.1.0",
     "supertest": "^4.0.2",
     "supervisor": "^0.12.0"
   }
