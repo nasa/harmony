@@ -7,10 +7,10 @@ info:
     name: Christopher Lynnes
     email: christopher.s.lynnes@nasa.gov
 servers:
-  - url: 'http://localhost:3002/esi2'
+  - url: 'http://localhost:3000'
     description: Local server
 paths:
-  /:
+  '/docs/eoss':
     get:
       summary: landing page of this API
       description: 'The landing page provides links to the API definition'
@@ -27,7 +27,7 @@ paths:
             text/html:
               schema:
                 type: string
-  '/docs/spec':
+  '/docs/eoss/spec':
     get:
       summary: API definition
       description: 'Returns the API definition'
@@ -44,7 +44,7 @@ paths:
             text/x-yaml:
               schema:
                 type: string
-  '/collections/{collectionId}/items/{granuleId}':
+  '/{collectionId}/eoss/items/{granuleId}':
     get:
       summary: "In theory, retrieve a granule with content negotiation to request metadata format, browse or actual data file (CMR Restification lives!!!). But initially this is just the resource path to the granule to be subsetted and reprojected, based on Parameters added to this path."
       operationId: getGranule

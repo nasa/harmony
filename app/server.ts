@@ -10,7 +10,7 @@ const { promisify } = require('util');
 const logger = require('./util/log');
 const serviceResponse = require('./backends/service-response');
 const serviceResponseRouter = require('./routers/service-response-router');
-const esi2 = require('./frontends/esi2');
+const eoss = require('./frontends/eoss');
 const router = require('./routers/router');
 
 if (dotenvResult.error) {
@@ -76,7 +76,7 @@ function start(config = {}) {
 
   // Setup the frontend server to handle client requests
   const frontend = buildServer('frontend', appPort, (app) => {
-    esi2.addOpenApiRoutes(app);
+    eoss.addOpenApiRoutes(app);
     app.use('/', router());
   });
 

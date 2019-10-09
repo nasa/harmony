@@ -3,11 +3,11 @@ const fs = require('fs');
 const path = require('path');
 
 const version = 0;
-const openApiPath = path.join(__dirname, '..', 'schemas', `esi2-v${version}.yml`);
+const openApiPath = path.join(__dirname, '..', 'schemas', `eoss-v${version}.yml`);
 const openApiContent = fs.readFileSync(openApiPath);
 
 /**
- * Sets up the express application with the OpenAPI routes
+ * Sets up the express application with the OpenAPI routes for EOSS
  *
  * @param {express.Application} app The express application
  * @returns {void}
