@@ -1,0 +1,5 @@
+rules:
+  # These overrides let us use anonymous functions for Mocha instead of lambdas, which is
+  # the preferred method described in the Mocha docs
+  prefer-arrow-callback: "off"
+  func-names: "off"

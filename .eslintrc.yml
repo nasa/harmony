@@ -8,8 +8,6 @@ extends:
   - plugin:import/warnings
   - plugin:node/recommended
 env:
-  jasmine: true
-  mocha: true
   node: true
 rules:
   indent: ["error", 2]
@@ -19,8 +17,16 @@ rules:
   require-jsdoc: ["warn"]
   valid-jsdoc: ["warn"]
   no-await-in-loop: ["off"]
+  object-curly-newline: ["off"]
+  no-unused-vars:
+    - error
+    - argsIgnorePattern: "^_"
 overrides:
   - files: [ "test/**/*" ]
     rules:
       import/no-extraneous-dependencies: ["off"]
       node/no-unpublished-require: ["off"]
+      # These overrides let us use anonymous functions for Mocha instead of lambdas, which is
+      # the preferred method described in the Mocha docs
+      prefer-arrow-callback: "off"
+      func-names: "off"

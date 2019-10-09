@@ -20,7 +20,8 @@ class BaseService {
       throw new TypeError('BaseService is abstract and cannot be instantiated directly');
     }
     this.config = config;
-    this.params = this.config.type.params;
+    const { type } = this.config;
+    this.params = (type && type.params) ? type.params : {};
     this.operation = operation;
   }
 
