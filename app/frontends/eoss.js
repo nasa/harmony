@@ -4,7 +4,7 @@ const path = require('path');
 
 const version = 0;
 const openApiPath = path.join(__dirname, '..', 'schemas', `eoss-v${version}.yml`);
-const openApiContent = fs.readFileSync(openApiPath);
+const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
 
 /**
  * Sets up the express application with the OpenAPI routes for EOSS
@@ -16,8 +16,12 @@ function addOpenApiRoutes(app) {
   initialize({
     app,
     apiDoc: openApiPath,
+    /* Note: the default way to expose an OpenAPI endpoint is to have express handle paths
+     * based on a supplied directory structure. Instead we are using the operations property
+     * because we want to include the paths within the OpenAPI specification itself. */
     operations: {
       getLandingPage(req, res) {
+        // HARMONY-72 will implement this functionality - stubbed out for now
         res.append('Content-type', 'text/html');
         res.send('<p>A fine landing page for now.<p>');
       },
@@ -26,7 +30,8 @@ function addOpenApiRoutes(app) {
         res.send(openApiContent);
       },
       getGranule(req, res) {
-        res.send('Called getGranule\n');
+        // HARMONY-55 will implement this functionality - stubbed out for now
+        res.send('Called getGranule');
       },
     },
   });
