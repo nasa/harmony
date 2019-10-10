@@ -1,0 +1,33 @@
+{
+  "statusCode": 200,
+  "headers": {
+    "content-type": "application/json;charset=utf-8",
+    "content-length": "8894",
+    "connection": "keep-alive",
+    "vary": "Accept-Encoding, Accept-Encoding, User-Agent",
+    "date": "Thu, 10 Oct 2019 20:41:46 GMT",
+    "set-cookie": [
+      "AWSALB=WaWZDJLTaRu5BEAb1m0IQ65vq0LH1VLXKkWjPW3Yd3uoQFFv860dxcclRaTcA8PluytmIeAqeN/d7+HS3X2rl0fhnE7xlh0a0Wr1lTFvamQqvblqsh/tQSDnvnwL; Expires=Thu, 17 Oct 2019 20:41:46 GMT; Path=/"
+    ],
+    "access-control-expose-headers": "CMR-Hits, CMR-Request-Id, CMR-Scroll-Id",
+    "access-control-allow-origin": "*",
+    "cmr-hits": "1",
+    "cmr-took": "7",
+    "cmr-request-id": "d9106300-124c-4ba1-a3f8-4e5547a94fef",
+    "server": "Jetty(9.4.z-SNAPSHOT)",
+    "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+    "x-cache": "Miss from cloudfront",
+    "via": "1.1 d57e92f55da6364b30f6b45e435b7b20.cloudfront.net (CloudFront)",
+    "x-amz-cf-pop": "EWR52-C1",
+    "x-amz-cf-id": "Z-Cl-blCpNA0EcBAWNuW5w2HuXoAG8b5EZl8nN-FFUbL1DRtyaXexg=="
+  },
+  "url": "https://cmr.uat.earthdata.nasa.gov/search/collections.json?concept_id=C1215669046-GES_DISC&concept_id=C1234-MISSING&page_size=2000",
+  "time": 371,
+  "request": {
+    "method": "GET",
+    "headers": {
+      "Accept": "application/json, text/plain, */*",
+      "User-Agent": "axios/0.19.0"
+    }
+  }
+}

@@ -4,6 +4,7 @@ const yaml = require('js-yaml');
 
 const LocalDockerService = require('./local-docker-service');
 const ChainService = require('./chain-service');
+const { NotFoundError } = require('../../util/errors');
 
 let serviceConfigs = null;
 
@@ -50,7 +51,7 @@ function buildService(serviceConfig, operation) {
     return new ServiceClass(serviceConfig, operation);
   }
 
-  throw new Error(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
+  throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
 }
 
 /**
@@ -73,9 +74,12 @@ function isCollectionMatch(operation, serviceConfig) {
  * @throws {Error} If no service can perform the given operation
  */
 function forOperation(operation) {
-  const matches = serviceConfigs.filter((config) => isCollectionMatch(operation, config));
+  let matches = [];
+  if (operation) {
+    matches = serviceConfigs.filter((config) => isCollectionMatch(operation, config));
+  }
   if (matches.length === 0) {
-    throw new Error('Could not find a capable handler for the provided service');
+    throw new NotFoundError('Could not find a service to fulfill the request for the given collection');
   }
 
   // TODO: Capabilities match.  Should be fuzzier and warn, rather than erroring?
@@ -93,11 +97,22 @@ function forOperation(operation) {
 function forName(name, operation) {
   const match = serviceConfigs.find((config) => config.name === name);
   if (!match) {
-    throw new Error(`Could not find service with name ${name}`);
+    throw new NotFoundError(`Could not find service with name ${name}`);
   }
   return buildService(match, operation);
+}
+
+/**
+ * Returns true if the collectionId has available backends
+ *
+ * @param {string} collection The CMR collection to check
+ * @returns {boolean} true if the collection has available backends, false otherwise
+ */
+function isCollectionSupported(collection) {
+  return serviceConfigs.find((sc) => sc.collections.includes(collection.id)) !== undefined;
 }
 
 // Don't set module.exports or ChainService breaks
 exports.forOperation = forOperation;
 exports.forName = forName;
+exports.isCollectionSupported = isCollectionSupported;
