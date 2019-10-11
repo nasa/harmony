@@ -2,8 +2,8 @@ const { initialize } = require('express-openapi');
 const fs = require('fs');
 const path = require('path');
 
-const version = 0;
-const openApiPath = path.join(__dirname, '..', 'schemas', `eoss-v${version}.yml`);
+const version = '0.1.0';
+const openApiPath = path.join(__dirname, '..', 'schemas', 'eoss', version, `eoss-v${version}.yml`);
 const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
 
 /**

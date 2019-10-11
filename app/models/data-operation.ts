@@ -10,12 +10,12 @@ const Ajv = require('ajv');
  * @private
  */
 function readSchema(version) {
-  const schemaPath = path.join(__dirname, '..', 'schemas', `data-operation-v${version}.json`);
+  const schemaPath = path.join(__dirname, '..', 'schemas', 'data-operation', version, `data-operation-v${version}.json`);
   return JSON.parse(fs.readFileSync(schemaPath));
 }
 
 const validator = new Ajv({ schemaId: 'auto' });
-validator.addSchema(readSchema(0), 'v0');
+validator.addSchema(readSchema('0.1.0'), 'v0.1.0');
 
 /**
  * Encapsulates an operation to be performed against a backend.  Currently the
@@ -276,7 +276,7 @@ class DataOperation {
    * @throws {TypeError} If validate is `true` and validation fails
    * @memberof DataOperation
    */
-  serialize(version = 0, validate = true) {
+  serialize(version = '0.1.0', validate = true) {
     const toWrite = Object.assign(this.model, { version });
 
     if (validate) {
