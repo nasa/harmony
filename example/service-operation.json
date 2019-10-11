@@ -2,6 +2,7 @@
   "$schema": "../app/schemas/data-operation-v0.json",
   "version": 0,
   "callback": "http://localhost/some-path",
+  "user": "jdoe",
   "sources": [
     {
       "collection": "C1215669046-GES_DISC",
