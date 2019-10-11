@@ -13,7 +13,7 @@ describe('DataOperation', () => {
       });
 
       describe('and its "validate" parameter is not passed', () => {
-        const call = () => operation.serialize(0);
+        const call = () => operation.serialize('0.1.0');
 
         it('throws an error', () => {
           expect(call).to.throw(TypeError);
@@ -21,7 +21,7 @@ describe('DataOperation', () => {
       });
 
       describe('and its "validate" parameter is set to true', () => {
-        const call = () => operation.serialize(0, true);
+        const call = () => operation.serialize('0.1.0', true);
 
         it('throws an error', () => {
           expect(call).to.throw(TypeError);
@@ -29,14 +29,14 @@ describe('DataOperation', () => {
       });
 
       describe('and its "validate" parameter is set to false', () => {
-        const call = () => operation.serialize(0, false);
+        const call = () => operation.serialize('0.1.0', false);
 
         it('does not throw an error', () => {
           expect(call).to.not.throw();
         });
 
         it('returns its JSON-serialized model', () => {
-          expect(call()).equal('{"callback":"http://example.com/callback","sources":[],"format":{},"subset":{"bbox":[-130,-45,130,45,100]},"version":0}');
+          expect(call()).equal('{"callback":"http://example.com/callback","sources":[],"format":{},"subset":{"bbox":[-130,-45,130,45,100]},"version":"0.1.0"}');
         });
       });
     });
