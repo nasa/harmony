@@ -11,6 +11,7 @@ tmp
 .nyc_output
 coverage
 logs
+test-results.xml
 
 .env
 .vscode
