@@ -1,0 +1,33 @@
+{
+  "statusCode": 200,
+  "headers": {
+    "content-type": "application/json;charset=utf-8",
+    "content-length": "200",
+    "connection": "keep-alive",
+    "date": "Thu, 10 Oct 2019 20:41:46 GMT",
+    "set-cookie": [
+      "AWSALB=4AYTxSFqGY32jjz8pF+AF1QZgD5Mvh5iU51ALPp97/nLGH83TF6xaclqNX5ocxFx1vao0rG7ng+rZLYga0Rjhvc7PN6PeKKiA3N4QS/AB+aQIx4LYZApAFobb92Z; Expires=Thu, 17 Oct 2019 20:41:46 GMT; Path=/"
+    ],
+    "access-control-expose-headers": "CMR-Hits, CMR-Request-Id, CMR-Scroll-Id",
+    "access-control-allow-origin": "*",
+    "cmr-hits": "0",
+    "cmr-took": "5",
+    "cmr-request-id": "137695b1-31fd-4d96-8088-c231e9fbd2f0",
+    "vary": "Accept-Encoding, User-Agent",
+    "server": "Jetty(9.4.z-SNAPSHOT)",
+    "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+    "x-cache": "Miss from cloudfront",
+    "via": "1.1 d671204b8bf6c2b9056c338588204020.cloudfront.net (CloudFront)",
+    "x-amz-cf-pop": "EWR52-C1",
+    "x-amz-cf-id": "s6uetor_AE_YSvGg9LHrzWwbQYxMM82HIDUAs00P2gJmPxMvtgQdAw=="
+  },
+  "url": "https://cmr.uat.earthdata.nasa.gov/search/collections.json?concept_id=C1234-MISSING&page_size=2000",
+  "time": 481,
+  "request": {
+    "method": "GET",
+    "headers": {
+      "Accept": "application/json, text/plain, */*",
+      "User-Agent": "axios/0.19.0"
+    }
+  }
+}

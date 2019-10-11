@@ -1,4 +1,6 @@
 const cmrutil = require('../util/cmr');
+const { listToText } = require('../util/string');
+const { NotFoundError } = require('../util/errors');
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
@@ -55,6 +57,15 @@ async function cmrCollectionReader(req, res, next) {
 
       req.collections = await cmrutil.getCollectionsByIds(collectionIds);
       const { collections } = req;
+
+      // Could not find a requested collection
+      if (collections.length !== collectionIds.length) {
+        const foundIds = collections.map((c) => c.id);
+        const missingIds = collectionIds.filter((c) => !foundIds.includes(c));
+        const s = missingIds.length > 1 ? 's' : '';
+        const message = `The collection${s} with ID${s} ${listToText(missingIds)} could not be found`;
+        throw new NotFoundError(message);
+      }
 
       const promises = [];
       for (const collection of collections) {

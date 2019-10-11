@@ -6,6 +6,8 @@ const wmsFrontend = require('../frontends/wms');
 const wcsFrontend = require('../frontends/wcs');
 const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
+const { NotFoundError } = require('../util/errors');
+const services = require('../models/services');
 
 const serviceInvoker = require('../backends/service-invoker');
 
@@ -34,6 +36,32 @@ function logged(fn) {
 }
 
 /**
+ * Returns a function that the incoming request is a valid service request before
+ * invoking its handler.
+ *
+ * @param {Function} fn The service handler
+ * @returns {Function} The handler wrapped in validation
+ * @throws {NotFoundError} If there are no collections in the request
+ */
+function service(fn) {
+  return async (req, res, next) => {
+    try {
+      if (!req.collections || req.collections.length === 0) {
+        throw new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name');
+      }
+      // Attempts to grab an available backend for the requested operation.
+      // If no such backend exists, this will throw, causing desirable 404s.
+      if (!req.collections.every(services.isCollectionSupported)) {
+        throw new NotFoundError('The requested service is not valid for the given collection');
+      }
+      await fn(req, res, next);
+    } catch (e) {
+      req.logger.error(e);
+      next(e);
+    }
+  };
+}
+/**
  * Creates and returns an express.Router instance that has the middleware
  * and handlers necessary to respond to frontend service requests
  *
@@ -45,13 +73,14 @@ function router() {
   result.use(logged(earthdataLoginAuthorizer));
   result.use(logged(cmrCollectionReader));
 
-  result.use('/wcs', logged(wcsFrontend));
-  result.use('/wms', logged(wmsFrontend));
+  result.use('/wcs', service(logged(wcsFrontend)));
+  result.use('/wms', service(logged(wmsFrontend)));
 
   result.use(logged(cmrGranuleLocator));
 
   result.get('/', (req, res) => res.status(200).send('ok'));
-  result.get('/*', serviceInvoker);
+  result.get(/\/(wcs|wms)/, service(serviceInvoker));
+  result.get('/*', () => { throw new NotFoundError('The requested page was not found'); });
   return result;
 }
 

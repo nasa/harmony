@@ -12,6 +12,7 @@ const serviceResponse = require('./backends/service-response');
 const serviceResponseRouter = require('./routers/service-response-router');
 const eoss = require('./frontends/eoss');
 const router = require('./routers/router');
+const errorHandler = require('./middleware/error-handler');
 
 if (dotenvResult.error) {
   winston.warn('Did not read a .env file');
@@ -50,6 +51,8 @@ function buildServer(name, port, setupFn) {
   if (setupFn) {
     setupFn(app);
   }
+
+  app.use(errorHandler);
 
   return app.listen(port, '0.0.0.0', () => appLogger.info(`Application "${name}" listening on port ${port}`));
 }
