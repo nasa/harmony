@@ -1,2 +1,4 @@
+reporter: mocha-multi
+reporterOptions: 'spec=-,mocha-junit-reporter=-'
 recursive: true
 exit: true
