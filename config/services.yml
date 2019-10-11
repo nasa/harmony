@@ -46,7 +46,7 @@
       - image/tiff
       - image/png
       - image/gif
-    projection_to_wkt: true
+    projection_to_proj4: true
 
 - name: chained-swot-l2
   type:
