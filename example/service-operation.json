@@ -1,5 +1,5 @@
 {
-  "$schema": "../app/schemas/data-operation-v0.json",
+  "$schema": "../app/schemas/data-operation/0.1.0/data-operation-v0.1.0.json",
   "version": 0,
   "callback": "http://localhost/some-path",
   "sources": [

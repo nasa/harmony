@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: EOSDIS Service API modeled on WFS3 
-  version: '0'
+  version: '0.1.0'
   description: 'This is an OpenAPI definition to support basic spatial subsetting and reprojection'
   contact:
     name: Christopher Lynnes

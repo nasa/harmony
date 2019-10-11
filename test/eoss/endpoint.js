@@ -20,7 +20,7 @@ describe('EOSS static content endpoints', function () {
   });
 
   describe('OpenAPI spec', function () {
-    const openApiPath = path.join(__dirname, '..', '..', 'app', 'schemas', 'eoss-v0.yml');
+    const openApiPath = path.join(__dirname, '..', '..', 'app', 'schemas', 'eoss', '0.1.0', 'eoss-v0.1.0.yml');
     const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
     it('returns an HTTP 200 and the OpenAPI spec for an EOSS request', async function () {
       const res = await eossSpecRequest(this.frontend);
