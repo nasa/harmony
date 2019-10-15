@@ -52,7 +52,6 @@ async function cmrCollectionReader(req, res, next) {
       const collectionIdStr = collectionMatch[0].substr(1, collectionMatch[0].length - 2);
       const collectionIds = collectionIdStr.split(/[+\s]/g);
       req.collectionIds = collectionIds;
-      req.url = req.url.replace(collectionMatch[0], '/');
       req.logger.info({ collectionIds });
 
       req.collections = await cmrutil.getCollectionsByIds(collectionIds);
@@ -83,5 +82,7 @@ async function cmrCollectionReader(req, res, next) {
     next(error);
   }
 }
+
+cmrCollectionReader.collectionRegex = COLLECTION_URL_PATH_REGEX;
 
 module.exports = cmrCollectionReader;
