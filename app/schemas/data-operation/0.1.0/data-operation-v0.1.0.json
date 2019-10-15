@@ -43,7 +43,7 @@
         "version": {
           "name": "Version number",
           "description": "Identifies which schema version and Harmony callback protocol is being used",
-          "type": "integer"
+          "type": "string"
         }
       },
       "required": [
