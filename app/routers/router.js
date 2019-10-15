@@ -8,6 +8,7 @@ const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
 const { NotFoundError } = require('../util/errors');
 const services = require('../models/services');
+const eoss = require('../frontends/eoss');
 
 const serviceInvoker = require('../backends/service-invoker');
 
@@ -61,6 +62,18 @@ function service(fn) {
     }
   };
 }
+
+/**
+ * Given a path, returns a regular expression for that path prefixed by one or more collections
+ *
+ * @param {string} path The URL path
+ * @returns {string} The path prefixed by one or more collection IDs
+ */
+function collectionPrefix(path) {
+  const result = new RegExp(cmrCollectionReader.collectionRegex.source + path);
+  return result;
+}
+
 /**
  * Creates and returns an express.Router instance that has the middleware
  * and handlers necessary to respond to frontend service requests
@@ -73,13 +86,18 @@ function router() {
   result.use(logged(earthdataLoginAuthorizer));
   result.use(logged(cmrCollectionReader));
 
-  result.use('/wcs', service(logged(wcsFrontend)));
-  result.use('/wms', service(logged(wmsFrontend)));
+  result.use(collectionPrefix('wcs'), service(logged(wcsFrontend)));
+  result.use(collectionPrefix('wms'), service(logged(wmsFrontend)));
+  eoss.addOpenApiRoutes(result);
+
+  result.use(/^\/(wms|wcs|eoss)/, (req, res, next) => {
+    next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name'));
+  });
 
   result.use(logged(cmrGranuleLocator));
 
   result.get('/', (req, res) => res.status(200).send('ok'));
-  result.get(/\/(wcs|wms)/, service(serviceInvoker));
+  result.get(collectionPrefix('(wms|wcs|eoss)'), service(serviceInvoker));
   result.get('/*', () => { throw new NotFoundError('The requested page was not found'); });
   return result;
 }

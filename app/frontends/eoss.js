@@ -36,12 +36,16 @@ function addOpenApiRoutes(app) {
     },
   });
 
-  // Handles returning errors formatted as JSON
-  app.use((err, req, res, _next) => {
-    res.status(err.status).json({
-      message: err.message,
-      errors: err.errors,
-    });
+  // Handles returning errors OpenAPI errors formatted as JSON
+  app.use((err, req, res, next) => {
+    if (err.status && err.errors) {
+      res.status(err.status).json({
+        message: err.message,
+        errors: err.errors,
+      });
+    } else {
+      next(err);
+    }
   });
 }
 
