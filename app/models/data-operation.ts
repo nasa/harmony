@@ -269,7 +269,7 @@ class DataOperation {
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
-   * @param {number} [version=0] The version to serialize
+   * @param {string} [version='0.1.0'] The version to serialize
    * @param {bool} [validate=true] true if the serialized output should be JSON Schema validated
    *   before returning
    * @returns {string} The serialized data operation in the requested version
