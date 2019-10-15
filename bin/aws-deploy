@@ -23,7 +23,6 @@ aws cloudformation deploy \
   --stack-name $stack \
   --capabilities CAPABILITY_IAM \
   --parameter-overrides \
-    HarmonyImage=$HARMONY_IMAGE:${HARMONY_VERSION:-latest} \
     VpcId=$VPC_ID \
     Subnet1Id=$SUBNET_1_ID \
     Subnet2Id=$SUBNET_2_ID \
