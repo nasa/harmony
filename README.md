@@ -99,8 +99,7 @@ The application is not very useful at this point, since no backends have been co
 
 Clone the [Harmony GDAL service repository](https://git.earthdata.nasa.gov/projects/HARMONY/repos/harmony-gdal/browse) on your machine.
 
-In its root directory, run
-
+From the harmony-gdal project root, run
 ```
 $ bin/build-image
 ```
@@ -118,18 +117,23 @@ on the local disk.
 To do so, fetch the desired files, whose filenames should match the part after the final `/` in their respective URLs.  The files
 chosen should correspond to the ones that would be fetched by the service calls to be performed.  For this reason, it is much simpler
 to choose collections that have global spatial coverage.  Place the files in the desired staging path, which can be S3, a localstack
-S3 location, or a local temporary directory.  Once the files are placed, set the `staging_path` environment variable to point at the
-prefix up to and including the final `/` before the filename, e.g.
+S3 location, or a directory in the backend service's Docker image (e.g. `harmony-gdal/staged-data`).
+
+If data is staged in a directory in the backend service's Docker image, you will need to rebuild that image to include the files. If using
+harmony-gdal, this means running `$ bin/build-image` from the root of the service's directory.
+
+Once the files are in place, set the `staging_path` environment variable to point at the prefix up to and including the final `/`
+before the filename, e.g.
 
 ```
-staging_path=tmp/
+staging_path=staged-data/
 ```
 or
 ```
 staging_path=s3://some-staging-bucket/staged-data/
 ```
 
-In order to use this every time, you can add one of the above lines to a file named `.env` in the root project directory.
+In order to use this every time, you can add one of the above lines to a file named `.env` in the harmony project's root directory.
 
 After doing this step and restarting the server, all subsequent CMR calls that find data URLs with prefix `http` will have their URLs
 converted to use the staging path instead.  Data that is already in S3 will be fetched from its S3 location.
@@ -171,8 +175,8 @@ $ npm run start-dev
 You should now be able to view the outputs of the WMS service by pointing a client at the WMS URL for a test collection.  For
 the GESDISC collection with staged data above, the corresponding URL is `http://localhost:3000/C1215669046-GES_DISC/wms`.
 
-This can be set up as a WMS connection in QGIS, for example, by placing the above URL as the "URL" field input in the "Connection Details"
-dialog when adding a new WMS connection.  Thereafter, expanding the connection should proide a list of layers obtained through a
+This can be set up as a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the above URL as the "URL" field input in the "Connection Details"
+dialog when adding a new WMS connection.  Thereafter, expanding the connection should provide a list of layers obtained through a
 GetCapabilities call to the test server, and double-clicking a layer should add it to a map, making a WMS call to retrieve an appropriate
 PNG from the test server.
 
