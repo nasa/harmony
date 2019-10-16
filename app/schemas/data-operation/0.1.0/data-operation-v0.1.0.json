@@ -28,7 +28,12 @@
         "callback": {
           "name": "Callback URL",
           "description": "The URL that services must POST to when their execution is complete.  Set query param \"redirect=\" with a URL to redirect the user to a service result (preferred).  Set the Content-Type header and POST bytes in order to send a file directly to the user.  Set query param \"error=\" with a message to provide a service error.",
-          "type": "string"
+          "type": "string",
+          "format": "uri",
+          "qt-uri-protocols": [
+            "http",
+            "https"
+          ]
         },
         "user": {
           "name": "Earthdata Login Username",
@@ -144,14 +149,7 @@
         },
         "url": {
           "type": "string",
-          "description": "The URL where the granule data file can be accessed.  This may be behind Earthdata Login.",
-          "format": "uri",
-          "qt-uri-protocols": [
-            "http",
-            "https",
-            "s3",
-            "file"
-          ]
+          "description": "The URL or relative file path where the granule data file can be accessed.  This may be behind Earthdata Login."
         }
       },
       "required": [
