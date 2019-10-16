@@ -43,7 +43,7 @@
         "version": {
           "name": "Version number",
           "description": "Identifies which schema version and Harmony callback protocol is being used",
-          "type": "integer"
+          "type": "string"
         }
       },
       "required": [
@@ -149,14 +149,7 @@
         },
         "url": {
           "type": "string",
-          "description": "The URL where the granule data file can be accessed.  This may be behind Earthdata Login.",
-          "format": "uri",
-          "qt-uri-protocols": [
-            "http",
-            "https",
-            "s3",
-            "file"
-          ]
+          "description": "The URL or relative file path where the granule data file can be accessed.  This may be behind Earthdata Login."
         }
       },
       "required": [
