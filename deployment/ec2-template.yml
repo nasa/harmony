@@ -5,9 +5,6 @@ Parameters:
   AMI:
     Description: The AMI to use
     Type: String
-  CodePath:
-    Description: The gdal Harmony service image
-    Type: String
   GdalImage:
     Description: The gdal Harmony service image
     Type: String

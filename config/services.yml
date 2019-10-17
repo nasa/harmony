@@ -8,7 +8,7 @@
         AWS_DEFAULT_REGION: us-east-1
         EDL_USERNAME: !Env ${EDL_USERNAME}
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
-        EDL_ENDPOINT: https://urs.earthdata.nasa.gov
+        EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
         STAGING_PATH: podaac-cloud/l2-subsetter-service
   collections:
@@ -32,7 +32,7 @@
         AWS_DEFAULT_REGION: us-east-1
         EDL_USERNAME: !Env ${EDL_USERNAME}
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
-        EDL_ENDPOINT: https://urs.earthdata.nasa.gov
+        EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
         STAGING_PATH: harmony/gdal
   collections:
