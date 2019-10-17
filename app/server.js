@@ -71,10 +71,10 @@ function buildServer(name, port, setupFn) {
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
 function start(config = {}) {
-  const appPort = config.port || 3000;
-  const backendPort = config.backendPort || 3001;
-  const backendHost = config.backendHost || 'localhost';
-  const backendProtocol = (config.useHttps || backendHost !== 'localhost') ? 'https' : 'http';
+  const appPort = config.PORT || 3000;
+  const backendPort = config.BACKEND_PORT || 3001;
+  const backendHost = config.BACKEND_HOST || 'localhost';
+  const backendProtocol = (config.USE_HTTPS || backendHost !== 'localhost') ? 'https' : 'http';
 
   // Setup the frontend server to handle client requests
   const frontend = buildServer('frontend', appPort, (app) => {
