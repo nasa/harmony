@@ -55,8 +55,8 @@ paths:
         - $ref: '#/components/parameters/granuleId'
         - $ref: '#/components/parameters/bbox'
         - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/format'
         - $ref: '#/components/parameters/rangeSubset'
-
       responses:
         '200':
           description: "Synchronous streaming: GeoTIFF. Synchronous staging: the plain text of the URL. Asynchronous staging: TBD"
@@ -83,7 +83,7 @@ components:
     bbox:
       name: bbox
       in: query
-      description: "The bounding box which should be used for spatial subsetting.  Coordinates are [West, South, North, East]."
+      description: "The bounding box which should be used for spatial subsetting.  Coordinates are [West, South, East, North]."
       required: false
       schema:
         type: array

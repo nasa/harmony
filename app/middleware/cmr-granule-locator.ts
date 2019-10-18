@@ -1,8 +1,7 @@
 const cmr = require('../util/cmr');
 
-// CMR Collection IDs separated by delimiters of single "+" or single whitespace
-// (some clients may translate + to space)
-const GRANULE_URL_PATH_REGEX = /^\/(?:G\d+-\w+[+\s])*(?:G\d+-\w+)+\//g;
+// CMR Granule ID may optionally be provided in the path
+const GRANULE_URL_PATH_REGEX = /\/(?:G\d+-\w+)/g;
 
 /**
  * Converts a Date object into an ISO String representation (truncates milliseconds)
@@ -29,18 +28,6 @@ async function cmrGranuleLocator(req, res, next) {
 
   if (!operation) return next();
 
-  // const granuleMatch = req.url.match(GRANULE_URL_PATH_REGEX);
-  // if (granuleMatch) {
-  //   // TODO - doh we need to query CMR for more information about the granule 
-  //   - hook this code in below
-  //   // For now just assume there's only one source (i.e. if there's a granule ID provided,
-  //   // assume there could have only been one collection)
-  //   const { sources } = operation;
-  //   if (sources.length > 0) {
-  //     Object.assign(sources[0], { id: granuleMatch });
-  //   }
-  // }
-
   const cmrQuery = {};
 
   if (operation.temporal) {
@@ -49,6 +36,13 @@ async function cmrGranuleLocator(req, res, next) {
   }
   if (operation.boundingRectangle) {
     cmrQuery.bounding_box = operation.boundingRectangle.join(',');
+  }
+
+  const granuleMatch = req.url.match(GRANULE_URL_PATH_REGEX);
+  if (granuleMatch) {
+    // Assumes there can only be one granule
+    const granuleId = granuleMatch[0].substr(1, granuleMatch[0].length - 1);
+    cmrQuery.concept_id = granuleId;
   }
 
   try {
