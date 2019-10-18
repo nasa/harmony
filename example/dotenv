@@ -9,6 +9,12 @@
 # Settings to control how Harmony behaves                                 #
 ###########################################################################
 
+# Random string used to sign cookies that should be consistent between
+# load-balanced instances of Harmony.  You can use
+# `hexdump -n 128 -e '"%08x"' /dev/random`
+# to generate a 128 byte random hex string (256 chars)
+COOKIE_SECRET=
+
 # The port on which to run the Harmony frontend
 PORT=3000
 
@@ -87,9 +93,9 @@ OAUTH_PASSWORD=
 
 # The URI that Earthdata Login will redirect to for token validation, which
 # needs to be provided verbatim when setting up the Earthdata Login app.
-# Leave "/oauth/redirect" intact for all apps using Harmony.  Be sure to
+# Leave "/oauth2/redirect" intact for all apps using Harmony.  Be sure to
 # use HTTPS for non-local instances.
-OAUTH_REDIRECT_URI=http://localhost:3000/oauth/redirect
+OAUTH_REDIRECT_URI=http://localhost:3000/oauth2/redirect
 
 # The OAuth2 endpoint used to authenticate users into Harmony.  CMR and
 # backend services must use the same endpoint to get full integration

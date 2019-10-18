@@ -1,4 +1,6 @@
+const process = require('process');
 const express = require('express');
+const cookieParser = require('cookie-parser');
 
 // Middleware requires in outside-in order
 const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authorizer');
@@ -83,6 +85,12 @@ function collectionPrefix(path) {
 function router() {
   const result = express.Router();
 
+  const secret = process.env.COOKIE_SECRET;
+  if (!secret) {
+    throw new Error('The "COOKIE_SECRET" environment variable must be set to a random secret string.');
+  }
+
+  result.use(cookieParser(secret));
   result.use(logged(earthdataLoginAuthorizer));
   result.use(logged(cmrCollectionReader));
 
