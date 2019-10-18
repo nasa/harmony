@@ -188,7 +188,7 @@
       "properties": {
         "bbox": {
           "name": "Bounding Box",
-          "description": "The bounding box which should be used for spatial subsetting.  Coordinates are [West, South, North, East].",
+          "description": "The bounding box which should be used for spatial subsetting.  Coordinates are [West, South, East, North].",
           "examples": [
             [-100.5, 30.4, -99.5, 31.4]
           ],
