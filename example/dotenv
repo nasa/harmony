@@ -9,15 +9,12 @@
 # Settings to control how Harmony behaves                                 #
 ###########################################################################
 
-<<<<<<< HEAD
 # Random string used to sign cookies that should be consistent between
 # load-balanced instances of Harmony.  You can use
 # `hexdump -n 128 -e '"%08x"' /dev/random`
 # to generate a 128 byte random hex string (256 chars)
 COOKIE_SECRET=
 
-=======
->>>>>>> HARMONY-41: Update .env settings for more consistency and better docs to accommodate new EDL vars
 # The port on which to run the Harmony frontend
 PORT=3000
 
