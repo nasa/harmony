@@ -3,3 +3,4 @@ rules:
   # the preferred method described in the Mocha docs
   prefer-arrow-callback: "off"
   func-names: "off"
+  no-unused-expressions: "off" # Required for chai `to.be.empty`
