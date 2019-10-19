@@ -1,3 +1,4 @@
+const { before, after } = require('mocha');
 const request = require('supertest');
 
 /**
@@ -9,10 +10,27 @@ const request = require('supertest');
  * @param {object} query The query parameters to pass to the EOSS request
  * @returns {Promise<Response>} The response
  */
-function eossRequest(app, collection, granule, query) {
+function eossGetGranule(app, collection, granule, query) {
   return request(app)
     .get(`/${collection}/eoss/items/${granule}`)
     .query(query);
+}
+
+/**
+ * Adds before/after hooks to run an EOS service request
+ *
+ * @param {string} collection The CMR Collection ID to perform a service on
+ * @param {string} granule The CMR Granule ID to perform a service on
+ * @param {object} query The query parameters to pass to the EOSS request
+ * @returns {void}
+ */
+function hookEossGetGranule(collection, granule, query) {
+  before(async function () {
+    this.res = await eossGetGranule(this.frontend, collection, granule, query);
+  });
+  after(function () {
+    delete this.res;
+  });
 }
 
 /**
@@ -36,7 +54,8 @@ function eossLandingPageRequest(app) {
 }
 
 module.exports = {
-  eossRequest,
+  eossGetGranule,
   eossSpecRequest,
   eossLandingPageRequest,
+  hookEossGetGranule,
 };
