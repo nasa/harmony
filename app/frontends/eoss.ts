@@ -44,7 +44,7 @@ function addOpenApiRoutes(app) {
           // default to tiff
           operation.outputFormat = 'image/tiff';
         }
-        operation.version = '0.1.0'; // TODO should we make the version part of the URL or a query param?
+        operation.version = '0.1.0';
         if (query.bbox) {
           const [west, south, east, north] = query.bbox;
           operation.boundingRectangle = [west, south, east, north];
