@@ -27,7 +27,7 @@ paths:
             text/html:
               schema:
                 type: string
-  '/docs/eoss/spec':
+  '/docs/eoss/0.1.0/spec':
     get:
       summary: API definition
       description: 'Returns the API definition'
@@ -44,7 +44,7 @@ paths:
             text/x-yaml:
               schema:
                 type: string
-  '/{collectionId}/eoss/items/{granuleId}':
+  '/{collectionId}/eoss/0.1.0/items/{granuleId}':
     get:
       summary: "In theory, retrieve a granule with content negotiation to request metadata format, browse or actual data file (CMR Restification lives!!!). But initially this is just the resource path to the granule to be subsetted and reprojected, based on Parameters added to this path."
       operationId: getGranule
