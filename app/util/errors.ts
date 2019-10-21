@@ -19,8 +19,11 @@ class ServerError extends HttpError {
   }
 }
 
+class RequestValidationError extends Error {}
+
 module.exports = {
   HttpError,
   NotFoundError,
   ServerError,
+  RequestValidationError,
 };
