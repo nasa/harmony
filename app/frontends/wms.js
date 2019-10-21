@@ -4,10 +4,11 @@ const path = require('path');
 const { promisify } = require('util');
 const DataOperation = require('../models/data-operation');
 const urlUtil = require('../util/url');
+const { keysToLowerCase } = require('../util/object');
+const { RequestValidationError } = require('../util/errors');
 
 const readFile = promisify(fs.readFile);
 
-class RequestValidationError extends Error {}
 
 /**
  * Validates that the given parameters are present in the map, throwing
@@ -238,10 +239,7 @@ function getMap(req, res, next) {
  * @returns {void}
  */
 async function wmsFrontend(req, res, next) {
-  const query = {};
-  for (const k of Object.keys(req.query)) {
-    query[k.toLowerCase()] = req.query[k];
-  }
+  const query = keysToLowerCase(req.query);
   req.wmsQuery = query;
 
   try {

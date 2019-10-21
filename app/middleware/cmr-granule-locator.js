@@ -1,8 +1,5 @@
 const cmr = require('../util/cmr');
 
-// CMR Granule ID may optionally be provided in the path
-const GRANULE_URL_PATH_REGEX = /\/(?:G\d+-\w+)/g;
-
 /**
  * Converts a Date object into an ISO String representation (truncates milliseconds)
  *
@@ -38,12 +35,7 @@ async function cmrGranuleLocator(req, res, next) {
     cmrQuery.bounding_box = operation.boundingRectangle.join(',');
   }
 
-  const granuleMatch = req.url.match(GRANULE_URL_PATH_REGEX);
-  if (granuleMatch) {
-    // Assumes there can only be one granule
-    const granuleId = granuleMatch[0].substr(1, granuleMatch[0].length - 1);
-    cmrQuery.concept_id = granuleId;
-  }
+  cmrQuery.concept_id = operation.granuleIds;
 
   try {
     const { sources } = operation;

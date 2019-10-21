@@ -1,0 +1,33 @@
+{
+  "statusCode": 200,
+  "headers": {
+    "content-type": "application/json;charset=utf-8",
+    "transfer-encoding": "chunked",
+    "connection": "keep-alive",
+    "date": "Mon, 21 Oct 2019 20:48:28 GMT",
+    "set-cookie": [
+      "AWSALB=i4mOjRLt18o7huq7fmI+lEHF51GIQCvOm+0pY46NabpJz1IBBUdYMxznkdsJliEl0JajJzwxwfXvLjiRma2la540+iHLyNmN1XT5k/uNXSdnnmSctA2y3iFzg/nc; Expires=Mon, 28 Oct 2019 20:48:28 GMT; Path=/"
+    ],
+    "access-control-expose-headers": "CMR-Hits, CMR-Request-Id, CMR-Scroll-Id",
+    "access-control-allow-origin": "*",
+    "cmr-hits": "41",
+    "cmr-took": "59",
+    "cmr-request-id": "55d390a2-e073-40e4-b954-bf160fa24e9a",
+    "vary": "Accept-Encoding, User-Agent",
+    "server": "Jetty(9.4.z-SNAPSHOT)",
+    "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+    "x-cache": "Miss from cloudfront",
+    "via": "1.1 263d97c176fc51d1d08116820c013de4.cloudfront.net (CloudFront)",
+    "x-amz-cf-pop": "IAD89-C1",
+    "x-amz-cf-id": "mKwjzlkXCdaDj6w1lfyKKIXMgVPi5JJDwT4ZHlYNuZXXyU_PUqvUrQ=="
+  },
+  "url": "https://cmr.uat.earthdata.nasa.gov/search/granules.json?collection_concept_id=C1215669046-GES_DISC&page_size=10&bounding_box=-180%2C-90%2C180%2C90&concept_id=",
+  "time": 727,
+  "request": {
+    "method": "GET",
+    "headers": {
+      "Accept": "application/json, text/plain, */*",
+      "User-Agent": "axios/0.19.0"
+    }
+  }
+}

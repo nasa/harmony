@@ -24,6 +24,7 @@ describe('EOSS GetGranule', function () {
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookEossGetGranule(version, collection, granule, query);
+
       it('passes the bbox parameter to the backend', function () {
         expect(this.service.operation.boundingRectangle).to.eql([-180, -90, 180, 90]);
       });
@@ -32,6 +33,7 @@ describe('EOSS GetGranule', function () {
         const source = this.service.operation.sources[0];
         expect(source.collection).to.equal(collection);
       });
+
       it('passes the source variable to the backend', function () {
         const source = this.service.operation.sources[0];
         expect(source.variables.length === 1);
@@ -136,6 +138,17 @@ describe('EOSS GetGranule', function () {
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql(expectedErrorResponse);
+    });
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when the variable does not exist', async function () {
+      const res = await eossGetGranule(
+        this.frontend,
+        version,
+        collection,
+        granule,
+        { rangeSubset: 'NotAVariable' },
+      );
+      expect(res.status).to.equal(400);
+      expect(res.body).to.eql({ errors: ['Invalid rangeSubset parameter: NotAVariable'] });
     });
   });
 });
