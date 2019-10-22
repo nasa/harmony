@@ -27,7 +27,7 @@ paths:
             text/html:
               schema:
                 type: string
-  '/docs/eoss/spec':
+  '/docs/eoss/0.1.0/spec':
     get:
       summary: API definition
       description: 'Returns the API definition'
@@ -44,7 +44,7 @@ paths:
             text/x-yaml:
               schema:
                 type: string
-  '/{collectionId}/eoss/items/{granuleId}':
+  '/{collectionId}/eoss/0.1.0/items/{granuleId}':
     get:
       summary: "In theory, retrieve a granule with content negotiation to request metadata format, browse or actual data file (CMR Restification lives!!!). But initially this is just the resource path to the granule to be subsetted and reprojected, based on Parameters added to this path."
       operationId: getGranule
@@ -55,8 +55,8 @@ paths:
         - $ref: '#/components/parameters/granuleId'
         - $ref: '#/components/parameters/bbox'
         - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/format'
         - $ref: '#/components/parameters/rangeSubset'
-
       responses:
         '200':
           description: "Synchronous streaming: GeoTIFF. Synchronous staging: the plain text of the URL. Asynchronous staging: TBD"
@@ -83,17 +83,12 @@ components:
     bbox:
       name: bbox
       in: query
-      description: |
-        Only data grid ranges that intersect the bounding box are returned. The bounding box is provided as four or six numbers, depending on whether the coordinate reference system includes a vertical axis (elevation or depth):
-        * Lower left corner, coordinate axis 1 * Lower left corner, coordinate axis 2 * Lower left corner, coordinate axis 3 (optional) * Upper right corner, coordinate axis 1 * Upper right corner, coordinate axis 2 * Upper right corner, coordinate axis 3 (optional)
-        The coordinate reference system of the values is WGS84 longitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate reference system is specified in the parameter `bbox-crs`. Coordinates are in the order lat,long.
-        For WGS84 longitude/latitude the values are in most cases the sequence of minimum longitude, minimum latitude, maximum longitude and maximum latitude. However, in cases where the box spans the antimeridian the first value (west-most box edge) is larger than the third value (east-most box edge).
-        If a granule has multiple spatial geometry properties, it is the decision of the server whether only a single spatial geometry property is used to determine the extent or all relevant geometries.
+      description: "The bounding box which should be used for spatial subsetting.  Coordinates are [West, South, East, North]."
       required: false
       schema:
         type: array
         minItems: 4
-        maxItems: 6
+        maxItems: 4
         items:
           type: number
       style: form
@@ -103,19 +98,18 @@ components:
       in: query
       schema:
         type: string
-        enum:
-          - 'geotiff'
-          - 'netcdf'
+        example:
+          - 'image/tiff'
+          - 'image/png'
     crs:
       name: crs
       in: query
       description: 'The coordinate reference systems in which data may be reprojected. Coordinate reference systems are identified by a common name, EPSG code, or URI. If no CRS is specified, the data are not reprojected. Enum is for prototyping, only one UTM zone is represented. (N.B.: current WCS uses outputCRS.)'
       schema:
         type: string
-        enum:
-          - 'geographic'
+        example:
+          - 'CRS:84'
           - 'EPSG:32611'  # UTM zone 11
-          - 'cylindrical_equal_area'
     collectionId:
       name: collectionId
       in: path

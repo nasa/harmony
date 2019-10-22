@@ -35,6 +35,8 @@ async function cmrGranuleLocator(req, res, next) {
     cmrQuery.bounding_box = operation.boundingRectangle.join(',');
   }
 
+  cmrQuery.concept_id = operation.granuleIds;
+
   try {
     const { sources } = operation;
     const queries = sources.map(async (source) => {
