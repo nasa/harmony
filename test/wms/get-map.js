@@ -1,12 +1,13 @@
 const { describe, it, xit } = require('mocha');
 const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
-const { hookGetMap } = require('../helpers/wms');
+const { hookGetMap, wmsRequest } = require('../helpers/wms');
 const StubService = require('../helpers/stub-service');
 
 describe('WMS GetMap', function () {
   const collection = 'C1215669046-GES_DISC';
   const variable = 'V1224729877-GES_DISC';
+  const defaultGranuleId = 'G1224343298-GES_DISC';
 
   hookServersStartStop();
 
@@ -33,10 +34,12 @@ describe('WMS GetMap', function () {
         expect(this.service.operation.boundingRectangle).to.eql([-180, -90, 180, 90]);
       });
 
-      it('passes the source collection to the backend', function () {
+      it('passes the source collection, variables, and granules to the backend', function () {
         const source = this.service.operation.sources[0];
         expect(source.collection).to.equal(collection);
         expect(source.variables[0].id).to.equal(variable);
+        expect(source.granules.length === 1);
+        expect(source.granules[0].id).to.equal(defaultGranuleId);
       });
 
       it('passes the crs parameter to the backend', function () {
@@ -102,6 +105,60 @@ describe('WMS GetMap', function () {
         //   failing to send headers, not the service invoker failing to deal with them
         expect(this.res.headers.contentType).to.equal('text/plain');
       });
+    });
+  });
+  describe('can provide an optional granule ID', function () {
+    const specificGranuleId = 'G1224343299-GES_DISC';
+    const query = {
+      service: 'WMS',
+      request: 'GetMap',
+      layers: `${collection}/${variable}`,
+      crs: 'CRS:84',
+      format: 'image/tiff',
+      styles: '',
+      width: 128,
+      height: 128,
+      version: '1.3.0',
+      bbox: '-180,-90,180,90',
+      transparent: 'TRUE',
+      granuleId: specificGranuleId,
+    };
+
+    describe('calling the backend service', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookGetMap(collection, query);
+
+      it('passes the source collection, variables, and granule to the backend', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.collection).to.equal(collection);
+        expect(source.variables[0].id).to.equal(variable);
+        expect(source.granules.length === 1);
+        expect(source.granules[0].id).to.equal(specificGranuleId);
+      });
+    });
+  });
+
+  describe('if no matching granules are found', function () {
+    const bogusGranuleId = 'G123-BOGUS';
+    const query = {
+      service: 'WMS',
+      request: 'GetMap',
+      layers: `${collection}/${variable}`,
+      crs: 'CRS:84',
+      format: 'image/tiff',
+      styles: '',
+      width: 128,
+      height: 128,
+      version: '1.3.0',
+      bbox: '-180,-90,180,90',
+      transparent: 'TRUE',
+      granuleId: bogusGranuleId,
+    };
+
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when no request parameter is set', async function () {
+      const res = await wmsRequest(this.frontend, collection, query);
+      expect(res.status).to.equal(400);
+      expect(res.body).to.eql({ errors: ['No matching granules found.'] });
     });
   });
 });

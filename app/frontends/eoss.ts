@@ -80,11 +80,6 @@ function addOpenApiRoutes(app) {
         message: err.message,
         errors: err.errors,
       });
-    } else if (err instanceof RequestValidationError) {
-      req.logger.error(err.message);
-      res.status(400).json({
-        errors: [err.message],
-      });
     } else {
       next(err);
     }
