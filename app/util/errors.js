@@ -19,7 +19,11 @@ class ServerError extends HttpError {
   }
 }
 
-class RequestValidationError extends Error {}
+class RequestValidationError extends HttpError {
+  constructor(message = 'Invalid request') {
+    super(400, message);
+  }
+}
 
 module.exports = {
   HttpError,
