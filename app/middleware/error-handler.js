@@ -1,6 +1,8 @@
 const mustache = require('mustache');
 const fs = require('fs');
 const path = require('path');
+const { RequestValidationError } = require('../util/errors');
+
 
 const errorTemplate = fs.readFileSync(path.join(__dirname, '../templates/server-error.mustache.html'), { encoding: 'utf8' });
 
@@ -23,9 +25,16 @@ module.exports = function errorHandler(err, req, res, next) {
     return;
   }
 
-  const message = err.message || err.toString();
-  const response = mustache.render(errorTemplate, { message });
-  const code = err.code || 500;
+  if (err instanceof RequestValidationError) {
+    req.logger.error(err.message);
+    res.status(400).json({
+      errors: [err.message],
+    });
+  } else {
+    const message = err.message || err.toString();
+    const response = mustache.render(errorTemplate, { message });
+    const code = err.code || 500;
 
-  res.status(code).type('html').send(response);
+    res.status(code).type('html').send(response);
+  }
 };
