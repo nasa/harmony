@@ -10,7 +10,6 @@ const { promisify } = require('util');
 const logger = require('./util/log');
 const serviceResponse = require('./backends/service-response');
 const serviceResponseRouter = require('./routers/service-response-router');
-const eoss = require('./frontends/eoss');
 const router = require('./routers/router');
 const errorHandler = require('./middleware/error-handler');
 
@@ -79,7 +78,6 @@ function start(config = {}) {
 
   // Setup the frontend server to handle client requests
   const frontend = buildServer('frontend', appPort, (app) => {
-    eoss.addOpenApiRoutes(app);
     app.use('/', router());
   });
 
