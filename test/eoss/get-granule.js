@@ -150,5 +150,16 @@ describe('EOSS GetGranule', function () {
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({ errors: ['Invalid rangeSubset parameter: NotAVariable'] });
     });
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when the granule does not exist', async function () {
+      const res = await eossGetGranule(
+        this.frontend,
+        version,
+        collection,
+        'G123-BOGUS',
+        { rangeSubset: 'CloudFrc_A' },
+      );
+      expect(res.status).to.equal(400);
+      expect(res.body).to.eql({ errors: ['No matching granules found.'] });
+    });
   });
 });

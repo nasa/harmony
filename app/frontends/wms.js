@@ -226,6 +226,13 @@ function getMap(req, res, next) {
   const [west, south, east, north] = query.bbox.split(',').map((c) => parseFloat(c));
   operation.boundingRectangle = [west, south, east, north];
 
+  if (query.granuleid) {
+    // NOTE: we will allow a user to pass in a comma-separated list of granule IDs;
+    // however, only the first granule returned by CMR is used when performing the
+    // service request.
+    operation.granuleIds = query.granuleid.split(',');
+  }
+
   req.operation = operation;
   next();
 }
