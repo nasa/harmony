@@ -1,13 +1,13 @@
 const simpleOAuth2 = require('simple-oauth2');
 const urlUtil = require('../util/url');
 const { ForbiddenError } = require('../util/errors');
+const { listToText } = require('../util/string');
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST'];
 
-for (const variable of vars) {
-  if (!process.env[variable]) {
-    throw new Error(`Earthdata Login configuration error: You must set the ${variable} environment variable`);
-  }
+const missingVars = vars.filter((v) => !process.env[v]);
+if (missingVars.length > 0) {
+  throw new Error(`Earthdata Login configuration error: You must set ${listToText(missingVars)} in the environment`);
 }
 
 const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === 'true' };
@@ -147,6 +147,7 @@ module.exports = function buildEdlAuthorizer(paths = []) {
 
     try {
       if (!token && req.headers.cookie && req.headers.cookie.indexOf('token=') !== -1) {
+        // Handle the case where a token comes in but it's not signed or not signed correctly
         res.clearCookie('token', cookieOptions);
         throw new ForbiddenError();
       }
