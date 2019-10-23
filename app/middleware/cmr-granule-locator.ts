@@ -1,4 +1,5 @@
 const cmr = require('../util/cmr');
+const { RequestValidationError } = require('../util/errors');
 
 /**
  * Converts a Date object into an ISO String representation (truncates milliseconds)
@@ -53,11 +54,17 @@ async function cmrGranuleLocator(req, res, next) {
           granules.push({ id: granule.id, name: granule.title, url: link.href });
         }
       }
+      if (granules.length === 0) {
+        throw new RequestValidationError('No matching granules found.');
+      }
       return Object.assign(source, { granules });
     });
 
     await Promise.all(queries);
   } catch (e) {
+    if (e instanceof RequestValidationError) {
+      return next(e);
+    }
     req.logger.error(e);
   }
   req.logger.debug(JSON.stringify(req.operation.model, null, 2));
