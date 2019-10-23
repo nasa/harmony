@@ -47,7 +47,7 @@
     "mustache": "^3.0.1",
     "request": "^2.88.0",
     "serve-favicon": "^2.5.0",
-    "simple-oauth2": "^3.0.1",
+    "simple-oauth2": "git+https://github.com/anselm94/simple-oauth2#488824246957c5bf12f525908f3ef30ddd08fc36",
     "uuid": "^3.3.3",
     "winston": "^3.2.1"
   },
