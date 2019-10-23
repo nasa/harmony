@@ -9,13 +9,13 @@ describe('WMS GetMap', function () {
   const variable = 'V1224729877-GES_DISC';
   const defaultGranuleId = 'G1224343298-GES_DISC';
 
-  const query = {
-    ...validGetMapQuery,
-    layers: `${collection}/${variable}`,
-  };
   hookServersStartStop();
 
   describe('when provided a valid set of parameters', function () {
+    const query = {
+      ...validGetMapQuery,
+      layers: `${collection}/${variable}`,
+    };
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookGetMap(collection, query);
