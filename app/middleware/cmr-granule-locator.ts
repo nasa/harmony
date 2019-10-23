@@ -62,10 +62,10 @@ async function cmrGranuleLocator(req, res, next) {
 
     await Promise.all(queries);
   } catch (e) {
-    req.logger.error(e);
     if (e instanceof RequestValidationError) {
       return next(e);
     }
+    req.logger.error(e);
   }
   req.logger.debug(JSON.stringify(req.operation.model, null, 2));
   return next();
