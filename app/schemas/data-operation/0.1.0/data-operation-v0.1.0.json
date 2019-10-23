@@ -51,6 +51,7 @@
         "format",
         "sources",
         "subset",
+        "user",
         "version"
       ]
     },

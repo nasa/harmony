@@ -245,6 +245,27 @@ class DataOperation {
   }
 
   /**
+   * Gets the EDL username of the user requesting the service
+   *
+   * @returns {string} The EDL username of the service invoker
+   * @memberof DataOperation
+   */
+  get user() {
+    return this.model.user;
+  }
+
+  /**
+   * Sets the EDL username of the user requesting the service
+   *
+   * @param {string} user The EDL username of the service invoker
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set user(user) {
+    this.model.user = user;
+  }
+
+  /**
    * Gets the URL to which data services should call back when they have completed
    *
    * @returns {string} The callback URL data services should send results to

@@ -1,6 +1,6 @@
 const simpleOAuth2 = require('simple-oauth2');
 const urlUtil = require('../util/url');
-const { ForbiddenError, ServerError } = require('../util/errors');
+const { ForbiddenError } = require('../util/errors');
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST'];
 
@@ -18,6 +18,17 @@ const oauthOptions = {
   },
   auth: { tokenHost: process.env.OAUTH_HOST },
 };
+
+// Earthdata Login (OAuth2) tokens have the following structure:
+// {
+//    "access_token": <string>,
+//    "token_type": "Bearer",
+//    "expires_in": <integer (seconds)>,
+//    "refresh_token": <string>,
+//    "endpoint":"/api/users/<username>",
+//    "expires_at": <string (ISO Date + Milliseconds)>
+// }
+
 
 /**
  * Handles an Earthdata Login callback by verifying its "code" URL parameter, setting auth
@@ -37,8 +48,9 @@ async function handleCodeValidation(oauth2, req, res, _next) {
   };
 
   const oauthToken = await oauth2.authorizationCode.getToken(tokenConfig);
-  const tokenStr = JSON.stringify(oauth2.accessToken.create(oauthToken).token);
-  res.cookie('token', tokenStr, cookieOptions);
+  const { token } = oauth2.accessToken.create(oauthToken);
+  res.cookie('token', token, cookieOptions);
+  res.clearCookie('redirect', cookieOptions);
   res.redirect(307, req.signedCookies.redirect || '/');
 }
 
@@ -70,7 +82,6 @@ function handleLogout(oauth2, req, res, _next) {
 
     res.clearCookie('token', cookieOptions);
   }
-
   res.redirect(307, redirect || '/');
 }
 
@@ -87,12 +98,11 @@ function handleLogout(oauth2, req, res, _next) {
  * @returns {*} The result of calling the adapter's redirect method
  */
 async function handleAuthorized(oauth2, req, res, next) {
-  const token = JSON.parse(req.signedCookies.token);
+  const { token } = req.signedCookies;
   const oauthToken = oauth2.accessToken.create(token);
   if (oauthToken.expired()) {
     const refreshed = await oauthToken.refresh();
-    const tokenStr = JSON.stringify(refreshed.token);
-    res.cookies('token', tokenStr, cookieOptions);
+    res.cookie('token', refreshed.token, cookieOptions);
   }
 
   req.user = oauthToken.token.endpoint.split('/').pop();
@@ -119,40 +129,50 @@ function handleNeedsAuthorized(oauth2, req, res, _next) {
 }
 
 /**
- * Express.js middleware for doing EDL auth.  Environment variables:
+ * Builds Express.js middleware for doing EDL auth.  Environment variables:
  *
  * OAUTH_CLIENT_ID: The application client ID from EDL
  * OAUTH_PASSWORD: The application (not user) password from EDL
  * OAUTH_REDIRECT_URI: The URI EDL will redirect to after auth
  * OAUTH_HOST: URL to the Earthdata Login server instance to use
  *
- * @param {http.IncomingMessage} req The client request
- * @param {http.ServerResponse} res The client response
- * @param {function} next The next function in the middleware chain
- * @returns {void}
+ * @param {Array<string>} paths Paths that require auth
+ * @returns {Function} Express.js middleware for doing EDL
  */
-module.exports = async function earthdataLoginAuthorizer(req, res, next) {
-  const oauth2 = simpleOAuth2.create(oauthOptions);
-  const { token } = req.signedCookies;
-  let handler;
+module.exports = function buildEdlAuthorizer(paths = []) {
+  return async function earthdataLoginAuthorizer(req, res, next) {
+    const oauth2 = simpleOAuth2.create(oauthOptions);
+    const { token } = req.signedCookies;
+    let handler;
 
-  try {
-    if (req.path === '/oauth2/redirect') {
-      handler = handleCodeValidation;
-    } else if (req.path === '/oauth2/logout') {
-      handler = handleLogout;
-    } else if (token) {
-      handler = handleAuthorized;
-    } else {
-      handler = handleNeedsAuthorized;
+    try {
+      if (!token && req.headers.cookie && req.headers.cookie.indexOf('token=') !== -1) {
+        res.clearCookie('token', cookieOptions);
+        throw new ForbiddenError();
+      }
+
+      if (req.path === '/oauth2/redirect') {
+        handler = handleCodeValidation;
+      } else if (req.path === '/oauth2/logout') {
+        handler = handleLogout;
+      } else if (token) {
+        handler = handleAuthorized;
+      } else if (paths.some((p) => req.path.match(p))) {
+        handler = handleNeedsAuthorized;
+      } else {
+        // No auth interaction and doesn't need auth
+        next();
+        return;
+      }
+      await handler(oauth2, req, res, next);
+    } catch (e) {
+      req.logger.error(e.stack);
+      if (e.message.startsWith('Response Error')) { // URS Error
+        res.clearCookie('token', cookieOptions);
+        next(new ForbiddenError());
+        return;
+      }
+      next(e);
     }
-    await handler(oauth2, req, res, next);
-  } catch (e) {
-    if (e.message.startsWith('Response Error')) { // URS Error
-      res.clearCookie('token', cookieOptions);
-      throw new ForbiddenError();
-    }
-    req.logger.error(e.stack);
-    next(e);
-  }
+  };
 };

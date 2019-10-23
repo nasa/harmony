@@ -147,10 +147,11 @@ SSM_TEST_ROLE=
 ###########################################################################
 
 # How to handle fixtures for remote calls in the test suite:
-#   cache (default): Perform and record new calls.  Replay existing calls.
-#   record: Perform and record all calls.  Never play back.
-#   playback: Always play back.  Throw an error if a call is not recorded.
-VCR_MODE=cache
+#   record (default): Perform and record new calls.  Replay existing calls.
+#   bloody: Perform and record all calls.  Never play back.
+#   replay: Always play back.  Throw an error if a call is not recorded.
+#   cheat: Play back cached calls.  Perform and do not cache any new calls
+REPLAY=record
 
 # True if server logs should be allowed to go to STDOUT.  When false
 # (default), they are routed to logs/test.log and suppressed in STDOUT

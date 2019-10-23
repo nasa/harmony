@@ -65,14 +65,14 @@ Harmony uses [eslint](https://eslint.org) as a linter, which can be invoked as `
 
 #### Test Fixtures
 Rather than repeatedly perform the same queries against the CMR, our test suite
-uses [replayer](https://github.com/aneilbaboo/replayer) to record and play back
+uses [node-replay](https://github.com/assaf/node-replay) to record and play back
 HTTP interactions.  All non-localhost interactions are recorded and placed in files
 in the [fixtures directory](fixtures/).
 
 By default, the test suite will playback interactions it has already seen and
 record any new interactions to new files.  This behavior can be changed by setting
-the `VCR_MODE` environment variable, as described in the
-[replayer documentation](https://github.com/aneilbaboo/replayer).
+the `REPLAY` environment variable, as described in the
+[node-replay README](https://github.com/assaf/node-replay).
 
 To re-record everything, remove the fixtures directory and run the test suite.
 This should be done to cull the recordings when a code change makes many of them
