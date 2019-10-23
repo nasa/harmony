@@ -78,12 +78,12 @@ function start(config = {}) {
 
   // Setup the frontend server to handle client requests
   const frontend = buildServer('frontend', appPort, (app) => {
-    app.use('/', router());
+    app.use('/', router(config));
   });
 
   // Setup the backend server to acccept callbacks from backend services
   const backend = buildServer('backend', backendPort, (app) => {
-    app.use('/service', serviceResponseRouter());
+    app.use('/service', serviceResponseRouter(config));
 
     serviceResponse.configure({
       baseUrl: url.format({

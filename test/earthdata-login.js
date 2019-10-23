@@ -1,20 +1,26 @@
 const { expect } = require('chai');
-const { describe, it, beforeEach } = require('mocha');
+const { describe, it, beforeEach, afterEach } = require('mocha');
 const request = require('supertest');
+
 const { hookServersStartStop } = require('./helpers/servers');
+const { auth, authRedirect, token, stubEdlRequest, stubEdlError, unstubEdlRequest } = require('./helpers/auth');
+const { itRespondsWithError } = require('./helpers/errors');
+const StubService = require('./helpers/stub-service');
+const { wmsRequest } = require('./helpers/wms');
 
+const blankToken = /^token=s%3A\./; // The start of a signed empty token cookie
+const nonBlankToken = /^token=s%3A[^.]/; // The start of a signed non-empty token cookie
+const blankRedirect = /^redirect=s%3A\./; // The start of a signed empty redirect cookie
 const fakeUsername = 'testy_mctestface';
-describe('Earthdata Login', function () {
-  const collection = 'C1215669046-GES_DISC';
-  const authedUrl = `/${collection}/wms?service=WMS&request=GetCapabilities`;
-  const unauthedUrl = '/';
 
-  hookServersStartStop();
+describe('Earthdata Login', function () {
+  StubService.hookEach();
+  hookServersStartStop({ skipEarthdataLogin: false });
 
   describe('Calls to authenticated resources', function () {
     describe('When a request provides no token', function () {
       beforeEach(async function () {
-        this.res = await request(this.frontend).get(authedUrl).redirects(0);
+        this.res = await wmsRequest(this.frontend).redirects(0);
       });
 
       it('redirects to Earthdata Login', function () {
@@ -23,176 +29,279 @@ describe('Earthdata Login', function () {
       });
 
       it('does not call the application request handler', function () {
-        expect(this.res.body).to.be.empty;
+        expect(this.service).to.equal(undefined);
       });
     });
 
     describe('When a request provides a valid token', function () {
-      let res;
       beforeEach(async function () {
-        res = await client.GET('/', { auth: true });
+        this.res = await wmsRequest(this.frontend).use(auth({ username: fakeUsername }));
       });
 
       it('calls the application request handler', function () {
-        expect(res.statusCode).to.be(200);
+        expect(this.res.statusCode).to.equal(302); // Redirect to data
       });
 
       it('provides the Earthdata Login user name to the application request handler', function () {
-        expect(res.body).to.be(`Hello, ${fakeUsername}`);
+        expect(this.service.operation.user).to.equal(fakeUsername);
       });
     });
 
     describe('When a request provides an invalid token', function () {
-      let res;
       beforeEach(async function () {
-        res = await client.GET('/', { auth: true, secret: 'BadSecret' });
+        this.res = await wmsRequest(this.frontend).use(auth({ secret: 'BadSecret' }));
       });
 
-      it('returns an authentication error', function () {
-        expect(res.statusCode).to.be(403);
-      });
+      itRespondsWithError(403, 'You are not authorized to access the requested resource');
 
       it('clears the invalid token', function () {
-        expect(res.headers['set-cookie'][0]).to.contain('auth=;');
+        expect(this.res.headers['set-cookie'][0]).to.match(blankToken);
       });
 
       it('does not call the application request handler', function () {
-        expect(res.body).to.be('Forbidden');
+        expect(this.service).to.equal(undefined);
       });
     });
 
     describe('When a request provides an expired token', function () {
       describe('and the library successfully refreshes the token', function () {
-        let res;
         beforeEach(async function () {
-          res = await client.GET('/', { auth: true, expired: true });
+          stubEdlRequest(
+            '/oauth/token',
+            { grant_type: 'refresh_token', refresh_token: 'fake_refresh' },
+            token({ accessToken: 'refreshed' }),
+          );
+          this.res = await wmsRequest(this.frontend)
+            .use(auth({ expired: true, username: fakeUsername }));
+        });
+        afterEach(function () {
+          unstubEdlRequest();
         });
 
-        it('supplies a the new token to the client', function () {
-          expect(client.readAuthCookie(res).token.refreshed).to.be(true);
+        it('supplies a new token to the client', function () {
+          expect(this.res.headers['set-cookie'][0]).to.match(nonBlankToken);
+          expect(this.res.headers['set-cookie'][0]).to.include('refreshed');
         });
 
         it('calls the application request handler', function () {
-          expect(res.statusCode).to.be(200);
+          expect(this.res.statusCode).to.equal(302);
         });
 
         it('provides the Earthdata Login user name to the application request handler', function () {
-          expect(res.body).to.be(`Hello, ${fakeUsername}`);
+          expect(this.service.operation.user).to.equal(fakeUsername);
         });
       });
 
       describe('and the request fails to refresh the token', function () {
-        let res;
         beforeEach(async function () {
-          res = await client.GET('/', { auth: true, expired: true, failRefresh: true });
+          stubEdlError(
+            '/oauth/token',
+            { grant_type: 'refresh_token', refresh_token: 'fake_refresh' },
+            'Response Error: Forbidden.',
+          );
+          this.res = await wmsRequest(this.frontend)
+            .use(auth({ expired: true, username: fakeUsername }));
+        });
+        afterEach(function () {
+          unstubEdlRequest();
         });
 
-        it('returns a server error', function () {
-          expect(res.statusCode).to.be(403);
-        });
+        itRespondsWithError(403, 'You are not authorized to access the requested resource');
 
         it('clears the failing token', function () {
-          expect(res.headers['set-cookie'][0]).to.contain('auth=;');
+          expect(this.res.headers['set-cookie'][0]).to.match(blankToken);
         });
 
         it('does not call the application request handler', function () {
-          expect(res.body).to.be('Forbidden');
+          expect(this.service).to.equal(undefined);
         });
       });
     });
   });
 
   describe('Callbacks from Earthdata Login', function () {
-    describe('When Earthdata login validates the provided code', function () {
+    describe('When Earthdata login validates a provided code', function () {
+      beforeEach(function () {
+        stubEdlRequest(
+          '/oauth/token',
+          { grant_type: 'authorization_code', code: 'abc123', redirect_uri: 'http://localhost:3000/oauth2/redirect' },
+          token({ accessToken: 'validated' }),
+        );
+      });
+      afterEach(function () {
+        unstubEdlRequest();
+      });
+
       describe('and a redirect location has been captured in the token', function () {
-        let res;
         beforeEach(async function () {
-          res = await client.GET('/callback?code=abc123', { location: '/tohere' });
+          this.res = await request(this.frontend)
+            .get('/oauth2/redirect')
+            .query({ code: 'abc123' })
+            .use(authRedirect('/tohere'));
         });
 
         it('redirects to the supplied redirect location', function () {
-          expect(res.statusCode).to.be(307);
-          expect(res.headers.location).to.be('/tohere');
+          expect(this.res.statusCode).to.equal(307);
+          expect(this.res.headers.location).to.equal('/tohere');
         });
 
         it('provides the token to the client', function () {
-          expect(client.readAuthCookie(res).token.succeeded).to.be(true);
+          expect(this.res.headers['set-cookie'][0]).to.match(nonBlankToken);
+          expect(this.res.headers['set-cookie'][0]).to.include('validated');
+        });
+
+        it('clears the redirect cookie', function () {
+          expect(this.res.headers['set-cookie'][1]).to.match(blankRedirect);
         });
       });
 
       describe('and no redirect location is present in the token', function () {
-        let res;
         beforeEach(async function () {
-          res = await client.GET('/callback?code=abc123');
+          this.res = await request(this.frontend)
+            .get('/oauth2/redirect')
+            .query({ code: 'abc123' });
         });
 
         it('redirects to the server root', function () {
-          expect(res.statusCode).to.be(307);
-          expect(res.headers.location).to.be('/');
+          expect(this.res.statusCode).to.equal(307);
+          expect(this.res.headers.location).to.equal('/');
         });
 
         it('provides the token to the client', function () {
-          expect(client.readAuthCookie(res).token.succeeded).to.be(true);
+          expect(this.res.headers['set-cookie'][0]).to.match(nonBlankToken);
+          expect(this.res.headers['set-cookie'][0]).to.include('validated');
         });
       });
     });
 
     describe('When Earthdata login does not validate the provided code', function () {
-      let res;
       beforeEach(async function () {
-        res = await client.GET('/callback?code=fail', { failCode: true });
+        stubEdlError(
+          '/oauth/token',
+          { grant_type: 'refresh_token', refresh_token: 'fake_refresh' },
+          'Response Error: Forbidden.',
+        );
+        this.res = await wmsRequest(this.frontend)
+          .use(auth({ expired: true, username: fakeUsername }));
+      });
+      afterEach(function () {
+        unstubEdlRequest();
       });
 
-      it('returns an authentication error', function () {
-        expect(res.statusCode).to.be(403);
-      });
+      itRespondsWithError(403, 'You are not authorized to access the requested resource');
     });
   });
 
   describe('Logout request', function () {
+    beforeEach(function () {
+      this.req = request(this.frontend).get('/oauth2/logout');
+    });
+
     describe('When the client supplies a token', function () {
-      describe('and a redirect location has been captured in the token', function () {
-        let res;
+      describe('and a "redirect" parameter has been set', function () {
         beforeEach(async function () {
-          res = await client.GET('/logout?redirect=/tohere', { auth: true });
+          this.res = await this.req.query({ redirect: '/tohere' }).use(auth({ username: fakeUsername }));
         });
 
         it('removes the token', function () {
-          expect(res.headers['set-cookie'][0]).to.contain('auth=;');
+          expect(this.res.headers['set-cookie'][0]).to.match(blankToken);
         });
 
-        it('redirects to the endpoint supplied in the \'redirect\' parameter', function () {
-          expect(res.statusCode).to.be(307);
-          expect(res.headers.location).to.be('/tohere');
+        it('redirects to the endpoint supplied in the "redirect" parameter', function () {
+          expect(this.res.statusCode).to.equal(307);
+          expect(this.res.headers.location).to.equal('/tohere');
         });
       });
 
-      describe('and no redirect location has been captured in the token', function () {
-        let res;
+      describe('and no "redirect" parameter has been set', function () {
         beforeEach(async function () {
-          res = await client.GET('/logout', { auth: true });
+          this.res = await this.req.use(auth({ username: fakeUsername }));
         });
 
         it('removes the token', function () {
-          expect(res.headers['set-cookie'][0]).to.contain('auth=;');
+          expect(this.res.headers['set-cookie'][0]).to.match(blankToken);
         });
 
         it('redirects to the site root', function () {
-          expect(res.statusCode).to.be(307);
-          expect(res.headers.location).to.be('/');
+          expect(this.res.statusCode).to.equal(307);
+          expect(this.res.headers.location).to.equal('/');
         });
       });
     });
 
     describe('When the client does not supply a token', function () {
-      let res;
-      beforeEach(async function () {
-        res = await client.GET('/logout?redirect=/tohere');
+      describe('and a "redirect" parameter has been set', function () {
+        beforeEach(async function () {
+          this.res = await this.req.query({ redirect: '/tohere' });
+        });
+
+        it('redirects to the endpoint supplied in the "redirect" parameter', function () {
+          expect(this.res.statusCode).to.equal(307);
+          expect(this.res.headers.location).to.equal('/tohere');
+        });
       });
 
-      it('redirects to the endpoint supplied in the \'redirect\' parameter', function () {
-        expect(res.statusCode).to.be(307);
-        expect(res.headers.location).to.be('/tohere');
+      describe('and no "redirect" parameter has been set', function () {
+        beforeEach(async function () {
+          this.res = await this.req;
+        });
+
+        it('redirects to the site root', function () {
+          expect(this.res.statusCode).to.equal(307);
+          expect(this.res.headers.location).to.equal('/');
+        });
+      });
+    });
+  });
+
+  describe('Calls to unauthenticated resources', function () {
+    describe('When loading the site root', function () {
+      beforeEach(function () {
+        this.req = request(this.frontend).get('/');
+      });
+
+      describe('if the request does not provide a token', function () {
+        beforeEach(async function () {
+          this.res = await this.req;
+        });
+
+        it('allows the request', function () {
+          expect(this.res.statusCode).to.equal(200);
+        });
+      });
+      describe('if the request provides a token', function () {
+        beforeEach(async function () {
+          this.res = await this.req.use(auth({}));
+        });
+
+        it('allows the request', function () {
+          expect(this.res.statusCode).to.equal(200);
+        });
+      });
+    });
+
+    describe('When loading a documentation URL', function () {
+      beforeEach(function () {
+        this.req = request(this.frontend).get('/docs/eoss');
+      });
+
+      describe('if the request does not provide a token', function () {
+        beforeEach(async function () {
+          this.res = await this.req;
+        });
+
+        it('allows the request', function () {
+          expect(this.res.statusCode).to.equal(200);
+        });
+      });
+      describe('if the request does not provide a token', function () {
+        beforeEach(async function () {
+          this.res = await this.req.use(auth({}));
+        });
+
+        it('allows the request', function () {
+          expect(this.res.statusCode).to.equal(200);
+        });
       });
     });
   });
