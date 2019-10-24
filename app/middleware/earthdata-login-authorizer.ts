@@ -143,13 +143,14 @@ module.exports = function buildEdlAuthorizer(paths = []) {
   return async function earthdataLoginAuthorizer(req, res, next) {
     const oauth2 = simpleOAuth2.create(oauthOptions);
     const { token } = req.signedCookies;
+    const requiresAuth = paths.some((p) => req.path.match(p));
     let handler;
 
     try {
       if (!token && req.headers.cookie && req.headers.cookie.indexOf('token=') !== -1) {
         // Handle the case where a token comes in but it's not signed or not signed correctly
         res.clearCookie('token', cookieOptions);
-        throw new ForbiddenError();
+        if (requiresAuth) throw new ForbiddenError();
       }
 
       if (req.path === '/oauth2/redirect') {
@@ -158,7 +159,7 @@ module.exports = function buildEdlAuthorizer(paths = []) {
         handler = handleLogout;
       } else if (token) {
         handler = handleAuthorized;
-      } else if (paths.some((p) => req.path.match(p))) {
+      } else if (requiresAuth) {
         handler = handleNeedsAuthorized;
       } else {
         // No auth interaction and doesn't need auth
