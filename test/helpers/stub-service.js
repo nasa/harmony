@@ -79,30 +79,37 @@ class StubService extends BaseService {
     });
   }
 
+  /**
+   * Adds before / after hooks in mocha to inject an instance of StubService
+   * into service invocations within the current context. Makes the real service call
+   * after replacing the docker image that would have been used with the passed in
+   * docker image name.
+   *
+   * @static
+   * @param {string} dockerImage The docker image name to use when calling the service.
+   * @returns {void}
+   * @memberof StubService
+   */
   static hookDockerImage(dockerImage) {
     before(function () {
       const origForOperation = services.forOperation;
       const origForName = services.forName;
-      const ctx = this;
       sinon.stub(services, 'forName')
         .callsFake((name, operation) => {
-          const realResponse = origForName(name, operation);
-          realResponse.params.image = dockerImage;
-          ctx.service = realResponse;
-          return realResponse;
+          const service = origForName(name, operation);
+          service.params.image = dockerImage;
+          return service;
         });
       sinon.stub(services, 'forOperation')
         .callsFake((operation) => {
-          const realResponse = origForOperation(operation);
-          realResponse.params.image = dockerImage;
-          ctx.service = realResponse;
-          return realResponse;
+          const service = origForOperation(operation);
+          service.params.image = dockerImage;
+          return service;
         });
     });
     after(function () {
       if (services.forName.restore) services.forName.restore();
       if (services.forOperation.restore) services.forOperation.restore();
-      delete this.service;
     });
   }
 }
