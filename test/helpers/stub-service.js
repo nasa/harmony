@@ -78,6 +78,33 @@ class StubService extends BaseService {
       delete this.service;
     });
   }
+
+  static hookDockerImage(dockerImage) {
+    before(function () {
+      const origForOperation = services.forOperation;
+      const origForName = services.forName;
+      const ctx = this;
+      sinon.stub(services, 'forName')
+        .callsFake((name, operation) => {
+          const realResponse = origForName(name, operation);
+          realResponse.params.image = dockerImage;
+          ctx.service = realResponse;
+          return realResponse;
+        });
+      sinon.stub(services, 'forOperation')
+        .callsFake((operation) => {
+          const realResponse = origForOperation(operation);
+          realResponse.params.image = dockerImage;
+          ctx.service = realResponse;
+          return realResponse;
+        });
+    });
+    after(function () {
+      if (services.forName.restore) services.forName.restore();
+      if (services.forOperation.restore) services.forOperation.restore();
+      delete this.service;
+    });
+  }
 }
 
 module.exports = StubService;

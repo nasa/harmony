@@ -121,6 +121,15 @@ describe('EOSS GetGranule', function () {
     });
   });
 
+  describe('when the backend service does not respond', function () {
+    StubService.hookDockerImage('alpine:3.10.3');
+    hookEossGetGranule(version, collection, granule, {});
+
+    it('returns an error to the client', async function () {
+      expect(this.res.text).to.equal('Child process died without responding.');
+    });
+  });
+
   describe('Validation', function () {
     it('returns an HTTP 400 "Bad Request" error with explanatory message when the bbox parameter is invalid', async function () {
       const expectedErrorResponse = {
