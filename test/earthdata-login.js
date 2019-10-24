@@ -11,6 +11,7 @@ const { wmsRequest } = require('./helpers/wms');
 const blankToken = /^token=s%3A\./; // The start of a signed empty token cookie
 const nonBlankToken = /^token=s%3A[^.]/; // The start of a signed non-empty token cookie
 const blankRedirect = /^redirect=s%3A\./; // The start of a signed empty redirect cookie
+const nonBlankRedirect = /^redirect=s%3A[^.]/; // The start of a signed non-empty redirect cookie
 const fakeUsername = 'testy_mctestface';
 
 describe('Earthdata Login', function () {
@@ -30,6 +31,13 @@ describe('Earthdata Login', function () {
 
       it('does not call the application request handler', function () {
         expect(this.service).to.equal(undefined);
+      });
+
+      it('sets the "redirect" cookie to the originally-requested resource', function () {
+        expect(this.res.headers['set-cookie'][0]).to.match(nonBlankRedirect);
+        // Sanity check the URL to ensure it's a WMS URL and query parameters are preserved
+        expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent('/wms?'));
+        expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent('service=WMS'));
       });
     });
 
@@ -152,6 +160,22 @@ describe('Earthdata Login', function () {
 
         it('clears the redirect cookie', function () {
           expect(this.res.headers['set-cookie'][1]).to.match(blankRedirect);
+        });
+
+        describe('and the client uses the supplied token cookie to access a resource', function () {
+          beforeEach(async function () {
+            this.res2 = await wmsRequest(this.frontend)
+              .set('Cookie', this.res.headers['set-cookie'][0])
+              .use(auth({ username: fakeUsername }));
+          });
+
+          it('calls the application request handler', function () {
+            expect(this.res2.statusCode).to.equal(302); // Redirect to data
+          });
+
+          it('provides the Earthdata Login user name to the application request handler', function () {
+            expect(this.service.operation.user).to.equal(fakeUsername);
+          });
         });
       });
 
@@ -276,6 +300,19 @@ describe('Earthdata Login', function () {
 
         it('allows the request', function () {
           expect(this.res.statusCode).to.equal(200);
+        });
+      });
+      describe('if the request provides an invalid token', function () {
+        beforeEach(async function () {
+          this.res = await this.req.use(auth({ secret: 'BadSecret' }));
+        });
+
+        it('allows the request @non-requirement', function () {
+          expect(this.res.statusCode).to.equal(200);
+        });
+
+        it('clears the invalid token @non-requirement', function () {
+          expect(this.res.headers['set-cookie'][0]).to.match(blankToken);
         });
       });
     });
