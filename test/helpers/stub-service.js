@@ -92,6 +92,8 @@ class StubService extends BaseService {
    */
   static hookDockerImage(dockerImage) {
     before(function () {
+      // Tests using a docker image can take more than 2 seconds to start the docker container
+      this.timeout(10000);
       const origForOperation = services.forOperation;
       const origForName = services.forName;
       sinon.stub(services, 'forName')

@@ -142,8 +142,6 @@ describe('WMS GetMap', function () {
       hookGetMap(collection, query);
 
       it('returns an error to the client', async function () {
-        // The test can sometimes take more than 2 seconds to start the docker container
-        this.timeout(5000);
         expect(this.res.text).to.equal('Child process died without responding.');
       });
     });
