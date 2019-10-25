@@ -138,6 +138,8 @@ describe('WMS GetMap', function () {
     });
 
     describe('when the backend service does not respond', function () {
+      // Starting up docker image can take more than 2 seconds
+      this.timeout(10000);
       StubService.hookDockerImage('alpine:3.10.3');
       hookGetMap(collection, query);
 
