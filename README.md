@@ -65,14 +65,14 @@ Harmony uses [eslint](https://eslint.org) as a linter, which can be invoked as `
 
 #### Test Fixtures
 Rather than repeatedly perform the same queries against the CMR, our test suite
-uses [replayer](https://github.com/aneilbaboo/replayer) to record and play back
+uses [node-replay](https://github.com/assaf/node-replay) to record and play back
 HTTP interactions.  All non-localhost interactions are recorded and placed in files
 in the [fixtures directory](fixtures/).
 
 By default, the test suite will playback interactions it has already seen and
 record any new interactions to new files.  This behavior can be changed by setting
-the `VCR_MODE` environment variable, as described in the
-[replayer documentation](https://github.com/aneilbaboo/replayer).
+the `REPLAY` environment variable, as described in the
+[node-replay README](https://github.com/assaf/node-replay).
 
 To re-record everything, remove the fixtures directory and run the test suite.
 This should be done to cull the recordings when a code change makes many of them
@@ -107,6 +107,18 @@ $ bin/build-image
 This may take some time, but ultimately it will produce a local docker image tagged `harmony/gdal:latest`.  You may choose to use
 another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
 
+### Set up environment variables
+
+Copy the file [example/dotenv](example/dotenv) to a file named `.env` in the root project directory.  Follow the instructions
+in that file to populate any blank variables.  Variables that have values in the example can be kept as-is, as they provide
+good defaults for local development.  To check environment differences between the example and local, run:
+
+```
+$ git diff --no-index .env example/dotenv
+```
+
+We recommend doing this any time you receive an example/dotenv update to ensure there are no new variables needed.
+
 ### Stage some data
 
 If you have a CMR collection with granules that are in S3, using it is ideal.  If not, you can run service requests against any
@@ -122,15 +134,15 @@ S3 location, or a directory in the backend service's Docker image (e.g. `harmony
 If data is staged in a directory in the backend service's Docker image, you will need to rebuild that image to include the files. If using
 harmony-gdal, this means running `$ bin/build-image` from the root of the service's directory.
 
-Once the files are in place, set the `staging_path` environment variable to point at the prefix up to and including the final `/`
+Once the files are in place, set the `STAGING_PATH` environment variable to point at the prefix up to and including the final `/`
 before the filename, e.g.
 
 ```
-staging_path=staged-data/
+STAGING_PATH=staged-data/
 ```
 or
 ```
-staging_path=s3://some-staging-bucket/staged-data/
+STAGING_PATH=s3://some-staging-bucket/staged-data/
 ```
 
 In order to use this every time, you can add one of the above lines to a file named `.env` in the harmony project's root directory.
@@ -148,21 +160,6 @@ $ curl 'https://cmr.uat.earthdata.nasa.gov/search/granules.json?pretty=true&coll
 ```
 
 You will need to use Earthdata login to actually fetch the URLs, which is most easily done through a web browser.
-
-### Set up environment variables
-
-Create a `.env` file in the root directory, or use the one created in the previous step.  This will be used to supply environment
-variables to the Harmony application.  It is also read by the scripts used to deploy to AWS.  For running locally, the following are needed:
-
-```
-EDL_USERNAME=example   # An Earthdata Login username for the system
-EDL_PASSWORD=example   # The password for the Earthdata Login user
-STAGING_BUCKET=harmony-example-bucket  # An AWS S3 bucket name where services should stage their output files
-GDAL_IMAGE=harmony/gdal:latest         # The Docker image for the gdal example subsetter (see "Adding a subsetter" below)
-```
-
-The environment variables are all used to populate values in [config/services.yml](config/services.yml), which is the primary location
-where variables are used.
 
 ### Connect a client
 

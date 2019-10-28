@@ -13,6 +13,12 @@ class NotFoundError extends HttpError {
   }
 }
 
+class ForbiddenError extends HttpError {
+  constructor(message = 'You are not authorized to access the requested resource') {
+    super(403, message);
+  }
+}
+
 class ServerError extends HttpError {
   constructor(message = 'An unexpected error occurred') {
     super(500, message);
@@ -30,4 +36,5 @@ module.exports = {
   NotFoundError,
   ServerError,
   RequestValidationError,
+  ForbiddenError,
 };
