@@ -1,0 +1,158 @@
+# Harmony Environment Variables
+# Example .env file.  Rename this file to '.env', move it to the root
+# folder, and fill in your project values to make use of it.  Correct
+# defaults are provided where possible for local development
+
+###########################################################################
+#                             General Config                              #
+#                                                                         #
+# Settings to control how Harmony behaves                                 #
+###########################################################################
+
+# Random string used to sign cookies that should be consistent between
+# load-balanced instances of Harmony.  You can use
+# `hexdump -n 128 -e '"%08x"' /dev/random`
+# to generate a 128 byte random hex string (256 chars)
+COOKIE_SECRET=
+
+# The port on which to run the Harmony frontend
+PORT=3000
+
+# The port on which to run the Harmony backend that receives service
+# callbacks
+BACKEND_PORT=3001
+
+# The host on which to run the Harmony backend that receives service
+# callbacks. This needs to be accessible from wherever the service is run
+BACKEND_HOST=localhost
+
+# The CMR Endpoint to use (e.g. URL for local, SIT, UAT, or production)
+CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
+
+# If staging data to avoid download from providers and/or speed up testing,
+# STAGING_PATH contains the path/URL with which to prefix staged filenames.
+# Data URLs from the CMR will have all but their basename stripped off and
+# then be prepended by the STAGING_PATH, e.g.:
+#    STAGING_PATH = s3://staged-data/
+#    Data URL = https://example.com/some/path/data.hdf5
+#    Staged data path -> s3://staged-data/data.hdf5
+STAGING_PATH=
+
+# For testing: Whether to use Localstack instead of AWS S3
+USE_LOCALSTACK=false
+
+# The hostname to be used for callbacks when the callback URL is localhost
+# and the service is a local Docker instance.  Docker networking differs
+# between platforms, causing some variation as to what this is called.
+CALLBACK_HOST=host.docker.internal
+
+# Whether to use HTTPS when providing service URLs to localhost.  Non-
+# localhost URLs always use HTTPS regardless of this setting.
+USE_HTTPS=false
+
+###########################################################################
+#                             Service Config                              #
+#                                                                         #
+# Variables defined in config/services.yml that get passed to backend     #
+# services on invocation                                                  #
+###########################################################################
+
+# Docker images for services referenced in config/services.yml.  Set to a
+# local image, ECR image, Docker Hub image, etc
+GDAL_IMAGE=harmony/gdal:latest
+PO_L2_IMAGE=podaac-cloud/l2-subsetter-service:latest
+
+# The bucket where service output data will be staged
+STAGING_BUCKET=
+
+# When using data that cannot accept Earthdata Login tokens from Harmony,
+# either because of application group setup or because they use a different
+# Earthdata Login endpoint (e.g. Data needs production while Harmony and
+# CMR need UAT), these provide a minimally-privileged user login for
+# fetching remote data behind Earthdata Login
+EDL_USERNAME=
+EDL_PASSWORD=
+EDL_ENDPOINT=https://urs.earthdata.nasa.gov
+
+#############################################################################
+#                        OAuth 2 (Earthdata Login)                          #
+#                                                                           #
+# Variables used to configure OAuth 2 authentication for Harmony data users #
+#                                                                           #
+# To use Earthdata Login, you must first set up a new application using the #
+# Earthdata Login UI.                                                       #
+# https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application #
+#############################################################################
+
+# The application client ID of your registered Earthdata Login application
+OAUTH_CLIENT_ID=
+
+# The application password set when creating the Earthdata Login
+# application
+OAUTH_PASSWORD=
+
+# The URI that Earthdata Login will redirect to for token validation, which
+# needs to be provided verbatim when setting up the Earthdata Login app.
+# Leave "/oauth2/redirect" intact for all apps using Harmony.  Be sure to
+# use HTTPS for non-local instances.
+OAUTH_REDIRECT_URI=http://localhost:3000/oauth2/redirect
+
+# The OAuth2 endpoint used to authenticate users into Harmony.  CMR and
+# backend services must use the same endpoint to get full integration
+OAUTH_HOST=https://uat.urs.earthdata.nasa.gov
+
+###########################################################################
+#                             AWS Deployments                             #
+#                                                                         #
+# Variables used when running bin/aws-deploy to deploy Harmony using      #
+# CloudFormation.  These do not need to be set if not deploying to AWS or #
+# if CI / CD is providing environment variables another way               #
+###########################################################################
+
+# The CloudFormation stack name
+HARMONY_STACK=harmony
+
+# The VPC ID in which Harmony's EC2 instance should be deployed
+# Format example: vpc-012345
+VPC_ID=
+
+# Two private subnets in different AZs where EC2 instances can be deployed,
+# Format example: subnet-012345
+SUBNET_1_ID=
+SUBNET_2_ID=
+
+# The ARN of the permissions boundary that limits roles built by
+# CloudFormation
+# Format example: arn:aws:iam::012345:role/SomeRoleBoundary
+PERMISSIONS_BOUNDARY_ARN=
+
+# The AMI ID used to for Harmony EC2 instances
+# Format example: ami-012345
+AMI=
+
+# The name of the SSH key, uploaded to AWS EC2, that will be able to log
+# into Harmony instances by default
+SSH_KEY_NAME=
+
+# The name of an existing role to use for EC2 instances (To be removed once
+# our permissions boundary expands for SSM)
+# Format example: ssm-test-role
+SSM_TEST_ROLE=
+
+###########################################################################
+#                               Test Suite                                #
+#                                                                         #
+# Settings for altering the behavior of the test suite that are not used  #
+# elsewhere in the application.                                           #
+###########################################################################
+
+# How to handle fixtures for remote calls in the test suite:
+#   record (default): Perform and record new calls.  Replay existing calls.
+#   bloody: Perform and record all calls.  Never play back.
+#   replay: Always play back.  Throw an error if a call is not recorded.
+#   cheat: Play back cached calls.  Perform and do not cache any new calls
+REPLAY=record
+
+# True if server logs should be allowed to go to STDOUT.  When false
+# (default), they are routed to logs/test.log and suppressed in STDOUT
+LOG_STDOUT=false

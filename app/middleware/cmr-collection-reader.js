@@ -52,7 +52,7 @@ async function cmrCollectionReader(req, res, next) {
       const collectionIdStr = collectionMatch[0].substr(1, collectionMatch[0].length - 2);
       const collectionIds = collectionIdStr.split(/[+\s]/g);
       req.collectionIds = collectionIds;
-      req.logger.info({ collectionIds });
+      req.logger.info(`Matched collections: ${collectionIds}`);
 
       req.collections = await cmrutil.getCollectionsByIds(collectionIds);
       const { collections } = req;
