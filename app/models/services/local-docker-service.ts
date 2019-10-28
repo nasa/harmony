@@ -49,7 +49,7 @@ class LocalDockerService extends BaseService {
     // END DELETE ME
 
     log.info(this.params);
-    this.operation.callback = this.operation.callback.replace('localhost', process.env.callback_host || 'host.docker.internal');
+    this.operation.callback = this.operation.callback.replace('localhost', process.env.CALLBACK_HOST || 'host.docker.internal');
     let dockerParams = ['run', '--rm', '-t'];
 
     for (const variable of Object.keys(this.params.env)) {

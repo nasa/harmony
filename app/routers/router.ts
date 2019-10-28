@@ -1,4 +1,6 @@
+const process = require('process');
 const express = require('express');
+const cookieParser = require('cookie-parser');
 
 // Middleware requires in outside-in order
 const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authorizer');
@@ -78,12 +80,23 @@ function collectionPrefix(path) {
  * Creates and returns an express.Router instance that has the middleware
  * and handlers necessary to respond to frontend service requests
  *
+ * @param {string} skipEarthdataLogin Opt to skip Earthdata Login
  * @returns {express.Router} A router which can respond to frontend service requests
  */
-function router() {
+function router({ skipEarthdataLogin }) {
   const result = express.Router();
 
-  result.use(logged(earthdataLoginAuthorizer));
+  const secret = process.env.COOKIE_SECRET;
+  if (!secret) {
+    throw new Error('The "COOKIE_SECRET" environment variable must be set to a random secret string.');
+  }
+
+  result.use(cookieParser(secret));
+
+  if (`${skipEarthdataLogin}` !== 'true') {
+    result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex])));
+  }
+
   result.use(logged(cmrCollectionReader));
 
   result.use(collectionPrefix('wcs'), service(logged(wcsFrontend)));
