@@ -47,6 +47,7 @@ function translateServiceResponse(req, res) {
  * @returns {Promise<void>} Resolves when the request is complete
  */
 async function serviceInvoker(req, res) {
+  req.operation.user = req.user || 'anonymous';
   const service = services.forOperation(req.operation);
   const result = await service.invoke();
   translateServiceResponse(result.req, res);

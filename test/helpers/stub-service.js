@@ -1,4 +1,4 @@
-const { before, after } = require('mocha');
+const { before, after, beforeEach, afterEach } = require('mocha');
 const sinon = require('sinon');
 const request = require('superagent');
 const BaseService = require('../../app/models/services/base-service');
@@ -48,18 +48,17 @@ class StubService extends BaseService {
   }
 
   /**
-   * Adds before / after hooks in mocha to inject an instance of StubService
-   * into service invocations within the current context.  Sets context.service
-   * to the most recently created stub service.
+   * Returns a function that can be passed to a before / beforeEach call to route
+   * service requests to StubService
    *
    * @static
-   * @param {object} callbackOptions The axios options to be used for the callback (merged with
+   * @param {object} callbackOptions The options to be used for the callback (merged with
    *   request method and URL)
-   * @returns {void}
+   * @returns {Function} A function to supply to before / beforeEach
    * @memberof StubService
    */
-  static hook(callbackOptions) {
-    before(function () {
+  static beforeHook(callbackOptions = { params: { redirect: 'http://example.com' } }) {
+    return function () {
       const ctx = this;
       sinon.stub(services, 'forName')
         .callsFake((name, operation) => {
@@ -71,12 +70,54 @@ class StubService extends BaseService {
           ctx.service = new StubService(operation, callbackOptions);
           return ctx.service;
         });
-    });
-    after(function () {
+    };
+  }
+
+  /**
+   * Returns a function for tearing down hooks created by beforeHook
+   *
+   * @static
+   * @returns {Function} A function to supply to after / afterEach
+   * @memberof StubService
+   */
+  static afterHook() {
+    return function () {
       if (services.forName.restore) services.forName.restore();
       if (services.forOperation.restore) services.forOperation.restore();
       delete this.service;
-    });
+    };
+  }
+
+  /**
+   * Adds before / after hooks in mocha to inject an instance of StubService
+   * into service invocations within the current context.  Sets context.service
+   * to the most recently created stub service.
+   *
+   * @static
+   * @param {object} callbackOptions The options to be used for the callback (merged with
+   *   request method and URL)
+   * @returns {void}
+   * @memberof StubService
+   */
+  static hook(callbackOptions = { params: { redirect: 'http://example.com' } }) {
+    before(StubService.beforeHook(callbackOptions));
+    after(StubService.afterHook());
+  }
+
+  /**
+   * Adds beforeEach / afterEach hooks in mocha to inject an instance of StubService
+   * into service invocations within the current context.  Sets context.service
+   * to the most recently created stub service.
+   *
+   * @static
+   * @param {object} callbackOptions The options to be used for the callback (merged with
+   *   request method and URL)
+   * @returns {void}
+   * @memberof StubService
+   */
+  static hookEach(callbackOptions = { params: { redirect: 'http://example.com' } }) {
+    beforeEach(StubService.beforeHook(callbackOptions));
+    afterEach(StubService.afterHook());
   }
 
   /**

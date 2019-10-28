@@ -150,7 +150,7 @@ async function getCapabilities(req, res /* , next */) {
   }
 
   const capabilities = {
-    url: urlUtil.getRequestUrl(req),
+    url: urlUtil.getRequestUrl(req, false),
     collections,
   };
 
