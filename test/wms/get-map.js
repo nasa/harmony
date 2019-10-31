@@ -137,7 +137,7 @@ describe('WMS GetMap', function () {
       hookGetMap(collection, query);
 
       it('returns an error to the client', async function () {
-        expect(this.res.text).to.equal('Child process died without responding.');
+        expect(this.res.text).to.equal('Service request failed with an unknown error.');
       });
     });
   });

@@ -32,11 +32,11 @@ function logProcessOutput(child) {
  * @returns {void}
  */
 function childProcessAborted(callbackUrl) {
-  log.error('Child process died without responding.');
+  log.error('Child did not hit the callback URL. Returning service request failed with an unknown error to the user.');
   const callbackRequest = axios.create({
     baseURL: `${callbackUrl}/response`,
   });
-  const querystr = querystring.stringify({ error: 'Child process died without responding.' });
+  const querystr = querystring.stringify({ error: 'Service request failed with an unknown error.' });
   callbackRequest.post(`?${querystr}`);
 }
 
