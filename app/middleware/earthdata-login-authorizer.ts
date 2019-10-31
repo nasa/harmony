@@ -3,7 +3,7 @@ const urlUtil = require('../util/url');
 const { ForbiddenError } = require('../util/errors');
 const { listToText } = require('../util/string');
 
-const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST'];
+const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
 const missingVars = vars.filter((v) => !process.env[v]);
 if (missingVars.length > 0) {

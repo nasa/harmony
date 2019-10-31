@@ -124,6 +124,17 @@ describe('EOSS GetGranule', function () {
     });
   });
 
+  describe('when the backend service does not respond', function () {
+    // Starting up docker image can take more than 2 seconds
+    this.timeout(10000);
+    StubService.hookDockerImage('alpine:3.10.3');
+    hookEossGetGranule(version, collection, granule, {});
+
+    it('returns an error to the client', async function () {
+      expect(this.res.text).to.equal('Service request failed with an unknown error.');
+    });
+  });
+
   describe('Validation', function () {
     it('returns an HTTP 400 "Bad Request" error with explanatory message when the bbox parameter is invalid', async function () {
       const expectedErrorResponse = {

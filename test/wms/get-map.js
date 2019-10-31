@@ -129,6 +129,17 @@ describe('WMS GetMap', function () {
         expect(source.granules[0].id).to.equal(specificGranuleId);
       });
     });
+
+    describe('when the backend service does not respond', function () {
+      // Starting up docker image can take more than 2 seconds
+      this.timeout(10000);
+      StubService.hookDockerImage('alpine:3.10.3');
+      hookGetMap(collection, query);
+
+      it('returns an error to the client', async function () {
+        expect(this.res.text).to.equal('Service request failed with an unknown error.');
+      });
+    });
   });
 
   describe('if no matching granules are found', function () {
