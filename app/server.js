@@ -74,7 +74,7 @@ function start(config = {}) {
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
   const backendHost = config.BACKEND_HOST || 'localhost';
-  const backendProtocol = (config.USE_HTTPS || backendHost !== 'localhost') ? 'https' : 'http';
+  const backendProtocol = (config.USE_HTTPS === 'true' || backendHost !== 'localhost') ? 'https' : 'http';
 
   // Setup the frontend server to handle client requests
   const frontend = buildServer('frontend', appPort, (app) => {

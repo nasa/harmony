@@ -1,9 +1,11 @@
 const process = require('process');
 const { spawn } = require('child_process');
+const axios = require('axios');
+const querystring = require('querystring');
 
 const BaseService = require('./base-service');
 const log = require('../../util/log');
-
+const { isUrlBound } = require('../../backends/service-response');
 
 /**
  * Sets up logging of stdin / stderr and the return code of child.
@@ -21,10 +23,21 @@ function logProcessOutput(child) {
   child.stderr.on('data', (data) => {
     process.stderr.write(`child stderr: ${data}`);
   });
+}
 
-  child.on('close', (code) => {
-    log.info(`closing code: ${code}`);
+/**
+ * Calls the callback URL with an error response indicating the child process crashed.
+ *
+ * @param {String} callbackUrl The callback URL for the current request
+ * @returns {void}
+ */
+function childProcessAborted(callbackUrl) {
+  log.error('Child did not hit the callback URL. Returning service request failed with an unknown error to the user.');
+  const callbackRequest = axios.create({
+    baseURL: `${callbackUrl}/response`,
   });
+  const querystr = querystring.stringify({ error: 'Service request failed with an unknown error.' });
+  callbackRequest.post(`?${querystr}`);
 }
 
 /**
@@ -49,6 +62,7 @@ class LocalDockerService extends BaseService {
     // END DELETE ME
 
     log.info(this.params);
+    const originalCallback = this.operation.callback;
     this.operation.callback = this.operation.callback.replace('localhost', process.env.CALLBACK_HOST || 'host.docker.internal');
     let dockerParams = ['run', '--rm', '-t'];
 
@@ -61,9 +75,16 @@ class LocalDockerService extends BaseService {
       '--harmony-action', 'invoke',
       '--harmony-input', this.operation.serialize(),
     );
-    log.info(dockerParams);
+    log.info(dockerParams.join(' '));
     const child = spawn('docker', dockerParams);
     logProcessOutput(child);
+
+    child.on('exit', ((code, signal) => {
+      log.info(`child process exited with code ${code} and signal ${signal}`);
+      if (isUrlBound(originalCallback)) {
+        childProcessAborted(originalCallback);
+      }
+    }));
   }
 }
 

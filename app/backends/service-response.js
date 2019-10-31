@@ -8,6 +8,9 @@ const config = {
 // We will need to clean these up or risk leaks.
 const idsToCallbacks = new Map();
 
+// Regex to find the UUID in a service response callback URL
+const UUID_REGEX = /\/service\/(.*)/;
+
 /**
  * Removes a callback URL / function binding.  Does nothing if url is null
  *
@@ -36,6 +39,21 @@ function bindResponseUrl(responseCallback) {
   });
   log.info('Callbacks size', idsToCallbacks.size);
   return config.baseUrl + callbackUUID;
+}
+
+/**
+ * Returns true if the callback URL is registered. Useful for checking
+ * whether a request has responded yet.
+ *
+ * @param {string} callbackUrl The callback URL
+ * @returns {boolean} true if the URL is registered and false otherwise
+ */
+function isUrlBound(callbackUrl) {
+  const callbackUUIDMatch = callbackUrl.match(UUID_REGEX);
+  if (callbackUUIDMatch && idsToCallbacks.get(callbackUUIDMatch[1])) {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -82,5 +100,6 @@ module.exports = {
   responseHandler,
   bindResponseUrl,
   unbindResponseUrl,
+  isUrlBound,
   configure,
 };
