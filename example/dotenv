@@ -36,10 +36,11 @@ CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
 #    STAGING_PATH = s3://staged-data/
 #    Data URL = https://example.com/some/path/data.hdf5
 #    Staged data path -> s3://staged-data/data.hdf5
+# If not staging data, this can be left blank.
 STAGING_PATH=
 
-# For testing: Whether to use Localstack instead of AWS S3
-USE_LOCALSTACK=false
+# For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
+USE_LOCALSTACK=true
 
 # The hostname to be used for callbacks when the callback URL is localhost
 # and the service is a local Docker instance.  Docker networking differs
@@ -62,8 +63,9 @@ USE_HTTPS=false
 GDAL_IMAGE=harmony/gdal:latest
 PO_L2_IMAGE=podaac-cloud/l2-subsetter-service:latest
 
-# The bucket where service output data will be staged
-STAGING_BUCKET=
+# The bucket where service output data will be staged, corresponds to the S3 bucket 
+# created in localstack when running locally
+STAGING_BUCKET=localStagingBucket
 
 # When using data that cannot accept Earthdata Login tokens from Harmony,
 # either because of application group setup or because they use a different
