@@ -14,14 +14,16 @@ Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
 * Node.js version 10.  We recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions
 * Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14, Amazon Linux 2, and Alpine Linux.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
-
-Highly Recommended:
 * [git](https://git-scm.com) - Used to clone this repository
-* A running [Docker Desktop](https://www.docker.com) or daemon instance - Used to invoke docker-based services
-* An Amazon Web Services account - Used for testing Harmony against object stores and running Harmony in AWS
+* A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
 * A running [Localstack](https://github.com/localstack/localstack) instance - Used for testing AWS services locally.  Only the S3 service needs to run.
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
+
+
+Highly Recommended: 
+* An Amazon Web Services account - Used for testing Harmony against object stores and running Harmony in AWS
 * An editor with syntax awareness of modern Javascript.  If you do not have this or any preference, consider [Visual Studio Code](https://code.visualstudio.com)
+
 
 Optional:
 * [awscli-local](https://github.com/localstack/awscli-local) - CLI helpers for interacting with localstack
@@ -30,6 +32,10 @@ Optional:
 ## Running Harmony
 
 ### Setup Environment
+If you have not yet cloned the Harmony repository, run
+```
+$ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony.git
+```
 
 Ensure node is available and is the correct version, 10.x.x
 
@@ -46,12 +52,36 @@ $ nvm use && nvm install
 
 Then verify the version again as above.
 
-Install library dependencies:
+From the harmony project root, install library dependencies:
 ```
 npm install
 ```
 
 Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to run binaries from installed node modules.  If you choose not to do this, you will need to prefix node module calls with `npx`, e.g. `npx mocha` instead of just `mocha`
+
+### Set up environment variables
+
+Copy the file [example/dotenv](example/dotenv) to a file named `.env` in the root project directory.  Follow the instructions in that file to populate any blank variables.  Variables that have values in the example can be kept as-is, as they provide good defaults for local development.  To check environment differences between the example and local, run:
+
+```
+$ git diff --no-index .env example/dotenv
+```
+
+We recommend doing this any time you receive an example/dotenv update to ensure there are no new variables needed.
+
+### Set up Earthdata Login application for your local Harmony instance
+To use Earthdata Login with a locally running Harmomy, you must first set up a new application using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  Update your .env file with the information from your Earthdata Login application. 
+
+### Start localstack
+These 2 steps need to be executed each time you prepare to run harmony locally if your .env file specifies that you are using localstack.
+
+```
+SERVICES=s3 localstack start
+```
+In another window, run the following. Note, if you have changed the name of STAGING_BUCKET in your .env file to something other than "localStagingBucket", modify the command below appropriately:
+```
+aws --endpoint-url=http://localhost:4572 s3 mb s3://localStagingBucket
+```
 
 ### Run Tests
 
@@ -74,10 +104,7 @@ record any new interactions to new files.  This behavior can be changed by setti
 the `REPLAY` environment variable, as described in the
 [node-replay README](https://github.com/assaf/node-replay).
 
-To re-record everything, remove the fixtures directory and run the test suite.
-This should be done to cull the recordings when a code change makes many of them
-obsolete, when CMR adds response fields that Harmony needs to make use of, and
-periodically to ensure no impactful CMR changes or regressions.
+To re-record everything, remove the fixtures directory and run the test suite. This should be done to cull the recordings when a code change makes many of them obsolete, when CMR adds response fields that Harmony needs to make use of, and periodically to ensure no impactful CMR changes or regressions.
 
 ### Run Harmony
 
@@ -89,42 +116,27 @@ $ npm run start-dev
 
 In production, we use `$ npm run start` which does the same but does not add the file watching and reloading behavior.
 
-You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend
-application receives requests from users, while the backend application receives callbacks from services.
+You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend application receives requests from users, while the backend application receives callbacks from services.
 
-The application is not very useful at this point, since no backends have been configured, which is the next step. For now,
-`Ctrl-C` to exit Harmony.
+The application is not very useful at this point, since no backends have been configured, which is the next step. For now,`Ctrl-C` to exit Harmony.
 
 ### Add a backend
 
-Clone the [Harmony GDAL service repository](https://git.earthdata.nasa.gov/projects/HARMONY/repos/harmony-gdal/browse) on your machine.
+Clone the Harmony GDAL service repository.  From your workspace, run
+```
+$ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony-gdal.git
+```
 
 From the harmony-gdal project root, run
 ```
 $ bin/build-image
 ```
 
-This may take some time, but ultimately it will produce a local docker image tagged `harmony/gdal:latest`.  You may choose to use
-another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
+This may take some time, but ultimately it will produce a local docker image tagged `harmony/gdal:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
 
-### Set up environment variables
+### Optional: Stage some data
 
-Copy the file [example/dotenv](example/dotenv) to a file named `.env` in the root project directory.  Follow the instructions
-in that file to populate any blank variables.  Variables that have values in the example can be kept as-is, as they provide
-good defaults for local development.  To check environment differences between the example and local, run:
-
-```
-$ git diff --no-index .env example/dotenv
-```
-
-We recommend doing this any time you receive an example/dotenv update to ensure there are no new variables needed.
-
-### Stage some data
-
-If you have a CMR collection with granules that are in S3, using it is ideal.  If not, you can run service requests against any
-collection whose granule URLs only require Earthdata Login authentication, but this will end up pulling the data which is slow
-and adds a production burden to the data provider.  For faster local testing, we can stage example data locally, either in S3 or
-on the local disk.
+If you have a CMR collection with granules that are in S3, using it is ideal.  If not, you can run service requests against any collection whose granule URLs only require Earthdata Login authentication, but this will end up pulling the data which is slow and adds a production burden to the data provider.  For faster local testing, we can stage example data locally, either in S3 or on the local disk.
 
 To do so, fetch the desired files, whose filenames should match the part after the final `/` in their respective URLs.  The files
 chosen should correspond to the ones that would be fetched by the service calls to be performed.  For this reason, it is much simpler
