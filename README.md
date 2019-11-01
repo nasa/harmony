@@ -231,10 +231,16 @@ Skip this step if harmony-gdal is not in an ECR.
 4. Run `$ if pgrep node; then pkill node; fi` to stop any existing server that may be running
 5. Run the following, where `$instance_ip` is the private IP address of your local instance and all other variables are as in prior steps:
 ```
-  $ callback_host=$instance_ip \
-    staging_path=s3://$STAGING_BUCKET \
-    GDAL_IMAGE=$GDAL_IMAGE
+  $ CALLBACK_HOST=$instance_ip \
+    STAGING_PATH=s3://$STAGING_BUCKET \
+    GDAL_IMAGE=$GDAL_IMAGE \
+    PO_L2_IMAGE=$PO_L2_IMAGE \
     STAGING_BUCKET=$STAGING_BUCKET \
+    OAUTH_HOST=$OAUTH_HOST \
+    OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID \
+    OAUTH_PASSWORD=$OAUTH_PASSWORD \
+    OAUTH_REDIRECT_URI=$OAUTH_REDIRECT_URI \
+    COOKIE_SECRET=$COOKIE_SECRET \
     EDL_USERNAME=$EDL_USERNAME \
     EDL_PASSWORD="$EDL_PASSWORD" \
     nohup npm start >> ../server.log 2>&1 &
