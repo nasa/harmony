@@ -14,6 +14,10 @@ A simple reference service, [harmony-gdal](https://git.earthdata.nasa.gov/projec
 
 ## 1. Allowing Harmony to invoke services
 
+Harmony provides a Python library, [harmony-service-lib-py](https://git.earthdata.nasa.gov/projects/HARMONY/repos/harmony-service-lib-py/browse), to
+ease the process of adapting Harmony messages to subsetter code.  It provides helpers for message parsing, command line interactions, data staging,
+and Harmony callbacks.  Full details as well as an example can be found in the project's README and code.
+
 At present, Harmony only provides one way of packaging a service for invocation: Docker container images.
 
 ### Docker Container Images
@@ -26,7 +30,7 @@ The service and all necessary code and dependencies to allow it to run can be pa
 
 `<input>` is a JSON string containing the details of the service operation to be run.  See the latest [Harmony data-operation schema](../app/schemas/) for format details.
 
-The `Dockerfile` in the harmony-gdal project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.  Harmony plans to offer a Python library to assist in command line and JSON parsing and validation.
+The `Dockerfile` in the harmony-gdal project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.
 
 In addition to the defined command-line parameters, Harmony can provide the Docker container with environment variables as set in [services.yml](../config/services.yml) by setting `service.type.params.env` key/value pairs.  See the existing services.yml for examples.
 
