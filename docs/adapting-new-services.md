@@ -15,7 +15,7 @@ A simple reference service, [harmony-gdal](https://git.earthdata.nasa.gov/projec
 ## 1. Allowing Harmony to invoke services
 
 Harmony provides a Python library, [harmony-service-lib-py](https://git.earthdata.nasa.gov/projects/HARMONY/repos/harmony-service-lib-py/browse), to
-ease the process of adapting Harmony messages to subsetter code  It provides helpers for message parsing, command line interactions, data staging,
+ease the process of adapting Harmony messages to subsetter code.  It provides helpers for message parsing, command line interactions, data staging,
 and Harmony callbacks.  Full details as well as an example can be found in the project's README and code.
 
 At present, Harmony only provides one way of packaging a service for invocation: Docker container images.
