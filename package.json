@@ -4,7 +4,7 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "eslint . && nyc mocha",
+    "test": "eslint . && nyc mocha && npm audit",
     "coverage": "nyc mocha",
     "start": "node app/server.js",
     "start-dev": "supervisor app/server.js",
