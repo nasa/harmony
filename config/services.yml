@@ -59,3 +59,18 @@
         - name: harmony/gdal
   collections:
     - C1225996408-POCUMULUS
+
+# This is an example service and backend from example/http-backend.js mounted by
+# the frontend callback server.
+# EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.1.0/items/G1216319051-PVC_TS2'
+- name: example
+  enabled: !Env ${EXAMPLE_SERVICES}
+  type:
+    name: http
+    params:
+      url: http://localhost:3000/example/harmony
+  collections:
+    # AMSR-E/Aqua L2B Global Swath Ocean Products derived from Wentz Algorithm V086
+    # Good example, being in UAT, global, many public non-global granules,
+    # and not yet on the services roadmap.
+    - C1104-PVC_TS2
