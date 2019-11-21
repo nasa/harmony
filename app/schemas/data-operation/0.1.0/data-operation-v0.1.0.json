@@ -27,7 +27,7 @@
         },
         "callback": {
           "name": "Callback URL",
-          "description": "The URL that services must POST to when their execution is complete.  Set query param \"redirect=\" with a URL to redirect the user to a service result (preferred).  Set the Content-Type header and POST bytes in order to send a file directly to the user.  Set query param \"error=\" with a message to provide a service error.",
+          "description": "The URL that non-HTTP services must POST to when their execution is complete (HTTP services simply return a response).  Set query param \"redirect=\" with a URL to redirect the user to a service result (preferred).  Set the Content-Type header and POST bytes in order to send a file directly to the user.  Set query param \"error=\" with a message to provide a service error.",
           "type": "string",
           "format": "uri",
           "qt-uri-protocols": [
@@ -47,7 +47,6 @@
         }
       },
       "required": [
-        "callback",
         "format",
         "sources",
         "subset",

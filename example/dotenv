@@ -51,6 +51,10 @@ CALLBACK_HOST=host.docker.internal
 # localhost URLs always use HTTPS regardless of this setting.
 USE_HTTPS=false
 
+# Whether to run example service endpoints under /example.  Useful for
+# testing HTTP backends without actual service calls.  See example/http-service.js
+EXAMPLE_SERVICES=true
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #
@@ -63,7 +67,7 @@ USE_HTTPS=false
 GDAL_IMAGE=harmony/gdal:latest
 PO_L2_IMAGE=podaac-cloud/l2-subsetter-service:latest
 
-# The bucket where service output data will be staged, corresponds to the S3 bucket 
+# The bucket where service output data will be staged, corresponds to the S3 bucket
 # created in localstack when running locally
 STAGING_BUCKET=localStagingBucket
 
