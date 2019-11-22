@@ -2,6 +2,7 @@
 // and redirects than axios wants to provide
 const http = require('http');
 const https = require('https');
+const URL = require('url');
 const BaseService = require('./base-service');
 
 /**
@@ -24,16 +25,25 @@ class HttpService extends BaseService {
       try {
         const body = this.operation.serialize();
         const { url } = this.params;
+        const uri = new URL.URL(url);
+        // We need to cram the string URL into a request object for Replay to work
         const requestOptions = {
+          protocol: uri.protocol,
+          username: uri.username,
+          password: uri.password,
+          host: uri.hostname,
+          port: uri.port,
+          path: `${uri.pathname}?${uri.search}`,
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(body),
           },
         };
+
         const httplib = url.startsWith('https') ? https : http;
 
-        const request = httplib.request(url, requestOptions, (res) => {
+        const request = httplib.request(requestOptions, (res) => {
           const result = {
             headers: res.headers,
             statusCode: res.statusCode,
