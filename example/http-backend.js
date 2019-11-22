@@ -1,3 +1,26 @@
+/**
+ * Example of a service backend that communicates with Harmony over HTTP.
+ *
+ * Exposes a URL path that knows how to communicate with Harmony, in this case
+ * "/example/harmony". In a real app, this could be any routable URL and could
+ * coexist with other application URLs.  The endpoint receives a POST from
+ * Harmony containing a Harmony JSON message.  The service then performs its
+ * work to fulfill the request (in this case simple stubbed-out, echoing,
+ * erroring, or redirecting behavior) and responds over HTTP.  The response
+ * is one of:
+ *   An HTTP error (4xx or 5xx) - Harmony will return the error to the user using
+ *      the same response code and body as the service
+ *   An HTTP redirect (300-399) - Harmony will redirect to the data pointed to in
+ *      the Location header
+ *   An HTTP response body - Harmony will convey the Content-Type and Content-Length
+ *      to the user (or subsequent service) and stream the bytes received in the
+ *      response body
+ *
+ * This example allows us to test and demonstrate all three.  It triggers off the
+ * message's `format.crs` property to decide the correct behavior.  See documentation
+ * for `handleHarmonyMessage` below for details.
+ */
+
 const express = require('express');
 const { promisify } = require('util');
 const winston = require('winston');
