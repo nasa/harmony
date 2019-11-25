@@ -1,0 +1,124 @@
+/**
+ * Example of a service backend that communicates with Harmony over HTTP.
+ *
+ * Exposes a URL path that knows how to communicate with Harmony, in this case
+ * "/example/harmony". In a real app, this could be any routable URL and could
+ * coexist with other application URLs.  The endpoint receives a POST from
+ * Harmony containing a Harmony JSON message.  The service then performs its
+ * work to fulfill the request (in this case simple stubbed-out, echoing,
+ * erroring, or redirecting behavior) and responds over HTTP.  The response
+ * is one of:
+ *   An HTTP error (4xx or 5xx) - Harmony will return the error to the user using
+ *      the same response code and body as the service
+ *   An HTTP redirect (300-399) - Harmony will redirect to the data pointed to in
+ *      the Location header
+ *   An HTTP response body - Harmony will convey the Content-Type and Content-Length
+ *      to the user (or subsequent service) and stream the bytes received in the
+ *      response body
+ *
+ * This example allows us to test and demonstrate all three.  It triggers off the
+ * message's `format.crs` property to decide the correct behavior.  See documentation
+ * for `handleHarmonyMessage` below for details.
+ */
+
+const express = require('express');
+const { promisify } = require('util');
+const winston = require('winston');
+
+/**
+ * Express.js handler demonstrating an example Harmony handler.
+ *
+ * This has three possible behaviors it can demonstrate, which it switches on based on
+ * the Harmony message's `format.crs` property, allowing clients to perform tests without
+ * altering or reloading services.yml.
+ *
+ * format.crs = "ERROR:<code>": Return an HTTP error with the given <code> and message
+ *   "An intentional error occurred"
+ * format.crs = "REDIRECT": Return an HTTP redirect to the "/redirected" path, which clients
+ *   can GET for a 200 response
+ * Default: Return a 200 response containing the incoming message
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @returns {Promise<void>} Resolves when the request is complete
+ */
+async function handleHarmonyMessage(req, res) {
+  const { body } = req;
+
+  if (!body || !body.format) {
+    res.status(400).send('You must provide a valid Harmony JSON message');
+    return;
+  }
+
+  const { crs } = body.format;
+
+  if (crs && crs.startsWith('ERROR:')) {
+    const code = parseInt(crs.replace('ERROR:', ''), 10);
+    if (code < 400 || code >= 600) {
+      res.status(400).send(`The provided error code ${code} is invalid`);
+    } else {
+      res.status(code).send('An intentional error occurred');
+    }
+  } else if (crs === 'REDIRECT') {
+    res.redirect(303, '/example/redirected');
+  } else {
+    res.type('application/json');
+    res.send(req.rawBody);
+  }
+}
+
+/**
+ * Creates and returns an express.Router instance that runs the example server, allowing
+ * it to be mounted onto another express server
+ *
+ * @returns {express.Router} A router which can respond to example service requests
+ */
+function router() {
+  const result = express.Router();
+
+  // Parse JSON POST bodies automatically, stashing the original text in req.rawBody
+  result.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf.toString(); } }));
+
+  // Endpoint to give to Harmony.  Note that other endpoints could be set up for general use
+  result.post('/harmony', handleHarmonyMessage);
+
+  // Endpoint we'll redirect to when requested
+  result.get('/redirected', (req, res) => res.send('You were redirected!'));
+
+  return result;
+}
+
+/**
+ * Starts the example server
+ *
+ * @param {object} [config={}] An optional configuration object containing server config.
+ *   When running this module using the CLI, the configuration is pulled from the environment.
+ *   Config values:
+ *     port: {number} The port to run the example server on (default: 3002)
+ *
+ * @returns {http.Server} The started server
+ */
+function start(config = {}) {
+  const port = config.PORT || 3002;
+  const app = express();
+
+  app.use('/example', router());
+
+  return app.listen(port, '0.0.0.0', () => winston.info(`Example application listening on port ${port}`));
+}
+
+/**
+ * Stops the express server created and returned by the start() method
+ *
+ * @param {http.Server} server A running server as returned by start()
+ * @returns {Promise<void>} A promise that completes when the server closes
+ */
+function stop(server) {
+  return promisify(server.close.bind(server));
+}
+
+module.exports = { start, stop, router };
+
+if (require.main === module) {
+  start(process.env);
+}

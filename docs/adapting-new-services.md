@@ -34,9 +34,13 @@ The `Dockerfile` in the harmony-gdal project serves as a minimal example of how 
 
 In addition to the defined command-line parameters, Harmony can provide the Docker container with environment variables as set in [services.yml](../config/services.yml) by setting `service.type.params.env` key/value pairs.  See the existing services.yml for examples.
 
-### Future: HTTP
+### Synchronous HTTP
 
-When a backend service has the need, Harmony plans to allow invocations of backends over HTTP, likely by POSTing a Harmony request to an endpoint.  Please contact the team if your service may be a near-term candidate.
+The service can expose an HTTP(S) URL reachable by Harmony either over the public internet or a more trusted network.  When configured to do so (see #4 below), Harmony will POST JSON strings containing service requests and following the [Harmony data-operation schema](../app/schemas/) to the URL.  It will then convey the HTTP response to the user as detailed in "#3. Sending results to Harmony" below.  See [example/http-backend.js](../example/http-backend.js) in the Harmony root for a working test server example.
+
+Note that the URL can coexist with other access methods for the same service running on the same server, so the same service could be presented both to Harmony using its protocol and to end users using a different protocol.
+
+Harmony's POST requests are currently unauthenticated, though plans to convey Earthdata Login information to the backend are under discussion.
 
 ## 2. Accepting Harmony requests
 
@@ -45,6 +49,8 @@ When invoking a service, Harmony provides an input detailing the specific operat
 Ideally, this adaptation would consist only of necessary complexity peculiar to the service in question.  Please let the team know if there are components that can make this process easier and consider sending a pull request or publishing your code if you believe it can help future services.
 
 ## 3. Sending results to Harmony
+
+### For Docker services
 
 Once complete, a service must send an HTTP POST request to the URL provided in the `callback` field of the Harmony input.  Failing to do so will cause user requests to hang until a timeout that is likely long in order to accommodate large, synchronous operations.  Please be mindful of this and provide ample error handling.
 
@@ -56,31 +62,54 @@ The following are the options for how to call back to the Harmony URL:
 
 `${operation.callback}/response` If no query parameters are provided and a POST body is present, Harmony will stream the POST body directly to the user as it receives data, conveying the appropriate `Content-Type` and `Content-Size` headers set in the callback.  Use this method if the service builds its response incrementally and the user would benefit from a partial response while waiting on the remainder.
 
+### For Synchronous HTTP Services
+
+Unlike Docker services, synchronous HTTP services *do not* receive a callback URL in their incoming request.  When a service completes, it responds to Harmony's original HTTP request with the results in one of three ways, based on the HTTP response status code:
+
+#### Status 2xx, success
+
+The service call was successful and the response body contains bytes constituting the resulting file.  Harmony will use the `Content-Size` and `Content-Type` headers to provide appropriate information to users or downstream services.
+
+#### Status 3xx, redirect
+
+The service call was successful and the resulting file can be found at the _fully qualified_ URL contained in the `Location` header.
+
+#### Status 4xx and 5xx, client and server errors
+
+The service call was unsuccessful due to an error.  The error message is the text of the response body.  Harmony will convey the message verbatim to the user when permitted by the user's request protocol.  Error status codes should follow [RFC-7231](https://tools.ietf.org/html/rfc7231#section-6), with 4xx errors indicating client errors such as validation or access problems and 5xx errors indicating server errors like unexpected exceptions.
+
 ## 4. Registering services in services.yml
 
 Add an entry to [services.yml](../config/services.yml) and send a pull request to the Harmony team, or ask a Harmony team member for assistance.  The structure of an entry is as follows:
 
 ```yaml
-- name: harmony/example # A unique identifier string for the service, conventionally <team>/<service>
-  type:                 # Configuration for service invocation
-    name: docker        # The type of service invocation, currently only "docker"
-    params:             # Parameters specific to the service invocation type
-      image: harmony/example  # The Docker container image to run
-      env:                    # Environment variables to pass to the image
+- name: harmony/docker-example # A unique identifier string for the service, conventionally <team>/<service>
+  type:                        # Configuration for service invocation
+    name: docker               # The type of service invocation, currently only "docker"
+    params:                    # Parameters specific to the service invocation type
+      image: harmony/example   # The Docker container image to run
+      env:                     # Environment variables to pass to the image
         EDL_USERNAME: !Env ${EDL_USERNAME}  # Note the syntax for reading environment variables from Harmony itself
         EDL_PASSWORD: !Env ${EDL_PASSWORD}  # to avoid placing secrets in git.  Ask the team for assistance if you need this
-  collections:           # A list of CMR collection IDs that the service works on
+  collections:                 # A list of CMR collection IDs that the service works on
     - C1234-EXAMPLE
-  capabilities:          # Service capabilities
+  capabilities:                # Service capabilities
     subsetting:
-      bbox: true         # Can subset by spatial bounding box
-      variable: true     # Can subset by UMM-Var variable
+      bbox: true               # Can subset by spatial bounding box
+      variable: true           # Can subset by UMM-Var variable
       multiple_variable: true  # Can subset multiple variables at once
-    output_formats:      # A list of output mime types the service can produce
+    output_formats:            # A list of output mime types the service can produce
       - image/tiff
       - image/png
       - image/gif
     projection_to_proj4: true  # The service can project to Proj4 and EPSG codes
+
+- name: harmony/http-example   # An example of configuring the HTTP backend
+  type:
+    name: http                 # This is an HTTP endpoint
+    params:
+      url: http://www.example.com/harmony  # URL for the backend service
+  # ... And other config (collections / capabilities) as in the above docker example
 ```
 
 This format is under active development.  In the long-term a large portion of it is likely to be editable and discoverable through the CMR via UMM-S.

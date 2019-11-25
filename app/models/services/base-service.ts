@@ -37,17 +37,56 @@ class BaseService {
   }
 
   /**
-   * Invokes the service, returning a promise for the invocation result
+   * Invokes the service, returning a promise for the invocation result with the
+   * following properties:
    *
-   * @returns {Promise<{req: http.IncomingMessage, res: http.ServerResponse}>} A promise resolving
-   *     to the service callback req/res
+   * error: An error message.  If set, the invocation was an error and the provided
+   *   message should be sent to the client
+   * errorCode: (optional) An HTTP status code for the error.  If set and there is an
+   *   error, the HTTP status code will be set to this value
+   * redirect: A redirect URL.  If set, the client should be redirected
+   *   to this URL
+   * stream: A byte stream.  If set, the bytes in the stream should be piped to the client
+   * headers: An object mapping key/value headers.  Any headers starting with "harmony" should
+   *   be passed to the client.  When streaming a result, content-type and content-length
+   *   should also be set.
+   * onComplete: (optional) A callback function with no arguments to be invoked when the
+   *   client receives its response
+   *
+   * @returns {Promise<{
+   *     error: string,
+   *     errorCode: number,
+   *     redirect: string,
+   *     stream: Stream,
+   *     headers: object,
+   *     onComplete: Function
+   *   }>} A promise resolving to the result of the callback. See method description
+   * for properties
    * @memberof BaseService
    */
   invoke() {
     return new Promise((resolve, reject) => {
       try {
         this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
-          resolve({ req, res });
+          const { error, redirect } = req.query;
+
+          const result = {
+            headers: req.headers,
+            onComplete: () => {
+              res.status(200);
+              res.send('Ok');
+            },
+          };
+
+          if (error) {
+            result.error = error;
+          } else if (redirect) {
+            result.redirect = redirect;
+          } else {
+            result.stream = req;
+          }
+
+          resolve(result);
         });
         this._invokeAsync();
       } catch (e) {
