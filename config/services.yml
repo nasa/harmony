@@ -37,6 +37,7 @@
         STAGING_PATH: harmony/gdal
   collections:
     - C1215669046-GES_DISC
+    - C1226288788-EDF_DEV07
   capabilities:
     subsetting:
       bbox: true
