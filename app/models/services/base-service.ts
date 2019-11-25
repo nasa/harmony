@@ -40,8 +40,8 @@ class BaseService {
    * Invokes the service, returning a promise for the invocation result with the
    * following properties:
    *
-   * error: An error message.  If set, the invocation was an error on the
-   *   message should go to the client
+   * error: An error message.  If set, the invocation was an error and the provided
+   *   message should be sent to the client
    * errorCode: (optional) An HTTP status code for the error.  If set and there is an
    *   error, the HTTP status code will be set to this value
    * redirect: A redirect URL.  If set, the client should be redirected

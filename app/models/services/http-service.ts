@@ -6,8 +6,9 @@ const URL = require('url');
 const BaseService = require('./base-service');
 
 /**
- * Service implementation which chains other service implementations with one
- * another when invoked
+ * Service implementation which invokes a backend over HTTP, synchronously POSTing the Harmony
+ * message to its configured endpoint and conveying its response back to the caller.  This is
+ * done in a single request to the backend.  We may poll for job status in the future.
  *
  * @class HttpService
  * @extends {BaseService}
