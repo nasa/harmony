@@ -45,7 +45,7 @@ const winston = require('winston');
 async function handleHarmonyMessage(req, res) {
   const { body } = req;
 
-  if (!body || !body.format || !body) {
+  if (!body || !body.format) {
     res.status(400).send('You must provide a valid Harmony JSON message');
     return;
   }
