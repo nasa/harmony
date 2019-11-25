@@ -3,38 +3,37 @@ const services = require('../models/services');
 /**
  * Copies the header with the given name from the given request to the given response
  *
- * @param {http.IncomingMessage} req The request to copy from
+ * @param {http.IncomingMessage} serviceResult The service result to copy from
  * @param {http.ServerResponse} res The response to copy to
  * @param {string} header The name of the header to set
  * @returns {void}
  */
-function copyHeader(req, res, header) {
-  res.set(header, req.get(header));
+function copyHeader(serviceResult, res, header) {
+  res.set(header, serviceResult.headers[header.toLowerCase()]);
 }
 
 /**
  * Translates the given request sent by a backend service into the given
  * response sent to the client.
  *
- * @param {http.IncomingMessage} req The request sent by the backend
+ * @param {http.IncomingMessage} serviceResult The service result
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  */
-function translateServiceResponse(req, res) {
-  for (const k of Object.keys(req.headers)) {
-    if (k.startsWith('Harmony')) {
-      copyHeader(req, res, k);
+function translateServiceResult(serviceResult, res) {
+  for (const k of Object.keys(serviceResult.headers)) {
+    if (k.toLowerCase().startsWith('harmony')) {
+      copyHeader(serviceResult, res, k);
     }
   }
-  const { query } = req;
-  if (query.error) {
-    res.status(400).send(query.error);
-  } else if (query.redirect) {
-    res.redirect(query.redirect);
+  if (serviceResult.error) {
+    res.status(serviceResult.statusCode || 400).send(serviceResult.error);
+  } else if (serviceResult.redirect) {
+    res.redirect(serviceResult.redirect);
   } else {
-    copyHeader(req, res, 'Content-Type');
-    copyHeader(req, res, 'Content-Length');
-    req.pipe(res);
+    copyHeader(serviceResult, res, 'Content-Type');
+    copyHeader(serviceResult, res, 'Content-Length');
+    serviceResult.stream.pipe(res);
   }
 }
 
@@ -49,10 +48,11 @@ function translateServiceResponse(req, res) {
 async function serviceInvoker(req, res) {
   req.operation.user = req.user || 'anonymous';
   const service = services.forOperation(req.operation);
-  const result = await service.invoke();
-  translateServiceResponse(result.req, res);
-  result.res.status(200);
-  result.res.send('Ok');
+  const serviceResult = await service.invoke();
+  translateServiceResult(serviceResult, res);
+  if (serviceResult.onComplete) {
+    serviceResult.onComplete();
+  }
 }
 
 module.exports = serviceInvoker;
