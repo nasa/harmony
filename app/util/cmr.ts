@@ -16,7 +16,11 @@ const cmrApi = axios.create({
  */
 async function cmrSearch(path, query, token) {
   const querystr = querystring.stringify(query);
-  const response = await cmrApi.get([path, querystr].join('?'), { headers: { 'Echo-token': `${token}:${process.env.OAUTH_CLIENT_ID}` } });
+  // Tests do not use EDL and instead pass in fake_access, make sure to not send in
+  // a header to CMR in these tests
+  const options = token !== 'fake_access'
+    ? { headers: { 'Echo-token': `${token}:${process.env.OAUTH_CLIENT_ID}` } } : {};
+  const response = await cmrApi.get([path, querystr].join('?'), options);
   // TODO: Error responses
   return response.data;
 }

@@ -41,7 +41,11 @@ async function cmrGranuleLocator(req, res, next) {
   try {
     const { sources } = operation;
     const queries = sources.map(async (source) => {
-      const atomGranules = await cmr.queryGranulesForCollection(source.collection, cmrQuery, req.accessToken);
+      const atomGranules = await cmr.queryGranulesForCollection(
+        source.collection,
+        cmrQuery,
+        req.accessToken,
+      );
       const granules = [];
       for (const granule of atomGranules) {
         const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);
