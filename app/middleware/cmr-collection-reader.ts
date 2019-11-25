@@ -11,11 +11,12 @@ const COLLECTION_URL_PATH_REGEX = /^\/(?:C\d+-\w+[+\s])*(?:C\d+-\w+)+\//g;
  * "variables" attribute to the result
  *
  * @param {CmrCollection} collection The collection whose variables should be loaded
+ * @param {String} token Access token for user request
  * @returns {Promise<void>} Resolves when the loading completes
  */
-async function loadVariablesForCollection(collection) {
+async function loadVariablesForCollection(collection, token) {
   const c = collection; // We are mutating collection
-  c.variables = await cmrutil.getVariablesForCollection(collection);
+  c.variables = await cmrutil.getVariablesForCollection(collection, token);
 }
 
 /**
@@ -54,7 +55,7 @@ async function cmrCollectionReader(req, res, next) {
       req.collectionIds = collectionIds;
       req.logger.info(`Matched collections: ${collectionIds}`);
 
-      req.collections = await cmrutil.getCollectionsByIds(collectionIds);
+      req.collections = await cmrutil.getCollectionsByIds(collectionIds, req.accessToken);
       const { collections } = req;
 
       // Could not find a requested collection
@@ -68,7 +69,7 @@ async function cmrCollectionReader(req, res, next) {
 
       const promises = [];
       for (const collection of collections) {
-        promises.push(loadVariablesForCollection(collection));
+        promises.push(loadVariablesForCollection(collection, req.accessToken));
       }
       await Promise.all(promises);
     } else {
