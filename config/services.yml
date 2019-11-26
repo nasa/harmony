@@ -38,6 +38,7 @@
   collections:
     - C1215669046-GES_DISC
     - C1226288788-EDF_DEV07
+    - C1221286860-NSIDC_TS1
   capabilities:
     subsetting:
       bbox: true
