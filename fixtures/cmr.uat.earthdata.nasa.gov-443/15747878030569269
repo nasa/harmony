@@ -1,0 +1,23 @@
+GET /search/granules.json?collection_concept_id=C1215669046-GES_DISC&page_size=10&concept_id=G123-BOGUS
+accept: application/json, text/plain, */*
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 235
+connection: close
+date: Tue, 26 Nov 2019 17:03:22 GMT
+set-cookie: AWSALB=7y9aHIeIlx7ORjNyGm4a7H2fhvMyBEiYKpN1uCmIkvITxQCQN/dK6iIzCFCYupOwMZMIjfTkQt8CxrfJP8X9Pt9yhO2ZMrSQULwXlVRqoyATPyLVB9UzaSOdgUK5; Expires=Tue, 03 Dec 2019 17:03:22 GMT; Path=/
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, CMR-Scroll-Id, CMR-Timed-Out
+access-control-allow-origin: *
+cmr-hits: 0
+cmr-took: 5
+cmr-request-id: 0607f72b-8ba9-4cc1-8c2a-f090f2a4f68b
+vary: Accept-Encoding, User-Agent
+server: Jetty(9.4.z-SNAPSHOT)
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+x-cache: Miss from cloudfront
+via: 1.1 c208eb85ab071bce3678151b6fd6ca37.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C1
+x-amz-cf-id: GG0bt-H0TtaTo_liuyNz1LPelJ6yw4k-sll_tsHANLYlskyPNdGjzw==
+
+{"feed":{"updated":"2019-11-26T17:03:22.597Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json?collection_concept_id=C1215669046-GES_DISC&page_size=10&concept_id=G123-BOGUS","title":"ECHO granule metadata","entry":[]}}
