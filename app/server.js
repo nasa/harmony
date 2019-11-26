@@ -12,6 +12,7 @@ const serviceResponse = require('./backends/service-response');
 const serviceResponseRouter = require('./routers/service-response-router');
 const router = require('./routers/router');
 const errorHandler = require('./middleware/error-handler');
+const exampleBackend = require('../example/http-backend');
 
 if (dotenvResult.error) {
   winston.warn('Did not read a .env file');
@@ -62,11 +63,13 @@ function buildServer(name, port, setupFn) {
  * @param {object} [config={}] An optional configuration object containing server config.
  *   When running this module using the CLI, the configuration is pulled from the environment.
  *   Config values:
- *     port: {number} The port to run the frontend server on
- *     backendPort: {number} The port to run the backend server on
- *     backendHost: {string} The hostname of the backend server for callbacks to use
- *     useHttps: {bool} True if the backend should use https, false if http.  Defaults to false if
+ *     PORT: {number} The port to run the frontend server on
+ *     BACKEND_PORT: {number} The port to run the backend server on
+ *     BACKEND_HOST: {string} The hostname of the backend server for callbacks to use
+ *     USE_HTTPS: {bool} True if the backend should use https, false if http.  Defaults to false if
  *       backend host is localhost, otherwise true
+ *     EXAMPLE_SERVICES: {bool} True if we should run example services, false otherwise.  Should
+ *       be false in production.  Defaults to true until we have real HTTP services.
  *
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
@@ -78,6 +81,9 @@ function start(config = {}) {
 
   // Setup the frontend server to handle client requests
   const frontend = buildServer('frontend', appPort, (app) => {
+    if (config.EXAMPLE_SERVICES !== 'false') {
+      app.use('/example', exampleBackend.router());
+    }
     app.use('/', router(config));
   });
 

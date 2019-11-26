@@ -1,0 +1,23 @@
+GET /search/collections.json?concept_id=C1104-PVC_TS2&page_size=2000
+accept: application/json, text/plain, */*
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 1798
+connection: close
+vary: Accept-Encoding, Accept-Encoding, User-Agent
+date: Fri, 22 Nov 2019 19:59:02 GMT
+set-cookie: AWSALB=1szn69NeWtVl3ks+eItRi/+OiKocc7FlVYKf5ToEdOgSDRKsbr8inuc3oHHiC0ZAQijPS4v0X3F+RAnTCOoTeE2Th/ad0CJ8kjCjA5W7FntjNNpsoIqiOAuCDLIY; Expires=Fri, 29 Nov 2019 19:59:02 GMT; Path=/
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, CMR-Scroll-Id, CMR-Timed-Out
+access-control-allow-origin: *
+cmr-hits: 1
+cmr-took: 10
+cmr-request-id: 6a562220-9442-4322-81ff-7cc4a88d5b92
+server: Jetty(9.4.z-SNAPSHOT)
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+x-cache: Miss from cloudfront
+via: 1.1 1e0c086b1361f8d4ae58a5db76efda36.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR52-C1
+x-amz-cf-id: I9MVjebEwY0JqDiIV21jtT1exZVqTPk0guDYfdvhXGGuSTxEW5134A==
+
+{"feed":{"updated":"2019-11-22T19:59:02.359Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1104-PVC_TS2&page_size=2000","title":"ECHO dataset metadata","entry":[{"processing_level_id":"2","boxes":["-90 -180 90 180"],"time_start":"2002-05-04T00:00:00.000Z","version_id":"86","updated":"2013-09-24T16:46:29.716Z","dataset_id":"AMSR-E/Aqua L2B Global Swath Ocean Products derived from Wentz Algorithm V086","has_spatial_subsetting":true,"has_transforms":true,"associations":{"services":["S1224343291-PVC_TS2"]},"has_variables":true,"data_center":"PVC_TS2","short_name":"AE_Ocean","organizations":["PVC","National Snow and Ice Data Center","AMSR-E SIPS-GHCC"],"title":"AMSR-E/Aqua L2B Global Swath Ocean Products derived from Wentz Algorithm V086","coordinate_system":"CARTESIAN","summary":"AMSR-E/Aqua global swath ocean wind speed at 38 and 21 km res., water vapor over ocean at 21 km res., cloud liquid water at 12 km res., and sea surface temperature at 56 and 38 km res. are generated using the Wentz Algorithm and level 2A product.","orbit_parameters":{"swath_width":"1450.0","period":"98.88","inclination_angle":"98.15","number_of_orbits":"0.5","start_circular_latitude":"-90.0"},"id":"C1104-PVC_TS2","has_formats":false,"original_format":"ECHO10","archive_center":"PVC","has_temporal_subsetting":false,"browse_flag":false,"online_access_flag":false,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"http://wwwghcc.msfc.nasa.gov/AMSR/qa.html"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"http://nsidc.org/data/docs/daac/ae_ocean_products.gd.html"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"http://nsidc.org/data/amsre/"}]}]}}
