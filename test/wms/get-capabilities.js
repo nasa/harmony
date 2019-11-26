@@ -1,4 +1,4 @@
-const { describe, it } = require('mocha');
+const { describe, it, xit } = require('mocha');
 const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookGetCapabilities } = require('../helpers/wms');
@@ -30,6 +30,9 @@ describe('WMS GetCapabilities', function () {
   });
 
   describe('when called on a collection without variable metadata', function () {
+    // Checks below are marked as broken because this collection now contains variables.
+    // With HARMONY-124 we will find a new collection without associated variable metadata
+    // to use for this test.
     const collection = 'C1225996408-POCUMULUS';
 
     hookGetCapabilities(collection);
@@ -38,11 +41,13 @@ describe('WMS GetCapabilities', function () {
       expect(this.res.status).to.equal(200);
     });
 
-    it('returns a single layer for the entire collection in the capabilities response', function () {
+    // Re-enable with HARMONY-124
+    xit('returns a single layer for the entire collection in the capabilities response', function () {
       expect(this.res.text).to.contain(`<Name>${collection}</Name>`);
     });
 
-    it('does not return any variable layers', function () {
+    // Re-enable with HARMONY-124
+    xit('does not return any variable layers', function () {
       expect(this.res.text).to.not.contain(`<Name>${collection}&#x2F;`);
     });
   });

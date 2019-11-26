@@ -1,0 +1,23 @@
+GET /search/variables.json?concept_id=V1229850953-POCUMULUS&concept_id=V1229852315-POCUMULUS&concept_id=V1229852256-POCUMULUS&concept_id=V1229852313-POCUMULUS&concept_id=V1229852342-POCUMULUS&concept_id=V1229852314-POCUMULUS&concept_id=V1229852181-POCUMULUS&concept_id=V1229852235-POCUMULUS&concept_id=V1229852319-POCUMULUS&concept_id=V1229852383-POCUMULUS&concept_id=V1229852277-POCUMULUS&concept_id=V1229852208-POCUMULUS&concept_id=V1229852406-POCUMULUS&concept_id=V1229852209-POCUMULUS&concept_id=V1229851991-POCUMULUS&page_size=2000
+accept: application/json, text/plain, */*
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 2356
+connection: close
+vary: Accept-Encoding, Accept-Encoding, User-Agent
+date: Tue, 26 Nov 2019 17:03:27 GMT
+set-cookie: AWSALB=u7DQMg61xdIVUDMeMU1qvgDxQf8N01OtwdRMCRueMhuBzj3UO8VLXppFajsCjisOu9h8RHXBHGSZ5fXu1Ug0ZAj7ABXw4Uj3VWrJX7oiigBj0vpLnp+1SvV6uU1s; Expires=Tue, 03 Dec 2019 17:03:27 GMT; Path=/
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, CMR-Scroll-Id, CMR-Timed-Out
+access-control-allow-origin: *
+cmr-hits: 15
+cmr-took: 9
+cmr-request-id: 884c63d4-f6ed-422b-adf2-7b88108a7886
+server: Jetty(9.4.z-SNAPSHOT)
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+x-cache: Miss from cloudfront
+via: 1.1 eb9474b59027c3531e9fe4ca132f8d87.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C1
+x-amz-cf-id: Eh2xTOeFjatemIifML2-_2um_pqtnS8uvWuxwy9dxzAqdbsH8Uh1PA==
+
+{"hits":15,"took":8,"items":[{"concept_id":"V1229852208-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v4","name":"cloud_liquid_water","long_name":"cloud liquid water"},{"concept_id":"V1229852209-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v5","name":"cool_skin","long_name":"cool skin"},{"concept_id":"V1229852235-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v6","name":"diurnal_amplitude","long_name":"estimated diurnal variability"},{"concept_id":"V1229852256-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v7","name":"dt_analysis","long_name":"deviation from sst reference climatology"},{"concept_id":"V1229852277-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v8","name":"l2p_flags","long_name":"L2P flags"},{"concept_id":"V1229851991-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v2","name":"lon","long_name":"longitude"},{"concept_id":"V1229852313-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v9","name":"quality_level","long_name":"quality_level"},{"concept_id":"V1229852314-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v10","name":"rain_rate","long_name":"rain rate"},{"concept_id":"V1229850953-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v1","name":"sea_surface_temperature","long_name":"sea surface sub-skin temperature"},{"concept_id":"V1229852315-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v11","name":"sses_bias","long_name":"SSES bias"},{"concept_id":"V1229852319-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v12","name":"sses_standard_deviation","long_name":"SSES standard deviation"},{"concept_id":"V1229852342-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v13","name":"sst_dtime","long_name":"time difference from reference time"},{"concept_id":"V1229852181-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v0","name":"time","long_name":"reference time of sst file"},{"concept_id":"V1229852383-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v15","name":"water_vapor","long_name":"total columnar water vapor"},{"concept_id":"V1229852406-POCUMULUS","revision_id":1,"provider_id":"POCUMULUS","native_id":"v16","name":"wind_speed","long_name":"wind speed"}]}
