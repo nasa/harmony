@@ -100,9 +100,11 @@ function handleLogout(oauth2, req, res, _next) {
 async function handleAuthorized(oauth2, req, res, next) {
   const { token } = req.signedCookies;
   const oauthToken = oauth2.accessToken.create(token);
+  req.accessToken = oauthToken.token.access_token;
   if (oauthToken.expired()) {
     const refreshed = await oauthToken.refresh();
     res.cookie('token', refreshed.token, cookieOptions);
+    req.accessToken = refreshed.access_token;
   }
 
   req.user = oauthToken.token.endpoint.split('/').pop();
