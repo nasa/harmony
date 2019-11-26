@@ -4,6 +4,7 @@ const yaml = require('js-yaml');
 
 const LocalDockerService = require('./local-docker-service');
 const ChainService = require('./chain-service');
+const HttpService = require('./http-service');
 const { NotFoundError } = require('../../util/errors');
 
 let serviceConfigs = null;
@@ -26,7 +27,7 @@ function loadServiceConfigs() {
   // Load the config
   const buffer = fs.readFileSync(path.join(__dirname, '../../../config/services.yml'));
   const schema = yaml.Schema.create([EnvType]);
-  serviceConfigs = yaml.load(buffer, { schema });
+  serviceConfigs = yaml.load(buffer, { schema }).filter((config) => config.enabled !== false && config.enabled !== 'false');
 }
 
 // Load config at require-time to ensure presence / validity early
@@ -35,6 +36,7 @@ loadServiceConfigs();
 const serviceTypesToServiceClasses = {
   docker: LocalDockerService,
   chain: ChainService,
+  http: HttpService,
 };
 
 /**
