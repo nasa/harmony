@@ -5,7 +5,7 @@
       image: !Env ${PO_L2_IMAGE}
       env:
         USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-        AWS_DEFAULT_REGION: us-east-1
+        AWS_DEFAULT_REGION: us-west-2
         EDL_USERNAME: !Env ${EDL_USERNAME}
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
@@ -29,7 +29,7 @@
       image: !Env ${GDAL_IMAGE}
       env:
         USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-        AWS_DEFAULT_REGION: us-east-1
+        AWS_DEFAULT_REGION: us-west-2
         EDL_USERNAME: !Env ${EDL_USERNAME}
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
@@ -37,8 +37,6 @@
         STAGING_PATH: harmony/gdal
   collections:
     - C1215669046-GES_DISC
-    - C1226288788-EDF_DEV07
-    - C1221286860-NSIDC_TS1
   capabilities:
     subsetting:
       bbox: true
@@ -61,6 +59,32 @@
         - name: harmony/gdal
   collections:
     - C1225996408-POCUMULUS
+
+- name: sds/swot-reproject
+  type:
+    name: docker
+    params:
+      image: !Env ${SWOT_REPR_IMAGE}
+      env:
+        USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+        AWS_DEFAULT_REGION: us-west-2
+        EDL_USERNAME: !Env ${EDL_USERNAME}
+        EDL_PASSWORD: !Env ${EDL_PASSWORD}
+        EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
+        STAGING_BUCKET: !Env ${STAGING_BUCKET}
+        STAGING_PATH: sds/swot-reproject
+  collections:
+    - C1221286860-NSIDC_TS1
+    - C1226288788-EDF_DEV07
+  capabilities:
+    subsetting:
+      bbox: false
+      variable: false
+    output_formats:
+      - image/tiff
+      - image/png
+      - image/gif
+    projection_to_proj4: true
 
 # This is an example service and backend from example/http-backend.js mounted by
 # the frontend callback server.
