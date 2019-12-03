@@ -55,6 +55,9 @@ USE_HTTPS=false
 # testing HTTP backends without actual service calls.  See example/http-service.js
 EXAMPLE_SERVICES=true
 
+# Identifier so backends know which Harmony client submitted the request
+CLIENT_ID=harmony-local
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #

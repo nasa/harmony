@@ -38,6 +38,7 @@ function addOpenApiRoutes(app) {
       getGranule(req, res, next) {
         const query = keysToLowerCase(req.query);
         const operation = new DataOperation();
+        operation.client = process.env.CLIENT_ID || 'harmony';
         operation.crs = query.crs;
         operation.outputFormat = query.format || 'image/tiff';
         operation.version = '0.1.0';

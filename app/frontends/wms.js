@@ -214,6 +214,7 @@ function getMap(req, res, next) {
     operation.addSource(collectionId, variablesByCollection[collectionId]);
   }
 
+  operation.client = process.env.CLIENT_ID || 'harmony';
   operation.crs = query.crs;
   operation.isTransparent = query.transparent === 'TRUE';
   operation.outputFormat = query.format;

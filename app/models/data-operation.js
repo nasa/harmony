@@ -287,6 +287,27 @@ class DataOperation {
   }
 
   /**
+   * Gets the Client ID that is submitting the request
+   *
+   * @returns {string} The Client ID that is submitting the request
+   * @memberof DataOperation
+   */
+  get client() {
+    return this.model.client;
+  }
+
+  /**
+   * Sets the Client ID that is submitting the request
+   *
+   * @param {string} value The Client ID that is submitting the request
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set client(value) {
+    this.model.client = value;
+  }
+
+  /**
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
