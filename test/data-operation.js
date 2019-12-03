@@ -6,6 +6,7 @@ describe('DataOperation', () => {
   describe('#serialize', () => {
     describe('when its serialized JSON fails schema validation', () => {
       const operation = new DataOperation({
+        client: 'harmony-test',
         callback: 'http://example.com/callback',
         sources: [],
         format: {},
@@ -36,13 +37,14 @@ describe('DataOperation', () => {
         });
 
         it('returns its JSON-serialized model', () => {
-          expect(call()).equal('{"callback":"http://example.com/callback","sources":[],"format":{},"subset":{"bbox":[-130,-45,130,45,100]},"version":"0.1.0"}');
+          expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{},"subset":{"bbox":[-130,-45,130,45,100]},"version":"0.1.0"}');
         });
       });
     });
 
     describe('when its serialized JSON passes schema validation', () => {
       const operation = new DataOperation({
+        client: 'harmony-test',
         callback: 'http://example.com/callback',
         sources: [],
         format: {},
@@ -55,7 +57,7 @@ describe('DataOperation', () => {
       });
 
       it('returns its JSON-serialized model', () => {
-        expect(call()).equal('{"callback":"http://example.com/callback","sources":[],"format":{},"subset":{"bbox":[-130,-45,130,45]},"version":"0.1.0"}');
+        expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{},"subset":{"bbox":[-130,-45,130,45]},"version":"0.1.0"}');
       });
     });
   });
