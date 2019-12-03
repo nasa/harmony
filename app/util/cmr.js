@@ -5,6 +5,8 @@ const cmrApi = axios.create({
   baseURL: 'https://cmr.uat.earthdata.nasa.gov/',
 });
 
+const clientIdHeader = { 'Client-id': `${process.env.CLIENT_ID || 'harmony'}` };
+
 /**
  * Performs a CMR search at the given path with the given query string
  *
@@ -17,8 +19,8 @@ const cmrApi = axios.create({
 async function cmrSearch(path, query, token) {
   const querystr = querystring.stringify(query);
   // Pass in a token to the CMR search if one is provided
-  const options = token
-    ? { headers: { 'Echo-token': `${token}:${process.env.OAUTH_CLIENT_ID}` } } : {};
+  const tokenHeader = token ? { 'Echo-token': `${token}:${process.env.OAUTH_CLIENT_ID}` } : {};
+  const options = { headers: { ...clientIdHeader, ...tokenHeader } };
   const response = await cmrApi.get([path, querystr].join('?'), options);
   // TODO: Error responses
   return response.data;
