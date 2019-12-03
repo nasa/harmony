@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.1.0.json",
+  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.2.0.json",
   "$ref": "#/definitions/DataOperation",
   "definitions": {
     "DataOperation": {
@@ -40,6 +40,11 @@
           "description": "The name of the user on behalf of whom Harmony is acting",
           "type": "string"
         },
+        "client": {
+          "name": "Client ID",
+          "description": "An identifier indicating the client submitting the request",
+          "type": "string"
+        },
         "version": {
           "name": "Version number",
           "description": "Identifies which schema version and Harmony callback protocol is being used",
@@ -51,6 +56,7 @@
         "sources",
         "subset",
         "user",
+        "client",
         "version"
       ]
     },

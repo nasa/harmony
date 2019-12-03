@@ -49,8 +49,10 @@ const serviceTypesToServiceClasses = {
  */
 function buildService(serviceConfig, operation) {
   const ServiceClass = serviceTypesToServiceClasses[serviceConfig.type.name];
+  const updatedOperation = operation;
+  updatedOperation.model.version = serviceConfig.data_operation_version;
   if (ServiceClass) {
-    return new ServiceClass(serviceConfig, operation);
+    return new ServiceClass(serviceConfig, updatedOperation);
   }
 
   throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);

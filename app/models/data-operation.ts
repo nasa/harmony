@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 const fs = require('fs');
 const path = require('path');
 const Ajv = require('ajv');
@@ -16,6 +17,20 @@ function readSchema(version) {
 
 const validator = new Ajv({ schemaId: 'auto' });
 validator.addSchema(readSchema('0.1.0'), 'v0.1.0');
+validator.addSchema(readSchema('0.2.0'), 'v0.2.0');
+
+/**
+ * Converts the model to be compatible with 0.1.0 schema
+ *
+ * @param {object} model The data operation model
+ * @returns {object} The data operation model compatible with 0.1.0 schema
+ * @private
+ */
+function modelTo0_1_0(model) {
+  const updatedModel = model;
+  delete updatedModel.client;
+  return updatedModel;
+}
 
 /**
  * Encapsulates an operation to be performed against a backend.  Currently the
@@ -311,18 +326,20 @@ class DataOperation {
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
-   * @param {string} [version='0.1.0'] The version to serialize
    * @param {bool} [validate=true] true if the serialized output should be JSON Schema validated
    *   before returning
    * @returns {string} The serialized data operation in the requested version
    * @throws {TypeError} If validate is `true` and validation fails
    * @memberof DataOperation
    */
-  serialize(version = '0.1.0', validate = true) {
-    const toWrite = Object.assign(this.model, { version });
+  serialize(validate = true) {
+    let toWrite = this.model;
+    if (this.model.version === '0.1.0') {
+      toWrite = modelTo0_1_0(this.model);
+    }
 
     if (validate) {
-      const valid = validator.validate(`v${version}`, toWrite);
+      const valid = validator.validate(`v${this.model.version}`, toWrite);
       if (!valid) {
         throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validator.errors)}`);
       }
