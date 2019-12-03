@@ -1,4 +1,5 @@
 - name: podaac-cloud/l2-subsetter-service
+  data_operation_version: '0.2.0'
   type:
     name: docker
     params:
@@ -23,6 +24,7 @@
       - CRS:84
 
 - name: harmony/gdal
+  data_operation_version: '0.2.0'
   type:
     name: docker
     params:
@@ -49,6 +51,7 @@
     projection_to_proj4: true
 
 - name: harmony/chained-swot-l2
+  data_operation_version: '0.2.0'
   type:
     name: chain
     params:
@@ -61,6 +64,7 @@
     - C1225996408-POCUMULUS
 
 - name: sds/swot-reproject
+  data_operation_version: '0.2.0'
   type:
     name: docker
     params:
@@ -90,6 +94,7 @@
 # the frontend callback server.
 # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.1.0/items/G1216319051-PVC_TS2'
 - name: harmony/example
+  data_operation_version: '0.1.0'
   enabled: !Env ${EXAMPLE_SERVICES}
   type:
     name: http
