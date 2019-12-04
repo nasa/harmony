@@ -55,6 +55,10 @@ USE_HTTPS=false
 # testing HTTP backends without actual service calls.  See example/http-service.js
 EXAMPLE_SERVICES=true
 
+# When set to true log messages are logged as a text string instead of the default
+# JSON format. Useful when running harmony locally and viewing logs via a terminal.
+TEXT_LOGGER=
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #
