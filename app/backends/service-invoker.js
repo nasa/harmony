@@ -46,6 +46,7 @@ function translateServiceResult(serviceResult, res) {
  * @returns {Promise<void>} Resolves when the request is complete
  */
 async function serviceInvoker(req, res) {
+  const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
   req.operation.client = process.env.CLIENT_ID || 'harmony-unknown';
   const service = services.forOperation(req.operation, req.logger);
@@ -54,6 +55,9 @@ async function serviceInvoker(req, res) {
   if (serviceResult.onComplete) {
     serviceResult.onComplete();
   }
+  const msTaken = new Date().getTime() - startTime;
+  req.logger.info('Request complete',
+    { took: msTaken, service: service.config.name, ...service.operation.model });
 }
 
 module.exports = serviceInvoker;
