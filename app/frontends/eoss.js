@@ -40,7 +40,6 @@ function addOpenApiRoutes(app) {
         const operation = new DataOperation();
         operation.crs = query.crs;
         operation.outputFormat = query.format || 'image/tiff';
-        operation.version = '0.1.0';
         if (query.bbox) {
           const [west, south, east, north] = query.bbox;
           operation.boundingRectangle = [west, south, east, north];
