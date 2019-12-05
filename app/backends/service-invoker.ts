@@ -48,7 +48,7 @@ function translateServiceResult(serviceResult, res) {
 async function serviceInvoker(req, res) {
   req.operation.user = req.user || 'anonymous';
   req.operation.client = process.env.CLIENT_ID || 'harmony-unknown';
-  const service = services.forOperation(req.operation);
+  const service = services.forOperation(req.operation, req.logger);
   const serviceResult = await service.invoke();
   translateServiceResult(serviceResult, res);
   if (serviceResult.onComplete) {

@@ -45,12 +45,14 @@ const serviceTypesToServiceClasses = {
  *
  * @param {object} serviceConfig The configuration from services.yml
  * @param {DataOperation} operation The data operation being performed
+ * @param {Logger} logger The logger associated with this request
  * @returns {Service} An appropriate service for the given config
  */
-function buildService(serviceConfig, operation) {
+function buildService(serviceConfig, operation, logger) {
   const ServiceClass = serviceTypesToServiceClasses[serviceConfig.type.name];
   if (ServiceClass) {
-    return new ServiceClass(serviceConfig, operation);
+    const serviceLogger = logger.child({ application: 'backend', component: `${ServiceClass.name}` });
+    return new ServiceClass(serviceConfig, operation, serviceLogger);
   }
 
   throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
@@ -73,9 +75,10 @@ function isCollectionMatch(operation, serviceConfig) {
  *
  * @param {DataOperation} operation The operation to build a service for
  * @returns {BaseService} A service instance appropriate for performing the operation
+ * @param {Logger} logger The logger associated with this request
  * @throws {Error} If no service can perform the given operation
  */
-function forOperation(operation) {
+function forOperation(operation, logger) {
   let matches = [];
   if (operation) {
     matches = serviceConfigs.filter((config) => isCollectionMatch(operation, config));
@@ -86,7 +89,7 @@ function forOperation(operation) {
 
   // TODO: Capabilities match.  Should be fuzzier and warn, rather than erroring?
 
-  return buildService(matches[0], operation);
+  return buildService(matches[0], operation, logger);
 }
 
 /**
@@ -94,14 +97,15 @@ function forOperation(operation) {
  *
  * @param {*} name The name of the service as it appears in services.yml
  * @param {*} operation The operation the service instance is serving
+ * @param {Logger} logger The logger associated with this request
  * @returns {BaseService} The constructed service
  */
-function forName(name, operation) {
+function forName(name, operation, logger) {
   const match = serviceConfigs.find((config) => config.name === name);
   if (!match) {
     throw new NotFoundError(`Could not find service with name ${name}`);
   }
-  return buildService(match, operation);
+  return buildService(match, operation, logger);
 }
 
 /**
