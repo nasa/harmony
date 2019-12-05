@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
-const cloneDeep = require('lodash.clonedeep');
 
 const LocalDockerService = require('./local-docker-service');
 const ChainService = require('./chain-service');
@@ -50,10 +49,8 @@ const serviceTypesToServiceClasses = {
  */
 function buildService(serviceConfig, operation) {
   const ServiceClass = serviceTypesToServiceClasses[serviceConfig.type.name];
-  const updatedOperation = cloneDeep(operation);
-  updatedOperation.model.version = serviceConfig.data_operation_version;
   if (ServiceClass) {
-    return new ServiceClass(serviceConfig, updatedOperation);
+    return new ServiceClass(serviceConfig, operation);
   }
 
   throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
