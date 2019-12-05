@@ -74,7 +74,7 @@ class LocalDockerService extends BaseService {
     dockerParams = dockerParams.concat(
       this.params.image,
       '--harmony-action', 'invoke',
-      '--harmony-input', this.operation.serialize(),
+      '--harmony-input', this.operation.serialize(this.config.data_operation_version),
     );
     this.logger.info(dockerParams.join(' '));
     const child = spawn('docker', dockerParams);
