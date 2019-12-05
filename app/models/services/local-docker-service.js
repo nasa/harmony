@@ -4,24 +4,24 @@ const axios = require('axios');
 const querystring = require('querystring');
 
 const BaseService = require('./base-service');
-const log = require('../../util/log');
 const { isUrlBound } = require('../../backends/service-response');
 
 /**
  * Sets up logging of stdin / stderr and the return code of child.
  *
  * @param {Process} child The child process
+ * @param {Logger} logger The logger associated with this request
  * @returns {void}
  */
-function logProcessOutput(child) {
+function logProcessOutput(child, logger) {
   child.stdout.setEncoding('utf8');
   child.stdout.on('data', (data) => {
-    process.stdout.write(`child stdout: ${data}`);
+    logger.info(`child stdout: ${data}`);
   });
 
   child.stderr.setEncoding('utf8');
   child.stderr.on('data', (data) => {
-    process.stderr.write(`child stderr: ${data}`);
+    logger.info(`child stderr: ${data}`);
   });
 }
 
@@ -29,10 +29,11 @@ function logProcessOutput(child) {
  * Calls the callback URL with an error response indicating the child process crashed.
  *
  * @param {String} callbackUrl The callback URL for the current request
+ * @param {Logger} logger The logger associated with this request
  * @returns {void}
  */
-function childProcessAborted(callbackUrl) {
-  log.error('Child did not hit the callback URL. Returning service request failed with an unknown error to the user.');
+function childProcessAborted(callbackUrl, logger) {
+  logger.error('Child did not hit the callback URL. Returning service request failed with an unknown error to the user.');
   const callbackRequest = axios.create({
     baseURL: `${callbackUrl}/response`,
   });
@@ -61,7 +62,7 @@ class LocalDockerService extends BaseService {
     }
     // END DELETE ME
 
-    log.info(this.params);
+    this.logger.info(this.params);
     const originalCallback = this.operation.callback;
     this.operation.callback = this.operation.callback.replace('localhost', process.env.CALLBACK_HOST || 'host.docker.internal');
     let dockerParams = ['run', '--rm', '-t'];
@@ -75,14 +76,14 @@ class LocalDockerService extends BaseService {
       '--harmony-action', 'invoke',
       '--harmony-input', this.operation.serialize(),
     );
-    log.info(dockerParams.join(' '));
+    this.logger.info(dockerParams.join(' '));
     const child = spawn('docker', dockerParams);
-    logProcessOutput(child);
+    logProcessOutput(child, this.logger);
 
     child.on('exit', ((code, signal) => {
-      log.info(`child process exited with code ${code} and signal ${signal}`);
+      this.logger.info(`child process exited with code ${code} and signal ${signal}`);
       if (isUrlBound(originalCallback)) {
-        childProcessAborted(originalCallback);
+        childProcessAborted(originalCallback, this.logger);
       }
     }));
   }

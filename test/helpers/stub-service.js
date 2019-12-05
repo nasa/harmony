@@ -3,6 +3,7 @@ const sinon = require('sinon');
 const request = require('superagent');
 const BaseService = require('../../app/models/services/base-service');
 const services = require('../../app/models/services');
+const logger = require('../../app/util/log');
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -20,7 +21,7 @@ class StubService extends BaseService {
    * @memberof StubService
    */
   constructor(operation, callbackOptions) {
-    super({}, operation);
+    super({}, operation, logger);
     this.callbackOptions = callbackOptions;
   }
 
@@ -61,12 +62,12 @@ class StubService extends BaseService {
     return function () {
       const ctx = this;
       sinon.stub(services, 'forName')
-        .callsFake((name, operation) => {
+        .callsFake((name, operation, _logger) => {
           ctx.service = new StubService(operation, callbackOptions);
           return ctx.service;
         });
       sinon.stub(services, 'forOperation')
-        .callsFake((operation) => {
+        .callsFake((operation, _logger) => {
           ctx.service = new StubService(operation, callbackOptions);
           return ctx.service;
         });
@@ -139,13 +140,13 @@ class StubService extends BaseService {
       const origForName = services.forName;
       sinon.stub(services, 'forName')
         .callsFake((name, operation) => {
-          const service = origForName(name, operation);
+          const service = origForName(name, operation, logger);
           service.params.image = dockerImage;
           return service;
         });
       sinon.stub(services, 'forOperation')
         .callsFake((operation) => {
-          const service = origForOperation(operation);
+          const service = origForOperation(operation, logger);
           service.params.image = dockerImage;
           return service;
         });
