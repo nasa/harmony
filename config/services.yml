@@ -6,7 +6,7 @@
       image: !Env ${PO_L2_IMAGE}
       env:
         USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-        AWS_DEFAULT_REGION: !Env ${AWS_DEFAULT_REGION}
+        AWS_DEFAULT_REGION: us-west-2
         EDL_USERNAME: !Env ${EDL_USERNAME}
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
@@ -31,7 +31,7 @@
       image: !Env ${GDAL_IMAGE}
       env:
         USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-        AWS_DEFAULT_REGION: !Env ${AWS_DEFAULT_REGION}
+        AWS_DEFAULT_REGION: us-west-2
         EDL_USERNAME: !Env ${EDL_USERNAME}
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
@@ -71,7 +71,7 @@
       image: !Env ${SWOT_REPR_IMAGE}
       env:
         USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-        AWS_DEFAULT_REGION: !Env ${AWS_DEFAULT_REGION}
+        AWS_DEFAULT_REGION: us-west-2
         EDL_USERNAME: !Env ${EDL_USERNAME}
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}

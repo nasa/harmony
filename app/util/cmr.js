@@ -5,7 +5,7 @@ const cmrApi = axios.create({
   baseURL: 'https://cmr.uat.earthdata.nasa.gov/',
 });
 
-const clientIdHeader = { 'Client-id': `${process.env.CLIENT_ID || 'harmony'}` };
+const clientIdHeader = { 'Client-id': `${process.env.CLIENT_ID || 'harmony-unknown'}` };
 
 /**
  * Performs a CMR search at the given path with the given query string

@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const Ajv = require('ajv');
+const cloneDeep = require('lodash.clonedeep');
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -20,14 +21,14 @@ validator.addSchema(readSchema('0.1.0'), 'v0.1.0');
 validator.addSchema(readSchema('0.2.0'), 'v0.2.0');
 
 /**
- * Converts the model to be compatible with 0.1.0 schema
+ * Returns an updated model that is compatible with the 0.1.0 schema
  *
  * @param {object} model The data operation model
- * @returns {object} The data operation model compatible with 0.1.0 schema
+ * @returns {object} The data operation model compatible with the 0.1.0 schema
  * @private
  */
 function modelTo0_1_0(model) {
-  const updatedModel = model;
+  const updatedModel = cloneDeep(model);
   delete updatedModel.client;
   return updatedModel;
 }
