@@ -53,6 +53,14 @@ describe('EOSS GetGranule', function () {
       it('passes the format parameter to the backend', function () {
         expect(this.service.operation.outputFormat).to.equal('image/tiff');
       });
+
+      it('passes the client parameter to the backend', function () {
+        expect(this.service.operation.client).to.equal('harmony-test');
+      });
+
+      it('passes the user parameter to the backend', function () {
+        expect(this.service.operation.user).to.equal('anonymous');
+      });
     });
 
     describe('and the backend service calls back with an error parameter', function () {
