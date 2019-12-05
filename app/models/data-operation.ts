@@ -1,6 +1,8 @@
+/* eslint-disable camelcase */
 const fs = require('fs');
 const path = require('path');
 const Ajv = require('ajv');
+const cloneDeep = require('lodash.clonedeep');
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -16,6 +18,20 @@ function readSchema(version) {
 
 const validator = new Ajv({ schemaId: 'auto' });
 validator.addSchema(readSchema('0.1.0'), 'v0.1.0');
+validator.addSchema(readSchema('0.2.0'), 'v0.2.0');
+
+/**
+ * Returns an updated model that is compatible with the 0.1.0 schema
+ *
+ * @param {object} model The data operation model
+ * @returns {object} The data operation model compatible with the 0.1.0 schema
+ * @private
+ */
+function modelTo0_1_0(model) {
+  const updatedModel = cloneDeep(model);
+  delete updatedModel.client;
+  return updatedModel;
+}
 
 /**
  * Encapsulates an operation to be performed against a backend.  Currently the
@@ -287,18 +303,43 @@ class DataOperation {
   }
 
   /**
+   * Gets the Client ID that is submitting the request
+   *
+   * @returns {string} The Client ID that is submitting the request
+   * @memberof DataOperation
+   */
+  get client() {
+    return this.model.client;
+  }
+
+  /**
+   * Sets the Client ID that is submitting the request
+   *
+   * @param {string} value The Client ID that is submitting the request
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set client(value) {
+    this.model.client = value;
+  }
+
+  /**
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
-   * @param {string} [version='0.1.0'] The version to serialize
+   * @param {string} [version='0.2.0'] The version to serialize
    * @param {bool} [validate=true] true if the serialized output should be JSON Schema validated
    *   before returning
    * @returns {string} The serialized data operation in the requested version
    * @throws {TypeError} If validate is `true` and validation fails
    * @memberof DataOperation
    */
-  serialize(version = '0.1.0', validate = true) {
-    const toWrite = Object.assign(this.model, { version });
+  serialize(version = '0.2.0', validate = true) {
+    let toWrite = this.model;
+    if (version === '0.1.0') {
+      toWrite = modelTo0_1_0(this.model);
+    }
+    toWrite.version = version;
 
     if (validate) {
       const valid = validator.validate(`v${version}`, toWrite);
