@@ -327,20 +327,22 @@ class DataOperation {
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
+   * @param {string} [version='0.2.0'] The version to serialize
    * @param {bool} [validate=true] true if the serialized output should be JSON Schema validated
    *   before returning
    * @returns {string} The serialized data operation in the requested version
    * @throws {TypeError} If validate is `true` and validation fails
    * @memberof DataOperation
    */
-  serialize(validate = true) {
+  serialize(version = '0.2.0', validate = true) {
     let toWrite = this.model;
-    if (this.model.version === '0.1.0') {
+    if (version === '0.1.0') {
       toWrite = modelTo0_1_0(this.model);
     }
+    toWrite.version = version;
 
     if (validate) {
-      const valid = validator.validate(`v${this.model.version}`, toWrite);
+      const valid = validator.validate(`v${version}`, toWrite);
       if (!valid) {
         throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validator.errors)}`);
       }
