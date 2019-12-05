@@ -23,7 +23,7 @@ class ChainService extends BaseService {
   async invoke() {
     let result;
     for (const serviceInfo of this.params.services) {
-      const service = services.forName(serviceInfo.name, this.operation);
+      const service = services.forName(serviceInfo.name, this.operation, this.logger);
       result = await service.invoke();
       const { query } = result.req;
       if (query.error) {
