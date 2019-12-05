@@ -13,9 +13,10 @@ class BaseService {
    *
    * @param {object} config The service configuration from config/services.yml
    * @param {DataOperation} operation The data operation being requested of the service
+   * @param {Logger} logger The logger associated with this request
    * @memberof BaseService
    */
-  constructor(config, operation) {
+  constructor(config, operation, logger) {
     if (new.target === BaseService) {
       throw new TypeError('BaseService is abstract and cannot be instantiated directly');
     }
@@ -23,6 +24,7 @@ class BaseService {
     const { type } = this.config;
     this.params = (type && type.params) ? type.params : {};
     this.operation = operation;
+    this.logger = logger;
   }
 
   /**
