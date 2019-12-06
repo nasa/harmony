@@ -106,8 +106,9 @@ async function handleAuthorized(oauth2, req, res, next) {
     res.cookie('token', refreshed.token, cookieOptions);
     req.accessToken = refreshed.access_token;
   }
-
-  req.user = oauthToken.token.endpoint.split('/').pop();
+  const user = oauthToken.token.endpoint.split('/').pop();
+  req.logger = req.logger.child({ user });
+  req.user = user;
   next();
 }
 

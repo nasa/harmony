@@ -1,3 +1,3 @@
-const clientId = process.env.CLIENT_ID || 'harmony-unknown';
+const harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 
-module.exports = { clientId };
+module.exports = { harmonyClientId };

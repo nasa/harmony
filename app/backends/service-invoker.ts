@@ -1,4 +1,5 @@
 const services = require('../models/services');
+const env = require('../util/env');
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -48,7 +49,7 @@ function translateServiceResult(serviceResult, res) {
 async function serviceInvoker(req, res) {
   const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
-  req.operation.client = process.env.CLIENT_ID || 'harmony-unknown';
+  req.operation.client = env.harmonyClientId;
   const service = services.forOperation(req.operation, req.logger);
   const serviceResult = await service.invoke();
   translateServiceResult(serviceResult, res);

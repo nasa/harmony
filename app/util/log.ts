@@ -1,9 +1,9 @@
 const winston = require('winston');
-const { clientId } = require('./env');
+const env = require('./env');
 
 const envNameFormat = winston.format((info) => {
   // eslint-disable-next-line no-param-reassign
-  info.env_name = clientId;
+  info.env_name = env.harmonyClientId;
   return info;
 });
 
