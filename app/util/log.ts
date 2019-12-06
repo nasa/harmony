@@ -1,4 +1,11 @@
 const winston = require('winston');
+const { clientId } = require('./env');
+
+const envNameFormat = winston.format((info) => {
+  // eslint-disable-next-line no-param-reassign
+  info.env_name = clientId;
+  return info;
+});
 
 /**
  * Creates a logger that logs messages in JSON format.
@@ -9,6 +16,7 @@ function createJsonLogger() {
   const jsonLogger = winston.createLogger({
     format: winston.format.combine(
       winston.format.timestamp(),
+      envNameFormat(),
       winston.format.json(),
     ),
     transports: [
