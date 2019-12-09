@@ -50,18 +50,18 @@
       - image/gif
     projection_to_proj4: true
 
-- name: harmony/chained-swot-l2
-  data_operation_version: '0.2.0'
-  type:
-    name: chain
-    params:
-      services:
-        - name: podaac-cloud/l2-subsetter-service
-          updates:
-            spatial.bbox: null
-        - name: harmony/gdal
-  collections:
-    - C1225996408-POCUMULUS
+# - name: harmony/chained-swot-l2
+#   data_operation_version: '0.2.0'
+#   type:
+#     name: chain
+#     params:
+#       services:
+#         - name: podaac-cloud/l2-subsetter-service
+#           updates:
+#             spatial.bbox: null
+#         - name: harmony/gdal
+#   collections:
+#     - C1225996408-POCUMULUS
 
 - name: sds/swot-reproject
   data_operation_version: '0.2.0'
