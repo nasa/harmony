@@ -86,6 +86,8 @@ function start(config = {}) {
     }
     app.use('/', router(config));
   });
+  // Allow requests to take 20 minutes
+  frontend.setTimeout(1200000);
 
   // Setup the backend server to acccept callbacks from backend services
   const backend = buildServer('backend', backendPort, (app) => {

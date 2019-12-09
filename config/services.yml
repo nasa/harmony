@@ -1,27 +1,27 @@
-- name: podaac-cloud/l2-subsetter-service
-  data_operation_version: '0.2.0'
-  type:
-    name: docker
-    params:
-      image: !Env ${PO_L2_IMAGE}
-      env:
-        USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-        AWS_DEFAULT_REGION: us-west-2
-        EDL_USERNAME: !Env ${EDL_USERNAME}
-        EDL_PASSWORD: !Env ${EDL_PASSWORD}
-        EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
-        STAGING_BUCKET: !Env ${STAGING_BUCKET}
-        STAGING_PATH: podaac-cloud/l2-subsetter-service
-  collections:
-    - C1225996408-POCUMULUS
-  capabilities:
-    subsetting:
-      bbox: true
-      variable: false # Default
-    output_formats:
-      - application/x-netcdf4
-    output_projections:
-      - CRS:84
+# - name: podaac-cloud/l2-subsetter-service
+#   data_operation_version: '0.2.0'
+#   type:
+#     name: docker
+#     params:
+#       image: !Env ${PO_L2_IMAGE}
+#       env:
+#         USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+#         AWS_DEFAULT_REGION: us-west-2
+#         EDL_USERNAME: !Env ${EDL_USERNAME}
+#         EDL_PASSWORD: !Env ${EDL_PASSWORD}
+#         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
+#         STAGING_BUCKET: !Env ${STAGING_BUCKET}
+#         STAGING_PATH: podaac-cloud/l2-subsetter-service
+#   collections:
+#     - C1225996408-POCUMULUS
+#   capabilities:
+#     subsetting:
+#       bbox: true
+#       variable: false # Default
+#     output_formats:
+#       - application/x-netcdf4
+#     output_projections:
+#       - CRS:84
 
 - name: harmony/gdal
   data_operation_version: '0.2.0'
@@ -76,10 +76,12 @@
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
-        STAGING_PATH: sds/swot-reproject
+        STAGING_PATH: harmony/gdal
   collections:
     - C1221286860-NSIDC_TS1
     - C1226288788-EDF_DEV07
+    - C1233147317-EEDTEST
+    - C1233147319-EEDTEST
   capabilities:
     subsetting:
       bbox: false
@@ -105,3 +107,12 @@
     # Good example, being in UAT, global, many public non-global granules,
     # and not yet on the services roadmap.
     - C1104-PVC_TS2
+
+- name: podaac/http-service
+  data_operation_version: '0.2.0'
+  type:
+    name: http
+    params:
+      url: http://internal-svc-harmony-adapter-ha-sbx-alb-1793829129.us-west-2.elb.amazonaws.com/dataOperation
+  collections:
+    - C1225996408-POCUMULUS
