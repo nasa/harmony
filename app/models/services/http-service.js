@@ -26,6 +26,7 @@ class HttpService extends BaseService {
       try {
         const body = this.operation.serialize(this.config.data_operation_version);
         const { url } = this.params;
+        this.logger.info('Submitting HTTP backend service request', { url });
         const uri = new URL.URL(url);
         // We need to cram the string URL into a request object for Replay to work
         const requestOptions = {

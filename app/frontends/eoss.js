@@ -36,6 +36,7 @@ function addOpenApiRoutes(app) {
         res.send(openApiContent);
       },
       getGranule(req, res, next) {
+        req.logger = req.logger.child({ component: 'eoss.getGranule' });
         const query = keysToLowerCase(req.query);
         const operation = new DataOperation();
         operation.crs = query.crs;

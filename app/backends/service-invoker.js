@@ -1,4 +1,5 @@
 const services = require('../models/services');
+const env = require('../util/env');
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -46,14 +47,18 @@ function translateServiceResult(serviceResult, res) {
  * @returns {Promise<void>} Resolves when the request is complete
  */
 async function serviceInvoker(req, res) {
+  const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
-  req.operation.client = process.env.CLIENT_ID || 'harmony-unknown';
+  req.operation.client = env.harmonyClientId;
   const service = services.forOperation(req.operation, req.logger);
   const serviceResult = await service.invoke();
   translateServiceResult(serviceResult, res);
   if (serviceResult.onComplete) {
     serviceResult.onComplete();
   }
+  const msTaken = new Date().getTime() - startTime;
+  req.logger.info('Backend service request complete',
+    { durationMs: msTaken, service: service.config.name, ...service.operation.model });
 }
 
 module.exports = serviceInvoker;

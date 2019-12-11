@@ -1,4 +1,7 @@
 const winston = require('winston');
+const env = require('./env');
+
+const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
 
 /**
  * Creates a logger that logs messages in JSON format.
@@ -9,10 +12,11 @@ function createJsonLogger() {
   const jsonLogger = winston.createLogger({
     format: winston.format.combine(
       winston.format.timestamp(),
+      envNameFormat(),
       winston.format.json(),
     ),
     transports: [
-      new winston.transports.Console(),
+      new winston.transports.Console({ level: env.logLevel }),
     ],
   });
 
@@ -49,7 +53,7 @@ function createTextLogger() {
       textformat,
     ),
     transports: [
-      new winston.transports.Console(),
+      new winston.transports.Console({ level: env.logLevel }),
     ],
   });
 
