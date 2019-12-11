@@ -62,6 +62,8 @@ The following are the options for how to call back to the Harmony URL:
 
 `${operation.callback}/response` If no query parameters are provided and a POST body is present, Harmony will stream the POST body directly to the user as it receives data, conveying the appropriate `Content-Type` and `Content-Size` headers set in the callback.  Use this method if the service builds its response incrementally and the user would benefit from a partial response while waiting on the remainder.
 
+All log messages should be directed to stdout, and all messages should be in JSON format. Harmony will capture all output on both stdout and stderr, and those logs will be available in the metrics system. By using JSON, metrics from the backend services can easily be extracted.
+
 ### For Synchronous HTTP Services
 
 Unlike Docker services, synchronous HTTP services *do not* receive a callback URL in their incoming request.  When a service completes, it responds to Harmony's original HTTP request with the results in one of three ways, based on the HTTP response status code:

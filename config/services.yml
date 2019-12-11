@@ -12,6 +12,7 @@
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
         STAGING_PATH: podaac-cloud/l2-subsetter-service
+        TEXT_LOGGER: !Env ${TEXT_LOGGER}
   collections:
     - C1225996408-POCUMULUS
   capabilities:
@@ -37,6 +38,7 @@
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
         STAGING_PATH: harmony/gdal
+        TEXT_LOGGER: !Env ${TEXT_LOGGER}
   collections:
     - C1215669046-GES_DISC
   capabilities:
@@ -77,9 +79,12 @@
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
         STAGING_PATH: sds/swot-reproject
+        TEXT_LOGGER: !Env ${TEXT_LOGGER}
   collections:
     - C1221286860-NSIDC_TS1
     - C1226288788-EDF_DEV07
+    - C1233147317-EEDTEST
+    - C1233147319-EEDTEST
   capabilities:
     subsetting:
       bbox: false

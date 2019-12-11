@@ -28,11 +28,13 @@ function logged(fn) {
   return async (req, res, next) => {
     const { logger } = req;
     req.logger = req.logger.child({ component: scope });
+    const startTime = new Date().getTime();
     try {
-      req.logger.info('Invoking middleware');
+      req.logger.debug('Invoking middleware');
       return await fn(req, res, next);
     } finally {
-      req.logger.info('Completed middleware');
+      const msTaken = new Date().getTime() - startTime;
+      req.logger.debug('Completed middleware', { durationMs: msTaken });
       req.logger = logger;
     }
   };
