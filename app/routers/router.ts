@@ -34,7 +34,7 @@ function logged(fn) {
       return await fn(req, res, next);
     } finally {
       const msTaken = new Date().getTime() - startTime;
-      req.logger.debug('Completed middleware', { took: msTaken });
+      req.logger.debug('Completed middleware', { durationMs: msTaken });
       req.logger = logger;
     }
   };
