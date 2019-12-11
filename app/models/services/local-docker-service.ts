@@ -6,6 +6,19 @@ const querystring = require('querystring');
 const BaseService = require('./base-service');
 const { isUrlBound } = require('../../backends/service-response');
 
+const blankStrings = ['\n', '\r', ''];
+
+/**
+ * Returns true if the string has no useful content such as an empty
+ * string, or a newline character.
+ *
+ * @param {String} line The string to return
+ * @returns {boolean} true if the passed in string is empty
+ */
+function blank(line) {
+  return blankStrings.includes(line);
+}
+
 /**
  * Sets up logging of stdin / stderr and the return code of child.
  *
@@ -16,12 +29,32 @@ const { isUrlBound } = require('../../backends/service-response');
 function logProcessOutput(child, logger) {
   child.stdout.setEncoding('utf8');
   child.stdout.on('data', (data) => {
-    logger.info(`child stdout: ${data}`);
+    const lines = data.toString().split('\n');
+    lines.forEach((line) => {
+      if (!blank(line)) {
+        try {
+          const jsonMessage = JSON.parse(line);
+          logger.info('child stdout', { dockerOut: jsonMessage });
+        } catch (e) {
+          logger.info('child stdout', { dockerOut: line });
+        }
+      }
+    });
   });
 
   child.stderr.setEncoding('utf8');
   child.stderr.on('data', (data) => {
-    logger.info(`child stderr: ${data}`);
+    const lines = data.toString().split('\n');
+    lines.forEach((line) => {
+      if (!blank(line)) {
+        try {
+          const jsonMessage = JSON.parse(line);
+          logger.warn('child stderr', { dockerErr: jsonMessage });
+        } catch (e) {
+          logger.warn('child stderr', { dockerErr: line });
+        }
+      }
+    });
   });
 }
 
