@@ -20,7 +20,7 @@ function createJsonLogger() {
       winston.format.json(),
     ),
     transports: [
-      new winston.transports.Console(),
+      new winston.transports.Console({ level: env.logLevel }),
     ],
   });
 
@@ -57,7 +57,7 @@ function createTextLogger() {
       textformat,
     ),
     transports: [
-      new winston.transports.Console(),
+      new winston.transports.Console({ level: env.logLevel }),
     ],
   });
 
