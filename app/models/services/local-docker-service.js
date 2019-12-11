@@ -20,7 +20,7 @@ function blank(line) {
 }
 
 /**
- * Helper function to log and messages from stderr or stdout in a format
+ * Helper function to log messages from stderr or stdout in a format
  * that helps support metrics extraction.
  *
  * @param {Stream} stream The stream of stderr or stdout from a process
