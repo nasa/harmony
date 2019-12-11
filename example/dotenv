@@ -62,6 +62,9 @@ CLIENT_ID=harmony-local
 # JSON format. Useful when running harmony locally and viewing logs via a terminal.
 TEXT_LOGGER=
 
+# Log level (error, warn, info, debug). Defaults to debug.
+LOG_LEVEL=
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #
