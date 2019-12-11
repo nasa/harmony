@@ -20,6 +20,31 @@ function blank(line) {
 }
 
 /**
+ * Helper function to log and messages from stderr or stdout in a format
+ * that helps support metrics extraction.
+ *
+ * @param {Stream} stream The stream of stderr or stdout from a process
+ * @param {Logger} logger The logger associated with this request
+ * @param {String} streamType Either 'stdout' or 'stderr'
+ * @param {String} field The name of the field to use in the JSON log message.
+ * @returns {void}
+ */
+function processLogMessagesFromStream(stream, logger, streamType, field) {
+  const lines = stream.toString().split('\n');
+  const message = `child ${streamType}`;
+  lines.forEach((line) => {
+    if (!blank(line)) {
+      try {
+        const jsonMessage = JSON.parse(line);
+        logger.info(message, { [field]: jsonMessage });
+      } catch (e) {
+        logger.info(message, { [field]: line });
+      }
+    }
+  });
+}
+
+/**
  * Sets up logging of stdin / stderr and the return code of child.
  *
  * @param {Process} child The child process
@@ -29,32 +54,12 @@ function blank(line) {
 function logProcessOutput(child, logger) {
   child.stdout.setEncoding('utf8');
   child.stdout.on('data', (data) => {
-    const lines = data.toString().split('\n');
-    lines.forEach((line) => {
-      if (!blank(line)) {
-        try {
-          const jsonMessage = JSON.parse(line);
-          logger.info('child stdout', { dockerOut: jsonMessage });
-        } catch (e) {
-          logger.info('child stdout', { dockerOut: line });
-        }
-      }
-    });
+    processLogMessagesFromStream(data, logger, 'stdout', 'dockerOut');
   });
 
   child.stderr.setEncoding('utf8');
   child.stderr.on('data', (data) => {
-    const lines = data.toString().split('\n');
-    lines.forEach((line) => {
-      if (!blank(line)) {
-        try {
-          const jsonMessage = JSON.parse(line);
-          logger.warn('child stderr', { dockerErr: jsonMessage });
-        } catch (e) {
-          logger.warn('child stderr', { dockerErr: line });
-        }
-      }
-    });
+    processLogMessagesFromStream(data, logger, 'stderr', 'dockerErr');
   });
 }
 

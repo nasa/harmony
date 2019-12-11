@@ -1,11 +1,7 @@
 const winston = require('winston');
 const env = require('./env');
 
-const envNameFormat = winston.format((info) => {
-  // eslint-disable-next-line no-param-reassign
-  info.env_name = env.harmonyClientId;
-  return info;
-});
+const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
 
 /**
  * Creates a logger that logs messages in JSON format.

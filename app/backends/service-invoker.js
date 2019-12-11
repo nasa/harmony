@@ -57,8 +57,8 @@ async function serviceInvoker(req, res) {
     serviceResult.onComplete();
   }
   const msTaken = new Date().getTime() - startTime;
-  req.logger.info('Backed service request complete',
-    { took: msTaken, service: service.config.name, ...service.operation.model });
+  req.logger.info('Backend service request complete',
+    { durationMs: msTaken, service: service.config.name, ...service.operation.model });
 }
 
 module.exports = serviceInvoker;
