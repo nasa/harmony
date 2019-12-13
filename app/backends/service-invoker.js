@@ -57,8 +57,19 @@ async function serviceInvoker(req, res) {
     serviceResult.onComplete();
   }
   const msTaken = new Date().getTime() - startTime;
+  const spatialSubset = service.operation.model.subset
+    && Object.keys(service.operation.model.subset).length > 0;
+  // eslint-disable-next-line arrow-body-style
+  const variableSubsetSources = service.operation.model.sources.filter((source) => {
+    return source.variables && source.variables.length > 0;
+  });
+  const variableSubset = variableSubsetSources.length > 0;
   req.logger.info('Backend service request complete',
-    { durationMs: msTaken, service: service.config.name, ...service.operation.model });
+    { durationMs: msTaken,
+      ...service.operation.model,
+      service: service.config.name,
+      spatialSubset,
+      variableSubset });
 }
 
 module.exports = serviceInvoker;
