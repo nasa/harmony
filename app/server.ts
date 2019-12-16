@@ -86,8 +86,6 @@ function start(config = {}) {
     }
     app.use('/', router(config));
   });
-  // Allow requests to take 20 minutes
-  frontend.setTimeout(1200000);
 
   // Allow requests to take 20 minutes
   frontend.setTimeout(1200000);
