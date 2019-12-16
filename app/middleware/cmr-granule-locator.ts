@@ -71,7 +71,6 @@ async function cmrGranuleLocator(req, res, next) {
     }
     req.logger.error(e);
   }
-  req.logger.debug(JSON.stringify(req.operation.model, null, 2));
   return next();
 }
 
