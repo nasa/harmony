@@ -115,6 +115,6 @@
   type:
     name: http
     params:
-      url: http://internal-svc-harmony-adapter-ha-sbx-alb-1793829129.us-west-2.elb.amazonaws.com/dataOperation
+      url: http://d241qn3lj7he8d.cloudfront.net/dataOperation
   collections:
     - C1225996408-POCUMULUS
