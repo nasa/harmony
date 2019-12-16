@@ -1,28 +1,28 @@
-- name: podaac-cloud/l2-subsetter-service
-  data_operation_version: '0.2.0'
-  type:
-    name: docker
-    params:
-      image: !Env ${PO_L2_IMAGE}
-      env:
-        USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-        AWS_DEFAULT_REGION: us-west-2
-        EDL_USERNAME: !Env ${EDL_USERNAME}
-        EDL_PASSWORD: !Env ${EDL_PASSWORD}
-        EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
-        STAGING_BUCKET: !Env ${STAGING_BUCKET}
-        STAGING_PATH: podaac-cloud/l2-subsetter-service
-        TEXT_LOGGER: !Env ${TEXT_LOGGER}
-  collections:
-    - C1225996408-POCUMULUS
-  capabilities:
-    subsetting:
-      bbox: true
-      variable: false # Default
-    output_formats:
-      - application/x-netcdf4
-    output_projections:
-      - CRS:84
+# Using HTTP based PODAAC subsetter now.
+# - name: podaac-cloud/l2-subsetter-service
+#   data_operation_version: '0.2.0'
+#   type:
+#     name: docker
+#     params:
+#       image: !Env ${PO_L2_IMAGE}
+#       env:
+#         USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+#         AWS_DEFAULT_REGION: us-west-2
+#         EDL_USERNAME: !Env ${EDL_USERNAME}
+#         EDL_PASSWORD: !Env ${EDL_PASSWORD}
+#         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
+#         STAGING_BUCKET: !Env ${STAGING_BUCKET}
+#         STAGING_PATH: podaac-cloud/l2-subsetter-service
+#   collections:
+#     - C1225996408-POCUMULUS
+#   capabilities:
+#     subsetting:
+#       bbox: true
+#       variable: false # Default
+#     output_formats:
+#       - application/x-netcdf4
+#     output_projections:
+#       - CRS:84
 
 - name: harmony/gdal
   data_operation_version: '0.2.0'
@@ -52,18 +52,19 @@
       - image/gif
     projection_to_proj4: true
 
-- name: harmony/chained-swot-l2
-  data_operation_version: '0.2.0'
-  type:
-    name: chain
-    params:
-      services:
-        - name: podaac-cloud/l2-subsetter-service
-          updates:
-            spatial.bbox: null
-        - name: harmony/gdal
-  collections:
-    - C1225996408-POCUMULUS
+# Using this collection for the new HTTP based PODAAC subsetter
+# - name: harmony/chained-swot-l2
+#   data_operation_version: '0.2.0'
+#   type:
+#     name: chain
+#     params:
+#       services:
+#         - name: podaac-cloud/l2-subsetter-service
+#           updates:
+#             spatial.bbox: null
+#         - name: harmony/gdal
+#   collections:
+#     - C1225996408-POCUMULUS
 
 - name: sds/swot-reproject
   data_operation_version: '0.2.0'
@@ -110,3 +111,12 @@
     # Good example, being in UAT, global, many public non-global granules,
     # and not yet on the services roadmap.
     - C1104-PVC_TS2
+
+- name: podaac/http-service
+  data_operation_version: '0.2.0'
+  type:
+    name: http
+    params:
+      url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
+  collections:
+    - C1225996408-POCUMULUS
