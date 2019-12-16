@@ -6,6 +6,44 @@ const querystring = require('querystring');
 const BaseService = require('./base-service');
 const { isUrlBound } = require('../../backends/service-response');
 
+const blankStrings = ['\n', '\r', ''];
+
+/**
+ * Returns true if the string has no useful content such as an empty
+ * string, or a newline character.
+ *
+ * @param {String} line The string to return
+ * @returns {boolean} true if the passed in string is empty
+ */
+function blank(line) {
+  return blankStrings.includes(line);
+}
+
+/**
+ * Helper function to log messages from stderr or stdout in a format
+ * that helps support metrics extraction.
+ *
+ * @param {Stream} stream The stream of stderr or stdout from a process
+ * @param {Logger} logger The logger associated with this request
+ * @param {String} streamType Either 'stdout' or 'stderr'
+ * @param {String} field The name of the field to use in the JSON log message.
+ * @returns {void}
+ */
+function processLogMessagesFromStream(stream, logger, streamType, field) {
+  const lines = stream.toString().split('\n');
+  const message = `child ${streamType}`;
+  lines.forEach((line) => {
+    if (!blank(line)) {
+      try {
+        const jsonMessage = JSON.parse(line);
+        logger.info(message, { [field]: jsonMessage });
+      } catch (e) {
+        logger.info(message, { [field]: line });
+      }
+    }
+  });
+}
+
 /**
  * Sets up logging of stdin / stderr and the return code of child.
  *
@@ -16,12 +54,12 @@ const { isUrlBound } = require('../../backends/service-response');
 function logProcessOutput(child, logger) {
   child.stdout.setEncoding('utf8');
   child.stdout.on('data', (data) => {
-    logger.info(`child stdout: ${data}`);
+    processLogMessagesFromStream(data, logger, 'stdout', 'dockerOut');
   });
 
   child.stderr.setEncoding('utf8');
   child.stderr.on('data', (data) => {
-    logger.info(`child stderr: ${data}`);
+    processLogMessagesFromStream(data, logger, 'stderr', 'dockerErr');
   });
 }
 
