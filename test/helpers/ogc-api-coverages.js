@@ -23,11 +23,13 @@ function hookLandingPage(collection, version) {
 
 
 /**
- * Asserts that a link relation exists, then loads it, allowing the passed function to provide further
- * specs about its contents.  Expects the current page response to exist in the `this.res` object.
+ * Asserts that a link relation exists, then loads it, allowing the passed function to provide
+ * further specs about its contents.  Expects the current page response to exist in the `this.res`
+ * object.
  *
  * @param {string} rel The link relation to find in the "links" array of the current response
- * @param {string} description A human-readable name for what the relation is, e.g. "the Open API Spec"
+ * @param {string} description A human-readable name for what the relation is, e.g.
+ *   "the Open API Spec"
  * @param {function} fn The body of the describe statement
  * @returns {void}
  */
@@ -63,7 +65,6 @@ function describeRelation(rel, description, fn) {
 
     await fn.bind(this)();
   });
-
 }
 
 /**
