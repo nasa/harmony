@@ -1,4 +1,4 @@
-module.exports = function getLandingPage(req, res) {
+module.exports = function getRequirementsClasses(req, res) {
   res.json({
     conformsTo: [
       'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core',
