@@ -11,7 +11,7 @@ const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
 const { NotFoundError } = require('../util/errors');
 const services = require('../models/services');
 const eoss = require('../frontends/eoss');
-const ogcCoverageApi = require('../frontends/ogc-coverage');
+const ogcCoverageApi = require('../frontends/ogc-coverages');
 
 const serviceInvoker = require('../backends/service-invoker');
 

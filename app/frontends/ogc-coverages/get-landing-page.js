@@ -22,7 +22,7 @@ module.exports = function getLandingPage(req, res) {
         title: 'this document',
       },
       {
-        href: `${root}/ogc-api-coverages-1.0.0.yml`,
+        href: `${root}/api`,
         rel: 'service-desc',
         type: 'text/openapi+yaml;version=3.0',
         title: 'the API definition',

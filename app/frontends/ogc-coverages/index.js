@@ -9,7 +9,7 @@ const getRequirementsClasses = require('./get-requirements-classes');
 
 const version = '1.0.0';
 const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverages', version);
-const openApiPath = path.join(openApiRoot, `ogc-api-coverages-${version}.yml`);
+const openApiPath = path.join(openApiRoot, `ogc-api-coverages-v${version}.yml`);
 const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
 
 /**
@@ -22,6 +22,7 @@ function addOpenApiRoutes(app) {
   initialize({
     app,
     apiDoc: openApiContent,
+    validateApiDoc: true,
     /* Note: the default way to expose an OpenAPI endpoint is to have express handle paths
      * based on a supplied directory structure. Instead we are using the operations property
      * because we want to include the paths within the OpenAPI specification itself. */
