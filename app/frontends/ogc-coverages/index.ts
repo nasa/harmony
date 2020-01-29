@@ -13,7 +13,7 @@ const openApiPath = path.join(openApiRoot, `ogc-api-coverages-v${version}.yml`);
 const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
 
 /**
- * Sets up the express application with the OpenAPI routes for EOSS
+ * Sets up the express application with the OpenAPI routes for OGC API - Coverages
  *
  * @param {express.Application} app The express application
  * @returns {void}
