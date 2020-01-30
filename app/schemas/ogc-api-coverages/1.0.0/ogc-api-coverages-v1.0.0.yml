@@ -117,7 +117,7 @@ paths:
           type: string
       responses:
         "200":
-          description: Metdata about the collections shared by this API.
+          description: Metadata about the collections shared by this API.
           content:
             application/json:
               schema:
