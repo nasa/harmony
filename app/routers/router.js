@@ -11,6 +11,7 @@ const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
 const { NotFoundError } = require('../util/errors');
 const services = require('../models/services');
 const eoss = require('../frontends/eoss');
+const ogcCoverageApi = require('../frontends/ogc-coverages');
 
 const serviceInvoker = require('../backends/service-invoker');
 
@@ -101,6 +102,7 @@ function router({ skipEarthdataLogin }) {
 
   result.use(logged(cmrCollectionReader));
 
+  ogcCoverageApi.addOpenApiRoutes(result);
   result.use(collectionPrefix('wcs'), service(logged(wcsFrontend)));
   result.use(collectionPrefix('wms'), service(logged(wmsFrontend)));
   eoss.addOpenApiRoutes(result);
