@@ -6,11 +6,37 @@ const { RequestValidationError } = require('../../util/errors');
 
 const getLandingPage = require('./get-landing-page');
 const getRequirementsClasses = require('./get-requirements-classes');
+const getCoverageRangeset = require('./get-coverage-rangeset');
 
 const version = '1.0.0';
 const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverages', version);
 const openApiPath = path.join(openApiRoot, `ogc-api-coverages-v${version}.yml`);
 const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
+
+/**
+ * Express handler that returns a 501 error and "not yet implemented" message to the client
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @returns {void}
+ */
+function TODO(req, res) {
+  res.status(501);
+  res.json('Not yet implemented');
+}
+
+/**
+ * Express handler that returns the OpenAPI spec for a collection
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @returns {void}
+ */
+function getSpecification(req, res) {
+  // Defined inline because the index file deals with the YAML spec.
+  res.append('Content-type', 'text/openapi+yaml;version=3.0');
+  res.send(openApiContent.replace('no-default-cmr-collection', req.collectionIds.join('/')));
+}
 
 /**
  * Sets up the express application with the OpenAPI routes for OGC API - Coverages
@@ -29,47 +55,16 @@ function addOpenApiRoutes(app) {
     operations: {
       getLandingPage,
       getRequirementsClasses,
-      getSpecification(req, res) {
-        // Defined inline because the index file deals with the YAML spec.
-        res.append('Content-type', 'text/openapi+yaml;version=3.0');
-        res.send(openApiContent.replace('no-default-cmr-collection', req.collectionIds.join('/')));
-      },
-      describeCollections(req, res) {
-        // TODO: Implement and ensure the yaml schema description matches the OGC spec
-        res.json('TODO');
-      },
-      describeCollection(req, res) {
-        // TODO: Implement and ensure the yaml schema description matches the OGC spec
-        res.json('TODO');
-      },
-      getCoverageOffering(req, res) {
-        // TODO: Implement and ensure the yaml schema description matches the OGC spec
-        res.json('TODO');
-      },
-      getCoverageDescription(req, res) {
-        // TODO: Implement and ensure the yaml schema description matches the OGC spec
-        res.json('TODO');
-      },
-      getCoverageDomainSet(req, res) {
-        // TODO: Implement and ensure the yaml schema description matches the OGC spec
-        res.json('TODO');
-      },
-      getCoverageRangeType(req, res) {
-        // TODO: Implement and ensure the yaml schema description matches the OGC spec
-        res.json('TODO');
-      },
-      getCoverageMetadata(req, res) {
-        // TODO: Implement and ensure the yaml schema description matches the OGC spec
-        res.json('TODO');
-      },
-      getCoverageRangeSet(req, res) {
-        // TODO: Implement and ensure the yaml schema description matches the OGC spec
-        res.json('TODO');
-      },
-      getCoverageAll(req, res) {
-        // TODO: Implement and ensure the yaml schema description matches the OGC spec
-        res.json('TODO');
-      },
+      getSpecification,
+      describeCollections: TODO,
+      describeCollection: TODO,
+      getCoverageOffering: TODO,
+      getCoverageDescription: TODO,
+      getCoverageDomainSet: TODO,
+      getCoverageRangeType: TODO,
+      getCoverageMetadata: TODO,
+      getCoverageRangeset,
+      getCoverageAll: TODO,
     },
   });
 

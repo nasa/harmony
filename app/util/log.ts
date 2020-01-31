@@ -34,7 +34,12 @@ function optionalTag(tag) {
 }
 
 const textformat = winston.format.printf(
-  (info) => `${info.timestamp} [${info.level}]${optionalTag(info.application)}${optionalTag(info.requestId)}${optionalTag(info.component)}: ${info.message}`,
+  (info) => {
+    let message = `${info.timestamp} [${info.level}]${optionalTag(info.application)}${optionalTag(info.requestId)}${optionalTag(info.component)}: ${info.message}`;
+    if (info.dockerOut) message += ` ${info.dockerOut}`;
+    if (info.stack) message += `\n${info.stack}`;
+    return message;
+  },
 );
 
 /**

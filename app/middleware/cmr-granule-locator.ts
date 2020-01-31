@@ -41,6 +41,7 @@ async function cmrGranuleLocator(req, res, next) {
   try {
     const { sources } = operation;
     const queries = sources.map(async (source) => {
+      req.logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const atomGranules = await cmr.queryGranulesForCollection(
         source.collection,
         cmrQuery,

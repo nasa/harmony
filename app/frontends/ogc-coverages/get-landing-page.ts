@@ -11,7 +11,14 @@ function requestRoot(req) {
   return root.replace(/\/$/, '');
 }
 
-module.exports = function getLandingPage(req, res) {
+/**
+ * Express handler that responds to OGC API landing page requests
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @returns {void}
+ */
+function getLandingPage(req, res) {
   const root = requestRoot(req);
   res.json({
     links: [
@@ -41,4 +48,6 @@ module.exports = function getLandingPage(req, res) {
       },
     ],
   });
-};
+}
+
+module.exports = getLandingPage;
