@@ -613,7 +613,11 @@ components:
     collectionId:
       name: collectionId
       in: path
-      description: Identifier for the UMM-Var variables to be retrieved, or "all" to retrieve an entire granule
+      description: |-
+        Names of the UMM-Var variables to be retrieved, or "all" to retrieve all variables within the CMR collection(s).
+        Multiple variables may be retrieved by separating them with a comma.  This API interprets OGC "collections" to be
+        equivalent to CMR "variables" which produces some overloading in the name.  In this document, a "collection" is
+        a CMR / UMM-Var variable and a "CMR collection" is a CMR / UMM-C collection.
       required: true
       style: simple
       explode: false
