@@ -156,6 +156,24 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({ errors: ['No matching granules found.'] });
     });
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when the provided granule ID is blank', async function () {
+      const res = await rangesetRequest(
+        this.frontend,
+        version,
+        collection,
+        variableName,
+        { granuleId: '' },
+      );
+      expect(res.status).to.equal(400);
+      expect(res.body).to.eql({
+        errors: [{
+          path: 'granuleId',
+          errorCode: 'minLength.openapi.validation',
+          message: 'should NOT be shorter than 1 characters',
+          location: 'query',
+        }],
+      });
+    });
     it('returns an HTTP 400 "Bad Request" error with explanatory message when "all" is specified with another coverage', async function () {
       const res = await rangesetRequest(
         this.frontend,
