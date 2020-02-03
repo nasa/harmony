@@ -632,6 +632,7 @@ components:
       explode: false
       schema:
         type: string
+        minLength: 1
     subset:
       name: subset
       in: query
