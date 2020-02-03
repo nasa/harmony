@@ -68,7 +68,7 @@ describe('EOSS GetGranule', function () {
       hookEossGetGranule(version, collection, granule, query);
 
       it('propagates the error message into the response', function () {
-        expect(this.res.text).to.equal('Something bad happened');
+        expect(this.res.text).to.include('Something bad happened');
       });
 
       it('responds with an HTTP 400 "Bad Request" status code', function () {
@@ -139,7 +139,7 @@ describe('EOSS GetGranule', function () {
     hookEossGetGranule(version, collection, granule, {});
 
     it('returns an error to the client', async function () {
-      expect(this.res.text).to.equal('Service request failed with an unknown error.');
+      expect(this.res.text).to.include('Service request failed with an unknown error.');
     });
   });
 
@@ -158,8 +158,8 @@ describe('EOSS GetGranule', function () {
         granule,
         { bbox: [1, 2] },
       );
-      expect(res.status).to.equal(400);
       expect(res.body).to.eql(expectedErrorResponse);
+      expect(res.status).to.equal(400);
     });
     it('returns an HTTP 400 "Bad Request" error with explanatory message when the variable does not exist', async function () {
       const res = await eossGetGranule(

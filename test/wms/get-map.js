@@ -66,7 +66,7 @@ describe('WMS GetMap', function () {
       hookGetMap(collection, query);
 
       it('propagates the error message into the response', function () {
-        expect(this.res.text).to.equal('Something bad happened');
+        expect(this.res.text).to.include('Something bad happened');
       });
 
       it('responds with an HTTP 400 "Bad Request" status code', function () {
@@ -145,7 +145,7 @@ describe('WMS GetMap', function () {
       hookGetMap(collection, query);
 
       it('returns an error to the client', async function () {
-        expect(this.res.text).to.equal('Service request failed with an unknown error.');
+        expect(this.res.text).to.include('Service request failed with an unknown error.');
       });
     });
   });

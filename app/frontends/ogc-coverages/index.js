@@ -2,8 +2,6 @@ const { initialize } = require('express-openapi');
 const fs = require('fs');
 const path = require('path');
 
-const { RequestValidationError } = require('../../util/errors');
-
 const getLandingPage = require('./get-landing-page');
 const getRequirementsClasses = require('./get-requirements-classes');
 const getCoverageRangeset = require('./get-coverage-rangeset');
@@ -67,24 +65,37 @@ function addOpenApiRoutes(app) {
       getCoverageAll: TODO,
     },
   });
+}
 
-  // Handles returning OpenAPI errors formatted as JSON
+/**
+ * Adds error handling appropriate to the OGC API to the given app
+ * @param {express.Application} app The express application which needs error handling routes
+ * @returns {void}
+ */
+function handleOpenApiErrors(app) {
   app.use((err, req, res, next) => {
-    if (err.status && err.errors) {
-      req.logger.error(`Request validation failed with the following errors: ${JSON.stringify(err.errors)}`);
-      res.status(err.status).json({
-        message: err.message,
-        errors: err.errors,
-      });
-    } else if (err instanceof RequestValidationError) {
-      req.logger.error(err.message);
-      res.status(400).json({
-        errors: [err.message],
-      });
-    } else {
+    if (req.path.indexOf('/ogc-api-coverages/') === -1) {
       next(err);
+      return;
     }
+    const status = err.status || err.code || 500;
+    let message = err.message || err.toString();
+    let code;
+    if (err.status && err.errors) {
+      // OpenAPI Validation errors;
+      code = 'openapi.ValidationError';
+      const messages = err.errors.map((error) => `${error.location} parameter "${error.path}" ${error.message}`);
+      message = messages.join('\n\t');
+    } else {
+      // Harmony errors / exceptions, using their constructor name if possible
+      code = `harmony.${err.constructor ? err.constructor.name : 'UnknownError'}`;
+    }
+    res.status(status).json({
+      code,
+      description: `Error: ${message}`,
+    });
+    req.logger.error(`[${code}] ${message}`);
   });
 }
 
-module.exports = { addOpenApiRoutes };
+module.exports = { addOpenApiRoutes, handleOpenApiErrors };

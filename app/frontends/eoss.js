@@ -75,6 +75,10 @@ function addOpenApiRoutes(app) {
 
   // Handles returning OpenAPI errors formatted as JSON
   app.use((err, req, res, next) => {
+    if (req.path.indexOf('/eoss/') === -1) {
+      next(err);
+      return;
+    }
     if (err.status && err.errors) {
       req.logger.error(`Request validation failed with the following errors: ${JSON.stringify(err.errors)}`);
       res.status(err.status).json({
