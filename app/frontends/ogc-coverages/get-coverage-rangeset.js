@@ -10,6 +10,8 @@ const { RequestValidationError } = require('../../util/errors');
  * @param {http.ServerResponse} res The response to send to the client
  * @param {function} next The next express handler
  * @returns {void}
+ * @throws {RequestValidationError} Thrown if the request has validation problems and
+ *   cannot be performed
  */
 function getCoverageRangeset(req, res, next) {
   const query = keysToLowerCase(req.query);
@@ -20,6 +22,12 @@ function getCoverageRangeset(req, res, next) {
     operation.granuleIds = query.granuleid.split(',');
   }
 
+  // Note that "collectionId" from the Open API spec is an OGC API Collection, which is
+  // what we would call a variable (or sometimes a named group of variables).  In the
+  // OpenAPI spec doc, a "collection" refers to a UMM-Var variable, and a "CMR collection" refers
+  // to a UMM-C collection.  In the code, wherever possible, collections are UMM-C collections
+  // and variables are UMM-Var variables.  The following line is the confusing part where we
+  // translate between the two nomenclatures.
   const variableIds = req.params.collectionId.split(',');
 
   if (variableIds.indexOf('all') !== -1) {
@@ -33,7 +41,7 @@ function getCoverageRangeset(req, res, next) {
   } else {
     // Figure out which variables belong to which collections and whether any are missing.
     // Note that a single variable name may appear in multiple collections
-    let missingVariables = variableIds.concat();
+    let missingVariables = variableIds;
     for (const collection of req.collections) {
       const variables = [];
       for (const variableId of variableIds) {
