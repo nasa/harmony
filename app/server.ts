@@ -13,6 +13,7 @@ const serviceResponseRouter = require('./routers/service-response-router');
 const router = require('./routers/router');
 const errorHandler = require('./middleware/error-handler');
 const exampleBackend = require('../example/http-backend');
+const ogcCoveragesApi = require('./frontends/ogc-coverages');
 
 if (dotenvResult.error) {
   winston.warn('Did not read a .env file');
@@ -85,6 +86,9 @@ function start(config = {}) {
       app.use('/example', exampleBackend.router());
     }
     app.use('/', router(config));
+    // Error handlers that format errors outside of their routes / middleware need to be mounted
+    // at the top level, not on a child router, or they get skipped.
+    ogcCoveragesApi.handleOpenApiErrors(app);
   });
 
   // Allow requests to take 20 minutes

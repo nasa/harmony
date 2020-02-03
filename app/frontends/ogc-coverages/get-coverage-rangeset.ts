@@ -21,6 +21,7 @@ function getCoverageRangeset(req, res, next) {
   if (query.granuleid) {
     operation.granuleIds = query.granuleid.split(',');
   }
+  operation.crs = query.outputcrs;
 
   // Note that "collectionId" from the Open API spec is an OGC API Collection, which is
   // what we would call a variable (or sometimes a named group of variables).  In the
