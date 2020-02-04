@@ -47,6 +47,7 @@ function translateServiceResult(serviceResult, res) {
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
+ * @throws {ServiceError} if the service call fails or returns an error
  */
 async function serviceInvoker(req, res) {
   const startTime = new Date().getTime();
