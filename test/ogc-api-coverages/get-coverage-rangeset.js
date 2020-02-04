@@ -40,8 +40,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(source.granules[0].id).to.equal(granuleId);
       });
 
-      it('passes the crs parameter to the backend', function () {
-        expect(this.service.operation.crs).to.equal('CRS:84');
+      it('passes the outputCrs parameter to the backend in Proj4 format', function () {
+        expect(this.service.operation.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
       });
 
       it('passes the client parameter to the backend', function () {
@@ -193,6 +193,20 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(res.body).to.eql({
         code: 'harmony.RequestValidationError',
         description: 'Error: "all" cannot be specified alongside other variables',
+      });
+    });
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid CRS is provided', async function () {
+      const res = await rangesetRequest(
+        this.frontend,
+        version,
+        collection,
+        variableName,
+        { granuleId, outputCrs: 'EPSG:1' },
+      );
+      expect(res.status).to.equal(400);
+      expect(res.body).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
       });
     });
   });

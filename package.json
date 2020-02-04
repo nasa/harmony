@@ -42,6 +42,7 @@
     "express-openapi": "^4.6.5",
     "express-validator": "^6.1.1",
     "express-winston": "^3.2.1",
+    "gdal": "^0.9.9",
     "js-yaml": "^3.13.1",
     "lodash.clonedeep": "^4.5.0",
     "lodash.set": "^4.3.2",
