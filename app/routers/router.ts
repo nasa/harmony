@@ -28,15 +28,23 @@ function logged(fn) {
   const scope = `middleware.${fn.name}`;
   return async (req, res, next) => {
     const { logger } = req;
-    req.logger = req.logger.child({ component: scope });
+    const child = logger.child({ component: scope });
+    req.logger = child;
     const startTime = new Date().getTime();
     try {
-      req.logger.debug('Invoking middleware');
+      child.debug('Invoking middleware');
       return await fn(req, res, next);
     } finally {
       const msTaken = new Date().getTime() - startTime;
-      req.logger.debug('Completed middleware', { durationMs: msTaken });
-      req.logger = logger;
+      child.debug('Completed middleware', { durationMs: msTaken });
+      if (req.logger === child) {
+        // Other middlewares may have changed the logger.  This generally happens
+        // when `next()` is an async call that the middleware doesn't await.  Note
+        // this method does not perfectly guarantee the correct logger is always
+        // used.  To do that, each middleware needs to set up and tear down its own
+        // logger.
+        req.logger = logger;
+      }
     }
   };
 }
@@ -51,6 +59,9 @@ function logged(fn) {
  */
 function service(fn) {
   return async (req, res, next) => {
+    const { logger } = req;
+    const child = logger.child({ component: `service.${fn.name}` });
+    req.logger = child;
     try {
       if (!req.collections || req.collections.length === 0) {
         throw new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name');
@@ -60,10 +71,16 @@ function service(fn) {
       if (!req.collections.every(services.isCollectionSupported)) {
         throw new NotFoundError('The requested service is not valid for the given collection');
       }
+      child.info('Running service');
       await fn(req, res, next);
     } catch (e) {
-      req.logger.error(e);
+      child.error(e);
       next(e);
+    } finally {
+      if (req.logger === child) {
+        // See note in `logged`.  The logger may have changed during middleware execution
+        req.logger = logger;
+      }
     }
   };
 }
@@ -114,7 +131,7 @@ function router({ skipEarthdataLogin }) {
   result.use(logged(cmrGranuleLocator));
 
   result.get('/', (req, res) => res.status(200).send('ok'));
-  result.get(collectionPrefix('(wms|wcs|eoss)'), service(serviceInvoker));
+  result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.get('/*', () => { throw new NotFoundError('The requested page was not found'); });
   return result;
 }

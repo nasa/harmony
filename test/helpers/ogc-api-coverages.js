@@ -23,6 +23,40 @@ function hookLandingPage(collection, version) {
 
 
 /**
+ * Performs getCoverageRangeset request on the given collection with the given params
+ *
+ * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {String} version The EOSS version
+ * @param {string} collection The CMR Collection ID to perform a service on
+ * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
+ * @param {object} query The query parameters to pass to the EOSS request
+ * @returns {Promise<Response>} The response
+ */
+function rangesetRequest(app, version, collection, coverageId, query) {
+  return request(app)
+    .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`)
+    .query(query);
+}
+
+/**
+ * Adds before/after hooks to run an EOS service request
+ *
+ * @param {String} version The EOSS version
+ * @param {string} collection The CMR Collection ID to perform a service on
+ * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
+ * @param {object} query The query parameters to pass to the EOSS request
+ * @returns {void}
+ */
+function hookRangesetRequest(version, collection, coverageId, query) {
+  before(async function () {
+    this.res = await rangesetRequest(this.frontend, version, collection, coverageId, query);
+  });
+  after(function () {
+    delete this.res;
+  });
+}
+
+/**
  * Asserts that a link relation exists, then loads it, allowing the passed function to provide
  * further specs about its contents.  Expects the current page response to exist in the `this.res`
  * object.
@@ -93,6 +127,8 @@ function coveragesLandingPageRequest(app, collection, version) {
 
 module.exports = {
   hookLandingPage,
+  hookRangesetRequest,
+  rangesetRequest,
   describeRelation,
   coveragesSpecRequest,
   coveragesLandingPageRequest,

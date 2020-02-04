@@ -32,9 +32,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/root'
-            text/html:
-              schema:
-                type: string
+        default:
+          $ref: '#/components/responses/default'
   /api:
     get:
       tags:
@@ -50,11 +49,7 @@ paths:
               schema:
                 type: string
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
+          $ref: '#/components/responses/default'
   /conformance:
     get:
       tags:
@@ -71,11 +66,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/req-classes'
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
+          $ref: '#/components/responses/default'
   /collections:
     get:
       tags:
@@ -126,14 +117,7 @@ paths:
               schema:
                 type: string
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
-            text/html:
-              schema:
-                type: string
+          $ref: '#/components/responses/default'
   /collections/{collectionId}:
     get:
       tags:
@@ -161,14 +145,7 @@ paths:
               schema:
                 type: string
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
-            text/html:
-              schema:
-                type: string
+          $ref: '#/components/responses/default'
   /collections/{collectionId}/coverage:
     get:
       tags:
@@ -197,14 +174,7 @@ paths:
               schema:
                 type: string
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
-            text/html:
-              schema:
-                type: string
+          $ref: '#/components/responses/default'
   /collections/{collectionId}/coverage/description:
     get:
       tags:
@@ -241,14 +211,7 @@ paths:
               schema:
                 type: string
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
-            text/html:
-              schema:
-                type: string
+          $ref: '#/components/responses/default'
   /collections/{collectionId}/coverage/domainset:
     get:
       tags:
@@ -285,14 +248,7 @@ paths:
               schema:
                 type: string
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
-            text/html:
-              schema:
-                type: string
+          $ref: '#/components/responses/default'
   /collections/{collectionId}/coverage/rangetype:
     get:
       tags:
@@ -314,14 +270,7 @@ paths:
               schema:
                 type: string
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
-            text/html:
-              schema:
-                type: string
+          $ref: '#/components/responses/default'
   /collections/{collectionId}/coverage/metadata:
     get:
       tags:
@@ -343,25 +292,18 @@ paths:
               schema:
                 type: string
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
-            text/html:
-              schema:
-                type: string
+          $ref: '#/components/responses/default'
   /collections/{collectionId}/coverage/rangeset:
     get:
       tags:
       - Coverage
-      summary: (Not yet implemented) retrieve a coverage's rangeset; use content negotiation to request
-        HTML or GeoJSON
-      description: Not yet implemented
-      operationId: getCoverageRangeSet
+      summary: Retrieve a coverage's rangeset
+      description: Retrieve the coverage's rangeset, i.e. its data values in their native format
+      operationId: getCoverageRangeset
       parameters:
       - $ref: '#/components/parameters/collectionId'
-      - $ref: '#/components/parameters/subset'
+      - $ref: '#/components/parameters/granuleId'
+      # (HARMONY-172) - $ref: '#/components/parameters/subset'
       responses:
         "200":
           description: A coverage's range set.
@@ -372,18 +314,8 @@ paths:
             application/*:
               schema:
                 $ref: '#/components/schemas/rangeSetImage'
-            text/html:
-              schema:
-                type: string
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
-            text/html:
-              schema:
-                type: string
+          $ref: '#/components/responses/default'
   /collections/{collectionId}/coverage/all:
     get:
       tags:
@@ -420,15 +352,18 @@ paths:
               schema:
                 type: string
         default:
-          description: An error occured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/exception'
-            text/html:
-              schema:
-                type: string
+          $ref: '#/components/responses/default'
 components:
+  responses:
+    default:
+      description: An error occured.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+        text/html:
+          schema:
+            type: string
   schemas:
     exception:
       required:
@@ -678,12 +613,26 @@ components:
     collectionId:
       name: collectionId
       in: path
-      description: Identifier (name) of a specific collection
+      description: |-
+        Names of the UMM-Var variables to be retrieved, or "all" to retrieve all variables within the CMR collection(s).
+        Multiple variables may be retrieved by separating them with a comma.  This API interprets OGC "collections" to be
+        equivalent to CMR "variables" which produces some overloading in the name.  In this document, a "collection" is
+        a CMR / UMM-Var variable and a "CMR collection" is a CMR / UMM-C collection.
       required: true
       style: simple
       explode: false
       schema:
         type: string
+    granuleId:
+      name: granuleId
+      in: query
+      description: The CMR Granule ID for the granule which should be retrieved
+      required: true # True until we do async
+      style: form
+      explode: false
+      schema:
+        type: string
+        minLength: 1
     subset:
       name: subset
       in: query
