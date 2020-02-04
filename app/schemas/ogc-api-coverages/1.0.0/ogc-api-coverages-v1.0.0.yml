@@ -708,7 +708,6 @@ components:
       explode: true
       schema:
         type: string
-        minLength: 1
     interpolation:
       name: interpolation
       in: query

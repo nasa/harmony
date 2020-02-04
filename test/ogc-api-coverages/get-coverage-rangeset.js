@@ -93,6 +93,15 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when passed a blank outputCrs', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookRangesetRequest(version, collection, variableName, { granuleId, outputCrs: '' });
+    it('accepts the request, passing an empty CRS to the backend', function () {
+      expect(this.res.status).to.be.lessThan(400);
+      expect(this.service.operation.crs).to.not.be;
+    });
+  });
+
   describe('Subsetting multiple variables', function () {
     const variableNames = 'CloudFrc_A,EmisIR_A';
     const query = {
