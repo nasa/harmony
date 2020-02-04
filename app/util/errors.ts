@@ -7,6 +7,9 @@ class HttpError extends Error {
   }
 }
 
+// Tag class for backend errors
+class ServiceError extends HttpError {}
+
 class NotFoundError extends HttpError {
   constructor(message = 'The requested resource could not be found') {
     super(404, message);
@@ -33,6 +36,7 @@ class RequestValidationError extends HttpError {
 
 module.exports = {
   HttpError,
+  ServiceError,
   NotFoundError,
   ServerError,
   RequestValidationError,
