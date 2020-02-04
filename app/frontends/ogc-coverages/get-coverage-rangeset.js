@@ -1,3 +1,4 @@
+const { SpatialReference } = require('gdal');
 const DataOperation = require('../../models/data-operation');
 const { keysToLowerCase } = require('../../util/object');
 const { RequestValidationError } = require('../../util/errors');
@@ -20,6 +21,13 @@ function getCoverageRangeset(req, res, next) {
 
   if (query.granuleid) {
     operation.granuleIds = query.granuleid.split(',');
+  }
+  if (query.outputcrs) {
+    try {
+      operation.crs = SpatialReference.fromUserInput(query.outputcrs).toProj4();
+    } catch (e) {
+      throw new RequestValidationError('query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.');
+    }
   }
 
   // Note that "collectionId" from the Open API spec is an OGC API Collection, which is

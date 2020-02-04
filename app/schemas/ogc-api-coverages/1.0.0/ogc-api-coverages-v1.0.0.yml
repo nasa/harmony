@@ -303,6 +303,7 @@ paths:
       parameters:
       - $ref: '#/components/parameters/collectionId'
       - $ref: '#/components/parameters/granuleId'
+      - $ref: '#/components/parameters/outputCrs'
       # (HARMONY-172) - $ref: '#/components/parameters/subset'
       responses:
         "200":
@@ -700,7 +701,8 @@ components:
     outputCrs:
       name: outputcrs
       in: query
-      description: reproject the output coverage to the given
+      description: reproject the output coverage to the given CRS.  Recognizes CRS types that can be inferred
+        by gdal, including EPSG codes, Proj4 strings, and OGC URLs (http://www.opengis.net/def/crs/...)
       required: false
       style: form
       explode: true

@@ -1,5 +1,6 @@
 const services = require('../models/services');
 const env = require('../util/env');
+const { ServiceError } = require('../util/errors');
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -20,6 +21,7 @@ function copyHeader(serviceResult, res, header) {
  * @param {http.IncomingMessage} serviceResult The service result
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
+ * @throws {ServiceError} If the backend service returns an error
  */
 function translateServiceResult(serviceResult, res) {
   for (const k of Object.keys(serviceResult.headers)) {
@@ -28,7 +30,7 @@ function translateServiceResult(serviceResult, res) {
     }
   }
   if (serviceResult.error) {
-    res.status(serviceResult.statusCode || 400).send(serviceResult.error);
+    throw new ServiceError(serviceResult.statusCode || 400, serviceResult.error);
   } else if (serviceResult.redirect) {
     res.redirect(serviceResult.redirect);
   } else {
@@ -45,16 +47,21 @@ function translateServiceResult(serviceResult, res) {
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
+ * @throws {ServiceError} if the service call fails or returns an error
  */
 async function serviceInvoker(req, res) {
   const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
   req.operation.client = env.harmonyClientId;
   const service = services.forOperation(req.operation, req.logger);
-  const serviceResult = await service.invoke();
-  translateServiceResult(serviceResult, res);
-  if (serviceResult.onComplete) {
-    serviceResult.onComplete();
+  let serviceResult = null;
+  try {
+    serviceResult = await service.invoke();
+    translateServiceResult(serviceResult, res);
+  } finally {
+    if (serviceResult && serviceResult.onComplete) {
+      serviceResult.onComplete();
+    }
   }
   const msTaken = new Date().getTime() - startTime;
   const { model } = service.operation;
