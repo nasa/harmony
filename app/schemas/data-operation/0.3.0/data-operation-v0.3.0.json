@@ -54,6 +54,12 @@
           "name": "Synchronous request mode",
           "description": "True if the request is going to be returned synchronously back to the end user. Note a backend service can still use a callback URL to indicate completion.",
           "type": "boolean"
+        },
+        "requestId": {
+          "name": "Request identifier",
+          "description": "UUID to uniquely identify a request.",
+          "type": "string",
+          "format": "uuid"
         }
       },
       "required": [
@@ -62,7 +68,8 @@
         "subset",
         "user",
         "client",
-        "version"
+        "version",
+        "requestId"
       ]
     },
     "Format": {

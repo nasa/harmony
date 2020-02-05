@@ -14,7 +14,7 @@ const env = require('../util/env');
 function syncRequestDecider(req, res, next) {
   const { operation } = req;
 
-  if (!operation || Object.prototype.hasOwnProperty.call(operation, 'isSynchronous')) {
+  if (!operation || operation.isSynchronous !== undefined) {
     return next();
   }
 
