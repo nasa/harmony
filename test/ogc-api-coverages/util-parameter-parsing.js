@@ -64,6 +64,10 @@ describe('OGC API Coverages - Utilities', function () {
         expect(parseSubsetParams(['lon(*:10.5)'])).to.eql({ lon: { min: -180, max: 10.5 } });
       });
 
+      it('returns a parsed object with "lon" info when the range minimum is higher than the maximum', function () {
+        expect(parseSubsetParams(['lon(10:-10.5)'])).to.eql({ lon: { min: 10, max: -10.5 } });
+      });
+
       it('throws a parse error when passed a range that is not numeric', function () {
         expect(parseSubsetParamsFn(['lon(abc:10.5)'])).to.throw(ParameterParseError, 'subset dimension "lon" has an invalid numeric value "abc"');
       });

@@ -14,6 +14,12 @@ describe('util/array', function () {
       expect(wrap(input)).to.eq(input);
     });
 
+    it('returns the original array when passed an array of arrays', function () {
+      // Note: reference equality
+      const input = [['value1'], ['value2']];
+      expect(wrap(input)).to.eq(input);
+    });
+
     it('returns an empty array when passed null', function () {
       expect(wrap(null)).to.eql([]);
     });

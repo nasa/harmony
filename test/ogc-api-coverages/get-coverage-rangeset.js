@@ -17,12 +17,12 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const query = {
       granuleId,
       outputCrs: 'CRS:84',
+      subset: ['lat(0:10)', 'lon(-20.1:20)'],
     };
-    const queryStr = 'subset=lat(0:10)&subset=lon(-20.1:20)';
 
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, query, queryStr);
+      hookRangesetRequest(version, collection, variableName, query);
 
       it('passes the source collection to the backend', function () {
         const source = this.service.operation.sources[0];
