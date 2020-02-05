@@ -30,6 +30,7 @@ validator.addSchema(readSchema('0.3.0'), 'v0.3.0');
 function modelTo0_2_0(model) {
   const updatedModel = cloneDeep(model);
   delete updatedModel.isSynchronous;
+  delete updatedModel.requestId;
   return updatedModel;
 }
 
@@ -321,6 +322,50 @@ class DataOperation {
    */
   set client(value) {
     this.model.client = value;
+  }
+
+  /**
+   * Gets whether the service is being invoked synchronously or asynchronously from
+   * the perspective of the end user.
+   *
+   * @returns {Boolean} isSynchronous
+   * @memberof DataOperation
+   */
+  get isSynchronous() {
+    return this.model.isSynchronous;
+  }
+
+  /**
+   * Sets whether the service is being invoked synchronously or asynchronously from
+   * the perspective of the end user.
+   *
+   * @param {Boolean} value The synchronous flag
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set isSynchronous(value) {
+    this.model.isSynchronous = value;
+  }
+
+  /**
+   * Gets the UUID associated with this request.
+   *
+   * @returns {String} UUID associated with this request.
+   * @memberof DataOperation
+   */
+  get requestId() {
+    return this.model.requestId;
+  }
+
+  /**
+   * Sets the UUID associated with this request.
+   *
+   * @param {String} value UUID associated with this request.
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set requestId(value) {
+    this.model.requestId = value;
   }
 
   /**
