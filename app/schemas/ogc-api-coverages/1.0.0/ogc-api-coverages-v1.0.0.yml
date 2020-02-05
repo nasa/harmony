@@ -628,7 +628,7 @@ components:
       name: granuleId
       in: query
       description: The CMR Granule ID for the granule which should be retrieved
-      required: true # True until we do async
+      required: false
       style: form
       explode: false
       schema:

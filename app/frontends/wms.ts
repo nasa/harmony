@@ -233,6 +233,8 @@ function getMap(req, res, next) {
     operation.granuleIds = query.granuleid.split(',');
   }
 
+  // WMS requests only support synchronous execution
+  operation.isSynchronous = true;
   req.operation = operation;
   next();
 }
