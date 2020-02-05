@@ -30,12 +30,14 @@ function hookLandingPage(collection, version) {
  * @param {string} collection The CMR Collection ID to perform a service on
  * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
  * @param {object} query The query parameters to pass to the EOSS request
+ * @param {object} queryStr An optional query string for passing parameters with multiple values
  * @returns {Promise<Response>} The response
  */
-function rangesetRequest(app, version, collection, coverageId, query) {
+function rangesetRequest(app, version, collection, coverageId, query, queryStr = '') {
   return request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`)
-    .query(query);
+    .query(query)
+    .query(queryStr);
 }
 
 /**
@@ -45,11 +47,19 @@ function rangesetRequest(app, version, collection, coverageId, query) {
  * @param {string} collection The CMR Collection ID to perform a service on
  * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
  * @param {object} query The query parameters to pass to the EOSS request
+ * @param {object} queryStr An optional query string for passing parameters with multiple values
  * @returns {void}
  */
-function hookRangesetRequest(version, collection, coverageId, query) {
+function hookRangesetRequest(version, collection, coverageId, query, queryStr = '') {
   before(async function () {
-    this.res = await rangesetRequest(this.frontend, version, collection, coverageId, query);
+    this.res = await rangesetRequest(
+      this.frontend,
+      version,
+      collection,
+      coverageId,
+      query,
+      queryStr,
+    );
   });
   after(function () {
     delete this.res;

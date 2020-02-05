@@ -18,10 +18,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       granuleId,
       outputCrs: 'CRS:84',
     };
+    const queryStr = 'subset=lat(0:10)&subset=lon(-20.1:20)';
 
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, query, queryStr);
 
       it('passes the source collection to the backend', function () {
         const source = this.service.operation.sources[0];
@@ -50,6 +51,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('passes the user parameter to the backend', function () {
         expect(this.service.operation.user).to.equal('anonymous');
+      });
+
+      it('transforms subset lat and lon parameters into a backend bounding box subset request', function () {
+        expect(this.service.operation.boundingRectangle).to.eql([-20.1, 0, 20, 10]);
       });
     });
 
@@ -216,6 +221,21 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(res.body).to.eql({
         code: 'harmony.RequestValidationError',
         description: 'Error: query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
+      });
+    });
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid subset is provided', async function () {
+      // See util-parameter-parsing.js spec for full details on subset validation
+      const res = await rangesetRequest(
+        this.frontend,
+        version,
+        collection,
+        variableName,
+        { granuleId, subset: 'lat(nonsense:20)' },
+      );
+      expect(res.status).to.equal(400);
+      expect(res.body).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: query parameter "subset" subset dimension "lat" has an invalid numeric value "nonsense"',
       });
     });
   });
