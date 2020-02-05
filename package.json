@@ -19,7 +19,7 @@
     "Cumulus"
   ],
   "engines": {
-    "node": ">=10.16.1"
+    "node": "^12.14.1"
   },
   "nyc": {
     "all": true,

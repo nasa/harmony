@@ -1,6 +1,6 @@
 # Using HTTP based PODAAC subsetter now.
 # - name: podaac-cloud/l2-subsetter-service
-#   data_operation_version: '0.2.0'
+#   data_operation_version: '0.3.0'
 #   type:
 #     name: docker
 #     params:
@@ -25,7 +25,7 @@
 #       - CRS:84
 
 - name: harmony/gdal
-  data_operation_version: '0.2.0'
+  data_operation_version: '0.3.0'
   type:
     name: docker
     params:
@@ -54,7 +54,7 @@
 
 # Using this collection for the new HTTP based PODAAC subsetter
 # - name: harmony/chained-swot-l2
-#   data_operation_version: '0.2.0'
+#   data_operation_version: '0.3.0'
 #   type:
 #     name: chain
 #     params:
@@ -67,7 +67,7 @@
 #     - C1225996408-POCUMULUS
 
 - name: sds/swot-reproject
-  data_operation_version: '0.2.0'
+  data_operation_version: '0.3.0'
   type:
     name: docker
     params:
@@ -98,9 +98,9 @@
 
 # This is an example service and backend from example/http-backend.js mounted by
 # the frontend callback server.
-# EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.1.0/items/G1216319051-PVC_TS2'
+# EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
 - name: harmony/example
-  data_operation_version: '0.1.0'
+  data_operation_version: '0.2.0'
   enabled: !Env ${EXAMPLE_SERVICES}
   type:
     name: http
@@ -113,7 +113,7 @@
     - C1104-PVC_TS2
 
 - name: podaac/http-service
-  data_operation_version: '0.2.0'
+  data_operation_version: '0.3.0'
   type:
     name: http
     params:

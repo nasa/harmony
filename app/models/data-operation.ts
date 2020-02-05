@@ -17,19 +17,19 @@ function readSchema(version) {
 }
 
 const validator = new Ajv({ schemaId: 'auto' });
-validator.addSchema(readSchema('0.1.0'), 'v0.1.0');
 validator.addSchema(readSchema('0.2.0'), 'v0.2.0');
+validator.addSchema(readSchema('0.3.0'), 'v0.3.0');
 
 /**
- * Returns an updated model that is compatible with the 0.1.0 schema
+ * Returns an updated model that is compatible with the 0.2.0 schema
  *
  * @param {object} model The data operation model
- * @returns {object} The data operation model compatible with the 0.1.0 schema
+ * @returns {object} The data operation model compatible with the 0.2.0 schema
  * @private
  */
-function modelTo0_1_0(model) {
+function modelTo0_2_0(model) {
   const updatedModel = cloneDeep(model);
-  delete updatedModel.client;
+  delete updatedModel.isSynchronous;
   return updatedModel;
 }
 
@@ -334,10 +334,10 @@ class DataOperation {
    * @throws {TypeError} If validate is `true` and validation fails
    * @memberof DataOperation
    */
-  serialize(version = '0.2.0', validate = true) {
+  serialize(version = '0.3.0', validate = true) {
     let toWrite = this.model;
-    if (version === '0.1.0') {
-      toWrite = modelTo0_1_0(this.model);
+    if (version === '0.2.0') {
+      toWrite = modelTo0_2_0(this.model);
     }
     toWrite.version = version;
 
