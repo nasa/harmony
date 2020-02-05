@@ -2,7 +2,8 @@ const env = require('../util/env');
 
 /**
  * Determines if a request should be handled synchronously or asynchronously.
- * Updates the request to set the request mode accordingly.
+ * Updates the request to set the request mode accordingly. Middleware must be
+ * called after the source granules have already been added to the operation.
  *
  * @param {http.IncomingMessage} req The client request, containing an operation
  * @param {http.ServerResponse} res The client response
@@ -13,10 +14,12 @@ const env = require('../util/env');
 function syncRequestDecider(req, res, next) {
   const { operation } = req;
 
-  if (!operation) return next();
+  if (!operation || Object.prototype.hasOwnProperty.call(operation, 'isSynchronous')) {
+    return next();
+  }
 
   const granules = operation.sources.flatMap((source) => source.granules);
-  req.synchronousRequest = (granules.length <= env.maxSynchronousGranules);
+  operation.isSynchronous = (granules.length <= env.maxSynchronousGranules);
 
   return next();
 }
