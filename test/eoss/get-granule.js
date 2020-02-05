@@ -61,6 +61,10 @@ describe('EOSS GetGranule', function () {
       it('passes the user parameter to the backend', function () {
         expect(this.service.operation.user).to.equal('anonymous');
       });
+
+      it('passes the synchronous mode parameter to the backend and is set to true', function () {
+        expect(this.service.operation.isSynchronous).to.equal(true);
+      });
     });
 
     describe('and the backend service calls back with an error parameter', function () {

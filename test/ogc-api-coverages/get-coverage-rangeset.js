@@ -51,6 +51,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       it('passes the user parameter to the backend', function () {
         expect(this.service.operation.user).to.equal('anonymous');
       });
+
+      it('passes the synchronous mode parameter to the backend and is set to true', function () {
+        expect(this.service.operation.isSynchronous).to.equal(true);
+      });
     });
 
     describe('and the backend service calls back with an error parameter', function () {
@@ -133,6 +137,22 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     it('passes no variables to the backend service', function () {
       const source = this.service.operation.sources[0];
       expect(source.variables).to.not.be;
+    });
+  });
+
+  describe('Not specifying a single granule ID', function () {
+    const query = {};
+
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookRangesetRequest(version, collection, variableName, query);
+
+    it('includes multiple granules to be subset', function () {
+      const granules = this.service.operation.sources.flatMap((source) => source.granules);
+      expect(granules.length).to.be.greaterThan(1);
+    });
+
+    it('sets the synchronous mode to false', function () {
+      expect(this.service.operation.isSynchronous).to.equal(false);
     });
   });
 
