@@ -3,7 +3,6 @@ const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { eossGetGranule, hookEossGetGranule } = require('../helpers/eoss');
 const StubService = require('../helpers/stub-service');
-// const isUUID = require('../helpers/uuid');
 
 describe('EOSS GetGranule', function () {
   const collection = 'C1215669046-GES_DISC';
@@ -69,7 +68,6 @@ describe('EOSS GetGranule', function () {
 
       it('passes the request id parameter to the backend', function () {
         expect(this.service.operation.requestId).to.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);
-        // expect(isUUID(this.service.operation.requestId).to.equal(true));
       });
     });
 
