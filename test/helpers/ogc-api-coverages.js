@@ -49,7 +49,13 @@ function rangesetRequest(app, version, collection, coverageId, query) {
  */
 function hookRangesetRequest(version, collection, coverageId, query) {
   before(async function () {
-    this.res = await rangesetRequest(this.frontend, version, collection, coverageId, query);
+    this.res = await rangesetRequest(
+      this.frontend,
+      version,
+      collection,
+      coverageId,
+      query,
+    );
   });
   after(function () {
     delete this.res;

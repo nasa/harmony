@@ -1,4 +1,8 @@
 reporter: mocha-multi
 reporterOptions: 'spec=-,mocha-junit-reporter=-'
+file: # Files that get loaded before suite execution.  Helpful when running a single file.
+  - test/helpers/env.js
+  - test/helpers/logging-hooks.js
+  - test/helpers/caching-hooks.js
 recursive: true
 exit: true
