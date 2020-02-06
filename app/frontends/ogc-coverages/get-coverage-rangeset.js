@@ -2,6 +2,8 @@ const { SpatialReference } = require('gdal-next');
 const DataOperation = require('../../models/data-operation');
 const { keysToLowerCase } = require('../../util/object');
 const { RequestValidationError } = require('../../util/errors');
+const { wrap } = require('../../util/array');
+const { parseSubsetParams, subsetParamsToBbox, ParameterParseError } = require('./util/parameter-parsing');
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -28,6 +30,19 @@ function getCoverageRangeset(req, res, next) {
     } catch (e) {
       throw new RequestValidationError('query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.');
     }
+  }
+  try {
+    const subset = parseSubsetParams(wrap(query.subset));
+    const bbox = subsetParamsToBbox(subset);
+    if (bbox) {
+      operation.boundingRectangle = bbox;
+    }
+  } catch (e) {
+    if (e instanceof ParameterParseError) {
+      // Turn parsing exceptions into 400 errors pinpointing the source parameter
+      throw new RequestValidationError(`query parameter "subset" ${e.message}`);
+    }
+    throw e;
   }
 
   // Note that "collectionId" from the Open API spec is an OGC API Collection, which is
