@@ -156,13 +156,15 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, variableName, query);
 
-    it('includes multiple granules to be subset', function () {
-      const granules = this.service.operation.sources.flatMap((source) => source.granules);
-      expect(granules.length).to.be.greaterThan(1);
+    it('is processed asynchronously', function () {
+      expect(this.service).to.equal(undefined);
     });
 
-    it('sets the synchronous mode to false', function () {
-      expect(this.service.operation.isSynchronous).to.equal(false);
+    it('returns a JSON response with a jobID and status', function () {
+      const { jobId, status } = JSON.parse(this.res.text);
+
+      expect(isUUID(jobId)).to.equal(true);
+      expect(status).to.equal('accepted');
     });
   });
 
