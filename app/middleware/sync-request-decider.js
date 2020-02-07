@@ -19,6 +19,10 @@ function syncRequestDecider(req, res, next) {
   if (operation.isSynchronous === undefined) {
     const granules = operation.sources.flatMap((source) => source.granules);
     operation.isSynchronous = (granules.length <= env.maxSynchronousGranules);
+    if (req.cmrHits > env.maxAsynchronousGranules) {
+      req.truncationMessage = `CMR query identified ${req.cmrHits} granules, but the request has been limited `
+        + `to process only the first ${env.maxAsynchronousGranules} granules.`;
+    }
   }
   return next();
 }
