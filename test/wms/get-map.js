@@ -3,7 +3,7 @@ const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookGetMap, wmsRequest, validGetMapQuery } = require('../helpers/wms');
 const StubService = require('../helpers/stub-service');
-// const isUUID = require('../helpers/uuid');
+const isUUID = require('../helpers/uuid');
 
 describe('WMS GetMap', function () {
   const collection = 'C1215669046-GES_DISC';
@@ -66,8 +66,7 @@ describe('WMS GetMap', function () {
       });
 
       it('passes the request id parameter to the backend', function () {
-        expect(this.service.operation.requestId).to.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);
-        // expect(isUUID(this.service.operation.requestId).to.equal(true));
+        expect(isUUID(this.service.operation.requestId)).to.equal(true);
       });
     });
 
