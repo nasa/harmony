@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.1.0.json",
+  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.3.0.json",
   "$ref": "#/definitions/DataOperation",
   "definitions": {
     "DataOperation": {
@@ -40,10 +40,26 @@
           "description": "The name of the user on behalf of whom Harmony is acting",
           "type": "string"
         },
+        "client": {
+          "name": "Client ID",
+          "description": "An identifier indicating the client submitting the request",
+          "type": "string"
+        },
         "version": {
           "name": "Version number",
           "description": "Identifies which schema version and Harmony callback protocol is being used",
           "type": "string"
+        },
+        "isSynchronous": {
+          "name": "Synchronous request mode",
+          "description": "True if the request is going to be returned synchronously back to the end user. Note a backend service can still use a callback URL to indicate completion.",
+          "type": "boolean"
+        },
+        "requestId": {
+          "name": "Request identifier",
+          "description": "UUID to uniquely identify a request.",
+          "type": "string",
+          "format": "uuid"
         }
       },
       "required": [
@@ -51,7 +67,9 @@
         "sources",
         "subset",
         "user",
-        "version"
+        "client",
+        "version",
+        "requestId"
       ]
     },
     "Format": {

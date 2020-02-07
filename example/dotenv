@@ -65,6 +65,10 @@ TEXT_LOGGER=
 # Log level (error, warn, info, debug). Defaults to debug.
 LOG_LEVEL=
 
+# Number of granules allowed for a synchronous request. When the request exceeds
+# this number it will be processed asynchronously.
+MAX_SYNCHRONOUS_GRANULES=1
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #

@@ -86,7 +86,7 @@ Add an entry to [services.yml](../config/services.yml) and send a pull request t
 
 ```yaml
 - name: harmony/docker-example    # A unique identifier string for the service, conventionally <team>/<service>
-  data_operation_version: '0.2.0' # The version of the data-operation messaging schema to use
+  data_operation_version: '0.3.0' # The version of the data-operation messaging schema to use
   type:                           # Configuration for service invocation
     name: docker                  # The type of service invocation, currently only "docker"
     params:                       # Parameters specific to the service invocation type
