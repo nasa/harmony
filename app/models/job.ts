@@ -23,16 +23,19 @@ class Job extends Record {
     return transaction('jobs').select().where({ username }).map((j) => new Job(j));
   }
 
-  static async forUserAndRequestId(transaction, username, requestId) {
-    return transaction('jobs').select().where({ username, requestId }).map((j) => new Job(j));
+  static async byUsernameAndRequestId(transaction, username, requestId) {
+    const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
+    return result.length === 0 ? null : new Job(result[0]);
   }
 
-  static async byUserAndId(transaction, username, id) {
-    const result = await transaction('jobs').select().where({ username, id }).forUpdate();
-    if (result.length === 0) {
-      return null;
-    }
-    return new Job(result[0]);
+  static async byRequestId(transaction, requestId) {
+    const result = await transaction('jobs').select().where({ requestId }).forUpdate();
+    return result.length === 0 ? null : new Job(result[0]);
+  }
+
+  static async byId(transaction, id) {
+    const result = await transaction('jobs').select().where({ id }).forUpdate();
+    return result.length === 0 ? null : new Job(result[0]);
   }
 
   constructor(fields) {
@@ -41,7 +44,7 @@ class Job extends Record {
     this.message = fields.message || this.status;
     this.progress = fields.progress || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
-    this.links = fields.json_links ? JSON.parse(fields.json_links) : [];
+    this.links = fields._json_links ? JSON.parse(fields._json_links) : [];
   }
 
   validate() {
@@ -56,7 +59,7 @@ class Job extends Record {
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     const { links } = this;
     delete this.links;
-    this.json_links = JSON.stringify(links);
+    this._json_links = JSON.stringify(links);
     await super.save(transaction);
     this.links = links;
   }

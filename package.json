@@ -28,6 +28,10 @@
     "reporter": [
       "lcov",
       "text"
+    ],
+    "include": [
+      "app/**/*.js",
+      "example/**/*.js"
     ]
   },
   "author": "Patrick Quinn",
