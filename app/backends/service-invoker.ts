@@ -1,5 +1,7 @@
 const services = require('../models/services');
 const env = require('../util/env');
+const Job = require('../models/job');
+const db = require('../util/db');
 const { ServiceError } = require('../util/errors');
 
 /**
@@ -45,36 +47,79 @@ function translateServiceResult(serviceResult, res) {
  * to POST to when complete.  Responds to the client once the backend responds.
  *
  * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {Promise<void>} Resolves when the request is complete
+ * @returns {http.IncomingMessage} The service result
  * @throws {ServiceError} if the service call fails or returns an error
  */
-async function serviceInvoker(req, res) {
+async function _invokeImmediately(req) {
   const startTime = new Date().getTime();
-  req.operation.user = req.user || 'anonymous';
-  req.operation.client = env.harmonyClientId;
-  const service = services.forOperation(req.operation, req.logger);
-  let serviceResult = null;
-  try {
-    serviceResult = await service.invoke();
-    translateServiceResult(serviceResult, res);
-  } finally {
-    if (serviceResult && serviceResult.onComplete) {
-      serviceResult.onComplete();
-    }
-  }
+  const { operation, logger } = req;
+  const service = services.forOperation(operation, logger);
+  const serviceResult = await service.invoke();
   const msTaken = new Date().getTime() - startTime;
   const { model } = service.operation;
   const spatialSubset = model.subset && Object.keys(model.subset).length > 0;
   // eslint-disable-next-line max-len
   const varSources = model.sources.filter((source) => source.variables && source.variables.length > 0);
   const variableSubset = varSources.length > 0;
-  req.logger.info('Backend service request complete',
+  logger.info('Backend service request complete',
     { durationMs: msTaken,
       ...model,
       service: service.config.name,
       spatialSubset,
       variableSubset });
+  return serviceResult;
+}
+
+/**
+ * Creates a job to handle the request asynchronously.
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @returns {Job} The job created for the request.
+ */
+function _createJob(req) {
+  req.logger.info(`Creating job for ${req.id}`);
+  const job = new Job({
+    username: req.operation.user,
+    requestId: req.id,
+  });
+  job.save(db);
+  return job;
+}
+
+/**
+ * Express.js handler which processes a request either synchronously or asynchronously.
+ * For an asychronous request is creates a job and returns the job information back to the client.
+ * For a synchronous request it calls the backend services, registering a URL for the backend to
+ * POST to when complete, and returning to the client once the backend responds.
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @returns {Promise<void>} Resolves when the request is complete
+ * @throws {ServiceError} if the service call fails or returns an error
+ */
+async function serviceInvoker(req, res) {
+  const { operation, user } = req;
+  operation.user = user || 'anonymous';
+  operation.client = env.harmonyClientId;
+
+  if (operation.isSynchronous) {
+    let serviceResult = null;
+    try {
+      serviceResult = await _invokeImmediately(req, res);
+      translateServiceResult(serviceResult, res);
+    } finally {
+      if (serviceResult && serviceResult.onComplete) {
+        serviceResult.onComplete();
+      }
+    }
+  } else {
+    const job = _createJob(req, res);
+    const result = { jobId: job.requestId, status: job.status };
+    if (req.truncationMessage) {
+      result.warning = req.truncationMessage;
+    }
+    res.send(result);
+  }
 }
 
 module.exports = serviceInvoker;
