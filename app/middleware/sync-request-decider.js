@@ -1,4 +1,6 @@
 const env = require('../util/env');
+const Job = require('../models/job');
+const db = require('../util/db');
 
 /**
  * Determines if a request should be handled synchronously or asynchronously.
@@ -14,12 +16,21 @@ const env = require('../util/env');
 function syncRequestDecider(req, res, next) {
   const { operation } = req;
 
-  if (!operation || operation.isSynchronous !== undefined) {
-    return next();
+  if (!operation) return next();
+
+  if (operation.isSynchronous === undefined) {
+    const granules = operation.sources.flatMap((source) => source.granules);
+    operation.isSynchronous = (granules.length <= env.maxSynchronousGranules);
   }
 
-  const granules = operation.sources.flatMap((source) => source.granules);
-  operation.isSynchronous = (granules.length <= env.maxSynchronousGranules);
+  // Save job information to the database for an asynchronous request
+  if (operation.isSynchronous === false) {
+    const job = new Job({
+      username: (req.user || 'unknown'),
+      requestId: req.id,
+    });
+    job.save(db);
+  }
 
   return next();
 }

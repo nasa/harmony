@@ -67,6 +67,8 @@ function addOpenApiRoutes(app) {
           }
         }
         operation.addSource(collectionId, variables);
+        // EOSS is going to be deprecated before supporting async
+        operation.isSynchronous = true;
         req.operation = operation;
         next();
       },
