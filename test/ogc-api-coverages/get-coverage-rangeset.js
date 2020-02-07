@@ -3,6 +3,7 @@ const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookRangesetRequest, rangesetRequest } = require('../helpers/ogc-api-coverages');
 const StubService = require('../helpers/stub-service');
+const isUUID = require('../helpers/uuid');
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1215669046-GES_DISC';
@@ -58,7 +59,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
 
       it('passes the request id parameter to the backend', function () {
-        expect(this.service.operation.requestId).to.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);
+        expect(isUUID(this.service.operation.requestId)).to.equal(true);
       });
 
       it('transforms subset lat and lon parameters into a backend bounding box subset request', function () {
