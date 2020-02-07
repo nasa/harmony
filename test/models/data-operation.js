@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const { describe, it } = require('mocha');
-const DataOperation = require('../app/models/data-operation');
+const DataOperation = require('../../app/models/data-operation');
 
 const validOperation = new DataOperation({
   client: 'harmony-test',
