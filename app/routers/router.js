@@ -8,6 +8,8 @@ const wmsFrontend = require('../frontends/wms');
 const wcsFrontend = require('../frontends/wcs');
 const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
+const syncRequestDecider = require('../middleware/sync-request-decider');
+const setRequestId = require('../middleware/request-id');
 const { NotFoundError } = require('../util/errors');
 const services = require('../models/services');
 const eoss = require('../frontends/eoss');
@@ -129,6 +131,8 @@ function router({ skipEarthdataLogin }) {
   });
 
   result.use(logged(cmrGranuleLocator));
+  result.use(logged(syncRequestDecider));
+  result.use(logged(setRequestId));
 
   result.get('/', (req, res) => res.status(200).send('ok'));
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));

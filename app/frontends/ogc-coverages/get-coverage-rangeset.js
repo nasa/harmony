@@ -1,4 +1,4 @@
-const { SpatialReference } = require('gdal');
+const { SpatialReference } = require('gdal-next');
 const DataOperation = require('../../models/data-operation');
 const { keysToLowerCase } = require('../../util/object');
 const { RequestValidationError } = require('../../util/errors');

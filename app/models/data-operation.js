@@ -17,19 +17,20 @@ function readSchema(version) {
 }
 
 const validator = new Ajv({ schemaId: 'auto' });
-validator.addSchema(readSchema('0.1.0'), 'v0.1.0');
 validator.addSchema(readSchema('0.2.0'), 'v0.2.0');
+validator.addSchema(readSchema('0.3.0'), 'v0.3.0');
 
 /**
- * Returns an updated model that is compatible with the 0.1.0 schema
+ * Returns an updated model that is compatible with the 0.2.0 schema
  *
  * @param {object} model The data operation model
- * @returns {object} The data operation model compatible with the 0.1.0 schema
+ * @returns {object} The data operation model compatible with the 0.2.0 schema
  * @private
  */
-function modelTo0_1_0(model) {
+function modelTo0_2_0(model) {
   const updatedModel = cloneDeep(model);
-  delete updatedModel.client;
+  delete updatedModel.isSynchronous;
+  delete updatedModel.requestId;
   return updatedModel;
 }
 
@@ -324,6 +325,50 @@ class DataOperation {
   }
 
   /**
+   * Gets whether the service is being invoked synchronously or asynchronously from
+   * the perspective of the end user.
+   *
+   * @returns {Boolean} isSynchronous
+   * @memberof DataOperation
+   */
+  get isSynchronous() {
+    return this.model.isSynchronous;
+  }
+
+  /**
+   * Sets whether the service is being invoked synchronously or asynchronously from
+   * the perspective of the end user.
+   *
+   * @param {Boolean} value The synchronous flag
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set isSynchronous(value) {
+    this.model.isSynchronous = value;
+  }
+
+  /**
+   * Gets the UUID associated with this request.
+   *
+   * @returns {String} UUID associated with this request.
+   * @memberof DataOperation
+   */
+  get requestId() {
+    return this.model.requestId;
+  }
+
+  /**
+   * Sets the UUID associated with this request.
+   *
+   * @param {String} value UUID associated with this request.
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set requestId(value) {
+    this.model.requestId = value;
+  }
+
+  /**
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
@@ -334,10 +379,10 @@ class DataOperation {
    * @throws {TypeError} If validate is `true` and validation fails
    * @memberof DataOperation
    */
-  serialize(version = '0.2.0', validate = true) {
+  serialize(version = '0.3.0', validate = true) {
     let toWrite = this.model;
-    if (version === '0.1.0') {
-      toWrite = modelTo0_1_0(this.model);
+    if (version === '0.2.0') {
+      toWrite = modelTo0_2_0(this.model);
     }
     toWrite.version = version;
 
