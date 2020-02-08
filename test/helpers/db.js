@@ -55,4 +55,4 @@ function hookTransactionEach() {
   });
 }
 
-module.exports = { hookTransaction, hookTransactionEach }
+module.exports = { hookTransaction, hookTransactionEach };
