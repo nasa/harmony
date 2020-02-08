@@ -78,7 +78,11 @@ function handleOpenApiErrors(app) {
       next(err);
       return;
     }
-    const status = err.status || err.code || 500;
+    let status = +err.status || +err.code || 500;
+    if (status < 400 || status >= 600) {
+      // Handle statuses out of range due to non-http error codes
+      status = 500;
+    }
     let message = err.message || err.toString();
     let code;
     if (err.status && err.errors) {
