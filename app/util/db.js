@@ -6,5 +6,6 @@ const config = require('../../db/knexfile')[environment];
 const database = require('knex')(config);
 
 database.engine = config.client;
+database.config = config;
 
 module.exports = database;

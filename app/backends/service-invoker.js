@@ -76,13 +76,13 @@ async function _invokeImmediately(req) {
  * @param {http.IncomingMessage} req The request sent by the client
  * @returns {Job} The job created for the request.
  */
-function _createJob(req) {
+async function _createJob(req) {
   req.logger.info(`Creating job for ${req.id}`);
   const job = new Job({
     username: req.operation.user,
     requestId: req.id,
   });
-  job.save(db);
+  await job.save(db);
   return job;
 }
 
@@ -113,7 +113,7 @@ async function serviceInvoker(req, res) {
       }
     }
   } else {
-    const job = _createJob(req, res);
+    const job = await _createJob(req, res);
     const result = { jobId: job.requestId, status: job.status };
     if (req.truncationMessage) {
       result.warning = req.truncationMessage;

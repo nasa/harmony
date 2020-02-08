@@ -1,9 +1,13 @@
-const { describe, it } = require('mocha');
+const fs = require('fs');
+const path = require('path');
+const knex = require('knex');
+const { describe, it, before, after } = require('mocha');
 const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookRangesetRequest, rangesetRequest } = require('../helpers/ogc-api-coverages');
 const StubService = require('../helpers/stub-service');
 const isUUID = require('../helpers/uuid');
+const db = require('../../app/util/db');
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1215669046-GES_DISC';
@@ -170,6 +174,27 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     it('returns a warning that the request is truncating the granules being processed', function () {
       const { warning } = JSON.parse(this.res.text);
       expect(warning).to.equal('CMR query identified 41 granules, but the request has been limited to process only the first 20 granules.');
+    });
+  });
+
+  describe('when the databases catches fire during an asynchronous request', function () {
+    before(function () {
+      const testdb = path.resolve(__dirname, '../../db/test.sqlite3');
+      fs.unlinkSync(testdb);
+    });
+
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookRangesetRequest(version, collection, variableName, {});
+
+    after(async function () {
+      // Get a new connection
+      await knex(db.config).migrate.latest();
+    });
+
+    it('returns an HTTP 500 error with the JSON error format', function () {
+      expect(this.res.status).to.eql(500);
+      const { code } = JSON.parse(this.res.text);
+      expect(code).to.eql('harmony.Error');
     });
   });
 

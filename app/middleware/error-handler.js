@@ -33,7 +33,12 @@ module.exports = function errorHandler(err, req, res, next) {
   } else {
     const message = err.message || err.toString();
     const response = mustache.render(errorTemplate, { message });
-    const code = err.code || 500;
+    let code = (+err.code) || 500;
+    if (code < 400 || code >= 600) {
+      // Need to check that the provided code is in a valid range due to some errors
+      // providing a non-http code.
+      code = 500;
+    }
 
     res.status(code).type('html').send(response);
   }
