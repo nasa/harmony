@@ -5,4 +5,6 @@ const config = require('../../db/knexfile')[environment];
 // eslint-disable-next-line import/order
 const database = require('knex')(config);
 
+database.engine = config.client;
+
 module.exports = database;

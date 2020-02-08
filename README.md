@@ -20,7 +20,7 @@ Required:
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
 
 
-Highly Recommended: 
+Highly Recommended:
 * An Amazon Web Services account - Used for testing Harmony against object stores and running Harmony in AWS
 * An editor with syntax awareness of modern Javascript.  If you do not have this or any preference, consider [Visual Studio Code](https://code.visualstudio.com)
 
@@ -105,6 +105,23 @@ the `REPLAY` environment variable, as described in the
 [node-replay README](https://github.com/assaf/node-replay).
 
 To re-record everything, remove the fixtures directory and run the test suite. This should be done to cull the recordings when a code change makes many of them obsolete, when CMR adds response fields that Harmony needs to make use of, and periodically to ensure no impactful CMR changes or regressions.
+
+### Setup the Database
+
+To set a sqlite3 database with the correct schema for local execution, run
+
+```
+$ knex --cwd db migrate:latest
+```
+
+This should be run any time the versioned contents of the `db/migrations` directory change.
+
+This will create a file, `db/development.sqlite3`, which will contain your local data.  You can delete the above file to remove
+all existing development data.
+
+In production environments, we use PostgreSQL.  If you have a PostgreSQL database, you can run create and/or migrate your
+database by setting.
+`NODE_ENV=production` and `DATABASE_URL=postgresql://your-postgres-connection-url`.
 
 ### Run Harmony
 

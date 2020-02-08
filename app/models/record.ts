@@ -1,3 +1,5 @@
+const db = require('../util/db');
+
 /**
  * Class describing a database record.  Subclass database tables
  * must define a unique primary key called `id` and timestamps
@@ -24,7 +26,11 @@ class Record {
     const newRecord = !this.createdAt;
     if (newRecord) {
       this.createdAt = this.updatedAt;
-      await transaction(this.constructor.table).insert(this);
+      let stmt = transaction(this.constructor.table).insert(this);
+      if (db.engine === 'pg') {
+        stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
+      }
+      [this.id] = await stmt;
     } else {
       await transaction(this.constructor.table).where({ id: this.id }).update(this);
     }
