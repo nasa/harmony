@@ -2,7 +2,7 @@ const services = require('../models/services');
 const env = require('../util/env');
 const Job = require('../models/job');
 const db = require('../util/db');
-const { ServiceError } = require('../util/errors');
+const { ServiceError, ServerError } = require('../util/errors');
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -82,7 +82,12 @@ async function _createJob(req) {
     username: req.operation.user,
     requestId: req.id,
   });
-  await job.save(db);
+  try {
+    await job.save(db);
+  } catch (e) {
+    req.logger.error(e.stack);
+    throw new ServerError('Failed to save job to database.');
+  }
   return job;
 }
 
@@ -96,6 +101,7 @@ async function _createJob(req) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  * @throws {ServiceError} if the service call fails or returns an error
+ * @throws {ServerError} if the job cannot be saved to the database
  */
 async function serviceInvoker(req, res) {
   const { operation, user } = req;
