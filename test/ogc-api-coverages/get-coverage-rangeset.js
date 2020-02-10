@@ -193,8 +193,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     it('returns an HTTP 500 error with the JSON error format', function () {
       expect(this.res.status).to.eql(500);
-      const { code } = JSON.parse(this.res.text);
-      expect(code).to.eql('harmony.Error');
+      const { code, description } = JSON.parse(this.res.text);
+      expect(code).to.eql('harmony.ServerError');
+      expect(description).to.eql('Error: Failed to save job to database.');
     });
   });
 
