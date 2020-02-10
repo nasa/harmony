@@ -177,7 +177,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
-  describe('when the databases catches fire during an asynchronous request', function () {
+  describe('when the database catches fire during an asynchronous request', function () {
     before(function () {
       const testdb = path.resolve(__dirname, '../../db/test.sqlite3');
       fs.unlinkSync(testdb);
