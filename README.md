@@ -12,7 +12,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
-* Node.js version 10.  We recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions
+* Node.js version 12.  We recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions
 * Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14, Amazon Linux 2, and Alpine Linux.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
 * [git](https://git-scm.com) - Used to clone this repository
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
@@ -37,11 +37,11 @@ If you have not yet cloned the Harmony repository, run
 $ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony.git
 ```
 
-Ensure node is available and is the correct version, 10.x.x
+Ensure node is available and is the correct version, 12.x.x
 
 ```
 $ node --version
-v10.16.1
+v12.15.0
 ```
 
 If it is not the correct version and you are using NVM, install it and ensure your `PATH` is up-to-date by running:
