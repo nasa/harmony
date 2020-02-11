@@ -1,4 +1,5 @@
 const cmr = require('../util/cmr');
+const env = require('../util/env');
 const { RequestValidationError } = require('../util/errors');
 
 /**
@@ -38,16 +39,19 @@ async function cmrGranuleLocator(req, res, next) {
 
   cmrQuery.concept_id = operation.granuleIds;
 
+  req.cmrHits = 0;
   try {
     const { sources } = operation;
     const queries = sources.map(async (source) => {
       req.logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
-      const atomGranules = await cmr.queryGranulesForCollection(
+      const { hits, granules: atomGranules } = await cmr.queryGranulesForCollection(
         source.collection,
         cmrQuery,
         req.accessToken,
+        env.maxAsynchronousGranules,
       );
+      req.cmrHits += hits;
       const msTaken = new Date().getTime() - startTime;
       req.logger.info('Completed granule query', { durationMs: msTaken });
       const granules = [];

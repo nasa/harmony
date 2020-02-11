@@ -1,9 +1,13 @@
-const { describe, it } = require('mocha');
+const fs = require('fs');
+const path = require('path');
+const knex = require('knex');
+const { describe, it, before, after } = require('mocha');
 const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookRangesetRequest, rangesetRequest } = require('../helpers/ogc-api-coverages');
 const StubService = require('../helpers/stub-service');
 const isUUID = require('../helpers/uuid');
+const db = require('../../app/util/db');
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1215669046-GES_DISC';
@@ -156,13 +160,42 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, variableName, query);
 
-    it('includes multiple granules to be subset', function () {
-      const granules = this.service.operation.sources.flatMap((source) => source.granules);
-      expect(granules.length).to.be.greaterThan(1);
+    it('is processed asynchronously', function () {
+      expect(this.service).to.equal(undefined);
     });
 
-    it('sets the synchronous mode to false', function () {
-      expect(this.service.operation.isSynchronous).to.equal(false);
+    it('returns a JSON response with a jobID and status', function () {
+      const { jobId, status } = JSON.parse(this.res.text);
+
+      expect(isUUID(jobId)).to.equal(true);
+      expect(status).to.equal('accepted');
+    });
+
+    it('returns a warning that the request is truncating the granules being processed', function () {
+      const { warning } = JSON.parse(this.res.text);
+      expect(warning).to.equal('CMR query identified 41 granules, but the request has been limited to process only the first 20 granules.');
+    });
+  });
+
+  describe('when the database catches fire during an asynchronous request', function () {
+    before(function () {
+      const testdb = path.resolve(__dirname, '../../db/test.sqlite3');
+      fs.unlinkSync(testdb);
+    });
+
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookRangesetRequest(version, collection, variableName, {});
+
+    after(async function () {
+      // Get a new connection
+      await knex(db.config).migrate.latest();
+    });
+
+    it('returns an HTTP 500 error with the JSON error format', function () {
+      expect(this.res.status).to.eql(500);
+      const { code, description } = JSON.parse(this.res.text);
+      expect(code).to.eql('harmony.ServerError');
+      expect(description).to.eql('Error: Failed to save job to database.');
     });
   });
 
