@@ -24,7 +24,7 @@ async function cmrSearch(path, query, token) {
   const options = { headers: { ...clientIdHeader, ...tokenHeader } };
   const response = await cmrApi.get([path, querystr].join('?'), options);
   // TODO: Error responses
-  return response.data;
+  return response;
 }
 
 /**
@@ -37,7 +37,7 @@ async function cmrSearch(path, query, token) {
  */
 async function queryVariables(query, token) {
   const variablesResponse = await cmrSearch('/search/variables.json', query, token);
-  return variablesResponse.items;
+  return variablesResponse.data.items;
 }
 
 /**
@@ -50,7 +50,7 @@ async function queryVariables(query, token) {
  */
 async function queryCollections(query, token) {
   const collectionsResponse = await cmrSearch('/search/collections.json', query, token);
-  return collectionsResponse.feed.entry;
+  return collectionsResponse.data.feed.entry;
 }
 
 /**
@@ -64,7 +64,8 @@ async function queryCollections(query, token) {
 async function queryGranules(query, token) {
   // TODO: Paging / hits
   const granulesResponse = await cmrSearch('/search/granules.json', query, token);
-  return granulesResponse.feed.entry;
+  const cmrHits = parseInt(granulesResponse.headers['cmr-hits'], 10);
+  return { hits: cmrHits, granules: granulesResponse.data.feed.entry };
 }
 
 /**

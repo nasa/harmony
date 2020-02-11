@@ -12,7 +12,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
-* Node.js version 10.  We recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions
+* Node.js version 12.  We recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions
 * Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14, Amazon Linux 2, and Alpine Linux.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
 * [git](https://git-scm.com) - Used to clone this repository
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
@@ -20,7 +20,7 @@ Required:
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
 
 
-Highly Recommended: 
+Highly Recommended:
 * An Amazon Web Services account - Used for testing Harmony against object stores and running Harmony in AWS
 * An editor with syntax awareness of modern Javascript.  If you do not have this or any preference, consider [Visual Studio Code](https://code.visualstudio.com)
 
@@ -37,11 +37,11 @@ If you have not yet cloned the Harmony repository, run
 $ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony.git
 ```
 
-Ensure node is available and is the correct version, 10.x.x
+Ensure node is available and is the correct version, 12.x.x
 
 ```
 $ node --version
-v10.16.1
+v12.15.0
 ```
 
 If it is not the correct version and you are using NVM, install it and ensure your `PATH` is up-to-date by running:
@@ -105,6 +105,23 @@ the `REPLAY` environment variable, as described in the
 [node-replay README](https://github.com/assaf/node-replay).
 
 To re-record everything, remove the fixtures directory and run the test suite. This should be done to cull the recordings when a code change makes many of them obsolete, when CMR adds response fields that Harmony needs to make use of, and periodically to ensure no impactful CMR changes or regressions.
+
+### Setup the Database
+
+To set a sqlite3 database with the correct schema for local execution, run
+
+```
+$ knex --cwd db migrate:latest
+```
+
+This should be run any time the versioned contents of the `db/migrations` directory change.
+
+This will create a file, `db/development.sqlite3`, which will contain your local data.  You can delete the above file to remove
+all existing development data.
+
+In production environments, we use PostgreSQL.  If you have a PostgreSQL database, you can run create and/or migrate your
+database by setting.
+`NODE_ENV=production` and `DATABASE_URL=postgresql://your-postgres-connection-url`.
 
 ### Run Harmony
 

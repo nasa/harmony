@@ -16,3 +16,6 @@ test-results.xml
 .env
 .vscode
 .ipynb*
+
+# Dev and test databases
+db/*.sqlite3
