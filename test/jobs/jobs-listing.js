@@ -1,38 +1,19 @@
 const { expect } = require('chai');
-const { describe, it } = require('mocha');
+const { describe, it, beforeEach } = require('mocha');
 const { hookServersStartStop } = require('../helpers/servers');
-// const request = require('supertest');
-
-const woodyJob1 = {
-  todo: 'todo',
-};
-
-const woodyJob2 = {
-  todo: 'for real',
-};
-
-const buzzJob1 = {
-  todo: 'again',
-};
-
-/**
- * Returns true if the object is found in the passed in list
- *
- * @param {Object} obj The object to search for
- * @param {Array} list An array objects
- * @returns {Boolean} true if the object is found
- */
-function contains(obj, list) {
-  list.forEach((element) => {
-    if (element === obj) {
-      return true;
-    }
-    return false;
-  });
-}
+const { hookTransactionEach } = require('../helpers/db');
+const { woodyJob1, woodyJob2, buzzJob1, contains } = require('../helpers/jobs');
+const Job = require('../../app/models/job');
 
 describe('Jobs listing route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
+  hookTransactionEach();
+  beforeEach(async function () {
+    // Add all jobs to the database
+    await new Job(woodyJob1).save(this.trx);
+    await new Job(woodyJob2).save(this.trx);
+    await new Job(buzzJob1).save(this.trx);
+  });
 
   describe('For a user who is not logged in', function () {
     it('redirects to Earthdata Login', function () {
