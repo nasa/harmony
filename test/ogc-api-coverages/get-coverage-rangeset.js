@@ -164,16 +164,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(this.service).to.equal(undefined);
     });
 
-    it('returns a JSON response with a jobID and status', function () {
-      const { jobId, status } = JSON.parse(this.res.text);
-
-      expect(isUUID(jobId)).to.equal(true);
-      expect(status).to.equal('accepted');
-    });
-
-    it('returns a warning that the request is truncating the granules being processed', function () {
-      const { warning } = JSON.parse(this.res.text);
-      expect(warning).to.equal('CMR query identified 41 granules, but the request has been limited to process only the first 20 granules.');
+    it('returns a redirect to the job status URL', function () {
+      const { status, headers } = this.res;
+      const { location } = headers;
+      expect(status).to.equal(303);
+      expect(location).to.match(/^\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
   });
 
