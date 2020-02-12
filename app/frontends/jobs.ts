@@ -24,8 +24,8 @@ async function getJobsListing(req, res) {
  * @returns {Promise<void>} Resolves when the request is complete
  */
 async function getJobStatus(req, res) {
-  req.logger.info(`Get job status for job ${req.jobId} and user ${req.user}`);
   const { jobId } = req.params;
+  req.logger.info(`Get job status for job ${jobId} and user ${req.user}`);
   const job = await Job.byUsernameAndRequestId(db, req.user, jobId);
   if (job) {
     delete job.id;

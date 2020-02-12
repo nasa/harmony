@@ -1,0 +1,22 @@
+GET /oauth/authorize?response_type=code&client_id=YrxlxXTazlUgcCQa0WFUrw&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Foauth2%2Fredirect
+accept-encoding: gzip, deflate
+
+HTTP/1.1 401 Unauthorized
+server: nginx/1.10.3
+date: Wed, 12 Feb 2020 18:41:28 GMT
+content-type: text/html; charset=utf-8
+transfer-encoding: chunked
+connection: close
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+x-content-type-options: nosniff
+x-download-options: noopen
+x-permitted-cross-domain-policies: none
+referrer-policy: strict-origin-when-cross-origin
+www-authenticate: Basic realm="Please enter your Earthdata Login credentials. If you do not have a Earthdata Login, create one at https://uat.urs.earthdata.nasa.gov//users/new"
+cache-control: no-cache
+x-request-id: 239e86b1-5655-4f5c-81fa-ebb51fd196e2
+x-runtime: 0.013885
+strict-transport-security: max-age=31536000
+
+HTTP Basic: Access denied.
