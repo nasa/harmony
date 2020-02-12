@@ -1,6 +1,6 @@
 const Job = require('../models/job');
 const db = require('../util/db');
-// const { NotFoundError } = require('../util/errors');
+const isUUID = require('../util/uuid');
 
 /**
  * Express.js handler that handles the jobs listing endpoint (/jobs)
@@ -26,13 +26,20 @@ async function getJobsListing(req, res) {
 async function getJobStatus(req, res) {
   const { jobId } = req.params;
   req.logger.info(`Get job status for job ${jobId} and user ${req.user}`);
-  const job = await Job.byUsernameAndRequestId(db, req.user, jobId);
-  if (job) {
-    delete job.id;
-    res.send(job);
+  if (!isUUID(jobId)) {
+    res.status(400);
+    res.json({
+      code: 'harmony:BadRequestError',
+      description: `Error: jobId ${jobId} is in invalid format.` });
   } else {
-    res.status(404);
-    res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
+    const job = await Job.byUsernameAndRequestId(db, req.user, jobId);
+    if (job) {
+      delete job.id;
+      res.send(job);
+    } else {
+      res.status(404);
+      res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
+    }
   }
 }
 
