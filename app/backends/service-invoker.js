@@ -78,9 +78,11 @@ async function _invokeImmediately(req) {
  */
 async function _createJob(req) {
   req.logger.info(`Creating job for ${req.id}`);
+  const message = req.truncationMessage;
   const job = new Job({
     username: req.operation.user,
     requestId: req.id,
+    message,
   });
   try {
     await job.save(db);
@@ -120,11 +122,7 @@ async function serviceInvoker(req, res) {
     }
   } else {
     const job = await _createJob(req, res);
-    const result = { jobId: job.requestId, status: job.status };
-    if (req.truncationMessage) {
-      result.warning = req.truncationMessage;
-    }
-    res.send(result);
+    res.redirect(303, `/jobs/${job.requestId}`);
   }
 }
 

@@ -1,15 +1,26 @@
 const { expect } = require('chai');
-const { describe, it } = require('mocha');
+const { describe, it, beforeEach } = require('mocha');
+const uuid = require('uuid');
 const { hookServersStartStop } = require('../helpers/servers');
-// const request = require('supertest');
+const { hookTransactionEach } = require('../helpers/db');
+const Job = require('../../app/models/job');
 
-const job = {
-  todo: 'todo',
+const aJob = {
+  username: 'joe',
+  requestId: uuid().toString(),
+  status: 'running',
+  message: 'it is running',
+  progress: 42,
+  links: [{ href: 'http://example.com' }],
 };
 
 describe('Individual job status route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
-  const jobId = 'the-job-id';
+  hookTransactionEach();
+  beforeEach(async function () {
+    await new Job(aJob).save(this.trx);
+  });
+  const jobId = aJob.requestId;
   describe('For a user who is not logged in', function () {
     it('redirects to Earthdata Login', function () {
       expect(this.res.statusCode).to.equal(307);
@@ -27,7 +38,7 @@ describe('Individual job status route', function () {
     });
 
     it('returns a single job record in JSON format', function () {
-      expect(JSON.parse(this.res.text)).to.equal(job);
+      expect(JSON.parse(this.res.text)).to.equal(aJob);
     });
   });
 

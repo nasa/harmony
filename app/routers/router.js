@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authorizer');
 const wmsFrontend = require('../frontends/wms');
 const wcsFrontend = require('../frontends/wcs');
+const { getJobsListing, getJobStatus } = require('../frontends/jobs');
 const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
 const syncRequestDecider = require('../middleware/sync-request-decider');
@@ -116,7 +117,7 @@ function router({ skipEarthdataLogin }) {
   result.use(cookieParser(secret));
 
   if (`${skipEarthdataLogin}` !== 'true') {
-    result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex])));
+    result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex, '/jobs*'])));
   }
 
   result.use(logged(cmrCollectionReader));
@@ -136,6 +137,8 @@ function router({ skipEarthdataLogin }) {
 
   result.get('/', (req, res) => res.status(200).send('ok'));
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
+  result.get('/jobs', getJobsListing);
+  result.get('/jobs/:jobId', getJobStatus);
   result.get('/*', () => { throw new NotFoundError('The requested page was not found'); });
   return result;
 }
