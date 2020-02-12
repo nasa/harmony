@@ -6,7 +6,7 @@ const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookRangesetRequest, rangesetRequest } = require('../helpers/ogc-api-coverages');
 const StubService = require('../helpers/stub-service');
-const isUUID = require('../helpers/uuid');
+const isUUID = require('../../app/util/uuid');
 const db = require('../../app/util/db');
 
 describe('OGC API Coverages - getCoverageRangeset', function () {

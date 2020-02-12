@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { describe, it, xit, before } = require('mocha');
+const { describe, it, before } = require('mocha');
 const uuid = require('uuid');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookTransaction } = require('../helpers/db');
@@ -80,15 +80,16 @@ describe('Individual job status route', function () {
 
   describe('For an invalid job ID format', function () {
     hookJobStatus('not-a-uuid', 'joe');
-    xit('returns a 404 HTTP Not found response', function () {
+    it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(400);
     });
 
-    xit('returns a JSON error response', function () {
+    it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:BadRequest',
-        description: 'Error: Invalid format for job ID' });
+        code: 'harmony:BadRequestError',
+        description: 'Error: jobId not-a-uuid is in invalid format.',
+      });
     });
   });
 });
