@@ -3,7 +3,7 @@ const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { eossGetGranule, hookEossGetGranule } = require('../helpers/eoss');
 const StubService = require('../helpers/stub-service');
-const isUUID = require('../helpers/uuid');
+const isUUID = require('../../app/util/uuid');
 
 describe('EOSS GetGranule', function () {
   const collection = 'C1215669046-GES_DISC';

@@ -51,6 +51,7 @@
     "knex": "^0.20.8",
     "lodash.clonedeep": "^4.5.0",
     "lodash.set": "^4.3.2",
+    "lodash.pick": "^4.4.0",
     "mustache": "^3.0.1",
     "request": "^2.88.0",
     "serve-favicon": "^2.5.0",
