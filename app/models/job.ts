@@ -79,7 +79,7 @@ class Job extends Record {
   /**
    * Creates a Job instance.
    *
-   * @param {object} fields Object containing to set on the record
+   * @param {object} fields Object containing fields to set on the record
    * @memberof Job
    */
   constructor(fields) {
@@ -125,6 +125,7 @@ class Job extends Record {
     this._json_links = JSON.stringify(links);
     await super.save(transaction);
     this.links = links;
+    delete this._json_links;
   }
 }
 

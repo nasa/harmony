@@ -1,8 +1,8 @@
 const url = require('url');
-
 const request = require('supertest');
 const { before, after, it, describe } = require('mocha');
 const { expect } = require('chai');
+const { auth } = require('./auth');
 
 /**
  * Adds before/after hooks to navigate from the coverages landing page to a related resource
@@ -20,7 +20,6 @@ function hookLandingPage(collection, version) {
     delete this.res;
   });
 }
-
 
 /**
  * Performs getCoverageRangeset request on the given collection with the given params
@@ -45,17 +44,28 @@ function rangesetRequest(app, version, collection, coverageId, query) {
  * @param {string} collection The CMR Collection ID to perform a service on
  * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
  * @param {object} query The query parameters to pass to the EOSS request
+ * @param {String} username Optional username to simulate logging in
  * @returns {void}
  */
-function hookRangesetRequest(version, collection, coverageId, query) {
+function hookRangesetRequest(version, collection, coverageId, query, username = undefined) {
   before(async function () {
-    this.res = await rangesetRequest(
-      this.frontend,
-      version,
-      collection,
-      coverageId,
-      query,
-    );
+    if (username) {
+      this.res = await rangesetRequest(
+        this.frontend,
+        version,
+        collection,
+        coverageId,
+        query,
+      );
+    } else {
+      this.res = await rangesetRequest(
+        this.frontend,
+        version,
+        collection,
+        coverageId,
+        query,
+      ).use(auth({ username }));
+    }
   });
   after(function () {
     delete this.res;

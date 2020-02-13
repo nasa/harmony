@@ -3,7 +3,7 @@ const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookGetMap, wmsRequest, validGetMapQuery } = require('../helpers/wms');
 const StubService = require('../helpers/stub-service');
-const isUUID = require('../helpers/uuid');
+const isUUID = require('../../app/util/uuid');
 
 describe('WMS GetMap', function () {
   const collection = 'C1215669046-GES_DISC';
