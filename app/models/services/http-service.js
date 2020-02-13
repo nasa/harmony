@@ -62,20 +62,24 @@ class HttpService extends BaseService {
 
           if (!this.operation.isSynchronous) {
             if (res.statusCode >= 400) {
+              const trx = await db.transaction();
               try {
-                const trx = await db.transaction();
                 const { user, requestId } = this.operation;
                 const job = await Job.byUsernameAndRequestId(trx, user, requestId);
                 if (job) {
                   job.status = 'failed';
                   job.message = 'failed';
-                  job.save(trx);
+                  await job.save(trx);
+                  await trx.commit();
                 }
               } catch (e) {
                 this.logger.error(e);
+                await trx.rollback();
               }
             }
-            resolve(result);
+            // Resolve to null because we are now communicating through callbacks
+            // and no active request is waiting on us
+            resolve(null);
             return;
           }
 
