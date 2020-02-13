@@ -1,50 +1,20 @@
-const uuid = require('uuid');
 const request = require('supertest');
 const { before, after } = require('mocha');
 const { auth } = require('./auth');
 
-
-// Example jobs to use in tests
-const woodyJob1 = {
-  username: 'woody',
-  requestId: uuid().toString(),
-  status: 'successful',
-  message: 'Completed successfully',
-  progress: 100,
-  links: [{ href: 'http://example.com/woody1' }],
-};
-
-const woodyJob2 = {
-  username: 'woody',
-  requestId: uuid().toString(),
-  status: 'running',
-  message: 'In progress',
-  progress: 60,
-  links: [],
-};
-
-const buzzJob1 = {
-  username: 'buzz',
-  requestId: uuid().toString(),
-  status: 'running',
-  message: 'In progress',
-  progress: 30,
-  links: [],
-};
-
 /**
- * Returns true if two jobs are the same (ignoring timestamps)
- * @param {Object} job1 first job
- * @param {Object} job2 second job
+ * Returns true if the passed in job record matches the serialized Job
+ * @param {Object} jobRecord a job record
+ * @param {Object} serializedJob a job record serialized
  * @returns {Boolean} true if the jobs are the same
  */
-function jobsEqual(job1, job2) {
-  return (job1.requestId === job2.requestId
-    && job1.username === job2.username
-    && job1.message && job2.message
-    && job1.progress && job2.progress
-    && job1.status === job2.status
-    && job1.links.length === job2.links.length);
+function jobsEqual(jobRecord, serializedJob) {
+  return (jobRecord.requestId === serializedJob.jobID
+    && jobRecord.username === serializedJob.username
+    && jobRecord.message && serializedJob.message
+    && jobRecord.progress && serializedJob.progress
+    && jobRecord.status === serializedJob.status
+    && jobRecord.links.length === serializedJob.links.length);
 }
 
 /**
@@ -124,9 +94,6 @@ function hookJobStatus(jobId, username = undefined) {
 }
 
 module.exports = {
-  woodyJob1,
-  woodyJob2,
-  buzzJob1,
   jobsEqual,
   containsJob,
   jobListing,
