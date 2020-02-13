@@ -32,7 +32,7 @@ class StubService extends BaseService {
    * @memberof StubService
    * @returns {void}
    */
-  async _invokeAsync() {
+  async _run() {
     const responseUrl = `${this.operation.callback}/response`;
     const { params, body, headers } = this.callbackOptions;
     let req = request.post(responseUrl);
@@ -82,9 +82,10 @@ class StubService extends BaseService {
    * @memberof StubService
    */
   static afterHook() {
-    return function () {
+    return async function () {
       if (services.forName.restore) services.forName.restore();
       if (services.forOperation.restore) services.forOperation.restore();
+      if (this.service && this.service.invocation) await this.service.invocation;
       delete this.service;
     };
   }

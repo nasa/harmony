@@ -47,7 +47,7 @@ describe('Earthdata Login', function () {
       });
 
       it('calls the application request handler', function () {
-        expect(this.res.statusCode).to.equal(302); // Redirect to data
+        expect(this.res.statusCode).to.equal(303); // Redirect to data
       });
 
       it('provides the Earthdata Login user name to the application request handler', function () {
@@ -92,7 +92,7 @@ describe('Earthdata Login', function () {
         });
 
         it('calls the application request handler', function () {
-          expect(this.res.statusCode).to.equal(302);
+          expect(this.res.statusCode).to.equal(303);
         });
 
         it('provides the Earthdata Login user name to the application request handler', function () {
@@ -170,7 +170,7 @@ describe('Earthdata Login', function () {
           });
 
           it('calls the application request handler', function () {
-            expect(this.res2.statusCode).to.equal(302); // Redirect to data
+            expect(this.res2.statusCode).to.equal(303); // Redirect to data
           });
 
           it('provides the Earthdata Login user name to the application request handler', function () {
