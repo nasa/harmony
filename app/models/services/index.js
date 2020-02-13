@@ -3,7 +3,6 @@ const path = require('path');
 const yaml = require('js-yaml');
 
 const LocalDockerService = require('./local-docker-service');
-const ChainService = require('./chain-service');
 const HttpService = require('./http-service');
 const { NotFoundError } = require('../../util/errors');
 
@@ -35,7 +34,6 @@ loadServiceConfigs();
 
 const serviceTypesToServiceClasses = {
   docker: LocalDockerService,
-  chain: ChainService,
   http: HttpService,
 };
 

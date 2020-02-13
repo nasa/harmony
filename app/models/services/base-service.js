@@ -1,4 +1,7 @@
 const serviceResponse = require('../../backends/service-response');
+const db = require('../../util/db');
+const Job = require('../../models/job');
+const { ServerError } = require('../../util/errors');
 
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
@@ -66,31 +69,25 @@ class BaseService {
    * for properties
    * @memberof BaseService
    */
-  invoke() {
+  async invoke() {
+    const isAsync = !this.operation.isSynchronous;
+    let job;
+    if (isAsync) {
+      job = await this._createJob(db);
+    }
     return new Promise((resolve, reject) => {
       try {
         this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
-          const { error, redirect } = req.query;
-
-          const result = {
-            headers: req.headers,
-            onComplete: () => {
-              res.status(200);
-              res.send('Ok');
-            },
-          };
-
-          if (error) {
-            result.error = error;
-          } else if (redirect) {
-            result.redirect = redirect;
+          if (isAsync) {
+            this._processAsyncCallback(req, res);
           } else {
-            result.stream = req;
+            resolve(this._processSyncCallback(req, res));
           }
-
-          resolve(result);
         });
         this._invokeAsync();
+        if (isAsync) {
+          resolve({ redirect: `/jobs/${job.requestId}` });
+        }
       } catch (e) {
         serviceResponse.unbindResponseUrl(this.operation.callback);
         reject(e);
@@ -109,6 +106,98 @@ class BaseService {
    */
   _invokeAsync() {
     throw new TypeError('BaseService subclasses must implement #_invokeAsync()');
+  }
+
+  _processSyncCallback(req, res) {
+    const { error, redirect, status } = req.query;
+    let result;
+
+    try {
+      result = {
+        headers: req.headers,
+        onComplete: (err) => {
+          if (err) {
+            res.status(err.code);
+            res.send(JSON.stringify(err));
+          } else {
+            res.status(200);
+            res.send('Ok');
+          }
+        },
+      };
+
+      if (error) {
+        result.error = error;
+      } else if (redirect) {
+        result.redirect = redirect;
+      } else {
+        result.stream = req;
+      }
+    } finally {
+      if (error || redirect || ['successful', 'failed'].indexOf(status) !== -1) {
+        serviceResponse.unbindResponseUrl(this.operation.callback);
+      }
+    }
+
+    return result;
+  }
+
+  async _processAsyncCallback(req, res) {
+    const { error, item, status } = req.query;
+    const trx = db.transaction();
+    let err = null;
+
+    try {
+      const { username, requestId } = this.operation;
+      const job = await Job.byUsernameAndRequestId(trx, username, requestId);
+      if (!job) {
+        res.status(404);
+        res.json({ code: 404, message: 'could not find a job with the given ID' });
+        trx.rollback();
+        return;
+      }
+
+      if (item) {
+        job.links.push(item);
+      }
+
+      if (error) {
+        job.status = 'failed';
+        job.message = error;
+      } else if (status) {
+        job.status = status;
+        job.message = status;
+      }
+      await job.save(trx);
+      trx.commit();
+    } catch (e) {
+      err = { code: 500, message: e.message };
+      trx.rollback();
+    } finally {
+      if (error || status === 'successful' || status === 'failed') {
+        serviceResponse.unbindResponseUrl(req, res);
+      }
+    }
+    if (err) {
+      res.status(err.code);
+      res.json(err);
+    } else {
+      res.status(200);
+      res.send('Ok');
+    }
+  }
+
+  async _createJob(transaction) {
+    const { requestId, username } = this.operation;
+    this.logger.info(`Creating job for ${requestId}`);
+    const job = new Job({ username, requestId });
+    try {
+      await job.save(transaction);
+    } catch (e) {
+      this.logger.error(e.stack);
+      throw new ServerError('Failed to save job to database.');
+    }
+    return job;
   }
 }
 
