@@ -93,7 +93,7 @@ class LocalDockerService extends BaseService {
    * @memberof LocalDockerService
    * @returns {void}
    */
-  _invokeAsync() {
+  _run() {
     // DELETE ME: Hacks for PO.DAAC having granule metadata with missing files.  They will fix.
     if (this.config.name === 'podaac-cloud/l2-subsetter-service') {
       this.operation.sources[0].granules = this.operation.sources[0].granules.slice(5);

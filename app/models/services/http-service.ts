@@ -4,6 +4,8 @@ const http = require('http');
 const https = require('https');
 const URL = require('url');
 const BaseService = require('./base-service');
+const db = require('../../util/db');
+const Job = require('../../models/job');
 
 /**
  * Service implementation which invokes a backend over HTTP, synchronously POSTing the Harmony
@@ -14,6 +16,13 @@ const BaseService = require('./base-service');
  * @extends {BaseService}
  */
 class HttpService extends BaseService {
+  invoke() {
+    if (this.operation.isSynchronous) {
+      return this._run();
+    }
+    return super.invoke();
+  }
+
   /**
    * Calls the HTTP backend and returns a promise for its result
    *
@@ -21,7 +30,7 @@ class HttpService extends BaseService {
    *     to the service callback req/res
    * @memberof BaseService
    */
-  invoke() {
+  _run() {
     return new Promise((resolve, reject) => {
       try {
         const body = this.operation.serialize(this.config.data_operation_version);
@@ -45,11 +54,30 @@ class HttpService extends BaseService {
 
         const httplib = url.startsWith('https') ? https : http;
 
-        const request = httplib.request(requestOptions, (res) => {
+        const request = httplib.request(requestOptions, async (res) => {
           const result = {
             headers: res.headers,
             statusCode: res.statusCode,
           };
+
+          if (!this.operation.isSynchronous) {
+            if (res.statusCode >= 400) {
+              try {
+                const trx = await db.transaction();
+                const { user, requestId } = this.operation;
+                const job = await Job.byUsernameAndRequestId(trx, user, requestId);
+                if (job) {
+                  job.status = 'failed';
+                  job.message = 'failed';
+                  job.save(trx);
+                }
+              } catch (e) {
+                this.logger.error(e);
+              }
+            }
+            resolve(result);
+            return;
+          }
 
           if (res.statusCode < 300) {
             result.stream = res;

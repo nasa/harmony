@@ -89,7 +89,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       hookRangesetRequest(version, collection, variableName, query);
 
       it('redirects the client to the provided URL', function () {
-        expect(this.res.status).to.equal(302);
+        expect(this.res.status).to.equal(303);
         expect(this.res.headers.location).to.equal('http://example.com');
       });
     });
@@ -157,11 +157,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   describe('Not specifying a single granule ID', function () {
     const query = {};
 
-    StubService.hook({ params: { redirect: 'http://example.com' } });
+    StubService.hook({ params: { status: 'successful' } });
     hookRangesetRequest(version, collection, variableName, query);
 
     it('is processed asynchronously', function () {
-      expect(this.service).to.equal(undefined);
+      expect(this.service.operation.isSynchronous).to.equal(false);
     });
 
     it('returns a redirect to the job status URL', function () {

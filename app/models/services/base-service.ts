@@ -75,6 +75,10 @@ class BaseService {
     if (isAsync) {
       job = await this._createJob(db);
     }
+    // Promise that can be awaited to ensure the service has completed its work
+    this.invocation = new Promise((resolve) => {
+      this.resolveInvocation = resolve;
+    });
     return new Promise((resolve, reject) => {
       try {
         this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
@@ -84,9 +88,9 @@ class BaseService {
             resolve(this._processSyncCallback(req, res));
           }
         });
-        this._invokeAsync();
+        this._run();
         if (isAsync) {
-          resolve({ redirect: `/jobs/${job.requestId}` });
+          resolve({ redirect: `/jobs/${job.requestId}`, headers: {} });
         }
       } catch (e) {
         serviceResponse.unbindResponseUrl(this.operation.callback);
@@ -104,12 +108,12 @@ class BaseService {
    * @memberof BaseService
    * @returns {void}
    */
-  _invokeAsync() {
-    throw new TypeError('BaseService subclasses must implement #_invokeAsync()');
+  _run() {
+    throw new TypeError('BaseService subclasses must implement #_run()');
   }
 
   _processSyncCallback(req, res) {
-    const { error, redirect, status } = req.query;
+    const { error, redirect } = req.query;
     let result;
 
     try {
@@ -134,9 +138,8 @@ class BaseService {
         result.stream = req;
       }
     } finally {
-      if (error || redirect || ['successful', 'failed'].indexOf(status) !== -1) {
-        serviceResponse.unbindResponseUrl(this.operation.callback);
-      }
+      serviceResponse.unbindResponseUrl(this.operation.callback);
+      if (this.resolveInvocation) this.resolveInvocation(true);
     }
 
     return result;
@@ -144,12 +147,12 @@ class BaseService {
 
   async _processAsyncCallback(req, res) {
     const { error, item, status } = req.query;
-    const trx = db.transaction();
+    const trx = await db.transaction();
     let err = null;
 
     try {
-      const { username, requestId } = this.operation;
-      const job = await Job.byUsernameAndRequestId(trx, username, requestId);
+      const { user, requestId } = this.operation;
+      const job = await Job.byUsernameAndRequestId(trx, user, requestId);
       if (!job) {
         res.status(404);
         res.json({ code: 404, message: 'could not find a job with the given ID' });
@@ -169,13 +172,15 @@ class BaseService {
         job.message = status;
       }
       await job.save(trx);
-      trx.commit();
+      await trx.commit();
     } catch (e) {
+      this.logger.error(e);
       err = { code: 500, message: e.message };
-      trx.rollback();
+      await trx.rollback();
     } finally {
       if (error || status === 'successful' || status === 'failed') {
-        serviceResponse.unbindResponseUrl(req, res);
+        if (this.resolveInvocation) this.resolveInvocation(true);
+        serviceResponse.unbindResponseUrl(this.operation.callback);
       }
     }
     if (err) {
@@ -188,9 +193,12 @@ class BaseService {
   }
 
   async _createJob(transaction) {
-    const { requestId, username } = this.operation;
+    const { requestId, user } = this.operation;
     this.logger.info(`Creating job for ${requestId}`);
-    const job = new Job({ username, requestId });
+    const job = new Job({ username: user, requestId });
+    if (this.truncationMessage) {
+      job.message = this.truncationMessage;
+    }
     try {
       await job.save(transaction);
     } catch (e) {

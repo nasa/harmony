@@ -88,7 +88,7 @@ describe('WMS GetMap', function () {
       hookGetMap(collection, query);
 
       it('redirects the client to the provided URL', function () {
-        expect(this.res.status).to.equal(302);
+        expect(this.res.status).to.equal(303);
         expect(this.res.headers.location).to.equal('http://example.com');
       });
     });
