@@ -1,9 +1,38 @@
 const { expect } = require('chai');
 const { describe, it, before } = require('mocha');
+const uuid = require('uuid');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookTransaction } = require('../helpers/db');
-const { woodyJob1, woodyJob2, buzzJob1, containsJob, jobListing, hookJobListing } = require('../helpers/jobs');
+const { containsJob, jobListing, hookJobListing } = require('../helpers/jobs');
 const Job = require('../../app/models/job');
+
+// Example jobs to use in tests
+const woodyJob1 = {
+  username: 'woody',
+  requestId: uuid().toString(),
+  status: 'successful',
+  message: 'Completed successfully',
+  progress: 100,
+  links: [{ href: 'http://example.com/woody1' }],
+};
+
+const woodyJob2 = {
+  username: 'woody',
+  requestId: uuid().toString(),
+  status: 'running',
+  message: 'In progress',
+  progress: 60,
+  links: [],
+};
+
+const buzzJob1 = {
+  username: 'buzz',
+  requestId: uuid().toString(),
+  status: 'running',
+  message: 'In progress',
+  progress: 30,
+  links: [],
+};
 
 describe('Jobs listing route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });

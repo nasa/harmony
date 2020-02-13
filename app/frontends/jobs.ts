@@ -15,6 +15,8 @@ function _serializeJob(job) {
   const serializedJob = pick(job, serializedJobFields);
   serializedJob.updatedAt = new Date(serializedJob.updatedAt);
   serializedJob.createdAt = new Date(serializedJob.createdAt);
+  serializedJob.jobID = serializedJob.requestId;
+  delete serializedJob.requestId;
   return serializedJob;
 }
 
