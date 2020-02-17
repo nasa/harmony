@@ -82,36 +82,36 @@ class HttpService extends BaseService {
             statusCode: res.statusCode,
           };
 
-          if (!this.operation.isSynchronous) {
-            if (res.statusCode >= 400) {
-              const trx = await db.transaction();
-              try {
-                const { user, requestId } = this.operation;
-                const job = await Job.byUsernameAndRequestId(trx, user, requestId);
-                if (job) {
-                  job.status = 'failed';
-                  job.message = 'failed';
-                  await job.save(trx);
-                  await trx.commit();
-                }
-              } catch (e) {
-                this.logger.error(e);
-                await trx.rollback();
+          if (!this.operation.isSynchronous && res.statusCode >= 400) {
+            // Asynchronous error
+            const trx = await db.transaction();
+            try {
+              const { user, requestId } = this.operation;
+              const job = await Job.byUsernameAndRequestId(trx, user, requestId);
+              if (job) {
+                job.status = 'failed';
+                job.message = 'failed';
+                await job.save(trx);
+                await trx.commit();
               }
+            } catch (e) {
+              this.logger.error(e);
+              await trx.rollback();
             }
-            // Resolve to null because we are now communicating through callbacks
-            // and no active request is waiting on us
             resolve(null);
-            return;
-          }
-
-          if (res.statusCode < 300) {
+          } else if (!this.operation.isSynchronous) {
+            // Asynchronous success
+            resolve(null); // Success.  Further communication is via callback
+          } else if (res.statusCode < 300) {
+            // Synchronous success
             result.stream = res;
             resolve(result);
           } else if (res.statusCode < 400) {
+            // Synchronous redirect
             result.redirect = res.headers.location;
             resolve(result);
           } else {
+            // Synchronous error
             result.error = '';
             res.on('data', (chunk) => { result.error += chunk; });
             res.on('end', () => { resolve(result); });
