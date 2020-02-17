@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const { describe, it, before } = require('mocha');
 const uuid = require('uuid');
+const request = require('supertest');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookTransaction, hookTransactionFailure } = require('../helpers/db');
 const { jobStatus, hookJobStatus, jobsEqual } = require('../helpers/jobs');
@@ -113,7 +114,7 @@ describe('Individual job status route', function () {
     });
   });
 
-  describe('status updates', function () {
+  describe('status updates from non-HTTP backends', function () {
     const collection = 'C1215669046-GES_DISC';
     const variableName = 'CloudFrc_A';
     const version = '1.0.0';
@@ -163,6 +164,76 @@ describe('Individual job status route', function () {
       hookRangesetRequest(version, collection, variableName, {}, 'jdoe3');
       before(async function () {
         await this.service.complete();
+      });
+
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe3');
+
+        it('returns a status field of "successful"', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.status).to.eql('successful');
+        });
+
+        it('returns a human-readable message field corresponding to its state', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.include('the request has been limited to process');
+        });
+      });
+    });
+  });
+
+  describe('status updates from HTTP backends', function () {
+    const collection = 'C1104-PVC_TS2';
+    const variableName = 'all';
+    const version = '1.0.0';
+
+    describe('when the job has started but not completed', function () {
+      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+
+        it('returns a status field of "running"', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.status).to.eql('running');
+        });
+
+        it('returns a human-readable message field corresponding to its state', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.include('the request has been limited to process');
+        });
+      });
+    });
+
+    describe('when the job has failed to complete @wip', function () {
+      hookRangesetRequest(version, collection, variableName, {}, 'jdoe2');
+      before(async function () {
+        const id = this.res.headers.location.split('/').pop();
+        await request(this.frontend)
+          .get('/example/status').query({ id, error: 'something broke' });
+      });
+
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe2');
+
+        it('returns a status field of "failed"', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.status).to.eql('failed');
+        });
+
+        it('returns a human-readable message field corresponding to its state', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.eql('something broke');
+        });
+      });
+    });
+
+    describe('when the job has completed successfully @wip', function () {
+      hookRangesetRequest(version, collection, variableName, {}, 'jdoe3');
+      before(async function () {
+        const id = this.res.headers.location.split('/').pop();
+        await request(this.frontend)
+          .get('/example/status').query({ id, status: 'successful' });
       });
 
       describe('retrieving its job status', function () {
