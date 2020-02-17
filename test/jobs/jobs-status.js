@@ -205,7 +205,7 @@ describe('Individual job status route', function () {
       });
     });
 
-    describe('when the job has failed to complete @wip', function () {
+    describe('when the job has failed to complete', function () {
       hookRangesetRequest(version, collection, variableName, {}, 'jdoe2');
       before(async function () {
         const id = this.res.headers.location.split('/').pop();
@@ -228,7 +228,7 @@ describe('Individual job status route', function () {
       });
     });
 
-    describe('when the job has completed successfully @wip', function () {
+    describe('when the job has completed successfully', function () {
       hookRangesetRequest(version, collection, variableName, {}, 'jdoe3');
       before(async function () {
         const id = this.res.headers.location.split('/').pop();
