@@ -112,6 +112,14 @@ class BaseService {
     throw new TypeError('BaseService subclasses must implement #_run()');
   }
 
+  /**
+   * Processes a callback coming from a synchronous service request
+   *
+   * @param {http.IncomingMessage} req the incoming callback request
+   * @param {http.ServerResponse} res the outgoing callback response
+   * @returns {void}
+   * @memberof BaseService
+   */
   _processSyncCallback(req, res) {
     const { error, redirect } = req.query;
     let result;
@@ -145,6 +153,14 @@ class BaseService {
     return result;
   }
 
+  /**
+   * Processes a callback coming from an asynchronous service request (Job)
+   *
+   * @param {http.IncomingMessage} req the incoming callback request
+   * @param {http.ServerResponse} res the outgoing callback response
+   * @returns {void}
+   * @memberof BaseService
+   */
   async _processAsyncCallback(req, res) {
     const { error, item, status } = req.query;
     const trx = await db.transaction();
@@ -169,7 +185,6 @@ class BaseService {
         job.message = error;
       } else if (status) {
         job.status = status;
-        job.message = status;
       }
       await job.save(trx);
       await trx.commit();
@@ -192,10 +207,19 @@ class BaseService {
     }
   }
 
+  /**
+   * Creates a new job for this service's operation, with appropriate logging, errors,
+   * and warnings.
+   *
+   * @param {knex.Transaction} transaction The transaction to use when creating the job
+   * @returns {Job} The created job
+   * @memberof BaseService
+   * @throws {ServerError} if the job cannot be created
+   */
   async _createJob(transaction) {
     const { requestId, user } = this.operation;
     this.logger.info(`Creating job for ${requestId}`);
-    const job = new Job({ username: user, requestId });
+    const job = new Job({ username: user, requestId, status: 'running' });
     if (this.truncationMessage) {
       job.message = this.truncationMessage;
     }
