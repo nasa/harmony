@@ -1,6 +1,7 @@
 process.env.NODE_ENV = 'test'; // Ensure we're immediately using the right DB
 
 const { before, after, beforeEach, afterEach } = require('mocha');
+const sinon = require('sinon');
 const db = require('../../app/util/db');
 
 const tables = ['jobs'];
@@ -26,7 +27,7 @@ function hookTransaction() {
   });
 
   after(async function () {
-    if (transactionSet) {
+    if (transactionSet && this.trx) {
       await this.trx.rollback();
       delete this.trx;
     }
@@ -48,11 +49,26 @@ function hookTransactionEach() {
   });
 
   afterEach(async function () {
-    if (transactionSet) {
+    if (transactionSet && this.trx) {
       await this.trx.rollback();
       delete this.trx;
     }
   });
 }
 
-module.exports = { hookTransaction, hookTransactionEach };
+/**
+ * Before/after hooks to have calls to create a database transaction throw an exception for
+ * just that test.
+ *
+ * @returns {void}
+ */
+function hookTransactionFailure() {
+  before(function () {
+    sinon.stub(db, 'transaction').throws();
+  });
+  after(function () {
+    if (db.transaction.restore) db.transaction.restore();
+  });
+}
+
+module.exports = { hookTransaction, hookTransactionEach, hookTransactionFailure };

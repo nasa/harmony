@@ -30,8 +30,10 @@ function _serializeJob(job) {
 async function getJobsListing(req, res) {
   req.logger.info(`Get job listing for user ${req.user}`);
   try {
-    const listing = await Job.forUser(db, req.user);
-    res.send(listing.map((j) => _serializeJob(j)));
+    await db.transaction(async (tx) => {
+      const listing = await Job.forUser(tx, req.user);
+      res.send(listing.map((j) => _serializeJob(j)));
+    });
   } catch (e) {
     req.logger.error(e);
     res.status(500);
@@ -58,13 +60,15 @@ async function getJobStatus(req, res) {
       description: `Error: jobId ${jobId} is in invalid format.` });
   } else {
     try {
-      const job = await Job.byUsernameAndRequestId(db, req.user, jobId);
-      if (job) {
-        res.send(_serializeJob(job));
-      } else {
-        res.status(404);
-        res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
-      }
+      await db.transaction(async (tx) => {
+        const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
+        if (job) {
+          res.send(_serializeJob(job));
+        } else {
+          res.status(404);
+          res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
+        }
+      });
     } catch (e) {
       req.logger.error(e);
       res.status(500);
