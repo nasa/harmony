@@ -16,6 +16,21 @@ const Job = require('../../models/job');
  * @extends {BaseService}
  */
 class HttpService extends BaseService {
+  /**
+   * Calls the HTTP backend and returns a promise for its result, or a redirect to
+   * a job if the result is async.
+   *
+   * @returns {Promise<{
+   *     error: string,
+   *     errorCode: number,
+   *     redirect: string,
+   *     stream: Stream,
+   *     headers: object,
+   *     onComplete: Function
+   *   }>} A promise resolving to the result of the callback. See method description
+   * for properties
+   * @memberof HttpService
+   */
   invoke() {
     if (this.operation.isSynchronous) {
       return this._run();
@@ -26,9 +41,16 @@ class HttpService extends BaseService {
   /**
    * Calls the HTTP backend and returns a promise for its result
    *
-   * @returns {Promise<{req: http.IncomingMessage, res: http.ServerResponse}>} A promise resolving
-   *     to the service callback req/res
-   * @memberof BaseService
+   * @returns {Promise<{
+   *     error: string,
+   *     errorCode: number,
+   *     redirect: string,
+   *     stream: Stream,
+   *     headers: object,
+   *     onComplete: Function
+   *   }>} A promise resolving to the result of the callback. See method description
+   * for properties
+   * @memberof HttpService
    */
   _run() {
     return new Promise((resolve, reject) => {

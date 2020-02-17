@@ -1,5 +1,14 @@
 const Record = require('./record');
 
+const statesToDefaultMessages = {
+  accepted: 'The job has been accepted and is waiting to be processed',
+  running: 'The job is being processed',
+  successful: 'The job has completed successfully',
+  failed: 'The job failed with an unknown error',
+};
+
+const defaultMessages = Object.values(statesToDefaultMessages);
+
 /**
  *
  * Wrapper object for persisted jobs
@@ -85,7 +94,9 @@ class Job extends Record {
   constructor(fields) {
     super(fields);
     this.status = fields.status || 'accepted';
-    this.message = fields.message || this.status;
+    if (!fields.message || defaultMessages.includes(fields.message)) {
+      this.message = statesToDefaultMessages[this.status];
+    }
     this.progress = fields.progress || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     this.links = fields.links
