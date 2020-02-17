@@ -162,7 +162,7 @@ class BaseService {
    * @memberof BaseService
    */
   async _processAsyncCallback(req, res) {
-    const { error, item, status } = req.query;
+    const { error, item, status, redirect } = req.query;
     const trx = await db.transaction();
     let err = null;
 
@@ -185,6 +185,9 @@ class BaseService {
         job.message = error;
       } else if (status) {
         job.status = status;
+      } else if (redirect) {
+        job.links.push({ href: redirect });
+        job.status = 'successful';
       }
       await job.save(trx);
       await trx.commit();
