@@ -159,7 +159,7 @@ describe('Job', function () {
 
     it('updates the message if a default was used and the status changed', function () {
       expect(new Job({ status: 'successful', message: 'The job is being processed' }).message)
-        .to.eql('The job has completed successfully');
+        .to.equal('The job has completed successfully');
     });
 
     it('defaults links to an empty array', function () {
