@@ -88,7 +88,8 @@ class Job extends Record {
     this.message = fields.message || this.status;
     this.progress = fields.progress || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
-    this.links = fields.links || (fields._json_links ? JSON.parse(fields._json_links) : []);
+    this.links = fields.links
+    || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : []);
   }
 
   /**
