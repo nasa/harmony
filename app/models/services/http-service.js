@@ -8,9 +8,9 @@ const db = require('../../util/db');
 const Job = require('../../models/job');
 
 /**
- * Service implementation which invokes a backend over HTTP, synchronously POSTing the Harmony
- * message to its configured endpoint and conveying its response back to the caller.  This is
- * done in a single request to the backend.  We may poll for job status in the future.
+ * Service implementation which invokes a backend over HTTP, POSTing the Harmony
+ * message to its configured endpoint and conveying its response back to the caller,
+ * or creating a Job to poll and listening for service updates for async services.
  *
  * @class HttpService
  * @extends {BaseService}
