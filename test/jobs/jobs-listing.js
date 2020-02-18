@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { describe, it, before } = require('mocha');
 const uuid = require('uuid');
 const { hookServersStartStop } = require('../helpers/servers');
-const { hookTransaction } = require('../helpers/db');
+const { hookTransaction, hookTransactionFailure } = require('../helpers/db');
 const { containsJob, jobListing, hookJobListing } = require('../helpers/jobs');
 const Job = require('../../app/models/job');
 
@@ -85,6 +85,22 @@ describe('Jobs listing route', function () {
       it('does not return jobs for other users', function () {
         const listing = JSON.parse(this.res.text);
         expect(containsJob(buzzJob1, listing)).to.be.false;
+      });
+    });
+  });
+  describe('When the database catches fire', function () {
+    hookTransactionFailure();
+    hookJobListing('woody');
+    describe('for a user that should have jobs', function () {
+      it('returns an internal server error status code', function () {
+        expect(this.res.statusCode).to.equal(500);
+      });
+      it('includes an error message in JSON format indicating a server error', function () {
+        const response = JSON.parse(this.res.text);
+        expect(response).to.eql({
+          code: 'harmony:ServerError',
+          description: 'Error: Internal server error trying to retrieve jobs listing',
+        });
       });
     });
   });
