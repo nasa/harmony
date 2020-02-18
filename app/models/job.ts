@@ -1,5 +1,22 @@
 const Record = require('./record');
 
+const statesToDefaultMessages = {
+  accepted: 'The job has been accepted and is waiting to be processed',
+  running: 'The job is being processed',
+  successful: 'The job has completed successfully',
+  failed: 'The job failed with an unknown error',
+};
+
+// Enum of valid statuses
+const statuses = {
+  ACCEPTED: 'accepted',
+  RUNNING: 'running',
+  SUCCESSFUL: 'successful',
+  FAILED: 'failed',
+};
+
+const defaultMessages = Object.values(statesToDefaultMessages);
+
 /**
  *
  * Wrapper object for persisted jobs
@@ -84,8 +101,7 @@ class Job extends Record {
    */
   constructor(fields) {
     super(fields);
-    this.status = fields.status || 'accepted';
-    this.message = fields.message || this.status;
+    this.updateStatus(fields.status || 'accepted', fields.message);
     this.progress = fields.progress || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     this.links = fields.links
@@ -107,6 +123,84 @@ class Job extends Record {
       errors.push('Job progress must be between 0 and 100');
     }
     return errors.length === 0 ? null : errors;
+  }
+
+  /**
+   * Adds a link to the list of result links for the job.
+   * You must call `#save` to persist the change
+   *
+   * @param {Object<{
+   *   href: string,
+   *   title: string,
+   *   type: string
+   * }>} link Adds a link to the list of links for the object.
+   * @returns {void}
+   * @memberof Job
+   */
+  addLink(link) {
+    this.links.push(link);
+  }
+
+  /**
+   * Updates the status to failed and message to the supplied error message or the default
+   * if none is provided.  You should generally provide an error message if possible, as the
+   * default indicates an unknown error.
+   * You must call `#save` to persist the change
+   *
+   * @param {string} [message=statesToDefaultMessages.failed] an error message
+   * @returns {void}
+   * @memberof Job
+   */
+  fail(message = statesToDefaultMessages.failed) {
+    this.updateStatus(statuses.FAILED, message);
+  }
+
+  /**
+   * Updates the status to success, providing the optional message.  Generally you should
+   * only set a message if there is information to provide to users about the result, as
+   * providing a message will override any prior message, including warnings.
+   * You must call `#save` to persist the change
+   *
+   * @param {string} message (optional) a human-readable success message.  See method description.
+   * @returns {void}
+   * @memberof Job
+   */
+  succeed(message) {
+    this.updateStatus(statuses.SUCCESSFUL, message);
+  }
+
+  /**
+   * Update the status and status message of a job.  If a null or default message is provided,
+   * will use a default message corresponding to the status.
+   * You must call `#save` to persist the change
+   *
+   * @param {string} status The new status, one of successful, failed, running, accepted
+   * @param {string} message (optional) a human-readable status message
+   * @returns {void}
+   * @memberof Job
+   */
+  updateStatus(status, message) {
+    this.status = status;
+    if (message) {
+      // Update the message if a new one was provided
+      this.message = message;
+    }
+    if (!this.message || defaultMessages.includes(this.message)) {
+      // Update the message to a default one if it's currently a default one for a
+      // different status
+      this.message = statesToDefaultMessages[status];
+    }
+  }
+
+  /**
+   * Returns true if the job is complete, i.e. it expects no further interaction with
+   * backend services.
+   *
+   * @returns {boolean} true if the job is complete
+   * @memberof Job
+   */
+  isComplete() {
+    return this.status === statuses.SUCCESSFUL || this.status === statuses.FAILED;
   }
 
   /**
@@ -132,5 +226,6 @@ class Job extends Record {
 }
 
 Job.table = 'jobs';
+Job.statuses = statuses;
 
 module.exports = Job;

@@ -1,4 +1,7 @@
 const serviceResponse = require('../../backends/service-response');
+const db = require('../../util/db');
+const Job = require('../../models/job');
+const { ServerError } = require('../../util/errors');
 
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
@@ -66,31 +69,29 @@ class BaseService {
    * for properties
    * @memberof BaseService
    */
-  invoke() {
+  async invoke() {
+    const isAsync = !this.operation.isSynchronous;
+    let job;
+    if (isAsync) {
+      job = await this._createJob(db);
+    }
+    // Promise that can be awaited to ensure the service has completed its work
+    this.invocation = new Promise((resolve) => {
+      this.resolveInvocation = resolve;
+    });
     return new Promise((resolve, reject) => {
       try {
         this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
-          const { error, redirect } = req.query;
-
-          const result = {
-            headers: req.headers,
-            onComplete: () => {
-              res.status(200);
-              res.send('Ok');
-            },
-          };
-
-          if (error) {
-            result.error = error;
-          } else if (redirect) {
-            result.redirect = redirect;
+          if (isAsync) {
+            this._processAsyncCallback(req, res);
           } else {
-            result.stream = req;
+            resolve(this._processSyncCallback(req, res));
           }
-
-          resolve(result);
         });
-        this._invokeAsync();
+        this._run();
+        if (isAsync) {
+          resolve({ redirect: `/jobs/${job.requestId}`, headers: {} });
+        }
       } catch (e) {
         serviceResponse.unbindResponseUrl(this.operation.callback);
         reject(e);
@@ -107,8 +108,132 @@ class BaseService {
    * @memberof BaseService
    * @returns {void}
    */
-  _invokeAsync() {
-    throw new TypeError('BaseService subclasses must implement #_invokeAsync()');
+  _run() {
+    throw new TypeError('BaseService subclasses must implement #_run()');
+  }
+
+  /**
+   * Processes a callback coming from a synchronous service request
+   *
+   * @param {http.IncomingMessage} req the incoming callback request
+   * @param {http.ServerResponse} res the outgoing callback response
+   * @returns {void}
+   * @memberof BaseService
+   */
+  _processSyncCallback(req, res) {
+    const { error, redirect } = req.query;
+    let result;
+
+    try {
+      result = {
+        headers: req.headers,
+        onComplete: (err) => {
+          if (err) {
+            res.status(err.code);
+            res.send(JSON.stringify(err));
+          } else {
+            res.status(200);
+            res.send('Ok');
+          }
+        },
+      };
+
+      if (error) {
+        result.error = error;
+      } else if (redirect) {
+        result.redirect = redirect;
+      } else {
+        result.stream = req;
+      }
+    } finally {
+      serviceResponse.unbindResponseUrl(this.operation.callback);
+      if (this.resolveInvocation) this.resolveInvocation(true);
+    }
+
+    return result;
+  }
+
+  /**
+   * Processes a callback coming from an asynchronous service request (Job)
+   *
+   * @param {http.IncomingMessage} req the incoming callback request
+   * @param {http.ServerResponse} res the outgoing callback response
+   * @returns {void}
+   * @memberof BaseService
+   */
+  async _processAsyncCallback(req, res) {
+    const { error, item, status, redirect } = req.query;
+    const trx = await db.transaction();
+    let err = null;
+
+    let job;
+    try {
+      const { user, requestId } = this.operation;
+      job = await Job.byUsernameAndRequestId(trx, user, requestId);
+      if (!job) {
+        res.status(404);
+        this.logger.error(`Received a callback for a missing job: user=${user}, requestId=${requestId}`);
+        res.json({ code: 404, message: 'could not find a job with the given ID' });
+        trx.rollback();
+        return;
+      }
+
+      if (item) {
+        job.links.push(item);
+      }
+
+      if (error) {
+        job.fail(error);
+      } else if (status) {
+        job.updateStatus(status);
+      } else if (redirect) {
+        job.addLink({ href: redirect });
+        job.succeed();
+      }
+      await job.save(trx);
+      await trx.commit();
+    } catch (e) {
+      this.logger.error(e);
+      err = { code: 500, message: e.message };
+      await trx.rollback();
+    } finally {
+      if (error || !job || job.isComplete()) {
+        if (this.resolveInvocation) this.resolveInvocation(true);
+        serviceResponse.unbindResponseUrl(this.operation.callback);
+      }
+    }
+    if (err) {
+      res.status(err.code);
+      res.json(err);
+    } else {
+      res.status(200);
+      res.send('Ok');
+    }
+  }
+
+  /**
+   * Creates a new job for this service's operation, with appropriate logging, errors,
+   * and warnings.
+   *
+   * @param {knex.Transaction} transaction The transaction to use when creating the job
+   * @returns {Job} The created job
+   * @memberof BaseService
+   * @throws {ServerError} if the job cannot be created
+   */
+  async _createJob(transaction) {
+    const { requestId, user } = this.operation;
+    this.logger.info(`Creating job for ${requestId}`);
+    const job = new Job({ username: user, requestId, status: 'running' });
+    if (this.truncationMessage) {
+      job.message = this.truncationMessage;
+    }
+    try {
+      await job.save(transaction);
+    } catch (e) {
+      this.logger.error(e.stack);
+      throw new ServerError('Failed to save job to database.');
+    }
+    return job;
   }
 }
 
