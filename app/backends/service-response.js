@@ -64,6 +64,7 @@ function isUrlBound(callbackUrl) {
  * @param {http.IncomingMessage} req The request sent by the service
  * @param {http.ServerResponse} res The response to send to the service
  * @returns {void}
+ * @throws {Error} if no callback can be found for the given ID
  */
 function responseHandler(req, res) {
   const id = req.params.uuid;

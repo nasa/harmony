@@ -74,7 +74,7 @@ function isCollectionMatch(operation, serviceConfig) {
  * @param {DataOperation} operation The operation to build a service for
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @param {Logger} logger The logger associated with this request
- * @throws {Error} If no service can perform the given operation
+ * @throws {NotFoundError} If no service can perform the given operation
  */
 function forOperation(operation, logger) {
   let matches = [];
