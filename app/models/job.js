@@ -193,6 +193,17 @@ class Job extends Record {
   }
 
   /**
+   * Returns true if the job is complete, i.e. it expects no further interaction with
+   * backend services.
+   *
+   * @returns {boolean} true if the job is complete
+   * @memberof Job
+   */
+  isComplete() {
+    return this.status === statuses.SUCCESSFUL || this.status === statuses.FAILED;
+  }
+
+  /**
    * Validates and saves the job using the given transaction.  Throws an error if the
    * job is not valid.  New jobs will be inserted and have their id, createdAt, and
    * updatedAt fields set.  Existing jobs will be updated and have their updatedAt

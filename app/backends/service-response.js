@@ -19,7 +19,7 @@ const UUID_REGEX = /\/service\/(.*)/;
  */
 function unbindResponseUrl(url) {
   if (url) {
-    idsToCallbacks.delete(url.split('/').last);
+    idsToCallbacks.delete(url.split('/').pop());
   }
 }
 

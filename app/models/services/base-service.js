@@ -166,9 +166,10 @@ class BaseService {
     const trx = await db.transaction();
     let err = null;
 
+    let job;
     try {
       const { user, requestId } = this.operation;
-      const job = await Job.byUsernameAndRequestId(trx, user, requestId);
+      job = await Job.byUsernameAndRequestId(trx, user, requestId);
       if (!job) {
         res.status(404);
         this.logger.error(`Received a callback for a missing job: user=${user}, requestId=${requestId}`);
@@ -196,7 +197,7 @@ class BaseService {
       err = { code: 500, message: e.message };
       await trx.rollback();
     } finally {
-      if (error || status === 'successful' || status === 'failed') {
+      if (error || !job || job.isComplete()) {
         if (this.resolveInvocation) this.resolveInvocation(true);
         serviceResponse.unbindResponseUrl(this.operation.callback);
       }
