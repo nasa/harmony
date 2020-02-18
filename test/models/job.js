@@ -153,8 +153,13 @@ describe('Job', function () {
       expect(new Job({}).progress).to.eql(0);
     });
 
-    it('defaults message to the status', function () {
-      expect(new Job({ status: 'failed' }).message).to.eql('failed');
+    it('defaults message to a human readable version of the status', function () {
+      expect(new Job({ status: 'failed' }).message).to.eql('The job failed with an unknown error');
+    });
+
+    it('updates the message if a default was used and the status changed', function () {
+      expect(new Job({ status: 'successful', message: 'The job is being processed' }).message)
+        .to.equal('The job has completed successfully');
     });
 
     it('defaults links to an empty array', function () {

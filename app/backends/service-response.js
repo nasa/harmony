@@ -19,7 +19,7 @@ const UUID_REGEX = /\/service\/(.*)/;
  */
 function unbindResponseUrl(url) {
   if (url) {
-    idsToCallbacks.delete(url.split('/').last);
+    idsToCallbacks.delete(url.split('/').pop());
   }
 }
 
@@ -58,11 +58,13 @@ function isUrlBound(callbackUrl) {
 
 /**
  * Express.js handler on a service-facing endpoint that receives responses
- * from backends and calls the registered callback for those responses
+ * from backends and calls the registered callback for those responses.
+ * Does not clean up the callback
  *
  * @param {http.IncomingMessage} req The request sent by the service
  * @param {http.ServerResponse} res The response to send to the service
  * @returns {void}
+ * @throws {Error} if no callback can be found for the given ID
  */
 function responseHandler(req, res) {
   const id = req.params.uuid;
@@ -70,12 +72,7 @@ function responseHandler(req, res) {
     throw new Error(`Could not find response callback for UUID ${id}`);
   }
   const callback = idsToCallbacks.get(id).response;
-
-  try {
-    callback(req, res);
-  } finally {
-    idsToCallbacks.delete(id);
-  }
+  callback(req, res);
 }
 
 /**

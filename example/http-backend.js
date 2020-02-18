@@ -24,6 +24,10 @@
 const express = require('express');
 const { promisify } = require('util');
 const winston = require('winston');
+const request = require('request-promise');
+
+// A mapping of request IDs to callback URLs for use in demonstrating and testing async requests.
+const idsToCallbacks = {};
 
 /**
  * Express.js handler demonstrating an example Harmony handler.
@@ -61,10 +65,37 @@ async function handleHarmonyMessage(req, res) {
     }
   } else if (crs === 'REDIRECT') {
     res.redirect(303, '/example/redirected');
+  } else if (!body.isSynchronous) {
+    idsToCallbacks[body.requestId] = body.callback;
+    // Asynchronous request.
+    res.status(202).send('accepted');
   } else {
     res.type('application/json');
     res.send(req.rawBody);
   }
+}
+
+/**
+ * Shows how to send asynchronous status.  Whenever something external sends a GET
+ * request to this endpoint, we forward a status onto Harmony.
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @returns {Promise<void>} Resolves when the request is complete
+ */
+async function sendAsyncHarmonyStatus(req, res) {
+  const { id } = req.query;
+  if (!id) {
+    res.status(400).send('parameter "id" is required');
+    return;
+  }
+  const callback = idsToCallbacks[id];
+  if (!callback) {
+    res.status(400).send(`no callback found for id="${id}"`);
+    return;
+  }
+  await request.post({ url: `${callback}/response`, qs: req.query });
+  res.send('ok');
 }
 
 /**
@@ -81,6 +112,9 @@ function router() {
 
   // Endpoint to give to Harmony.  Note that other endpoints could be set up for general use
   result.post('/harmony', handleHarmonyMessage);
+
+  // Endpoint to provide status updates for async services
+  result.get('/status', sendAsyncHarmonyStatus);
 
   // Endpoint we'll redirect to when requested
   result.get('/redirected', (req, res) => res.send('You were redirected!'));

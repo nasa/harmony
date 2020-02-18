@@ -23,16 +23,35 @@ class StubService extends BaseService {
   constructor(operation, callbackOptions) {
     super({}, operation, logger);
     this.callbackOptions = callbackOptions;
+    this.isComplete = false;
+    this.isRun = false;
   }
 
   /**
-   * Asynchronously POSTs to the operation's callback using the callback options provided to the
-   * constructor set by the constructor
+   * Runs the service.  For synchronous services, this will callback immediately.  For async,
+   * `complete` must be run for a callback to occur.
    *
    * @memberof StubService
    * @returns {void}
    */
-  async _invokeAsync() {
+  async _run() {
+    this.isRun = true;
+    if (!this.operation.isSynchronous) return;
+    await this.complete();
+  }
+
+  /**
+   * Asynchronously POSTs to the operation's callback using the callback options provided to the
+   * constructor set by the constructor.
+   *
+   * @returns {void}
+   * @memberof StubService
+   */
+  async complete() {
+    // Allow tests / helpers to not care if a request is sync or async and always call `complete`
+    // by only executing this if something has tried to run the service and has not called back yet.
+    if (!this.isRun || this.isComplete) return;
+    this.isComplete = true;
     const responseUrl = `${this.operation.callback}/response`;
     const { params, body, headers } = this.callbackOptions;
     let req = request.post(responseUrl);
@@ -82,9 +101,11 @@ class StubService extends BaseService {
    * @memberof StubService
    */
   static afterHook() {
-    return function () {
+    return async function () {
       if (services.forName.restore) services.forName.restore();
       if (services.forOperation.restore) services.forOperation.restore();
+      if (this.service) await this.service.complete();
+      if (this.service && this.service.invocation) await this.service.invocation;
       delete this.service;
     };
   }

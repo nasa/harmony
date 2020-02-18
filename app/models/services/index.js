@@ -3,7 +3,6 @@ const path = require('path');
 const yaml = require('js-yaml');
 
 const LocalDockerService = require('./local-docker-service');
-const ChainService = require('./chain-service');
 const HttpService = require('./http-service');
 const { NotFoundError } = require('../../util/errors');
 
@@ -35,7 +34,6 @@ loadServiceConfigs();
 
 const serviceTypesToServiceClasses = {
   docker: LocalDockerService,
-  chain: ChainService,
   http: HttpService,
 };
 
@@ -76,7 +74,7 @@ function isCollectionMatch(operation, serviceConfig) {
  * @param {DataOperation} operation The operation to build a service for
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @param {Logger} logger The logger associated with this request
- * @throws {Error} If no service can perform the given operation
+ * @throws {NotFoundError} If no service can perform the given operation
  */
 function forOperation(operation, logger) {
   let matches = [];

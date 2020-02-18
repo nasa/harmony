@@ -33,11 +33,11 @@ function describeHttpBackendBehavior(performRequestFn) {
     });
   });
 
-  describe('a service redirect response @wip', function () {
+  describe('a service redirect response', function () {
     hookFunction(performRequestFn, 'res', 'REDIRECT');
 
     it('redirects to the location provided in the Location header', function () {
-      expect(this.res.statusCode).to.equal(302);
+      expect(this.res.statusCode).to.equal(303);
       expect(this.res.headers.location).to.equal('/example/redirected');
     });
   });
