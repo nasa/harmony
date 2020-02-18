@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const Ajv = require('ajv');
 const cloneDeep = require('lodash.clonedeep');
+const { toISODateTime } = require('../util/date');
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -17,8 +18,8 @@ function readSchema(version) {
 }
 
 const validator = new Ajv({ schemaId: 'auto' });
-validator.addSchema(readSchema('0.2.0'), 'v0.2.0');
 validator.addSchema(readSchema('0.3.0'), 'v0.3.0');
+validator.addSchema(readSchema('0.4.0'), 'v0.4.0');
 
 /**
  * Returns an updated model that is compatible with the 0.2.0 schema
@@ -27,10 +28,9 @@ validator.addSchema(readSchema('0.3.0'), 'v0.3.0');
  * @returns {object} The data operation model compatible with the 0.2.0 schema
  * @private
  */
-function modelTo0_2_0(model) {
+function modelTo0_3_0(model) {
   const updatedModel = cloneDeep(model);
-  delete updatedModel.isSynchronous;
-  delete updatedModel.requestId;
+  delete updatedModel.temporal;
   return updatedModel;
 }
 
@@ -195,7 +195,7 @@ class DataOperation {
    * Returns the temporal range to be acted upon by services, [ start, end ], where each time
    * is expressed in ISO 8601 format without milliseconds
    *
-   * @returns {Array<string>} The [ start, end ] temporal range
+   * @returns {Array<String>} The [ start, end ] temporal range
    * @memberof DataOperation
    */
   get temporal() {
@@ -205,18 +205,21 @@ class DataOperation {
   }
 
   /**
-   * Sets the temporal range to be acted upon by services, [ start, end ], where each time
-   * is expressed in ISO 8601 format without milliseconds
+   * Sets the temporal range to be acted upon by services, [ start, end ], storing each time
+   * as a string expressed in ISO 8601 format without milliseconds
    *
-   * @param {Array<string>} The [ start, end ] temporal range
+   * @param {Array<Date>} The [ start, end ] temporal range
    * @returns {void}
    * @memberof DataOperation
    */
   set temporal([startTime, endTime]) {
-    this.model.temporal = {
-      start: startTime,
-      end: endTime,
-    };
+    this.model.temporal = {};
+    if (startTime) {
+      this.model.temporal.start = (typeof startTime === 'string') ? startTime : toISODateTime(startTime);
+    }
+    if (endTime) {
+      this.model.temporal.end = (typeof endTime === 'string') ? endTime : toISODateTime(endTime);
+    }
   }
 
   /**
@@ -372,17 +375,17 @@ class DataOperation {
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
-   * @param {string} [version='0.2.0'] The version to serialize
+   * @param {string} [version='0.4.0'] The version to serialize
    * @param {bool} [validate=true] true if the serialized output should be JSON Schema validated
    *   before returning
    * @returns {string} The serialized data operation in the requested version
    * @throws {TypeError} If validate is `true` and validation fails
    * @memberof DataOperation
    */
-  serialize(version = '0.3.0', validate = true) {
+  serialize(version = '0.4.0', validate = true) {
     let toWrite = this.model;
-    if (version === '0.2.0') {
-      toWrite = modelTo0_2_0(this.model);
+    if (version === '0.3.0') {
+      toWrite = modelTo0_3_0(this.model);
     }
     toWrite.version = version;
 
