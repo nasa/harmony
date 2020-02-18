@@ -3,7 +3,7 @@ const DataOperation = require('../../models/data-operation');
 const { keysToLowerCase } = require('../../util/object');
 const { RequestValidationError } = require('../../util/errors');
 const { wrap } = require('../../util/array');
-const { parseSubsetParams, subsetParamsToBbox, ParameterParseError } = require('./util/parameter-parsing');
+const { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } = require('./util/parameter-parsing');
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -36,6 +36,10 @@ function getCoverageRangeset(req, res, next) {
     const bbox = subsetParamsToBbox(subset);
     if (bbox) {
       operation.boundingRectangle = bbox;
+    }
+    const { startTime, stopTime } = subsetParamsToTemporal(subset);
+    if (startTime || stopTime) {
+      operation.temporal = [startTime, stopTime];
     }
   } catch (e) {
     if (e instanceof ParameterParseError) {
