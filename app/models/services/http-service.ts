@@ -89,8 +89,7 @@ class HttpService extends BaseService {
               const { user, requestId } = this.operation;
               const job = await Job.byUsernameAndRequestId(trx, user, requestId);
               if (job) {
-                job.status = 'failed';
-                job.message = 'failed';
+                job.fail();
                 await job.save(trx);
                 await trx.commit();
               }

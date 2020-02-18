@@ -171,6 +171,7 @@ class BaseService {
       const job = await Job.byUsernameAndRequestId(trx, user, requestId);
       if (!job) {
         res.status(404);
+        this.logger.error(`Received a callback for a missing job: user=${user}, requestId=${requestId}`);
         res.json({ code: 404, message: 'could not find a job with the given ID' });
         trx.rollback();
         return;
@@ -181,13 +182,12 @@ class BaseService {
       }
 
       if (error) {
-        job.status = 'failed';
-        job.message = error;
+        job.fail(error);
       } else if (status) {
-        job.status = status;
+        job.updateStatus(status);
       } else if (redirect) {
-        job.links.push({ href: redirect });
-        job.status = 'successful';
+        job.addLink({ href: redirect });
+        job.succeed();
       }
       await job.save(trx);
       await trx.commit();
