@@ -80,12 +80,12 @@ function parseDate(dim, valueStr) {
     return undefined;
   }
 
-  try {
-    const value = Date.parse(valueStr);
-    return value;
-  } catch (e) {
-    throw new ParameterParseError(`subset dimension "${name}" has an invalid date time ${valueStr}`);
+  const value = Date.parse(valueStr);
+  if (Number.isNaN(value)) {
+    throw new ParameterParseError(`subset dimension "${name}" has an invalid date time "${valueStr}"`);
   }
+
+  return new Date(value);
 }
 
 
@@ -97,7 +97,7 @@ const dimensionNameRegex = /^(\w+)\(.+\)$/;
  * @param {String} value The value of the subset parameter
  * @returns {String} the dimension name
  */
-function getDimensionName(value) {
+function _getDimensionName(value) {
   const match = value.match(dimensionNameRegex);
   const [, dimName] = match;
   return dimName;
@@ -118,7 +118,7 @@ function getDimensionName(value) {
 function parseSubsetParams(values, dimConfig = dimensionConfig) {
   const result = {};
   for (const value of values) {
-    const dimName = getDimensionName(value);
+    const dimName = _getDimensionName(value);
     const dim = dimConfig[dimName];
     if (!dim) {
       throw new ParameterParseError(`unrecognized subset dimension "${dimName}"`);
@@ -200,47 +200,6 @@ function subsetParamsToTemporal(values) {
   }
   return temporal;
 }
-
-/**
- * Takes the full subset parameters and returns an object that may contain two fields:
- * start_time and end_time.
- *
- * If no temporal information is provided an empty object will be returned. If only one
- * of the fields is present only it will be returned.
- * @param {Object} subsetParameters the full list of subset parameters provided by the user
- * @returns {Object} An object with start_time and end_time fields if applicable
- */
-/*
-function parseTemporal(subsetParameters) {
-  const timeRangeSeparator = '/';
-  const anyValue = '..';
-  const timeDimension = 'time';
-  const timeParams = subsetParameters.filter((param) => getDimensionName(param) === timeDimension);
-  const temporal = {};
-  if (timeParams.length > 0) {
-    if (timeParams.length > 1) {
-  throw new ParameterParseError(`subset dimension "${timeDimension}" was specified multiple times`);
-    }
-    const timeParamValues = timeParams[0].replace(`${timeDimension}(`, '').replace(')', '');
-    const [startTime, stopTime] = timeParamValues.split(timeRangeSeparator);
-    if (startTime !== anyValue) {
-      try {
-        temporal.startTime = Date.parse(startTime);
-      } catch (e) {
-        throw new ParameterParseError(`invalid starting time value ${startTime}`);
-      }
-    }
-    if (stopTime !== anyValue) {
-      try {
-        temporal.stopTime = Date.parse(stopTime);
-      } catch (e) {
-        throw new ParameterParseError(`invalid ending time value ${stopTime}`);
-      }
-    }
-  }
-  return temporal;
-}
-*/
 
 module.exports = {
   parseSubsetParams,
