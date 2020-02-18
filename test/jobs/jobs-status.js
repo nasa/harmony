@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { describe, it, before } = require('mocha');
 const uuid = require('uuid');
 const { hookServersStartStop } = require('../helpers/servers');
-const { hookTransaction } = require('../helpers/db');
+const { hookTransaction, hookTransactionFailure } = require('../helpers/db');
 const { jobStatus, hookJobStatus, jobsEqual } = require('../helpers/jobs');
 const Job = require('../../app/models/job');
 
@@ -89,6 +89,23 @@ describe('Individual job status route', function () {
       expect(response).to.eql({
         code: 'harmony:BadRequestError',
         description: 'Error: jobId not-a-uuid is in invalid format.',
+      });
+    });
+  });
+
+  describe('When the database catches fire', function () {
+    hookTransactionFailure();
+    describe('for a user that should have jobs', function () {
+      hookJobStatus(jobId, 'joe');
+      it('returns an internal server error status code', function () {
+        expect(this.res.statusCode).to.equal(500);
+      });
+      it('includes an error message in JSON format indicating a server error', function () {
+        const response = JSON.parse(this.res.text);
+        expect(response).to.eql({
+          code: 'harmony:ServerError',
+          description: `Error: Internal server error trying to retrieve job status for job ${jobId}`,
+        });
       });
     });
   });
