@@ -192,16 +192,16 @@ class DataOperation {
   }
 
   /**
-   * Returns the temporal range to be acted upon by services, [ start, end ], where each time
+   * Returns the temporal range to be acted upon by services where each time
    * is expressed in ISO 8601 format without milliseconds
    *
-   * @returns {Array<String>} The [ start, end ] temporal range
+   * @returns {Object} The temporal range with two keys start and end
    * @memberof DataOperation
    */
   get temporal() {
     const { temporal } = this.model;
     if (!temporal) return null;
-    return [temporal.start, temporal.end];
+    return temporal;
   }
 
   /**
