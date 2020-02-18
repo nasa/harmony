@@ -88,7 +88,6 @@ function parseDate(dim, valueStr) {
   return new Date(value);
 }
 
-
 const dimensionNameRegex = /^(\w+)\(.+\)$/;
 
 /**
