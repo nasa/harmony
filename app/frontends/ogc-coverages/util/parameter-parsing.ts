@@ -3,16 +3,20 @@ const unbounded = '*';
 // Regex to match lat(-10:10) or lon(*:20)
 const numberRangeRegex = new RegExp(`^(\\w+)\\((.+)${rangeSeparator}(.+)\\)$`);
 
-// Date ranges can have several different representations
 // time("2001-05-01T12:35:00Z":"2002-07-01T13:18:55Z")
-const twoDatesRegex = new RegExp(`^(\\w+)\\("(.+)"${rangeSeparator}"(.+)"\\)$`);
+const twoStringsRegex = new RegExp(`^(\\w+)\\("(.+)"${rangeSeparator}"(.+)"\\)$`);
 // time(*:"2001-05-01T12:35:00Z")
-const unboundedStartDateRegex = new RegExp(`^(\\w+)\\((\\*)${rangeSeparator}"(.+)"\\)$`);
+const unboundedMinStringRegex = new RegExp(`^(\\w+)\\((\\*)${rangeSeparator}"(.+)"\\)$`);
 // time("2001-05-01T12:35:00Z":*)
-const unboundedEndDateRegex = new RegExp(`^(\\w+)\\("(.+)"${rangeSeparator}(\\*)\\)$`);
+const unboundedMaxStringRegex = new RegExp(`^(\\w+)\\("(.+)"${rangeSeparator}(\\*)\\)$`);
 // time(*:*)
-const unboundedDateRegex = new RegExp(`^(\\w+)\\((\\*)${rangeSeparator}(\\*)\\)`);
-const dateTimeRegex = new RegExp(`${twoDatesRegex.source}|${unboundedStartDateRegex.source}|${unboundedEndDateRegex.source}|${unboundedDateRegex.source}`);
+const unboundedStringRegex = new RegExp(`^(\\w+)\\((\\*)${rangeSeparator}(\\*)\\)`);
+// time(*)
+const singleUnboundedStringRegex = new RegExp('^(\\w+)\\((\\*)\\)$');
+// time("2001-05-01T12:35:00Z")
+const singleStringRegex = new RegExp('^(\\w+)\\("(.+)"\\)$');
+// Date ranges can have several different representations
+const dateTimeRegex = new RegExp(`${twoStringsRegex.source}|${unboundedMinStringRegex.source}|${unboundedMaxStringRegex.source}|${unboundedStringRegex.source}|${singleStringRegex.source}|${singleUnboundedStringRegex.source}`);
 
 const dimensionConfig = {
   lat: {
@@ -139,19 +143,28 @@ function parseSubsetParams(values, dimConfig = dimensionConfig) {
     if (!match) {
       throw new ParameterParseError(`subset dimension "${dim.name}" could not be parsed`);
     }
-    const [, , minStr, maxStr] = match.filter((v) => v);
+    const matches = match.filter((v) => v);
+    const [, , minStr] = matches;
+    let [, , , maxStr] = matches;
+    if (minStr !== undefined && maxStr === undefined) {
+      // When just a single value is provided treat it as a range with the same min and max
+      maxStr = minStr;
+    }
     const parsed = {};
 
     if (result[dim.name]) {
       throw new ParameterParseError(`subset dimension "${dim.name}" was specified multiple times`);
     }
-    if (dim.type === Number) {
+    switch (dim.type) {
+    case Number:
       parsed.min = parseNumeric(dim, minStr, dim.min);
       parsed.max = parseNumeric(dim, maxStr, dim.max);
-    } else if (dim.type === Date) {
+      break;
+    case Date:
       parsed.min = parseDate(dim, minStr);
       parsed.max = parseDate(dim, maxStr);
-    } else {
+      break;
+    default:
       // Cannot be reached with current config.
       if (minStr !== unbounded) parsed.min = minStr;
       if (maxStr !== unbounded) parsed.max = maxStr;
