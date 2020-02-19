@@ -54,8 +54,12 @@ async function getServiceResult(req, res, next) {
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
     try {
-      const result = await objectStore.signGetObject(url, { 'x-user': req.user });
-      res.redirect(303, result);
+      const linkExpirationSeconds = 1800;
+      const redirectExpirationSeconds = linkExpirationSeconds / 2;
+      const result = await objectStore.signGetObject(url, { 'x-user': req.user }, linkExpirationSeconds);
+      // Direct clients to reuse the redirect for 15 minutes before asking for a new one
+      res.append('Cache-Control', `private, max-age=${redirectExpirationSeconds}`);
+      res.redirect(307, result);
     } catch (e) {
       // Thrown if signing fails, either due to inadequate bucket permissions or
       // an object not existing.
