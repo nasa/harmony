@@ -100,47 +100,47 @@ describe('OGC API Coverages - Utilities', function () {
 
     describe('time subsets', function () {
       it('returns a parsed object with "time" info when passed a valid range', function () {
-        expect(parseSubsetParams(['time(2001-05-01T12:35:00Z/2002-07-01T13:18:55Z)'])).to.eql({
+        expect(parseSubsetParams(['time("2001-05-01T12:35:00Z":"2002-07-01T13:18:55Z")'])).to.eql({
           time: { min: new Date('2001-05-01T12:35:00Z'), max: new Date('2002-07-01T13:18:55Z') } });
       });
 
-      it('returns a parsed object with an unbounded end when the ending range is ".."', function () {
-        expect(parseSubsetParams(['time(2001-05-01T12:35:00Z/..)'])).to.eql({
+      it('returns a parsed object with an unbounded end when the ending range is "*"', function () {
+        expect(parseSubsetParams(['time("2001-05-01T12:35:00Z":*)'])).to.eql({
           time: { min: new Date('2001-05-01T12:35:00Z'), max: undefined } });
       });
 
-      it('returns a parsed object with an unbounded start when the starting range is ".."', function () {
-        expect(parseSubsetParams(['time(../2001-05-01T12:35:00Z)'])).to.eql({
+      it('returns a parsed object with an unbounded start when the starting range is "*"', function () {
+        expect(parseSubsetParams(['time(*:"2001-05-01T12:35:00Z")'])).to.eql({
           time: { min: undefined, max: new Date('2001-05-01T12:35:00Z') } });
       });
 
-      it('returns a parsed object with an unbounded start and unbounded end time when both ranges are ".."', function () {
-        expect(parseSubsetParams(['time(../..)'])).to.eql({
+      it('returns a parsed object with an unbounded start and unbounded end time when both ranges are "*"', function () {
+        expect(parseSubsetParams(['time(*:*)'])).to.eql({
           time: { min: undefined, max: undefined } });
       });
 
       it('throws a parse error when the starting time is later than the ending time', function () {
-        expect(parseSubsetParamsFn(['time(2002-07-01T13:18:55Z/2001-05-01T12:35:00Z)'])).to.throw(ParameterParseError, 'subset dimension "time" values must be ordered from low to high');
+        expect(parseSubsetParamsFn(['time("2002-07-01T13:18:55Z":"2001-05-01T12:35:00Z")'])).to.throw(ParameterParseError, 'subset dimension "time" values must be ordered from low to high');
       });
 
       it('throws a parse error when the starting time is not a valid date time', function () {
-        expect(parseSubsetParamsFn(['time(abc/2001-05-01T12:35:00Z)'])).to.throw(ParameterParseError, 'subset dimension "time" has an invalid date time "abc"');
+        expect(parseSubsetParamsFn(['time("abc":"2001-05-01T12:35:00Z")'])).to.throw(ParameterParseError, 'subset dimension "time" has an invalid date time "abc"');
       });
 
       it('throws a parse error when the end time is not a valid date time', function () {
-        expect(parseSubsetParamsFn(['time(2001-05-01T12:35:00Z/xyz)'])).to.throw(ParameterParseError, 'subset dimension "time" has an invalid date time "xyz"');
+        expect(parseSubsetParamsFn(['time("2001-05-01T12:35:00Z":"xyz")'])).to.throw(ParameterParseError, 'subset dimension "time" has an invalid date time "xyz"');
       });
 
-      it('throws a parse error when missing the "/" range separator value', function () {
-        expect(parseSubsetParamsFn(['time(2001-05-01T12:35:00Z2002-07-01T13:18:55Z)'])).to.throw(ParameterParseError, 'subset dimension "time" could not be parsed');
+      it('throws a parse error when missing the ":" range separator value', function () {
+        expect(parseSubsetParamsFn(['time("2001-05-01T12:35:00Z""2002-07-01T13:18:55Z")'])).to.throw(ParameterParseError, 'subset dimension "time" could not be parsed');
       });
 
       it('throws a parse error when the ending range is missing', function () {
-        expect(parseSubsetParamsFn(['time(2001-05-01T12:35:00Z/)'])).to.throw(ParameterParseError, 'subset dimension "time" could not be parsed');
+        expect(parseSubsetParamsFn(['time("2001-05-01T12:35:00Z":)'])).to.throw(ParameterParseError, 'subset dimension "time" could not be parsed');
       });
 
       it('throws a parse error when the starting range is missing', function () {
-        expect(parseSubsetParamsFn(['time(/2001-05-01T12:35:00Z)'])).to.throw(ParameterParseError, 'subset dimension "time" could not be parsed');
+        expect(parseSubsetParamsFn(['time(:"2001-05-01T12:35:00Z")'])).to.throw(ParameterParseError, 'subset dimension "time" could not be parsed');
       });
 
       it('throws a parse error when only a single date time value is provided', function () {
@@ -150,7 +150,7 @@ describe('OGC API Coverages - Utilities', function () {
 
     describe('multiple subsets', function () {
       it('returns a parsed object with "lat" and "lon" info when passed a valid ranges', function () {
-        expect(parseSubsetParams(['lon(-10:10.5)', 'lat(-20:20.5)', 'time(2001-05-01T12:35:00Z/2002-07-01T13:18:55Z)'])).to.eql({
+        expect(parseSubsetParams(['lon(-10:10.5)', 'lat(-20:20.5)', 'time("2001-05-01T12:35:00Z":"2002-07-01T13:18:55Z")'])).to.eql({
           lon: { min: -10, max: 10.5 },
           lat: { min: -20, max: 20.5 },
           time: { min: new Date('2001-05-01T12:35:00Z'), max: new Date('2002-07-01T13:18:55Z') },

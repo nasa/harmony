@@ -176,7 +176,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const query = {
       outputCrs: 'CRS:84',
       // Time range matches exactly one granule
-      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time(2002-07-31T00:00:00.000Z/2002-08-31T10:00:00.000Z)'],
+      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2002-07-31T00:00:00.000Z":"2002-08-31T10:00:00.000Z")'],
     };
 
     describe('calling the backend service', function () {
@@ -327,7 +327,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         version,
         collection,
         variableName,
-        { granuleId, subset: 'time(nonsense/2010-01-01T01:00:00Z)' },
+        { granuleId, subset: 'time("nonsense":"2010-01-01T01:00:00Z")' },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
