@@ -172,6 +172,35 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when provided a valid temporal range', function () {
+    const query = {
+      outputCrs: 'CRS:84',
+      // Time range matches exactly one granule
+      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2002-07-31T00:00:00.000Z":"2002-08-31T10:00:00.000Z")'],
+    };
+
+    describe('calling the backend service', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, collection, variableName, query);
+
+      it('synchronously makes the request', function () {
+        expect(this.service.operation.isSynchronous).to.equal(true);
+      });
+
+      it('passes the temporal range to the backend service', function () {
+        const { start, end } = this.service.operation.temporal;
+        expect(start).to.equal('2002-07-31T00:00:00Z');
+        expect(end).to.equal('2002-08-31T10:00:00Z');
+      });
+
+      it('identifies the correct granule based on time range', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.granules.length === 1);
+        expect(source.granules[0].id).to.equal('G1224343298-GES_DISC');
+      });
+    });
+  });
+
   describe('when the database catches fire during an asynchronous request', function () {
     before(function () {
       const testdb = path.resolve(__dirname, '../../db/test.sqlite3');
@@ -276,8 +305,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         description: 'Error: query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
       });
     });
-    it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid subset is provided', async function () {
-      // See util-parameter-parsing.js spec for full details on subset validation
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid spatial subset is provided', async function () {
+      // See util-parameter-parsing.js spec for full details on spatial subset validation
       const res = await rangesetRequest(
         this.frontend,
         version,
@@ -289,6 +318,21 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(res.body).to.eql({
         code: 'harmony.RequestValidationError',
         description: 'Error: query parameter "subset" subset dimension "lat" has an invalid numeric value "nonsense"',
+      });
+    });
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid temporal subset is provided', async function () {
+      // See util-parameter-parsing.js spec for full details on temporal subset validation
+      const res = await rangesetRequest(
+        this.frontend,
+        version,
+        collection,
+        variableName,
+        { granuleId, subset: 'time("nonsense":"2010-01-01T01:00:00Z")' },
+      );
+      expect(res.status).to.equal(400);
+      expect(res.body).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: query parameter "subset" subset dimension "time" has an invalid date time "nonsense"',
       });
     });
   });
