@@ -37,7 +37,7 @@
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
-        STAGING_PATH: harmony/gdal
+        STAGING_PATH: public/harmony/gdal
         TEXT_LOGGER: !Env ${TEXT_LOGGER}
   collections:
     - C1215669046-GES_DISC
@@ -65,7 +65,7 @@
         EDL_PASSWORD: !Env ${EDL_PASSWORD}
         EDL_ENDPOINT: !Env ${EDL_ENDPOINT}
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
-        STAGING_PATH: sds/swot-reproject
+        STAGING_PATH: public/sds/swot-reproject
         TEXT_LOGGER: !Env ${TEXT_LOGGER}
   collections:
     - C1221286860-NSIDC_TS1
