@@ -37,11 +37,12 @@ class S3ObjectStore {
    *
    * @param {string|URL} objectUrl the URL of the object to sign
    * @param {Object} params an optional mapping of parameter key/values to put in the URL
+   * @param {Integer} [expires=900] the amount of time in seconds before the URL expires
    * @returns {Promise<string>} a signed URL
    * @throws {TypeError} if the URL is not a recognized protocol or cannot be parsed
    * @memberof S3ObjectStore
    */
-  async signGetObject(objectUrl, params) {
+  async signGetObject(objectUrl, params, expires = 900) {
     const url = new URL(objectUrl);
     if (url.protocol.toLowerCase() !== 's3:') {
       throw new TypeError(`Invalid S3 URL: ${objectUrl}`);
@@ -49,6 +50,7 @@ class S3ObjectStore {
     const object = {
       Bucket: url.hostname,
       Key: url.pathname.substr(1), // Nuke leading "/"
+      Expires: expires,
     };
     // Verifies that the object exists, or throws NotFound
     await this.s3.headObject(object).promise();
