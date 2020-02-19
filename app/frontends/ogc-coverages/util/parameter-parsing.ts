@@ -145,11 +145,8 @@ function parseSubsetParams(values, dimConfig = dimensionConfig) {
     }
     const matches = match.filter((v) => v);
     const minStr = matches[2];
-    let maxStr = matches[3];
-    if (minStr !== undefined && maxStr === undefined) {
-      // When just a single value is provided treat it as a range with the same min and max
-      maxStr = minStr;
-    }
+    // When just a single value is provided treat it as a range with the same min and max
+    const maxStr = matches[3] || minStr;
     const parsed = {};
 
     if (result[dim.name]) {
