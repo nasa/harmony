@@ -1,3 +1,19 @@
+const rangeSeparator = ':';
+const unbounded = '*';
+// Regex to match lat(-10:10) or lon(*:20)
+const numberRangeRegex = new RegExp(`^(\\w+)\\((.+)${rangeSeparator}(.+)\\)$`);
+
+// Date ranges can have several different representations
+// time("2001-05-01T12:35:00Z":"2002-07-01T13:18:55Z")
+const twoDatesRegex = new RegExp(`^(\\w+)\\("(.+)"${rangeSeparator}"(.+)"\\)$`);
+// time(*:"2001-05-01T12:35:00Z")
+const unboundedStartDateRegex = new RegExp(`^(\\w+)\\((\\*)${rangeSeparator}"(.+)"\\)$`);
+// time("2001-05-01T12:35:00Z":*)
+const unboundedEndDateRegex = new RegExp(`^(\\w+)\\("(.+)"${rangeSeparator}(\\*)\\)$`);
+// time(*:*)
+const unboundedDateRegex = new RegExp(`^(\\w+)\\((\\*)${rangeSeparator}(\\*)\\)`);
+const dateTimeRegex = new RegExp(`${twoDatesRegex.source}|${unboundedStartDateRegex.source}|${unboundedEndDateRegex.source}|${unboundedDateRegex.source}`);
+
 const dimensionConfig = {
   lat: {
     name: 'lat',
@@ -5,8 +21,7 @@ const dimensionConfig = {
     max: 90,
     lowToHigh: true,
     type: Number,
-    rangeSeparator: ':',
-    anyValue: '*',
+    regex: numberRangeRegex,
   },
   lon: {
     name: 'lon',
@@ -14,15 +29,13 @@ const dimensionConfig = {
     max: 180,
     lowToHigh: false, // Max longitude is allowed to be lower than min across the antimeridian
     type: Number,
-    rangeSeparator: ':',
-    anyValue: '*',
+    regex: numberRangeRegex,
   },
   time: {
     name: 'time',
     lowToHigh: true,
     type: Date,
-    rangeSeparator: '/',
-    anyValue: '..',
+    regex: dateTimeRegex,
   },
 };
 
@@ -45,9 +58,9 @@ class ParameterParseError extends Error {}
  * @throws {ParameterParseError} if there are errors while parsing
  */
 function parseNumeric(dim, valueStr, defaultValue) {
-  const { name, min, max, anyValue } = dim;
+  const { name, min, max } = dim;
 
-  if (valueStr === anyValue) {
+  if (valueStr === unbounded) {
     return defaultValue;
   }
   // The `+` strictly converts a string to a number or NaN if it's invalid
@@ -74,18 +87,18 @@ function parseNumeric(dim, valueStr, defaultValue) {
  * @throws {ParameterParseError} if there are errors while parsing
  */
 function parseDate(dim, valueStr) {
-  const { name, anyValue } = dim;
+  const { name } = dim;
 
-  if (valueStr === anyValue) {
+  if (valueStr === unbounded) {
     return undefined;
   }
+  const value = new Date(valueStr);
 
-  const value = Date.parse(valueStr);
-  if (Number.isNaN(value)) {
+  if (Number.isNaN(+value)) {
     throw new ParameterParseError(`subset dimension "${name}" has an invalid date time "${valueStr}"`);
   }
 
-  return new Date(value);
+  return value;
 }
 
 const dimensionNameRegex = /^(\w+)\(.+\)$/;
@@ -122,17 +135,13 @@ function parseSubsetParams(values, dimConfig = dimensionConfig) {
     if (!dim) {
       throw new ParameterParseError(`unrecognized subset dimension "${dimName}"`);
     }
-    // Regex to match lat(-10:10) or time(2010-01-01T01:01:00Z/2011-01-01T01:01:00Z)
-    const regex = new RegExp(`^(\\w+)\\((.+)${dim.rangeSeparator}(.+)\\)$`);
-    const match = value.match(regex);
+    const match = value.match(dim.regex);
     if (!match) {
       throw new ParameterParseError(`subset dimension "${dim.name}" could not be parsed`);
     }
-    const [, , minStr, maxStr] = match;
+    const [, , minStr, maxStr] = match.filter((v) => v);
     const parsed = {};
-    if (!dim) {
-      throw new ParameterParseError(`unrecognized subset dimension "${dimName}"`);
-    }
+
     if (result[dim.name]) {
       throw new ParameterParseError(`subset dimension "${dim.name}" was specified multiple times`);
     }
@@ -144,8 +153,8 @@ function parseSubsetParams(values, dimConfig = dimensionConfig) {
       parsed.max = parseDate(dim, maxStr);
     } else {
       // Cannot be reached with current config.
-      if (minStr !== dim.anyValue) parsed.min = minStr;
-      if (maxStr !== dim.anyValue) parsed.max = maxStr;
+      if (minStr !== unbounded) parsed.min = minStr;
+      if (maxStr !== unbounded) parsed.max = maxStr;
     }
     const { min, max } = parsed;
     if (dim.lowToHigh && min !== undefined && max !== undefined && min > max) {
