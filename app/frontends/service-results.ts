@@ -54,7 +54,7 @@ async function getServiceResult(req, res, next) {
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
     try {
-      const result = await objectStore.signGetObject(url);
+      const result = await objectStore.signGetObject(url, { 'x-user': req.user });
       res.redirect(303, result);
     } catch (e) {
       // Thrown if signing fails, either due to inadequate bucket permissions or
