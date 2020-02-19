@@ -3,16 +3,6 @@ const env = require('../util/env');
 const { RequestValidationError } = require('../util/errors');
 
 /**
- * Converts a Date object into an ISO String representation (truncates milliseconds)
- *
- * @param {Date} date The date to convert
- * @returns {string} An ISO string representation of the date, with milliseconds truncated
- */
-function toISODateTime(date) {
-  return date.toISOString().replace(/\.\d{3}/g, '');
-}
-
-/**
  * Express.js middleware which extracts parameters from the Harmony operation
  * and performs a granule query on them, determining which files are applicable
  * to the given operation.
@@ -31,7 +21,7 @@ async function cmrGranuleLocator(req, res, next) {
 
   if (operation.temporal) {
     const { start, end } = operation.temporal;
-    cmrQuery.temporal = `${toISODateTime(start)},${toISODateTime(end)}`;
+    cmrQuery.temporal = `${start || ''},${end || ''}`;
   }
   if (operation.boundingRectangle) {
     cmrQuery.bounding_box = operation.boundingRectangle.join(',');
