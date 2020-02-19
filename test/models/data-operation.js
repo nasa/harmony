@@ -13,7 +13,7 @@ const validOperation = new DataOperation({
   requestId: 'c045c793-19f1-43b5-9547-c87a5c7dfadb',
 });
 // Verifying that setting the temporal with dates converts them to strings
-validOperation.temporal = [new Date('01-01-1999'), new Date('02-02-2020')];
+validOperation.temporal = [new Date('1999-01-01T10:00:00Z'), new Date('2020-02-20T15:00:00Z')];
 
 const invalidOperation = new DataOperation({
   client: 'harmony-test',
@@ -24,7 +24,7 @@ const invalidOperation = new DataOperation({
   subset: { bbox: [-130, -45, 130, 45, 100] }, // bbox has one too many numbers
   isSynchronous: true,
   requestId: 'c045c793-19f1-43b5-9547-c87a5c7dfadb',
-  temporal: { start: '1999-01-01T05:00:00Z', end: '2020-02-02T05:00:00Z' },
+  temporal: { start: '1999-01-01T10:00:00Z', end: '2020-02-20T15:00:00Z' },
 });
 
 describe('DataOperation', () => {
@@ -54,7 +54,7 @@ describe('DataOperation', () => {
         });
 
         it('returns its JSON-serialized model', () => {
-          expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{},"user":"test-user","subset":{"bbox":[-130,-45,130,45,100]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T05:00:00Z","end":"2020-02-02T05:00:00Z"},"version":"0.4.0"}');
+          expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{},"user":"test-user","subset":{"bbox":[-130,-45,130,45,100]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}');
         });
       });
     });
@@ -67,7 +67,7 @@ describe('DataOperation', () => {
       });
 
       it('returns its JSON-serialized model', () => {
-        expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T05:00:00Z","end":"2020-02-02T05:00:00Z"},"version":"0.4.0"}');
+        expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}');
       });
     });
 
@@ -79,7 +79,7 @@ describe('DataOperation', () => {
       });
 
       it('returns its JSON-serialized model with the latest schema version', () => {
-        expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T05:00:00Z","end":"2020-02-02T05:00:00Z"},"version":"0.4.0"}');
+        expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}');
       });
     });
     describe('when using the 0.3.0 schema version', () => {
