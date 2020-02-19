@@ -144,8 +144,8 @@ function parseSubsetParams(values, dimConfig = dimensionConfig) {
       throw new ParameterParseError(`subset dimension "${dim.name}" could not be parsed`);
     }
     const matches = match.filter((v) => v);
-    const [, , minStr] = matches;
-    let [, , , maxStr] = matches;
+    const minStr = matches[2];
+    let maxStr = matches[3];
     if (minStr !== undefined && maxStr === undefined) {
       // When just a single value is provided treat it as a range with the same min and max
       maxStr = minStr;
