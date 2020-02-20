@@ -30,14 +30,14 @@ BACKEND_HOST=localhost
 CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
 
 # If staging data to avoid download from providers and/or speed up testing,
-# STAGING_PATH contains the path/URL with which to prefix staged filenames.
+# CACHED_DATA_PATH contains the path/URL with which to prefix staged filenames.
 # Data URLs from the CMR will have all but their basename stripped off and
-# then be prepended by the STAGING_PATH, e.g.:
-#    STAGING_PATH = s3://staged-data/
+# then be prepended by the CACHED_DATA_PATH, e.g.:
+#    CACHED_DATA_PATH = s3://cached-data/
 #    Data URL = https://example.com/some/path/data.hdf5
-#    Staged data path -> s3://staged-data/data.hdf5
+#    Staged data path -> s3://cached-data/data.hdf5
 # If not staging data, this can be left blank.
-STAGING_PATH=
+CACHED_DATA_PATH=
 
 # For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
 USE_LOCALSTACK=true
