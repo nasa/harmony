@@ -27,10 +27,10 @@ function createPublicPermalink(url, frontendRoot) {
     // Right now we only handle permalinks to S3.  We also don't capture the
     // protocol information in the URL, which would need to be incorporated if we
     // ever allow the simultaneous use of multiple object store vendors
-    if (!url.pathname.startsWith('/public/')) {
+    if (!parsed.pathname.startsWith('/public/')) {
       throw new TypeError(`Staged objects must have prefix /public/ or they will not be accessible: ${url}`);
     }
-    return `${frontendRoot}/service-results/${url.pathname.replace('/public/', '')}`;
+    return `${frontendRoot}/service-results/${parsed.host}/${parsed.pathname.replace('/public/', '')}`;
   }
   if (['https', 'http', 'sftp', 'ftp'].includes(protocol)) {
     return url;
@@ -54,11 +54,9 @@ async function getServiceResult(req, res, next) {
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
     try {
-      const linkExpirationSeconds = 1800;
-      const redirectExpirationSeconds = linkExpirationSeconds / 2;
-      const result = await objectStore.signGetObject(url, { 'x-user': req.user }, linkExpirationSeconds);
-      // Direct clients to reuse the redirect for 15 minutes before asking for a new one
-      res.append('Cache-Control', `private, max-age=${redirectExpirationSeconds}`);
+      const result = await objectStore.signGetObject(url, { 'x-user': req.user });
+      // Direct clients to reuse the redirect for 10 minutes before asking for a new one
+      res.append('Cache-Control', 'private, max-age=600');
       res.redirect(307, result);
     } catch (e) {
       // Thrown if signing fails, either due to inadequate bucket permissions or

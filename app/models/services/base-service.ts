@@ -162,7 +162,7 @@ class BaseService {
    * @memberof BaseService
    */
   async _processAsyncCallback(req, res) {
-    const { error, item, status, redirect } = req.query;
+    const { error, item, status, redirect, progress } = req.query;
     const trx = await db.transaction();
     let err = null;
 
@@ -180,6 +180,9 @@ class BaseService {
 
       if (item) {
         job.links.push(item);
+      }
+      if (progress) {
+        job.progress = parseInt(progress, 10);
       }
 
       if (error) {
