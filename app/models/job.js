@@ -190,6 +190,9 @@ class Job extends Record {
       // different status
       this.message = statesToDefaultMessages[status];
     }
+    if (this.status === statuses.SUCCESSFUL) {
+      this.progress = 100;
+    }
   }
 
   /**

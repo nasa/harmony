@@ -42,7 +42,7 @@ class StubService extends BaseService {
 
   /**
    * Asynchronously POSTs to the operation's callback using the callback options provided to the
-   * constructor set by the constructor.
+   * constructor
    *
    * @returns {void}
    * @memberof StubService
@@ -52,14 +52,26 @@ class StubService extends BaseService {
     // by only executing this if something has tried to run the service and has not called back yet.
     if (!this.isRun || this.isComplete) return;
     this.isComplete = true;
+    await this.sendResponse(this.callbackOptions.params);
+  }
+
+  /**
+   * Asynchronously POSTs a response to the backend using the supplied
+   * query parameters but not marking the service complete.
+   *
+   * @param {object} query an object to be serialized as query params to the callback
+   * @returns {void}
+   * @memberof StubService
+   */
+  async sendResponse(query) {
     const responseUrl = `${this.operation.callback}/response`;
-    const { params, body, headers } = this.callbackOptions;
+    const { body, headers } = this.callbackOptions;
     let req = request.post(responseUrl);
     if (headers) {
       req = req.set(headers);
     }
-    if (params) {
-      req = req.query(params);
+    if (query) {
+      req = req.query(query);
     }
     if (body) {
       req = req.send(body);

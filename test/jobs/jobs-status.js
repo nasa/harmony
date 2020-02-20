@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { describe, it, before } = require('mocha');
+const sinon = require('sinon');
+const { describe, it, before, after } = require('mocha');
 const uuid = require('uuid');
 const request = require('supertest');
 const { hookServersStartStop } = require('../helpers/servers');
@@ -7,8 +8,9 @@ const { hookTransaction, hookTransactionFailure } = require('../helpers/db');
 const { jobStatus, hookJobStatus, jobsEqual } = require('../helpers/jobs');
 const Job = require('../../app/models/job');
 const StubService = require('../helpers/stub-service');
-const { hookRedirect } = require('../helpers/hooks');
+const { hookRedirect, hookUrl } = require('../helpers/hooks');
 const { hookRangesetRequest } = require('../helpers/ogc-api-coverages');
+const { S3ObjectStore } = require('../../app/util/object-store');
 
 const aJob = {
   username: 'joe',
@@ -224,6 +226,93 @@ describe('Individual job status route', function () {
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.eql('something broke');
+        });
+      });
+    });
+
+    describe('when an incomplete job has provided links as a partial status updates', function () {
+      const links = [
+        {
+          href: 'http://example.com/1',
+          title: 'Example 1',
+          type: 'text/plain',
+        },
+        {
+          href: 'http://example.com/2',
+          title: 'Example 2',
+          type: 'text/ornate',
+        },
+      ];
+
+      StubService.hook({ params: { status: 'successful' } });
+      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      before(async function () {
+        await this.service.sendResponse({ item: links[0] });
+        await this.service.sendResponse({ item: links[1] });
+      });
+      hookRedirect('jdoe1');
+
+      it('returns the links in its response', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.links).to.eql(links);
+      });
+
+      it('maintains a status of "running"', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.status).to.equal('running');
+      });
+    });
+
+    describe('when an incomplete job has provided a percentage progress update', function () {
+      StubService.hook({ params: { status: 'successful' } });
+      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      before(async function () {
+        await this.service.sendResponse({ progress: 20 });
+      });
+      hookRedirect('jdoe1');
+
+      it('displays the progress in its response', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.progress).to.equal(20);
+      });
+
+      it('maintains a status of "running"', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.status).to.equal('running');
+      });
+    });
+
+    describe('when a job has provided an S3 URL as a result', function () {
+      const s3Uri = 's3://example-bucket/public/example/path.tif';
+      StubService.hook({ params: { status: 'successful' } });
+      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      before(async function () {
+        await this.service.sendResponse({ item: { href: s3Uri } });
+      });
+      hookRedirect('jdoe1');
+
+      it('provides a permanent link to a Harmony HTTP URL', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.links[0].href).to.match(/^http/);
+        expect(job.links[0].href).to.have.string('/service-results/example-bucket/example/path.tif');
+      });
+
+      describe('loading the provided Harmony HTTP URL', function () {
+        before(function () {
+          sinon.stub(S3ObjectStore.prototype, 'signGetObject')
+            .callsFake((url, params) => `https://example.com/signed/${params['x-user']}`);
+        });
+        after(function () {
+          S3ObjectStore.prototype.signGetObject.restore();
+        });
+
+        hookUrl(function () {
+          return JSON.parse(this.res.text).links[0].href.split(/:\d+/)[1];
+        }, 'jdoe1');
+
+        it('temporarily redirects to a presigned URL for the data', function () {
+          expect(this.res.statusCode).to.equal(307);
+          expect(this.res.headers.location).to.equal('https://example.com/signed/jdoe1');
         });
       });
     });
