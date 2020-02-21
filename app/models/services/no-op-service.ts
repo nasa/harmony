@@ -1,7 +1,7 @@
 const BaseService = require('./base-service');
 const Job = require('../job');
 
-const noOpMessage = 'Returning direct download links, no transformations performed.';
+const noOpMessage = 'Returning direct download links, no transformation was performed because no known service exists to perform this transformation on the data.';
 
 /**
  * Service implementation that does not actually perform any transformation
