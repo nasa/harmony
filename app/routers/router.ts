@@ -69,11 +69,6 @@ function service(fn) {
       if (!req.collections || req.collections.length === 0) {
         throw new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name');
       }
-      // Attempts to grab an available backend for the requested operation.
-      // If no such backend exists, this will throw, causing desirable 404s.
-      if (!req.collections.every(services.isCollectionSupported)) {
-        throw new NotFoundError('The requested service is not valid for the given collection');
-      }
       child.info('Running service');
       await fn(req, res, next);
     } catch (e) {
