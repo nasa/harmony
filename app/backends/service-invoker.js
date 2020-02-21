@@ -1,11 +1,14 @@
 const services = require('../models/services');
 const env = require('../util/env');
 const { ServiceError } = require('../util/errors');
+const { objectStoreForProtocol } = require('../util/object-store');
 
 /**
  * Copies the header with the given name from the given request to the given response
  *
- * @param {http.IncomingMessage} serviceResult The service result to copy from
+ * @param {Object<{
+ *  headers: object
+ * }>} serviceResult The service result to copy from
  * @param {http.ServerResponse} res The response to copy to
  * @param {string} header The name of the header to set
  * @returns {void}
@@ -18,12 +21,17 @@ function copyHeader(serviceResult, res, header) {
  * Translates the given request sent by a backend service into the given
  * response sent to the client.
  *
- * @param {http.IncomingMessage} serviceResult The service result
+ * @param {Object<{
+ *   error: string,
+ *   redirect: string,
+ *   body: http.IncomingMessage,
+ * }>} serviceResult The service result
+ * @param {string} user The user making the request
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  * @throws {ServiceError} If the backend service returns an error
  */
-function translateServiceResult(serviceResult, res) {
+function translateServiceResult(serviceResult, user, res) {
   for (const k of Object.keys(serviceResult.headers)) {
     if (k.toLowerCase().startsWith('harmony')) {
       copyHeader(serviceResult, res, k);
@@ -33,7 +41,12 @@ function translateServiceResult(serviceResult, res) {
   if (error) {
     throw new ServiceError(statusCode || 400, error);
   } else if (redirect) {
-    res.redirect(303, redirect);
+    const store = objectStoreForProtocol(redirect.split(':')[0]);
+    let dest = redirect;
+    if (store) {
+      dest = store.signGetObject(redirect, { 'x-user': user });
+    }
+    res.redirect(303, dest);
   } else if (content) {
     res.send(content);
   } else {
@@ -62,7 +75,7 @@ async function serviceInvoker(req, res) {
   try {
     service.truncationMessage = req.truncationMessage;
     serviceResult = await service.invoke();
-    translateServiceResult(serviceResult, res);
+    translateServiceResult(serviceResult, req.operation.user, res);
   } finally {
     if (serviceResult && serviceResult.onComplete) {
       serviceResult.onComplete();
