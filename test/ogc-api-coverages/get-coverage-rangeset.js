@@ -338,6 +338,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 });
 
+const expectedJobKeys = ['username', 'status', 'message', 'progress', 'links', 'updatedAt', 'createdAt', 'jobID'];
+
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
   const collection = 'C446398-ORNL_DAAC';
   const version = '1.0.0';
@@ -352,7 +354,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a JSON body in the format of a job status', function () {
       const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(['jobID', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links']);
+      expect(Object.keys(job)).to.eql(expectedJobKeys);
     });
     it('returns a successful status', function () {
       const job = JSON.parse(this.res.text);
@@ -364,7 +366,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
+      expect(job.message).to.eql('Returning direct download links, no transformations performed. CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
@@ -389,7 +391,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a JSON body in the format of a job status', function () {
       const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(['jobID', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links']);
+      expect(Object.keys(job)).to.eql(expectedJobKeys);
     });
     it('returns a message indicating no transformations were performed', function () {
       const job = JSON.parse(this.res.text);
@@ -408,7 +410,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a JSON body in the format of a job status', function () {
       const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(['jobID', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links']);
+      expect(Object.keys(job)).to.eql(expectedJobKeys);
     });
     it('limits results to only those that match the spatial and temporal subset', function () {
       const job = JSON.parse(this.res.text);

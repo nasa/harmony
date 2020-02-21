@@ -1,6 +1,8 @@
 const BaseService = require('./base-service');
 const Job = require('../job');
 
+const noOpMessage = 'Returning direct download links, no transformations performed.';
+
 /**
  * Service implementation that does not actually perform any transformation
  * to data files. For each granule requested return just the download links
@@ -17,24 +19,24 @@ class NoOpService extends BaseService {
    * @memberof HttpService
    */
   invoke() {
-    const now = new Date();
     const granules = this.operation.sources.flatMap((source) => source.granules);
     const links = granules.map((granule) => ({ title: granule.id, href: granule.url }));
+    const message = this.truncationMessage ? `${noOpMessage} ${this.truncationMessage}` : noOpMessage;
+    const job = new Job({
+      username: this.operation.user,
+      requestId: this.operation.requestId,
+      status: Job.statuses.SUCCESSFUL,
+      progress: 100,
+      message,
+      links,
+    });
 
     const response = {
       headers: { contentType: 'application/json' },
       statusCode: 200,
-      content: {
-        jobID: this.operation.requestId,
-        username: this.operation.user,
-        status: Job.statuses.SUCCESSFUL,
-        message: this.truncationMessage || 'Returning direct download links, no transformations performed.',
-        progress: 100,
-        createdAt: now,
-        updatedAt: now,
-        links,
-      },
+      content: job.serialize(),
     };
+
     return response;
   }
 }
