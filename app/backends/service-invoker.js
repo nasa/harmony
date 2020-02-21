@@ -29,14 +29,17 @@ function translateServiceResult(serviceResult, res) {
       copyHeader(serviceResult, res, k);
     }
   }
-  if (serviceResult.error) {
-    throw new ServiceError(serviceResult.statusCode || 400, serviceResult.error);
-  } else if (serviceResult.redirect) {
-    res.redirect(303, serviceResult.redirect);
+  const { error, statusCode, redirect, content, stream } = serviceResult;
+  if (error) {
+    throw new ServiceError(statusCode || 400, error);
+  } else if (redirect) {
+    res.redirect(303, redirect);
+  } else if (content) {
+    res.send(content);
   } else {
     copyHeader(serviceResult, res, 'Content-Type');
     copyHeader(serviceResult, res, 'Content-Length');
-    serviceResult.stream.pipe(res);
+    stream.pipe(res);
   }
 }
 
