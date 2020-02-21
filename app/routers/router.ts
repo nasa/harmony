@@ -13,7 +13,6 @@ const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
 const syncRequestDecider = require('../middleware/sync-request-decider');
 const setRequestId = require('../middleware/request-id');
 const { NotFoundError } = require('../util/errors');
-const services = require('../models/services');
 const eoss = require('../frontends/eoss');
 const ogcCoverageApi = require('../frontends/ogc-coverages');
 
@@ -69,13 +68,6 @@ function service(fn) {
     try {
       if (!req.collections || req.collections.length === 0) {
         throw new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name');
-      }
-      // Attempts to grab an available backend for the requested operation if the frontend
-      // is WMS or EOSS. If no such backend exists, this will throw, causing desirable 404s.
-      // If using the ogc-coverages-api no exception will be thrown since it supports
-      // returning links to download the untransformed granules when no service is configured.
-      if (!req.path.match(/ogc-api-coverages/) && !req.collections.every(services.isCollectionSupported)) {
-        throw new NotFoundError('The requested service is not valid for the given collection');
       }
       child.info('Running service');
       await fn(req, res, next);

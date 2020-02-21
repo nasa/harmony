@@ -9,7 +9,6 @@ describe('Routing', function () {
   const invalidCollection = 'C1234-MISSING';
   const invalidCollection2 = 'C4568-MISSING';
   const validCollection = 'C1215669046-GES_DISC';
-  const unsupportedCollection = 'C1228420197-AU_AADC';
 
   hookServersStartStop();
 
@@ -41,12 +40,6 @@ describe('Routing', function () {
     condition: 'mounting a service type that does not exist',
     path: `/${validCollection}/${wmts}`,
     message: 'The requested page was not found',
-  });
-
-  describeErrorCondition({
-    condition: 'mounting a service on a collection that does not support it',
-    path: `/${unsupportedCollection}/${wms}`,
-    message: 'The requested service is not valid for the given collection',
   });
 
   describeErrorCondition({

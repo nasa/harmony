@@ -2,6 +2,7 @@ const { describe, it, xit } = require('mocha');
 const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookGetCapabilities } = require('../helpers/wms');
+const { describeErrorCondition } = require('../helpers/errors');
 
 describe('WMS GetCapabilities', function () {
   hookServersStartStop();
@@ -50,5 +51,12 @@ describe('WMS GetCapabilities', function () {
     xit('does not return any variable layers', function () {
       expect(this.res.text).to.not.contain(`<Name>${collection}&#x2F;`);
     });
+  });
+
+  const unsupportedCollection = 'C446398-ORNL_DAAC';
+  describeErrorCondition({
+    condition: 'collection that does not have any supported services',
+    path: `/${unsupportedCollection}/wms?service=WMS&request=GetCapabilities`,
+    message: 'There is no service configured to support transformations on the provided collection via WMS.',
   });
 });
