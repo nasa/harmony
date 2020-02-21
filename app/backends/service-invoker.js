@@ -31,7 +31,7 @@ function copyHeader(serviceResult, res, header) {
  * @returns {void}
  * @throws {ServiceError} If the backend service returns an error
  */
-function translateServiceResult(serviceResult, user, res) {
+async function translateServiceResult(serviceResult, user, res) {
   for (const k of Object.keys(serviceResult.headers)) {
     if (k.toLowerCase().startsWith('harmony')) {
       copyHeader(serviceResult, res, k);
@@ -44,7 +44,7 @@ function translateServiceResult(serviceResult, user, res) {
     const store = objectStoreForProtocol(redirect.split(':')[0]);
     let dest = redirect;
     if (store) {
-      dest = store.signGetObject(redirect, { 'x-user': user });
+      dest = await store.signGetObject(redirect, { 'x-user': user });
     }
     res.redirect(303, dest);
   } else if (content) {
@@ -75,7 +75,7 @@ async function serviceInvoker(req, res) {
   try {
     service.truncationMessage = req.truncationMessage;
     serviceResult = await service.invoke();
-    translateServiceResult(serviceResult, req.operation.user, res);
+    await translateServiceResult(serviceResult, req.operation.user, res);
   } finally {
     if (serviceResult && serviceResult.onComplete) {
       serviceResult.onComplete();

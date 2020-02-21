@@ -12,7 +12,7 @@ describe('service-results', function () {
   describe('createPublicPermalink', function () {
     it('returns Harmony permalink when given an S3 link prefixed with /public/', function () {
       const result = createPublicPermalink('s3://some-bucket/public/some/key.txt', 'https://example.com');
-      expect(result).to.equal('https://example.com/service-results/some-bucket/some/key.txt');
+      expect(result).to.equal('https://example.com/service-results/some-bucket/public/some/key.txt');
     });
 
     it('throws an error when given an S3 link not prefixed with /public/', function () {
@@ -51,7 +51,7 @@ describe('service-results', function () {
         stub = sinon.stub(S3ObjectStore.prototype, 'signGetObject')
           .callsFake((url, params) => `https://example.com/signed/${params['x-user']}`);
       });
-      hookUrl('/service-results/some-bucket/some/path.tif', 'jdoe');
+      hookUrl('/service-results/some-bucket/public/some/path.tif', 'jdoe');
       after(function () {
         stub.restore();
       });
@@ -79,7 +79,7 @@ describe('service-results', function () {
       before(function () {
         stub = sinon.stub(S3ObjectStore.prototype, 'signGetObject').throws();
       });
-      hookUrl('/service-results/some-bucket/some/path.tif', 'jdoe');
+      hookUrl('/service-results/some-bucket/public/some/path.tif', 'jdoe');
       after(function () {
         stub.restore();
       });
