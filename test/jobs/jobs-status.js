@@ -282,6 +282,34 @@ describe('Individual job status route', function () {
       });
     });
 
+    describe('when an incomplete job provides an out-of-range percentage', function () {
+      StubService.hook({ params: { status: 'successful' } });
+      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      before(async function () {
+        this.res = await this.service.sendResponse({ progress: -1 }).ok(() => true);
+      });
+
+      it('rejects the update', async function () {
+        expect(this.res.status).to.equal(400);
+        const body = JSON.parse(this.res.text);
+        expect(body.message).to.equal('Job record is invalid: ["Job progress must be between 0 and 100"]');
+      });
+    });
+
+    describe('when an incomplete job provides a non-numeric percentage', function () {
+      StubService.hook({ params: { status: 'successful' } });
+      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      before(async function () {
+        this.res = await this.service.sendResponse({ progress: 'garbage' }).ok(() => true);
+      });
+
+      it('rejects the update', async function () {
+        expect(this.res.status).to.equal(400);
+        const body = JSON.parse(this.res.text);
+        expect(body.message).to.equal('Job record is invalid: ["Job progress must be between 0 and 100"]');
+      });
+    });
+
     describe('when a job has provided an S3 URL as a result', function () {
       const s3Uri = 's3://example-bucket/public/example/path.tif';
       StubService.hook({ params: { status: 'successful' } });
