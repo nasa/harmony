@@ -7,6 +7,7 @@ const { hookServersStartStop } = require('../helpers/servers');
 const { hookRangesetRequest, rangesetRequest } = require('../helpers/ogc-api-coverages');
 const { jobStatus } = require('../helpers/jobs');
 const { auth } = require('../helpers/auth');
+const { hookSignS3Object } = require('../helpers/object-store');
 const StubService = require('../helpers/stub-service');
 
 const isUUID = require('../../app/util/uuid');
@@ -94,6 +95,18 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       it('redirects the client to the provided URL', function () {
         expect(this.res.status).to.equal(303);
         expect(this.res.headers.location).to.equal('http://example.com');
+      });
+    });
+
+    describe('and the backend service calls back with a redirect to an S3 location', function () {
+      const signedPrefix = hookSignS3Object();
+      StubService.hook({ params: { redirect: 's3://my-bucket/public/my-object.tif' } });
+      hookRangesetRequest(version, collection, variableName, query);
+
+      it('redirects the client to a presigned url', function () {
+        expect(this.res.status).to.equal(303);
+        expect(this.res.headers.location).to.include(signedPrefix);
+        expect(this.res.headers.location).to.include('anonymous');
       });
     });
 
