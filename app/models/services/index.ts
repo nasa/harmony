@@ -4,6 +4,7 @@ const yaml = require('js-yaml');
 
 const LocalDockerService = require('./local-docker-service');
 const HttpService = require('./http-service');
+const NoOpService = require('./no-op-service');
 const { NotFoundError } = require('../../util/errors');
 
 let serviceConfigs = null;
@@ -35,6 +36,7 @@ loadServiceConfigs();
 const serviceTypesToServiceClasses = {
   docker: LocalDockerService,
   http: HttpService,
+  noOp: NoOpService,
 };
 
 /**
@@ -82,7 +84,7 @@ function forOperation(operation, logger) {
     matches = serviceConfigs.filter((config) => isCollectionMatch(operation, config));
   }
   if (matches.length === 0) {
-    throw new NotFoundError('Could not find a service to fulfill the request for the given collection');
+    matches = [{ type: { name: 'noOp' } }];
   }
 
   // TODO: Capabilities match.  Should be fuzzier and warn, rather than erroring?

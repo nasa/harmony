@@ -1,34 +1,7 @@
-const pick = require('lodash.pick');
 const Job = require('../models/job');
 const db = require('../util/db');
 const { getRequestRoot } = require('../util/url');
 const isUUID = require('../util/uuid');
-const { createPublicPermalink } = require('./service-results');
-
-const serializedJobFields = [
-  'requestId', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links'];
-
-/**
- * Serializes a Job to return from job listing and status endpoints
- * @param {Job} job the job
- * @param {string} urlRoot the root URL to be used when constructing links
- * @returns {Object} an object with the serialized job fields.
- */
-function _serializeJob(job, urlRoot) {
-  const serializedJob = pick(job, serializedJobFields);
-  serializedJob.updatedAt = new Date(serializedJob.updatedAt);
-  serializedJob.createdAt = new Date(serializedJob.createdAt);
-  serializedJob.jobID = serializedJob.requestId;
-
-  serializedJob.links = serializedJob.links.map((link) => ({
-    href: createPublicPermalink(link.href, urlRoot),
-    title: link.title,
-    type: link.type,
-  }));
-
-  delete serializedJob.requestId;
-  return serializedJob;
-}
 
 /**
  * Express.js handler that handles the jobs listing endpoint (/jobs)
@@ -43,7 +16,7 @@ async function getJobsListing(req, res) {
     const root = getRequestRoot(req);
     await db.transaction(async (tx) => {
       const listing = await Job.forUser(tx, req.user);
-      res.send(listing.map((j) => _serializeJob(j, root)));
+      res.send(listing.map((j) => j.serialize(root)));
     });
   } catch (e) {
     req.logger.error(e);
@@ -74,7 +47,7 @@ async function getJobStatus(req, res) {
       await db.transaction(async (tx) => {
         const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
         if (job) {
-          res.send(_serializeJob(job, getRequestRoot(req)));
+          res.send(job.serialize(getRequestRoot(req)));
         } else {
           res.status(404);
           res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });

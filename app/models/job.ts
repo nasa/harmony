@@ -1,4 +1,6 @@
+const pick = require('lodash.pick');
 const Record = require('./record');
+const { createPublicPermalink } = require('../frontends/service-results');
 
 const statesToDefaultMessages = {
   accepted: 'The job has been accepted and is waiting to be processed',
@@ -16,6 +18,10 @@ const statuses = {
 };
 
 const defaultMessages = Object.values(statesToDefaultMessages);
+
+const serializedJobFields = [
+  'requestId', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links',
+];
 
 /**
  *
@@ -225,6 +231,25 @@ class Job extends Record {
     await super.save(transaction);
     this.links = links;
     delete this._json_links;
+  }
+
+  /**
+   * Serializes a Job to return from any of the jobs frontend endpoints
+   * @param {string} urlRoot the root URL to be used when constructing links
+   * @returns {Object} an object with the serialized job fields.
+   */
+  serialize(urlRoot) {
+    const serializedJob = pick(this, serializedJobFields);
+    serializedJob.updatedAt = new Date(serializedJob.updatedAt);
+    serializedJob.createdAt = new Date(serializedJob.createdAt);
+    serializedJob.jobID = serializedJob.requestId;
+    serializedJob.links = serializedJob.links.map((link) => ({
+      href: createPublicPermalink(link.href, urlRoot),
+      title: link.title,
+      type: link.type,
+    }));
+    delete serializedJob.requestId;
+    return serializedJob;
   }
 }
 
