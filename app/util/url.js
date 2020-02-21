@@ -16,6 +16,20 @@ function getRequestUrl(req, includeQuery = true) {
   });
 }
 
+/**
+ * Returns the root of the request (protocol, host, port, with path = "/")
+ *
+ * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
+ * @returns {string} The URL the incoming request is requesting
+ */
+function getRequestRoot(req) {
+  return url.format({
+    protocol: req.protocol,
+    host: req.get('host'),
+  });
+}
+
 module.exports = {
   getRequestUrl,
+  getRequestRoot,
 };
