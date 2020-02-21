@@ -341,7 +341,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 });
 
-const expectedJobKeys = ['username', 'status', 'message', 'progress', 'links', 'updatedAt', 'createdAt', 'jobID'];
+const expectedJobKeys = ['username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'jobID'];
 
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
   const collection = 'C446398-ORNL_DAAC';

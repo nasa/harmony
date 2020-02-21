@@ -19,6 +19,7 @@ class NoOpService extends BaseService {
    * @memberof HttpService
    */
   invoke() {
+    const now = new Date();
     const granules = this.operation.sources.flatMap((source) => source.granules);
     const links = granules.map((granule) => ({ title: granule.id, href: granule.url }));
     const message = this.truncationMessage ? `${noOpMessage} ${this.truncationMessage}` : noOpMessage;
@@ -27,6 +28,8 @@ class NoOpService extends BaseService {
       requestId: this.operation.requestId,
       status: Job.statuses.SUCCESSFUL,
       progress: 100,
+      createdAt: now,
+      updatedAt: now,
       message,
       links,
     });
