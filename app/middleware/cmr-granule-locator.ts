@@ -48,10 +48,10 @@ async function cmrGranuleLocator(req, res, next) {
       for (const granule of atomGranules) {
         const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);
         if (link) {
-          if (process.env.STAGING_PATH && link.href.startsWith('http')) {
+          if (process.env.CACHED_DATA_PATH && link.href.startsWith('http')) {
             // Testing with staged data in S3 or a local path
             const linkParts = link.href.split('/');
-            link.href = `${process.env.STAGING_PATH}/${linkParts[linkParts.length - 1]}`;
+            link.href = `${process.env.CACHED_DATA_PATH}/${linkParts[linkParts.length - 1]}`;
           }
           granules.push({ id: granule.id, name: granule.title, url: link.href });
         }

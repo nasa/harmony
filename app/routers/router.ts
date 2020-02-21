@@ -7,6 +7,7 @@ const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authoriz
 const wmsFrontend = require('../frontends/wms');
 const wcsFrontend = require('../frontends/wcs');
 const { getJobsListing, getJobStatus } = require('../frontends/jobs');
+const { getServiceResult } = require('../frontends/service-results');
 const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
 const syncRequestDecider = require('../middleware/sync-request-decider');
@@ -120,6 +121,10 @@ function router({ skipEarthdataLogin }) {
     result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex, '/jobs*'])));
   }
 
+  // Routes and middleware not dealing with service requests
+  result.get('/service-results/:bucket/:key(*)', getServiceResult);
+
+  // Routes and middleware for handling service requests
   result.use(logged(cmrCollectionReader));
 
   ogcCoverageApi.addOpenApiRoutes(result);
