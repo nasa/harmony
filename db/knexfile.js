@@ -31,5 +31,6 @@ module.exports = {
     },
     searchPath: ['knex', 'public'],
     migrations,
+    acquireConnectionTimeout: 120000, // Allow adequate warmup of serverless aurora
   },
 };
