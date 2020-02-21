@@ -162,7 +162,7 @@ class BaseService {
    * @memberof BaseService
    */
   async _processAsyncCallback(req, res) {
-    const { error, item, status, redirect } = req.query;
+    const { error, item, status, redirect, progress } = req.query;
     const trx = await db.transaction();
     let err = null;
 
@@ -181,6 +181,12 @@ class BaseService {
       if (item) {
         job.links.push(item);
       }
+      if (progress) {
+        if (Number.isNaN(+progress)) {
+          throw new TypeError('Job record is invalid: ["Job progress must be between 0 and 100"]');
+        }
+        job.progress = parseInt(progress, 10);
+      }
 
       if (error) {
         job.fail(error);
@@ -193,8 +199,9 @@ class BaseService {
       await job.save(trx);
       await trx.commit();
     } catch (e) {
+      const code = (e instanceof TypeError) ? 400 : 500;
       this.logger.error(e);
-      err = { code: 500, message: e.message };
+      err = { code, message: e.message };
       await trx.rollback();
     } finally {
       if (error || !job || job.isComplete()) {

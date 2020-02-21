@@ -1,5 +1,6 @@
 const Job = require('../models/job');
 const db = require('../util/db');
+const { getRequestRoot } = require('../util/url');
 const isUUID = require('../util/uuid');
 
 /**
@@ -12,9 +13,10 @@ const isUUID = require('../util/uuid');
 async function getJobsListing(req, res) {
   req.logger.info(`Get job listing for user ${req.user}`);
   try {
+    const root = getRequestRoot(req);
     await db.transaction(async (tx) => {
       const listing = await Job.forUser(tx, req.user);
-      res.send(listing.map((j) => j.serialize()));
+      res.send(listing.map((j) => j.serialize(root)));
     });
   } catch (e) {
     req.logger.error(e);
@@ -45,7 +47,7 @@ async function getJobStatus(req, res) {
       await db.transaction(async (tx) => {
         const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
         if (job) {
-          res.send(job.serialize());
+          res.send(job.serialize(getRequestRoot(req)));
         } else {
           res.status(404);
           res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
