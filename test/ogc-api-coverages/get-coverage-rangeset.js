@@ -337,3 +337,97 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 });
+
+describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
+  const collection = 'C446398-ORNL_DAAC';
+  const version = '1.0.0';
+
+  hookServersStartStop();
+
+  describe('when provided a valid set of parameters', function () {
+    hookRangesetRequest(version, collection, 'all', {});
+
+    it('returns a 200 successful response', function () {
+      expect(this.res.status).to.equal(200);
+    });
+    it('returns a JSON body in the format of a job status', function () {
+      const job = JSON.parse(this.res.text);
+      expect(Object.keys(job)).to.eql(['jobID', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links']);
+    });
+    it('returns a successful status', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.status).to.eql('successful');
+    });
+    it('returns 100 for progress', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.progress).to.eql(100);
+    });
+    it('returns a message when results are truncated', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.message).to.eql('CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
+    });
+    it('returns granule links', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.links.length).to.equal(20);
+    });
+    it('granule links include a title of the granuleId', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.links[0].title).to.equal('G1220944164-ORNL_DAAC');
+    });
+    it('granule links include a download link', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.links[0].href).to.not.equal(undefined);
+    });
+  });
+
+  describe('when only one granule is identified', function () {
+    const collectionWithSingleGranule = 'C1000000099-ORNL_DAAC';
+    hookRangesetRequest(version, collectionWithSingleGranule, 'all', {});
+
+    it('returns a 200 successful response', function () {
+      expect(this.res.status).to.equal(200);
+    });
+    it('returns a JSON body in the format of a job status', function () {
+      const job = JSON.parse(this.res.text);
+      expect(Object.keys(job)).to.eql(['jobID', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links']);
+    });
+    it('returns a message indicating no transformations were performed', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.message).to.eql('Returning direct download links, no transformations performed.');
+    });
+  });
+
+  describe('when performing spatial and temporal subsetting', function () {
+    const query = {
+      subset: ['lat(30:40)', 'lon(-100:0)', 'time("1987-05-29T00:00Z":"1987-05-30T00:00Z")'],
+    };
+    hookRangesetRequest(version, collection, 'all', query);
+
+    it('returns a 200 successful response', function () {
+      expect(this.res.status).to.equal(200);
+    });
+    it('returns a JSON body in the format of a job status', function () {
+      const job = JSON.parse(this.res.text);
+      expect(Object.keys(job)).to.eql(['jobID', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links']);
+    });
+    it('limits results to only those that match the spatial and temporal subset', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.links.length).to.equal(10);
+    });
+  });
+
+  describe('when specifying an invalid variable', function () {
+    hookRangesetRequest(version, collection, 'badVar', {});
+
+    it('returns a 400 error', function () {
+      expect(this.res.status).to.equal(400);
+    });
+    it('includes an error message indicating the bad variable name', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: Coverages were not found for the provided CMR collection: badVar',
+      });
+    });
+  });
+});
