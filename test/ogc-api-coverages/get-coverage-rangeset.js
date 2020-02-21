@@ -369,7 +369,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links, no transformations performed. CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
+      expect(job.message).to.eql('Returning direct download links, no transformation was performed because no known service exists to perform this transformation on the data. CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
@@ -398,7 +398,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message indicating no transformations were performed', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links, no transformations performed.');
+      expect(job.message).to.eql('Returning direct download links, no transformation was performed because no known service exists to perform this transformation on the data.');
     });
   });
 
