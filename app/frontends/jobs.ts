@@ -1,24 +1,6 @@
-const pick = require('lodash.pick');
 const Job = require('../models/job');
 const db = require('../util/db');
 const isUUID = require('../util/uuid');
-
-const serializedJobFields = [
-  'requestId', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links'];
-
-/**
- * Serializes a Job to return from job listing and status endpoints
- * @param {Job} job the job
- * @returns {Object} an object with the serialized job fields.
- */
-function _serializeJob(job) {
-  const serializedJob = pick(job, serializedJobFields);
-  serializedJob.updatedAt = new Date(serializedJob.updatedAt);
-  serializedJob.createdAt = new Date(serializedJob.createdAt);
-  serializedJob.jobID = serializedJob.requestId;
-  delete serializedJob.requestId;
-  return serializedJob;
-}
 
 /**
  * Express.js handler that handles the jobs listing endpoint (/jobs)
@@ -32,7 +14,7 @@ async function getJobsListing(req, res) {
   try {
     await db.transaction(async (tx) => {
       const listing = await Job.forUser(tx, req.user);
-      res.send(listing.map((j) => _serializeJob(j)));
+      res.send(listing.map((j) => j.serialize()));
     });
   } catch (e) {
     req.logger.error(e);
@@ -63,7 +45,7 @@ async function getJobStatus(req, res) {
       await db.transaction(async (tx) => {
         const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
         if (job) {
-          res.send(_serializeJob(job));
+          res.send(job.serialize());
         } else {
           res.status(404);
           res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });

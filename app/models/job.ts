@@ -1,3 +1,4 @@
+const pick = require('lodash.pick');
 const Record = require('./record');
 
 const statesToDefaultMessages = {
@@ -16,6 +17,10 @@ const statuses = {
 };
 
 const defaultMessages = Object.values(statesToDefaultMessages);
+
+const serializedJobFields = [
+  'requestId', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links',
+];
 
 /**
  *
@@ -222,6 +227,19 @@ class Job extends Record {
     await super.save(transaction);
     this.links = links;
     delete this._json_links;
+  }
+
+  /**
+   * Serializes a Job to return from any of the jobs frontend endpoints
+   * @returns {Object} an object with the serialized job fields.
+   */
+  serialize() {
+    const serializedJob = pick(this, serializedJobFields);
+    serializedJob.updatedAt = new Date(serializedJob.updatedAt);
+    serializedJob.createdAt = new Date(serializedJob.createdAt);
+    serializedJob.jobID = serializedJob.requestId;
+    delete serializedJob.requestId;
+    return serializedJob;
   }
 }
 
