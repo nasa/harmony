@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const DataOperation = require('../models/data-operation');
 const { keysToLowerCase } = require('../util/object');
-const { RequestValidationError } = require('../util/errors');
+const { RequestValidationError, NotFoundError } = require('../util/errors');
+const services = require('../models/services');
+
 
 const version = '0.1.0';
 const openApiPath = path.join(__dirname, '..', 'schemas', 'eoss', version, `eoss-v${version}.yml`);
@@ -36,6 +38,9 @@ function addOpenApiRoutes(app) {
         res.send(openApiContent);
       },
       getGranule(req, res, next) {
+        if (!req.collections.every(services.isCollectionSupported)) {
+          throw new NotFoundError('There is no service configured to support transformations on the provided collection via EOSS.');
+        }
         req.logger = req.logger.child({ component: 'eoss.getGranule' });
         const query = keysToLowerCase(req.query);
         const operation = new DataOperation();

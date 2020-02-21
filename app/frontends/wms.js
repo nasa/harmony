@@ -5,7 +5,8 @@ const { promisify } = require('util');
 const DataOperation = require('../models/data-operation');
 const urlUtil = require('../util/url');
 const { keysToLowerCase } = require('../util/object');
-const { RequestValidationError } = require('../util/errors');
+const { RequestValidationError, NotFoundError } = require('../util/errors');
+const services = require('../models/services');
 
 const readFile = promisify(fs.readFile);
 
@@ -254,6 +255,9 @@ async function wmsFrontend(req, res, next) {
   try {
     validateParamIn(query, 'service', ['WMS']);
     validateParamIn(query, 'request', ['GetCapabilities', 'GetMap']);
+    if (!req.collections.every(services.isCollectionSupported)) {
+      throw new NotFoundError('There is no service configured to support transformations on the provided collection via WMS.');
+    }
 
     const wmsRequest = query.request;
     if (wmsRequest === 'GetCapabilities') {

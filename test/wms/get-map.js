@@ -182,4 +182,27 @@ describe('WMS GetMap', function () {
       expect(res.body).to.eql({ errors: ['No matching granules found.'] });
     });
   });
+
+  const unsupportedCollection = 'C446398-ORNL_DAAC';
+  describe('collection that does not have any supported services', function () {
+    const query = {
+      service: 'WMS',
+      request: 'GetMap',
+      layers: `${unsupportedCollection}`,
+      crs: 'CRS:84',
+      format: 'image/tiff',
+      styles: '',
+      width: 128,
+      height: 128,
+      version: '1.3.0',
+      bbox: '-180,-90,180,90',
+      transparent: 'TRUE',
+    };
+
+    it('returns an HTTP 404 for a collection with no services defined', async function () {
+      const res = await wmsRequest(this.frontend, unsupportedCollection, query);
+      expect(res.status).to.equal(404);
+      expect(res.text).to.include('There is no service configured to support transformations on the provided collection via WMS.');
+    });
+  });
 });

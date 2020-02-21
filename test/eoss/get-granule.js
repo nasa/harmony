@@ -192,5 +192,16 @@ describe('EOSS GetGranule', function () {
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({ errors: ['No matching granules found.'] });
     });
+    it('returns an HTTP 404 "Not Found" error for a collection with no services defined', async function () {
+      const unsupportedCollection = 'C446398-ORNL_DAAC';
+      const res = await eossGetGranule(
+        this.frontend,
+        version,
+        unsupportedCollection,
+        granule,
+      );
+      expect(res.status).to.equal(404);
+      expect(res.text).to.include('There is no service configured to support transformations on the provided collection via EOSS.');
+    });
   });
 });
