@@ -63,7 +63,7 @@ class StubService extends BaseService {
    * @returns {void}
    * @memberof StubService
    */
-  async sendResponse(query) {
+  sendResponse(query) {
     const responseUrl = `${this.operation.callback}/response`;
     const { body, headers } = this.callbackOptions;
     let req = request.post(responseUrl);
@@ -76,7 +76,7 @@ class StubService extends BaseService {
     if (body) {
       req = req.send(body);
     }
-    await req;
+    return req;
   }
 
   /**
