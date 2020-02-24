@@ -36,7 +36,7 @@ function createPublicPermalink(url, frontendRoot) {
     // Right now we only handle permalinks to S3.  We also don't capture the
     // protocol information in the URL, which would need to be incorporated if we
     // ever allow the simultaneous use of multiple object store vendors
-    if (!parsed.pathname.startsWith('/public/') && !parsed.pathname.startsWith(process.env.CACHED_DATA_PATH)) {
+    if (!parsed.pathname.startsWith('/public/') && !parsed.href.startsWith(process.env.CACHED_DATA_PATH)) {
       throw new TypeError(`Staged objects must have prefix /public/ or they will not be accessible: ${url}`);
     }
     return `${frontendRoot}/service-results/${parsed.host}${parsed.pathname}`;
