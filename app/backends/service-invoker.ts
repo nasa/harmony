@@ -2,6 +2,7 @@ const services = require('../models/services');
 const env = require('../util/env');
 const { ServiceError } = require('../util/errors');
 const { objectStoreForProtocol } = require('../util/object-store');
+const { getRequestRoot } = require('../util/url');
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -70,7 +71,7 @@ async function serviceInvoker(req, res) {
   const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
   req.operation.client = env.harmonyClientId;
-  const service = services.forOperation(req.operation, req.logger);
+  const service = services.forOperation(req.operation, req.logger, getRequestRoot(req));
   let serviceResult = null;
   try {
     service.truncationMessage = req.truncationMessage;

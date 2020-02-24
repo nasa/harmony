@@ -76,15 +76,16 @@ function isCollectionMatch(operation, serviceConfig) {
  * @param {DataOperation} operation The operation to build a service for
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @param {Logger} logger The logger associated with this request
+ * @param {String} harmonyRoot The harmony root URL
  * @throws {NotFoundError} If no service can perform the given operation
  */
-function forOperation(operation, logger) {
+function forOperation(operation, logger, harmonyRoot) {
   let matches = [];
   if (operation) {
     matches = serviceConfigs.filter((config) => isCollectionMatch(operation, config));
   }
   if (matches.length === 0) {
-    matches = [{ type: { name: 'noOp' } }];
+    matches = [{ type: { name: 'noOp' }, harmonyRoot }];
   }
 
   // TODO: Capabilities match.  Should be fuzzier and warn, rather than erroring?
