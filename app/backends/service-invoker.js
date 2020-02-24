@@ -2,6 +2,7 @@ const services = require('../models/services');
 const env = require('../util/env');
 const { ServiceError } = require('../util/errors');
 const { objectStoreForProtocol } = require('../util/object-store');
+const { getRequestRoot } = require('../util/url');
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -31,7 +32,7 @@ function copyHeader(serviceResult, res, header) {
  * @returns {void}
  * @throws {ServiceError} If the backend service returns an error
  */
-function translateServiceResult(serviceResult, user, res) {
+async function translateServiceResult(serviceResult, user, res) {
   for (const k of Object.keys(serviceResult.headers)) {
     if (k.toLowerCase().startsWith('harmony')) {
       copyHeader(serviceResult, res, k);
@@ -44,7 +45,7 @@ function translateServiceResult(serviceResult, user, res) {
     const store = objectStoreForProtocol(redirect.split(':')[0]);
     let dest = redirect;
     if (store) {
-      dest = store.signGetObject(redirect, { 'x-user': user });
+      dest = await store.signGetObject(redirect, { 'x-user': user });
     }
     res.redirect(303, dest);
   } else if (content) {
@@ -70,12 +71,12 @@ async function serviceInvoker(req, res) {
   const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
   req.operation.client = env.harmonyClientId;
-  const service = services.forOperation(req.operation, req.logger);
+  const service = services.forOperation(req.operation, req.logger, getRequestRoot(req));
   let serviceResult = null;
   try {
     service.truncationMessage = req.truncationMessage;
     serviceResult = await service.invoke();
-    translateServiceResult(serviceResult, req.operation.user, res);
+    await translateServiceResult(serviceResult, req.operation.user, res);
   } finally {
     if (serviceResult && serviceResult.onComplete) {
       serviceResult.onComplete();
