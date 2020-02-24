@@ -21,16 +21,25 @@ const { NotFoundError } = require('../util/errors');
  * @throws {TypeError} If the provided URL cannot be handled
  */
 function createPublicPermalink(url, frontendRoot) {
-  const parsed = new URL(url);
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch (e) {
+    if (url.startsWith(process.env.CACHED_DATA_PATH)) {
+      // Supports fuzzier matching of URLs for local testing, i.e. relative file paths
+      return url;
+    }
+    throw e;
+  }
   const protocol = parsed.protocol.toLowerCase().replace(/:$/, '');
   if (protocol === 's3') {
     // Right now we only handle permalinks to S3.  We also don't capture the
     // protocol information in the URL, which would need to be incorporated if we
     // ever allow the simultaneous use of multiple object store vendors
-    if (!parsed.pathname.startsWith('/public/')) {
+    if (!parsed.pathname.startsWith('/public/') && !parsed.href.startsWith(process.env.CACHED_DATA_PATH)) {
       throw new TypeError(`Staged objects must have prefix /public/ or they will not be accessible: ${url}`);
     }
-    return `${frontendRoot}/service-results/${parsed.host}/${parsed.pathname.replace('/public/', '')}`;
+    return `${frontendRoot}/service-results/${parsed.host}${parsed.pathname}`;
   }
   if (['https', 'http', 'sftp', 'ftp'].includes(protocol)) {
     return url;
@@ -49,7 +58,7 @@ function createPublicPermalink(url, frontendRoot) {
  */
 async function getServiceResult(req, res, next) {
   const { bucket, key } = req.params;
-  const url = `s3://${bucket}/public/${key}`;
+  const url = `s3://${bucket}/${key}`;
 
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {

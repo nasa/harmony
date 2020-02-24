@@ -37,7 +37,7 @@ class NoOpService extends BaseService {
     const response = {
       headers: { contentType: 'application/json' },
       statusCode: 200,
-      content: job.serialize(),
+      content: job.serialize(this.config.harmonyRoot),
     };
 
     return response;
