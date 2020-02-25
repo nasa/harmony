@@ -40,6 +40,7 @@
         STAGING_PATH: public/harmony/gdal
         TEXT_LOGGER: !Env ${TEXT_LOGGER}
   collections:
+    - C1233800302-EEDTEST
     - C1215669046-GES_DISC
   capabilities:
     subsetting:
