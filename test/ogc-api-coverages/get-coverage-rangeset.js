@@ -233,9 +233,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     it('returns an HTTP 500 error with the JSON error format', function () {
       expect(this.res.status).to.eql(500);
-      const { code, description } = JSON.parse(this.res.text);
-      expect(code).to.eql('harmony.ServerError');
-      expect(description).to.eql('Error: Failed to save job to database.');
+      const body = JSON.parse(this.res.text);
+      expect(body).to.eql({
+        code: 'harmony.ServerError',
+        description: 'Error: Failed to save job to database.',
+      });
     });
   });
 
@@ -354,7 +356,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 });
 
-const expectedJobKeys = ['username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'jobID'];
+const expectedJobKeys = [
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'originatingRequest', 'jobID',
+];
 
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
   const collection = 'C446398-ORNL_DAAC';
@@ -396,6 +400,11 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       const job = JSON.parse(this.res.text);
       expect(job.links[0].href).to.not.equal(undefined);
     });
+
+    it('returns an originatingRequest field with the URL used to generate the request', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.originatingRequest).to.equal('http://127.0.0.1:3000/C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
+    });
   });
 
   describe('when only one granule is identified', function () {
@@ -431,6 +440,11 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     it('limits results to only those that match the spatial and temporal subset', function () {
       const job = JSON.parse(this.res.text);
       expect(job.links.length).to.equal(10);
+    });
+
+    it('returns an originatingRequest field with the URL used to generate the request', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.originatingRequest).to.equal('http://127.0.0.1:3000/C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
     });
   });
 

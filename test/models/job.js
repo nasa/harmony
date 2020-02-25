@@ -11,6 +11,7 @@ const exampleProps = {
   message: 'it is running',
   progress: 42,
   links: [{ href: 'http://example.com' }],
+  originatingRequest: 'http://example.com/harmony?foo=bar',
 };
 
 describe('Job', function () {
@@ -216,13 +217,13 @@ describe('Job', function () {
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
 
-    it('throws an error when username is not provided', async function () {
+    it('throws an error when requestId is not provided', async function () {
       const { trx } = this;
       const job = new Job({ username: 'jdoe' });
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
 
-    it('throws an error when requestId is not provided', async function () {
+    it('throws an error when username is not provided', async function () {
       const { trx } = this;
       const job = new Job({ requestId: uuid().toString() });
       await expect(job.save(trx)).to.eventually.be.rejected;

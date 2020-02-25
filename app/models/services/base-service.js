@@ -17,9 +17,10 @@ class BaseService {
    * @param {object} config The service configuration from config/services.yml
    * @param {DataOperation} operation The data operation being requested of the service
    * @param {Logger} logger The logger associated with this request
+   * @param {String} originatingRequestUrl The URL the end user invoked
    * @memberof BaseService
    */
-  constructor(config, operation, logger) {
+  constructor(config, operation, logger, originatingRequestUrl) {
     if (new.target === BaseService) {
       throw new TypeError('BaseService is abstract and cannot be instantiated directly');
     }
@@ -28,6 +29,7 @@ class BaseService {
     this.params = (type && type.params) ? type.params : {};
     this.operation = operation;
     this.logger = logger;
+    this.originatingRequestUrl = originatingRequestUrl;
   }
 
   /**
@@ -230,7 +232,7 @@ class BaseService {
   async _createJob(transaction) {
     const { requestId, user } = this.operation;
     this.logger.info(`Creating job for ${requestId}`);
-    const job = new Job({ username: user, requestId, status: 'running' });
+    const job = new Job({ username: user, requestId, status: 'running', originatingRequest: this.originatingRequestUrl });
     if (this.truncationMessage) {
       job.message = this.truncationMessage;
     }

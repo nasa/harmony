@@ -19,6 +19,7 @@ const aJob = {
   message: 'it is running',
   progress: 42,
   links: [{ href: 'http://example.com' }],
+  originatingRequest: 'http://example.com/harmony?job=aJob',
 };
 
 describe('Individual job status route', function () {
@@ -346,7 +347,8 @@ describe('Individual job status route', function () {
     });
 
     describe('when the job has completed successfully', function () {
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe3');
+      const query = { subset: ['lat(-80:80)', 'lon(-100:100)'] };
+      hookRangesetRequest(version, collection, variableName, query, 'jdoe3');
       before(async function () {
         const id = this.res.headers.location.split('/').pop();
         await request(this.frontend)
@@ -364,6 +366,11 @@ describe('Individual job status route', function () {
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.include('the request has been limited to process');
+        });
+
+        it('returns an originatingRequest field with the URL used to generate the request', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.originatingRequest).to.equal('http://127.0.0.1:3000/C1104-PVC_TS2/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(-80%3A80)&subset=lon(-100%3A100)');
         });
       });
     });
