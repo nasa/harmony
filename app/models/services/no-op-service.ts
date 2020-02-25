@@ -32,7 +32,7 @@ class NoOpService extends BaseService {
       updatedAt: now,
       message,
       links,
-      originatingRequest: this.originatingRequestUrl,
+      request: this.requestUrl,
     });
 
     const response = {

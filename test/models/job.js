@@ -11,7 +11,7 @@ const exampleProps = {
   message: 'it is running',
   progress: 42,
   links: [{ href: 'http://example.com' }],
-  originatingRequest: 'http://example.com/harmony?foo=bar',
+  request: 'http://example.com/harmony?foo=bar',
 };
 
 describe('Job', function () {

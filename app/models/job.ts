@@ -20,7 +20,7 @@ const statuses = {
 const defaultMessages = Object.values(statesToDefaultMessages);
 
 const serializedJobFields = [
-  'requestId', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'originatingRequest',
+  'requestId', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
 ];
 
 /**
@@ -35,7 +35,7 @@ const serializedJobFields = [
  *   - message: (string) human readable status message
  *   - progress: (integer) 0-100 approximate completion percentage
  *   - links: (JSON) links to output files, array of objects containing "href", "title", "type"
- *   - originatingRequest: (string) Original user request URL that created this job
+ *   - request: (string) Original user request URL that created this job
  *   - createdAt: (Date) the date / time at which the job was created
  *   - updatedAt: (Date) the date / time at which the job was last updated
  *
