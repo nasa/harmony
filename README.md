@@ -151,45 +151,6 @@ $ bin/build-image
 
 This may take some time, but ultimately it will produce a local docker image tagged `harmony/gdal:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
 
-### Optional: Stage some data
-
-If you have a CMR collection with granules that are in S3, using it is ideal.  If not, you can run service requests against any collection whose granule URLs only require Earthdata Login authentication, but this will end up pulling the data which is slow and adds a production burden to the data provider.  For faster local testing, we can stage example data locally, either in S3 or on the local disk.
-
-To do so, fetch the desired files, whose filenames should match the part after the final `/` in their respective URLs.  The files
-chosen should correspond to the ones that would be fetched by the service calls to be performed.  For this reason, it is much simpler
-to choose collections that have global spatial coverage.  Place the files in the desired staging path, which can be S3, a localstack
-S3 location, or a directory in the backend service's Docker image (e.g. `harmony-gdal/staged-data`).
-
-If data is staged in a directory in the backend service's Docker image, you will need to rebuild that image to include the files. If using
-harmony-gdal, this means running `$ bin/build-image` from the root of the service's directory.
-
-Once the files are in place, set the `STAGING_PATH` environment variable to point at the prefix up to and including the final `/`
-before the filename, e.g.
-
-```
-STAGING_PATH=staged-data/
-```
-or
-```
-STAGING_PATH=s3://some-staging-bucket/staged-data/
-```
-
-In order to use this every time, you can add one of the above lines to a file named `.env` in the harmony project's root directory.
-
-After doing this step and restarting the server, all subsequent CMR calls that find data URLs with prefix `http` will have their URLs
-converted to use the staging path instead.  Data that is already in S3 will be fetched from its S3 location.
-
-For testing, stage the first few granules of the `C1215669046-GES_DISC` collection from CMR UAT, which has UMM-Var variables and is
-configured to use the gdal service.  The following will produce a list of URLs to download, provided you have the [jq](https://stedolan.github.io/jq/)
-utility installed:
-
-```
-$ curl 'https://cmr.uat.earthdata.nasa.gov/search/granules.json?pretty=true&collection_concept_id=C1215669046-GES_DISC&page_size=3' \
-  | jq -r '.feed.entry[].links[].href | select(endswith(".hdf") and contains("/data/"))'
-```
-
-You will need to use Earthdata login to actually fetch the URLs, which is most easily done through a web browser.
-
 ### Connect a client
 
 Once again, run
