@@ -368,7 +368,7 @@ describe('Individual job status route', function () {
           expect(job.message).to.include('the request has been limited to process');
         });
 
-        it('returns an request field with the URL used to generate the request', function () {
+        it('returns a request field with the URL used to generate the request', function () {
           const job = JSON.parse(this.res.text);
           expect(job.request).to.equal('http://127.0.0.1:3000/C1104-PVC_TS2/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(-80%3A80)&subset=lon(-100%3A100)');
         });

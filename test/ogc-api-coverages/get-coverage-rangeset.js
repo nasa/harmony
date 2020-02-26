@@ -401,7 +401,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       expect(job.links[0].href).to.not.equal(undefined);
     });
 
-    it('returns an request field with the URL used to generate the request', function () {
+    it('returns a request field with the URL used to generate the request', function () {
       const job = JSON.parse(this.res.text);
       expect(job.request).to.equal('http://127.0.0.1:3000/C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
     });
@@ -442,7 +442,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       expect(job.links.length).to.equal(10);
     });
 
-    it('returns an request field with the URL used to generate the request', function () {
+    it('returns a request field with the URL used to generate the request', function () {
       const job = JSON.parse(this.res.text);
       expect(job.request).to.equal('http://127.0.0.1:3000/C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
     });
