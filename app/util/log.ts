@@ -37,6 +37,7 @@ const textformat = winston.format.printf(
   (info) => {
     let message = `${info.timestamp} [${info.level}]${optionalTag(info.application)}${optionalTag(info.requestId)}${optionalTag(info.component)}: ${info.message}`;
     if (info.dockerOut) message += ` ${info.dockerOut}`;
+    if (info.dockerErr) message += ` ${info.dockerErr}`;
     if (info.stack) message += `\n${info.stack}`;
     return message;
   },
