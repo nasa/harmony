@@ -90,17 +90,18 @@ class LocalDockerService extends BaseService {
    * Invoke the service at the local command line, passing --harmony-action and --harmony-input
    * parameters to the Docker container
    *
+   * @param {Log} logger the logger associated with the request
    * @memberof LocalDockerService
    * @returns {void}
    */
-  _run() {
+  _run(logger) {
     // DELETE ME: Hacks for PO.DAAC having granule metadata with missing files.  They will fix.
     if (this.config.name === 'podaac-cloud/l2-subsetter-service') {
       this.operation.sources[0].granules = this.operation.sources[0].granules.slice(5);
     }
     // END DELETE ME
 
-    this.logger.info(this.params);
+    logger.info(this.params);
     const originalCallback = this.operation.callback;
     this.operation.callback = this.operation.callback.replace('localhost', process.env.CALLBACK_HOST || 'host.docker.internal');
     let dockerParams = ['run', '--rm', '-t'];
@@ -114,14 +115,14 @@ class LocalDockerService extends BaseService {
       '--harmony-action', 'invoke',
       '--harmony-input', this.operation.serialize(this.config.data_operation_version),
     );
-    this.logger.info(dockerParams.join(' '));
+    logger.info(dockerParams.join(' '));
     const child = spawn('docker', dockerParams);
-    logProcessOutput(child, this.logger);
+    logProcessOutput(child, logger);
 
     child.on('exit', ((code, signal) => {
-      this.logger.info(`child process exited with code ${code} and signal ${signal}`);
+      logger.info(`child process exited with code ${code} and signal ${signal}`);
       if (isUrlBound(originalCallback)) {
-        childProcessAborted(originalCallback, this.logger);
+        childProcessAborted(originalCallback, logger);
       }
     }));
   }

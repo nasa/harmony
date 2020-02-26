@@ -3,7 +3,6 @@ const sinon = require('sinon');
 const request = require('superagent');
 const BaseService = require('../../app/models/services/base-service');
 const services = require('../../app/models/services');
-const logger = require('../../app/util/log');
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -21,21 +20,20 @@ class StubService extends BaseService {
    * @memberof StubService
    */
   constructor(operation, callbackOptions) {
-    super({}, operation, logger, 'http://example.com/dummy');
+    super({}, operation);
     this.callbackOptions = callbackOptions;
     this.isComplete = false;
     this.isRun = false;
-    this.logger = logger;
   }
 
   /**
    * Runs the service.  For synchronous services, this will callback immediately.  For async,
    * `complete` must be run for a callback to occur.
-   *
+   * @param {Log} _logger the logger associated with the request
    * @memberof StubService
    * @returns {void}
    */
-  async _run() {
+  async _run(_logger) {
     this.isRun = true;
     if (!this.operation.isSynchronous) return;
     await this.complete();
@@ -94,8 +92,8 @@ class StubService extends BaseService {
     return function () {
       const ctx = this;
       sinon.stub(services, 'forOperation')
-        .callsFake((req) => {
-          ctx.service = new StubService(req.operation, callbackOptions);
+        .callsFake((operation) => {
+          ctx.service = new StubService(operation, callbackOptions);
           return ctx.service;
         });
     };
@@ -166,8 +164,8 @@ class StubService extends BaseService {
       this.timeout(10000);
       const origForOperation = services.forOperation;
       sinon.stub(services, 'forOperation')
-        .callsFake((req) => {
-          const service = origForOperation(req);
+        .callsFake((operation) => {
+          const service = origForOperation(operation);
           service.params.image = dockerImage;
           return service;
         });

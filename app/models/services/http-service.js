@@ -20,6 +20,9 @@ class HttpService extends BaseService {
    * Calls the HTTP backend and returns a promise for its result, or a redirect to
    * a job if the result is async.
    *
+   * @param {Logger} logger The logger associated with this request
+   * @param {String} harmonyRoot The harmony request root
+   * @param {String} requestUrl The URL the end user invoked
    * @returns {Promise<{
    *     error: string,
    *     errorCode: number,
@@ -31,16 +34,16 @@ class HttpService extends BaseService {
    * for properties
    * @memberof HttpService
    */
-  invoke() {
+  invoke(logger, harmonyRoot, requestUrl) {
     if (this.operation.isSynchronous) {
-      return this._run();
+      return this._run(logger);
     }
-    return super.invoke();
+    return super.invoke(logger, harmonyRoot, requestUrl);
   }
 
   /**
    * Calls the HTTP backend and returns a promise for its result
-   *
+   * @param {Logger} logger The logger associated with this request
    * @returns {Promise<{
    *     error: string,
    *     errorCode: number,
@@ -52,12 +55,12 @@ class HttpService extends BaseService {
    * for properties
    * @memberof HttpService
    */
-  _run() {
+  _run(logger) {
     return new Promise((resolve, reject) => {
       try {
         const body = this.operation.serialize(this.config.data_operation_version);
         const { url } = this.params;
-        this.logger.info('Submitting HTTP backend service request', { url });
+        logger.info('Submitting HTTP backend service request', { url });
         const uri = new URL.URL(url);
         // We need to cram the string URL into a request object for Replay to work
         const requestOptions = {
@@ -94,7 +97,7 @@ class HttpService extends BaseService {
                 await trx.commit();
               }
             } catch (e) {
-              this.logger.error(e);
+              logger.error(e);
               await trx.rollback();
             }
             resolve(null);

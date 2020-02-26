@@ -6,7 +6,6 @@ const LocalDockerService = require('./local-docker-service');
 const HttpService = require('./http-service');
 const NoOpService = require('./no-op-service');
 const { NotFoundError } = require('../../util/errors');
-const { getRequestRoot, getRequestUrl } = require('../../util/url');
 
 let serviceConfigs = null;
 
@@ -43,18 +42,14 @@ const serviceTypesToServiceClasses = {
 /**
  * Given a service configuration from services.yml and an operation, returns a
  * Service object for invoking that operation using the given service
- *
  * @param {object} serviceConfig The configuration from services.yml
- * @param {DataOperation} operation The data operation being performed
- * @param {Logger} logger The logger associated with this request
- * @param {String} requestUrl The originating request URL
+ * @param {DataOperation} operation The operation to perform
  * @returns {Service} An appropriate service for the given config
  */
-function buildService(serviceConfig, operation, logger, requestUrl) {
+function buildService(serviceConfig, operation) {
   const ServiceClass = serviceTypesToServiceClasses[serviceConfig.type.name];
   if (ServiceClass) {
-    const serviceLogger = logger.child({ application: 'backend', component: `${ServiceClass.name}` });
-    return new ServiceClass(serviceConfig, operation, serviceLogger, requestUrl);
+    return new ServiceClass(serviceConfig, operation);
   }
 
   throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
@@ -75,25 +70,22 @@ function isCollectionMatch(operation, serviceConfig) {
 /**
  * Given a data operation, returns a service instance appropriate for performing that operation
  *
- * @param {http.IncomingMessage} req The request object from the end user request
+ * @param {DataOperation} operation The operation to perform
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @throws {NotFoundError} If no service can perform the given operation
  */
-function forOperation(req) {
-  const { operation, logger } = req;
-  const harmonyRoot = getRequestRoot(req);
-  const requestUrl = getRequestUrl(req);
+function forOperation(operation) {
   let matches = [];
   if (operation) {
     matches = serviceConfigs.filter((config) => isCollectionMatch(operation, config));
   }
   if (matches.length === 0) {
-    matches = [{ type: { name: 'noOp' }, harmonyRoot }];
+    matches = [{ type: { name: 'noOp' } }];
   }
 
   // TODO: Capabilities match.  Should be fuzzier and warn, rather than erroring?
 
-  return buildService(matches[0], operation, logger, requestUrl);
+  return buildService(matches[0], operation);
 }
 
 /**
