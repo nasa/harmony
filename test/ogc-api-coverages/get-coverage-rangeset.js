@@ -5,7 +5,7 @@ const { describe, it, before, after } = require('mocha');
 const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookRangesetRequest, rangesetRequest } = require('../helpers/ogc-api-coverages');
-const { jobStatus } = require('../helpers/jobs');
+const { jobStatus, itIncludesRequestUrl } = require('../helpers/jobs');
 const { auth } = require('../helpers/auth');
 const { hookSignS3Object } = require('../helpers/object-store');
 const StubService = require('../helpers/stub-service');
@@ -401,10 +401,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       expect(job.links[0].href).to.not.equal(undefined);
     });
 
-    it('returns a request field with the URL used to generate the request', function () {
-      const job = JSON.parse(this.res.text);
-      expect(job.request).to.equal('http://127.0.0.1:3000/C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
-    });
+    itIncludesRequestUrl('/C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
   });
 
   describe('when only one granule is identified', function () {
