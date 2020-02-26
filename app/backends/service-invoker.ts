@@ -2,6 +2,7 @@ const services = require('../models/services');
 const env = require('../util/env');
 const { ServiceError } = require('../util/errors');
 const { objectStoreForProtocol } = require('../util/object-store');
+const { getRequestRoot, getRequestUrl } = require('../util/url');
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -70,11 +71,15 @@ async function serviceInvoker(req, res) {
   const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
   req.operation.client = env.harmonyClientId;
-  const service = services.forOperation(req);
+  const service = services.forOperation(req.operation);
   let serviceResult = null;
+  const serviceLogger = req.logger.child({
+    application: 'backend',
+    component: `${service.constructor.name}`,
+  });
   try {
     service.truncationMessage = req.truncationMessage;
-    serviceResult = await service.invoke();
+    serviceResult = await service.invoke(serviceLogger, getRequestRoot(req), getRequestUrl(req));
     await translateServiceResult(serviceResult, req.operation.user, res);
   } finally {
     if (serviceResult && serviceResult.onComplete) {
