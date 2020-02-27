@@ -11,25 +11,37 @@ const exampleProps = {
   message: 'it is running',
   progress: 42,
   links: [{ href: 'http://example.com' }],
+  request: 'http://example.com/harmony?foo=bar',
 };
+
+/**
+ * Creates a Job object for the provided username
+ *
+ * @param {String} username The user that requested the job
+ * @returns {Job} An example job for the user
+ */
+function createJob(username) {
+  return new Job({
+    username,
+    requestId: uuid().toString(),
+    request: `http://example.com/${username}`,
+  });
+}
 
 describe('Job', function () {
   describe('retrieval methods', function () {
     hookTransactionEach();
     beforeEach(async function () {
       // Add records to the job table that should not be returned
-      await new Job({ username: 'dummy', requestId: uuid().toString() }).save(this.trx);
-      await new Job({ username: 'dummy', requestId: uuid().toString() }).save(this.trx);
+      await createJob('dummy').save(this.trx);
+      await createJob('dummy').save(this.trx);
     });
 
     describe('.forUser', function () {
       describe('when a user has jobs', function () {
         let jobs;
         beforeEach(async function () {
-          jobs = [
-            new Job({ username: 'jdoe', requestId: uuid().toString() }),
-            new Job({ username: 'jdoe', requestId: uuid().toString() }),
-          ];
+          jobs = [createJob('jdoe'), createJob('jdoe')];
           await Promise.all([jobs[0].save(this.trx), jobs[1].save(this.trx)]);
         });
 
@@ -58,7 +70,11 @@ describe('Job', function () {
     describe('.byUsernameAndRequestId', function () {
       let job;
       beforeEach(async function () {
-        job = new Job({ username: 'jdoe', requestId: uuid().toString() });
+        job = new Job({
+          username: 'jdoe',
+          requestId: uuid().toString(),
+          request: 'http://example.com/jdoe',
+        });
         await job.save(this.trx);
       });
 
@@ -94,7 +110,7 @@ describe('Job', function () {
     describe('.byRequestId', function () {
       let job;
       beforeEach(async function () {
-        job = new Job({ username: 'jdoe', requestId: uuid().toString() });
+        job = createJob('jdoe');
         await job.save(this.trx);
       });
 
@@ -116,7 +132,7 @@ describe('Job', function () {
     describe('.byId', function () {
       let job;
       beforeEach(async function () {
-        job = new Job({ username: 'jdoe', requestId: uuid().toString() });
+        job = createJob('jdoe');
         await job.save(this.trx);
       });
 
@@ -216,15 +232,21 @@ describe('Job', function () {
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
 
-    it('throws an error when username is not provided', async function () {
+    it('throws an error when requestId is not provided', async function () {
       const { trx } = this;
       const job = new Job({ username: 'jdoe' });
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
 
-    it('throws an error when requestId is not provided', async function () {
+    it('throws an error when username is not provided', async function () {
       const { trx } = this;
       const job = new Job({ requestId: uuid().toString() });
+      await expect(job.save(trx)).to.eventually.be.rejected;
+    });
+
+    it('throws an error when the request field is not a URL', async function () {
+      const { trx } = this;
+      const job = new Job({ requestId: uuid().toString(), username: 'jdoe', request: 'foo:not//a-url' });
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
   });

@@ -14,6 +14,7 @@ const woodyJob1 = {
   message: 'Completed successfully',
   progress: 100,
   links: [{ href: 'http://example.com/woody1' }],
+  request: 'http://example.com/harmony?request=woody1',
 };
 
 const woodyJob2 = {
@@ -23,6 +24,7 @@ const woodyJob2 = {
   message: 'In progress',
   progress: 60,
   links: [],
+  request: 'http://example.com/harmony?request=woody2',
 };
 
 const buzzJob1 = {
@@ -32,6 +34,7 @@ const buzzJob1 = {
   message: 'In progress',
   progress: 30,
   links: [],
+  request: 'http://example.com/harmony?request=buzz1',
 };
 
 describe('Jobs listing route', function () {

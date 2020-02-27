@@ -3,7 +3,6 @@ const sinon = require('sinon');
 const request = require('superagent');
 const BaseService = require('../../app/models/services/base-service');
 const services = require('../../app/models/services');
-const logger = require('../../app/util/log');
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -21,7 +20,7 @@ class StubService extends BaseService {
    * @memberof StubService
    */
   constructor(operation, callbackOptions) {
-    super({}, operation, logger);
+    super({}, operation);
     this.callbackOptions = callbackOptions;
     this.isComplete = false;
     this.isRun = false;
@@ -30,11 +29,11 @@ class StubService extends BaseService {
   /**
    * Runs the service.  For synchronous services, this will callback immediately.  For async,
    * `complete` must be run for a callback to occur.
-   *
+   * @param {Log} _logger the logger associated with the request
    * @memberof StubService
    * @returns {void}
    */
-  async _run() {
+  async _run(_logger) {
     this.isRun = true;
     if (!this.operation.isSynchronous) return;
     await this.complete();
@@ -92,13 +91,8 @@ class StubService extends BaseService {
   static beforeHook(callbackOptions = { params: { redirect: 'http://example.com' } }) {
     return function () {
       const ctx = this;
-      sinon.stub(services, 'forName')
-        .callsFake((name, operation, _logger) => {
-          ctx.service = new StubService(operation, callbackOptions);
-          return ctx.service;
-        });
       sinon.stub(services, 'forOperation')
-        .callsFake((operation, _logger) => {
+        .callsFake((operation) => {
           ctx.service = new StubService(operation, callbackOptions);
           return ctx.service;
         });
@@ -114,7 +108,6 @@ class StubService extends BaseService {
    */
   static afterHook() {
     return async function () {
-      if (services.forName.restore) services.forName.restore();
       if (services.forOperation.restore) services.forOperation.restore();
       if (this.service) await this.service.complete();
       if (this.service && this.service.invocation) await this.service.invocation;
@@ -170,22 +163,14 @@ class StubService extends BaseService {
       // Tests using a docker image can take more than 2 seconds to start the docker container
       this.timeout(10000);
       const origForOperation = services.forOperation;
-      const origForName = services.forName;
-      sinon.stub(services, 'forName')
-        .callsFake((name, operation) => {
-          const service = origForName(name, operation, logger);
-          service.params.image = dockerImage;
-          return service;
-        });
       sinon.stub(services, 'forOperation')
         .callsFake((operation) => {
-          const service = origForOperation(operation, logger);
+          const service = origForOperation(operation);
           service.params.image = dockerImage;
           return service;
         });
     });
     after(function () {
-      if (services.forName.restore) services.forName.restore();
       if (services.forOperation.restore) services.forOperation.restore();
     });
   }

@@ -42,17 +42,14 @@ const serviceTypesToServiceClasses = {
 /**
  * Given a service configuration from services.yml and an operation, returns a
  * Service object for invoking that operation using the given service
- *
  * @param {object} serviceConfig The configuration from services.yml
- * @param {DataOperation} operation The data operation being performed
- * @param {Logger} logger The logger associated with this request
+ * @param {DataOperation} operation The operation to perform
  * @returns {Service} An appropriate service for the given config
  */
-function buildService(serviceConfig, operation, logger) {
+function buildService(serviceConfig, operation) {
   const ServiceClass = serviceTypesToServiceClasses[serviceConfig.type.name];
   if (ServiceClass) {
-    const serviceLogger = logger.child({ application: 'backend', component: `${ServiceClass.name}` });
-    return new ServiceClass(serviceConfig, operation, serviceLogger);
+    return new ServiceClass(serviceConfig, operation);
   }
 
   throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
@@ -73,40 +70,22 @@ function isCollectionMatch(operation, serviceConfig) {
 /**
  * Given a data operation, returns a service instance appropriate for performing that operation
  *
- * @param {DataOperation} operation The operation to build a service for
+ * @param {DataOperation} operation The operation to perform
  * @returns {BaseService} A service instance appropriate for performing the operation
- * @param {Logger} logger The logger associated with this request
- * @param {String} harmonyRoot The harmony root URL
  * @throws {NotFoundError} If no service can perform the given operation
  */
-function forOperation(operation, logger, harmonyRoot) {
+function forOperation(operation) {
   let matches = [];
   if (operation) {
     matches = serviceConfigs.filter((config) => isCollectionMatch(operation, config));
   }
   if (matches.length === 0) {
-    matches = [{ type: { name: 'noOp' }, harmonyRoot }];
+    matches = [{ type: { name: 'noOp' } }];
   }
 
   // TODO: Capabilities match.  Should be fuzzier and warn, rather than erroring?
 
-  return buildService(matches[0], operation, logger);
-}
-
-/**
- * Constructs and returns a service instance whose config has the given name in services.yml
- *
- * @param {*} name The name of the service as it appears in services.yml
- * @param {*} operation The operation the service instance is serving
- * @param {Logger} logger The logger associated with this request
- * @returns {BaseService} The constructed service
- */
-function forName(name, operation, logger) {
-  const match = serviceConfigs.find((config) => config.name === name);
-  if (!match) {
-    throw new NotFoundError(`Could not find service with name ${name}`);
-  }
-  return buildService(match, operation, logger);
+  return buildService(matches[0], operation);
 }
 
 /**
@@ -121,5 +100,4 @@ function isCollectionSupported(collection) {
 
 // Don't set module.exports or ChainService breaks
 exports.forOperation = forOperation;
-exports.forName = forName;
 exports.isCollectionSupported = isCollectionSupported;
