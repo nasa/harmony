@@ -22,7 +22,6 @@ class NoOpService extends BaseService {
    * @memberof HttpService
    */
   invoke(logger, harmonyRoot, requestUrl) {
-    logger.info('Durbin no-op');
     const now = new Date();
     const granules = this.operation.sources.flatMap((source) => source.granules);
     const links = granules.map((granule) => ({ title: granule.id, href: granule.url }));
