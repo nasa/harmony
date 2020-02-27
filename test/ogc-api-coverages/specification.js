@@ -4,7 +4,7 @@ const { hookServersStartStop } = require('../helpers/servers');
 const { hookLandingPage, describeRelation } = require('../helpers/ogc-api-coverages');
 
 const version = '1.0.0';
-const collection = 'C1215669046-GES_DISC';
+const collection = 'C1233800302-EEDTEST';
 
 describe(`OGC API - Coverages navigation and specification ${version}`, function () {
   hookServersStartStop();

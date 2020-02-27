@@ -1,0 +1,25 @@
+GET /search/granules.json?collection_concept_id=C1233800302-EEDTEST&page_size=20&bounding_box=-180%2C-90%2C180%2C90&concept_id=G1233800343-EEDTEST
+accept: application/json, text/plain, */*
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 1270
+connection: close
+vary: Accept-Encoding, Accept-Encoding, User-Agent
+date: Thu, 27 Feb 2020 01:49:31 GMT
+set-cookie: AWSALB=JDz2FY6RlNYZzPLgd8PCD4gZfcnReReLGDTjvoLDuMOHwMBy5wDgjE7hBVE8JHEi5UH119ly4hB3atLXXATwcPGJyhw/9g2b3TqOARU97Ve6Lm05lNhFXhW1jYfY; Expires=Thu, 05 Mar 2020 01:49:31 GMT; Path=/
+set-cookie: AWSALBCORS=JDz2FY6RlNYZzPLgd8PCD4gZfcnReReLGDTjvoLDuMOHwMBy5wDgjE7hBVE8JHEi5UH119ly4hB3atLXXATwcPGJyhw/9g2b3TqOARU97Ve6Lm05lNhFXhW1jYfY; Expires=Thu, 05 Mar 2020 01:49:31 GMT; Path=/; SameSite=None
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out
+access-control-allow-origin: *
+cmr-hits: 1
+cmr-took: 17
+cmr-request-id: 8b6ede25-f081-4167-8b7e-16e618085444
+x-request-id: 8b6ede25-f081-4167-8b7e-16e618085444
+server: Jetty(9.4.z-SNAPSHOT)
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+x-cache: Miss from cloudfront
+via: 1.1 fe01b0d08a6c82e83617785283fae2db.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR52-C3
+x-amz-cf-id: sNrmDaGcwZEZ9uT490_wVhXNlZJO9d8cPOxodO7ha1rK-FsepULULA==
+
+{"feed":{"updated":"2020-02-27T01:49:31.231Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json?collection_concept_id=C1233800302-EEDTEST&page_size=20&bounding_box=-180%2C-90%2C180%2C90&concept_id=G1233800343-EEDTEST","title":"ECHO granule metadata","entry":[{"producer_granule_id":"001_00_7f00ff_global","boxes":["-90 -180 90 180"],"time_start":"2020-01-01T00:00:00.000Z","updated":"2020-02-25T21:43:11.000Z","dataset_id":"Harmony Example Data","data_center":"EEDTEST","title":"001_00_7f00ff_global","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T01:59:59.000Z","id":"G1233800343-EEDTEST","original_format":"ECHO10","granule_size":"1.3701868057250977","browse_flag":false,"collection_concept_id":"C1233800302-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf4","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_7f00ff_global.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/001_00_7f00ff_global.tif"}]}]}}
