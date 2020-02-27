@@ -6,9 +6,9 @@ const StubService = require('../helpers/stub-service');
 const isUUID = require('../../app/util/uuid');
 
 describe('WMS GetMap', function () {
-  const collection = 'C1215669046-GES_DISC';
-  const variable = 'V1224729877-GES_DISC';
-  const defaultGranuleId = 'G1224343298-GES_DISC';
+  const collection = 'C1233800302-EEDTEST';
+  const variable = 'V1233801695-EEDTEST';
+  const defaultGranuleId = 'G1233800343-EEDTEST';
 
   hookServersStartStop();
 
@@ -118,7 +118,7 @@ describe('WMS GetMap', function () {
     });
   });
   describe('can provide an optional granule ID', function () {
-    const specificGranuleId = 'G1224343299-GES_DISC';
+    const specificGranuleId = 'G1233800344-EEDTEST';
     const query = {
       service: 'WMS',
       request: 'GetMap',

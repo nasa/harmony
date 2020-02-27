@@ -14,10 +14,10 @@ const isUUID = require('../../app/util/uuid');
 const db = require('../../app/util/db');
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
-  const collection = 'C1215669046-GES_DISC';
-  const granuleId = 'G1224343298-GES_DISC';
-  const variableId = 'V1224729877-GES_DISC';
-  const variableName = 'CloudFrc_A';
+  const collection = 'C1233800302-EEDTEST';
+  const granuleId = 'G1233800343-EEDTEST';
+  const variableId = 'V1233801695-EEDTEST';
+  const variableName = 'red_var';
   const version = '1.0.0';
 
   hookServersStartStop();
@@ -137,12 +137,12 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 
   describe('Subsetting multiple variables', function () {
-    const variableNames = 'CloudFrc_A,EmisIR_A';
+    const variableNames = 'red_var,green_var';
     const query = {
       granuleId,
     };
-    const variableId1 = 'V1224729877-GES_DISC';
-    const variableId2 = 'V1224352381-GES_DISC';
+    const variableId1 = 'V1233801695-EEDTEST';
+    const variableId2 = 'V1233801696-EEDTEST';
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, variableNames, query);
@@ -192,7 +192,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const query = {
       outputCrs: 'CRS:84',
       // Time range matches exactly one granule
-      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2002-07-31T00:00:00.000Z":"2002-08-31T10:00:00.000Z")'],
+      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
     };
 
     describe('calling the backend service', function () {
@@ -205,14 +205,14 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('passes the temporal range to the backend service', function () {
         const { start, end } = this.service.operation.temporal;
-        expect(start).to.equal('2002-07-31T00:00:00Z');
-        expect(end).to.equal('2002-08-31T10:00:00Z');
+        expect(start).to.equal('2020-01-02T00:00:00Z');
+        expect(end).to.equal('2020-01-02T01:00:00Z');
       });
 
       it('identifies the correct granule based on time range', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal('G1224343298-GES_DISC');
+        expect(source.granules[0].id).to.equal('G1233800352-EEDTEST');
       });
     });
   });

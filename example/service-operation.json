@@ -5,23 +5,23 @@
   "user": "jdoe",
   "sources": [
     {
-      "collection": "C1215669046-GES_DISC",
+      "collection": "C1233800302-EEDTEST",
       "variables": [
         {
-          "id": "V1224729877-GES_DISC",
-          "name": "CloudFrc_A"
+          "id": "V1233801695-EEDTEST",
+          "name": "red_var"
         }
       ],
       "granules": [
         {
-          "id": "G1224343298-GES_DISC",
-          "name": "AIRS.2002.08.31.L3.RetStd001.v6.0.9.0.G13208034313.hdf",
-          "url": "file://./tmp/AIRS.2002.08.31.L3.RetStd001.v6.0.9.0.G13208034313.hdf"
+          "id": "G1233800343-EEDTEST",
+          "name": "001_00_7f00ff_global.nc",
+          "url": "file://./tmp/001_00_7f00ff_global.nc"
         },
         {
-          "id": "G1224343299-GES_DISC",
-          "name": "AIRS.2002.09.01.L3.RetStd001.v6.0.9.0.G13208004820.hdf",
-          "url": "file://./tmp/AIRS.2002.09.01.L3.RetStd001.v6.0.9.0.G13208004820.hdf"
+          "id": "G1233800344-EEDTEST",
+          "name": "001_01_7f00ff_africa.nc",
+          "url": "file://./tmp/001_01_7f00ff_africa.nc"
         }
       ]
     }

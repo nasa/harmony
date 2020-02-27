@@ -117,8 +117,8 @@ describe('Individual job status route', function () {
   });
 
   describe('status updates from non-HTTP backends', function () {
-    const collection = 'C1215669046-GES_DISC';
-    const variableName = 'CloudFrc_A';
+    const collection = 'C1233800302-EEDTEST';
+    const variableName = 'red_var';
     const version = '1.0.0';
     describe('when the job has started but not completed', function () {
       StubService.hook({ params: { status: 'successful' } });

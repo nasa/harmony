@@ -8,9 +8,9 @@ describe('WMS GetCapabilities', function () {
   hookServersStartStop();
 
   describe('when called on a collection with variable metadata', function () {
-    const collection = 'C1215669046-GES_DISC';
-    const variable1 = 'V1224729877-GES_DISC';
-    const variable2 = 'V1224729868-GES_DISC';
+    const collection = 'C1233800302-EEDTEST';
+    const variable1 = 'V1233801695-EEDTEST';
+    const variable2 = 'V1233801716-EEDTEST';
 
     hookGetCapabilities(collection);
 

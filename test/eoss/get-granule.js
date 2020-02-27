@@ -6,10 +6,10 @@ const StubService = require('../helpers/stub-service');
 const isUUID = require('../../app/util/uuid');
 
 describe('EOSS GetGranule', function () {
-  const collection = 'C1215669046-GES_DISC';
-  const granule = 'G1224343298-GES_DISC';
-  const variableId = 'V1224729877-GES_DISC';
-  const variableName = 'CloudFrc_A';
+  const collection = 'C1233800302-EEDTEST';
+  const granule = 'G1233800343-EEDTEST';
+  const variableId = 'V1233801695-EEDTEST';
+  const variableName = 'red_var';
   const version = '0.1.0';
 
   hookServersStartStop();
@@ -122,13 +122,13 @@ describe('EOSS GetGranule', function () {
 
   describe('Subsetting multiple variables', function () {
     const query = {
-      rangeSubset: 'CloudFrc_A,EmisIR_A',
+      rangeSubset: 'red_var,green_var',
       format: 'image/tiff',
       crs: 'CRS:84',
       bbox: '-180,-90,180,90',
     };
-    const variableId1 = 'V1224729877-GES_DISC';
-    const variableId2 = 'V1224352381-GES_DISC';
+    const variableId1 = 'V1233801695-EEDTEST';
+    const variableId2 = 'V1233801696-EEDTEST';
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookEossGetGranule(version, collection, granule, query);
@@ -187,7 +187,7 @@ describe('EOSS GetGranule', function () {
         version,
         collection,
         'G123-BOGUS',
-        { rangeSubset: 'CloudFrc_A' },
+        { rangeSubset: 'red_var' },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({ errors: ['No matching granules found.'] });
