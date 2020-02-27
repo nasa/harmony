@@ -20,7 +20,7 @@ const statuses = {
 const defaultMessages = Object.values(statesToDefaultMessages);
 
 const serializedJobFields = [
-  'requestId', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links',
+  'requestId', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
 ];
 
 /**
@@ -35,6 +35,7 @@ const serializedJobFields = [
  *   - message: (string) human readable status message
  *   - progress: (integer) 0-100 approximate completion percentage
  *   - links: (JSON) links to output files, array of objects containing "href", "title", "type"
+ *   - request: (string) Original user request URL that created this job
  *   - createdAt: (Date) the date / time at which the job was created
  *   - updatedAt: (Date) the date / time at which the job was last updated
  *
@@ -116,9 +117,8 @@ class Job extends Record {
   }
 
   /**
-   * Validates the job, ensuring progress is within the allowable bounds.  Returns null
-   * if the job is valid.  Returns a list of errors if it is invalid.  Other constraints
-   * are validated via database constraints.
+   * Validates the job. Returns null if the job is valid.  Returns a list of errors if
+   * it is invalid. Other constraints are validated via database constraints.
    *
    * @returns {string[]} a list of validation errors, or null if the record is valid
    * @memberof Job
@@ -127,6 +127,9 @@ class Job extends Record {
     const errors = [];
     if (this.progress < 0 || this.progress > 100) {
       errors.push('Job progress must be between 0 and 100');
+    }
+    if (!this.request.match(/^https?:\/\/.+$/)) {
+      errors.push(`Invalid request ${this.request}. Job request must be a URL.`);
     }
     return errors.length === 0 ? null : errors;
   }

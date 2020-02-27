@@ -1,5 +1,6 @@
 const request = require('supertest');
-const { before, after } = require('mocha');
+const { before, after, it } = require('mocha');
+const { expect } = require('chai');
 const { auth } = require('./auth');
 
 /**
@@ -14,6 +15,7 @@ function jobsEqual(jobRecord, serializedJob) {
     && jobRecord.message && serializedJob.message
     && jobRecord.progress && serializedJob.progress
     && jobRecord.status === serializedJob.status
+    && jobRecord.request === serializedJob.request
     && jobRecord.links.length === serializedJob.links.length);
 }
 
@@ -93,10 +95,41 @@ function hookJobStatus(jobId, username = undefined) {
   });
 }
 
+/**
+ * Given a string returns a new string with all characters escaped such that the string
+ * can be used in a regular expression.
+ *
+ * @param {string} s the string to escape
+ * @returns {string} the escaped string to use in a regular expression
+ */
+function _escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+/**
+ * Adds before / after hooks in mocha to inject an instance of StubService
+ * into service invocations within the current context. Makes the real service call
+ * after replacing the docker image that would have been used with the passed in
+ * docker image name.
+ *
+ * @param {string} expectedPath the expected relative path and query string
+ * @returns {void}
+ */
+function itIncludesRequestUrl(expectedPath) {
+  it('returns a request field with the URL used to generate the request', function () {
+    const job = JSON.parse(this.res.text);
+    // If the request is not a URL this will throw an exception
+    // eslint-disable-next-line no-unused-vars
+    const parsed = new URL(job.request);
+    const regex = new RegExp(`^https?://.*${_escapeRegExp(expectedPath)}$`);
+    expect(job.request).to.match(regex);
+  });
+}
+
 module.exports = {
   jobsEqual,
   containsJob,
   jobListing,
   jobStatus,
   hookJobListing,
-  hookJobStatus };
+  hookJobStatus,
+  itIncludesRequestUrl };

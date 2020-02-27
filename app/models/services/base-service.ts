@@ -13,13 +13,11 @@ const { ServerError } = require('../../util/errors');
 class BaseService {
   /**
    * Creates an instance of BaseService.
-   *
    * @param {object} config The service configuration from config/services.yml
    * @param {DataOperation} operation The data operation being requested of the service
-   * @param {Logger} logger The logger associated with this request
    * @memberof BaseService
    */
-  constructor(config, operation, logger) {
+  constructor(config, operation) {
     if (new.target === BaseService) {
       throw new TypeError('BaseService is abstract and cannot be instantiated directly');
     }
@@ -27,7 +25,6 @@ class BaseService {
     const { type } = this.config;
     this.params = (type && type.params) ? type.params : {};
     this.operation = operation;
-    this.logger = logger;
   }
 
   /**
@@ -57,6 +54,9 @@ class BaseService {
    *   should also be set.
    * onComplete: (optional) A callback function with no arguments to be invoked when the
    *   client receives its response
+   * @param {Logger} logger The logger associated with this request
+   * @param {String} harmonyRoot The harmony request root
+   * @param {String} requestUrl The URL the end user invoked
    *
    * @returns {Promise<{
    *     error: string,
@@ -69,11 +69,11 @@ class BaseService {
    * for properties
    * @memberof BaseService
    */
-  async invoke() {
+  async invoke(logger, harmonyRoot, requestUrl) {
     const isAsync = !this.operation.isSynchronous;
     let job;
     if (isAsync) {
-      job = await this._createJob(db);
+      job = await this._createJob(db, logger, requestUrl);
     }
     // Promise that can be awaited to ensure the service has completed its work
     this.invocation = new Promise((resolve) => {
@@ -81,14 +81,15 @@ class BaseService {
     });
     return new Promise((resolve, reject) => {
       try {
+        // eslint-disable-next-line no-param-reassign
         this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
           if (isAsync) {
-            this._processAsyncCallback(req, res);
+            this._processAsyncCallback(req, res, logger);
           } else {
             resolve(this._processSyncCallback(req, res));
           }
         });
-        this._run();
+        this._run(logger);
         if (isAsync) {
           resolve({ redirect: `/jobs/${job.requestId}`, headers: {} });
         }
@@ -104,11 +105,11 @@ class BaseService {
    * Subclasses must implement this method if using the default invoke() implementation.
    * The method will be invoked asynchronously, completing when the service's callback is
    * received.
-   *
+   * @param {Log} _logger the logger associated with the request
    * @memberof BaseService
    * @returns {void}
    */
-  _run() {
+  _run(_logger) {
     throw new TypeError('BaseService subclasses must implement #_run()');
   }
 
@@ -158,10 +159,11 @@ class BaseService {
    *
    * @param {http.IncomingMessage} req the incoming callback request
    * @param {http.ServerResponse} res the outgoing callback response
+   * @param {Logger} logger The logger associated with this request
    * @returns {void}
    * @memberof BaseService
    */
-  async _processAsyncCallback(req, res) {
+  async _processAsyncCallback(req, res, logger) {
     const { error, item, status, redirect, progress } = req.query;
     const trx = await db.transaction();
     let err = null;
@@ -172,7 +174,7 @@ class BaseService {
       job = await Job.byUsernameAndRequestId(trx, user, requestId);
       if (!job) {
         res.status(404);
-        this.logger.error(`Received a callback for a missing job: user=${user}, requestId=${requestId}`);
+        logger.error(`Received a callback for a missing job: user=${user}, requestId=${requestId}`);
         res.json({ code: 404, message: 'could not find a job with the given ID' });
         trx.rollback();
         return;
@@ -200,7 +202,7 @@ class BaseService {
       await trx.commit();
     } catch (e) {
       const code = (e instanceof TypeError) ? 400 : 500;
-      this.logger.error(e);
+      logger.error(e);
       err = { code, message: e.message };
       await trx.rollback();
     } finally {
@@ -223,21 +225,23 @@ class BaseService {
    * and warnings.
    *
    * @param {knex.Transaction} transaction The transaction to use when creating the job
+   * @param {Logger} logger The logger associated with this request
+   * @param {String} requestUrl The URL the end user invoked
    * @returns {Job} The created job
    * @memberof BaseService
    * @throws {ServerError} if the job cannot be created
    */
-  async _createJob(transaction) {
+  async _createJob(transaction, logger, requestUrl) {
     const { requestId, user } = this.operation;
-    this.logger.info(`Creating job for ${requestId}`);
-    const job = new Job({ username: user, requestId, status: 'running' });
+    logger.info(`Creating job for ${requestId}`);
+    const job = new Job({ username: user, requestId, status: 'running', request: requestUrl });
     if (this.truncationMessage) {
       job.message = this.truncationMessage;
     }
     try {
       await job.save(transaction);
     } catch (e) {
-      this.logger.error(e.stack);
+      logger.error(e.stack);
       throw new ServerError('Failed to save job to database.');
     }
     return job;

@@ -15,10 +15,13 @@ class NoOpService extends BaseService {
   /**
    * Generates a response with a list of download links as provided by the CMR.
    *
+   * @param {Logger} logger The logger associated with this request
+   * @param {String} harmonyRoot The harmony root URL
+   * @param {String} requestUrl The URL the end user invoked
    * @returns {Object} Job status response
    * @memberof HttpService
    */
-  invoke() {
+  invoke(logger, harmonyRoot, requestUrl) {
     const now = new Date();
     const granules = this.operation.sources.flatMap((source) => source.granules);
     const links = granules.map((granule) => ({ title: granule.id, href: granule.url }));
@@ -32,12 +35,13 @@ class NoOpService extends BaseService {
       updatedAt: now,
       message,
       links,
+      request: requestUrl,
     });
 
     const response = {
       headers: { contentType: 'application/json' },
       statusCode: 200,
-      content: job.serialize(this.config.harmonyRoot),
+      content: job.serialize(harmonyRoot),
     };
 
     return response;

@@ -5,7 +5,7 @@ const { describe, it, before, after } = require('mocha');
 const { expect } = require('chai');
 const { hookServersStartStop } = require('../helpers/servers');
 const { hookRangesetRequest, rangesetRequest } = require('../helpers/ogc-api-coverages');
-const { jobStatus } = require('../helpers/jobs');
+const { jobStatus, itIncludesRequestUrl } = require('../helpers/jobs');
 const { auth } = require('../helpers/auth');
 const { hookSignS3Object } = require('../helpers/object-store');
 const StubService = require('../helpers/stub-service');
@@ -233,9 +233,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     it('returns an HTTP 500 error with the JSON error format', function () {
       expect(this.res.status).to.eql(500);
-      const { code, description } = JSON.parse(this.res.text);
-      expect(code).to.eql('harmony.ServerError');
-      expect(description).to.eql('Error: Failed to save job to database.');
+      const body = JSON.parse(this.res.text);
+      expect(body).to.eql({
+        code: 'harmony.ServerError',
+        description: 'Error: Failed to save job to database.',
+      });
     });
   });
 
@@ -354,7 +356,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 });
 
-const expectedJobKeys = ['username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'jobID'];
+const expectedJobKeys = [
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'jobID',
+];
 
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
   const collection = 'C446398-ORNL_DAAC';
@@ -396,6 +400,8 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       const job = JSON.parse(this.res.text);
       expect(job.links[0].href).to.not.equal(undefined);
     });
+
+    itIncludesRequestUrl('/C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
   });
 
   describe('when only one granule is identified', function () {
@@ -432,6 +438,8 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       const job = JSON.parse(this.res.text);
       expect(job.links.length).to.equal(10);
     });
+
+    itIncludesRequestUrl('C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
   });
 
   describe('when specifying an invalid variable', function () {
