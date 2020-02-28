@@ -8,7 +8,7 @@ describe('Routing', function () {
   const wmts = wms.replace('wms', 'wmts');
   const invalidCollection = 'C1234-MISSING';
   const invalidCollection2 = 'C4568-MISSING';
-  const validCollection = 'C1215669046-GES_DISC';
+  const validCollection = 'C1233800302-EEDTEST';
 
   hookServersStartStop();
 
