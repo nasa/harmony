@@ -6,7 +6,7 @@ const { wmsRequest } = require('../helpers/wms');
 const { expect } = chai;
 
 describe('WMS Endpoint', function () {
-  const collection = 'C1215669046-GES_DISC';
+  const collection = 'C1233800302-EEDTEST';
 
   hookServersStartStop();
 

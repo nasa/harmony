@@ -4,7 +4,7 @@ const request = require('supertest');
 /**
  * Example of a collection that can be hooked up to WMS
  */
-const validCollection = 'C1215669046-GES_DISC';
+const validCollection = 'C1233800302-EEDTEST';
 
 /**
  * Example of a valid WMS query for use in tests.

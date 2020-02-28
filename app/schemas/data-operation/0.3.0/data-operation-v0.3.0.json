@@ -123,7 +123,7 @@
         "collection": {
           "type": "string",
           "description": "The CMR Collection ID that has the variables and granules in this data source",
-          "examples": ["C1215669046-GES_DISC"]
+          "examples": ["C1233800302-EEDTEST"]
         },
         "variables": {
           "type": "array",
@@ -155,14 +155,14 @@
           "type": "string",
           "description": "The CMR granule identifier",
           "examples": [
-            "G1224343298-GES_DISC"
+            "G1233800343-EEDTEST"
           ]
         },
         "name": {
           "type": "string",
           "description": "The name of the granule (GranuleID, GranuleUR), typically corresponding to the data file name",
           "examples": [
-            "AIRS.2002.08.31.L3.RetStd001.v6.0.9.0.G13208034313.hdf"
+            "001_00_7f00ff_global.nc"
           ]
         },
         "url": {
@@ -185,12 +185,12 @@
         "id": {
           "type": "string",
           "description": "The CMR ID of the variable",
-          "examples": [ "V1224729877-GES_DISC" ]
+          "examples": [ "V1233801695-EEDTEST" ]
         },
         "name": {
           "type": "string",
           "description": "The name of the variable in the data file",
-          "examples": [ "CloudFrc_A" ]
+          "examples": [ "red_var" ]
         }
       },
       "required": [
