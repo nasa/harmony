@@ -44,6 +44,15 @@ describe('service-results', function () {
     });
   });
 
+  describe('When a request provides no token', function () {
+    hookUrl('/service-results/some-bucket/public/some/path.tif');
+
+    it('redirects to Earthdata Login', function () {
+      expect(this.res.statusCode).to.equal(307);
+      expect(this.res.headers.location).to.include(process.env.OAUTH_HOST);
+    });
+  });
+
   describe('getServiceResult', function () {
     describe('when given a valid bucket and key', function () {
       let stub;

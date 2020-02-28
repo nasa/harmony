@@ -112,7 +112,7 @@ function router({ skipEarthdataLogin }) {
   result.use(cookieParser(secret));
 
   if (`${skipEarthdataLogin}` !== 'true') {
-    result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex, '/jobs*'])));
+    result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex, '/jobs*', '/service-results/*'])));
   }
 
   // Routes and middleware not dealing with service requests
