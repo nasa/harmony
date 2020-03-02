@@ -8,7 +8,7 @@ const url = require('url');
  */
 function _getProtocol(req) {
   const host = req.get('host');
-  return (host === 'localhost' || host === '127.0.0.1') ? 'http' : 'https';
+  return (host.startsWith('localhost') || host.startsWith('127.0.0.1')) ? 'http' : 'https';
 }
 
 /**
