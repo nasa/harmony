@@ -19,16 +19,16 @@ function createRequest(hostname) {
 describe('util/url', function () {
   describe('#getRequestUrl', function () {
     describe('using localhost', function () {
-      const request = createRequest('localhost');
+      const request = createRequest('localhost:3000');
       it('returns the correct URL starting with http', function () {
-        expect(getRequestUrl(request, true)).to.equal('http://localhost/example/path?param1=foo&param2=2');
+        expect(getRequestUrl(request, true)).to.equal('http://localhost:3000/example/path?param1=foo&param2=2');
       });
     });
 
     describe('using 127.0.0.1', function () {
-      const request = createRequest('127.0.0.1');
+      const request = createRequest('127.0.0.1:3000');
       it('returns the correct URL starting with http', function () {
-        expect(getRequestUrl(request)).to.equal('http://127.0.0.1/example/path?param1=foo&param2=2');
+        expect(getRequestUrl(request)).to.equal('http://127.0.0.1:3000/example/path?param1=foo&param2=2');
       });
     });
 
@@ -56,16 +56,16 @@ describe('util/url', function () {
 
   describe('#getRequestRoot', function () {
     describe('using localhost', function () {
-      const request = createRequest('localhost');
+      const request = createRequest('localhost:3000');
       it('returns the correct root starting with http', function () {
-        expect(getRequestRoot(request)).to.equal('http://localhost');
+        expect(getRequestRoot(request)).to.equal('http://localhost:3000');
       });
     });
 
     describe('using 127.0.0.1', function () {
-      const request = createRequest('127.0.0.1');
+      const request = createRequest('127.0.0.1:3000');
       it('returns the correct root starting with http', function () {
-        expect(getRequestRoot(request)).to.equal('http://127.0.0.1');
+        expect(getRequestRoot(request)).to.equal('http://127.0.0.1:3000');
       });
     });
   });
