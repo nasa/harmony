@@ -10,7 +10,7 @@ const { getRequestUrl, getRequestRoot } = require('../../app/util/url');
  */
 function createRequest(hostname) {
   return {
-    originalUrl: '/example/path?param1=foo&param2=bar',
+    originalUrl: '/example/path?param1=foo&param2=2',
     query: { param1: 'foo', param2: 2 },
     get() { return hostname; },
   };
