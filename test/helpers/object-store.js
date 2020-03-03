@@ -3,7 +3,7 @@ const sinon = require('sinon');
 const { S3ObjectStore } = require('../../app/util/object-store');
 
 /**
- * Adds stubs to S3 object signing that retain the username form the 'A-userid' parameter.
+ * Adds stubs to S3 object signing that retain the username from the 'A-userid' parameter.
  *
  * @returns {string} The URL prefix for use in matching responses
  */
