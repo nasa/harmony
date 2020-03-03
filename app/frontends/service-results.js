@@ -54,6 +54,7 @@ async function getServiceResult(req, res, next) {
   const objectStore = objectStoreForProtocol('s3');
   if (objectStore) {
     try {
+      req.logger.info(`Signing ${url}`);
       const result = await objectStore.signGetObject(url, { 'A-userid': req.user });
       // Direct clients to reuse the redirect for 10 minutes before asking for a new one
       res.append('Cache-Control', 'private, max-age=600');
