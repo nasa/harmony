@@ -45,7 +45,7 @@ async function translateServiceResult(serviceResult, user, res) {
     const store = objectStoreForProtocol(redirect.split(':')[0]);
     let dest = redirect;
     if (store) {
-      dest = await store.signGetObject(redirect, { 'x-user': user });
+      dest = await store.signGetObject(redirect, { 'A-userid': user });
     }
     res.redirect(303, dest);
   } else if (content) {
