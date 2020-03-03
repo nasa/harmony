@@ -30,8 +30,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       interpolation: 'near',
       // TODO: it might only make sense to include width and height with a scaleExtent
       // and scaleSize by itself
-      scaleExtent: '0,2500000,1500000,3300000',
-      scaleSize: '1,2',
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
       height: 500,
       width: 1000,
     };
@@ -89,12 +89,12 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       it('passes the scaleExtent parameter to the backend', function () {
         expect(this.service.operation.scaleExtent).to.eql({
           x: { min: 0, max: 1500000 },
-          y: { min: 2500000, max: 3300000 },
+          y: { min: 2500000.3, max: 3300000 },
         });
       });
 
       it('passes the scaleSize parameter to the backend', function () {
-        expect(this.service.operation.scaleSize).to.eql({ x: 1, y: 2 });
+        expect(this.service.operation.scaleSize).to.eql({ x: 1.1, y: 2 });
       });
 
       it('passes the height parameter to the backend', function () {
@@ -352,6 +352,34 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(res.body).to.eql({
         code: 'harmony.RequestValidationError',
         description: 'Error: query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
+      });
+    });
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid scaleExtent is provided', async function () {
+      const res = await rangesetRequest(
+        this.frontend,
+        version,
+        collection,
+        variableName,
+        { granuleId, scaleExtent: '1,55,100,250,330' },
+      );
+      expect(res.status).to.equal(400);
+      expect(res.body).to.eql({
+        code: 'openapi.ValidationError',
+        description: 'Error: query parameter "scaleExtent" should NOT have more than 4 items',
+      });
+    });
+    it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid scaleExtent is provided', async function () {
+      const res = await rangesetRequest(
+        this.frontend,
+        version,
+        collection,
+        variableName,
+        { granuleId, scaleExtent: '1,55,100' },
+      );
+      expect(res.status).to.equal(400);
+      expect(res.body).to.eql({
+        code: 'openapi.ValidationError',
+        description: 'Error: query parameter "scaleExtent" should NOT have fewer than 4 items',
       });
     });
     it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid spatial subset is provided', async function () {
