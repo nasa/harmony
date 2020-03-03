@@ -118,11 +118,8 @@
           "type": "string",
           "description": "The interpolation method to be used during reprojection and scaling",
           "examples": [
-            "honor_BBox",
-            "Align-UL",
-            "Align-center", 
-            "Preserve-Resolution",
-            "Preserve-Grid-Size"
+            "near",
+            "bilinear"
           ]
         },
         "scaleExtent": {
