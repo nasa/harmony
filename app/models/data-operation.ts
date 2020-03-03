@@ -18,19 +18,22 @@ function readSchema(version) {
 }
 
 const validator = new Ajv({ schemaId: 'auto' });
-validator.addSchema(readSchema('0.3.0'), 'v0.3.0');
 validator.addSchema(readSchema('0.4.0'), 'v0.4.0');
+validator.addSchema(readSchema('0.5.0'), 'v0.5.0');
 
 /**
- * Returns an updated model that is compatible with the 0.2.0 schema
+ * Returns an updated model that is compatible with the 0.4.0 schema
  *
  * @param {object} model The data operation model
- * @returns {object} The data operation model compatible with the 0.2.0 schema
+ * @returns {object} The data operation model compatible with the 0.4.0 schema
  * @private
  */
-function modelTo0_3_0(model) {
+function modelTo0_4_0(model) {
   const updatedModel = cloneDeep(model);
-  delete updatedModel.temporal;
+  delete updatedModel.format.interpolation;
+  delete updatedModel.format.scaleExtent;
+  delete updatedModel.format.scaleSize;
+
   return updatedModel;
 }
 
@@ -447,10 +450,10 @@ class DataOperation {
    * @throws {TypeError} If validate is `true` and validation fails
    * @memberof DataOperation
    */
-  serialize(version = '0.4.0', validate = true) {
+  serialize(version = '0.5.0', validate = true) {
     let toWrite = this.model;
-    if (version === '0.3.0') {
-      toWrite = modelTo0_3_0(this.model);
+    if (version === '0.4.0') {
+      toWrite = modelTo0_4_0(this.model);
     }
     toWrite.version = version;
 
