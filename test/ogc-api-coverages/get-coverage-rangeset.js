@@ -15,7 +15,7 @@ const db = require('../../app/util/db');
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
-  const granuleId = 'G1233800343-EEDTEST';
+  const granuleId = 'G1233800352-EEDTEST';
   const variableId = 'V1233801695-EEDTEST';
   const variableName = 'red_var';
   const version = '1.0.0';
@@ -26,7 +26,14 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const query = {
       granuleId,
       outputCrs: 'CRS:84',
-      subset: ['lat(0:10)', 'lon(-20.1:20)'],
+      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+      interpolation: 'near',
+      // TODO: it might only make sense to include width and height with a scaleExtent
+      // and scaleSize by itself
+      scaleExtent: '0,2500000,1500000,3300000',
+      scaleSize: '1,2',
+      height: 500,
+      width: 1000,
     };
 
     describe('calling the backend service', function () {
@@ -72,6 +79,30 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('transforms subset lat and lon parameters into a backend bounding box subset request', function () {
         expect(this.service.operation.boundingRectangle).to.eql([-20.1, 0, 20, 10]);
+      });
+
+
+      it('passes the interpolation parameter to the backend', function () {
+        expect(this.service.operation.interpolation).to.equal('near');
+      });
+
+      it('passes the scaleExtent parameter to the backend', function () {
+        expect(this.service.operation.scaleExtent).to.eql({
+          x: { min: 0, max: 1500000 },
+          y: { min: 2500000, max: 3300000 },
+        });
+      });
+
+      it('passes the scaleSize parameter to the backend', function () {
+        expect(this.service.operation.scaleSize).to.eql({ x: 1, y: 2 });
+      });
+
+      it('passes the height parameter to the backend', function () {
+        expect(this.service.operation.height).to.equal(500);
+      });
+
+      it('passes the width parameter to the backend', function () {
+        expect(this.service.operation.width).to.equal(1000);
       });
     });
 

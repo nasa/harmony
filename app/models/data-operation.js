@@ -169,6 +169,71 @@ class DataOperation {
   }
 
   /**
+   * Returns the scale extent which the service should use.
+   *
+   * @returns {Object} the scale extent
+   * @memberof DataOperation
+   */
+  get scaleExtent() {
+    return this.model.format.scaleExtent;
+  }
+
+  /**
+   * Sets the scale extent which the service should use.
+   *
+   * @param {Object} scaleExtent the scale extent
+   * Example: { x: { min: 0, max: 5 }, y: { min: 5, max: 15} }
+   *
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set scaleExtent(scaleExtent) {
+    this.model.format.scaleExtent = scaleExtent;
+  }
+
+  /**
+   * Returns the scale size which the service should use.
+   *
+   * @returns {Object} the scale size, e.g. { x: 2, y: 1 }
+   * @memberof DataOperation
+   */
+  get scaleSize() {
+    return this.model.format.scaleSize;
+  }
+
+  /**
+   * Sets the scale size which the service should use, e.g. { x: 2, y: 1 }
+   *
+   * @param {string} scaleSize the scale size which the service should use.
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set scaleSize(scaleSize) {
+    this.model.format.scaleSize = scaleSize;
+  }
+
+  /**
+   * Returns interpolation method the service should use, e.g. "bilinear"
+   *
+   * @returns {string} the interpolation method which the service should use
+   * @memberof DataOperation
+   */
+  get interpolationMethod() {
+    return this.model.format.interpolation;
+  }
+
+  /**
+   * Sets the interpolation method the service should use, e.g. "bilinear"
+   *
+   * @param {string} interpolationMethod the interpolation method which the service should use
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set interpolationMethod(interpolationMethod) {
+    this.model.format.interpolation = interpolationMethod;
+  }
+
+  /**
    * Gets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
    *   [ East, South, West, North ]
    *
