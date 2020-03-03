@@ -329,7 +329,7 @@ describe('Individual job status route', function () {
       describe('loading the provided Harmony HTTP URL', function () {
         before(function () {
           sinon.stub(S3ObjectStore.prototype, 'signGetObject')
-            .callsFake((url, params) => `https://example.com/signed/${params['x-user']}`);
+            .callsFake((url, params) => `https://example.com/signed/${params['A-userid']}`);
         });
         after(function () {
           S3ObjectStore.prototype.signGetObject.restore();

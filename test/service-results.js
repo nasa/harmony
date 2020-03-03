@@ -58,7 +58,7 @@ describe('service-results', function () {
       let stub;
       before(function () {
         stub = sinon.stub(S3ObjectStore.prototype, 'signGetObject')
-          .callsFake((url, params) => `https://example.com/signed/${params['x-user']}`);
+          .callsFake((url, params) => `https://example.com/signed/${params['A-userid']}`);
       });
       hookUrl('/service-results/some-bucket/public/some/path.tif', 'jdoe');
       after(function () {
@@ -70,7 +70,7 @@ describe('service-results', function () {
       });
 
       it("passes the user's Earthdata Login username to the signing function for tracking", function () {
-        expect(stub.getCall(0).args[1]).to.eql({ 'x-user': 'jdoe' });
+        expect(stub.getCall(0).args[1]).to.eql({ 'A-userid': 'jdoe' });
       });
 
       it('redirects temporarily to a presigned URL', function () {
