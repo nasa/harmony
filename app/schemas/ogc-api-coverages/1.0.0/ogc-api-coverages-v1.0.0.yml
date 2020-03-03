@@ -304,7 +304,12 @@ paths:
       - $ref: '#/components/parameters/collectionId'
       - $ref: '#/components/parameters/granuleId'
       - $ref: '#/components/parameters/outputCrs'
-      # (HARMONY-172) - $ref: '#/components/parameters/subset'
+      - $ref: '#/components/parameters/subset'
+      - $ref: '#/components/parameters/interpolation'
+      - $ref: '#/components/parameters/scaleExtent'
+      - $ref: '#/components/parameters/scaleSize'
+      - $ref: '#/components/parameters/width'
+      - $ref: '#/components/parameters/height'
       responses:
         "200":
           description: A coverage's range set.
@@ -654,7 +659,9 @@ components:
       style: form
       explode: true
       schema:
-        type: string
+        type: array
+        items:
+          type: string
     rangeSubset:
       name: rangeSubset
       in: query
@@ -689,18 +696,26 @@ components:
       description: scale the resulting coverage either among one axis to a given size
       required: false
       style: form
-      explode: true
+      explode: false
       schema:
-        type: string
+        minItems: 2
+        maxItems: 2
+        type: array
+        items:
+          type: number
     scaleExtent:
       name: scaleExtent
       in: query
       description: scale the resulting coverage either among one axis to a given extent
       required: false
       style: form
-      explode: true
+      explode: false
       schema:
-        type: string
+        minItems: 4
+        maxItems: 4
+        type: array
+        items:
+          type: number
     subsettingCrs:
       name: subsettingcrs
       in: query
@@ -729,3 +744,17 @@ components:
       explode: true
       schema:
         type: string
+    width:
+      name: width
+      in: query
+      description: number of columns to return in the output coverage
+      required: false
+      schema:
+        type: integer
+    height:
+      name: height
+      in: query
+      description: number of rows to return in the output coverage
+      required: false
+      schema:
+        type: integer
