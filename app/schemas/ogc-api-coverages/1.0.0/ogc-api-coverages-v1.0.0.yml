@@ -703,6 +703,7 @@ components:
         type: array
         items:
           type: number
+          minimum: 0
     scaleExtent:
       name: scaleExtent
       in: query
@@ -716,6 +717,7 @@ components:
         type: array
         items:
           type: number
+          minimum: 0
     subsettingCrs:
       name: subsettingcrs
       in: query
@@ -751,6 +753,7 @@ components:
       required: false
       schema:
         type: integer
+        minimum: 1
     height:
       name: height
       in: query
@@ -758,3 +761,4 @@ components:
       required: false
       schema:
         type: integer
+        minimum: 1
