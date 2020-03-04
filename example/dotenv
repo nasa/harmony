@@ -99,10 +99,10 @@ STAGING_BUCKET=localStagingBucket
 # either because of application group setup or because they use a different
 # Earthdata Login endpoint (e.g. Data needs production while Harmony and
 # CMR need UAT), these provide a minimally-privileged user login for
-# fetching remote data behind Earthdata Login
+# fetching remote data behind Earthdata Login.   This user should exist in
+# all environments being used to fetch data
 EDL_USERNAME=
 EDL_PASSWORD=
-EDL_ENDPOINT=https://urs.earthdata.nasa.gov
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #

@@ -6,7 +6,7 @@ fi
 make_bucket=0
 while read -r line ; do
   if [[ "$line" == *Ready.* ]] && [[ $make_bucket -eq 0 ]]; then
-    aws --endpoint-url=http://localhost:4572 s3 mb s3://harmony-local-staging
+    aws --endpoint-url=http://localhost:4572 s3 mb s3://localStagingBucket
   fi
   echo "$line"
 done < <(docker run --rm -it -e SERVICES=s3 -e DEBUG=1 -p 4572:4572 localstack/localstack)
