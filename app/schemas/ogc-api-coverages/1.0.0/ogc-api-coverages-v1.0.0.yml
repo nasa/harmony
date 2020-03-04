@@ -635,10 +635,12 @@ components:
       description: The CMR Granule ID for the granule which should be retrieved
       required: false
       style: form
-      explode: false
+      explode: true
       schema:
-        type: string
-        minLength: 1
+        type: array
+        items:
+          type: string
+          minLength: 1
     subset:
       name: subset
       in: query
