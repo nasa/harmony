@@ -22,7 +22,7 @@ function getCoverageRangeset(req, res, next) {
   operation.outputFormat = 'image/tiff'; // content negotiation to be added in HARMONY-173
 
   if (query.granuleid) {
-    operation.granuleIds = query.granuleid.split(',');
+    operation.granuleIds = query.granuleid;
   }
   if (query.outputcrs) {
     try {

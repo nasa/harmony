@@ -317,7 +317,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     );
     itReturnsAValidationError(
       { granuleId: '' },
-      'query parameter "granuleId" should NOT be shorter than 1 characters',
+      'query parameter "granuleId[0]" should NOT be shorter than 1 characters',
     );
     itReturnsAValidationError(
       { granuleId, outputCrs: 'EPSG:1' },
