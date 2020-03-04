@@ -180,35 +180,12 @@ it done manually.
 * Once per account, run `$ bin/account-setup` to create a service linked role for ECS.
 * Upload the harmony/gdal Docker image somewhere accessible to an EC2 deployment.  This should be done any time the image changes.  The easiest way is to create an ECR in your account and push the image there.  Running `$ bin/build-image && bin/push-image` from the harmony-gdal repository will perform this step..
 
-#### Provision an instance
-
-Provisioning a new instance involves creating a CloudFormation stack from [deployment/ec2-template.yml](deployment/ec2-template.yml).
-
-```
-aws cloudformation deploy \
-  --template-file deployment/ec2-template.yml \
-  --stack-name $stack \
-  --capabilities CAPABILITY_IAM \
-  --parameter-overrides \
-    VpcId=$VPC_ID \
-    Subnet1Id=$SUBNET_1_ID \
-    Subnet2Id=$SUBNET_2_ID \
-    PermissionsBoundaryArn=$PERMISSIONS_BOUNDARY_ARN \
-    GdalImage=$GDAL_IMAGE \
-    AMI=$AMI \
-    CodePath=$CODE_PATH \
-    SSHKeyName=$SSH_KEY_NAME \
-    SSMTestRole=$SSM_TEST_ROLE
-```
-
-For information on what to pass for each parameter, see [deployment/ec2-template.yml](deployment/ec2-template.yml).
-
 #### Stop here and set up CI/CD
 
 Deploying the code should be done using the harmony-ci-cd project from Bamboo rather than manually.  Apart from that project and CI/CD setup,
 we do not yet have automation scripts for (re)deploying to AWS manually, as it is typically not needed during development.
 
-#### Deploy the code
+#### Deploy the code to AWS
 
 Note: The harmony-ci-cd repository contains automation code to do the following, usable from Bamboo.  You may use it locally by setting all
 relevant environment variables in a `.env` file, running `$ bin/build-image` in the root directory of the harmony-ci-cd project, and then
