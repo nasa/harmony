@@ -29,12 +29,12 @@ validator.addSchema(readSchema('0.5.0'), 'v0.5.0');
  * @private
  */
 function modelTo0_4_0(model) {
-  const updatedModel = cloneDeep(model);
-  delete updatedModel.format.interpolation;
-  delete updatedModel.format.scaleExtent;
-  delete updatedModel.format.scaleSize;
+  const revertedModel = cloneDeep(model);
+  delete revertedModel.format.interpolation;
+  delete revertedModel.format.scaleExtent;
+  delete revertedModel.format.scaleSize;
 
-  return updatedModel;
+  return revertedModel;
 }
 
 /**
