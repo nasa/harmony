@@ -302,12 +302,13 @@ paths:
       operationId: getCoverageRangeset
       parameters:
       - $ref: '#/components/parameters/collectionId'
-      - $ref: '#/components/parameters/granuleId'
       - $ref: '#/components/parameters/outputCrs'
       - $ref: '#/components/parameters/subset'
       - $ref: '#/components/parameters/interpolation'
       - $ref: '#/components/parameters/scaleExtent'
       - $ref: '#/components/parameters/scaleSize'
+      # Parameters below this line are not part of the OGC specification
+      - $ref: '#/components/parameters/granuleId'
       - $ref: '#/components/parameters/width'
       - $ref: '#/components/parameters/height'
       responses:
