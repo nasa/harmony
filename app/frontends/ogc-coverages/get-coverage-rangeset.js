@@ -31,13 +31,13 @@ function getCoverageRangeset(req, res, next) {
       throw new RequestValidationError('query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.');
     }
   }
-  operation.interpolation = query.interpolation;
+  operation.interpolationMethod = query.interpolation;
   if (query.scaleextent) {
     const [xMin, yMin, xMax, yMax] = query.scaleextent;
     operation.scaleExtent = { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } };
   }
-  operation.width = query.width;
-  operation.height = query.height;
+  operation.outputWidth = query.width;
+  operation.outputHeight = query.height;
   if (query.scalesize) {
     const [x, y] = query.scalesize;
     operation.scaleSize = { x, y };
