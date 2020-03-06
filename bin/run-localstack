@@ -1,12 +1,22 @@
 #!/bin/bash
 
+set -e
+
+if [ -f .env ]; then
+  set -o allexport
+  source .env
+  set +o allexport
+fi
+bucket="${STAGING_BUCKET:-localStagingBucket}"
+echo "Starting localstack and creating staging bucket s3://$bucket"
+
 if [[ "$(docker images -q localstack/localstack 2> /dev/null)" == "" ]]; then
   docker pull localstack/localstack
 fi
 make_bucket=0
 while read -r line ; do
   if [[ "$line" == *Ready.* ]] && [[ $make_bucket -eq 0 ]]; then
-    aws --endpoint-url=http://localhost:4572 s3 mb s3://localStagingBucket
+    aws --endpoint-url=http://localhost:4572 s3 mb s3://$bucket
   fi
   echo "$line"
 done < <(docker run --rm -it -e SERVICES=s3 -e DEBUG=1 -p 4572:4572 localstack/localstack)
