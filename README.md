@@ -73,15 +73,14 @@ We recommend doing this any time you receive an example/dotenv update to ensure 
 To use Earthdata Login with a locally running Harmomy, you must first set up a new application using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS.  You will also need to add the "echo" group to the list of required application groups in order for CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update your .env file with the information from your Earthdata Login application. Additional information including OATH values to use when creating the application can be found in the example/dotenv file in this repository.
 
 ### Start localstack
-These 2 steps need to be executed each time you prepare to run harmony locally if your .env file specifies that you are using localstack.
+To avoid using real S3 buckets when testing locally, you can run [Localstack](https://github.com/localstack/localstack).  Our helper
+script installs it, runs a local S3 instance, and creates the staging bucket configured in `.env`
 
 ```
-SERVICES=s3 localstack start
+$ bin/run-localstack
 ```
-In another window, run the following. Note, if you have changed the name of STAGING_BUCKET in your .env file to something other than "localStagingBucket", modify the command below appropriately:
-```
-aws --endpoint-url=http://localhost:4572 s3 mb s3://localStagingBucket
-```
+
+Keep this running during development.  `Ctrl-C` will exit.
 
 ### Run Tests
 
