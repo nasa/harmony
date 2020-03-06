@@ -720,7 +720,6 @@ components:
         type: array
         items:
           type: number
-          minimum: 0
     subsettingCrs:
       name: subsettingcrs
       in: query
