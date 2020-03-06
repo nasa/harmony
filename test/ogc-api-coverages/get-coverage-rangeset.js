@@ -337,10 +337,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       'query parameter "scaleExtent[3]" should be number',
     );
     itReturnsAValidationError(
-      { granuleId, scaleExtent: '-1.3,55,100,25' },
-      'query parameter "scaleExtent[0]" should be >= 0',
-    );
-    itReturnsAValidationError(
       { granuleId, scaleSize: '1.5' },
       'query parameter "scaleSize" should NOT have fewer than 2 items',
     );
