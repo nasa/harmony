@@ -72,6 +72,7 @@
     - C1226288788-EDF_DEV07
     - C1233147317-EEDTEST
     - C1233147319-EEDTEST
+    - C1233860183-EEDTEST
   capabilities:
     subsetting:
       bbox: false
