@@ -83,7 +83,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
 
       it('passes the interpolation parameter to the backend', function () {
-        expect(this.service.operation.interpolation).to.equal('near');
+        expect(this.service.operation.interpolationMethod).to.equal('near');
       });
 
       it('passes the scaleExtent parameter to the backend', function () {
@@ -98,11 +98,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
 
       it('passes the height parameter to the backend', function () {
-        expect(this.service.operation.height).to.equal(500);
+        expect(this.service.operation.outputHeight).to.equal(500);
       });
 
       it('passes the width parameter to the backend', function () {
-        expect(this.service.operation.width).to.equal(1000);
+        expect(this.service.operation.outputWidth).to.equal(1000);
       });
     });
 

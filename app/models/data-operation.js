@@ -318,7 +318,7 @@ class DataOperation {
    * @memberof DataOperation
    */
   get outputHeight() {
-    return this.model.format.width;
+    return this.model.format.height;
   }
 
   /**
