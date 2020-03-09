@@ -22,7 +22,7 @@ function getCoverageRangeset(req, res, next) {
   operation.outputFormat = 'image/tiff'; // content negotiation to be added in HARMONY-173
 
   if (query.granuleid) {
-    operation.granuleIds = query.granuleid.split(',');
+    operation.granuleIds = query.granuleid;
   }
   if (query.outputcrs) {
     try {
@@ -30,6 +30,17 @@ function getCoverageRangeset(req, res, next) {
     } catch (e) {
       throw new RequestValidationError('query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.');
     }
+  }
+  operation.interpolationMethod = query.interpolation;
+  if (query.scaleextent) {
+    const [xMin, yMin, xMax, yMax] = query.scaleextent;
+    operation.scaleExtent = { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } };
+  }
+  operation.outputWidth = query.width;
+  operation.outputHeight = query.height;
+  if (query.scalesize) {
+    const [x, y] = query.scalesize;
+    operation.scaleSize = { x, y };
   }
   try {
     const subset = parseSubsetParams(wrap(query.subset));

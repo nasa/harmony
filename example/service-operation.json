@@ -1,6 +1,6 @@
 {
-  "$schema": "../app/schemas/data-operation/0.1.0/data-operation-v0.1.0.json",
-  "version": 0,
+  "$schema": "../app/schemas/data-operation/0.5.0/data-operation-v0.5.0.json",
+  "version": "0.5.0",
   "callback": "http://localhost/some-path",
   "user": "jdoe",
   "sources": [
@@ -32,7 +32,14 @@
     "mime": "image/tiff",
     "width": 881,
     "height": 393,
-    "dpi": 72
+    "dpi": 72,
+    "interpolation": "near",
+    "scaleExtent": { "x": { "min": 0.5, "max": 125 }, "y": { "min": 52, "max": 75.22 } },
+    "scaleSize": { "x": 14.2, "y": 35 }
+  },
+  "temporal": {
+    "start": "1999-01-01T10:00:00Z",
+    "end": "2020-02-20T15:00:00Z"
   },
   "subset": {
     "bbox": [
@@ -41,5 +48,8 @@
       -80.46305347517998,
       59.72697747022849
     ]
-  }
+  },
+  "isSynchronous": false,
+  "requestId": "c045c793-19f1-43b5-9547-c87a5c7dfadb",
+  "client": "harmony-sit"
 }
