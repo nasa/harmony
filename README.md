@@ -159,8 +159,8 @@ Once again, run
 $ npm run start-dev
 ```
 
-You should now be able to view the outputs of the WMS service by pointing a client at the WMS URL for a test collection.  For
-the GESDISC collection with staged data above, the corresponding URL is `http://localhost:3000/C1233800302-EEDTEST/wms`.
+You should now be able to view the outputs of the WMS service by pointing a client at the WMS URL for a test collection. Harmony has its own test collection set up for sanity checking
+harmony with the harmony-gdal backend service available at `http://localhost:3000/C1233800302-EEDTEST/wms`.
 
 This can be set up as a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the above URL as the "URL" field input in the "Connection Details"
 dialog when adding a new WMS connection.  Thereafter, expanding the connection should provide a list of layers obtained through a

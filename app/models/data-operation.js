@@ -18,20 +18,23 @@ function readSchema(version) {
 }
 
 const validator = new Ajv({ schemaId: 'auto' });
-validator.addSchema(readSchema('0.3.0'), 'v0.3.0');
 validator.addSchema(readSchema('0.4.0'), 'v0.4.0');
+validator.addSchema(readSchema('0.5.0'), 'v0.5.0');
 
 /**
- * Returns an updated model that is compatible with the 0.2.0 schema
+ * Returns an updated model that is compatible with the 0.4.0 schema
  *
  * @param {object} model The data operation model
- * @returns {object} The data operation model compatible with the 0.2.0 schema
+ * @returns {object} The data operation model compatible with the 0.4.0 schema
  * @private
  */
-function modelTo0_3_0(model) {
-  const updatedModel = cloneDeep(model);
-  delete updatedModel.temporal;
-  return updatedModel;
+function modelTo0_4_0(model) {
+  const revertedModel = cloneDeep(model);
+  delete revertedModel.format.interpolation;
+  delete revertedModel.format.scaleExtent;
+  delete revertedModel.format.scaleSize;
+
+  return revertedModel;
 }
 
 /**
@@ -169,6 +172,71 @@ class DataOperation {
   }
 
   /**
+   * Returns the scale extent which the service should use.
+   *
+   * @returns {Object} the scale extent
+   * @memberof DataOperation
+   */
+  get scaleExtent() {
+    return this.model.format.scaleExtent;
+  }
+
+  /**
+   * Sets the scale extent which the service should use.
+   *
+   * @param {Object} scaleExtent the scale extent
+   * Example: { x: { min: 0, max: 5 }, y: { min: 5, max: 15} }
+   *
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set scaleExtent(scaleExtent) {
+    this.model.format.scaleExtent = scaleExtent;
+  }
+
+  /**
+   * Returns the scale size which the service should use.
+   *
+   * @returns {Object} the scale size, e.g. { x: 2, y: 1 }
+   * @memberof DataOperation
+   */
+  get scaleSize() {
+    return this.model.format.scaleSize;
+  }
+
+  /**
+   * Sets the scale size which the service should use, e.g. { x: 2, y: 1 }
+   *
+   * @param {string} scaleSize the scale size which the service should use.
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set scaleSize(scaleSize) {
+    this.model.format.scaleSize = scaleSize;
+  }
+
+  /**
+   * Returns interpolation method the service should use, e.g. "bilinear"
+   *
+   * @returns {string} the interpolation method which the service should use
+   * @memberof DataOperation
+   */
+  get interpolationMethod() {
+    return this.model.format.interpolation;
+  }
+
+  /**
+   * Sets the interpolation method the service should use, e.g. "bilinear"
+   *
+   * @param {string} interpolationMethod the interpolation method which the service should use
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set interpolationMethod(interpolationMethod) {
+    this.model.format.interpolation = interpolationMethod;
+  }
+
+  /**
    * Gets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
    *   [ East, South, West, North ]
    *
@@ -250,7 +318,7 @@ class DataOperation {
    * @memberof DataOperation
    */
   get outputHeight() {
-    return this.model.format.width;
+    return this.model.format.height;
   }
 
   /**
@@ -382,10 +450,10 @@ class DataOperation {
    * @throws {TypeError} If validate is `true` and validation fails
    * @memberof DataOperation
    */
-  serialize(version = '0.4.0', validate = true) {
+  serialize(version = '0.5.0', validate = true) {
     let toWrite = this.model;
-    if (version === '0.3.0') {
-      toWrite = modelTo0_3_0(this.model);
+    if (version === '0.4.0') {
+      toWrite = modelTo0_4_0(this.model);
     }
     toWrite.version = version;
 
