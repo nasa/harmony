@@ -1,6 +1,7 @@
 const process = require('process');
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const multer = require('multer');
 
 // Middleware requires in outside-in order
 const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authorizer');
@@ -133,6 +134,12 @@ function router({ skipEarthdataLogin }) {
 
   result.use(cookieParser(secret));
 
+  // Handle multipart/form-data (used for shapefiles). Files will be stored in the system
+  // temporary directory.
+  const upload = multer({ storage: multer.diskStorage({ destination: '/tmp' }) });
+  const uploadFields = [{ name: 'shapefile', maxCount: 1 }];
+  result.post(collectionPrefix('(ogc-api-coverages)'), upload.fields(uploadFields));
+
   if (`${skipEarthdataLogin}` !== 'true') {
     result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex, '/jobs*', '/service-results/*'])));
   }
@@ -147,6 +154,7 @@ function router({ skipEarthdataLogin }) {
   ogcCoverageApi.addOpenApiRoutes(result);
   result.use(collectionPrefix('wcs'), service(logged(wcsFrontend)));
   result.use(collectionPrefix('wms'), service(logged(wmsFrontend)));
+
   eoss.addOpenApiRoutes(result);
 
   result.use(/^\/(wms|wcs|eoss|ogc-api-coverages)/, (req, res, next) => {
@@ -158,6 +166,7 @@ function router({ skipEarthdataLogin }) {
 
   result.get('/', (req, res) => res.status(200).send('ok'));
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
+  result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
   result.get('/jobs/:jobId', getJobStatus);
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });

@@ -35,6 +35,7 @@ async function cmrGranuleLocator(req, res, next) {
     const queries = sources.map(async (source) => {
       req.logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
+      // TODO: Add support for POST with shapefile here
       const { hits, granules: atomGranules } = await cmr.queryGranulesForCollection(
         source.collection,
         cmrQuery,
