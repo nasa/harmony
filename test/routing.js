@@ -31,6 +31,22 @@ describe('Routing', function () {
   });
 
   describeErrorCondition({
+    condition: 'providing an invalid format for a CMR collection ID',
+    path: `/bogus-not-a-cmr-id/${wms}`,
+    message: 'Route must include a CMR collection identifier. bogus-not-a-cmr-id is not a valid collection identifier.',
+  });
+
+  describeErrorCondition({
+    condition: 'ogc-coverages-api providing an invalid format for a CMR collection ID',
+    path: '/BOGUS-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset',
+    message: {
+      code: 'harmony.NotFoundError',
+      description: 'Error: Route must include a CMR collection identifier. BOGUS-EEDTEST is not a valid collection identifier.',
+    },
+    html: false,
+  });
+
+  describeErrorCondition({
     condition: 'mounting a service without a collection ID',
     path: `/${wms}`,
     message: 'Services can only be invoked when a valid collection is supplied in the URL path before the service name.',
