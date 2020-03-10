@@ -67,7 +67,7 @@ function service(fn) {
     req.logger = child;
     try {
       if (!req.collections || req.collections.length === 0) {
-        throw new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name');
+        throw new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.');
       }
       child.info('Running service');
       await fn(req, res, next);
@@ -92,6 +92,29 @@ function service(fn) {
 function collectionPrefix(path) {
   const result = new RegExp(cmrCollectionReader.collectionRegex.source + path);
   return result;
+}
+
+// Regex for any routes that we expect to begin with a CMR collection identifier
+const collectionRoute = /^(\/(?!docs).*\/)(wms|wcs|eoss|ogc-api-coverages)/;
+
+/**
+ * Validates that routes which require a collection identifier are using the correct
+ * format for a collection identifier.
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @param {function} next The next function in the call chain
+ * @returns {void}
+ */
+function validateCollectionRoute(req, res, next) {
+  const { path } = req;
+  const collectionRouteMatch = path.match(collectionRoute);
+  if (collectionRouteMatch) {
+    if (!collectionRouteMatch[1].match(cmrCollectionReader.collectionRegex)) {
+      const badId = collectionRouteMatch[1].substring(1, collectionRouteMatch[1].length - 1);
+      next(new NotFoundError(`Route must include a CMR collection identifier. ${badId} is not a valid collection identifier.`));
+    }
+  }
+  next();
 }
 
 /**
@@ -119,6 +142,7 @@ function router({ skipEarthdataLogin }) {
   result.get('/service-results/:bucket/:key(*)', getServiceResult);
 
   // Routes and middleware for handling service requests
+  result.use(logged(validateCollectionRoute));
   result.use(logged(cmrCollectionReader));
 
   ogcCoverageApi.addOpenApiRoutes(result);
@@ -126,8 +150,8 @@ function router({ skipEarthdataLogin }) {
   result.use(collectionPrefix('wms'), service(logged(wmsFrontend)));
   eoss.addOpenApiRoutes(result);
 
-  result.use(/^\/(wms|wcs|eoss)/, (req, res, next) => {
-    next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name'));
+  result.use(/^\/(wms|wcs|eoss|ogc-api-coverages)/, (req, res, next) => {
+    next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
 
   result.use(logged(cmrGranuleLocator));
@@ -138,7 +162,7 @@ function router({ skipEarthdataLogin }) {
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
   result.get('/jobs/:jobId', getJobStatus);
-  result.get('/*', () => { throw new NotFoundError('The requested page was not found'); });
+  result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   return result;
 }
 

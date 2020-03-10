@@ -63,7 +63,7 @@ async function cmrCollectionReader(req, res, next) {
         const foundIds = collections.map((c) => c.id);
         const missingIds = collectionIds.filter((c) => !foundIds.includes(c));
         const s = missingIds.length > 1 ? 's' : '';
-        const message = `The collection${s} with ID${s} ${listToText(missingIds)} could not be found`;
+        const message = `Route must include a CMR collection identifier. The collection${s} with ID${s} ${listToText(missingIds)} could not be found.`;
         throw new NotFoundError(message);
       }
 
