@@ -16,7 +16,7 @@ fi
 make_bucket=0
 while read -r line ; do
   if [[ "$line" == *Ready.* ]] && [[ $make_bucket -eq 0 ]]; then
-    aws --endpoint-url=http://localhost:4572 s3 mb s3://$bucket
+    AWS_DEFAULT_REGION=us-west-2 AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake aws --endpoint-url=http://localhost:4572 s3 mb s3://$bucket
   fi
   echo "$line"
 done < <(docker run --rm -it -e SERVICES=s3 -e DEBUG=1 -p 4572:4572 localstack/localstack)
