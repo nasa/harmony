@@ -17,6 +17,10 @@ async function cmrGranuleLocator(req, res, next) {
 
   if (!operation) return next();
 
+  const shapefileInfo = req.signedCookies.shapefile;
+
+  let cmrResponse;
+
   const cmrQuery = {};
 
   if (operation.temporal) {
@@ -35,13 +39,26 @@ async function cmrGranuleLocator(req, res, next) {
     const queries = sources.map(async (source) => {
       req.logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
-      // TODO: Add support for POST with shapefile here
-      const { hits, granules: atomGranules } = await cmr.queryGranulesForCollection(
-        source.collection,
-        cmrQuery,
-        req.accessToken,
-        env.maxAsynchronousGranules,
-      );
+
+      if (shapefileInfo) {
+        cmrQuery.shapefileInfo = JSON.parse(shapefileInfo);
+        cmrResponse = await cmr.queryGranulesForCollectionWithMultipartForm(
+          source.collection,
+          cmrQuery,
+          req.accessToken,
+          env.maxAsynchronousGranules,
+        );
+      } else {
+        cmrResponse = await cmr.queryGranulesForCollection(
+          source.collection,
+          cmrQuery,
+          req.accessToken,
+          env.maxAsynchronousGranules,
+        );
+      }
+
+      const { hits, granules: atomGranules } = cmrResponse;
+
       operation.cmrHits += hits;
       const msTaken = new Date().getTime() - startTime;
       req.logger.info('Completed granule query', { durationMs: msTaken });

@@ -2,6 +2,8 @@ const process = require('process');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const multer = require('multer');
+const multerS3 = require('multer-s3');
+const { objectStoreForProtocol } = require('../util/object-store');
 
 // Middleware requires in outside-in order
 const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authorizer');
@@ -137,6 +139,12 @@ function router({ skipEarthdataLogin }) {
   // Handle multipart/form-data (used for shapefiles). Files will be stored in the system
   // temporary directory.
   const upload = multer({ storage: multer.diskStorage({ destination: '/tmp' }) });
+  // const { s3 } = objectStoreForProtocol('s3');
+
+  // const upload = multer({ storage: multerS3({
+  //   s3,
+  //   bucket: 'shapefiles',
+  // }) });
   const uploadFields = [{ name: 'shapefile', maxCount: 1 }];
   result.post(collectionPrefix('(ogc-api-coverages)'), upload.fields(uploadFields));
 
@@ -166,7 +174,7 @@ function router({ skipEarthdataLogin }) {
 
   result.get('/', (req, res) => res.status(200).send('ok'));
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
-  result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
+  // result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
   result.get('/jobs/:jobId', getJobStatus);
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
