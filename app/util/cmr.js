@@ -1,16 +1,22 @@
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
+const fetch = require('node-fetch');
 const querystring = require('querystring');
+const readable = require('s3-readable');
 const env = require('./env');
-
-// TODO: Clean up this library during the IP sprint
+const { objectStoreForProtocol } = require('./object-store');
 
 const cmrApi = axios.create({
   baseURL: 'https://cmr.uat.earthdata.nasa.gov/',
 });
 
+const POST_PATH = 'https://cmr.uat.earthdata.nasa.gov/search/granules.json';
+// const POST_PATH = 'http://localhost:3003/granules.json';
+
 const clientIdHeader = { 'Client-id': `${env.harmonyClientId}` };
+
+const { s3 } = objectStoreForProtocol('s3');
 
 /**
  * Combine headers into an options object to be passed with a CMR call
@@ -64,28 +70,41 @@ async function cmrSearch(path, query, token) {
  * @param {string} path The absolute path on the cmR API to the resource being queried
  * @param {object} form An object with keys and values representing the parameters for the query
  * @param {string} token Access token for the user
+ * @returns {Promise<object>} The CMR query result
+ * @private
  */
 async function cmrPostSearch(path, form, token) {
   const options = makeOptions(clientIdHeader, makeTokenHeader(token));
   let tempFile;
   const formData = new FormData();
-  form.forEach((value, key, _map) => {
-    if (key === 'shapefile') {
-      tempFile = value;
-      // can't use a stream here or it won't work with axios
-      formData.append(key, fs.readFileSync(value));
-    } else {
-      formData.append(key, value);
+  Object.keys(form).forEach((key) => {
+    const value = form[key];
+    if (value) {
+      if (key === 'shapefileInfo') {
+        tempFile = value.path;
+        // formData.append('shapefile', readable(s3).createReadStream({
+        //   Bucket: value.bucket,
+        //   Key: value.key,
+        // }), {
+        //   contentType: value.mimetype,
+        // });
+        formData.append('shapefile', fs.createReadStream(tempFile), { contentType: value.mimetype });
+      } else {
+        formData.append(key, value);
+      }
     }
   });
 
   const formHeaders = formData.getHeaders();
   options.headers = { ...options.headers, formHeaders };
 
-  const response = await axios.pos('https://cmr.uat.earthdata.nasa.gov/',
-    formData,
-    options);
-
+  let response;
+  try {
+    response = await fetch(POST_PATH, { method: 'POST', body: formData, headers: options.headers });
+    response.data = await response.json();
+  } catch (e) {
+    console.log(e);
+  }
   // TODO: handle errors
 
   // TODO: delete the temp file
@@ -144,9 +163,10 @@ async function queryGranules(query, token) {
  * @private
  */
 async function queryGranuleUsingMultipartForm(form, token) {
-  const { shapefile } = form;
-  const strippedForm = { ...form };
-  delete strippedForm.shapefile;
+  // TODO: Paging / hits
+  const granuleResponse = await cmrPostSearch('/search/granules.json', form, token);
+  const cmrHits = parseInt(granuleResponse.headers['cmr-hits'], 10);
+  return { hits: cmrHits, granules: granuleResponse.data.feed.entry };
 }
 
 /**
@@ -220,7 +240,7 @@ function queryGranulesForCollectionWithMultipartForm(collectionId, form, token, 
     page_size: limit,
   };
 
-  return queryGranulesForCollectionWithMultipartForm({ ...baseQuery, ...form }, token);
+  return queryGranuleUsingMultipartForm({ ...baseQuery, ...form }, token);
 }
 
 module.exports = {
