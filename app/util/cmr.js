@@ -1,22 +1,38 @@
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
+const get = require('lodash.get');
 const fetch = require('node-fetch');
 const querystring = require('querystring');
-const readable = require('s3-readable');
+const tmp = require('tmp');
 const env = require('./env');
-const { objectStoreForProtocol } = require('./object-store');
+const { CmrError } = require('../util/errors');
+const {
+  objectStoreForProtocol,
+} = require('./object-store');
 
 const cmrApi = axios.create({
   baseURL: 'https://cmr.uat.earthdata.nasa.gov/',
 });
 
+const CMR_URL = 'https://cmr.uat.earthdata.nasa.gov';
+
 const POST_PATH = 'https://cmr.uat.earthdata.nasa.gov/search/granules.json';
 // const POST_PATH = 'http://localhost:3003/granules.json';
 
-const clientIdHeader = { 'Client-id': `${env.harmonyClientId}` };
+const clientIdHeader = {
+  'Client-id': `${env.harmonyClientId}`,
+};
 
-const { s3 } = objectStoreForProtocol('s3');
+const acceptJsonHeader = {
+  Accept: 'application/json',
+};
+
+const {
+  s3,
+} = objectStoreForProtocol('s3');
+
+// const pGetObject = promisify(s3.getObject.bind(s3));
 
 /**
  * Combine headers into an options object to be passed with a CMR call
@@ -28,10 +44,13 @@ const { s3 } = objectStoreForProtocol('s3');
  */
 function makeOptions(...headers) {
   const keyVals = headers.reduce((options, header) => ({
-    ...options, ...header,
+    ...options,
+    ...header,
   }));
 
-  return { headers: keyVals };
+  return {
+    headers: keyVals,
+  };
 }
 
 /**
@@ -43,7 +62,28 @@ function makeOptions(...headers) {
  * @private
  */
 function makeTokenHeader(token) {
-  return token ? { 'Echo-token': `${token}:${process.env.OAUTH_CLIENT_ID}` } : {};
+  return token ? {
+    'Echo-token': `${token}:${process.env.OAUTH_CLIENT_ID}`,
+  } : {};
+}
+
+/**
+ * Handle any errors in the CMR response
+ *
+ * @param {Object} response The response from the CMR
+ * @returns {void}
+ * @throws {CmrError} if the CMR response indicates an error
+ */
+function handleCmrErrors(response) {
+  const { status } = response;
+  if (status >= 500) {
+    throw new CmrError(503, `The CMR has failed with status '${status}'`);
+  } else if (status >= 400) {
+    // pass on errors from the CMR
+    const message = get(response, ['data', 'errors', 0])
+    || `The CMR has returned an error: '${response.statusText}'`;
+    throw new CmrError(status, message);
+  }
 }
 
 /**
@@ -59,8 +99,14 @@ async function cmrSearch(path, query, token) {
   const querystr = querystring.stringify(query);
   // Pass in a token to the CMR search if one is provided
   const options = makeOptions(clientIdHeader, makeTokenHeader(token));
-  const response = await cmrApi.get([path, querystr].join('?'), options);
-  // TODO: Error responses
+  // const response = await cmrApi.get(['adkfjakfdsa', querystr].join('?'), options);
+  const response = await fetch(`${CMR_URL}${path}?${querystr}`,
+    {
+      method: 'GET',
+      headers: { ...options.headers, ...acceptJsonHeader },
+    });
+  response.data = await response.json();
+  handleCmrErrors(response);
   return response;
 }
 
@@ -77,37 +123,54 @@ async function cmrPostSearch(path, form, token) {
   const options = makeOptions(clientIdHeader, makeTokenHeader(token));
   let tempFile;
   const formData = new FormData();
-  Object.keys(form).forEach((key) => {
+  await Promise.all(Object.keys(form).map(async (key) => {
     const value = form[key];
     if (value) {
       if (key === 'shapefileInfo') {
-        tempFile = value.path;
-        // formData.append('shapefile', readable(s3).createReadStream({
-        //   Bucket: value.bucket,
-        //   Key: value.key,
-        // }), {
-        //   contentType: value.mimetype,
-        // });
-        formData.append('shapefile', fs.createReadStream(tempFile), { contentType: value.mimetype });
+        // after attempting to use various different solutions to stream
+        // directly from S3 to the CMR and failing I'm giving up for now
+        // and downloading the shapefile from S3 to a temporary file before
+        // uploading it to the CMR
+        tempFile = tmp.fileSync();
+        const fileData = await s3.getObject({
+          Bucket: value.bucket,
+          Key: value.key,
+        }).promise();
+
+        fs.writeFileSync(tempFile.name, fileData.Body);
+
+        formData.append('shapefile',
+          fs.createReadStream(tempFile.name), {
+            contentType: value.mimetype,
+          });
       } else {
         formData.append(key, value);
       }
     }
-  });
+  }));
 
   const formHeaders = formData.getHeaders();
-  options.headers = { ...options.headers, formHeaders };
+  options.headers = {
+    ...options.headers,
+    ...acceptJsonHeader,
+    formHeaders,
+  };
 
   let response;
   try {
-    response = await fetch(POST_PATH, { method: 'POST', body: formData, headers: options.headers });
+    response = await fetch(POST_PATH, {
+      method: 'POST',
+      body: formData,
+      headers: options.headers,
+    });
     response.data = await response.json();
-  } catch (e) {
-    console.log(e);
-  }
-  // TODO: handle errors
 
-  // TODO: delete the temp file
+    handleCmrErrors(response);
+  } finally {
+    // not strictly needed as the library will handle this, but added
+    // for completeness to make sure the temporary file gets deleted
+    tempFile.removeCallback();
+  }
 
   return response;
 }
@@ -150,7 +213,10 @@ async function queryGranules(query, token) {
   // TODO: Paging / hits
   const granulesResponse = await cmrSearch('/search/granules.json', query, token);
   const cmrHits = parseInt(granulesResponse.headers['cmr-hits'], 10);
-  return { hits: cmrHits, granules: granulesResponse.data.feed.entry };
+  return {
+    hits: cmrHits,
+    granules: granulesResponse.data.feed.entry,
+  };
 }
 
 /**
@@ -166,7 +232,10 @@ async function queryGranuleUsingMultipartForm(form, token) {
   // TODO: Paging / hits
   const granuleResponse = await cmrPostSearch('/search/granules.json', form, token);
   const cmrHits = parseInt(granuleResponse.headers['cmr-hits'], 10);
-  return { hits: cmrHits, granules: granuleResponse.data.feed.entry };
+  return {
+    hits: cmrHits,
+    granules: granuleResponse.data.feed.entry,
+  };
 }
 
 /**
@@ -177,7 +246,10 @@ async function queryGranuleUsingMultipartForm(form, token) {
  * @returns {Promise<Array<CmrCollection>>} The collections with the given ids
  */
 function getCollectionsByIds(ids, token) {
-  return queryCollections({ concept_id: ids, page_size: 2000 }, token);
+  return queryCollections({
+    concept_id: ids,
+    page_size: 2000,
+  }, token);
 }
 
 /**
@@ -188,7 +260,10 @@ function getCollectionsByIds(ids, token) {
  * @returns {Promise<Array<CmrVariable>>} The variables with the given ids
  */
 function getVariablesByIds(ids, token) {
-  return queryVariables({ concept_id: ids, page_size: 2000 }, token);
+  return queryVariables({
+    concept_id: ids,
+    page_size: 2000,
+  }, token);
 }
 
 /**
@@ -240,7 +315,10 @@ function queryGranulesForCollectionWithMultipartForm(collectionId, form, token, 
     page_size: limit,
   };
 
-  return queryGranuleUsingMultipartForm({ ...baseQuery, ...form }, token);
+  return queryGranuleUsingMultipartForm({
+    ...baseQuery,
+    ...form,
+  }, token);
 }
 
 module.exports = {
