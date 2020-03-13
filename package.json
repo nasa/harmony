@@ -64,10 +64,10 @@
     "pg-native": "^3.0.0",
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
-    "s3-readable": "^1.0.1",
     "serve-favicon": "^2.5.0",
     "simple-oauth2": "git+https://github.com/bilts/simple-oauth2.git#fix-encoding",
     "sqlite3": "^4.1.1",
+    "tmp": "^0.1.0",
     "uuid": "^3.4.0",
     "winston": "^3.2.1"
   },

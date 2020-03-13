@@ -1,6 +1,6 @@
 const cmr = require('../util/cmr');
 const env = require('../util/env');
-const { RequestValidationError } = require('../util/errors');
+const { CmrError, RequestValidationError } = require('../util/errors');
 
 /**
  * Express.js middleware which extracts parameters from the Harmony operation
@@ -77,7 +77,7 @@ async function cmrGranuleLocator(req, res, next) {
 
     await Promise.all(queries);
   } catch (e) {
-    if (e instanceof RequestValidationError) {
+    if (e instanceof RequestValidationError || e instanceof CmrError) {
       return next(e);
     }
     req.logger.error(e);
