@@ -1,4 +1,3 @@
-const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
 const get = require('lodash.get');
@@ -11,47 +10,20 @@ const {
   objectStoreForProtocol,
 } = require('./object-store');
 
-const cmrApi = axios.create({
-  baseURL: 'https://cmr.uat.earthdata.nasa.gov/',
-});
-
-const CMR_URL = 'https://cmr.uat.earthdata.nasa.gov';
-
-const POST_PATH = 'https://cmr.uat.earthdata.nasa.gov/search/granules.json';
-// const POST_PATH = 'http://localhost:3003/granules.json';
-
 const clientIdHeader = {
   'Client-id': `${env.harmonyClientId}`,
+};
+
+const cmrApiConfig = {
+  baseURL: env.CMR_URL || 'https://cmr.uat.earthdata.nasa.gov',
+  useToken: true,
 };
 
 const acceptJsonHeader = {
   Accept: 'application/json',
 };
 
-const {
-  s3,
-} = objectStoreForProtocol('s3');
-
-// const pGetObject = promisify(s3.getObject.bind(s3));
-
-/**
- * Combine headers into an options object to be passed with a CMR call
- *
- * @param {...object} headers One or more headers to be included in the options
- * @returns {object} An object with a single 'headers' key pointing to an object
- * containing the header key/value pairs
- * @private
- */
-function makeOptions(...headers) {
-  const keyVals = headers.reduce((options, header) => ({
-    ...options,
-    ...header,
-  }));
-
-  return {
-    headers: keyVals,
-  };
-}
+const { s3 } = objectStoreForProtocol('s3');
 
 /**
  * Create a token header for the given access token string
@@ -62,7 +34,7 @@ function makeOptions(...headers) {
  * @private
  */
 function makeTokenHeader(token) {
-  return token ? {
+  return cmrApiConfig.useToken && token ? {
     'Echo-token': `${token}:${process.env.OAUTH_CLIENT_ID}`,
   } : {};
 }
@@ -97,13 +69,15 @@ function handleCmrErrors(response) {
  */
 async function cmrSearch(path, query, token) {
   const querystr = querystring.stringify(query);
-  // Pass in a token to the CMR search if one is provided
-  const options = makeOptions(clientIdHeader, makeTokenHeader(token));
-  // const response = await cmrApi.get(['adkfjakfdsa', querystr].join('?'), options);
-  const response = await fetch(`${CMR_URL}${path}?${querystr}`,
+  const headers = {
+    ...clientIdHeader,
+    ...makeTokenHeader(token),
+    ...acceptJsonHeader,
+  };
+  const response = await fetch(`${cmrApiConfig.baseURL}${path}?${querystr}`,
     {
       method: 'GET',
-      headers: { ...options.headers, ...acceptJsonHeader },
+      headers,
     });
   response.data = await response.json();
   handleCmrErrors(response);
@@ -120,7 +94,6 @@ async function cmrSearch(path, query, token) {
  * @private
  */
 async function cmrPostSearch(path, form, token) {
-  const options = makeOptions(clientIdHeader, makeTokenHeader(token));
   let tempFile;
   const formData = new FormData();
   await Promise.all(Object.keys(form).map(async (key) => {
@@ -143,25 +116,29 @@ async function cmrPostSearch(path, form, token) {
           fs.createReadStream(tempFile.name), {
             contentType: value.mimetype,
           });
+      } else if (Array.isArray(value)) {
+        value.forEach((v) => {
+          formData.append(key, v);
+        });
       } else {
         formData.append(key, value);
       }
     }
   }));
 
-  const formHeaders = formData.getHeaders();
-  options.headers = {
-    ...options.headers,
+  const headers = {
+    ...clientIdHeader,
+    ...makeTokenHeader(token),
     ...acceptJsonHeader,
-    formHeaders,
+    ...formData.getHeaders(),
   };
 
   let response;
   try {
-    response = await fetch(POST_PATH, {
+    response = await fetch(`${cmrApiConfig.baseURL}${path}`, {
       method: 'POST',
       body: formData,
-      headers: options.headers,
+      headers,
     });
     response.data = await response.json();
 
@@ -212,7 +189,7 @@ async function queryCollections(query, token) {
 async function queryGranules(query, token) {
   // TODO: Paging / hits
   const granulesResponse = await cmrSearch('/search/granules.json', query, token);
-  const cmrHits = parseInt(granulesResponse.headers['cmr-hits'], 10);
+  const cmrHits = parseInt(granulesResponse.headers.get('cmr-hits'), 10);
   return {
     hits: cmrHits,
     granules: granulesResponse.data.feed.entry,
@@ -222,8 +199,8 @@ async function queryGranules(query, token) {
 /**
  * Performs a CMR granules.json search with the given form data
  *
- * @param {object} form The key/value pairs to search including a `shapefile` parameter pointing to a file
- * on the file system
+ * @param {object} form The key/value pairs to search including a `shapefile` parameter
+ * pointing to a file on the file system
  * @param {string} token Access token for user request
  * @returns {Promise<Array<CmrGranule>>} The granule search results
  * @private
@@ -231,7 +208,7 @@ async function queryGranules(query, token) {
 async function queryGranuleUsingMultipartForm(form, token) {
   // TODO: Paging / hits
   const granuleResponse = await cmrPostSearch('/search/granules.json', form, token);
-  const cmrHits = parseInt(granuleResponse.headers['cmr-hits'], 10);
+  const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
   return {
     hits: cmrHits,
     granules: granuleResponse.data.feed.entry,
@@ -327,5 +304,5 @@ module.exports = {
   getVariablesForCollection,
   queryGranulesForCollection,
   queryGranulesForCollectionWithMultipartForm,
-  cmrApi, // Allow tests to override cmrApi
+  cmrApiConfig, // Allow tests to override cmrApiConfig
 };
