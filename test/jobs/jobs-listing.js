@@ -44,7 +44,7 @@ describe('Jobs listing route', function () {
       this.res = await jobListing(this.frontend).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
-      expect(this.res.statusCode).to.equal(307);
+      expect(this.res.statusCode).to.equal(303);
       expect(this.res.headers.location).to.include(process.env.OAUTH_HOST);
     });
 

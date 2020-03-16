@@ -101,15 +101,16 @@ function handleNeedsAuthorized(oauth2, req, res, _next) {
   });
 
   res.cookie('redirect', urlUtil.getRequestUrl(req), cookieOptions);
-  // res.cookie('redirect', '')
   // if this was a shapefile upload set a cookie with a url for the shapefile and
   // the other POST form parameters
   if (req.files) {
-    // const { mimetype, key, bucket } = req.files.shapefile[0];
     const { mimetype, key, bucket } = req.files.shapefile[0];
-    const otherParams = req.body; // TODO: convert these to URL params snd set the 'redirect' cookie to use them
+    // copy other form parameter to the query field on req to they get used
+    // when building the redirect
+    req.query = req.body;
     const shapefileParams = { mimetype, key, bucket };
     res.cookie('shapefile', JSON.stringify(shapefileParams), cookieOptions);
+    res.cookie('redirect', urlUtil.getRequestUrl(req), cookieOptions);
   }
   res.redirect(303, url);
 }
