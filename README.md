@@ -13,10 +13,9 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
 * Node.js version 12.  We recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions
-* Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14, Amazon Linux 2, and Alpine Linux.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
+* Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14 and Amazon Linux 2.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
 * [git](https://git-scm.com) - Used to clone this repository
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
-* A running [Localstack](https://github.com/localstack/localstack) instance - Used for testing AWS services locally.  Only the S3 service needs to run.
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
 
 
@@ -110,7 +109,7 @@ To re-record everything, remove the fixtures directory and run the test suite. T
 To set a sqlite3 database with the correct schema for local execution, run
 
 ```
-$ knex --cwd db migrate:latest
+$ npx knex --cwd db migrate:latest
 ```
 
 This should be run any time the versioned contents of the `db/migrations` directory change.
@@ -138,8 +137,9 @@ The application is not very useful at this point, since no backends have been co
 
 ### Add a backend
 
-Clone the Harmony GDAL service repository.  From your workspace, run
+Clone the Harmony GDAL service repository into a peer directory of the main Harmony repo
 ```
+$ cd ..
 $ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony-gdal.git
 ```
 
@@ -152,16 +152,17 @@ This may take some time, but ultimately it will produce a local docker image tag
 
 ### Connect a client
 
-Once again, run
+From the main Harmony repository directory, once again run
 
 ```
 $ npm run start-dev
 ```
 
-You should now be able to view the outputs of the WMS service by pointing a client at the WMS URL for a test collection.  For
-the GESDISC collection with staged data above, the corresponding URL is `http://localhost:3000/C1233800302-EEDTEST/wms`.
+You should now be able to view the outputs of performing a simple transformation request.  Try loading a
+granule from our test collection: `http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/all/coverage/rangeset?granuleId=G1233800343-EEDTEST`.
 
-This can be set up as a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the above URL as the "URL" field input in the "Connection Details"
+You can also set up a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the
+`http://localhost:3000/C1233800302-EEDTEST/wms` as the "URL" field input in the "Connection Details"
 dialog when adding a new WMS connection.  Thereafter, expanding the connection should provide a list of layers obtained through a
 GetCapabilities call to the test server, and double-clicking a layer should add it to a map, making a WMS call to retrieve an appropriate
 PNG from the test server.
