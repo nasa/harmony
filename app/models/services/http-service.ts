@@ -5,7 +5,7 @@ const https = require('https');
 const URL = require('url');
 const BaseService = require('./base-service');
 const db = require('../../util/db');
-const Job = require('../../models/job');
+const Job = require('../job');
 
 /**
  * Service implementation which invokes a backend over HTTP, POSTing the Harmony
