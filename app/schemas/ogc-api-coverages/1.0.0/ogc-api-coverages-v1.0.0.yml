@@ -76,15 +76,7 @@ paths:
       parameters:
       - name: limit
         in: query
-        description: |
-          The optional limit parameter limits the number of collections that are
-          presented in the response document.
-          Only items are counted that are on the first level of the collection in
-          the response document. Nested objects contained within the explicitly
-          requested items shall not be counted.
-          * Minimum = 1
-          * Maximum = 10000
-          * Default = 10
+        description: Not yet implemented
         required: false
         style: form
         explode: false
@@ -113,6 +105,19 @@ paths:
         explode: false
         schema:
           type: string
+      - name: f
+        in: query
+        description: |
+          The optional f parameter indicates the output format which the server shall provide as part of the response document. It has preference over the HTTP Accept header. The default format is JSON.
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: string
+          default: json
+          enum:
+          - json
+          - html
       responses:
         "200":
           description: Metadata about the collections shared by this API.

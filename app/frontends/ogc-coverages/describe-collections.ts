@@ -1,4 +1,6 @@
-const { getRequestUrl, getRequestRoot } = require('../../util/url');
+const { getRequestUrl } = require('../../util/url');
+const { keysToLowerCase } = require('../../util/object');
+const { RequestValidationError } = require('../../util/errors');
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
@@ -35,6 +37,10 @@ function generateExtent(collection) {
  *   cannot be performed
  */
 function describeCollections(req, res) {
+  const query = keysToLowerCase(req.query);
+  if (query.f && query.f !== 'json') {
+    throw new RequestValidationError(`Unsupported format "${query.f}". Currently only the json format is supported.`);
+  }
   const links = [];
   const variables = [];
   for (const collection of req.collections) {
@@ -45,10 +51,14 @@ function describeCollections(req, res) {
     const rootLink = {
       title: `OGC coverages API root for ${collectionShortLabel}`,
       href: ogcApiRoot,
+      rel: 'root',
+      type: 'application/json',
     };
     const selfLink = {
       title: `Collections listing for ${collectionShortLabel}`,
       href: requestUrl,
+      rel: 'self',
+      type: 'application/json',
     };
     links.push(rootLink, selfLink);
     const extent = generateExtent(collection);

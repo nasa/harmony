@@ -25,7 +25,7 @@ function hookLandingPage(collection, version) {
  * Performs getCoverageRangeset request on the given collection with the given params
  *
  * @param {Express.Application} app The express application (typically this.frontend)
- * @param {String} version The EOSS version
+ * @param {String} version The OGC coverages API version
  * @param {string} collection The CMR Collection ID to perform a service on
  * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
  * @param {object} query The query parameters to pass to the EOSS request
@@ -38,12 +38,12 @@ function rangesetRequest(app, version, collection, coverageId, query) {
 }
 
 /**
- * Adds before/after hooks to run an EOS service request
+ * Adds before/after hooks to run an OGC API coverages rangeset request
  *
- * @param {String} version The EOSS version
+ * @param {String} version The OGC coverages API version
  * @param {string} collection The CMR Collection ID to perform a service on
  * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
- * @param {object} query The query parameters to pass to the EOSS request
+ * @param {object} query The query parameters to pass to the rangeset request
  * @param {String} username Optional username to simulate logging in
  * @returns {void}
  */
@@ -147,10 +147,13 @@ function coveragesLandingPageRequest(app, collection, version) {
  * @param {Express.Application} app The express application (typically this.frontend)
  * @param {string} collection The CMR Collection ID to query
  * @param {String} version The specification version
+ * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {Promise<Response>} The response
  */
-function describeCollectionsRequest(app, collection, version) {
-  return request(app).get(`/${collection}/ogc-api-coverages/${version}/collections`);
+function describeCollectionsRequest(app, collection, version, query) {
+  return request(app)
+    .get(`/${collection}/ogc-api-coverages/${version}/collections`)
+    .query(query);
 }
 
 /**
@@ -158,11 +161,12 @@ function describeCollectionsRequest(app, collection, version) {
  *
  * @param {string} collection The CMR Collection ID to query
  * @param {String} version The specification version
+ * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {void}
  */
-function hookDescribeCollectionsRequest(collection, version) {
+function hookDescribeCollectionsRequest(collection, version, query = {}) {
   before(async function () {
-    this.res = await describeCollectionsRequest(this.frontend, collection, version);
+    this.res = await describeCollectionsRequest(this.frontend, collection, version, query);
   });
 
   after(function () {
