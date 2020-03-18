@@ -6,6 +6,7 @@ const querystring = require('querystring');
 const tmp = require('tmp');
 const env = require('./env');
 const { CmrError } = require('../util/errors');
+const logger = require('./log');
 const {
   objectStoreForProtocol,
 } = require('./object-store');
@@ -49,11 +50,13 @@ function makeTokenHeader(token) {
 function handleCmrErrors(response) {
   const { status } = response;
   if (status >= 500) {
-    throw new CmrError(503, `The CMR has failed with status '${status}'`);
+    logger.error(`CMR call failed with statue '${status}'`);
+    throw new CmrError(503, 'Service unavailable');
   } else if (status >= 400) {
     // pass on errors from the CMR
     const message = get(response, ['data', 'errors', 0])
-    || `The CMR has returned an error: '${response.statusText}'`;
+    || `'${response.statusText}'`;
+    logger.error(`CMR returned status '${status}' with message '${message}'`);
     throw new CmrError(status, message);
   }
 }
