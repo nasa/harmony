@@ -1,8 +1,0 @@
-#!/bin/bash
-
-set -e
-
-image="harmony/harmony"
-tag=${1:-latest}
-
-docker build -t ${image}:${tag} .
