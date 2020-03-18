@@ -38,6 +38,30 @@ function rangesetRequest(app, version, collection, coverageId, query) {
 }
 
 /**
+ * Performs getCoverageRangeset request on the given collection with the given params
+ * using a multipart/form-data POST
+ *
+ * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {String} version The OGC version
+ * @param {string} collection The CMR Collection ID to perform a service on
+ * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
+ * @param {object} form The form parameters to pass to the request
+ * @returns {Promise<Response>} The response
+ */
+function postRangesetRequest(app, version, collection, coverageId, form) {
+  const req = request(app)
+    .post(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`);
+  Object.keys(form).forEach((key) => {
+    if (key === 'shapefile') {
+      req.attach(key, form[key].path, form[key].mimetype);
+    } else {
+      req.field(key, form[key]);
+    }
+  });
+  return req;
+}
+
+/**
  * Adds before/after hooks to run an OGC API coverages rangeset request
  *
  * @param {String} version The OGC coverages API version
@@ -71,6 +95,31 @@ function hookRangesetRequest(version, collection, coverageId, query, username = 
     delete this.res;
   });
 }
+
+/**
+ *
+ *
+ * @param {string} version
+ * @param {string} collection
+ * @param {string} coverageId
+ * @param {object} form
+ * @returns {void}
+ */
+function hookPostRangesetRequest(version, collection, coverageId, form) {
+  before(async function () {
+    this.res = await postRangesetRequest(
+      this.frontend,
+      version,
+      collection,
+      coverageId,
+      form,
+    );
+  });
+  after(function () {
+    delete this.res;
+  });
+}
+
 
 /**
  * Asserts that a link relation exists, then loads it, allowing the passed function to provide
@@ -219,6 +268,7 @@ module.exports = {
   hookLandingPage,
   hookRangesetRequest,
   rangesetRequest,
+  postRangesetRequest,
   describeRelation,
   coveragesSpecRequest,
   coveragesLandingPageRequest,
@@ -226,4 +276,5 @@ module.exports = {
   hookDescribeCollectionRequest,
   describeCollectionsRequest,
   hookDescribeCollectionsRequest,
+  hookPostRangesetRequest,
 };
