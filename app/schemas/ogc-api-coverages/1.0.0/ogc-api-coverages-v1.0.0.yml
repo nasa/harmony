@@ -134,7 +134,7 @@ paths:
     get:
       tags:
       - Capabilities
-      summary: (Not yet implemented) describe the {collectionId} collection
+      summary: Describe the {collectionId} collection
       operationId: describeCollection
       parameters:
       - name: collectionId
