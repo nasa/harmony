@@ -20,14 +20,20 @@ describe('OGC API Coverages - describeCollections', function () {
 
     it('includes a link to the coverages landing page', function () {
       const listing = JSON.parse(this.res.text);
-      expect(listing.links[0].title).to.equal('OGC coverages API root for AIRX3STD v006');
-      expect(listing.links[0].href).to.contain('C1215669046-GES_DISC/ogc-api-coverages/1.0.0');
+      const rootLink = listing.links[0];
+      expect(rootLink.title).to.equal('OGC coverages API root for AIRX3STD v006');
+      expect(rootLink.href).to.contain('C1215669046-GES_DISC/ogc-api-coverages/1.0.0');
+      expect(rootLink.type).to.equal('application/json');
+      expect(rootLink.rel).to.equal('root');
     });
 
-    it('includes a link to the coverages landing page', function () {
+    it('includes a link to the collections listing page', function () {
       const listing = JSON.parse(this.res.text);
-      expect(listing.links[1].title).to.equal('Collections listing for AIRX3STD v006');
-      expect(listing.links[1].href).to.contain('C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections');
+      const selfLink = listing.links[1];
+      expect(selfLink.title).to.equal('Collections listing for AIRX3STD v006');
+      expect(selfLink.href).to.contain('C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections');
+      expect(selfLink.type).to.equal('application/json');
+      expect(selfLink.rel).to.equal('self');
     });
 
     describe('when inspecting a single collection object in the response', function () {
@@ -80,6 +86,44 @@ describe('OGC API Coverages - describeCollections', function () {
         const listing = JSON.parse(this.res.text);
         const firstItem = listing.collections[0];
         expect(firstItem.itemType).to.equal('Variable');
+      });
+    });
+  });
+  describe('Validation', function () {
+    describe('When requesting an invalid response format', function () {
+      hookDescribeCollectionsRequest(collection, version, { f: 'bad-value' });
+      it('returns a 400 "Bad Request" error', function () {
+        expect(this.res.status).to.equal(400);
+      });
+      it('includes a message indicating the invalid "f" parameter', function () {
+        const body = JSON.parse(this.res.text);
+        expect(body).to.eql({
+          code: 'openapi.ValidationError',
+          description: 'Error: query parameter "f" should be equal to one of the allowed values',
+        });
+      });
+    });
+    describe('When requesting an html response format', function () {
+      hookDescribeCollectionsRequest(collection, version, { f: 'html' });
+      it('returns a 400 "Bad Request" error', function () {
+        expect(this.res.status).to.equal(400);
+      });
+      it('includes a message indicating that only json is supported', function () {
+        const body = JSON.parse(this.res.text);
+        expect(body).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: Unsupported format "html". Currently only the json format is supported.',
+        });
+      });
+    });
+    describe('When requesting a JSON response format', function () {
+      hookDescribeCollectionsRequest(collection, version, { f: 'json' });
+      it('returns a 200 successful response', function () {
+        expect(this.res.status).to.equal(200);
+      });
+      it('returns valid JSON listing', function () {
+        const body = JSON.parse(this.res.text);
+        expect(Object.keys(body)).to.eql(['links', 'collections']);
       });
     });
   });
