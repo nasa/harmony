@@ -1,5 +1,5 @@
 - name: harmony/gdal
-  data_operation_version: '0.4.0'
+  data_operation_version: '0.5.0'
   type:
     name: docker
     params:
@@ -27,7 +27,7 @@
     projection_to_proj4: true
 
 - name: sds/swot-reproject
-  data_operation_version: '0.4.0'
+  data_operation_version: '0.5.0'
   type:
     name: docker
     params:
@@ -46,6 +46,7 @@
     - C1226288788-EDF_DEV07
     - C1233147317-EEDTEST
     - C1233147319-EEDTEST
+    - C1233860183-EEDTEST
   capabilities:
     subsetting:
       bbox: false
@@ -60,7 +61,7 @@
 # the frontend callback server.
 # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
 - name: harmony/example
-  data_operation_version: '0.4.0'
+  data_operation_version: '0.5.0'
   enabled: !Env ${EXAMPLE_SERVICES}
   type:
     name: http
@@ -73,7 +74,7 @@
     - C1104-PVC_TS2
 
 - name: podaac/http-service
-  data_operation_version: '0.4.0'
+  data_operation_version: '0.5.0'
   type:
     name: http
     params:

@@ -158,8 +158,9 @@ From the main Harmony repository directory, once again run
 $ npm run start-dev
 ```
 
-You should now be able to view the outputs of performing a simple transformation request.  Try loading a
-granule from our test collection: `http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/all/coverage/rangeset?granuleId=G1233800343-EEDTEST`.
+You should now be able to view the outputs of performing a simple transformation request.  Harmony has its own test collection
+set up for sanity checking harmony with the harmony-gdal backend.  This will fetch a granule from that collection converted to GeoTIFF:
+[http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/all/coverage/rangeset?granuleId=G1233800343-EEDTEST](http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/all/coverage/rangeset?granuleId=G1233800343-EEDTEST)
 
 You can also set up a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the
 `http://localhost:3000/C1233800302-EEDTEST/wms` as the "URL" field input in the "Connection Details"
