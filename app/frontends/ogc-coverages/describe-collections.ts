@@ -1,4 +1,4 @@
-const { getRequestUrl } = require('../../util/url');
+const { getRequestUrl, getRequestRoot } = require('../../util/url');
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
@@ -9,13 +9,17 @@ const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
  * @returns {Object} the extent object
  */
 function generateExtent(collection) {
-  const bbox = collection.boxes ? collection.boxes[0].split(' ').map((v) => +v) : undefined;
+  let bbox;
+  if (collection.boxes) {
+    bbox = collection.boxes[0].split(' ').map((v) => parseFloat(v));
+  }
   const spatial = bbox ? { bbox, crs: WGS84 } : undefined;
 
   let temporal;
   if (collection.time_start || collection.time_end) {
     temporal = { interval: [collection.time_start, collection.time_end], trs: gregorian };
   }
+
   const extent = (spatial || temporal) ? { spatial, temporal } : undefined;
   return extent;
 }
@@ -31,11 +35,22 @@ function generateExtent(collection) {
  *   cannot be performed
  */
 function describeCollections(req, res) {
+  const links = [];
   const variables = [];
   for (const collection of req.collections) {
-    const requestRoot = getRequestUrl(req, false);
+    const requestUrl = getRequestUrl(req, false);
+    const ogcApiRoot = requestUrl.replace(/\/collections$/, '');
     const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
     const collectionLongLabel = `${collectionShortLabel} (${collection.archive_center || collection.data_center})`;
+    const rootLink = {
+      title: `OGC coverages API root for ${collectionShortLabel}`,
+      href: ogcApiRoot,
+    };
+    const selfLink = {
+      title: `Collections listing for ${collectionShortLabel}`,
+      href: requestUrl,
+    };
+    links.push(rootLink, selfLink);
     const extent = generateExtent(collection);
 
     for (const variable of collection.variables) {
@@ -45,7 +60,7 @@ function describeCollections(req, res) {
         description: `${variable.long_name} ${collectionLongLabel}`,
         links: [{
           title: `Perform rangeset request for ${variable.name}`,
-          href: `${requestRoot}/${variable.name}/coverage/rangeset`,
+          href: `${requestUrl}/${variable.name}/coverage/rangeset`,
         }],
         extent,
         itemType: 'Variable',
@@ -55,7 +70,7 @@ function describeCollections(req, res) {
     }
   }
   res.send({
-    links: [],
+    links,
     collections: variables,
   });
 }
