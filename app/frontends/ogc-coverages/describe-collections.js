@@ -27,6 +27,34 @@ function generateExtent(collection) {
 }
 
 /**
+ * Helper that returns the information needed for a describe collection response
+ * for the given CMR collection.
+ *
+ * @param {Object} collection The CMR collection information
+ * @param {Object} variable The variable information
+ * @param {String} requestUrl The request URL to use within links
+ * @param {Object} extent The spatial and temporal extent information for the CMR collection.
+ * @returns {Object} The collection info matching the collectionInfo OGC schema.
+ */
+function _buildCollectionInfo(collection, variable, requestUrl, extent) {
+  const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
+  const collectionLongLabel = `${collectionShortLabel} (${collection.archive_center || collection.data_center})`;
+  return {
+    id: `${collection.id}/${variable.concept_id}`,
+    title: `${variable.name} ${collectionShortLabel}`,
+    description: `${variable.long_name} ${collectionLongLabel}`,
+    links: [{
+      title: `Perform rangeset request for ${variable.name}`,
+      href: `${requestUrl}/${variable.name}/coverage/rangeset`,
+    }],
+    extent,
+    itemType: 'Variable',
+    // TODO set CRS
+    // crs: 'TODO get from UMM-S or services.yml capabilities.output_projections',
+  };
+}
+
+/**
  * Express.js-style handler that responds to OGC API - Coverages describe
  * collections requests.
  *
@@ -42,12 +70,11 @@ function describeCollections(req, res) {
     throw new RequestValidationError(`Unsupported format "${query.f}". Currently only the json format is supported.`);
   }
   const links = [];
-  const variables = [];
+  const ogcCollections = [];
+  const requestUrl = getRequestUrl(req, false);
+  const ogcApiRoot = requestUrl.replace(/\/collections$/, '');
   for (const collection of req.collections) {
-    const requestUrl = getRequestUrl(req, false);
-    const ogcApiRoot = requestUrl.replace(/\/collections$/, '');
     const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
-    const collectionLongLabel = `${collectionShortLabel} (${collection.archive_center || collection.data_center})`;
     const rootLink = {
       title: `OGC coverages API root for ${collectionShortLabel}`,
       href: ogcApiRoot,
@@ -64,28 +91,41 @@ function describeCollections(req, res) {
     const extent = generateExtent(collection);
 
     for (const variable of collection.variables) {
-      variables.push({
-        id: `${collection.id}/${variable.concept_id}`,
-        title: `${variable.name} ${collectionShortLabel}`,
-        description: `${variable.long_name} ${collectionLongLabel}`,
-        links: [{
-          title: `Perform rangeset request for ${variable.name}`,
-          href: `${requestUrl}/${variable.name}/coverage/rangeset`,
-        }],
-        extent,
-        itemType: 'Variable',
-        // TODO set CRS
-        // crs: 'TODO get from UMM-S or services.yml capabilities.output_projections',
-      });
+      const collectionInfo = _buildCollectionInfo(collection, variable, requestUrl, extent);
+      ogcCollections.push(collectionInfo);
     }
   }
   res.send({
     links,
-    collections: variables,
+    collections: ogcCollections,
   });
+}
+
+/**
+ * Express.js-style handler that responds to OGC API - Coverages describe
+ * collection requests.
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @returns {void}
+ * @throws {RequestValidationError} Thrown if the request has validation problems and
+ *   cannot be performed
+ */
+function describeCollection(req, res) {
+  const query = keysToLowerCase(req.query);
+  if (query.f && query.f !== 'json') {
+    throw new RequestValidationError(`Unsupported format "${query.f}". Currently only the json format is supported.`);
+  }
+  const collection = req.collections[0];
+  const requestUrl = getRequestUrl(req, false);
+  const extent = generateExtent(collection);
+  const variable = collection.variables[0];
+  const collectionInfo = _buildCollectionInfo(collection, variable, requestUrl, extent);
+  res.send(collectionInfo);
 }
 
 module.exports = {
   describeCollections,
+  describeCollection,
   generateExtent,
 };
