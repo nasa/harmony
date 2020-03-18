@@ -141,6 +141,35 @@ function coveragesLandingPageRequest(app, collection, version) {
   return request(app).get(`/${collection}/ogc-api-coverages/${version}/`);
 }
 
+/**
+ * Makes a call to return the OGC API Coverages describe collections page.
+ *
+ * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {string} collection The CMR Collection ID to query
+ * @param {String} version The specification version
+ * @returns {Promise<Response>} The response
+ */
+function describeCollectionsRequest(app, collection, version) {
+  return request(app).get(`/${collection}/ogc-api-coverages/${version}/collections`);
+}
+
+/**
+ * Adds before/after hooks when calling the OGC API Coverages describe collections page.
+ *
+ * @param {string} collection The CMR Collection ID to query
+ * @param {String} version The specification version
+ * @returns {void}
+ */
+function hookDescribeCollectionsRequest(collection, version) {
+  before(async function () {
+    this.res = await describeCollectionsRequest(this.frontend, collection, version);
+  });
+
+  after(function () {
+    delete this.res;
+  });
+}
+
 module.exports = {
   hookLandingPage,
   hookRangesetRequest,
@@ -148,4 +177,6 @@ module.exports = {
   describeRelation,
   coveragesSpecRequest,
   coveragesLandingPageRequest,
+  describeCollectionsRequest,
+  hookDescribeCollectionsRequest,
 };
