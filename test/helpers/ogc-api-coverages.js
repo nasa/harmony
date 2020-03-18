@@ -179,12 +179,12 @@ function hookDescribeCollectionsRequest(collection, version, query = {}) {
  *
  * @param {Express.Application} app The express application (typically this.frontend)
  * @param {String} collection The CMR Collection ID to query
- * @param {String} variableName The name of the variable
  * @param {String} version The specification version
+ * @param {String} variableName The name of the variable
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {Promise<Response>} The response
  */
-function describeCollectionRequest(app, collection, variableName, version, query) {
+function describeCollectionRequest(app, collection, version, variableName, query) {
   return request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${variableName}`)
     .query(query);
@@ -194,18 +194,18 @@ function describeCollectionRequest(app, collection, variableName, version, query
  * Adds before/after hooks when calling the OGC API Coverages describe collections page.
  *
  * @param {String} collection The CMR Collection ID to query
- * @param {String} variableName The name of the variable
  * @param {String} version The specification version
+ * @param {String} variableName The name of the variable
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {void}
  */
-function hookDescribeCollectionRequest(collection, variableName, version, query = {}) {
+function hookDescribeCollectionRequest(collection, version, variableName, query = {}) {
   before(async function () {
-    this.res = await describeCollectionsRequest(
+    this.res = await describeCollectionRequest(
       this.frontend,
       collection,
-      variableName,
       version,
+      variableName,
       query,
     );
   });
