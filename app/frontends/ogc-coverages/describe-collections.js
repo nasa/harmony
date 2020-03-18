@@ -45,7 +45,7 @@ function _buildCollectionInfo(collection, variable, requestUrl, extent) {
     description: `${variable.long_name} ${collectionLongLabel}`,
     links: [{
       title: `Perform rangeset request for ${variable.name}`,
-      href: `${requestUrl}/${variable.name}/coverage/rangeset`,
+      href: `${requestUrl}/coverage/rangeset`,
     }],
     extent,
     itemType: 'Variable',
@@ -91,7 +91,7 @@ function describeCollections(req, res) {
     const extent = generateExtent(collection);
 
     for (const variable of collection.variables) {
-      const collectionInfo = _buildCollectionInfo(collection, variable, requestUrl, extent);
+      const collectionInfo = _buildCollectionInfo(collection, variable, `${requestUrl}/${variable.name}`, extent);
       ogcCollections.push(collectionInfo);
     }
   }
