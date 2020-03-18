@@ -15,7 +15,7 @@ const db = require('../../app/util/db');
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
-  const granuleId = 'G1233800343-EEDTEST';
+  const granuleId = 'G1233800352-EEDTEST';
   const variableId = 'V1233801695-EEDTEST';
   const variableName = 'red_var';
   const version = '1.0.0';
@@ -26,7 +26,14 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const query = {
       granuleId,
       outputCrs: 'CRS:84',
-      subset: ['lat(0:10)', 'lon(-20.1:20)'],
+      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+      interpolation: 'near',
+      // TODO: it might only make sense to include width and height with a scaleExtent
+      // and scaleSize by itself
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+      height: 500,
+      width: 1000,
     };
 
     describe('calling the backend service', function () {
@@ -72,6 +79,30 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('transforms subset lat and lon parameters into a backend bounding box subset request', function () {
         expect(this.service.operation.boundingRectangle).to.eql([-20.1, 0, 20, 10]);
+      });
+
+
+      it('passes the interpolation parameter to the backend', function () {
+        expect(this.service.operation.interpolationMethod).to.equal('near');
+      });
+
+      it('passes the scaleExtent parameter to the backend', function () {
+        expect(this.service.operation.scaleExtent).to.eql({
+          x: { min: 0, max: 1500000 },
+          y: { min: 2500000.3, max: 3300000 },
+        });
+      });
+
+      it('passes the scaleSize parameter to the backend', function () {
+        expect(this.service.operation.scaleSize).to.eql({ x: 1.1, y: 2 });
+      });
+
+      it('passes the height parameter to the backend', function () {
+        expect(this.service.operation.outputHeight).to.equal(500);
+      });
+
+      it('passes the width parameter to the backend', function () {
+        expect(this.service.operation.outputWidth).to.equal(1000);
       });
     });
 
@@ -253,6 +284,88 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 
   describe('Validation', function () {
+    /**
+     * Creates an it assertion that the passed in query causes a 400 validation error
+     * with the given error message
+     *
+     * @param {Object} queryParams The query parameters to send to the request
+     * @param {String} message The error message that should be returned
+     * @param {String} code The error code of the message
+     * @returns {void}
+     */
+    function itReturnsAValidationError(queryParams, message, code = 'openapi.ValidationError') {
+      it(`returns an HTTP 400 "Bad Request" error with explanatory message ${message}`, async function () {
+        const res = await rangesetRequest(
+          this.frontend,
+          version,
+          collection,
+          variableName,
+          queryParams,
+        );
+        expect(res.status).to.equal(400);
+        expect(res.body).to.eql({
+          code,
+          description: `Error: ${message}`,
+        });
+      });
+    }
+
+    itReturnsAValidationError(
+      { granuleId: 'G123-BOGUS' },
+      'No matching granules found.',
+      'harmony.RequestValidationError',
+    );
+    itReturnsAValidationError(
+      { granuleId: '' },
+      'query parameter "granuleId[0]" should NOT be shorter than 1 characters',
+    );
+    itReturnsAValidationError(
+      { granuleId, outputCrs: 'EPSG:1' },
+      'query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
+      'harmony.RequestValidationError',
+    );
+    itReturnsAValidationError(
+      { granuleId, scaleExtent: '1,55,100,250,330' },
+      'query parameter "scaleExtent" should NOT have more than 4 items',
+    );
+    itReturnsAValidationError(
+      { granuleId, scaleExtent: '1,55,100' },
+      'query parameter "scaleExtent" should NOT have fewer than 4 items',
+    );
+    itReturnsAValidationError(
+      { granuleId, scaleExtent: '1,55,100,nonsense' },
+      'query parameter "scaleExtent[3]" should be number',
+    );
+    itReturnsAValidationError(
+      { granuleId, scaleSize: '1.5' },
+      'query parameter "scaleSize" should NOT have fewer than 2 items',
+    );
+    itReturnsAValidationError(
+      { granuleId, scaleSize: '1.5,3,35' },
+      'query parameter "scaleSize" should NOT have more than 2 items',
+    );
+    itReturnsAValidationError(
+      { granuleId, scaleSize: '1.5,nonsense' },
+      'query parameter "scaleSize[1]" should be number',
+    );
+    itReturnsAValidationError(
+      { granuleId, scaleSize: '-1.3,55.3' },
+      'query parameter "scaleSize[0]" should be >= 0',
+    );
+    itReturnsAValidationError({ granuleId, width: 0 }, 'query parameter "width" should be >= 1');
+    itReturnsAValidationError({ granuleId, height: 0 }, 'query parameter "height" should be >= 1');
+    // See util-parameter-parsing.js spec for full details on spatial and temporal subset validation
+    itReturnsAValidationError(
+      { granuleId, subset: 'lat(nonsense:20)' },
+      'query parameter "subset" subset dimension "lat" has an invalid numeric value "nonsense"',
+      'harmony.RequestValidationError',
+    );
+    itReturnsAValidationError(
+      { granuleId, subset: 'time("nonsense":"2010-01-01T01:00:00Z")' },
+      'query parameter "subset" subset dimension "time" has an invalid date time "nonsense"',
+      'harmony.RequestValidationError',
+    );
+
     it('returns an HTTP 400 "Bad Request" error with explanatory message when the variable does not exist', async function () {
       const res = await rangesetRequest(
         this.frontend,
@@ -267,34 +380,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         description: 'Error: Coverages were not found for the provided CMR collection: NotAVariable',
       });
     });
-    it('returns an HTTP 400 "Bad Request" error with explanatory message when the granule does not exist', async function () {
-      const res = await rangesetRequest(
-        this.frontend,
-        version,
-        collection,
-        variableName,
-        { granuleId: 'G123-BOGUS' },
-      );
-      expect(res.status).to.equal(400);
-      expect(res.body).to.eql({
-        code: 'harmony.RequestValidationError',
-        description: 'Error: No matching granules found.',
-      });
-    });
-    it('returns an HTTP 400 "Bad Request" error with explanatory message when the provided granule ID is blank', async function () {
-      const res = await rangesetRequest(
-        this.frontend,
-        version,
-        collection,
-        variableName,
-        { granuleId: '' },
-      );
-      expect(res.status).to.equal(400);
-      expect(res.body).to.eql({
-        code: 'openapi.ValidationError',
-        description: 'Error: query parameter "granuleId" should NOT be shorter than 1 characters',
-      });
-    });
+
     it('returns an HTTP 400 "Bad Request" error with explanatory message when "all" is specified with another coverage', async function () {
       const res = await rangesetRequest(
         this.frontend,
@@ -307,50 +393,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(res.body).to.eql({
         code: 'harmony.RequestValidationError',
         description: 'Error: "all" cannot be specified alongside other variables',
-      });
-    });
-    it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid CRS is provided', async function () {
-      const res = await rangesetRequest(
-        this.frontend,
-        version,
-        collection,
-        variableName,
-        { granuleId, outputCrs: 'EPSG:1' },
-      );
-      expect(res.status).to.equal(400);
-      expect(res.body).to.eql({
-        code: 'harmony.RequestValidationError',
-        description: 'Error: query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.',
-      });
-    });
-    it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid spatial subset is provided', async function () {
-      // See util-parameter-parsing.js spec for full details on spatial subset validation
-      const res = await rangesetRequest(
-        this.frontend,
-        version,
-        collection,
-        variableName,
-        { granuleId, subset: 'lat(nonsense:20)' },
-      );
-      expect(res.status).to.equal(400);
-      expect(res.body).to.eql({
-        code: 'harmony.RequestValidationError',
-        description: 'Error: query parameter "subset" subset dimension "lat" has an invalid numeric value "nonsense"',
-      });
-    });
-    it('returns an HTTP 400 "Bad Request" error with explanatory message when an invalid temporal subset is provided', async function () {
-      // See util-parameter-parsing.js spec for full details on temporal subset validation
-      const res = await rangesetRequest(
-        this.frontend,
-        version,
-        collection,
-        variableName,
-        { granuleId, subset: 'time("nonsense":"2010-01-01T01:00:00Z")' },
-      );
-      expect(res.status).to.equal(400);
-      expect(res.body).to.eql({
-        code: 'harmony.RequestValidationError',
-        description: 'Error: query parameter "subset" subset dimension "time" has an invalid date time "nonsense"',
       });
     });
   });

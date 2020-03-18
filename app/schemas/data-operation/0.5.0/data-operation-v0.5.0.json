@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.3.0.json",
+  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.5.0.json",
   "$ref": "#/definitions/DataOperation",
   "definitions": {
     "DataOperation": {
@@ -24,6 +24,9 @@
         },
         "subset": {
           "$ref": "#/definitions/Subset"
+        },
+        "temporal": {
+          "$ref": "#/definitions/Temporal"
         },
         "callback": {
           "name": "Callback URL",
@@ -110,6 +113,20 @@
         "dpi": {
           "type": "integer",
           "description": "For image output, the dots-per-inch resolution of the output image"
+        },
+        "interpolation": {
+          "type": "string",
+          "description": "The interpolation method to be used during reprojection and scaling",
+          "examples": [
+            "near",
+            "bilinear"
+          ]
+        },
+        "scaleExtent": {
+          "$ref": "#/definitions/ScaleExtent"
+        },
+        "scaleSize": {
+          "$ref": "#/definitions/ScaleSize"
         }
       },
       "required": []
@@ -217,6 +234,85 @@
           },
           "minItems": 4,
           "maxItems": 4
+        }
+      },
+      "required": []
+    },
+    "Temporal": {
+      "type": "object",
+      "title": "Temporal",
+      "description": "Temporal parameters",
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "name": "Start time",
+          "description": "The time which should be used as the starting time for temporal subsetting. The format is an ISO 8601 datetime.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "name": "Start time",
+          "description": "The time which should be used as the ending time for temporal subsetting. The format is an ISO 8601 datetime.",
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": []
+    },
+    "ScaleExtent": {
+      "type": "object",
+      "title": "ScaleExtent",
+      "description": "Target grid extent",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "object",
+          "description": "X dimension scale extent.",
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "number",
+              "description": "Minimum x of the scale extent."
+            },
+            "max": {
+              "type": "number",
+              "description": "Maximum x of the scale extent."
+            }
+          },
+          "required": []
+        },
+        "y": {
+          "type": "object",
+          "description": "Y dimension scale extent.",
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "number",
+              "description": "Minimum y of the scale extent."
+            },
+            "max": {
+              "type": "number",
+              "description": "Maximum y of the scale extent."
+            }
+          },
+          "required": []
+        }
+      },
+      "required": []
+    },
+    "ScaleSize": {
+      "type": "object",
+      "title": "ScaleSize",
+      "description": "Target grid scale size",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "Row scale size"
+        },
+        "y": {
+          "type": "number",
+          "description": "Column scale size."
         }
       },
       "required": []

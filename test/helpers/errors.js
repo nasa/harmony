@@ -19,7 +19,7 @@ function itRespondsWithError(code, message, html = true) {
 
   if (message) {
     it(`provides the error message "${message}"`, function () {
-      const expected = html ? `<span class="message">${message}</span>` : message;
+      const expected = html ? `<span class="message">${message}</span>` : JSON.stringify(message);
       expect(this.res.text).to.have.string(expected);
     });
   }
