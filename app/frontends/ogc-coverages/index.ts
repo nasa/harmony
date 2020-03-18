@@ -5,7 +5,7 @@ const path = require('path');
 const getLandingPage = require('./get-landing-page');
 const getRequirementsClasses = require('./get-requirements-classes');
 const getCoverageRangeset = require('./get-coverage-rangeset');
-const describeCollections = require('./describe-collections');
+const { describeCollections } = require('./describe-collections');
 
 const version = '1.0.0';
 const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverages', version);
