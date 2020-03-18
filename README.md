@@ -13,10 +13,9 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
 * Node.js version 12.  We recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions
-* Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14, Amazon Linux 2, and Alpine Linux.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
+* Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14 and Amazon Linux 2.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
 * [git](https://git-scm.com) - Used to clone this repository
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
-* A running [Localstack](https://github.com/localstack/localstack) instance - Used for testing AWS services locally.  Only the S3 service needs to run.
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
 
 
@@ -73,15 +72,14 @@ We recommend doing this any time you receive an example/dotenv update to ensure 
 To use Earthdata Login with a locally running Harmomy, you must first set up a new application using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS.  You will also need to add the "echo" group to the list of required application groups in order for CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update your .env file with the information from your Earthdata Login application. Additional information including OATH values to use when creating the application can be found in the example/dotenv file in this repository.
 
 ### Start localstack
-These 2 steps need to be executed each time you prepare to run harmony locally if your .env file specifies that you are using localstack.
+To avoid using real S3 buckets when testing locally, you can run [Localstack](https://github.com/localstack/localstack).  Our helper
+script installs it, runs a local S3 instance, and creates the staging bucket configured in `.env`
 
 ```
-SERVICES=s3 localstack start
+$ bin/run-localstack
 ```
-In another window, run the following. Note, if you have changed the name of STAGING_BUCKET in your .env file to something other than "localStagingBucket", modify the command below appropriately:
-```
-aws --endpoint-url=http://localhost:4572 s3 mb s3://localStagingBucket
-```
+
+Keep this running during development.  `Ctrl-C` will exit.
 
 ### Run Tests
 
@@ -111,7 +109,7 @@ To re-record everything, remove the fixtures directory and run the test suite. T
 To set a sqlite3 database with the correct schema for local execution, run
 
 ```
-$ knex --cwd db migrate:latest
+$ npx knex --cwd db migrate:latest
 ```
 
 This should be run any time the versioned contents of the `db/migrations` directory change.
@@ -139,8 +137,9 @@ The application is not very useful at this point, since no backends have been co
 
 ### Add a backend
 
-Clone the Harmony GDAL service repository.  From your workspace, run
+Clone the Harmony GDAL service repository into a peer directory of the main Harmony repo
 ```
+$ cd ..
 $ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony-gdal.git
 ```
 
@@ -153,16 +152,18 @@ This may take some time, but ultimately it will produce a local docker image tag
 
 ### Connect a client
 
-Once again, run
+From the main Harmony repository directory, once again run
 
 ```
 $ npm run start-dev
 ```
 
-You should now be able to view the outputs of the WMS service by pointing a client at the WMS URL for a test collection. Harmony has its own test collection set up for sanity checking
-harmony with the harmony-gdal backend service available at `http://localhost:3000/C1233800302-EEDTEST/wms`.
+You should now be able to view the outputs of performing a simple transformation request.  Harmony has its own test collection
+set up for sanity checking harmony with the harmony-gdal backend.  This will fetch a granule from that collection converted to GeoTIFF:
+[http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/all/coverage/rangeset?granuleId=G1233800343-EEDTEST](http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/all/coverage/rangeset?granuleId=G1233800343-EEDTEST)
 
-This can be set up as a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the above URL as the "URL" field input in the "Connection Details"
+You can also set up a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the
+`http://localhost:3000/C1233800302-EEDTEST/wms` as the "URL" field input in the "Connection Details"
 dialog when adding a new WMS connection.  Thereafter, expanding the connection should provide a list of layers obtained through a
 GetCapabilities call to the test server, and double-clicking a layer should add it to a map, making a WMS call to retrieve an appropriate
 PNG from the test server.
@@ -180,35 +181,12 @@ it done manually.
 * Once per account, run `$ bin/account-setup` to create a service linked role for ECS.
 * Upload the harmony/gdal Docker image somewhere accessible to an EC2 deployment.  This should be done any time the image changes.  The easiest way is to create an ECR in your account and push the image there.  Running `$ bin/build-image && bin/push-image` from the harmony-gdal repository will perform this step..
 
-#### Provision an instance
-
-Provisioning a new instance involves creating a CloudFormation stack from [deployment/ec2-template.yml](deployment/ec2-template.yml).
-
-```
-aws cloudformation deploy \
-  --template-file deployment/ec2-template.yml \
-  --stack-name $stack \
-  --capabilities CAPABILITY_IAM \
-  --parameter-overrides \
-    VpcId=$VPC_ID \
-    Subnet1Id=$SUBNET_1_ID \
-    Subnet2Id=$SUBNET_2_ID \
-    PermissionsBoundaryArn=$PERMISSIONS_BOUNDARY_ARN \
-    GdalImage=$GDAL_IMAGE \
-    AMI=$AMI \
-    CodePath=$CODE_PATH \
-    SSHKeyName=$SSH_KEY_NAME \
-    SSMTestRole=$SSM_TEST_ROLE
-```
-
-For information on what to pass for each parameter, see [deployment/ec2-template.yml](deployment/ec2-template.yml).
-
 #### Stop here and set up CI/CD
 
 Deploying the code should be done using the harmony-ci-cd project from Bamboo rather than manually.  Apart from that project and CI/CD setup,
 we do not yet have automation scripts for (re)deploying to AWS manually, as it is typically not needed during development.
 
-#### Deploy the code
+#### Deploy the code to AWS
 
 Note: The harmony-ci-cd repository contains automation code to do the following, usable from Bamboo.  You may use it locally by setting all
 relevant environment variables in a `.env` file, running `$ bin/build-image` in the root directory of the harmony-ci-cd project, and then

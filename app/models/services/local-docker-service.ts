@@ -1,10 +1,13 @@
 const process = require('process');
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 const axios = require('axios');
 const querystring = require('querystring');
 
 const BaseService = require('./base-service');
 const { isUrlBound } = require('../../backends/service-response');
+const { isDevelopment } = require('../../util/env');
 
 const blankStrings = ['\n', '\r', ''];
 
@@ -109,6 +112,7 @@ class LocalDockerService extends BaseService {
     for (const variable of Object.keys(this.params.env)) {
       dockerParams = dockerParams.concat('-e', [variable, this.params.env[variable]].join('='));
     }
+    dockerParams = dockerParams.concat(this.dockerParamsForEnv());
 
     dockerParams = dockerParams.concat(
       this.params.image,
@@ -125,6 +129,50 @@ class LocalDockerService extends BaseService {
         childProcessAborted(originalCallback, logger);
       }
     }));
+  }
+
+  /**
+   * Return additional docker parameters to use when running docker containers based on the
+   * environment settings.
+   *
+   * When NODE_ENV == 'development' this mounts local repos peered with the Harmony repo into
+   * the docker image to ease iteration:
+   * If ../harmony-service-lib-py exists, it gets mounted into /usr/lib/harmony-service-lib-py and
+   * PYTHONPATH gets set
+   * For a docker service of the form <repo>/<image>:<version>, if ../<repo>-<image> exists,
+   * mounts it into /home in the docker image
+   *
+   * @param {string} image the name of the docker image
+   * @returns {string[]} an array of additional parameters to pass to docker
+   */
+  dockerParamsForEnv() {
+    const result = [];
+    if (isDevelopment) {
+      // Note that checking the fs like this should not be done in production and should be cached,
+      // since it's blocking I/O
+
+      // this.params.image="harmony/gdal:latest" -> dirname="harmony-gdal"
+      const dirname = this.params.image.split(':')[0].split('/').join('-');
+      const root = path.join(__dirname, '..', '..', '..', '..');
+
+      // Mount a dev copy of the image if one exists
+      const imageDevPath = path.join(root, dirname);
+      if (fs.existsSync(imageDevPath)) {
+        result.push('-v', [imageDevPath, '/home'].join(':'));
+      }
+
+      // Mount harmony-service-lib-py and put it in PYTHONPATH if a dev copy exists
+      const libDevPath = path.join(root, 'harmony-service-lib-py/harmony');
+      if (fs.existsSync(libDevPath)) {
+        result.push('-v', [libDevPath, '/usr/lib/harmony-service-lib-py/harmony'].join(':'));
+        const pythonpath = ['/usr/lib/harmony-service-lib-py'];
+        if (this.params.env.PYTHONPATH) {
+          pythonpath.push(this.params.env.PYTHONPATH);
+        }
+        result.push('-e', `PYTHONPATH=${pythonpath}`);
+      }
+    }
+    return result;
   }
 }
 

@@ -1,7 +1,0 @@
-node_modules
-example
-test
-spec
-**/*.log
-**/tmp
-.env
