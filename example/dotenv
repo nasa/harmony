@@ -99,10 +99,10 @@ STAGING_BUCKET=localStagingBucket
 # either because of application group setup or because they use a different
 # Earthdata Login endpoint (e.g. Data needs production while Harmony and
 # CMR need UAT), these provide a minimally-privileged user login for
-# fetching remote data behind Earthdata Login
+# fetching remote data behind Earthdata Login.   This user should exist in
+# all environments being used to fetch data
 EDL_USERNAME=
 EDL_PASSWORD=
-EDL_ENDPOINT=https://urs.earthdata.nasa.gov
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
@@ -130,44 +130,6 @@ OAUTH_REDIRECT_URI=http://localhost:3000/oauth2/redirect
 # The OAuth2 endpoint used to authenticate users into Harmony.  CMR and
 # backend services must use the same endpoint to get full integration
 OAUTH_HOST=https://uat.urs.earthdata.nasa.gov
-
-###########################################################################
-#                             AWS Deployments                             #
-#                                                                         #
-# Variables used when running bin/aws-deploy to deploy Harmony using      #
-# CloudFormation.  These do not need to be set if not deploying to AWS or #
-# if CI / CD is providing environment variables another way               #
-###########################################################################
-
-# The CloudFormation stack name
-HARMONY_STACK=harmony
-
-# The VPC ID in which Harmony's EC2 instance should be deployed
-# Format example: vpc-012345
-VPC_ID=
-
-# Two private subnets in different AZs where EC2 instances can be deployed,
-# Format example: subnet-012345
-SUBNET_1_ID=
-SUBNET_2_ID=
-
-# The ARN of the permissions boundary that limits roles built by
-# CloudFormation
-# Format example: arn:aws:iam::012345:role/SomeRoleBoundary
-PERMISSIONS_BOUNDARY_ARN=
-
-# The AMI ID used to for Harmony EC2 instances
-# Format example: ami-012345
-AMI=
-
-# The name of the SSH key, uploaded to AWS EC2, that will be able to log
-# into Harmony instances by default
-SSH_KEY_NAME=
-
-# The name of an existing role to use for EC2 instances (To be removed once
-# our permissions boundary expands for SSM)
-# Format example: ssm-test-role
-SSM_TEST_ROLE=
 
 ###########################################################################
 #                               Test Suite                                #
