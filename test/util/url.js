@@ -1,17 +1,19 @@
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
-const { getRequestUrl, getRequestRoot } = require('../../app/util/url');
+const { getRequestUrl, getSanitizedRequestUrl, getRequestRoot } = require('../../app/util/url');
 
 /**
  * Returns a request object to be used in tests to simulate different URLs
  *
  * @param {String} hostname The hostname for the mock request
+ * @param {String} path the URL path
+ * @param {Object} params the query parameters
  * @returns {Object} An object emulating an http.IncomingMessage
  */
-function createRequest(hostname) {
+function createRequest(hostname, path = '/example/path', params = { param1: 'foo', param2: 2 }) {
   return {
-    originalUrl: '/example/path?param1=foo&param2=2',
-    query: { param1: 'foo', param2: 2 },
+    originalUrl: `${path}?${params}`,
+    query: params,
     get() { return hostname; },
   };
 }
@@ -50,6 +52,50 @@ describe('util/url', function () {
       const request = createRequest('harmony.earthdata.nasa.gov');
       it('does NOT include the query parameter string', function () {
         expect(getRequestUrl(request, false)).to.equal('https://harmony.earthdata.nasa.gov/example/path');
+      });
+    });
+  });
+
+  describe('#getSanitizedRequestUrl', function () {
+    describe('with query parameters and no trailing slash', function () {
+      const request = createRequest('localhost:3000', '/example/path');
+      it('returns the correct URL starting with http', function () {
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path?param1=foo&param2=2');
+      });
+    });
+
+    describe('with query parameters and one trailing slash', function () {
+      const request = createRequest('localhost:3000', '/example/path/');
+      it('returns the correct URL starting with http', function () {
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path?param1=foo&param2=2');
+      });
+    });
+
+    describe('with query parameters and many slashes', function () {
+      const request = createRequest('localhost:3000', '/example/path//////');
+      it('returns the correct URL starting with http', function () {
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path?param1=foo&param2=2');
+      });
+    });
+
+    describe('without query parameters and no trailing slash', function () {
+      const request = createRequest('localhost:3000', '/example/path', {});
+      it('returns the correct URL starting with http', function () {
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path');
+      });
+    });
+
+    describe('without query parameters and one trailing slash', function () {
+      const request = createRequest('localhost:3000', '/example/path/', {});
+      it('returns the correct URL starting with http', function () {
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path');
+      });
+    });
+
+    describe('without query parameters and many slashes', function () {
+      const request = createRequest('localhost:3000', '/example/path///////', {});
+      it('returns the correct URL starting with http', function () {
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path');
       });
     });
   });
