@@ -1,7 +1,7 @@
 const simpleOAuth2 = require('simple-oauth2');
-const urlUtil = require('../util/url');
 const { ForbiddenError } = require('../util/errors');
 const { listToText } = require('../util/string');
+const { setCookies } = require('../util/cookies');
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
@@ -11,6 +11,7 @@ if (missingVars.length > 0) {
 }
 
 const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === 'true' };
+
 const oauthOptions = {
   client: {
     id: process.env.OAUTH_CLIENT_ID,
@@ -100,18 +101,8 @@ function handleNeedsAuthorized(oauth2, req, res, _next) {
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
   });
 
-  res.cookie('redirect', urlUtil.getRequestUrl(req), cookieOptions);
-  // if this was a shapefile upload set a cookie with a url for the shapefile and
-  // the other POST form parameters
-  if (req.files) {
-    const { mimetype, key, bucket } = req.files.shapefile[0];
-    // copy other form parameter to the query field on req to they get used
-    // when building the redirect
-    req.query = req.body;
-    const shapefileParams = { mimetype, key, bucket };
-    res.cookie('shapefile', JSON.stringify(shapefileParams), cookieOptions);
-    res.cookie('redirect', urlUtil.getRequestUrl(req), cookieOptions);
-  }
+  setCookies(req, res, cookieOptions);
+
   res.redirect(303, url);
 }
 
