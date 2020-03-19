@@ -1,4 +1,4 @@
-const { getRequestUrl } = require('../../util/url');
+const { getSanitizedRequestUrl } = require('../../util/url');
 const { keysToLowerCase } = require('../../util/object');
 const { RequestValidationError } = require('../../util/errors');
 
@@ -71,7 +71,7 @@ function describeCollections(req, res) {
   }
   const links = [];
   const ogcCollections = [];
-  const requestUrl = getRequestUrl(req, false);
+  const requestUrl = getSanitizedRequestUrl(req, false);
   const ogcApiRoot = requestUrl.replace(/\/collections$/, '');
   for (const collection of req.collections) {
     const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
@@ -117,7 +117,7 @@ function describeCollection(req, res) {
     throw new RequestValidationError(`Unsupported format "${query.f}". Currently only the json format is supported.`);
   }
   const collection = req.collections[0];
-  const requestUrl = getRequestUrl(req, false);
+  const requestUrl = getSanitizedRequestUrl(req, false);
   const extent = generateExtent(collection);
   const variable = collection.variables[0];
   const collectionInfo = _buildCollectionInfo(collection, variable, requestUrl, extent);
