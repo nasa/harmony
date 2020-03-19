@@ -1,3 +1,7 @@
+// const FormData = require('form-data');
+// const fs = require('fs');
+// const fetch = require('node-fetch');
+
 const url = require('url');
 const request = require('supertest');
 const { before, after, it, describe } = require('mocha');
@@ -33,7 +37,11 @@ function hookLandingPage(collection, version) {
  */
 function rangesetRequest(app, version, collection, coverageId, query) {
   return request(app)
-    .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`)
+    .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`,
+      (rq, rs) => {
+        console.log(rq);
+        console.log(rs);
+      })
     .query(query);
 }
 
@@ -48,9 +56,12 @@ function rangesetRequest(app, version, collection, coverageId, query) {
  * @param {object} form The form parameters to pass to the request
  * @returns {Promise<Response>} The response
  */
-function postRangesetRequest(app, version, collection, coverageId, form) {
+async function postRangesetRequest(app, version, collection, coverageId, form) {
   const req = request(app)
-    .post(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`);
+    .post(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`,
+      (rq, rs) => {
+        console.log('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
+      });
   Object.keys(form).forEach((key) => {
     if (key === 'shapefile') {
       req.attach(key, form[key].path, form[key].mimetype);
@@ -59,6 +70,39 @@ function postRangesetRequest(app, version, collection, coverageId, form) {
     }
   });
   return req;
+
+
+  // const formData = new FormData();
+  // await Promise.all(Object.keys(form).map(async (key) => {
+  //   const value = form[key];
+  //   if (value) {
+  //     if (key === 'shapefile') {
+  //       formData.append('shapefile',
+  //         fs.createReadStream(value.path), {
+  //           contentType: value.mimetype,
+  //         });
+  //     } else if (Array.isArray(value)) {
+  //       value.forEach((v) => {
+  //         formData.append(key, v);
+  //       });
+  //     } else {
+  //       formData.append(key, value);
+  //     }
+  //   }
+  // }));
+
+  // const headers = {
+  //   ...formData.getHeaders(),
+  // };
+
+  // const response = await fetch(`http://localhost:3000/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`, {
+  //   method: 'POST',
+  //   body: formData,
+  //   headers,
+  // });
+  // response.body = await response.json();
+
+  // return response;
 }
 
 /**
@@ -99,10 +143,10 @@ function hookRangesetRequest(version, collection, coverageId, query, username = 
 /**
  *
  *
- * @param {string} version
- * @param {string} collection
- * @param {string} coverageId
- * @param {object} form
+ * @param {string} version The OGC API version
+ * @param {string} collection The CMR Collection ID to perform a service on
+ * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
+ * @param {object} form The form data to be POST'd
  * @returns {void}
  */
 function hookPostRangesetRequest(version, collection, coverageId, form) {
