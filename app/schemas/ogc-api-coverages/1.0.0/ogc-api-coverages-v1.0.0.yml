@@ -92,7 +92,7 @@ paths:
         style: form
         explode: false
         schema:
-          maxItems: 4
+          maxItems: 6
           minItems: 4
           type: array
           items:
