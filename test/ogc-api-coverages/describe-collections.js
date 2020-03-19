@@ -19,7 +19,7 @@ describe('OGC API Coverages - describeCollections', function () {
 
     it('includes an OGC collection for every variable in the EOSDIS collection', function () {
       const listing = JSON.parse(this.res.text);
-      expect(listing.collections.length).to.equal(102);
+      expect(listing.collections.length).to.equal(103);
     });
 
     it('includes a link to the OGC coverages landing page', function () {
@@ -43,35 +43,35 @@ describe('OGC API Coverages - describeCollections', function () {
     describe('when inspecting a single collection object in the response', function () {
       it('includes an id', function () {
         const listing = JSON.parse(this.res.text);
-        const firstItem = listing.collections[0];
-        expect(firstItem.id).to.equal('C1215669046-GES_DISC/V1224729877-GES_DISC');
+        const singleCollection = listing.collections[1];
+        expect(singleCollection.id).to.equal('C1215669046-GES_DISC/V1224729877-GES_DISC');
       });
 
       it('includes a title', function () {
         const listing = JSON.parse(this.res.text);
-        const firstItem = listing.collections[0];
-        expect(firstItem.title).to.equal('CloudFrc_A AIRX3STD v006');
+        const singleCollection = listing.collections[1];
+        expect(singleCollection.title).to.equal('CloudFrc_A AIRX3STD v006');
       });
 
       it('includes a description', function () {
         const listing = JSON.parse(this.res.text);
-        const firstItem = listing.collections[0];
-        expect(firstItem.description).to.equal('Cloud Fraction Ascending AIRX3STD v006 (NASA/GSFC/SED/ESD/GCDC/GESDISC)');
+        const singleCollection = listing.collections[1];
+        expect(singleCollection.description).to.equal('Cloud Fraction Ascending AIRX3STD v006 (NASA/GSFC/SED/ESD/GCDC/GESDISC)');
       });
 
       it('includes links to make a rangeset request for the variable', function () {
         const listing = JSON.parse(this.res.text);
-        const firstItem = listing.collections[0];
-        const firstLink = firstItem.links[0];
-        expect(firstItem.links.length).to.equal(1);
+        const singleCollection = listing.collections[1];
+        const firstLink = singleCollection.links[0];
+        expect(singleCollection.links.length).to.equal(1);
         expect(firstLink.title).to.equal('Perform rangeset request for CloudFrc_A');
         expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/CloudFrc_A/coverage/rangeset');
       });
 
       it('includes a spatial extent', function () {
         const listing = JSON.parse(this.res.text);
-        const firstItem = listing.collections[0];
-        expect(firstItem.extent.spatial).to.eql({
+        const singleCollection = listing.collections[1];
+        expect(singleCollection.extent.spatial).to.eql({
           bbox: [-90, -180, 90, 180],
           crs: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84',
         });
@@ -79,8 +79,8 @@ describe('OGC API Coverages - describeCollections', function () {
 
       it('includes a temporal extent', function () {
         const listing = JSON.parse(this.res.text);
-        const firstItem = listing.collections[0];
-        expect(firstItem.extent.temporal).to.eql({
+        const singleCollection = listing.collections[1];
+        expect(singleCollection.extent.temporal).to.eql({
           interval: ['2002-08-31T00:00:00.000Z', '2016-09-25T23:59:59.000Z'],
           trs: 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian',
         });
@@ -88,8 +88,19 @@ describe('OGC API Coverages - describeCollections', function () {
 
       it('includes an item type of variable', function () {
         const listing = JSON.parse(this.res.text);
-        const firstItem = listing.collections[0];
-        expect(firstItem.itemType).to.equal('Variable');
+        const singleCollection = listing.collections[1];
+        expect(singleCollection.itemType).to.equal('Variable');
+      });
+    });
+
+    describe('when inspecting the first collection in the response', function () {
+      it('includes a link to perform a rangeset request requesting all variables', function () {
+        const listing = JSON.parse(this.res.text);
+        const firstCollection = listing.collections[0];
+        const firstLink = firstCollection.links[0];
+        expect(firstCollection.links.length).to.equal(1);
+        expect(firstLink.title).to.equal('Perform rangeset request for all');
+        expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
       });
     });
   });

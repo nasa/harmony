@@ -89,7 +89,9 @@ function describeCollections(req, res) {
     };
     links.push(rootLink, selfLink);
     const extent = generateExtent(collection);
-
+    // Include a link to perform a request asking for all variables in the EOSDIS collection
+    const allVariables = { name: 'all', concept_id: 'all', long_name: 'All variables' };
+    ogcCollections.push(_buildCollectionInfo(collection, allVariables, `${requestUrl}/all`, extent));
     for (const variable of collection.variables) {
       const collectionInfo = _buildCollectionInfo(collection, variable, `${requestUrl}/${variable.name}`, extent);
       ogcCollections.push(collectionInfo);
@@ -119,6 +121,7 @@ function describeCollection(req, res) {
   const collection = req.collections[0];
   const requestUrl = getSanitizedRequestUrl(req, false);
   const extent = generateExtent(collection);
+  // TODO - the variables aren't being pruned in this route - need to id the correct variable
   const variable = collection.variables[0];
   const collectionInfo = _buildCollectionInfo(collection, variable, requestUrl, extent);
   res.send(collectionInfo);
