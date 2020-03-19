@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
+const getIn = require('lodash.get');
 
 const LocalDockerService = require('./local-docker-service');
 const HttpService = require('./http-service');
@@ -71,16 +72,26 @@ function isCollectionMatch(operation, serviceConfig) {
  * Given a data operation, returns a service instance appropriate for performing that operation
  *
  * @param {DataOperation} operation The operation to perform
+ * @param {object} configs The configuration to use for finding the operation, with all variables
+ *    resolved (default: the contents of config/services.yml)
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @throws {NotFoundError} If no service can perform the given operation
  */
-function forOperation(operation) {
+function forOperation(operation, configs = serviceConfigs) {
   let matches = [];
   if (operation) {
-    matches = serviceConfigs.filter((config) => isCollectionMatch(operation, config));
+    matches = configs.filter((config) => isCollectionMatch(operation, config));
   }
   if (matches.length === 0) {
     matches = [{ type: { name: 'noOp' } }];
+  }
+
+  const format = operation.outputFormat;
+  if (format) {
+    const formatMatches = matches.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(format));
+    if (formatMatches.length > 0) {
+      matches = formatMatches;
+    }
   }
 
   // TODO: Capabilities match.  Should be fuzzier and warn, rather than erroring?

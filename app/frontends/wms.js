@@ -235,7 +235,7 @@ function getMap(req, res, next) {
   }
 
   // WMS requests only support synchronous execution
-  operation.isSynchronous = true;
+  operation.requireSynchronous = true;
   req.operation = operation;
   next();
 }

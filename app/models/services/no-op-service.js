@@ -25,7 +25,7 @@ class NoOpService extends BaseService {
     const now = new Date();
     const granules = this.operation.sources.flatMap((source) => source.granules);
     const links = granules.map((granule) => ({ title: granule.id, href: granule.url }));
-    const message = this.truncationMessage ? `${noOpMessage} ${this.truncationMessage}` : noOpMessage;
+    const message = this.warningMessage ? `${noOpMessage} ${this.warningMessage}` : noOpMessage;
     const job = new Job({
       username: this.operation.user,
       requestId: this.operation.requestId,

@@ -17,13 +17,18 @@ const { NotFoundError } = require('../util/errors');
  *
  * @param {string} url a URL to the data location
  * @param {string} frontendRoot The root URL to use when producing URLs relative to the Harmony root
+ * @param {string} mimeType The mime type of the link
  * @returns {string} a URL which getServiceResult can route to when mounted to the site root
  * @throws {TypeError} If the provided URL cannot be handled
  */
-function createPublicPermalink(url, frontendRoot) {
+function createPublicPermalink(url, frontendRoot, mimeType) {
   const parsed = new URL(url);
   const protocol = parsed.protocol.toLowerCase().replace(/:$/, '');
   if (protocol === 's3') {
+    if (mimeType === 'application/x-zarr') {
+      return url;
+    }
+
     // Right now we only handle permalinks to S3.  We also don't capture the
     // protocol information in the URL, which would need to be incorporated if we
     // ever allow the simultaneous use of multiple object store vendors

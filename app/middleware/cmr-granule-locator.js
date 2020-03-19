@@ -29,7 +29,7 @@ async function cmrGranuleLocator(req, res, next) {
 
   cmrQuery.concept_id = operation.granuleIds;
 
-  req.cmrHits = 0;
+  operation.cmrHits = 0;
   try {
     const { sources } = operation;
     const queries = sources.map(async (source) => {
@@ -41,7 +41,7 @@ async function cmrGranuleLocator(req, res, next) {
         req.accessToken,
         env.maxAsynchronousGranules,
       );
-      req.cmrHits += hits;
+      operation.cmrHits += hits;
       const msTaken = new Date().getTime() - startTime;
       req.logger.info('Completed granule query', { durationMs: msTaken });
       const granules = [];

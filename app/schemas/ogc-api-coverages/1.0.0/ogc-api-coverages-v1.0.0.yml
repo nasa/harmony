@@ -311,6 +311,7 @@ paths:
       - $ref: '#/components/parameters/granuleId'
       - $ref: '#/components/parameters/width'
       - $ref: '#/components/parameters/height'
+      - $ref: '#/components/parameters/format'
       responses:
         "200":
           description: A coverage's range set.
@@ -764,3 +765,13 @@ components:
       schema:
         type: integer
         minimum: 1
+    format:
+      name: format
+      in: query
+      description: the output mime type to return
+      schema:
+        type: string
+        example:
+          - 'application/x-zarr'
+          - 'image/tiff'
+          - 'image/png'

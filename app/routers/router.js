@@ -10,7 +10,6 @@ const { getJobsListing, getJobStatus } = require('../frontends/jobs');
 const { getServiceResult } = require('../frontends/service-results');
 const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
-const syncRequestDecider = require('../middleware/sync-request-decider');
 const setRequestId = require('../middleware/request-id');
 const { NotFoundError } = require('../util/errors');
 const eoss = require('../frontends/eoss');
@@ -155,7 +154,6 @@ function router({ skipEarthdataLogin }) {
   });
 
   result.use(logged(cmrGranuleLocator));
-  result.use(logged(syncRequestDecider));
   result.use(logged(setRequestId));
 
   result.get('/', (req, res) => res.status(200).send('ok'));

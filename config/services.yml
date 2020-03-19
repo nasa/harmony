@@ -1,3 +1,6 @@
+# Order in this file will reflect precedence of the service when multiple services handle a collection until
+# smarter service matching is implemented.
+
 - name: harmony/gdal
   data_operation_version: '0.5.0'
   type:
@@ -81,3 +84,25 @@
       url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
   collections:
     - C1225996408-POCUMULUS
+
+- name: harmony/netcdf-to-zarr
+  data_operation_version: '0.5.0'
+  type:
+    name: docker
+    params:
+      image: !Env ${NETCDF_TO_ZARR_IMAGE}
+      env:
+        USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+        AWS_DEFAULT_REGION: us-west-2
+        EDL_USERNAME: !Env ${EDL_USERNAME}
+        EDL_PASSWORD: !Env ${EDL_PASSWORD}
+        STAGING_BUCKET: !Env ${STAGING_BUCKET}
+        STAGING_PATH: public/harmony/netcdf-to-zarr
+        TEXT_LOGGER: !Env ${TEXT_LOGGER}
+  collections:
+    - C1233800302-EEDTEST
+    - C1233860183-EEDTEST
+  maximum_sync_granules: 0
+  capabilities:
+    output_formats:
+      - application/x-zarr

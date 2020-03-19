@@ -346,6 +346,21 @@ describe('Individual job status route', function () {
       });
     });
 
+    describe('when a job has provided an S3 URL result with application/x-zarr mime type', function () {
+      const s3Uri = 's3://example-bucket/public/example/path.tif';
+      StubService.hook({ params: { status: 'successful' } });
+      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      before(async function () {
+        await this.service.sendResponse({ item: { href: s3Uri, type: 'application/x-zarr' } });
+      });
+      hookRedirect('jdoe1');
+
+      it('returns the S3 URL', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.links[0].href).to.equal(s3Uri);
+      });
+    });
+
     describe('when the job has completed successfully', function () {
       const query = { subset: ['lat(-80:80)', 'lon(-100:100)'] };
       hookRangesetRequest(version, collection, variableName, query, 'jdoe3');
