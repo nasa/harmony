@@ -11,11 +11,11 @@ const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
  * @returns {Object} the extent object
  */
 function generateExtent(collection) {
-  let bbox;
-  if (collection.boxes) {
-    bbox = collection.boxes[0].split(' ').map((v) => parseFloat(v));
+  let spatial;
+  if (collection.boxes && collection.boxes.length > 0) {
+    const bbox = collection.boxes[0].split(' ').map((v) => parseFloat(v));
+    spatial = { bbox, crs: WGS84 };
   }
-  const spatial = bbox ? { bbox, crs: WGS84 } : undefined;
 
   let temporal;
   if (collection.time_start || collection.time_end) {
@@ -49,7 +49,7 @@ function _buildCollectionInfo(collection, variable, requestUrl, extent) {
     }],
     extent,
     itemType: 'Variable',
-    // TODO set CRS
+    // TODO set CRS (HARMONY-242)
     // crs: 'TODO get from UMM-S or services.yml capabilities.output_projections',
   };
 }
