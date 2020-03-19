@@ -1,7 +1,10 @@
+const getIn = require('lodash.get');
 const serviceResponse = require('../../backends/service-response');
 const db = require('../../util/db');
 const Job = require('../../models/job');
 const { ServerError } = require('../../util/errors');
+const env = require('../../util/env');
+
 
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
@@ -25,6 +28,7 @@ class BaseService {
     const { type } = this.config;
     this.params = (type && type.params) ? type.params : {};
     this.operation = operation;
+    this.operation.isSynchronous = this.isSynchronous;
   }
 
   /**
@@ -70,7 +74,7 @@ class BaseService {
    * @memberof BaseService
    */
   async invoke(logger, harmonyRoot, requestUrl) {
-    const isAsync = !this.operation.isSynchronous;
+    const isAsync = !this.isSynchronous;
     let job;
     if (isAsync) {
       job = await this._createJob(db, logger, requestUrl);
@@ -235,8 +239,8 @@ class BaseService {
     const { requestId, user } = this.operation;
     logger.info(`Creating job for ${requestId}`);
     const job = new Job({ username: user, requestId, status: 'running', request: requestUrl });
-    if (this.truncationMessage) {
-      job.message = this.truncationMessage;
+    if (this.warningMessage) {
+      job.message = this.warningMessage;
     }
     try {
       await job.save(transaction);
@@ -245,6 +249,43 @@ class BaseService {
       throw new ServerError('Failed to save job to database.');
     }
     return job;
+  }
+
+  /**
+   * Determines if a request should be handled synchronously or asynchronously.
+   * Updates the request to set the request mode accordingly. Middleware must be
+   * called after the source granules have already been added to the operation.
+   *
+   * @returns {boolean} true if the request is synchronous, false otherwise
+   *
+   */
+  get isSynchronous() {
+    const { operation } = this;
+
+    if (operation.requireSynchronous) {
+      return true;
+    }
+    if (operation.isSynchronous !== undefined) {
+      return operation.isSynchronous;
+    }
+
+    const maxSyncGranules = getIn(this.config, 'maximum_sync_granules', env.maxSynchronousGranules);
+    return this.operation.cmrHits <= maxSyncGranules;
+  }
+
+  /**
+   * Returns a warning message if some part of the request can't be fulfilled
+   *
+   * @returns {string} a warning message to display, or undefined if not applicable
+   * @readonly
+   * @memberof BaseService
+   */
+  get warningMessage() {
+    if (this.operation.cmrHits > env.maxAsynchronousGranules) {
+      return `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
+      + `to process only the first ${env.maxAsynchronousGranules} granules.`;
+    }
+    return undefined;
   }
 }
 
