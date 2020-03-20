@@ -147,7 +147,7 @@ describe('OGC API Coverages - describeCollections', function () {
 describe('OGC API Coverages - describeCollection', function () {
   const collection = 'C1215669046-GES_DISC';
   const version = '1.0.0';
-  const variableName = 'CloudFrc_A';
+  const variableName = 'EmisIR_A';
 
   hookServersStartStop();
 
@@ -160,25 +160,25 @@ describe('OGC API Coverages - describeCollection', function () {
 
     it('includes an id', function () {
       const collectionInfo = JSON.parse(this.res.text);
-      expect(collectionInfo.id).to.equal('C1215669046-GES_DISC/V1224729877-GES_DISC');
+      expect(collectionInfo.id).to.equal('C1215669046-GES_DISC/V1224352381-GES_DISC');
     });
 
     it('includes a title', function () {
       const collectionInfo = JSON.parse(this.res.text);
-      expect(collectionInfo.title).to.equal('CloudFrc_A AIRX3STD v006');
+      expect(collectionInfo.title).to.equal('EmisIR_A AIRX3STD v006');
     });
 
     it('includes a description', function () {
       const collectionInfo = JSON.parse(this.res.text);
-      expect(collectionInfo.description).to.equal('Cloud Fraction Ascending AIRX3STD v006 (NASA/GSFC/SED/ESD/GCDC/GESDISC)');
+      expect(collectionInfo.description).to.equal('Emissivity IR Ascending AIRX3STD v006 (NASA/GSFC/SED/ESD/GCDC/GESDISC)');
     });
 
     it('includes links to make a rangeset request for the variable', function () {
       const collectionInfo = JSON.parse(this.res.text);
       const firstLink = collectionInfo.links[0];
       expect(collectionInfo.links.length).to.equal(1);
-      expect(firstLink.title).to.equal('Perform rangeset request for CloudFrc_A');
-      expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/CloudFrc_A/coverage/rangeset');
+      expect(firstLink.title).to.equal('Perform rangeset request for EmisIR_A');
+      expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/EmisIR_A/coverage/rangeset');
     });
 
     it('includes a spatial extent', function () {

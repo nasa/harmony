@@ -1,6 +1,7 @@
 const { getSanitizedRequestUrl } = require('../../util/url');
 const { keysToLowerCase } = require('../../util/object');
 const { RequestValidationError } = require('../../util/errors');
+const { parseVariables } = require('./util/variable-parsing');
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
@@ -121,8 +122,8 @@ function describeCollection(req, res) {
   const collection = req.collections[0];
   const requestUrl = getSanitizedRequestUrl(req, false);
   const extent = generateExtent(collection);
-  // TODO - the variables aren't being pruned in this route - need to id the correct variable
-  const variable = collection.variables[0];
+  const variableInfo = parseVariables([collection], req.params.collectionId);
+  const variable = variableInfo[0].variables[0];
   const collectionInfo = _buildCollectionInfo(collection, variable, requestUrl, extent);
   res.send(collectionInfo);
 }
