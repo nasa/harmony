@@ -71,8 +71,7 @@ paths:
     get:
       tags:
       - Capabilities
-      summary: (Not yet implemented) describe the collections in the dataset
-      description: Not yet implemented
+      summary: Describe the collections in the dataset
       operationId: describeCollections
       parameters:
       - name: limit
@@ -106,6 +105,19 @@ paths:
         explode: false
         schema:
           type: string
+      - name: f
+        in: query
+        description: |
+          The optional f parameter indicates the output format which the server shall provide as part of the response document. It has preference over the HTTP Accept header. The default format is JSON.
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: string
+          default: json
+          enum:
+          - json
+          - html
       responses:
         "200":
           description: Metadata about the collections shared by this API.
@@ -122,7 +134,7 @@ paths:
     get:
       tags:
       - Capabilities
-      summary: (Not yet implemented) describe the {collectionId} collection
+      summary: Describe the {collectionId} collection
       operationId: describeCollection
       parameters:
       - name: collectionId

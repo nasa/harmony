@@ -1,6 +1,6 @@
 const serviceResponse = require('../../backends/service-response');
 const db = require('../../util/db');
-const Job = require('../../models/job');
+const Job = require('../job');
 const { ServerError } = require('../../util/errors');
 
 /**
