@@ -78,7 +78,6 @@ async function serviceInvoker(req, res) {
     component: `${service.constructor.name}`,
   });
   try {
-    service.truncationMessage = req.truncationMessage;
     serviceResult = await service.invoke(serviceLogger, getRequestRoot(req), getRequestUrl(req));
     await translateServiceResult(serviceResult, req.operation.user, res);
   } finally {

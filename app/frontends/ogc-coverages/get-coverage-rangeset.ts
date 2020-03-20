@@ -20,8 +20,9 @@ const { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, Parameter
 function getCoverageRangeset(req, res, next) {
   const query = keysToLowerCase(req.query);
   const operation = new DataOperation();
-  operation.outputFormat = 'image/tiff'; // content negotiation to be added in HARMONY-173
-
+  if (query.format) {
+    operation.outputFormat = query.format; // content negotiation to be added in HARMONY-173
+  }
   if (query.granuleid) {
     operation.granuleIds = query.granuleid;
   }
