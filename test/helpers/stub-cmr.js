@@ -7,23 +7,13 @@ const cmr = require('../../app/util/cmr');
  * `cmr` module with a function that generates a response with the given
  * status and message
  * @param {string} functionName
- * @param {number} status
- * @param {string} message
+ * @param {object} response
  * @returns {void}
  */
-function hookCmr(functionName, status, message) {
+function hookCmr(functionName, response) {
   before(function () {
     sinon.stub(cmr, functionName)
-      .callsFake(() => {
-        const resp = {
-          status,
-          body: {
-            code: 'harmony.CmrError',
-            description: message,
-          },
-        };
-        return resp;
-      });
+      .callsFake(() => response);
   });
   after(function () {
     if (cmr[functionName].restore) cmr[functionName].restore();

@@ -70,7 +70,7 @@ function handleCmrErrors(response) {
  * @returns {Promise<object>} The CMR query result
  * @private
  */
-async function cmrSearch(path, query, token) {
+async function cmrSearchBase(path, query, token) {
   const querystr = querystring.stringify(query);
   const headers = {
     ...clientIdHeader,
@@ -83,6 +83,22 @@ async function cmrSearch(path, query, token) {
       headers,
     });
   response.data = await response.json();
+  return response;
+}
+
+/**
+ * Performs a CMR search at the given path with the given query string. This function wraps
+ * `CmrSearchBase` to make it easier to test.
+ *
+ * @param {string} path The absolute path on the CMR API to the resource being queried
+ * @param {object} query The key/value pairs to send to the CMR query string
+ * @param {string} token Access token for user request
+ * @returns {Promise<object>} The CMR query result
+ * @throws {CmrError} If the CMR returns an error status
+ * @private
+ */
+async function cmrSearch(path, query, token) {
+  const response = await cmrSearchBase(path, query, token);
   handleCmrErrors(response);
   return response;
 }
@@ -96,7 +112,7 @@ async function cmrSearch(path, query, token) {
  * @returns {Promise<object>} The CMR query result
  * @private
  */
-async function cmrPostSearch(path, form, token) {
+async function cmrPostSearchBase(path, form, token) {
   let tempFile;
   const formData = new FormData();
   await Promise.all(Object.keys(form).map(async (key) => {
@@ -144,13 +160,29 @@ async function cmrPostSearch(path, form, token) {
       headers,
     });
     response.data = await response.json();
-
-    handleCmrErrors(response);
   } finally {
     // not strictly needed as the library will handle this, but added
     // for completeness to make sure the temporary file gets deleted
     tempFile.removeCallback();
   }
+
+  return response;
+}
+
+/**
+ * Post a query to the CMR with the parameters in the given form. This function wraps
+ * `CmrPostSearchBase` to make it easier to test.
+ *
+ * @param {string} path The absolute path on the cmR API to the resource being queried
+ * @param {object} form An object with keys and values representing the parameters for the query
+ * @param {string} token Access token for the user
+ * @returns {Promise<object>} The CMR query result
+ * @throws {CmrError} If the CMR returns an error status
+ * @private
+ */
+async function cmrPostSearch(path, form, token) {
+  const response = await module.exports.cmrPostSearchBase(path, form, token);
+  handleCmrErrors(response);
 
   return response;
 }
@@ -307,5 +339,7 @@ module.exports = {
   getVariablesForCollection,
   queryGranulesForCollection,
   queryGranulesForCollectionWithMultipartForm,
+  cmrSearchBase, // Allows test stubbing
+  cmrPostSearchBase, // Allows test stubbing
   cmrApiConfig, // Allow tests to override cmrApiConfig
 };

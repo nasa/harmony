@@ -2,12 +2,14 @@
 // const fs = require('fs');
 // const path = require('path');
 // const knex = require('knex');
+const { parse } = require('cookie');
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
 const cookieParser = require('cookie-parser');
 const { hookServersStartStop } = require('../helpers/servers');
 // const { hookPostRangesetRequest, postRangesetRequest } = require('../helpers/ogc-api-coverages');
-const { postRangesetRequest } = require('../helpers/ogc-api-coverages');
+const { auth, authRedirect, token, stubEdlRequest, stubEdlError, unstubEdlRequest } = require('../helpers/auth');
+const { rangesetRequest, postRangesetRequest } = require('../helpers/ogc-api-coverages');
 // const { jobStatus, itIncludesRequestUrl } = require('../helpers/jobs');
 // const { auth } = require('../helpers/auth');
 // const { hookSignS3Object } = require('../helpers/object-store');
@@ -23,6 +25,21 @@ const { hookCmr } = require('../helpers/stub-cmr');
 //     expect(x).to.equal(1);
 //   });
 // });
+
+/**
+ * Strip the signature from a signed cookie value
+ *
+ * @param {string} value The value portion of the cookie
+ * @returns {string} the unsigned cookie value
+ */
+function stripSignature(value) {
+  const m = value.match(/^s:j:(.*)\..*$/);
+  if (m) {
+    return m[1];
+  }
+
+  return value;
+}
 
 describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -108,26 +125,53 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   // });
 
   describe('Validation', function () {
-    const secret = process.env.COOKIE_SECRET;
-    // it('returns an HTTP 400 "Bad Request" error with explanatory message when the shapefile is corrupt', async function () {
-    //   const res = await postRangesetRequest(
-    //     this.frontend,
-    //     version,
-    //     collection,
-    //     variableName,
-    //     { shapefile }, // TODO: make correct form
-    //   );
-    //   expect(res.status).to.equal(400); // TODO: Set correct code
-    //   expect(res.body).to.eql({
-    //     code: 'harmony.RequestValidationError',
-    //     description: 'Error: Coverages were not found for the provided CMR collection: NotAVariable',
-    //   });
-    // });
+    describe('when the CMR returns a 4xx', function () {
+      const cmrErrorMessage = 'Corrupt zip file';
+      const cmrStatus = 400;
+      hookCmr('cmrPostSearchBase', { status: cmrStatus, data: { errors: [cmrErrorMessage] } });
+      it('returns an HTTP 400 "Bad Request" error with explanatory message when the shapefile is corrupt', async function () {
+        let res = await postRangesetRequest(
+          this.frontend,
+          version,
+          collection,
+          variableName,
+          { shapefile: { path: './fixtures/corrupt_file.zip', mimetype: 'application/shapefile+zip' } },
+        );
+        expect(res.status).to.equal(303);
+
+        const shapefileHeader = res.headers['set-cookie'].filter((cookie) => {
+          const decoded = decodeURIComponent(cookie);
+          const parsed = parse(decoded);
+          return parsed.shapefile;
+        })[0];
+
+        const decoded = decodeURIComponent(shapefileHeader);
+        const parsed = parse(decoded);
+        const cookieValue = JSON.parse(stripSignature(parsed.shapefile));
+
+        const cookies = { shapefile: cookieValue };
+
+        res = await rangesetRequest(
+          this.frontend,
+          version,
+          collection,
+          variableName,
+          res.body,
+          cookies,
+        ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+
+        expect(res.status).to.equal(cmrStatus);
+        expect(res.body).to.eql({
+          code: 'harmony.CmrError',
+          description: `Error: ${cmrErrorMessage}`,
+        });
+      });
+    });
 
     describe('when the CMR returns a 5xx', function () {
-      hookCmr('queryGranulesForCollectionWithMultipartForm', 500, 'Internal error');
+      hookCmr('cmrPostSearchBase', { status: 500 });
       it('returns an HTTP 503 "Service unavailable" error', async function () {
-        const res = await postRangesetRequest(
+        let res = await postRangesetRequest(
           this.frontend,
           version,
           collection,
@@ -135,18 +179,32 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
           { shapefile: { path: './fixtures/southern_africa.zip', mimetype: 'application/shapefile+zip' } },
         );
         expect(res.status).to.equal(303);
-        // TODO: Figure out how to follow the redirect (with cookies set)
-        const cookies = res.headers['set-cookie'].map((cookie) => {
-          const [key, value] = cookie.split('=');
-          const decoded = cookieParser.signedCookie(value, secret);
-          const rval = {};
-          rval[key] = decoded;
-          return rval;
-        });
-        console.log(cookies);
+
+        const shapefileHeader = res.headers['set-cookie'].filter((cookie) => {
+          const decoded = decodeURIComponent(cookie);
+          const parsed = parse(decoded);
+          return parsed.shapefile;
+        })[0];
+
+        const decoded = decodeURIComponent(shapefileHeader);
+        const parsed = parse(decoded);
+        const cookieValue = JSON.parse(stripSignature(parsed.shapefile));
+
+        const cookies = { shapefile: cookieValue };
+
+        res = await rangesetRequest(
+          this.frontend,
+          version,
+          collection,
+          variableName,
+          res.body,
+          cookies,
+        ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+
+        expect(res.status).to.equal(503);
         expect(res.body).to.eql({
           code: 'harmony.CmrError',
-          description: 'Service unavailable',
+          description: 'Error: Service unavailable',
         });
       });
     });

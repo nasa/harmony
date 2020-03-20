@@ -41,7 +41,7 @@ async function cmrGranuleLocator(req, res, next) {
       const startTime = new Date().getTime();
 
       if (shapefileInfo) {
-        cmrQuery.shapefileInfo = JSON.parse(shapefileInfo);
+        cmrQuery.shapefileInfo = shapefileInfo; // JSON.parse(shapefileInfo);
         cmrResponse = await cmr.queryGranulesForCollectionWithMultipartForm(
           source.collection,
           cmrQuery,
