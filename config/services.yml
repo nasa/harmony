@@ -75,6 +75,9 @@
     # Good example, being in UAT, global, many public non-global granules,
     # and not yet on the services roadmap.
     - C1104-PVC_TS2
+  capabilities:
+    output_formats:
+      - image/tiff
 
 - name: podaac/http-service
   data_operation_version: '0.5.0'

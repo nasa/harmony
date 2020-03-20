@@ -217,7 +217,9 @@ function getMap(req, res, next) {
 
   operation.crs = query.crs;
   operation.isTransparent = query.transparent === 'TRUE';
-  operation.outputFormat = query.format;
+  if (query.format) {
+    operation.outputFormat = query.format;
+  }
   operation.outputWidth = parseInt(query.width, 10);
   operation.outputHeight = parseInt(query.height, 10);
   if (dpi) {

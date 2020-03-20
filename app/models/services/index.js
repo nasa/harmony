@@ -88,9 +88,9 @@ function forOperation(operation, configs = serviceConfigs) {
 
   const format = operation.outputFormat;
   if (format) {
-    const formatMatches = matches.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(format));
-    if (formatMatches.length > 0) {
-      matches = formatMatches;
+    matches = matches.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(format));
+    if (matches.length === 0) {
+      throw new NotFoundError(`Could not find a service to reformat to ${format} for the given collection`);
     }
   }
 
