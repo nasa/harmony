@@ -61,16 +61,13 @@ function getCoverageRangeset(req, res, next) {
     throw e;
   }
 
-  const variableInfo = parseVariables(req.collections, req.params.collectionId);
-  for (const collectionAndVars of variableInfo) {
-    if (collectionAndVars.variables) {
-      const variablesForOperation = collectionAndVars.variables.map((v) => {
-        const varForOperation = { id: v.concept_id, name: v.name };
-        return varForOperation;
-      });
-      operation.addSource(collectionAndVars.collectionId, variablesForOperation);
+  const varInfos = parseVariables(req.collections, req.params.collectionId);
+  for (const varInfo of varInfos) {
+    if (varInfo.variables) {
+      const sourceVars = varInfo.variables.map((v) => ({ id: v.concept_id, name: v.name }));
+      operation.addSource(varInfo.collectionId, sourceVars);
     } else {
-      operation.addSource(collectionAndVars.collectionId);
+      operation.addSource(varInfo.collectionId);
     }
   }
 
