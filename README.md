@@ -17,6 +17,7 @@ Required:
 * [git](https://git-scm.com) - Used to clone this repository
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
+* PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
 
 
 Highly Recommended:
