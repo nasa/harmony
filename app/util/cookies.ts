@@ -24,7 +24,7 @@ function _shapefile(req) {
   if (req.files) {
     const { mimetype, key, bucket } = req.files.shapefile[0];
     const shapefileParams = { mimetype, key, bucket };
-    rval = ['shapefile', JSON.stringify(shapefileParams)];
+    rval = ['shapefile', `j:${JSON.stringify(shapefileParams)}`];
   }
 
   return rval;
