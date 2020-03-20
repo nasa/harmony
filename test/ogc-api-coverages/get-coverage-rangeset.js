@@ -34,6 +34,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       scaleSize: '1.1,2',
       height: 500,
       width: 1000,
+      format: 'image/png',
     };
 
     describe('calling the backend service', function () {
@@ -103,6 +104,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('passes the width parameter to the backend', function () {
         expect(this.service.operation.outputWidth).to.equal(1000);
+      });
+
+      it('passes the format parameter to the backend', function () {
+        expect(this.service.operation.outputFormat).to.equal('image/png');
       });
     });
 

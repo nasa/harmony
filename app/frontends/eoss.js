@@ -45,7 +45,9 @@ function addOpenApiRoutes(app) {
         const query = keysToLowerCase(req.query);
         const operation = new DataOperation();
         operation.crs = query.crs;
-        operation.outputFormat = query.format || 'image/tiff';
+        if (query.format) {
+          operation.outputFormat = query.format;
+        }
         if (query.bbox) {
           const [west, south, east, north] = query.bbox;
           operation.boundingRectangle = [west, south, east, north];
@@ -73,7 +75,7 @@ function addOpenApiRoutes(app) {
         }
         operation.addSource(collectionId, variables);
         // EOSS is going to be deprecated before supporting async
-        operation.isSynchronous = true;
+        operation.requireSynchronous = true;
         req.operation = operation;
         next();
       },

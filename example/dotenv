@@ -88,6 +88,7 @@ DATABASE_URL=
 # Docker images for services referenced in config/services.yml.  Set to a
 # local image, ECR image, Docker Hub image, etc
 GDAL_IMAGE=harmony/gdal:latest
+NETCDF_TO_ZARR_IMAGE=harmony/netcdf-to-zarr:latest
 PO_L2_IMAGE=podaac-cloud/l2-subsetter-service:latest
 SWOT_REPR_IMAGE=sds/swot-reproject:latest
 

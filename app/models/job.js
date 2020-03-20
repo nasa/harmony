@@ -20,7 +20,7 @@ const statuses = {
 const defaultMessages = Object.values(statesToDefaultMessages);
 
 const serializedJobFields = [
-  'requestId', 'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
 ];
 
 /**
@@ -245,13 +245,12 @@ class Job extends Record {
     const serializedJob = pick(this, serializedJobFields);
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
-    serializedJob.jobID = serializedJob.requestId;
+    serializedJob.jobID = this.requestId;
     serializedJob.links = serializedJob.links.map((link) => ({
-      href: createPublicPermalink(link.href, urlRoot),
+      href: createPublicPermalink(link.href, urlRoot, link.type),
       title: link.title,
       type: link.type,
     }));
-    delete serializedJob.requestId;
     return serializedJob;
   }
 }

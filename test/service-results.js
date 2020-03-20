@@ -20,6 +20,11 @@ describe('service-results', function () {
       expect(result).to.throw(TypeError);
     });
 
+    it('returns S3 links unaltered when the mime type is application/x-zarr', function () {
+      const result = createPublicPermalink('s3://some-bucket/some/key.txt', 'https://example.com', 'application/x-zarr');
+      expect(result).to.equal('s3://some-bucket/some/key.txt');
+    });
+
     /**
      * Adds an `it` statement asserting createPublicPermalink does not alter links with
      * the given protocol
