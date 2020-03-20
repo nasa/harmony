@@ -29,6 +29,8 @@ class BaseService {
     this.params = (type && type.params) ? type.params : {};
     this.operation = operation;
     this.operation.isSynchronous = this.isSynchronous;
+    // To be fixed by HARMONY-203 to not default to TIFF
+    this.operation.outputFormat = this.operation.outputFormat || 'image/tiff';
   }
 
   /**
@@ -252,9 +254,7 @@ class BaseService {
   }
 
   /**
-   * Determines if a request should be handled synchronously or asynchronously.
-   * Updates the request to set the request mode accordingly. Middleware must be
-   * called after the source granules have already been added to the operation.
+   * Returns true if a request should be handled synchronously, false otherwise
    *
    * @returns {boolean} true if the request is synchronous, false otherwise
    *
