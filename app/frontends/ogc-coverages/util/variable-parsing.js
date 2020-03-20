@@ -1,12 +1,15 @@
 const { RequestValidationError } = require('../../../util/errors');
 
 /**
- * Parses the variables
+ * Given a list of EOSDIS collections and variables parsed from the CMR and an OGC
+ * collectionId parameter return the full variables which match.
  *
  * @param {Array<Object>} eosdisCollections An array of collections
  * @param {Object} collectionIdParam The OGC collectionId query parameter
  * @returns {Array<Object>} an array of objects with a collectionId and list
  *   of variables e.g. [{ collectionId: C123-PROV1, variables: [<Variable object>] }]
+ * @throws {RequestValidationError} if the requested OGC collection ID parameter is not valid
+ * based on the variables in the collections
  */
 function parseVariables(eosdisCollections, collectionIdParam) {
   // Note that "collectionId" from the Open API spec is an OGC API Collection, which is
