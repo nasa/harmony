@@ -28,6 +28,23 @@ function getRequestUrl(req, includeQuery = true) {
 }
 
 /**
+ * Returns the full string URL being accessed by a http.IncomingMessage, "req" object
+ * after removing any trailing slashes from the path
+ *
+ * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
+ * @param {boolean} includeQuery Include the query string in the returned URL (default: true)
+ * @returns {string} The URL the incoming request is requesting
+ */
+function getSanitizedRequestUrl(req, includeQuery = true) {
+  return url.format({
+    protocol: _getProtocol(req),
+    host: req.get('host'),
+    pathname: req.originalUrl.split('?')[0].replace(/\/+$/, ''),
+    query: includeQuery ? req.query : null,
+  });
+}
+
+/**
  * Returns the root of the request (protocol, host, port, with path = "/")
  *
  * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
@@ -42,5 +59,6 @@ function getRequestRoot(req) {
 
 module.exports = {
   getRequestUrl,
+  getSanitizedRequestUrl,
   getRequestRoot,
 };

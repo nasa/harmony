@@ -25,7 +25,7 @@ function hookLandingPage(collection, version) {
  * Performs getCoverageRangeset request on the given collection with the given params
  *
  * @param {Express.Application} app The express application (typically this.frontend)
- * @param {String} version The EOSS version
+ * @param {String} version The OGC coverages API version
  * @param {string} collection The CMR Collection ID to perform a service on
  * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
  * @param {object} query The query parameters to pass to the EOSS request
@@ -38,12 +38,12 @@ function rangesetRequest(app, version, collection, coverageId, query) {
 }
 
 /**
- * Adds before/after hooks to run an EOS service request
+ * Adds before/after hooks to run an OGC API coverages rangeset request
  *
- * @param {String} version The EOSS version
+ * @param {String} version The OGC coverages API version
  * @param {string} collection The CMR Collection ID to perform a service on
  * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
- * @param {object} query The query parameters to pass to the EOSS request
+ * @param {object} query The query parameters to pass to the rangeset request
  * @param {String} username Optional username to simulate logging in
  * @returns {void}
  */
@@ -141,6 +141,80 @@ function coveragesLandingPageRequest(app, collection, version) {
   return request(app).get(`/${collection}/ogc-api-coverages/${version}/`);
 }
 
+/**
+ * Makes a call to return the OGC API Coverages describe collections page.
+ *
+ * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {string} collection The CMR Collection ID to query
+ * @param {String} version The specification version
+ * @param {Object} query The query parameters to pass to the describe collections request
+ * @returns {Promise<Response>} The response
+ */
+function describeCollectionsRequest(app, collection, version, query) {
+  return request(app)
+    .get(`/${collection}/ogc-api-coverages/${version}/collections`)
+    .query(query);
+}
+
+/**
+ * Adds before/after hooks when calling the OGC API Coverages describe collections page.
+ *
+ * @param {string} collection The CMR Collection ID to query
+ * @param {String} version The specification version
+ * @param {Object} query The query parameters to pass to the describe collections request
+ * @returns {void}
+ */
+function hookDescribeCollectionsRequest(collection, version, query = {}) {
+  before(async function () {
+    this.res = await describeCollectionsRequest(this.frontend, collection, version, query);
+  });
+
+  after(function () {
+    delete this.res;
+  });
+}
+
+/**
+ * Makes a call to return the OGC API Coverages describe collections page.
+ *
+ * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {String} collection The CMR Collection ID to query
+ * @param {String} version The specification version
+ * @param {String} variableName The name of the variable
+ * @param {Object} query The query parameters to pass to the describe collections request
+ * @returns {Promise<Response>} The response
+ */
+function describeCollectionRequest(app, collection, version, variableName, query) {
+  return request(app)
+    .get(`/${collection}/ogc-api-coverages/${version}/collections/${variableName}`)
+    .query(query);
+}
+
+/**
+ * Adds before/after hooks when calling the OGC API Coverages describe collections page.
+ *
+ * @param {String} collection The CMR Collection ID to query
+ * @param {String} version The specification version
+ * @param {String} variableName The name of the variable
+ * @param {Object} query The query parameters to pass to the describe collections request
+ * @returns {void}
+ */
+function hookDescribeCollectionRequest(collection, version, variableName, query = {}) {
+  before(async function () {
+    this.res = await describeCollectionRequest(
+      this.frontend,
+      collection,
+      version,
+      variableName,
+      query,
+    );
+  });
+
+  after(function () {
+    delete this.res;
+  });
+}
+
 module.exports = {
   hookLandingPage,
   hookRangesetRequest,
@@ -148,4 +222,8 @@ module.exports = {
   describeRelation,
   coveragesSpecRequest,
   coveragesLandingPageRequest,
+  describeCollectionRequest,
+  hookDescribeCollectionRequest,
+  describeCollectionsRequest,
+  hookDescribeCollectionsRequest,
 };

@@ -47,5 +47,14 @@ describe(`OGC API - Coverages navigation and specification ${version}`, function
         expect(conformances).to.include('http://www.opengis.net/spec/ogcapi-coverages-1/1.0/conf/core');
       });
     });
+
+    describeRelation('data', 'the collections listing', function () {
+      it('returns an HTTP 200 response containing the collections listing', function () {
+        const collectionListing = JSON.parse(this.res.text);
+        expect(this.res.status).to.equal(200);
+        expect(this.res.headers['content-type']).to.equal('application/json; charset=utf-8');
+        expect(Object.keys(collectionListing)).to.eql(['links', 'collections']);
+      });
+    });
   });
 });

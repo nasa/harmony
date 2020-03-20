@@ -42,7 +42,7 @@ function getLandingPage(req, res) {
       },
       {
         href: `${root}/collections`,
-        rel: 'collections',
+        rel: 'data',
         type: 'application/json',
         title: 'Metadata about the resource collections',
       },
