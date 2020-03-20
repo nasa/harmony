@@ -58,6 +58,7 @@
       - image/tiff
       - image/png
       - image/gif
+      - application/netcdf
     projection_to_proj4: true
 
 # This is an example service and backend from example/http-backend.js mounted by
@@ -87,6 +88,9 @@
       url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
   collections:
     - C1225996408-POCUMULUS
+  capabilities:
+    output_formats:
+      - application/netcdf
 
 - name: harmony/netcdf-to-zarr
   data_operation_version: '0.5.0'
