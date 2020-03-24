@@ -66,7 +66,7 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
-    "@pollyjs/adapter-node-http": "^2.7.0",
+    "@pollyjs/adapter-node-http": "^4.0.4",
     "@pollyjs/core": "^2.6.3",
     "@pollyjs/persister-fs": "^2.6.3",
     "@types/express": "^4.17.3",

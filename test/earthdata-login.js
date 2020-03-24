@@ -114,14 +114,23 @@ describe('Earthdata Login', function () {
           unstubEdlRequest();
         });
 
-        itRespondsWithError(403, 'You are not authorized to access the requested resource');
+        it('redirects to Earthdata Login', function () {
+          expect(this.res.statusCode).to.equal(307);
+          expect(this.res.headers.location).to.include(process.env.OAUTH_HOST);
+        });
+
+        it('does not call the application request handler', function () {
+          expect(this.service).to.equal(undefined);
+        });
 
         it('clears the failing token', function () {
           expect(this.res.headers['set-cookie'][0]).to.match(blankToken);
         });
 
-        it('does not call the application request handler', function () {
-          expect(this.service).to.equal(undefined);
+        it('sets the "redirect" cookie to the originally-requested resource', function () {
+          expect(this.res.headers['set-cookie'][1]).to.match(nonBlankRedirect);
+          expect(this.res.headers['set-cookie'][1]).to.include(encodeURIComponent('/wms?'));
+          expect(this.res.headers['set-cookie'][1]).to.include(encodeURIComponent('service=WMS'));
         });
       });
     });
@@ -212,7 +221,24 @@ describe('Earthdata Login', function () {
         unstubEdlRequest();
       });
 
-      itRespondsWithError(403, 'You are not authorized to access the requested resource');
+      it('redirects to Earthdata Login', function () {
+        expect(this.res.statusCode).to.equal(307);
+        expect(this.res.headers.location).to.include(process.env.OAUTH_HOST);
+      });
+
+      it('does not call the application request handler', function () {
+        expect(this.service).to.equal(undefined);
+      });
+
+      it('sets the "redirect" cookie to the originally-requested resource', function () {
+        expect(this.res.headers['set-cookie'][1]).to.match(nonBlankRedirect);
+        expect(this.res.headers['set-cookie'][1]).to.include(encodeURIComponent('/wms?'));
+        expect(this.res.headers['set-cookie'][1]).to.include(encodeURIComponent('service=WMS'));
+      });
+
+      it('clears the failing token', function () {
+        expect(this.res.headers['set-cookie'][0]).to.match(blankToken);
+      });
     });
   });
 
