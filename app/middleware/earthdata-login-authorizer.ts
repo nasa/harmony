@@ -86,33 +86,6 @@ function handleLogout(oauth2, req, res, _next) {
 }
 
 /**
- * Handles a call that has already been authorized through Earthdata Login, refreshing the token
- * as necessary and calling the provided function with the authorized username
- *
- * @param {Object} oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
- * @param {http.IncomingMessage} req The client request
- * @param {http.ServerResponse} res The client response
- * @param {function} next The next function in the middleware chain
- * @returns {void}
- *
- * @returns {*} The result of calling the adapter's redirect method
- */
-async function handleAuthorized(oauth2, req, res, next) {
-  const { token } = req.signedCookies;
-  const oauthToken = oauth2.accessToken.create(token);
-  req.accessToken = oauthToken.token.access_token;
-  if (oauthToken.expired()) {
-    const refreshed = await oauthToken.refresh();
-    res.cookie('token', refreshed.token, cookieOptions);
-    req.accessToken = refreshed.access_token;
-  }
-  const user = oauthToken.token.endpoint.split('/').pop();
-  req.logger = req.logger.child({ user });
-  req.user = user;
-  next();
-}
-
-/**
  * Handles a call that has no authorization data and is not a redirect or validation, persisting
  * the current URL on the client for future redirection and then redirecting to Earthdata Login
  *
@@ -129,6 +102,40 @@ function handleNeedsAuthorized(oauth2, req, res, _next) {
 
   res.cookie('redirect', urlUtil.getRequestUrl(req), cookieOptions);
   res.redirect(307, url);
+}
+
+/**
+ * Handles a call that has already been authorized through Earthdata Login, refreshing the token
+ * as necessary and calling the provided function with the authorized username
+ *
+ * @param {Object} oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
+ * @param {http.IncomingMessage} req The client request
+ * @param {http.ServerResponse} res The client response
+ * @param {function} next The next function in the middleware chain
+ * @returns {void}
+ *
+ * @returns {*} The result of calling the adapter's redirect method
+ */
+async function handleAuthorized(oauth2, req, res, next) {
+  const { token } = req.signedCookies;
+  const oauthToken = oauth2.accessToken.create(token);
+  req.accessToken = oauthToken.token.access_token;
+  try {
+    if (oauthToken.expired()) {
+      const refreshed = await oauthToken.refresh();
+      res.cookie('token', refreshed.token, cookieOptions);
+      req.accessToken = refreshed.access_token;
+    }
+    const user = oauthToken.token.endpoint.split('/').pop();
+    req.logger = req.logger.child({ user });
+    req.user = user;
+    next();
+  } catch (e) {
+    req.logger.error('Failed to refresh expired token, forcing login through EDL.');
+    req.logger.error(e.stack);
+    res.clearCookie('token', cookieOptions);
+    handleNeedsAuthorized(oauth2, req, res, next);
+  }
 }
 
 /**
