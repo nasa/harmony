@@ -88,14 +88,13 @@ function signedCookie(name, data, secret) {
  * @param {string} options Options to customize the behavior of the call
  * @param {string} [options.username='mock_user'] The username to be logged in
  * @param {string} [options.secret=process.env.COOKIE_SECRET] The signing secret to use
- * @param {string} [options.expired=false] Whether to produce an expired token
+ * @param {boolean} [options.expired=false] Whether to produce an expired token
  * @returns {supertest} The chainable supertest object with appropriate auth headers
  */
 function auth({ username = 'mock_user', secret = process.env.COOKIE_SECRET, expired = false }) {
   const expiresIn = 3600;
   const expiresDelta = expired ? -expiresIn : expiresIn;
   const cookieData = token({ username, expiresDelta });
-
   const cookieStr = signedCookie('token', cookieData, secret);
   return (request) => request.set('Cookie', cookieStr);
 }
