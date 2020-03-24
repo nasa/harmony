@@ -123,6 +123,10 @@ describe('Earthdata Login', function () {
           expect(this.service).to.equal(undefined);
         });
 
+        it('clears the failing token', function () {
+          expect(this.res.headers['set-cookie'][0]).to.match(blankToken);
+        });
+
         it('sets the "redirect" cookie to the originally-requested resource', function () {
           expect(this.res.headers['set-cookie'][1]).to.match(nonBlankRedirect);
           expect(this.res.headers['set-cookie'][1]).to.include(encodeURIComponent('/wms?'));
