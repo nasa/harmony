@@ -21,8 +21,11 @@ function getCoverageRangeset(req, res, next) {
   const query = keysToLowerCase(req.query);
   const operation = new DataOperation();
   if (query.format) {
-    operation.outputFormat = query.format; // content negotiation to be added in HARMONY-173
+    operation.outputFormat = query.format;
+  } else {
+    // Check for an accept header
   }
+
   if (query.granuleid) {
     operation.granuleIds = query.granuleid;
   }

@@ -39,7 +39,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('passes the source collection to the backend', function () {
         const source = this.service.operation.sources[0];
@@ -113,7 +113,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('and the backend service calls back with an error parameter', function () {
       StubService.hook({ params: { error: 'Something bad happened' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('propagates the error message into the response', function () {
         expect(this.res.text).to.include('Something bad happened');
@@ -126,7 +126,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('and the backend service calls back with a redirect', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('redirects the client to the provided URL', function () {
         expect(this.res.status).to.equal(303);
@@ -137,7 +137,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('and the backend service calls back with a redirect to an S3 location', function () {
       const signedPrefix = hookSignS3Object();
       StubService.hook({ params: { redirect: 's3://my-bucket/public/my-object.tif' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('redirects the client to a presigned url', function () {
         expect(this.res.status).to.equal(303);
@@ -151,7 +151,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         body: 'realistic mock data',
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('returns an HTTP 200 "OK" status code', function () {
         expect(this.res.status).to.equal(200);
@@ -165,7 +165,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when passed a blank outputCrs', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableName, { granuleId, outputCrs: '' });
+    hookRangesetRequest(version, collection, variableName, { query: { granuleId, outputCrs: '' } });
     it('accepts the request, passing an empty CRS to the backend', function () {
       expect(this.res.status).to.be.lessThan(400);
       expect(this.service.operation.crs).to.not.be;
@@ -181,7 +181,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const variableId2 = 'V1233801696-EEDTEST';
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableNames, query);
+    hookRangesetRequest(version, collection, variableNames, { query });
 
     it('passes multiple variables to the backend service', function () {
       const source = this.service.operation.sources[0];
@@ -198,7 +198,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     };
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableNames, query);
+    hookRangesetRequest(version, collection, variableNames, { query });
 
     it('passes no variables to the backend service', function () {
       const source = this.service.operation.sources[0];
@@ -210,7 +210,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const query = {};
 
     StubService.hook({ params: { status: 'successful' } });
-    hookRangesetRequest(version, collection, variableName, query);
+    hookRangesetRequest(version, collection, variableName, { query });
 
     it('is processed asynchronously', function () {
       expect(this.service.operation.isSynchronous).to.equal(false);
@@ -233,7 +233,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('synchronously makes the request', function () {
         expect(this.service.operation.isSynchronous).to.equal(true);
@@ -281,7 +281,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     // Starting up docker image can take more than 2 seconds
     this.timeout(10000);
     StubService.hookDockerImage('alpine:3.10.3');
-    hookRangesetRequest(version, collection, variableName, { granuleId });
+    hookRangesetRequest(version, collection, variableName, { query: { granuleId } });
 
     it('returns an error to the client', async function () {
       expect(this.res.text).to.include('Service request failed with an unknown error.');
@@ -305,7 +305,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           version,
           collection,
           variableName,
-          queryParams,
+          { query: queryParams },
         );
         expect(res.status).to.equal(400);
         expect(res.body).to.eql({
@@ -377,7 +377,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         version,
         collection,
         'NotAVariable',
-        { granuleId },
+        { query: { granuleId } },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
@@ -392,7 +392,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         version,
         collection,
         `all,${variableName}`,
-        { granuleId },
+        { query: { granuleId } },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
@@ -414,7 +414,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
   hookServersStartStop();
 
   describe('when provided a valid set of parameters', function () {
-    hookRangesetRequest(version, collection, 'all', {}, 'joe');
+    hookRangesetRequest(version, collection, 'all', { username: 'joe' });
 
     it('returns a 200 successful response', function () {
       expect(this.res.status).to.equal(200);
@@ -472,7 +472,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     const query = {
       subset: ['lat(30:40)', 'lon(-100:0)', 'time("1987-05-29T00:00Z":"1987-05-30T00:00Z")'],
     };
-    hookRangesetRequest(version, collection, 'all', query);
+    hookRangesetRequest(version, collection, 'all', { query });
 
     it('returns a 200 successful response', function () {
       expect(this.res.status).to.equal(200);
@@ -512,7 +512,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
   hookServersStartStop({ skipEarthdataLogin: false });
 
   describe('when provided a valid set of parameters', function () {
-    hookRangesetRequest(version, collection, 'all', {}, 'joe');
+    hookRangesetRequest(version, collection, 'all', { username: 'joe' });
 
     describe('attempting to retrieve the job via the job status route', function () {
       it('returns a 404 because no job is created', async function () {
