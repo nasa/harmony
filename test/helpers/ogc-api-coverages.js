@@ -67,13 +67,10 @@ function hookLandingPage(collection, version) {
  * @param {string} cookies The cookies to set on the call
  * @returns {supertest.Test} An 'awaitable' object that resolves to a Response
  */
-function rangesetRequest(app, version, collection, coverageId, query, cookies = null) {
+function rangesetRequest(app, version, collection, coverageId, { query = {}, headers = {} }) {
   const req = request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`);
-  if (cookies) {
-    req.set('Cookie', [cookies]);
-  }
-  return req.query(query);
+  return req.set(headers).query(query);
 }
 
 /**
@@ -106,13 +103,17 @@ function postRangesetRequest(app, version, collection, coverageId, form) {
  * Adds before/after hooks to run an OGC API coverages rangeset request
  *
  * @param {String} version The OGC coverages API version
- * @param {string} collection The CMR Collection ID to perform a service on
- * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
- * @param {object} query The query parameters to pass to the rangeset request
- * @param {String} username Optional username to simulate logging in
+ * @param {String} collection The CMR Collection ID to perform a service on
+ * @param {String} coverageId The coverage ID(s) / variable name(s), or "all"
+ * @param {Object} options additional options for the request
+ * @param {Object} [options.query] The query parameters to pass to the rangeset request
+ * @param {String} [options.headers] The headers to pass to the rangeset request
+ * @param {String} [options.username] Optional username to simulate logging in
  * @returns {void}
  */
-function hookRangesetRequest(version, collection, coverageId, query, username = undefined) {
+function hookRangesetRequest(
+  version, collection, coverageId, { query = {}, headers = {}, username = undefined },
+) {
   before(async function () {
     if (!username) {
       this.res = await rangesetRequest(
@@ -120,7 +121,7 @@ function hookRangesetRequest(version, collection, coverageId, query, username = 
         version,
         collection,
         coverageId,
-        query,
+        { query, headers },
       );
     } else {
       this.res = await rangesetRequest(
@@ -128,7 +129,7 @@ function hookRangesetRequest(version, collection, coverageId, query, username = 
         version,
         collection,
         coverageId,
-        query,
+        { query, headers },
       ).use(auth({ username }));
     }
   });
