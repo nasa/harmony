@@ -142,7 +142,7 @@ function router({ skipEarthdataLogin }) {
 
   const upload = multer({ storage: multerS3({
     s3,
-    bucket: process.env.UPLOAD_BUCKET,
+    bucket: process.env.UPLOAD_BUCKET || 'shapefiles',
   }) });
   const uploadFields = [{ name: 'shapefile', maxCount: 1 }];
   result.post(collectionPrefix('(ogc-api-coverages)'), upload.fields(uploadFields));
