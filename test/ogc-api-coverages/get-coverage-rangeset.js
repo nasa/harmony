@@ -253,6 +253,117 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when requesting output formats', function () {
+    const tiff = 'image/tiff';
+    const png = 'image/png';
+    const anyWildcard = '*/*';
+    const imageWildcard = 'image/*';
+    const wildcardTiff = '*/tiff';
+    const zarr = 'application/x-zarr';
+    const unsupportedFormat = 'text/plain';
+    const query = { granuleId };
+
+
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    describe('when providing an accept header and a format parameter', function () {
+      const pngQuery = { granuleId, format: png };
+      const headers = { accept: tiff };
+      hookRangesetRequest(version, collection, variableName, { pngQuery, headers });
+      it('gives the format parameter precedence over the accept header', function () {
+        expect(this.service.operation.outputFormat).to.equal(png);
+      });
+    });
+
+    describe('when providing */* for the accept header', function () {
+      const headers = { accept: anyWildcard };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('does not specify an output format', function () {
+        expect(this.service.operation.outputFormat).to.be.undefined;
+      });
+    });
+
+    describe('when providing */tiff for the accept header', function () {
+      const headers = { accept: imageWildcard };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('selects the first valid tiff format supported', function () {
+        expect(this.service.operation.outputFormat).to.equal(tiff);
+      });
+    });
+
+    describe('when providing image/* for the accept header', function () {
+      const headers = { accept: wildcardTiff };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('selects the first valid image format supported', function () {
+        expect(this.service.operation.outputFormat).to.equal(png);
+      });
+    });
+
+    describe('when providing an accept header with a parameter', function () {
+      const headers = { accept: `${zarr};q=0.9` };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('correctly parses the format from the header', function () {
+        expect(this.service.operation.outputFormat).to.equal(zarr);
+      });
+    });
+
+    describe('when providing an accept header for an unsupported format', function () {
+      const headers = { accept: unsupportedFormat };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('returns a 400 error', function () {
+        expect(this.res.status).to.equal(400);
+      });
+      it('indicates the format as the reason the request was rejected', function () {
+        const error = JSON.parse(this.res.body);
+        expect(error).to.equal({
+          code: 'harmony',
+          description: 'fix',
+        });
+      });
+    });
+
+    describe('when providing multiple formats supported by different services', function () {
+      const headers = { accept: `${zarr}, ${tiff}` };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('uses the first format in the list', function () {
+        expect(this.service.operation.outputFormat).to.equal(zarr);
+      });
+      it('uses the correct backend service', function () {
+        expect(this.service.type).to.equal('the zarr one');
+      });
+    });
+
+    describe('when providing multiple formats with the highest priority being unsupported', function () {
+      const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8` };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('uses the highest quality value format that is supported', function () {
+        expect(this.service.operation.outputFormat).to.equal(tiff);
+      });
+      it('uses the correct backend service', function () {
+        expect(this.service.type).to.equal('the tiff one');
+      });
+    });
+
+    describe('when providing multiple formats and not specifying a quality value for one of them', function () {
+      const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('treats the unspecified quality value as 1 (higher than any others)', function () {
+        expect(this.service.operation.outputFormat).to.equal(png);
+      });
+    });
+
+    describe('when requesting an unsupported format followed by */*', function () {
+      const headers = { accept: `${unsupportedFormat}, ${anyWildcard}` };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('returns a redirect 303 (and not a 400 error)', function () {
+        expect(this.res.status).to.equal(303);
+      });
+
+      it('does not specify an output format', function () {
+        expect(this.service.operation.outputFormat).to.be.undefined;
+      });
+    });
+  });
+
   describe('when the database catches fire during an asynchronous request', function () {
     before(function () {
       const testdb = path.resolve(__dirname, '../../db/test.sqlite3');
