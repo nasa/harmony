@@ -104,13 +104,35 @@ async function cmrSearch(path, query, token) {
 }
 
 /**
+ * Use `fetch` to POST multipart/form-data. This code has been pulled into a separate
+ * function simply as a work-around to a bug in `node replay` that breaks shapefile
+ * uploads to the CMR. By pulling it into a separate function we can stub it to have
+ * the necessary response.
+ *
+ * @param {string} path The URL path
+ * @param {*} formData A FormData object to be POST'd
+ * @param {object} headers The headers to be sent with the POST
+ * @returns {Response} A SuperAgent Response object
+ */
+async function fetchPost(path, formData, headers) {
+  const response = await fetch(`${cmrApiConfig.baseURL}${path}`, {
+    // response = await fetch('http://kubernetes.docker.internal:3003/granules.json', {
+    // response = await fetch('http://localhost:3003/granules.json', {
+    method: 'POST',
+    body: formData,
+    headers,
+  });
+  response.data = await response.json();
+  return response;
+}
+
+/**
  * Post a query to the CMR with the parameters in the given form
  *
  * @param {string} path The absolute path on the cmR API to the resource being queried
  * @param {object} form An object with keys and values representing the parameters for the query
  * @param {string} token Access token for the user
  * @returns {Promise<object>} The CMR query result
- * @private
  */
 async function cmrPostSearchBase(path, form, token) {
   let tempFile;
@@ -154,12 +176,7 @@ async function cmrPostSearchBase(path, form, token) {
 
   let response;
   try {
-    response = await fetch(`${cmrApiConfig.baseURL}${path}`, {
-      method: 'POST',
-      body: formData,
-      headers,
-    });
-    response.data = await response.json();
+    response = await module.exports.fetchPost(path, formData, headers);
   } finally {
     // not strictly needed as the library will handle this, but added
     // for completeness to make sure the temporary file gets deleted
@@ -339,7 +356,10 @@ module.exports = {
   getVariablesForCollection,
   queryGranulesForCollection,
   queryGranulesForCollectionWithMultipartForm,
-  cmrSearchBase, // Allows test stubbing
-  cmrPostSearchBase, // Allows test stubbing
-  cmrApiConfig, // Allow tests to override cmrApiConfig
+  // The following are exported to allow test stubbing
+  cmrSearchBase,
+  fetchPost,
+  cmrPostSearchBase,
+  // Allow tests to override cmrApiConfig
+  cmrApiConfig,
 };

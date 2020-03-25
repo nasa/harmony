@@ -1,8 +1,43 @@
+const { parse } = require('cookie');
 const url = require('url');
 const request = require('supertest');
 const { before, after, it, describe } = require('mocha');
 const { expect } = require('chai');
 const { auth } = require('./auth');
+
+/**
+ * Strip the signature from a signed cookie value
+ *
+ * @param {string} value The value portion of the cookie
+ * @returns {string} the unsigned cookie value
+ * @private
+ */
+function stripSignature(value) {
+  let m = value.match(/^s:j:(.*)\..*$/);
+  if (m) {
+    return JSON.parse(m[1]);
+  }
+  m = value.match(/^s:(.*)\..*$/);
+  if (m) {
+    return m[1];
+  }
+
+  return value;
+}
+
+/**
+ * Get value string from encoded cookie
+ *
+ * @param {string} encodedValue The encoded cookie value
+ * @param {string} key The key for the cookie
+ * @returns {string} The unencoded cookie string
+ * @private
+ */
+function cookieValue(encodedValue, key) {
+  const decoded = decodeURIComponent(encodedValue);
+  const parsed = parse(decoded);
+  return stripSignature(parsed[key]);
+}
 
 /**
  * Adds before/after hooks to navigate from the coverages landing page to a related resource
@@ -58,7 +93,7 @@ async function postRangesetRequest(app, version, collection, coverageId, form) {
 
   Object.keys(form).forEach((key) => {
     if (key === 'shapefile') {
-      req.attach(key, form[key].path, form[key].mimetype);
+      req.attach(key, form[key].path, { contentType: form[key].mimetype });
     } else {
       req.field(key, form[key]);
     }
@@ -103,7 +138,7 @@ function hookRangesetRequest(version, collection, coverageId, query, username = 
 }
 
 /**
- *
+ * Adds before/after hooks to run a POST getCoverageRangeset request
  *
  * @param {string} version The OGC API version
  * @param {string} collection The CMR Collection ID to perform a service on
@@ -120,6 +155,33 @@ function hookPostRangesetRequest(version, collection, coverageId, form) {
       coverageId,
       form,
     );
+
+    const shapefileHeader = this.res.headers['set-cookie'].filter((cookie) => {
+      const decoded = decodeURIComponent(cookie);
+      const parsed = parse(decoded);
+      return parsed.shapefile;
+    })[0];
+
+    const value = cookieValue(shapefileHeader, 'shapefile');
+    const cookies = { shapefile: value };
+
+    const redirectHeader = this.res.headers['set-cookie'].filter((cookie) => {
+      const decoded = decodeURIComponent(cookie);
+      const parsed = parse(decoded);
+      return !parsed.shapefile;
+    })[0];
+
+    const redirect = cookieValue(redirectHeader, 'redirect');
+    const query = redirect.split('?')[1];
+
+    this.res = await rangesetRequest(
+      this.frontend,
+      version,
+      collection,
+      coverageId,
+      query,
+      cookies,
+    ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
   });
   after(function () {
     delete this.res;
@@ -283,4 +345,5 @@ module.exports = {
   describeCollectionsRequest,
   hookDescribeCollectionsRequest,
   hookPostRangesetRequest,
+  stripSignature,
 };
