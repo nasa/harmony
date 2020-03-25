@@ -63,6 +63,7 @@ function addOpenApiRoutes(app) {
       getCoverageRangeType: TODO,
       getCoverageMetadata: TODO,
       getCoverageRangeset,
+      postCoverageRangeset: getCoverageRangeset,
       getCoverageAll: TODO,
     },
   });
