@@ -11,7 +11,6 @@ if (missingVars.length > 0) {
 }
 
 const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === 'true' };
-
 const oauthOptions = {
   client: {
     id: process.env.OAUTH_CLIENT_ID,

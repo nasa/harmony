@@ -62,8 +62,8 @@ async function cmrGranuleLocator(req, res, next) {
       operation.cmrHits += hits;
       const msTaken = new Date().getTime() - startTime;
       req.logger.info('Completed granule query', { durationMs: msTaken });
+      req.logger.info(`Found ${hits} granules`);
       const granules = [];
-      req.logger.error(`Found ${atomGranules.length} granules`);
       for (const granule of atomGranules) {
         const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);
         if (link) {

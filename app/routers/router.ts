@@ -136,14 +136,13 @@ function router({ skipEarthdataLogin }) {
 
   result.use(cookieParser(secret));
 
-  // Handle multipart/form-data (used for shapefiles). Files will be stored in the system
-  // temporary directory.
-  // const upload = multer({ storage: multer.diskStorage({ destination: '/tmp' }) });
+  // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
+  // an S3 bucket.
   const { s3 } = objectStoreForProtocol('s3');
 
   const upload = multer({ storage: multerS3({
     s3,
-    bucket: 'shapefiles',
+    bucket: process.env.UPLOAD_BUCKET || 'shapefiles',
   }) });
   const uploadFields = [{ name: 'shapefile', maxCount: 1 }];
   result.post(collectionPrefix('(ogc-api-coverages)'), upload.fields(uploadFields));
@@ -162,7 +161,6 @@ function router({ skipEarthdataLogin }) {
   ogcCoverageApi.addOpenApiRoutes(result);
   result.use(collectionPrefix('wcs'), service(logged(wcsFrontend)));
   result.use(collectionPrefix('wms'), service(logged(wmsFrontend)));
-
   eoss.addOpenApiRoutes(result);
 
   result.use(/^\/(wms|wcs|eoss|ogc-api-coverages)/, (req, res, next) => {

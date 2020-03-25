@@ -68,7 +68,6 @@ function addOpenApiRoutes(app) {
   });
 }
 
-
 /**
  * Adds error handling appropriate to the OGC API to the given app
  * @param {express.Application} app The express application which needs error handling routes

@@ -19,7 +19,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const variableName = 'red_var';
   const version = '1.0.0';
 
-  hookMockS3([ 'shapefiles' ]);
+  hookMockS3(['shapefiles']);
   hookServersStartStop({ skipEarthdataLogin: false });
 
   describe('when provided a valid set of parameters', function () {
