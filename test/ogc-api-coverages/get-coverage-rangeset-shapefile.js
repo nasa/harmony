@@ -7,6 +7,7 @@ const fs = require('fs');
 const { hookServersStartStop } = require('../helpers/servers');
 const StubService = require('../helpers/stub-service');
 const { auth } = require('../helpers/auth');
+const { hookMockS3 } = require('../helpers/object-store');
 const { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } = require('../helpers/ogc-api-coverages');
 const { hookCmr } = require('../helpers/stub-cmr');
 const isUUID = require('../../app/util/uuid');
@@ -18,6 +19,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const variableName = 'red_var';
   const version = '1.0.0';
 
+  hookMockS3([ 'shapefiles' ]);
   hookServersStartStop({ skipEarthdataLogin: false });
 
   describe('when provided a valid set of parameters', function () {

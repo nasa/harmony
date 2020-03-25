@@ -7,9 +7,7 @@ const tmp = require('tmp');
 const env = require('./env');
 const { CmrError } = require('./errors');
 const logger = require('./log');
-const {
-  objectStoreForProtocol,
-} = require('./object-store');
+const { objectStoreForProtocol } = require('./object-store');
 
 const clientIdHeader = {
   'Client-id': `${env.harmonyClientId}`,
@@ -23,8 +21,6 @@ const cmrApiConfig = {
 const acceptJsonHeader = {
   Accept: 'application/json',
 };
-
-const { s3 } = objectStoreForProtocol('s3');
 
 /**
  * Create a token header for the given access token string
@@ -144,7 +140,7 @@ async function cmrPostSearchBase(path, form, token) {
         // and downloading the shapefile from S3 to a temporary file before
         // uploading it to the CMR
         tempFile = tmp.fileSync();
-        const fileData = await s3.getObject({
+        const fileData = await objectStoreForProtocol('s3').getObject({
           Bucket: value.bucket,
           Key: value.key,
         }).promise();
