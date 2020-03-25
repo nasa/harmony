@@ -2,8 +2,8 @@
   "size": 0,
   "timeout": 0,
   "status": 200,
-  "header": {
-    "cmr-hits": ["10"]
+  "headers": {
+    "cmr-hits": ["1"]
   },
   "data": {
     "feed": {

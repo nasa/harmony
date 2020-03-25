@@ -1,4 +1,4 @@
-const urlUtil = require('../util/url');
+const urlUtil = require('./url');
 
 /**
  * This module provides functions to support setting cookies associated with the

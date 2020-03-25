@@ -5,7 +5,7 @@ const fetch = require('node-fetch');
 const querystring = require('querystring');
 const tmp = require('tmp');
 const env = require('./env');
-const { CmrError } = require('../util/errors');
+const { CmrError } = require('./errors');
 const logger = require('./log');
 const {
   objectStoreForProtocol,
@@ -116,8 +116,6 @@ async function cmrSearch(path, query, token) {
  */
 async function fetchPost(path, formData, headers) {
   const response = await fetch(`${cmrApiConfig.baseURL}${path}`, {
-    // response = await fetch('http://kubernetes.docker.internal:3003/granules.json', {
-    // response = await fetch('http://localhost:3003/granules.json', {
     method: 'POST',
     body: formData,
     headers,
