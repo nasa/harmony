@@ -131,6 +131,8 @@ async function fetchPost(path, formData, headers) {
 async function cmrPostSearchBase(path, form, token) {
   let tempFile;
   const formData = new FormData();
+  let s3Key;
+  let s3Bucket;
   await Promise.all(Object.keys(form).map(async (key) => {
     const value = form[key];
     if (value) {
@@ -140,9 +142,11 @@ async function cmrPostSearchBase(path, form, token) {
         // and downloading the shapefile from S3 to a temporary file before
         // uploading it to the CMR
         tempFile = tmp.fileSync();
+        s3Key = value.key;
+        s3Bucket = value.bucket;
         const fileData = await objectStoreForProtocol('s3').s3.getObject({
-          Bucket: value.bucket,
-          Key: value.key,
+          Bucket: s3Bucket,
+          Key: s3Key,
         }).promise();
 
         fs.writeFileSync(tempFile.name, fileData.Body);
@@ -175,6 +179,11 @@ async function cmrPostSearchBase(path, form, token) {
     // not strictly needed as the library will handle this, but added
     // for completeness to make sure the temporary file gets deleted
     tempFile.removeCallback();
+    // remove the s3 object
+    await objectStoreForProtocol('s3').s3.deleteObject({
+      Bucket: s3Bucket,
+      Key: s3Key,
+    }).promise();
   }
 
   return response;
