@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
 const { parse } = require('cookie');
+const fetch = require('node-fetch');
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
 const fs = require('fs');
@@ -35,7 +36,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
       const cmrResp = JSON.parse(cmrRespStr);
-      // stubCmr('fetchPost', cmrResp);
+      cmrResp.headers = new fetch.Headers(cmrResp.headers);
       hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
