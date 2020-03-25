@@ -140,7 +140,7 @@ async function cmrPostSearchBase(path, form, token) {
         // and downloading the shapefile from S3 to a temporary file before
         // uploading it to the CMR
         tempFile = tmp.fileSync();
-        const fileData = await objectStoreForProtocol('s3').getObject({
+        const fileData = await objectStoreForProtocol('s3').s3.getObject({
           Bucket: value.bucket,
           Key: value.key,
         }).promise();

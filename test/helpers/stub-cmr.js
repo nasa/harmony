@@ -8,6 +8,7 @@ const cmr = require('../../app/util/cmr');
  * @param {string} functionName The name of the function to be stubbed
  * @param {*} response The response the function should return
  * @returns {void}
+ * @private
  */
 function stubCmr(functionName, response) {
   sinon.stub(cmr, functionName)
@@ -22,6 +23,7 @@ function stubCmr(functionName, response) {
  *
  * @param {string} functionName The name of the function to reset
  * @returns {void}
+ * @private
  */
 function unStubCmr(functionName) {
   if (cmr[functionName].restore) cmr[functionName].restore();
@@ -53,6 +55,4 @@ function hookCmr(functionName, response) {
 
 module.exports = {
   hookCmr,
-  stubCmr,
-  unStubCmr,
 };
