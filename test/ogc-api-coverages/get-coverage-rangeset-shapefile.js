@@ -22,8 +22,9 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   hookMockS3(['shapefiles']);
   hookServersStartStop({ skipEarthdataLogin: false });
 
+  // ESRI shapefile
   describe('when provided a valid set of parameters', function () {
-    const form = {
+    let form = {
       subset: ['time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
       interpolation: 'near',
       scaleExtent: '0,2500000.3,1500000,3300000',
@@ -34,7 +35,9 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' },
     };
 
-    describe('calling the backend service', function () {
+    // ESRI shapefile
+    describe('calling the backend service with an ESRI shapefile', function () {
+      form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
       const cmrResp = JSON.parse(cmrRespStr);
@@ -96,6 +99,40 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       });
       it('passes the width parameter to the backend', function () {
         expect(this.service.operation.outputWidth).to.equal(1000);
+      });
+    });
+
+    // GeoJSON
+    describe('calling the backend service with a GeoJSON shapefile', function () {
+      form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } } };
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
+      const cmrResp = JSON.parse(cmrRespStr);
+      cmrResp.headers = new fetch.Headers(cmrResp.headers);
+      hookCmr('fetchPost', cmrResp);
+      hookPostRangesetRequest(version, collection, variableName, form);
+
+      it('correctly identifies the granules based on the shapefile', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.granules.length === 1);
+        expect(source.granules[0].id).to.equal(granuleId);
+      });
+    });
+
+    // KML
+    describe('calling the backend service with a KML shapefile', function () {
+      form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.kml', mimetype: 'application/vnd.google-earth.kml+xml' } } };
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
+      const cmrResp = JSON.parse(cmrRespStr);
+      cmrResp.headers = new fetch.Headers(cmrResp.headers);
+      hookCmr('fetchPost', cmrResp);
+      hookPostRangesetRequest(version, collection, variableName, form);
+
+      it('correctly identifies the granules based on the shapefile', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.granules.length === 1);
+        expect(source.granules[0].id).to.equal(granuleId);
       });
     });
   });

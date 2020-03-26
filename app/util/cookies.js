@@ -47,9 +47,13 @@ function _redirect(req) {
   return ['redirect', urlUtil.getRequestUrl(req)];
 }
 
-const recipes = [
+const edlRecipes = [
   _shapefile,
   _redirect,
+];
+
+const authorizedRecipes = [
+  _shapefile,
 ];
 
 /**
@@ -58,10 +62,10 @@ const recipes = [
  * @param {object} req The request
  * @param {object} res The response
  * @param {object} options The options to use when setting the cookie
- * @returns {void} nothing
+ * @returns {void}
  */
 function setCookiesForEdl(req, res, options) {
-  recipes.forEach((recipe) => {
+  edlRecipes.forEach((recipe) => {
     const [name, value] = recipe(req);
     if (name) {
       res.cookie(name, value, options);
@@ -69,4 +73,21 @@ function setCookiesForEdl(req, res, options) {
   });
 }
 
-module.exports = { setCookiesForEdl };
+/**
+ * Set cookies on the response when handling an authorized request.
+ *
+ * @param {object} req The request
+ * @param {object} res The response
+ * @param {object} options The options to use when setting the cookie
+ * @returns {void}
+ */
+function setCookiesForAuthorized(req, res, options) {
+  authorizedRecipes.forEach((recipe) => {
+    const [name, value] = recipe(req);
+    if (name) {
+      res.cookie(name, value, options);
+    }
+  });
+}
+
+module.exports = { setCookiesForEdl, setCookiesForAuthorized };
