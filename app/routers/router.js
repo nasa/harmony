@@ -134,6 +134,11 @@ function router({ skipEarthdataLogin }) {
     throw new Error('The "COOKIE_SECRET" environment variable must be set to a random secret string.');
   }
 
+  const uploadBucket = process.env.UPLOAD_BUCKET;
+  if (!uploadBucket) {
+    throw new Error('The "UPLOAD_BUCKET" environment variable must be set to a valid S3 bucket');
+  }
+
   result.use(cookieParser(secret));
 
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
@@ -142,7 +147,7 @@ function router({ skipEarthdataLogin }) {
 
   const upload = multer({ storage: multerS3({
     s3,
-    bucket: process.env.UPLOAD_BUCKET || 'shapefiles',
+    bucket: uploadBucket,
   }) });
   const uploadFields = [{ name: 'shapefile', maxCount: 1 }];
   result.post(collectionPrefix('(ogc-api-coverages)'), upload.fields(uploadFields));
