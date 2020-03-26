@@ -35,8 +35,11 @@ function isMimeTypeAccepted(mimeType, acceptHeader) {
   if (acceptHeader === anyWildcard) {
     return true;
   }
-  const headerValue = acceptHeader.split(';')[0];
-  const re = new RegExp(headerValue);
+  const headerValue = acceptHeader
+    .split(';')[0]
+    .replace('*', '.*')
+    .replace('/', '\\/');
+  const re = new RegExp(`^${headerValue}$`);
   return !!mimeType.match(re);
 }
 
