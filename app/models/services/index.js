@@ -7,6 +7,7 @@ const LocalDockerService = require('./local-docker-service');
 const HttpService = require('./http-service');
 const NoOpService = require('./no-op-service');
 const { NotFoundError } = require('../../util/errors');
+const { isMimeTypeAccepted } = require('../../util/content-negotiation');
 
 let serviceConfigs = null;
 
@@ -69,15 +70,19 @@ function isCollectionMatch(operation, serviceConfig) {
 }
 
 /**
- * Given a data operation, returns a service instance appropriate for performing that operation
+ * Given a data operation, returns a service instance appropriate for performing that operation.
+ * The operation may also be mutated to set additional properties as part of this function.
  *
- * @param {DataOperation} operation The operation to perform
- * @param {object} configs The configuration to use for finding the operation, with all variables
+ * @param {DataOperation} operation The operation to perform. Note that this function may mutate
+ *    the operation.
+ * @param {Object} context Additional context that's not part of the operation, but influences the
+ *    choice regarding the service to use
+ * @param {Object} configs The configuration to use for finding the operation, with all variables
  *    resolved (default: the contents of config/services.yml)
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @throws {NotFoundError} If no service can perform the given operation
  */
-function forOperation(operation, configs = serviceConfigs) {
+function forOperation(operation, context, configs = serviceConfigs) {
   let matches = [];
   if (operation) {
     matches = configs.filter((config) => isCollectionMatch(operation, config));
@@ -92,9 +97,31 @@ function forOperation(operation, configs = serviceConfigs) {
     if (matches.length === 0) {
       throw new NotFoundError(`Could not find a service to reformat to ${format} for the given collection`);
     }
+  } else if (context.requestedMimeTypes) {
+    for (const mimeType of context.requestedMimeTypes) {
+      let internalMatches = matches.map((config) => {
+        const supportedFormats = getIn(config, 'capabilities.output_formats', []);
+        const formatMatch = supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType));
+        if (formatMatch) {
+          return {
+            service: config,
+            format: supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType)),
+          };
+        }
+        return null;
+      });
+      internalMatches = matches.filter((v) => v);
+      if (internalMatches.length > 0) {
+        // eslint-disable-next-line no-param-reassign
+        operation.outputFormat = internalMatches[0].format;
+        matches = internalMatches.map((match) => match.service);
+        break;
+      }
+    }
+    if (!operation.outputFormat) {
+      throw new NotFoundError(`Could not find a service to reformat to one of the requested formats "${context.requestedMimeTypes}" for the given collection`);
+    }
   }
-
-  // TODO: Capabilities match.  Should be fuzzier and warn, rather than erroring?
 
   return buildService(matches[0], operation);
 }

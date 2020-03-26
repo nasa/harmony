@@ -32,7 +32,7 @@ describe('services.forOperation', function () {
       });
 
       it('returns the first service for the collection from the service configuration', function () {
-        const service = forOperation(this.operation, this.config);
+        const service = forOperation(this.operation, {}, this.config);
         expect(service.config.name).to.equal('first-service');
         expect(service.constructor.name).to.equal('LocalDockerService');
       });
@@ -43,7 +43,7 @@ describe('services.forOperation', function () {
         this.operation.outputFormat = 'image/png';
       });
       it('returns the second service for the collection from the service configuration', function () {
-        const service = forOperation(this.operation, this.config);
+        const service = forOperation(this.operation, {}, this.config);
         expect(service.config.name).to.equal('second-service');
         expect(service.constructor.name).to.equal('HttpService');
       });
@@ -54,7 +54,7 @@ describe('services.forOperation', function () {
         this.operation.outputFormat = 'image/gif';
       });
       it('selects the first service for the collection from the service configuration', function () {
-        expect(() => forOperation(this.operation, this.config)).to.throw('Could not find a service to reformat to image/gif for the given collection');
+        expect(() => forOperation(this.operation, {}, this.config)).to.throw('Could not find a service to reformat to image/gif for the given collection');
       });
     });
   });
@@ -80,7 +80,7 @@ describe('services.forOperation', function () {
     });
 
     it('returns the service configured for the collection', function () {
-      const service = forOperation(this.operation, this.config);
+      const service = forOperation(this.operation, {}, this.config);
       expect(service.config.name).to.equal('matching-service');
       expect(service.constructor.name).to.equal('LocalDockerService');
     });
@@ -102,7 +102,7 @@ describe('services.forOperation', function () {
     });
 
     it('returns the no op service', function () {
-      const service = forOperation(this.operation, this.config);
+      const service = forOperation(this.operation, {}, this.config);
       expect(service.constructor.name).to.equal('NoOpService');
       expect(service.operation).to.equal(this.operation);
     });
