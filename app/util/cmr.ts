@@ -144,7 +144,6 @@ async function processShapefile(metadata, formData) {
   return { tempFile, s3Key, s3Bucket };
 }
 
-
 /**
  * Post a query to the CMR with the parameters in the given form
  *
