@@ -71,7 +71,7 @@ async function serviceInvoker(req, res) {
   const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
   req.operation.client = env.harmonyClientId;
-  const service = services.forOperation(req.operation);
+  const service = services.forOperation(req.operation, req.context);
   let serviceResult = null;
   const serviceLogger = req.logger.child({
     application: 'backend',
