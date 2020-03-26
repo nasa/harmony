@@ -268,7 +268,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('when providing an accept header and a format parameter', function () {
       const pngQuery = { granuleId, format: png };
       const headers = { accept: tiff };
-      hookRangesetRequest(version, collection, variableName, { pngQuery, headers });
+      hookRangesetRequest(version, collection, variableName, { query: pngQuery, headers });
       it('gives the format parameter precedence over the accept header', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
@@ -277,8 +277,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('when providing */* for the accept header', function () {
       const headers = { accept: anyWildcard };
       hookRangesetRequest(version, collection, variableName, { headers, query });
-      it('does not specify an output format', function () {
-        expect(this.service.operation.outputFormat).to.be.undefined;
+      it('chooses the first output format supported by the service (see services.yml)', function () {
+        expect(this.service.operation.outputFormat).to.equal(tiff);
       });
     });
 
@@ -294,7 +294,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       const headers = { accept: wildcardTiff };
       hookRangesetRequest(version, collection, variableName, { headers, query });
       it('selects the first valid image format supported', function () {
-        expect(this.service.operation.outputFormat).to.equal(png);
+        expect(this.service.operation.outputFormat).to.equal(tiff);
       });
     });
 
@@ -309,14 +309,14 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('when providing an accept header for an unsupported format', function () {
       const headers = { accept: unsupportedFormat };
       hookRangesetRequest(version, collection, variableName, { headers, query });
-      it('returns a 400 error', function () {
-        expect(this.res.status).to.equal(400);
+      it('returns a 404 error', function () {
+        expect(this.res.status).to.equal(404);
       });
       it('indicates the format as the reason the request was rejected', function () {
-        const error = JSON.parse(this.res.body);
-        expect(error).to.equal({
-          code: 'harmony',
-          description: 'fix',
+        const error = JSON.parse(this.res.text);
+        expect(error).to.eql({
+          code: 'harmony.NotFoundError',
+          description: 'Error: Could not find a service to reformat to any of the requested formats [text/plain] for the given collection',
         });
       });
     });
@@ -328,18 +328,18 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(this.service.operation.outputFormat).to.equal(zarr);
       });
       it('uses the correct backend service', function () {
-        expect(this.service.type).to.equal('the zarr one');
+        expect(this.service.name).to.equal('harmony/netcdf-to-zarr');
       });
     });
 
     describe('when providing multiple formats with the highest priority being unsupported', function () {
-      const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8` };
+      const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
       hookRangesetRequest(version, collection, variableName, { headers, query });
       it('uses the highest quality value format that is supported', function () {
-        expect(this.service.operation.outputFormat).to.equal(tiff);
+        expect(this.service.operation.outputFormat).to.equal(png);
       });
       it('uses the correct backend service', function () {
-        expect(this.service.type).to.equal('the tiff one');
+        expect(this.service.name).to.equal('harmony/gdal');
       });
     });
 
@@ -354,12 +354,12 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('when requesting an unsupported format followed by */*', function () {
       const headers = { accept: `${unsupportedFormat}, ${anyWildcard}` };
       hookRangesetRequest(version, collection, variableName, { headers, query });
-      it('returns a redirect 303 (and not a 400 error)', function () {
+      it('returns a redirect 303 (and not a 404 error)', function () {
         expect(this.res.status).to.equal(303);
       });
 
-      it('does not specify an output format', function () {
-        expect(this.service.operation.outputFormat).to.be.undefined;
+      it('chooses the first output format supported by the service (see services.yml)', function () {
+        expect(this.service.operation.outputFormat).to.equal(tiff);
       });
     });
   });

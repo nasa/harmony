@@ -119,7 +119,7 @@ function forOperation(operation, context, configs = serviceConfigs) {
       }
     }
     if (!operation.outputFormat) {
-      throw new NotFoundError(`Could not find a service to reformat to one of the requested formats "${context.requestedMimeTypes}" for the given collection`);
+      throw new NotFoundError(`Could not find a service to reformat to any of the requested formats [${context.requestedMimeTypes}] for the given collection`);
     }
   }
 
