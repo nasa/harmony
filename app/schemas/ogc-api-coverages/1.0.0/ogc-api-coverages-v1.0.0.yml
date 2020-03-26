@@ -356,13 +356,17 @@ paths:
       - $ref: '#/components/parameters/format'
       requestBody:
         content:
-          multipart/form-data:
+          multipart/mixed:
             schema:
               type: object
               properties:
                 shapefile:
                   type: string
                   format: binary
+            encoding:
+              shapefile:
+                contentType: 'application/shapefile+zip,application/geo+json,application/vnd.google-earth.kml+xml'
+
       responses:
         "200":
           description: A coverage's range set.

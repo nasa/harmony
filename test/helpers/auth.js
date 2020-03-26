@@ -1,8 +1,6 @@
 const sinon = require('sinon');
 const cookie = require('cookie');
-const {
-  sign,
-} = require('cookie-signature');
+const { sign } = require('cookie-signature');
 const Client = require('simple-oauth2/lib/client');
 
 /**
