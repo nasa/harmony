@@ -97,7 +97,7 @@ function forOperation(operation, context, configs = serviceConfigs) {
     if (matches.length === 0) {
       throw new NotFoundError(`Could not find a service to reformat to ${format} for the given collection`);
     }
-  } else if (context.requestedMimeTypes) {
+  } else if (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
     for (const mimeType of context.requestedMimeTypes) {
       let internalMatches = matches.map((config) => {
         const supportedFormats = getIn(config, 'capabilities.output_formats', []);
@@ -110,7 +110,7 @@ function forOperation(operation, context, configs = serviceConfigs) {
         }
         return null;
       });
-      internalMatches = matches.filter((v) => v);
+      internalMatches = internalMatches.filter((v) => v);
       if (internalMatches.length > 0) {
         // eslint-disable-next-line no-param-reassign
         operation.outputFormat = internalMatches[0].format;

@@ -24,9 +24,11 @@ function getCoverageRangeset(req, res, next) {
   const context = {};
   if (query.format) {
     operation.outputFormat = query.format;
-  } else {
-    const acceptMimeTypes = parseAcceptHeader(req.headers.accept);
-    context.requestedMimeTypes = acceptMimeTypes.map((v) => v.value);
+  } else if (req.headers.accept) {
+    const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
+    context.requestedMimeTypes = acceptedMimeTypes
+      .map((v) => v.mimeType)
+      .filter((v) => v);
   }
 
   if (query.granuleid) {
