@@ -1,7 +1,7 @@
 const simpleOAuth2 = require('simple-oauth2');
 const { ForbiddenError } = require('../util/errors');
 const { listToText } = require('../util/string');
-const { setCookiesForEdl } = require('../util/cookies');
+const { setCookiesForEdl, setCookiesForAuthorized } = require('../util/cookies');
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
@@ -121,6 +121,7 @@ async function handleAuthorized(oauth2, req, res, next) {
   const { token } = req.signedCookies;
   const oauthToken = oauth2.accessToken.create(token);
   req.accessToken = oauthToken.token.access_token;
+  setCookiesForAuthorized(req, res, cookieOptions);
   try {
     if (oauthToken.expired()) {
       const refreshed = await oauthToken.refresh();
