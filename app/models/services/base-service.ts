@@ -30,7 +30,7 @@ class BaseService {
     this.operation = operation;
     this.operation.isSynchronous = this.isSynchronous;
     // To be fixed by HARMONY-203 to not default to TIFF
-    this.operation.outputFormat = this.operation.outputFormat || 'image/tiff';
+    // this.operation.outputFormat = this.operation.outputFormat;
   }
 
   /**

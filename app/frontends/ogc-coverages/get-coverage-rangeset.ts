@@ -5,6 +5,7 @@ const { RequestValidationError } = require('../../util/errors');
 const { wrap } = require('../../util/array');
 const { parseVariables } = require('./util/variable-parsing');
 const { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } = require('./util/parameter-parsing');
+const { parseAcceptHeader } = require('../../util/content-negotiation');
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -20,10 +21,12 @@ const { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, Parameter
 function getCoverageRangeset(req, res, next) {
   const query = keysToLowerCase(req.query);
   const operation = new DataOperation();
+  const context = {};
   if (query.format) {
     operation.outputFormat = query.format;
   } else {
-    // Check for an accept header
+    const acceptMimeTypes = parseAcceptHeader(req.headers.accept);
+    context.requestedMimeTypes = acceptMimeTypes.map((v) => v.value);
   }
 
   if (query.granuleid) {
@@ -76,6 +79,7 @@ function getCoverageRangeset(req, res, next) {
   }
 
   req.operation = operation;
+  req.context = context;
   next();
 }
 
