@@ -105,5 +105,35 @@ describe('util/content-negotiation', function () {
     it('returns true for any value when the header is */*', function () {
       expect(isMimeTypeAccepted('any garbage', '*/*')).to.be.true;
     });
+    describe('when the header is image/*', function () {
+      const header = 'image/*';
+      it('returns true for image/tiff', function () {
+        expect(isMimeTypeAccepted('image/tiff', header)).to.be.true;
+      });
+      it('returns true for image/png', function () {
+        expect(isMimeTypeAccepted('image/png', header)).to.be.true;
+      });
+      it('returns false for application/zarr', function () {
+        expect(isMimeTypeAccepted('application/zarr', header)).to.be.false;
+      });
+      it('returns false for application/image+tiff', function () {
+        expect(isMimeTypeAccepted('application/image+tiff', header)).to.be.false;
+      });
+    });
+    describe('when the header is */tiff', function () {
+      const header = '*/tiff';
+      it('returns true for image/tiff', function () {
+        expect(isMimeTypeAccepted('image/tiff', header)).to.be.true;
+      });
+      it('returns true for application/tiff', function () {
+        expect(isMimeTypeAccepted('application/tiff', header)).to.be.true;
+      });
+      it('returns false for image/geotiff', function () {
+        expect(isMimeTypeAccepted('image/geotiff', header)).to.be.false;
+      });
+    });
+    it('returns true when there is an exact match', function () {
+      expect(isMimeTypeAccepted('application/zarr', 'application/zarr')).to.be.true;
+    });
   });
 });
