@@ -53,14 +53,14 @@ const recipes = [
 ];
 
 /**
- * Set cookies on the response
+ * Set cookies on the response before calling EDL.
  *
  * @param {object} req The request
  * @param {object} res The response
  * @param {object} options The options to use when setting the cookie
  * @returns {void} nothing
  */
-function setCookies(req, res, options) {
+function setCookiesForEdl(req, res, options) {
   recipes.forEach((recipe) => {
     const [name, value] = recipe(req);
     if (name) {
@@ -69,4 +69,4 @@ function setCookies(req, res, options) {
   });
 }
 
-module.exports = { setCookies };
+module.exports = { setCookiesForEdl };

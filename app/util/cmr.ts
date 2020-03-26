@@ -30,7 +30,7 @@ const acceptJsonHeader = {
  * or an empty object if the token is not set
  * @private
  */
-function makeTokenHeader(token) {
+function _makeTokenHeader(token) {
   return cmrApiConfig.useToken && token ? {
     'Echo-token': `${token}:${process.env.OAUTH_CLIENT_ID}`,
   } : {};
@@ -42,8 +42,9 @@ function makeTokenHeader(token) {
  * @param {Object} response The response from the CMR
  * @returns {void}
  * @throws {CmrError} if the CMR response indicates an error
+ * @private
  */
-function handleCmrErrors(response) {
+function _handleCmrErrors(response) {
   const { status } = response;
   if (status >= 500) {
     logger.error(`CMR call failed with statue '${status}'`);
@@ -64,13 +65,12 @@ function handleCmrErrors(response) {
  * @param {object} query The key/value pairs to send to the CMR query string
  * @param {string} token Access token for user request
  * @returns {Promise<object>} The CMR query result
- * @private
  */
 async function cmrSearchBase(path, query, token) {
   const querystr = querystring.stringify(query);
   const headers = {
     ...clientIdHeader,
-    ...makeTokenHeader(token),
+    ..._makeTokenHeader(token),
     ...acceptJsonHeader,
   };
   const response = await fetch(`${cmrApiConfig.baseURL}${path}?${querystr}`,
@@ -93,9 +93,9 @@ async function cmrSearchBase(path, query, token) {
  * @throws {CmrError} If the CMR returns an error status
  * @private
  */
-async function cmrSearch(path, query, token) {
+async function _cmrSearch(path, query, token) {
   const response = await cmrSearchBase(path, query, token);
-  handleCmrErrors(response);
+  _handleCmrErrors(response);
   return response;
 }
 
@@ -121,9 +121,34 @@ async function fetchPost(path, formData, headers) {
 }
 
 /**
+ * Process a shapefile entry by downloading the file from S3 and adding an entry for it in
+ * a mulitpart/form-data object to be uploaded to the CMR.
+ *
+ * @param {Object} metadata The value containing the shapefile metadata
+ * @param {Object} formData the Form data
+ * @returns {*} A tuple containing the temporary file created, the key, and bucket to the original
+ * file on S3.
+ */
+async function processShapefile(metadata, formData) {
+  const tempFile = tmp.fileSync();
+  const s3Key = metadata.key;
+  const s3Bucket = metadata.bucket;
+  const fileData = await objectStoreForProtocol('s3').s3.getObject({
+    Bucket: s3Bucket,
+    Key: s3Key,
+  }).promise();
+  fs.writeFileSync(tempFile.name, fileData.Body);
+  formData.append('shapefile', fs.createReadStream(tempFile.name), {
+    contentType: metadata.mimetype,
+  });
+  return { tempFile, s3Key, s3Bucket };
+}
+
+
+/**
  * Post a query to the CMR with the parameters in the given form
  *
- * @param {string} path The absolute path on the cmR API to the resource being queried
+ * @param {string} path The absolute path on the CMR API to the resource being queried
  * @param {object} form An object with keys and values representing the parameters for the query
  * @param {string} token Access token for the user
  * @returns {Promise<object>} The CMR query result
@@ -141,20 +166,7 @@ async function cmrPostSearchBase(path, form, token) {
         // directly from S3 to the CMR and failing I'm giving up for now
         // and downloading the shapefile from S3 to a temporary file before
         // uploading it to the CMR
-        tempFile = tmp.fileSync();
-        s3Key = value.key;
-        s3Bucket = value.bucket;
-        const fileData = await objectStoreForProtocol('s3').s3.getObject({
-          Bucket: s3Bucket,
-          Key: s3Key,
-        }).promise();
-
-        fs.writeFileSync(tempFile.name, fileData.Body);
-
-        formData.append('shapefile',
-          fs.createReadStream(tempFile.name), {
-            contentType: value.mimetype,
-          });
+        ({ tempFile, s3Key, s3Bucket } = await processShapefile(value, formData));
       } else if (Array.isArray(value)) {
         value.forEach((v) => {
           formData.append(key, v);
@@ -167,7 +179,7 @@ async function cmrPostSearchBase(path, form, token) {
 
   const headers = {
     ...clientIdHeader,
-    ...makeTokenHeader(token),
+    ..._makeTokenHeader(token),
     ...acceptJsonHeader,
     ...formData.getHeaders(),
   };
@@ -200,9 +212,9 @@ async function cmrPostSearchBase(path, form, token) {
  * @throws {CmrError} If the CMR returns an error status
  * @private
  */
-async function cmrPostSearch(path, form, token) {
+async function _cmrPostSearch(path, form, token) {
   const response = await module.exports.cmrPostSearchBase(path, form, token);
-  handleCmrErrors(response);
+  _handleCmrErrors(response);
 
   return response;
 }
@@ -216,7 +228,7 @@ async function cmrPostSearch(path, form, token) {
  * @private
  */
 async function queryVariables(query, token) {
-  const variablesResponse = await cmrSearch('/search/variables.json', query, token);
+  const variablesResponse = await _cmrSearch('/search/variables.json', query, token);
   return variablesResponse.data.items;
 }
 
@@ -229,7 +241,7 @@ async function queryVariables(query, token) {
  * @private
  */
 async function queryCollections(query, token) {
-  const collectionsResponse = await cmrSearch('/search/collections.json', query, token);
+  const collectionsResponse = await _cmrSearch('/search/collections.json', query, token);
   return collectionsResponse.data.feed.entry;
 }
 
@@ -243,7 +255,7 @@ async function queryCollections(query, token) {
  */
 async function queryGranules(query, token) {
   // TODO: Paging / hits
-  const granulesResponse = await cmrSearch('/search/granules.json', query, token);
+  const granulesResponse = await _cmrSearch('/search/granules.json', query, token);
   const cmrHits = parseInt(granulesResponse.headers.get('cmr-hits'), 10);
   return {
     hits: cmrHits,
@@ -262,7 +274,7 @@ async function queryGranules(query, token) {
  */
 async function queryGranuleUsingMultipartForm(form, token) {
   // TODO: Paging / hits
-  const granuleResponse = await cmrPostSearch('/search/granules.json', form, token);
+  const granuleResponse = await _cmrPostSearch('/search/granules.json', form, token);
   const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
   return {
     hits: cmrHits,
