@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 const fs = require('fs');
 const path = require('path');
 const Ajv = require('ajv');
@@ -17,24 +16,44 @@ function readSchema(version) {
   return JSON.parse(fs.readFileSync(schemaPath));
 }
 
-const validator = new Ajv({ schemaId: 'auto' });
-validator.addSchema(readSchema('0.4.0'), 'v0.4.0');
-validator.addSchema(readSchema('0.5.0'), 'v0.5.0');
-
 /**
- * Returns an updated model that is compatible with the 0.4.0 schema
- *
- * @param {object} model The data operation model
- * @returns {object} The data operation model compatible with the 0.4.0 schema
- * @private
+ * List of schema objects in order of descending version number.
+ * Each object defines these fields:
+ *   {string} version The version number of the given schema
+ *   {object} schema The JSON schema for the version, parsed into an object
+ *   {function} down (optional) A function that takes a model in the schema's version and returns a
+ *      model for the schema one version lower.  If this is not provided, schema translations will
+ *      be unable to downgrade from the version
  */
-function modelTo0_4_0(model) {
-  const revertedModel = cloneDeep(model);
-  delete revertedModel.format.interpolation;
-  delete revertedModel.format.scaleExtent;
-  delete revertedModel.format.scaleSize;
+const schemaVersions = [
+  {
+    version: '0.6.0',
+    schema: readSchema('0.6.0'),
+    down: (model) => {
+      const revertedModel = cloneDeep(model);
+      return revertedModel;
+    },
+  },
+  {
+    version: '0.5.0',
+    schema: readSchema('0.5.0'),
+    down: (model) => {
+      const revertedModel = cloneDeep(model);
+      delete revertedModel.format.interpolation;
+      delete revertedModel.format.scaleExtent;
+      delete revertedModel.format.scaleSize;
+      return revertedModel;
+    },
+  },
+  {
+    version: '0.4.0',
+    schema: readSchema('0.4.0'),
+  },
+];
 
-  return revertedModel;
+const validator = new Ajv({ schemaId: 'auto' });
+for (const { schema, version } of schemaVersions) {
+  validator.addSchema(schema, version);
 }
 
 /**
@@ -443,22 +462,38 @@ class DataOperation {
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
-   * @param {string} [version='0.4.0'] The version to serialize
+   * @param {string} [version] The version to serialize
    * @param {bool} [validate=true] true if the serialized output should be JSON Schema validated
    *   before returning
    * @returns {string} The serialized data operation in the requested version
-   * @throws {TypeError} If validate is `true` and validation fails
+   * @throws {TypeError} If validate is `true` and validation fails, or if version is not provided
+   * @throws {RangeError} If the provided version cannot be serialized
    * @memberof DataOperation
    */
-  serialize(version = '0.5.0', validate = true) {
-    let toWrite = this.model;
-    if (version === '0.4.0') {
-      toWrite = modelTo0_4_0(this.model);
+  serialize(version, validate = true) {
+    if (!version) {
+      throw new TypeError('Schema version is required to serialize DataOperation objects');
     }
-    toWrite.version = version;
+    let toWrite = this.model;
+    let matchingSchema = null;
+    for (const schemaVersion of schemaVersions) {
+      if (schemaVersion.version === version) {
+        matchingSchema = schemaVersion;
+        break;
+      }
+      if (!schemaVersion.down) {
+        break;
+      }
+      toWrite = schemaVersion.down(toWrite);
+    }
 
+    if (!matchingSchema) {
+      throw new RangeError(`Unable to produce a data operation with version ${version}`);
+    }
+
+    toWrite.version = version;
     if (validate) {
-      const valid = validator.validate(`v${version}`, toWrite);
+      const valid = validator.validate(version, toWrite);
       if (!valid) {
         throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validator.errors)}`);
       }
