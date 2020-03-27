@@ -1,6 +1,6 @@
 {
-  "$schema": "../app/schemas/data-operation/0.5.0/data-operation-v0.5.0.json",
-  "version": "0.5.0",
+  "$schema": "../app/schemas/data-operation/0.6.0/data-operation-v0.6.0.json",
+  "version": "0.6.0",
   "callback": "http://localhost/some-path",
   "user": "jdoe",
   "sources": [
@@ -47,7 +47,11 @@
       40.46108325823108,
       -80.46305347517998,
       59.72697747022849
-    ]
+    ],
+    "shape": {
+      "href": "s3://example-bucket/some/path/resource.json",
+      "type": "application/geo+json"
+    }
   },
   "isSynchronous": false,
   "requestId": "c045c793-19f1-43b5-9547-c87a5c7dfadb",

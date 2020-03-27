@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.5.0.json",
+  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.6.0.json",
   "$ref": "#/definitions/DataOperation",
   "definitions": {
     "DataOperation": {
@@ -234,6 +234,10 @@
           },
           "minItems": 4,
           "maxItems": 4
+        },
+        "shape": {
+          "description": "Reference to a location containing a shape within which the service should spatially subset.  If present, the resource will always be GeoJSON (application/geo+json) in an object store (S3)",
+          "$ref": "#/definitions/RemoteResource"
         }
       },
       "required": []
@@ -316,6 +320,27 @@
         }
       },
       "required": []
+    },
+    "RemoteResource": {
+      "type": "object",
+      "description": "A remote resource which needs to be downloaded before use",
+      "additionalProperties": false,
+      "properties": {
+        "href": {
+          "type": "string",
+          "description": "The URI of the remote resource",
+          "examples": [ "s3://example-bucket/some/path/resource.ext" ]
+        },
+        "type": {
+          "type": "string",
+          "description": "The content type of the resource",
+          "examples": [ "application/geo+json" ]
+        }
+      },
+      "required": [
+        "href",
+        "type"
+      ]
     }
   }
 }
