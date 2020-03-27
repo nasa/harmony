@@ -31,6 +31,7 @@ const schemaVersions = [
     schema: readSchema('0.6.0'),
     down: (model) => {
       const revertedModel = cloneDeep(model);
+      delete revertedModel.subset.shape;
       return revertedModel;
     },
   },
@@ -264,6 +265,27 @@ class DataOperation {
    */
   get boundingRectangle() {
     return this.model.subset.bbox;
+  }
+
+  /**
+   * Sets the object store URI to the geojson shape used for spatial subsetting
+   *
+   * @param {string} geojsonUri A URI to the geojson shape
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set geojson(geojsonUri) {
+    this.model.subset.shape = { type: 'application/geo+json', uri: geojsonUri };
+  }
+
+  /**
+   * Gets the object store URI for the geojson shape used for spatial subsetting
+   *
+   * @returns {string} A URI to the geojson shape
+   * @memberof DataOperation
+   */
+  get geojson() {
+    return this.model.subset.shape && this.model.subset.shape.uri;
   }
 
   /**

@@ -1,3 +1,8 @@
+## [0.6.0] - 2020-03-27
+### Added
+- subset.shape - Reference to a location containing a shape within which the service should spatially subset.
+  If present, the resource will always be GeoJSON (application/geo+json) in an object store (S3)
+
 ## [0.5.0] - 2020-03-03
 ### Changed
 - format - Added a few additional subfields to support regridding. New subfields are interpolation, scaleExtent, and scaleSize.
