@@ -451,6 +451,8 @@ class DataOperation {
    * @memberof DataOperation
    */
   serialize(version = '0.5.0', validate = true) {
+    // To be fixed by HARMONY-203 to not default to TIFF
+    this.model.format.mime = this.model.format.mime || 'image/tiff';
     let toWrite = this.model;
     if (version === '0.4.0') {
       toWrite = modelTo0_4_0(this.model);
