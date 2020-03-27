@@ -1,0 +1,18 @@
+# Harmony Data Operation Schemas
+
+## Schema update checklist
+
+- [ ] Add `<version>/data-operation-v<version>.json` to this directory, making necessary changes
+- [ ] Update [CHANGELOG.md](CHANGELOG.md)
+- [ ] Add a migration to [data-operation.json](../../models/data-operation.json)
+- [ ] Add getters and setters to [DataOperation](../../models/data-operation.json)
+- [ ] Update [test/models/data-operation.js](../../../test/models/data-operation.js) to point to the latest schema
+- [ ] Update [test/models/data-operation.js](../../../test/models/data-operation.js) to ensure correct validation and serialization of the current version
+- [ ] Add a new test to [test/models/data-operation.js](../../../test/models/data-operation.js) to test the migration
+- [ ] Update [example/service-operation.json](../../../example/service-operation.json) to reference the updated schema and have any required fields
+- [ ] Update [harmony-service-lib-py](../../../../harmony-service-lib-py/harmony/message.py) to parse the new schema
+- [ ] Update [harmony-service-lib-py/example/service-operation.json](../../../../harmony-service-lib-py/example/service-operation.json) to use the new schema
+- [ ] Update [harmony-gdal/example/harmony-operation.json](../../../../harmony-gdal/example/harmony-operation.json) to use the new schema and service library
+- [ ] Update [harmony-netcdf-to-zarr/example/harmony-operation.json](../../../../harmony-netcdf-to-zarr/example/harmony-operation.json) to use the new schema and service library
+- [ ] Update [config/services.yml](../../../config/services.yml) to supply the new library version for any services that will be automatically or manually upgraded with the change
+- [ ] Swear that next time around you'll make the process a little easier
