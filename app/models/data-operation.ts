@@ -496,6 +496,9 @@ class DataOperation {
     if (!version) {
       throw new TypeError('Schema version is required to serialize DataOperation objects');
     }
+
+    // To be fixed by HARMONY-203 to not default to TIFF
+    this.model.format.mime = this.model.format.mime || 'image/tiff';
     let toWrite = this.model;
     let matchingSchema = null;
     for (const schemaVersion of schemaVersions) {

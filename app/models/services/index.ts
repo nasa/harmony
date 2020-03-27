@@ -70,37 +70,50 @@ function isCollectionMatch(operation, serviceConfig) {
 }
 
 /**
- * Returns the service and format to use based on the request context and service configs
- * @param {Object} context Additional context that's not part of the operation, but influences the
+ * Returns the service to use based on the requested format
+ * @param {String} format Additional context that's not part of the operation, but influences the
  *    choice regarding the service to use
  * @param {Object} configs The configuration to use for finding the operation, with all variables
  *    resolved (default: the contents of config/services.yml)
  * @returns {Object} An object with two properties - service and format for the service and format
  * that should be used to fulfill the given request context
+ * @private
  */
-function selectFormatAndService(context, configs) {
-  let service;
-  let format;
-  for (const mimeType of context.requestedMimeTypes) {
-    let internalMatches = configs.map((config) => {
-      const supportedFormats = getIn(config, 'capabilities.output_formats', []);
-      const formatMatch = supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType));
-      if (formatMatch) {
-        return {
-          service: config,
-          format: supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType)),
-        };
-      }
-      return null;
-    });
-    internalMatches = internalMatches.filter((v) => v);
-    if (internalMatches.length > 0) {
-      service = internalMatches[0].service;
-      format = internalMatches[0].format;
-      break;
+function _selectServiceForFormat(format, configs) {
+  return configs.find((config) => {
+    const supportedFormats = getIn(config, 'capabilities.output_formats', []);
+    return supportedFormats.find((f) => isMimeTypeAccepted(f, format));
+  });
+}
+
+/**
+ * Returns the service and format to use based on the request context and service configs
+ * @param {DataOperation} operation The operation to perform.
+ * @param {Object} context Additional context that's not part of the operation, but influences the
+ *    choice regarding the service to use
+ * @param {Object} configs The configuration to use for finding the operation, with all variables
+ *    resolved (default: the contents of config/services.yml)
+ * @returns {String} The output format to use
+ * @private
+ */
+function _selectFormat(operation, context, configs) {
+  const { outputFormat } = operation;
+  if (outputFormat) {
+    const matches = configs.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(outputFormat));
+    if (matches.length === 0) {
+      throw new NotFoundError(`Could not find a service to reformat to ${outputFormat} for the given collection`);
     }
+  } else if (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
+    for (const mimeType of context.requestedMimeTypes) {
+      const service = _selectServiceForFormat(mimeType, configs);
+      if (service) {
+        const supportedFormats = getIn(service, 'capabilities.output_formats', []);
+        return supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType));
+      }
+    }
+    throw new NotFoundError(`Could not find a service to reformat to any of the requested formats [${context.requestedMimeTypes}] for the given collection`);
   }
-  return { service, format };
+  return outputFormat;
 }
 
 /**
@@ -125,24 +138,12 @@ function forOperation(operation, context, configs = serviceConfigs) {
     matches = [{ type: { name: 'noOp' } }];
   }
 
-  const { outputFormat } = operation;
-  if (outputFormat) {
-    matches = matches.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(outputFormat));
-    if (matches.length === 0) {
-      throw new NotFoundError(`Could not find a service to reformat to ${outputFormat} for the given collection`);
-    }
-  } else if (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
-    const { service, format } = selectFormatAndService(context, matches);
-    if (!format) {
-      throw new NotFoundError(`Could not find a service to reformat to any of the requested formats [${context.requestedMimeTypes}] for the given collection`);
-    } else {
-      // eslint-disable-next-line no-param-reassign
-      operation.outputFormat = format;
-      matches = [service];
-    }
-  }
+  const outputFormat = _selectFormat(operation, context, matches);
+  const service = outputFormat ? _selectServiceForFormat(outputFormat, matches) : matches[0];
 
-  return buildService(matches[0], operation);
+  // eslint-disable-next-line no-param-reassign
+  operation.outputFormat = outputFormat;
+  return buildService(service, operation);
 }
 
 /**
