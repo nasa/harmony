@@ -346,7 +346,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('when providing multiple formats and not specifying a quality value for one of them', function () {
       const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
       hookRangesetRequest(version, collection, variableName, { headers, query });
-      it('treats the unspecified quality value as 1 (higher than any others)', function () {
+      it('treats the unspecified quality value as 1.0', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
     });
