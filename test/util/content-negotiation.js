@@ -24,7 +24,10 @@ describe('util/content-negotiation', function () {
     });
     describe('when multiple accept headers share the same quality value', function () {
       it('orders the mime-types based on the order they were provided', function () {
-        expect(parseAcceptHeader('image/tiff;q=0.5, image/png;q=0.5, application/zarr;q=0.5')).to.eql([{
+        expect(parseAcceptHeader('text/plain;q=0.2, image/tiff;q=0.5, image/gif;q=0.6, image/png;q=0.5, application/zarr;q=0.5')).to.eql([{
+          mimeType: 'image/gif',
+          qualityValue: 0.6,
+        }, {
           mimeType: 'image/tiff',
           qualityValue: 0.5,
         }, {
@@ -33,6 +36,9 @@ describe('util/content-negotiation', function () {
         }, {
           mimeType: 'application/zarr',
           qualityValue: 0.5,
+        }, {
+          mimeType: 'text/plain',
+          qualityValue: 0.2,
         }]);
       });
     });
