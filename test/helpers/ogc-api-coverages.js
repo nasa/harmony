@@ -65,7 +65,7 @@ function hookLandingPage(collection, version) {
  * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
  * @param {object} query The query parameters to pass to the EOSS request
  * @param {string} cookies The cookies to set on the call
- * @returns {Promise<Response>} The response
+ * @returns {supertest.Test} An 'awaitable' object that resolves to a Response
  */
 function rangesetRequest(app, version, collection, coverageId, query, cookies = null) {
   const req = request(app)
@@ -85,9 +85,9 @@ function rangesetRequest(app, version, collection, coverageId, query, cookies = 
  * @param {string} collection The CMR Collection ID to perform a service on
  * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
  * @param {object} form The form parameters to pass to the request
- * @returns {Promise<Response>} The response
+ * @returns {supertest.Test} An 'awaitable' object that resolves to a Response
  */
-async function postRangesetRequest(app, version, collection, coverageId, form) {
+function postRangesetRequest(app, version, collection, coverageId, form) {
   const req = request(app)
     .post(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`);
 

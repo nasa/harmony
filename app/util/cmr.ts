@@ -126,14 +126,14 @@ async function fetchPost(path, formData, headers) {
  *
  * @param {Object} metadata The value containing the shapefile metadata
  * @param {Object} formData the Form data
- * @returns {*} A tuple containing the temporary file created, the key, and bucket to the original
- * file on S3.
+ * @returns {Promise<File>} The a promise containing the file object pointing to the temporary
+ * file on the file system
  */
 async function processShapefile(metadata, formData) {
   const tempFile = tmp.fileSync();
   const s3Key = metadata.key;
   const s3Bucket = metadata.bucket;
-  const fileData = await objectStoreForProtocol('s3').s3.getObject({
+  const fileData = await objectStoreForProtocol(env.objectStoreType).getObject({
     Bucket: s3Bucket,
     Key: s3Key,
   }).promise();
@@ -141,7 +141,7 @@ async function processShapefile(metadata, formData) {
   formData.append('shapefile', fs.createReadStream(tempFile.name), {
     contentType: metadata.mimetype,
   });
-  return { tempFile, s3Key, s3Bucket };
+  return tempFile;
 }
 
 /**
@@ -155,8 +155,6 @@ async function processShapefile(metadata, formData) {
 async function cmrPostSearchBase(path, form, token) {
   let tempFile;
   const formData = new FormData();
-  let s3Key;
-  let s3Bucket;
   await Promise.all(Object.keys(form).map(async (key) => {
     const value = form[key];
     if (value) {
@@ -165,7 +163,7 @@ async function cmrPostSearchBase(path, form, token) {
         // directly from S3 to the CMR and failing I'm giving up for now
         // and downloading the shapefile from S3 to a temporary file before
         // uploading it to the CMR
-        ({ tempFile, s3Key, s3Bucket } = await processShapefile(value, formData));
+        tempFile = await processShapefile(value, formData);
       } else if (Array.isArray(value)) {
         value.forEach((v) => {
           formData.append(key, v);
@@ -185,16 +183,11 @@ async function cmrPostSearchBase(path, form, token) {
 
   let response;
   try {
-    response = await module.exports.fetchPost(path, formData, headers);
+    response = module.exports.fetchPost(path, formData, headers);
   } finally {
     // not strictly needed as the library will handle this, but added
     // for completeness to make sure the temporary file gets deleted
     tempFile.removeCallback();
-    // remove the s3 object
-    await objectStoreForProtocol('s3').s3.deleteObject({
-      Bucket: s3Bucket,
-      Key: s3Key,
-    }).promise();
   }
 
   return response;
