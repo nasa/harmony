@@ -123,7 +123,7 @@ describe('Individual job status route', function () {
     const version = '1.0.0';
     describe('when the job has started but not completed', function () {
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
 
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
@@ -142,7 +142,7 @@ describe('Individual job status route', function () {
 
     describe('when the job has failed to complete', function () {
       StubService.hook({ params: { error: 'something broke' } });
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe2');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe2' });
       before(async function () {
         await this.service.complete();
       });
@@ -164,7 +164,7 @@ describe('Individual job status route', function () {
 
     describe('when the job has completed successfully', function () {
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe3');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe3' });
       before(async function () {
         await this.service.complete();
       });
@@ -191,7 +191,7 @@ describe('Individual job status route', function () {
     const version = '1.0.0';
 
     describe('when the job has started but not completed', function () {
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
 
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
@@ -209,7 +209,7 @@ describe('Individual job status route', function () {
     });
 
     describe('when the job has failed to complete', function () {
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe2');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe2' });
       before(async function () {
         const id = this.res.headers.location.split('/').pop();
         await request(this.frontend)
@@ -246,7 +246,7 @@ describe('Individual job status route', function () {
       ];
 
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
         await this.service.sendResponse({ item: links[0] });
         await this.service.sendResponse({ item: links[1] });
@@ -266,7 +266,7 @@ describe('Individual job status route', function () {
 
     describe('when an incomplete job has provided a percentage progress update', function () {
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
         await this.service.sendResponse({ progress: 20 });
       });
@@ -285,7 +285,7 @@ describe('Individual job status route', function () {
 
     describe('when an incomplete job provides an out-of-range percentage', function () {
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
         this.res = await this.service.sendResponse({ progress: -1 }).ok(() => true);
       });
@@ -299,7 +299,7 @@ describe('Individual job status route', function () {
 
     describe('when an incomplete job provides a non-numeric percentage', function () {
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
         this.res = await this.service.sendResponse({ progress: 'garbage' }).ok(() => true);
       });
@@ -314,7 +314,7 @@ describe('Individual job status route', function () {
     describe('when a job has provided an S3 URL as a result', function () {
       const s3Uri = 's3://example-bucket/public/example/path.tif';
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
         await this.service.sendResponse({ item: { href: s3Uri } });
       });
@@ -349,7 +349,7 @@ describe('Individual job status route', function () {
     describe('when a job has provided an S3 URL result with application/x-zarr mime type', function () {
       const s3Uri = 's3://example-bucket/public/example/path.tif';
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, {}, 'jdoe1');
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
         await this.service.sendResponse({ item: { href: s3Uri, type: 'application/x-zarr' } });
       });
@@ -363,7 +363,7 @@ describe('Individual job status route', function () {
 
     describe('when the job has completed successfully', function () {
       const query = { subset: ['lat(-80:80)', 'lon(-100:100)'] };
-      hookRangesetRequest(version, collection, variableName, query, 'jdoe3');
+      hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe3' });
       before(async function () {
         const id = this.res.headers.location.split('/').pop();
         await request(this.frontend)

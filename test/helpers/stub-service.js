@@ -17,13 +17,15 @@ class StubService extends BaseService {
    * @param {DataOperation} operation The data operation being requested of the service
    * @param {object} callbackOptions The request options to be used for the callback (merged with
    *   request method and URL)
+   * @param {String} serviceName The service name
    * @memberof StubService
    */
-  constructor(operation, callbackOptions) {
+  constructor(operation, callbackOptions, serviceName) {
     super({}, operation);
     this.callbackOptions = callbackOptions;
     this.isComplete = false;
     this.isRun = false;
+    this.name = serviceName;
   }
 
   /**
@@ -91,9 +93,11 @@ class StubService extends BaseService {
   static beforeHook(callbackOptions = { params: { redirect: 'http://example.com' } }) {
     return function () {
       const ctx = this;
+      const origForOperation = services.forOperation;
       sinon.stub(services, 'forOperation')
-        .callsFake((operation) => {
-          ctx.service = new StubService(operation, callbackOptions);
+        .callsFake((operation, context, configs) => {
+          const chosenService = origForOperation(operation, context, configs);
+          ctx.service = new StubService(operation, callbackOptions, chosenService.config.name);
           return ctx.service;
         });
     };

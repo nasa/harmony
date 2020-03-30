@@ -33,7 +33,7 @@ async function cmrGranuleLocator(req, res, next) {
   try {
     const { sources } = operation;
     const queries = sources.map(async (source) => {
-      req.logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
+      req.context.logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
       const { hits, granules: atomGranules } = await cmr.queryGranulesForCollection(
         source.collection,
@@ -43,7 +43,7 @@ async function cmrGranuleLocator(req, res, next) {
       );
       operation.cmrHits += hits;
       const msTaken = new Date().getTime() - startTime;
-      req.logger.info('Completed granule query', { durationMs: msTaken });
+      req.context.logger.info('Completed granule query', { durationMs: msTaken });
       const granules = [];
       for (const granule of atomGranules) {
         const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);
@@ -62,7 +62,7 @@ async function cmrGranuleLocator(req, res, next) {
     if (e instanceof RequestValidationError) {
       return next(e);
     }
-    req.logger.error(e);
+    req.context.logger.error(e);
   }
   return next();
 }
