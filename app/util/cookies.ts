@@ -9,6 +9,8 @@ const urlUtil = require('./url');
  * containing the cookie name, value, and options.
  */
 
+const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === 'true' };
+
 /**
  * Recipe for a cookie to support handling shapefiles
  *
@@ -90,4 +92,4 @@ function setCookiesForAuthorized(req, res, options) {
   });
 }
 
-module.exports = { setCookiesForEdl, setCookiesForAuthorized };
+module.exports = { setCookiesForEdl, setCookiesForAuthorized, cookieOptions };

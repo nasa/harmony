@@ -3,6 +3,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
+const env = require('../util/env');
 const { objectStoreForProtocol } = require('../util/object-store');
 
 // Middleware requires in outside-in order
@@ -142,11 +143,13 @@ function router({ skipEarthdataLogin }) {
   result.use(cookieParser(secret));
 
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
-  // an S3 bucket.
-  const { s3 } = objectStoreForProtocol('s3');
-
+  // a bucket.
+  const objectStore = objectStoreForProtocol(env.objectStoreType);
+  // This is a little bit brittle because `multer-S3` might change it's internal implementation
+  // and start calling s3 SDK functions that we have not wrapped in our object store
+  // implementation, but the only alternative would be implementing `multer-s3` ourselves.
   const upload = multer({ storage: multerS3({
-    s3,
+    s3: objectStore,
     bucket: uploadBucket,
   }) });
   const uploadFields = [{ name: 'shapefile', maxCount: 1 }];
@@ -177,9 +180,11 @@ function router({ skipEarthdataLogin }) {
 
   result.get('/', (req, res) => res.status(200).send('ok'));
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
+  result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
   result.get('/jobs/:jobId', getJobStatus);
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
+  result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
   return result;
 }
 

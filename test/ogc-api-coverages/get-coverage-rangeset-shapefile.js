@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 const { parse } = require('cookie');
 const fetch = require('node-fetch');
-const { describe, it } = require('mocha');
+const { describe, it, xit } = require('mocha');
 const { expect } = require('chai');
 const fs = require('fs');
 const { hookServersStartStop } = require('../helpers/servers');
@@ -19,8 +19,11 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const variableName = 'red_var';
   const version = '1.0.0';
 
-  hookMockS3(['shapefiles']);
+  // hookMockS3(['shapefiles']);
   hookServersStartStop({ skipEarthdataLogin: false });
+
+  const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
+  const cmrResp = JSON.parse(cmrRespStr);
 
   // ESRI shapefile
   describe('when provided a valid set of parameters', function () {
@@ -39,8 +42,8 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('calling the backend service with an ESRI shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
-      const cmrResp = JSON.parse(cmrRespStr);
+      // const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
+      // const cmrResp = JSON.parse(cmrRespStr);
       cmrResp.headers = new fetch.Headers(cmrResp.headers);
       hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
@@ -102,39 +105,66 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       });
     });
 
-    // GeoJSON
+    // GeoJSON - NOTE: It makes no sense to run this test without relay, so it's marked as pending.
+    // If you want to run it, comment out relay in `caching-hooks.js`. Setting the
+    // RELAY environment variable won't work
     describe('calling the backend service with a GeoJSON shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
-      const cmrResp = JSON.parse(cmrRespStr);
-      cmrResp.headers = new fetch.Headers(cmrResp.headers);
-      hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
-      it('correctly identifies the granules based on the shapefile', function () {
+      xit('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
         expect(source.granules[0].id).to.equal(granuleId);
       });
     });
 
-    // KML
+    // KML - NOTE: It makes no sense to run this test without relay, so it's marked as pending.
+    // If you want to run it, comment out relay in `caching-hooks.js`. Setting the
+    // RELAY environment variable won't work
     describe('calling the backend service with a KML shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.kml', mimetype: 'application/vnd.google-earth.kml+xml' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
-      const cmrResp = JSON.parse(cmrRespStr);
-      cmrResp.headers = new fetch.Headers(cmrResp.headers);
-      hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
-      it('correctly identifies the granules based on the shapefile', function () {
+      xit('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
         expect(source.granules[0].id).to.equal(granuleId);
       });
     });
+  });
+
+  describe('When a user is already authenticated', async function () {
+    cmrResp.headers = new fetch.Headers(cmrResp.headers);
+    hookCmr('fetchPost', cmrResp);
+    it('does not redirect to EDL', async function () {
+      this.timeout(50000);
+      const res = await postRangesetRequest(
+        this.frontend,
+        version,
+        collection,
+        variableName,
+        {
+          shapefile: {
+            path: './test/resources/southern_africa.zip',
+            mimetype: 'application/shapefile+zip',
+          },
+          format: 'image/png',
+          subset: ['time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+        },
+      ).use(auth({ username: 'fakeUsername', extraCookies: {} }));
+
+
+      expect(res.status).to.equal(200);
+    });
+
+    // it('correctly identifies the granules based on the shapefile', function () {
+    //   const source = this.service.operation.sources[0];
+    //   expect(source.granules.length === 1);
+    //   expect(source.granules[0].id).to.equal(granuleId);
+    // });
   });
 
   describe('Validation', function () {
