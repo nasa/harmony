@@ -11,7 +11,7 @@ const isUUID = require('../util/uuid');
  * @returns {Promise<void>} Resolves when the request is complete
  */
 async function getJobsListing(req, res) {
-  req.logger.info(`Get job listing for user ${req.user}`);
+  req.context.logger.info(`Get job listing for user ${req.user}`);
   try {
     const root = getRequestRoot(req);
     await db.transaction(async (tx) => {
@@ -19,7 +19,7 @@ async function getJobsListing(req, res) {
       res.send(listing.map((j) => j.serialize(root)));
     });
   } catch (e) {
-    req.logger.error(e);
+    req.context.logger.error(e);
     res.status(500);
     res.json({
       code: 'harmony:ServerError',
@@ -36,7 +36,7 @@ async function getJobsListing(req, res) {
  */
 async function getJobStatus(req, res) {
   const { jobId } = req.params;
-  req.logger.info(`Get job status for job ${jobId} and user ${req.user}`);
+  req.context.logger.info(`Get job status for job ${jobId} and user ${req.user}`);
   if (!isUUID(jobId)) {
     res.status(400);
     res.json({
@@ -54,7 +54,7 @@ async function getJobStatus(req, res) {
         }
       });
     } catch (e) {
-      req.logger.error(e);
+      req.context.logger.error(e);
       res.status(500);
       res.json({
         code: 'harmony:ServerError',

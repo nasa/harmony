@@ -273,7 +273,7 @@ async function wmsFrontend(req, res, next) {
   } catch (e) {
     // TODO: Handle 'exceptions' param (HARMONY-40)
     if (e instanceof RequestValidationError) {
-      req.logger.error(e.message);
+      req.context.logger.error(e.message);
       return requestError(res, e.message);
     }
 
