@@ -195,8 +195,10 @@ function hookPostRangesetRequest(version, collection, coverageId, form) {
       version,
       collection,
       coverageId,
-      query,
-      cookies,
+      {
+        query,
+        cookies,
+      },
     ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
   });
   after(function () {

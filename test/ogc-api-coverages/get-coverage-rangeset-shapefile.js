@@ -7,7 +7,7 @@ const fs = require('fs');
 const { hookServersStartStop } = require('../helpers/servers');
 const StubService = require('../helpers/stub-service');
 const { auth } = require('../helpers/auth');
-const { hookMockS3 } = require('../helpers/object-store');
+const { hookGetObject, hookUpload, hookDeleteObject } = require('../helpers/object-store');
 const { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } = require('../helpers/ogc-api-coverages');
 const { hookCmr } = require('../helpers/stub-cmr');
 const isUUID = require('../../app/util/uuid');
@@ -20,6 +20,10 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const version = '1.0.0';
 
   // hookMockS3(['shapefiles']);
+  hookGetObject('/tmp/my_buckets');
+  hookUpload('/tmp/my_buckets');
+  hookDeleteObject('/tmp/my_buckets');
+
   hookServersStartStop({ skipEarthdataLogin: false });
 
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
@@ -157,14 +161,9 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       ).use(auth({ username: 'fakeUsername', extraCookies: {} }));
 
 
-      expect(res.status).to.equal(200);
+      expect(res.status).to.equal(303);
+      expect(res.text.match(/See Other\. Redirecting to http:\/\/localhost:4572\/localStagingBucket\/public\/harmony\/gdal\/002_00_3200ff_global_red_var\.png.*/));
     });
-
-    // it('correctly identifies the granules based on the shapefile', function () {
-    //   const source = this.service.operation.sources[0];
-    //   expect(source.granules.length === 1);
-    //   expect(source.granules[0].id).to.equal(granuleId);
-    // });
   });
 
   describe('Validation', function () {
