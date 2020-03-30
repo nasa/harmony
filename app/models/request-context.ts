@@ -46,7 +46,7 @@ class RequestContext {
   /**
    * Returns the request logger
    *
-   * @returns {String} The request logger
+   * @returns {Logger} The request logger
    * @memberof RequestContext
    */
   get logger() {
@@ -56,7 +56,7 @@ class RequestContext {
   /**
    * Sets the request logger
    *
-   * @param {String} logger The request logger
+   * @param {Logger} logger The request logger
    * @returns {void}
    * @memberof RequestContext
    */
@@ -67,7 +67,7 @@ class RequestContext {
   /**
    * Returns the requestedMimeTypes
    *
-   * @returns {String} The requestedMimeTypes
+   * @returns {Array<String>} The requestedMimeTypes
    * @memberof RequestContext
    */
   get requestedMimeTypes() {
@@ -77,7 +77,7 @@ class RequestContext {
   /**
    * Sets the requestedMimeTypes
    *
-   * @param {String} requestedMimeTypes The requestedMimeTypes
+   * @param {Array<String>} requestedMimeTypes The requestedMimeTypes
    * @returns {void}
    * @memberof RequestContext
    */
