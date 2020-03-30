@@ -71,9 +71,9 @@ async function serviceInvoker(req, res) {
   const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
   req.operation.client = env.harmonyClientId;
-  const service = services.forOperation(req.operation);
+  const service = services.forOperation(req.operation, req.context);
   let serviceResult = null;
-  const serviceLogger = req.logger.child({
+  const serviceLogger = req.context.logger.child({
     application: 'backend',
     component: `${service.constructor.name}`,
   });
@@ -91,7 +91,7 @@ async function serviceInvoker(req, res) {
   // eslint-disable-next-line max-len
   const varSources = model.sources.filter((source) => source.variables && source.variables.length > 0);
   const variableSubset = varSources.length > 0;
-  req.logger.info('Backend service request complete',
+  req.context.logger.info('Backend service request complete',
     { durationMs: msTaken,
       ...model,
       service: service.config.name,

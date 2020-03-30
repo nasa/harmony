@@ -128,12 +128,12 @@ async function handleAuthorized(oauth2, req, res, next) {
       req.accessToken = refreshed.access_token;
     }
     const user = oauthToken.token.endpoint.split('/').pop();
-    req.logger = req.logger.child({ user });
+    req.context.logger = req.context.logger.child({ user });
     req.user = user;
     next();
   } catch (e) {
-    req.logger.error('Failed to refresh expired token, forcing login through EDL.');
-    req.logger.error(e.stack);
+    req.context.logger.error('Failed to refresh expired token, forcing login through EDL.');
+    req.context.logger.error(e.stack);
     res.clearCookie('token', cookieOptions);
     handleNeedsAuthorized(oauth2, req, res, next);
   }
@@ -179,7 +179,7 @@ module.exports = function buildEdlAuthorizer(paths = []) {
       }
       await handler(oauth2, req, res, next);
     } catch (e) {
-      req.logger.error(e.stack);
+      req.context.logger.error(e.stack);
       if (e.message.startsWith('Response Error')) { // URS Error
         res.clearCookie('token', cookieOptions);
         next(new ForbiddenError());

@@ -12,7 +12,7 @@ function setRequestId(req, res, next) {
 
   if (!operation) return next();
 
-  operation.requestId = req.id;
+  operation.requestId = req.context.id;
   return next();
 }
 

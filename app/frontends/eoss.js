@@ -41,7 +41,7 @@ function addOpenApiRoutes(app) {
         if (!req.collections.every(services.isCollectionSupported)) {
           throw new NotFoundError('There is no service configured to support transformations on the provided collection via EOSS.');
         }
-        req.logger = req.logger.child({ component: 'eoss.getGranule' });
+        req.context.logger = req.context.logger.child({ component: 'eoss.getGranule' });
         const query = keysToLowerCase(req.query);
         const operation = new DataOperation();
         operation.crs = query.crs;
@@ -89,13 +89,13 @@ function addOpenApiRoutes(app) {
       return;
     }
     if (err.status && err.errors) {
-      req.logger.error(`Request validation failed with the following errors: ${JSON.stringify(err.errors)}`);
+      req.context.logger.error(`Request validation failed with the following errors: ${JSON.stringify(err.errors)}`);
       res.status(err.status).json({
         message: err.message,
         errors: err.errors,
       });
     } else if (err instanceof RequestValidationError) {
-      req.logger.error(err.message);
+      req.context.logger.error(err.message);
       res.status(400).json({
         errors: [err.message],
       });
