@@ -36,11 +36,7 @@ const invalidOperation = new DataOperation({
   temporal: { start: '1999-01-01T10:00:00Z', end: '2020-02-20T15:00:00Z' },
 });
 
-<<<<<<< HEAD
-const expectedOutput = `{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"${CURRENT_SCHEMA_VERSION}"}`;
-=======
-const expectedOutput = '{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.5.0"}';
->>>>>>> HARMONY-173: Refactor and default to TIFF if no format has been specified via format parameter or accept header.
+const expectedOutput = `{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"${CURRENT_SCHEMA_VERSION}"}`;
 
 describe('DataOperation', () => {
   describe('#serialize', () => {
@@ -107,7 +103,6 @@ describe('DataOperation', () => {
         describe(`when using the ${version} schema version`, () => {
           const call = () => validOperation.serialize(version);
 
-<<<<<<< HEAD
           it('does not throw an error', () => {
             expect(call).to.not.throw();
           });
@@ -121,19 +116,14 @@ describe('DataOperation', () => {
       describeOldSchemaOutput(
         '0.5.0',
         'without shapefile locations',
-        '{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.5.0"}',
+        '{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.5.0"}',
       );
 
       describeOldSchemaOutput(
         '0.4.0',
         'without temporal parameters',
-        '{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}',
+        '{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png","width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}',
       );
-=======
-      it('returns its JSON-serialized model without the temporal parameters and the correct 0.4.0 version', () => {
-        expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png","width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}');
-      });
->>>>>>> HARMONY-173: Refactor and default to TIFF if no format has been specified via format parameter or accept header.
     });
   });
 });
