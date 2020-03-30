@@ -14,6 +14,7 @@ const router = require('./routers/router');
 const errorHandler = require('./middleware/error-handler');
 const exampleBackend = require('../example/http-backend');
 const ogcCoveragesApi = require('./frontends/ogc-coverages');
+const RequestContext = require('./models/request-context');
 
 if (dotenvResult.error) {
   winston.warn('Did not read a .env file');
@@ -32,14 +33,16 @@ function buildServer(name, port, setupFn) {
   const appLogger = logger.child({ application: name });
 
   const addRequestId = (req, res, next) => {
-    req.id = uuid();
-    req.logger = appLogger.child({ requestId: req.id });
+    const id = uuid();
+    const context = new RequestContext(id);
+    context.logger = appLogger.child({ requestId: id });
+    req.context = context;
     next();
   };
 
   const addRequestLogger = expressWinston.logger({
     winstonInstance: appLogger,
-    dynamicMeta(req) { return { requestId: req.id }; },
+    dynamicMeta(req) { return { requestId: req.context.id }; },
   });
 
   const app = express();
