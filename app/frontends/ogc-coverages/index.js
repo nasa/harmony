@@ -102,10 +102,10 @@ function handleOpenApiErrors(app) {
       description: `Error: ${message}`,
     });
     if (status < 500) {
-      req.logger.error(`[${code}] ${message}`);
+      req.context.logger.error(`[${code}] ${message}`);
     } else {
       // Make sure we get stack traces when we throw an unexpected exception
-      req.logger.error(err);
+      req.context.logger.error(err);
     }
   });
 }

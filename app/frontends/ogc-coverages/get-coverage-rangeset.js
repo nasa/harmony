@@ -21,12 +21,11 @@ const { parseAcceptHeader } = require('../../util/content-negotiation');
 function getCoverageRangeset(req, res, next) {
   const query = keysToLowerCase(req.query);
   const operation = new DataOperation();
-  const context = {};
   if (query.format) {
     operation.outputFormat = query.format;
   } else if (req.headers.accept) {
     const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
-    context.requestedMimeTypes = acceptedMimeTypes
+    req.context.requestedMimeTypes = acceptedMimeTypes
       .map((v) => v.mimeType)
       .filter((v) => v);
   }
@@ -81,7 +80,6 @@ function getCoverageRangeset(req, res, next) {
   }
 
   req.operation = operation;
-  req.context = context;
   next();
 }
 
