@@ -1,7 +1,6 @@
 const get = require('lodash.get');
 const cmr = require('../util/cmr');
 const env = require('../util/env');
-const { cookieOptions } = require('../util/cookies');
 const { CmrError, RequestValidationError } = require('../util/errors');
 
 /**
@@ -39,7 +38,7 @@ async function cmrGranuleLocator(req, res, next) {
   try {
     const { sources } = operation;
     const queries = sources.map(async (source) => {
-      req.logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
+      req.context.logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
 
       if (shapefileInfo) {
@@ -83,11 +82,7 @@ async function cmrGranuleLocator(req, res, next) {
     if (e instanceof RequestValidationError || e instanceof CmrError) {
       return next(e);
     }
-    req.logger.error(e);
-  } finally {
-    if (req.signedCookies.shapefile) {
-      res.clearCookie('shapefile', cookieOptions);
-    }
+    req.context.logger.error(e);
   }
   return next();
 }

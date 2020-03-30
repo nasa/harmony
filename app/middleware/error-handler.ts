@@ -26,7 +26,7 @@ module.exports = function errorHandler(err, req, res, next) {
   }
 
   if (err instanceof RequestValidationError) {
-    req.logger.error(err.message);
+    req.context.logger.error(err.message);
     res.status(400).json({
       errors: [err.message],
     });
