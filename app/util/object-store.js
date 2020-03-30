@@ -60,6 +60,47 @@ class S3ObjectStore {
     const result = await req.presign();
     return result;
   }
+
+  /**
+   * Delete an object from the object store (see AWS S3 SDK `deleteObject`)
+   *
+   * @param {Object} params a map of parameters (Bucket, Key) indicating the object to be deleted
+   * @param {*} callback an optional callback function
+   * @returns {AWS.Request} An object with a `promise` function that can be called to obtain
+   * a promise that can be used to await the deletion
+   * @memberof S3ObjectStore
+   */
+  deleteObject(params, callback) {
+    return this.s3.deleteObject(params, callback);
+  }
+
+  /**
+   * Get an object from the object store (see AWS S3 SDK `getObject`)
+   *
+   * @param {Object} params a map of parameters (Bucket, Key) indicating the object to be
+   * retrieved
+   * @param {*} callback an optional callback function
+   * @returns  {AWS.Request} An object with a `promise` function that can be called to obtain a
+   * promise containing the retrieved object
+   * @memberof S3ObjectStore
+   */
+  getObject(params, callback) {
+    return this.s3.getObject(params, callback);
+  }
+
+  /**
+   * Stream upload an object to S3 (see AWS S3 SDK `upload`)
+   *
+   * @param {Object} params an object describing the upload
+   * @param {Object} options an optional object containing settings to control the upload
+   * @param {*} callback an optional callback function
+   * @returns {AWS.S3.ManagedUpload} the managed upload object that can call send() or track
+   * progress.
+   * @memberof S3ObjectStore
+   */
+  upload(params, options, callback) {
+    return this.s3.upload(params, options, callback);
+  }
 }
 
 /**

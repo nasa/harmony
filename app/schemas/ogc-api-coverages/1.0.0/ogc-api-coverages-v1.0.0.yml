@@ -356,7 +356,7 @@ paths:
       - $ref: '#/components/parameters/format'
       requestBody:
         content:
-          multipart/mixed:
+          multipart/form-data:
             schema:
               type: object
               properties:
