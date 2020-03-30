@@ -7,6 +7,7 @@ const validOperation = new DataOperation({
   callback: 'http://example.com/callback',
   sources: [],
   format: {
+    mime: 'image/png',
     interpolation: 'near',
     scaleExtent: { x: { min: 0.5, max: 125 }, y: { min: 52, max: 75.22 } },
     scaleSize: { x: 14.2, y: 35 },
@@ -25,7 +26,7 @@ const invalidOperation = new DataOperation({
   client: 'harmony-test',
   callback: 'http://example.com/callback',
   sources: [],
-  format: {},
+  format: { mime: 'image/png' },
   user: 'test-user',
   subset: { bbox: [-130, -45, 130, 45, 100] }, // bbox has one too many numbers
   isSynchronous: true,
@@ -33,7 +34,7 @@ const invalidOperation = new DataOperation({
   temporal: { start: '1999-01-01T10:00:00Z', end: '2020-02-20T15:00:00Z' },
 });
 
-const expectedOutput = '{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.5.0"}';
+const expectedOutput = '{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.5.0"}';
 
 describe('DataOperation', () => {
   describe('#serialize', () => {
@@ -62,7 +63,7 @@ describe('DataOperation', () => {
         });
 
         it('returns its JSON-serialized model', () => {
-          expect(call()).to.equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{},"user":"test-user","subset":{"bbox":[-130,-45,130,45,100]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.5.0"}');
+          expect(call()).to.equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png"},"user":"test-user","subset":{"bbox":[-130,-45,130,45,100]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.5.0"}');
         });
       });
     });
@@ -98,7 +99,7 @@ describe('DataOperation', () => {
       });
 
       it('returns its JSON-serialized model without the temporal parameters and the correct 0.4.0 version', () => {
-        expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}');
+        expect(call()).equal('{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png","width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}');
       });
     });
   });

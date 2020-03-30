@@ -33,9 +33,9 @@ const serviceInvoker = require('../backends/service-invoker');
 function logged(fn) {
   const scope = `middleware.${fn.name}`;
   return async (req, res, next) => {
-    const { logger } = req;
+    const { logger } = req.context;
     const child = logger.child({ component: scope });
-    req.logger = child;
+    req.context.logger = child;
     const startTime = new Date().getTime();
     try {
       child.debug('Invoking middleware');
@@ -43,13 +43,13 @@ function logged(fn) {
     } finally {
       const msTaken = new Date().getTime() - startTime;
       child.debug('Completed middleware', { durationMs: msTaken });
-      if (req.logger === child) {
+      if (req.context.logger === child) {
         // Other middlewares may have changed the logger.  This generally happens
         // when `next()` is an async call that the middleware doesn't await.  Note
         // this method does not perfectly guarantee the correct logger is always
         // used.  To do that, each middleware needs to set up and tear down its own
         // logger.
-        req.logger = logger;
+        req.context.logger = logger;
       }
     }
   };
@@ -65,9 +65,9 @@ function logged(fn) {
  */
 function service(fn) {
   return async (req, res, next) => {
-    const { logger } = req;
+    const { logger } = req.context;
     const child = logger.child({ component: `service.${fn.name}` });
-    req.logger = child;
+    req.context.logger = child;
     try {
       if (!req.collections || req.collections.length === 0) {
         throw new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.');
@@ -78,9 +78,9 @@ function service(fn) {
       child.error(e);
       next(e);
     } finally {
-      if (req.logger === child) {
+      if (req.context.logger === child) {
         // See note in `logged`.  The logger may have changed during middleware execution
-        req.logger = logger;
+        req.context.logger = logger;
       }
     }
   };

@@ -5,6 +5,7 @@ const { RequestValidationError } = require('../../util/errors');
 const { wrap } = require('../../util/array');
 const { parseVariables } = require('./util/variable-parsing');
 const { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } = require('./util/parameter-parsing');
+const { parseAcceptHeader } = require('../../util/content-negotiation');
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -21,8 +22,14 @@ function getCoverageRangeset(req, res, next) {
   const query = keysToLowerCase(req.query);
   const operation = new DataOperation();
   if (query.format) {
-    operation.outputFormat = query.format; // content negotiation to be added in HARMONY-173
+    operation.outputFormat = query.format;
+  } else if (req.headers.accept) {
+    const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
+    req.context.requestedMimeTypes = acceptedMimeTypes
+      .map((v) => v.mimeType)
+      .filter((v) => v);
   }
+
   if (query.granuleid) {
     operation.granuleIds = query.granuleid;
   }
