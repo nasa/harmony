@@ -39,7 +39,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('passes the source collection to the backend', function () {
         const source = this.service.operation.sources[0];
@@ -113,7 +113,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('and the backend service calls back with an error parameter', function () {
       StubService.hook({ params: { error: 'Something bad happened' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('propagates the error message into the response', function () {
         expect(this.res.text).to.include('Something bad happened');
@@ -126,7 +126,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('and the backend service calls back with a redirect', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('redirects the client to the provided URL', function () {
         expect(this.res.status).to.equal(303);
@@ -137,7 +137,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('and the backend service calls back with a redirect to an S3 location', function () {
       const signedPrefix = hookSignS3Object();
       StubService.hook({ params: { redirect: 's3://my-bucket/public/my-object.tif' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('redirects the client to a presigned url', function () {
         expect(this.res.status).to.equal(303);
@@ -151,7 +151,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         body: 'realistic mock data',
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('returns an HTTP 200 "OK" status code', function () {
         expect(this.res.status).to.equal(200);
@@ -165,7 +165,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when passed a blank outputCrs', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableName, { granuleId, outputCrs: '' });
+    hookRangesetRequest(version, collection, variableName, { query: { granuleId, outputCrs: '' } });
     it('accepts the request, passing an empty CRS to the backend', function () {
       expect(this.res.status).to.be.lessThan(400);
       expect(this.service.operation.crs).to.not.be;
@@ -181,7 +181,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const variableId2 = 'V1233801696-EEDTEST';
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableNames, query);
+    hookRangesetRequest(version, collection, variableNames, { query });
 
     it('passes multiple variables to the backend service', function () {
       const source = this.service.operation.sources[0];
@@ -198,7 +198,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     };
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
-    hookRangesetRequest(version, collection, variableNames, query);
+    hookRangesetRequest(version, collection, variableNames, { query });
 
     it('passes no variables to the backend service', function () {
       const source = this.service.operation.sources[0];
@@ -210,7 +210,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const query = {};
 
     StubService.hook({ params: { status: 'successful' } });
-    hookRangesetRequest(version, collection, variableName, query);
+    hookRangesetRequest(version, collection, variableName, { query });
 
     it('is processed asynchronously', function () {
       expect(this.service.operation.isSynchronous).to.equal(false);
@@ -233,7 +233,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, collection, variableName, query);
+      hookRangesetRequest(version, collection, variableName, { query });
 
       it('synchronously makes the request', function () {
         expect(this.service.operation.isSynchronous).to.equal(true);
@@ -249,6 +249,117 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
         expect(source.granules[0].id).to.equal('G1233800352-EEDTEST');
+      });
+    });
+  });
+
+  describe('when requesting output formats', function () {
+    const tiff = 'image/tiff';
+    const png = 'image/png';
+    const anyWildcard = '*/*';
+    const imageWildcard = 'image/*';
+    const wildcardTiff = '*/tiff';
+    const zarr = 'application/x-zarr';
+    const unsupportedFormat = 'text/plain';
+    const query = { granuleId };
+
+
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    describe('when providing an accept header and a format parameter', function () {
+      const pngQuery = { granuleId, format: png };
+      const headers = { accept: tiff };
+      hookRangesetRequest(version, collection, variableName, { query: pngQuery, headers });
+      it('gives the format parameter precedence over the accept header', function () {
+        expect(this.service.operation.outputFormat).to.equal(png);
+      });
+    });
+
+    describe('when providing */* for the accept header', function () {
+      const headers = { accept: anyWildcard };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('chooses the first output format supported by the service (see services.yml)', function () {
+        expect(this.service.operation.outputFormat).to.equal(tiff);
+      });
+    });
+
+    describe('when providing */tiff for the accept header', function () {
+      const headers = { accept: imageWildcard };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('selects the first valid tiff format supported', function () {
+        expect(this.service.operation.outputFormat).to.equal(tiff);
+      });
+    });
+
+    describe('when providing image/* for the accept header', function () {
+      const headers = { accept: wildcardTiff };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('selects the first valid image format supported', function () {
+        expect(this.service.operation.outputFormat).to.equal(tiff);
+      });
+    });
+
+    describe('when providing an accept header with a parameter', function () {
+      const headers = { accept: `${zarr};q=0.9` };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('correctly parses the format from the header', function () {
+        expect(this.service.operation.outputFormat).to.equal(zarr);
+      });
+    });
+
+    describe('when providing an accept header for an unsupported format', function () {
+      const headers = { accept: unsupportedFormat };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('returns a 404 error', function () {
+        expect(this.res.status).to.equal(404);
+      });
+      it('indicates the format as the reason the request was rejected', function () {
+        const error = JSON.parse(this.res.text);
+        expect(error).to.eql({
+          code: 'harmony.NotFoundError',
+          description: 'Error: Could not find a service to reformat to any of the requested formats [text/plain] for the given collection',
+        });
+      });
+    });
+
+    describe('when providing multiple formats supported by different services', function () {
+      const headers = { accept: `${zarr}, ${tiff}` };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('uses the first format in the list', function () {
+        expect(this.service.operation.outputFormat).to.equal(zarr);
+      });
+      it('uses the correct backend service', function () {
+        expect(this.service.name).to.equal('harmony/netcdf-to-zarr');
+      });
+    });
+
+    describe('when providing multiple formats with the highest priority being unsupported', function () {
+      const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('uses the highest quality value format that is supported', function () {
+        expect(this.service.operation.outputFormat).to.equal(png);
+      });
+      it('uses the correct backend service', function () {
+        expect(this.service.name).to.equal('harmony/gdal');
+      });
+    });
+
+    describe('when providing multiple formats and not specifying a quality value for one of them', function () {
+      const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('treats the unspecified quality value as 1.0', function () {
+        expect(this.service.operation.outputFormat).to.equal(png);
+      });
+    });
+
+    describe('when requesting an unsupported format followed by */*', function () {
+      const headers = { accept: `${unsupportedFormat}, ${anyWildcard}` };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('returns a redirect 303 (and not a 404 error)', function () {
+        expect(this.res.status).to.equal(303);
+      });
+
+      it('chooses the first output format supported by the service (see services.yml)', function () {
+        expect(this.service.operation.outputFormat).to.equal(tiff);
       });
     });
   });
@@ -281,7 +392,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     // Starting up docker image can take more than 2 seconds
     this.timeout(10000);
     StubService.hookDockerImage('alpine:3.10.3');
-    hookRangesetRequest(version, collection, variableName, { granuleId });
+    hookRangesetRequest(version, collection, variableName, { query: { granuleId } });
 
     it('returns an error to the client', async function () {
       expect(this.res.text).to.include('Service request failed with an unknown error.');
@@ -305,7 +416,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           version,
           collection,
           variableName,
-          queryParams,
+          { query: queryParams },
         );
         expect(res.status).to.equal(400);
         expect(res.body).to.eql({
@@ -377,7 +488,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         version,
         collection,
         'NotAVariable',
-        { granuleId },
+        { query: { granuleId } },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
@@ -392,7 +503,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         version,
         collection,
         `all,${variableName}`,
-        { granuleId },
+        { query: { granuleId } },
       );
       expect(res.status).to.equal(400);
       expect(res.body).to.eql({
@@ -414,7 +525,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
   hookServersStartStop();
 
   describe('when provided a valid set of parameters', function () {
-    hookRangesetRequest(version, collection, 'all', {}, 'joe');
+    hookRangesetRequest(version, collection, 'all', { username: 'joe' });
 
     it('returns a 200 successful response', function () {
       expect(this.res.status).to.equal(200);
@@ -472,7 +583,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     const query = {
       subset: ['lat(30:40)', 'lon(-100:0)', 'time("1987-05-29T00:00Z":"1987-05-30T00:00Z")'],
     };
-    hookRangesetRequest(version, collection, 'all', query);
+    hookRangesetRequest(version, collection, 'all', { query });
 
     it('returns a 200 successful response', function () {
       expect(this.res.status).to.equal(200);
@@ -512,7 +623,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
   hookServersStartStop({ skipEarthdataLogin: false });
 
   describe('when provided a valid set of parameters', function () {
-    hookRangesetRequest(version, collection, 'all', {}, 'joe');
+    hookRangesetRequest(version, collection, 'all', { username: 'joe' });
 
     describe('attempting to retrieve the job via the job status route', function () {
       it('returns a 404 because no job is created', async function () {

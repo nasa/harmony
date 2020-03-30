@@ -7,6 +7,7 @@ const LocalDockerService = require('./local-docker-service');
 const HttpService = require('./http-service');
 const NoOpService = require('./no-op-service');
 const { NotFoundError } = require('../../util/errors');
+const { isMimeTypeAccepted } = require('../../util/content-negotiation');
 
 let serviceConfigs = null;
 
@@ -69,15 +70,66 @@ function isCollectionMatch(operation, serviceConfig) {
 }
 
 /**
- * Given a data operation, returns a service instance appropriate for performing that operation
+ * Returns the service to use based on the requested format
+ * @param {String} format Additional context that's not part of the operation, but influences the
+ *    choice regarding the service to use
+ * @param {Object} configs The configuration to use for finding the operation, with all variables
+ *    resolved (default: the contents of config/services.yml)
+ * @returns {Object} An object with two properties - service and format for the service and format
+ * that should be used to fulfill the given request context
+ * @private
+ */
+function _selectServiceForFormat(format, configs) {
+  return configs.find((config) => {
+    const supportedFormats = getIn(config, 'capabilities.output_formats', []);
+    return supportedFormats.find((f) => isMimeTypeAccepted(f, format));
+  });
+}
+
+/**
+ * Returns the service and format to use based on the request context and service configs
+ * @param {DataOperation} operation The operation to perform.
+ * @param {Object} context Additional context that's not part of the operation, but influences the
+ *    choice regarding the service to use
+ * @param {Object} configs The configuration to use for finding the operation, with all variables
+ *    resolved (default: the contents of config/services.yml)
+ * @returns {String} The output format to use
+ * @private
+ */
+function _selectFormat(operation, context, configs) {
+  const { outputFormat } = operation;
+  if (outputFormat) {
+    const matches = configs.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(outputFormat));
+    if (matches.length === 0) {
+      throw new NotFoundError(`Could not find a service to reformat to ${outputFormat} for the given collection`);
+    }
+  } else if (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
+    for (const mimeType of context.requestedMimeTypes) {
+      const service = _selectServiceForFormat(mimeType, configs);
+      if (service) {
+        const supportedFormats = getIn(service, 'capabilities.output_formats', []);
+        return supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType));
+      }
+    }
+    throw new NotFoundError(`Could not find a service to reformat to any of the requested formats [${context.requestedMimeTypes}] for the given collection`);
+  }
+  return outputFormat;
+}
+
+/**
+ * Given a data operation, returns a service instance appropriate for performing that operation.
+ * The operation may also be mutated to set additional properties as part of this function.
  *
- * @param {DataOperation} operation The operation to perform
- * @param {object} configs The configuration to use for finding the operation, with all variables
+ * @param {DataOperation} operation The operation to perform. Note that this function may mutate
+ *    the operation.
+ * @param {Object} context Additional context that's not part of the operation, but influences the
+ *    choice regarding the service to use
+ * @param {Object} configs The configuration to use for finding the operation, with all variables
  *    resolved (default: the contents of config/services.yml)
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @throws {NotFoundError} If no service can perform the given operation
  */
-function forOperation(operation, configs = serviceConfigs) {
+function forOperation(operation, context, configs = serviceConfigs) {
   let matches = [];
   if (operation) {
     matches = configs.filter((config) => isCollectionMatch(operation, config));
@@ -86,17 +138,12 @@ function forOperation(operation, configs = serviceConfigs) {
     matches = [{ type: { name: 'noOp' } }];
   }
 
-  const format = operation.outputFormat;
-  if (format) {
-    matches = matches.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(format));
-    if (matches.length === 0) {
-      throw new NotFoundError(`Could not find a service to reformat to ${format} for the given collection`);
-    }
-  }
+  const outputFormat = _selectFormat(operation, context, matches);
+  const service = outputFormat ? _selectServiceForFormat(outputFormat, matches) : matches[0];
 
-  // TODO: Capabilities match.  Should be fuzzier and warn, rather than erroring?
-
-  return buildService(matches[0], operation);
+  // eslint-disable-next-line no-param-reassign
+  operation.outputFormat = outputFormat;
+  return buildService(service, operation);
 }
 
 /**
