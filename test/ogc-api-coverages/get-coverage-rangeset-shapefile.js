@@ -12,10 +12,34 @@ const { hookCmr } = require('../helpers/stub-cmr');
 const isUUID = require('../../app/util/uuid');
 const { hookMockS3 } = require('../helpers/object-store');
 
+/**
+ * Common steps in the validation tests
+ *
+ * @param {Object} app The express application
+ * @param {Response} res The response object
+ * @param {string} version The OGC version
+ * @param {string} collection The collection id
+ * @param {string} variableName The variable name
+ * @returns {Response} the response from the request
+ */
+async function commonValidationSteps(app, res, version, collection, variableName) {
+  const shapefileHeader = res.headers['set-cookie'].filter((cookie) => {
+    const decoded = decodeURIComponent(cookie);
+    const parsed = parse(decoded);
+    return parsed.shapefile;
+  })[0];
+  const decoded = decodeURIComponent(shapefileHeader);
+  const parsed = parse(decoded);
+  const cookieValue = stripSignature(parsed.shapefile);
+  const cookies = { shapefile: cookieValue };
+  // we 'follow' the redirect from EDL
+  return rangesetRequest(app, version, collection, variableName, res.body, cookies).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+}
+
 describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const collection = 'C1233800302-EEDTEST';
-  const granuleId = 'G1233800352-EEDTEST';
-  const variableId = 'V1233801695-EEDTEST';
+  const expectedGranuleId = 'G1233800352-EEDTEST';
+  const expectedVariableId = 'V1233801695-EEDTEST';
   const variableName = 'red_var';
   const version = '1.0.0';
 
@@ -56,13 +80,13 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       it('passes the source variable to the backend', function () {
         const source = this.service.operation.sources[0];
         expect(source.variables.length === 1);
-        expect(source.variables[0].id).to.equal(variableId);
+        expect(source.variables[0].id).to.equal(expectedVariableId);
       });
 
       it('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal(granuleId);
+        expect(source.granules[0].id).to.equal(expectedGranuleId);
       });
 
       it('passes the outputCrs parameter to the backend in Proj4 format', function () {
@@ -115,7 +139,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       xit('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal(granuleId);
+        expect(source.granules[0].id).to.equal(expectedGranuleId);
       });
     });
 
@@ -131,7 +155,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       xit('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal(granuleId);
+        expect(source.granules[0].id).to.equal(expectedGranuleId);
       });
     });
   });
@@ -176,28 +200,11 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
             variableName,
             { shapefile: { path: './test/resources/corrupt_file.geojson', mimetype: 'application/geo+json' } },
           );
+          // we get redirected to EDL before the shapefile gets processed
           expect(res.status).to.equal(303);
 
-          const shapefileHeader = res.headers['set-cookie'].filter((cookie) => {
-            const decoded = decodeURIComponent(cookie);
-            const parsed = parse(decoded);
-            return parsed.shapefile;
-          })[0];
-
-          const decoded = decodeURIComponent(shapefileHeader);
-          const parsed = parse(decoded);
-          const cookieValue = stripSignature(parsed.shapefile);
-
-          const cookies = { shapefile: cookieValue };
-
-          res = await rangesetRequest(
-            this.frontend,
-            version,
-            collection,
-            variableName,
-            res.body,
-            cookies,
-          ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+          // we fake and follow the EDL response here
+          res = await commonValidationSteps(this.frontend, res, version, collection, variableName);
 
           expect(res.status).to.equal(cmrStatus);
           expect(res.body).to.eql({
@@ -217,28 +224,11 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
           variableName,
           { shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } },
         );
+        // we get redirected to EDL before the shapefile gets processed
         expect(res.status).to.equal(303);
 
-        const shapefileHeader = res.headers['set-cookie'].filter((cookie) => {
-          const decoded = decodeURIComponent(cookie);
-          const parsed = parse(decoded);
-          return parsed.shapefile;
-        })[0];
-
-        const decoded = decodeURIComponent(shapefileHeader);
-        const parsed = parse(decoded);
-        const cookieValue = stripSignature(parsed.shapefile);
-
-        const cookies = { shapefile: cookieValue };
-
-        res = await rangesetRequest(
-          this.frontend,
-          version,
-          collection,
-          variableName,
-          res.body,
-          cookies,
-        ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+        // we fake and follow the EDL response here
+        res = await commonValidationSteps(this.frontend, res, version, collection, variableName);
 
         expect(res.status).to.equal(503);
         expect(res.body).to.eql({

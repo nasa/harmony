@@ -136,10 +136,7 @@ function router({ skipEarthdataLogin }) {
     throw new Error('The "COOKIE_SECRET" environment variable must be set to a random secret string.');
   }
 
-  const uploadBucket = process.env.UPLOAD_BUCKET;
-  if (!uploadBucket) {
-    throw new Error('The "UPLOAD_BUCKET" environment variable must be set to a valid S3 bucket');
-  }
+  const { uploadBucket } = env;
 
   result.use(cookieParser(secret));
 
