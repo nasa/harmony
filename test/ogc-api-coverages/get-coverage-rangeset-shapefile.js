@@ -7,7 +7,7 @@ const fs = require('fs');
 const { hookServersStartStop } = require('../helpers/servers');
 const StubService = require('../helpers/stub-service');
 const { auth } = require('../helpers/auth');
-const { hookGetObject, hookUpload, hookDeleteObject } = require('../helpers/object-store');
+const { hookMockS3 } = require('../helpers/object-store');
 const { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } = require('../helpers/ogc-api-coverages');
 const { hookCmr } = require('../helpers/stub-cmr');
 const isUUID = require('../../app/util/uuid');
@@ -19,11 +19,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const variableName = 'red_var';
   const version = '1.0.0';
 
-  // hookMockS3(['shapefiles']);
-  hookGetObject('/tmp/my_buckets');
-  hookUpload('/tmp/my_buckets');
-  hookDeleteObject('/tmp/my_buckets');
-
+  hookMockS3();
   hookServersStartStop({ skipEarthdataLogin: false });
 
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
@@ -115,6 +111,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('calling the backend service with a GeoJSON shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
       xit('correctly identifies the granules based on the shapefile', function () {
@@ -130,6 +127,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('calling the backend service with a KML shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.kml', mimetype: 'application/vnd.google-earth.kml+xml' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
       xit('correctly identifies the granules based on the shapefile', function () {
@@ -144,7 +142,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     cmrResp.headers = new fetch.Headers(cmrResp.headers);
     hookCmr('fetchPost', cmrResp);
     it('does not redirect to EDL', async function () {
-      this.timeout(50000);
       const res = await postRangesetRequest(
         this.frontend,
         version,
@@ -159,7 +156,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
           subset: ['time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
         },
       ).use(auth({ username: 'fakeUsername', extraCookies: {} }));
-
 
       expect(res.status).to.equal(303);
       expect(res.text.match(/See Other\. Redirecting to http:\/\/localhost:4572\/localStagingBucket\/public\/harmony\/gdal\/002_00_3200ff_global_red_var\.png.*/));

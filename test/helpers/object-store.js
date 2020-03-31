@@ -10,15 +10,10 @@ const { S3ObjectStore } = require('../../app/util/object-store');
 // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
 const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
 const originalUpload = S3MockPrototype.upload;
-S3MockPrototype.upload = function (params, options, callback) {
-  const myCallback = callback;
-  // if (typeof callback !== 'function') {
-  //   myCallback = () => {};
-  // }
-  const result = originalUpload.call(this, params, options, myCallback);
+S3MockPrototype.upload = function (...args) {
+  const result = originalUpload.call(this, ...args);
   return {
     on: () => {},
-    send: originalUpload.send,
     ...result,
   };
 };
@@ -36,7 +31,6 @@ function hookMockS3(_buckets) {
   let dir;
   before(async function () {
     dir = tmp.dirSync();
-    console.log(dir);
     mockAws.config.basePath = dir.name;
     aws.S3 = mockAws.S3;
   });

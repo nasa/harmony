@@ -20,6 +20,7 @@ async function cmrGranuleLocator(req, res, next) {
   if (!operation) return next();
 
   const shapefileInfo = get(req, ['files', 'shapefile', 0]) || req.signedCookies.shapefile;
+  res.clearCookie('shapefile', cookieOptions);
 
   let cmrResponse;
 
@@ -84,10 +85,6 @@ async function cmrGranuleLocator(req, res, next) {
       return next(e);
     }
     req.context.logger.error(e);
-  } finally {
-    if (req.signedCookies.shapefile) {
-      res.clearCookie('shapefile', cookieOptions);
-    }
   }
   return next();
 }
