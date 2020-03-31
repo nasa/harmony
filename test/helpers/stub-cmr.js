@@ -3,7 +3,8 @@ const sinon = require('sinon');
 const cmr = require('../../app/util/cmr');
 
 /**
- * Replace a function in the `cmr` module with a given function
+ * Replace a function in the `cmr` module with a given function. This is needed because
+ * `replay` does not handle POSTs to the CMR correctly.
  *
  * @param {string} functionName The name of the function to be stubbed
  * @param {*} response The response the function should return
