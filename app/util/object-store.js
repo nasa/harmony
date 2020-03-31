@@ -77,14 +77,22 @@ class S3ObjectStore {
   /**
    * Get an object from the object store (see AWS S3 SDK `getObject`)
    *
-   * @param {Object} params a map of parameters (Bucket, Key) indicating the object to be
-   * retrieved
+   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   * be retrieved or the object URL
    * @param {*} callback an optional callback function
    * @returns  {AWS.Request} An object with a `promise` function that can be called to obtain a
    * promise containing the retrieved object
    * @memberof S3ObjectStore
    */
-  getObject(params, callback) {
+  getObject(paramsOrUrl, callback) {
+    let params = paramsOrUrl;
+    if (typeof params === 'string') {
+      const match = params.match(new RegExp('s3://([^/]+)/(.*)'));
+      if (!match) {
+        throw new TypeError(`getObject string does not seem to be an S3 URL: ${params}`);
+      }
+      params = { Bucket: match[1], Key: match[2] };
+    }
     return this.s3.getObject(params, callback);
   }
 
@@ -119,7 +127,8 @@ class S3ObjectStore {
  * Returns a class to interact with the object store appropriate for
  * the provided protocol, or null if no such store exists.
  *
- * @param {string} protocol the protocol used in object store URLs
+ * @param {string} protocol the protocol used in object store URLs.  This may be a full URL, in
+ *   which case the protocol will be read from the front of the URL.
  * @returns {ObjectStore} an object store for interacting with the given protocol
  */
 function objectStoreForProtocol(protocol) {
@@ -127,7 +136,7 @@ function objectStoreForProtocol(protocol) {
     return null;
   }
   // Make sure the protocol is lowercase and does not end in a colon (as URL parsing produces)
-  const normalizedProtocol = protocol.toLowerCase().replace(/:$/, '');
+  const normalizedProtocol = protocol.toLowerCase().split(':')[0];
   if (normalizedProtocol === 's3') {
     return new S3ObjectStore();
   }
