@@ -61,16 +61,31 @@ function hookLandingPage(collection, version) {
  *
  * @param {Express.Application} app The express application (typically this.frontend)
  * @param {String} version The OGC coverages API version
- * @param {string} collection The CMR Collection ID to perform a service on
- * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
- * @param {object} query The query parameters to pass to the EOSS request
- * @param {string} cookies The cookies to set on the call
- * @returns {supertest.Test} An 'awaitable' object that resolves to a Response
+ * @param {String} collection The CMR Collection ID to perform a service on
+ * @param {String} coverageId The coverage ID(s) / variable name(s), or "all"
+ * @param {Object} options additional options for the request
+ * @param {Object} [options.query] The query parameters to pass to the rangeset request
+ * @param {String} [options.headers] The headers to pass to the rangeset request
+ * @param {String} [options.cookies] The cookies to set on the call
+ * @returns {Promise<Response>} The response
  */
-function rangesetRequest(app, version, collection, coverageId, { query = {}, headers = {} }) {
+function rangesetRequest(
+  app,
+  version,
+  collection,
+  coverageId,
+  { query = {}, headers = {}, cookies = null },
+) {
   const req = request(app)
-    .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`);
-  return req.set(headers).query(query);
+    .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`)
+    .query(query)
+    .set(headers);
+
+  if (cookies) {
+    req.set('Cookie', [cookies]);
+  }
+
+  return req;
 }
 
 /**
@@ -180,8 +195,10 @@ function hookPostRangesetRequest(version, collection, coverageId, form) {
       version,
       collection,
       coverageId,
-      query,
-      cookies,
+      {
+        query,
+        cookies,
+      },
     ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
   });
   after(function () {
