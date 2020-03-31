@@ -65,10 +65,10 @@ class S3ObjectStore {
    * Get an object from the object store (see AWS S3 SDK `getObject`)
    *
    * @param {Object} params a map of parameters (Bucket, Key) indicating the object to be
-   * retrieved
+   *   retrieved
    * @param {*} callback an optional callback function
    * @returns  {AWS.Request} An object with a `promise` function that can be called to obtain a
-   * promise containing the retrieved object
+   *   promise containing the retrieved object
    * @memberof S3ObjectStore
    */
   getObject(params, callback) {

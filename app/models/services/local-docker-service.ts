@@ -71,7 +71,7 @@ function logProcessOutput(child, logger) {
  *
  * @param {String} callbackUrl The callback URL for the current request
  * @param {Logger} logger The logger associated with this request
- * @returns {void} Nothing
+ * @returns {void}
  */
 function childProcessAborted(callbackUrl, logger) {
   logger.error('Child did not hit the callback URL. Returning service request failed with an unknown error to the user.');
