@@ -2,7 +2,7 @@ const get = require('lodash.get');
 const cmr = require('../util/cmr');
 const env = require('../util/env');
 const { cookieOptions } = require('../util/cookies');
-const { CmrError, RequestValidationError } = require('../util/errors');
+const { CmrError, RequestValidationError, ServerError } = require('../util/errors');
 
 /**
  * Express.js middleware which extracts parameters from the Harmony operation
@@ -85,6 +85,7 @@ async function cmrGranuleLocator(req, res, next) {
       return next(e);
     }
     req.context.logger.error(e);
+    next(new ServerError('Failed to query the CMR'));
   }
   return next();
 }

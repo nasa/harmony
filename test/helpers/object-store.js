@@ -12,10 +12,7 @@ const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
 const originalUpload = S3MockPrototype.upload;
 S3MockPrototype.upload = function (...args) {
   const result = originalUpload.call(this, ...args);
-  return {
-    on: () => {},
-    ...result,
-  };
+  return { on: () => {}, ...result };
 };
 
 /**
@@ -31,7 +28,6 @@ function hookMockS3(_buckets) {
   let dir;
   before(async function () {
     dir = tmp.dirSync();
-    console.log(dir);
     mockAws.config.basePath = dir.name;
     aws.S3 = mockAws.S3;
   });

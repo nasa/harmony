@@ -275,7 +275,7 @@ class DataOperation {
    * @memberof DataOperation
    */
   set geojson(geojsonUri) {
-    this.model.subset.shape = { type: 'application/geo+json', uri: geojsonUri };
+    this.model.subset.shape = { type: 'application/geo+json', href: geojsonUri };
   }
 
   /**
@@ -285,7 +285,7 @@ class DataOperation {
    * @memberof DataOperation
    */
   get geojson() {
-    return this.model.subset.shape && this.model.subset.shape.uri;
+    return this.model.subset.shape && this.model.subset.shape.href;
   }
 
   /**
