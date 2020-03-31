@@ -62,19 +62,6 @@ class S3ObjectStore {
   }
 
   /**
-   * Delete an object from the object store (see AWS S3 SDK `deleteObject`)
-   *
-   * @param {Object} params a map of parameters (Bucket, Key) indicating the object to be deleted
-   * @param {*} callback an optional callback function
-   * @returns {AWS.Request} An object with a `promise` function that can be called to obtain
-   * a promise that can be used to await the deletion
-   * @memberof S3ObjectStore
-   */
-  deleteObject(params, callback) {
-    return this.s3.deleteObject(params, callback);
-  }
-
-  /**
    * Get an object from the object store (see AWS S3 SDK `getObject`)
    *
    * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
