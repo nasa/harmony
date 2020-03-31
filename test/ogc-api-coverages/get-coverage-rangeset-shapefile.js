@@ -9,7 +9,7 @@ const StubService = require('../helpers/stub-service');
 const { auth } = require('../helpers/auth');
 const { hookMockS3 } = require('../helpers/object-store');
 const { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } = require('../helpers/ogc-api-coverages');
-const { hookCmr } = require('../helpers/stub-cmr');
+// const { hookCmr } = require('../helpers/stub-cmr');
 const isUUID = require('../../app/util/uuid');
 
 describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
@@ -42,10 +42,8 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('calling the backend service with an ESRI shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      // const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
-      // const cmrResp = JSON.parse(cmrRespStr);
       cmrResp.headers = new fetch.Headers(cmrResp.headers);
-      hookCmr('fetchPost', cmrResp);
+      // hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
       it('passes the source collection to the backend', function () {
@@ -111,7 +109,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('calling the backend service with a GeoJSON shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookCmr('fetchPost', cmrResp);
+      // hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
       xit('correctly identifies the granules based on the shapefile', function () {
@@ -127,7 +125,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('calling the backend service with a KML shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.kml', mimetype: 'application/vnd.google-earth.kml+xml' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookCmr('fetchPost', cmrResp);
+      // hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
       xit('correctly identifies the granules based on the shapefile', function () {
@@ -140,7 +138,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
 
   describe('When a user is already authenticated', async function () {
     cmrResp.headers = new fetch.Headers(cmrResp.headers);
-    hookCmr('fetchPost', cmrResp);
+    // hookCmr('fetchPost', cmrResp);
     StubService.hook({ params: { redirect: 'http://example.com' } });
 
     it('does not redirect to EDL', async function () {
@@ -168,7 +166,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('when the CMR returns a 4xx', function () {
       const cmrErrorMessage = 'Corrupt zip file';
       const cmrStatus = 400;
-      hookCmr('cmrPostSearchBase', { status: cmrStatus, data: { errors: [cmrErrorMessage] } });
+      // hookCmr('cmrPostSearchBase', { status: cmrStatus, data: { errors: [cmrErrorMessage] } });
       it('returns an HTTP 400 "Bad Request" error with explanatory message when the shapefile is corrupt',
         async function () {
           let res = await postRangesetRequest(
@@ -210,7 +208,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     });
 
     describe('when the CMR returns a 5xx', function () {
-      hookCmr('cmrPostSearchBase', { status: 500 });
+      // hookCmr('cmrPostSearchBase', { status: 500 });
       it('returns an HTTP 503 "Service unavailable" error', async function () {
         let res = await postRangesetRequest(
           this.frontend,

@@ -2,8 +2,6 @@ const { before, after } = require('mocha');
 const sinon = require('sinon');
 const aws = require('aws-sdk');
 const mockAws = require('mock-aws-s3');
-const fs = require('fs');
-const path = require('path');
 const tmp = require('tmp');
 const { S3ObjectStore } = require('../../app/util/object-store');
 
@@ -42,92 +40,6 @@ function hookMockS3(_buckets) {
 }
 
 /**
- * Replace `upload` with a function that uses the local file system
- *
- * @param {string} directory The directory in which to create buckets
- * @returns {void}
- */
-function hookUpload(directory) {
-  before(function () {
-    sinon.stub(S3ObjectStore.prototype, 'upload')
-      .callsFake((params) => {
-        const { Body: body, Bucket: bucket, Key: key } = params;
-        const bucketPath = path.join(directory, bucket);
-        if (!fs.existsSync(bucketPath)) {
-          fs.mkdirSync(bucketPath, { recursive: true });
-        }
-        const filePath = path.join(bucketPath, key);
-        const writeStream = fs.createWriteStream(filePath);
-        body.pipe(writeStream);
-        return {
-          on: (_event, cb) => {
-            writeStream.on('finish', () => {
-              const fileSize = fs.statSync(filePath).size;
-              cb({ total: fileSize });
-            });
-          },
-          send: (cb) => { cb(null, {}); },
-        };
-      });
-  });
-
-  after(function () {
-    S3ObjectStore.prototype.upload.restore();
-  });
-}
-
-/**
- * Replace `getObject` with a function that uses the local file system
- *
- * @param {string} directory The directory in which the buckets are kept
- * @returns {void}
- */
-function hookGetObject(directory) {
-  before(function () {
-    sinon.stub(S3ObjectStore.prototype, 'getObject')
-      .callsFake((params) => {
-        const { Bucket: bucket, Key: key } = params;
-        const filePath = path.join(directory, bucket, key);
-        const data = fs.readFileSync(filePath);
-
-        return {
-          promise: () => new Promise((resolve, _reject) => resolve(data)),
-        };
-      });
-  });
-
-  after(function () {
-    S3ObjectStore.prototype.getObject.restore();
-  });
-}
-
-/**
- * Replace `deleteObject` with a function that uses the local file system
- *
- * @param {string} directory The directory in which the buckets are kept
- * @returns {void}
- */
-function hookDeleteObject(directory) {
-  before(function () {
-    sinon.stub(S3ObjectStore.prototype, 'deleteObject')
-      .callsFake((params) => {
-        const { Bucket: bucket, Key: key } = params;
-        const filePath = path.join(directory, bucket, key);
-        const data = fs.readFileSync(filePath);
-
-        return {
-          promise: () => new Promise((resolve, _reject) => resolve(data)),
-        };
-      });
-  });
-
-  after(function () {
-    S3ObjectStore.prototype.deleteObject.restore();
-  });
-}
-
-
-/**
  * Adds stubs to S3 object signing that retain the username from the 'A-userid' parameter.
  *
  * @returns {string} The URL prefix for use in matching responses
@@ -147,7 +59,4 @@ function hookSignS3Object() {
 module.exports = {
   hookMockS3,
   hookSignS3Object,
-  hookUpload,
-  hookGetObject,
-  hookDeleteObject,
 };
