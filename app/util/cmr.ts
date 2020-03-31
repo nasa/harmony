@@ -2,10 +2,16 @@ const FormData = require('form-data');
 const get = require('lodash.get');
 const fetch = require('node-fetch');
 const querystring = require('querystring');
+const fs = require('fs');
+const tmp = require('tmp');
+const util = require('util');
+const stream = require('stream');
 const env = require('./env');
 const { CmrError } = require('./errors');
 const logger = require('./log');
 const { objectStoreForProtocol } = require('./object-store');
+
+const pipeline = util.promisify(stream.pipeline);
 
 const clientIdHeader = {
   'Client-id': `${env.harmonyClientId}`,
@@ -127,15 +133,18 @@ async function fetchPost(path, formData, headers) {
  * @returns {void}
  */
 async function processShapefile(metadata, formData) {
+  const tempFile = tmp.fileSync();
   const s3Key = metadata.key;
   const s3Bucket = metadata.bucket;
-  const fileData = await objectStoreForProtocol(env.objectStoreType).getObject({
+  const getObjectResponse = await objectStoreForProtocol(env.objectStoreType).getObject({
     Bucket: s3Bucket,
     Key: s3Key,
   });
-  formData.append('shapefile', fileData.createReadStream(), {
+  await pipeline(getObjectResponse.createReadStream(), fs.createWriteStream(tempFile.name));
+  formData.append('shapefile', fs.createReadStream(tempFile.name), {
     contentType: metadata.mimetype,
   });
+  return tempFile;
 }
 
 /**
