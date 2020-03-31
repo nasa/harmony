@@ -136,9 +136,8 @@ async function processShapefile(metadata, formData) {
   const fileData = await objectStoreForProtocol(env.objectStoreType).getObject({
     Bucket: s3Bucket,
     Key: s3Key,
-  }).promise();
-  fs.writeFileSync(tempFile.name, fileData.Body);
-  formData.append('shapefile', fs.createReadStream(tempFile.name), {
+  });
+  formData.append('shapefile', fileData.createReadStream(tempFile.name), {
     contentType: metadata.mimetype,
   });
   return tempFile;
