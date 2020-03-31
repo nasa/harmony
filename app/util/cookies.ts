@@ -21,15 +21,11 @@ const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === 'true' }
 function _shapefile(req) {
   // if a shapefile was uploaded set a cookie with a url for the shapefile and
   // the other POST form parameters
-  let rval = [];
+  if (!req.files) return [];
 
-  if (req.files) {
-    const { mimetype, key, bucket } = req.files.shapefile[0];
-    const shapefileParams = { mimetype, key, bucket };
-    rval = ['shapefile', `j:${JSON.stringify(shapefileParams)}`];
-  }
-
-  return rval;
+  const { mimetype, key, bucket } = req.files.shapefile[0];
+  const shapefileParams = { mimetype, key, bucket };
+  return ['shapefile', `j:${JSON.stringify(shapefileParams)}`];
 }
 
 /**
