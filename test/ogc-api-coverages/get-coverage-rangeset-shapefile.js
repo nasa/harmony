@@ -141,6 +141,8 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   describe('When a user is already authenticated', async function () {
     cmrResp.headers = new fetch.Headers(cmrResp.headers);
     hookCmr('fetchPost', cmrResp);
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+
     it('does not redirect to EDL', async function () {
       const res = await postRangesetRequest(
         this.frontend,
@@ -158,7 +160,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       ).use(auth({ username: 'fakeUsername', extraCookies: {} }));
 
       expect(res.status).to.equal(303);
-      expect(res.text.match(/See Other\. Redirecting to http:\/\/localhost:4572\/localStagingBucket\/public\/harmony\/gdal\/002_00_3200ff_global_red_var\.png.*/));
+      expect(res.text.match(/See Other\. Redirecting to http:\/\/example.com.*/));
     });
   });
 
