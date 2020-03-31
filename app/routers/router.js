@@ -3,6 +3,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
+const crypto = require('crypto');
 const env = require('../util/env');
 const { objectStoreForProtocol } = require('../util/object-store');
 
@@ -145,15 +146,20 @@ function router({ skipEarthdataLogin }) {
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
   // a bucket.
   const objectStore = objectStoreForProtocol(env.objectStoreType);
-  // This is a little bit brittle because `multer-S3` might change it's internal implementation
-  // and start calling s3 SDK functions that we have not wrapped in our object store
-  // implementation, but the only alternative would be implementing `multer-s3` ourselves.
+  const shapefilePrefix = 'temp-user-uploads';
+
   const upload = multer({ storage: multerS3({
     s3: objectStore.s3,
+    key: (_request, _file, callback) => {
+      crypto.randomBytes(16, (err, raw) => {
+        callback(err, err ? undefined : `${shapefilePrefix}/${raw.toString('hex')}`);
+      });
+    },
     bucket: uploadBucket,
   }) });
   const uploadFields = [{ name: 'shapefile', maxCount: 1 }];
   result.post(collectionPrefix('(ogc-api-coverages)'), upload.fields(uploadFields));
+
 
   if (`${skipEarthdataLogin}` !== 'true') {
     result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex, '/jobs*', '/service-results/*'])));
