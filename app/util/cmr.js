@@ -129,11 +129,11 @@ async function fetchPost(path, formData, headers) {
 async function processShapefile(metadata, formData) {
   const s3Key = metadata.key;
   const s3Bucket = metadata.bucket;
-  const fileData = await objectStoreForProtocol(env.objectStoreType).getObject({
+  const filestream = objectStoreForProtocol(env.objectStoreType).getObject({
     Bucket: s3Bucket,
     Key: s3Key,
-  });
-  formData.append('shapefile', fileData.createReadStream(), {
+  }).createReadStream();
+  formData.append('shapefile', filestream, {
     contentType: metadata.mimetype,
   });
 }
@@ -166,7 +166,6 @@ async function cmrPostSearchBase(path, form, token) {
       }
     }
   }));
-
   const headers = {
     ...clientIdHeader,
     ..._makeTokenHeader(token),

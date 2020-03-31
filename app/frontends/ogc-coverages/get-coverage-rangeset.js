@@ -1,4 +1,5 @@
 const { SpatialReference } = require('gdal-next');
+const get = require('lodash.get');
 const DataOperation = require('../../models/data-operation');
 const { keysToLowerCase } = require('../../util/object');
 const { RequestValidationError } = require('../../util/errors');
@@ -6,6 +7,7 @@ const { wrap } = require('../../util/array');
 const { parseVariables } = require('./util/variable-parsing');
 const { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } = require('./util/parameter-parsing');
 const { parseAcceptHeader } = require('../../util/content-negotiation');
+const { defaultObjectStore } = require('../../util/object-store');
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -20,7 +22,18 @@ const { parseAcceptHeader } = require('../../util/content-negotiation');
  */
 function getCoverageRangeset(req, res, next) {
   const query = keysToLowerCase(req.query);
+
   const operation = new DataOperation();
+
+  const shapefile = get(req, 'files.shapefile[0]') || req.signedCookies.shapefile;
+  if (shapefile) {
+    if (shapefile.mimetype !== 'application/geo+json') {
+      // HARMONY-243 will need to convert other types to GeoJSON here and update the exception
+      throw new RequestValidationError(`Shapefiles must have content type "application/geo+json".  Received ${shapefile.mimetype}`);
+    }
+    operation.geojson = defaultObjectStore().getUrlString(shapefile.bucket, shapefile.key);
+  }
+
   if (query.format) {
     operation.outputFormat = query.format;
   } else if (req.headers.accept) {

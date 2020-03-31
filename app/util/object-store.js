@@ -101,6 +101,18 @@ class S3ObjectStore {
   upload(params, options, callback) {
     return this.s3.upload(params, options, callback);
   }
+
+  /**
+   * Returns a URL string for an object with the given bucket and key (prefix)
+   *
+   * @param {string} bucket the bucket containing the URL to construct
+   * @param {string} key the key or key prefix for the location
+   * @returns {string} the URL for the object
+   * @memberof S3ObjectStore
+   */
+  getUrlString(bucket, key) {
+    return `s3://${bucket}/${key}`;
+  }
 }
 
 /**
@@ -122,7 +134,18 @@ function objectStoreForProtocol(protocol) {
   return null;
 }
 
+/**
+ * Returns the default object store for this instance of Harmony.  Allows requesting an
+ * object store without first knowing a protocol.
+ *
+ * @returns {ObjectStore} the default object store for Harmony.
+ */
+function defaultObjectStore() {
+  return new S3ObjectStore();
+}
+
 module.exports = {
   objectStoreForProtocol,
+  defaultObjectStore,
   S3ObjectStore,
 };

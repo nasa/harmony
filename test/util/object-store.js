@@ -1,6 +1,6 @@
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
-const { objectStoreForProtocol, S3ObjectStore } = require('../../app/util/object-store');
+const { objectStoreForProtocol, defaultObjectStore, S3ObjectStore } = require('../../app/util/object-store');
 
 describe('util/object-store', function () {
   describe('objectStoreForProtocol', function () {
@@ -22,6 +22,20 @@ describe('util/object-store', function () {
 
     it('ignores trailing colons on the protocol', function () {
       expect(objectStoreForProtocol('s3:')).to.be.instanceof(S3ObjectStore);
+    });
+  });
+
+  describe('defaultObjectStore', function () {
+    it('returns an S3 object store', function () {
+      expect(defaultObjectStore()).to.be.instanceof(S3ObjectStore);
+    });
+  });
+
+  describe('S3ObjectStore', function () {
+    describe('#getUrlString', function () {
+      it('returns a string corresponding to the bucket and key location using the s3:// protocol', function () {
+        expect(new S3ObjectStore().getUrlString('mybucket', 'my/key/path')).to.equal('s3://mybucket/my/key/path');
+      });
     });
   });
 });
