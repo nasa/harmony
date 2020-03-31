@@ -1,9 +1,7 @@
 const FormData = require('form-data');
-const fs = require('fs');
 const get = require('lodash.get');
 const fetch = require('node-fetch');
 const querystring = require('querystring');
-const tmp = require('tmp');
 const env = require('./env');
 const { CmrError } = require('./errors');
 const logger = require('./log');
@@ -126,22 +124,18 @@ async function fetchPost(path, formData, headers) {
  *
  * @param {Object} metadata The value containing the shapefile metadata
  * @param {Object} formData the Form data
- * @returns {Promise<File>} The a promise containing the file object pointing to the temporary
- * file on the file system
+ * @returns {void}
  */
 async function processShapefile(metadata, formData) {
-  const tempFile = tmp.fileSync();
   const s3Key = metadata.key;
   const s3Bucket = metadata.bucket;
   const fileData = await objectStoreForProtocol(env.objectStoreType).getObject({
     Bucket: s3Bucket,
     Key: s3Key,
-  }).promise();
-  fs.writeFileSync(tempFile.name, fileData.Body);
-  formData.append('shapefile', fs.createReadStream(tempFile.name), {
+  });
+  formData.append('shapefile', fileData.createReadStream(), {
     contentType: metadata.mimetype,
   });
-  return tempFile;
 }
 
 /**
@@ -153,7 +147,6 @@ async function processShapefile(metadata, formData) {
  * @returns {Promise<object>} The CMR query result
  */
 async function cmrPostSearchBase(path, form, token) {
-  let tempFile;
   const formData = new FormData();
   await Promise.all(Object.keys(form).map(async (key) => {
     const value = form[key];
@@ -163,7 +156,7 @@ async function cmrPostSearchBase(path, form, token) {
         // directly from S3 to the CMR and failing I'm giving up for now
         // and downloading the shapefile from S3 to a temporary file before
         // uploading it to the CMR
-        tempFile = await processShapefile(value, formData);
+        await processShapefile(value, formData);
       } else if (Array.isArray(value)) {
         value.forEach((v) => {
           formData.append(key, v);
@@ -181,16 +174,7 @@ async function cmrPostSearchBase(path, form, token) {
     ...formData.getHeaders(),
   };
 
-  let response;
-  try {
-    response = module.exports.fetchPost(path, formData, headers);
-  } finally {
-    // not strictly needed as the library will handle this, but added
-    // for completeness to make sure the temporary file gets deleted
-    tempFile.removeCallback();
-  }
-
-  return response;
+  return module.exports.fetchPost(path, formData, headers);
 }
 
 /**

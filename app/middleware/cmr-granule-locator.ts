@@ -1,6 +1,7 @@
 const get = require('lodash.get');
 const cmr = require('../util/cmr');
 const env = require('../util/env');
+const { cookieOptions } = require('../util/cookies');
 const { CmrError, RequestValidationError } = require('../util/errors');
 
 /**
@@ -19,6 +20,7 @@ async function cmrGranuleLocator(req, res, next) {
   if (!operation) return next();
 
   const shapefileInfo = get(req, ['files', 'shapefile', 0]) || req.signedCookies.shapefile;
+  res.clearCookie('shapefile', cookieOptions);
 
   let cmrResponse;
 
@@ -62,8 +64,8 @@ async function cmrGranuleLocator(req, res, next) {
 
       operation.cmrHits += hits;
       const msTaken = new Date().getTime() - startTime;
-      req.logger.info('Completed granule query', { durationMs: msTaken });
-      req.logger.info(`Found ${hits} granules`);
+      req.context.logger.info('Completed granule query', { durationMs: msTaken });
+      req.context.logger.info(`Found ${hits} granules`);
       const granules = [];
       for (const granule of atomGranules) {
         const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);

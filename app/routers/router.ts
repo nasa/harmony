@@ -149,7 +149,7 @@ function router({ skipEarthdataLogin }) {
   // and start calling s3 SDK functions that we have not wrapped in our object store
   // implementation, but the only alternative would be implementing `multer-s3` ourselves.
   const upload = multer({ storage: multerS3({
-    s3: objectStore,
+    s3: objectStore.s3,
     bucket: uploadBucket,
   }) });
   const uploadFields = [{ name: 'shapefile', maxCount: 1 }];

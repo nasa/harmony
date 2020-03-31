@@ -19,7 +19,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const variableName = 'red_var';
   const version = '1.0.0';
 
-  // hookMockS3(['shapefiles']);
+  hookMockS3();
   hookServersStartStop({ skipEarthdataLogin: false });
 
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
@@ -111,6 +111,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('calling the backend service with a GeoJSON shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
       xit('correctly identifies the granules based on the shapefile', function () {
@@ -126,6 +127,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('calling the backend service with a KML shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.kml', mimetype: 'application/vnd.google-earth.kml+xml' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
       xit('correctly identifies the granules based on the shapefile', function () {
@@ -139,8 +141,9 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   describe('When a user is already authenticated', async function () {
     cmrResp.headers = new fetch.Headers(cmrResp.headers);
     hookCmr('fetchPost', cmrResp);
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+
     it('does not redirect to EDL', async function () {
-      this.timeout(50000);
       const res = await postRangesetRequest(
         this.frontend,
         version,
@@ -156,15 +159,9 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         },
       ).use(auth({ username: 'fakeUsername', extraCookies: {} }));
 
-
-      expect(res.status).to.equal(200);
+      expect(res.status).to.equal(303);
+      expect(res.text.match(/See Other\. Redirecting to http:\/\/example.com.*/));
     });
-
-    // it('correctly identifies the granules based on the shapefile', function () {
-    //   const source = this.service.operation.sources[0];
-    //   expect(source.granules.length === 1);
-    //   expect(source.granules[0].id).to.equal(granuleId);
-    // });
   });
 
   describe('Validation', function () {
