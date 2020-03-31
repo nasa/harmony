@@ -1,5 +1,6 @@
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
+const sinon = require('sinon');
 const { objectStoreForProtocol, defaultObjectStore, S3ObjectStore } = require('../../app/util/object-store');
 
 describe('util/object-store', function () {
@@ -32,6 +33,28 @@ describe('util/object-store', function () {
   });
 
   describe('S3ObjectStore', function () {
+    describe('#getObject', function () {
+      it('parses valid S3 URL strings and passes their bucket and key to s3.getObject', function () {
+        const store = new S3ObjectStore();
+        const s3 = sinon.mock(store.s3);
+        s3.expects('getObject').once().withArgs({ Bucket: 'example-bucket', Key: 'example/path.txt' });
+        store.getObject('s3://example-bucket/example/path.txt');
+      });
+
+      it('raises exceptions for invalid S3 URL strings', function () {
+        const store = new S3ObjectStore();
+        expect(() => store.getObject('s://example-bucket/example/path.txt')).to.throw(TypeError);
+      });
+
+      it('passes options objects directly to s3.getObject', function () {
+        const store = new S3ObjectStore();
+        const options = { Bucket: 'example-bucket', Key: 'example/path.txt' };
+        const s3 = sinon.mock(store.s3);
+        s3.expects('getObject').once().withArgs(options);
+        store.getObject(options);
+      });
+    });
+
     describe('#getUrlString', function () {
       it('returns a string corresponding to the bucket and key location using the s3:// protocol', function () {
         expect(new S3ObjectStore().getUrlString('mybucket', 'my/key/path')).to.equal('s3://mybucket/my/key/path');

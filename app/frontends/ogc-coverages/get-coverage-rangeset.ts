@@ -7,6 +7,7 @@ const { wrap } = require('../../util/array');
 const { parseVariables } = require('./util/variable-parsing');
 const { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } = require('./util/parameter-parsing');
 const { parseAcceptHeader } = require('../../util/content-negotiation');
+const { cookieOptions } = require('../../util/cookies');
 const { defaultObjectStore } = require('../../util/object-store');
 
 /**
@@ -26,6 +27,8 @@ function getCoverageRangeset(req, res, next) {
   const operation = new DataOperation();
 
   const shapefile = get(req, 'files.shapefile[0]') || req.signedCookies.shapefile;
+  res.clearCookie('shapefile', cookieOptions);
+
   if (shapefile) {
     if (shapefile.mimetype !== 'application/geo+json') {
       // HARMONY-243 will need to convert other types to GeoJSON here and update the exception

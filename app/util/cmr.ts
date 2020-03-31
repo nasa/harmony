@@ -1,11 +1,17 @@
 const FormData = require('form-data');
+const fs = require('fs');
 const get = require('lodash.get');
 const fetch = require('node-fetch');
 const querystring = require('querystring');
+const stream = require('stream');
+const tmp = require('tmp');
+const util = require('util');
 const env = require('./env');
 const { CmrError } = require('./errors');
 const logger = require('./log');
 const { objectStoreForProtocol } = require('./object-store');
+
+const pipeline = util.promisify(stream.pipeline);
 
 const clientIdHeader = {
   'Client-id': `${env.harmonyClientId}`,
@@ -119,23 +125,21 @@ async function fetchPost(path, formData, headers) {
 }
 
 /**
- * Process a shapefile entry by downloading the file from S3 and adding an entry for it in
+ * Process a GeoJSON entry by downloading the file from S3 and adding an entry for it in
  * a mulitpart/form-data object to be uploaded to the CMR.
  *
- * @param {Object} metadata The value containing the shapefile metadata
+ * @param {string} geoJsonUrl The location of the shapefile
  * @param {Object} formData the Form data
- * @returns {void}
+ * @returns {Promise<File>} The a promise containing the file object pointing to the temporary
  */
-async function processShapefile(metadata, formData) {
-  const s3Key = metadata.key;
-  const s3Bucket = metadata.bucket;
-  const filestream = objectStoreForProtocol(env.objectStoreType).getObject({
-    Bucket: s3Bucket,
-    Key: s3Key,
-  }).createReadStream();
-  formData.append('shapefile', filestream, {
-    contentType: metadata.mimetype,
+async function processGeoJson(geoJsonUrl, formData) {
+  const tempFile = tmp.fileSync();
+  const getObjectResponse = await objectStoreForProtocol(geoJsonUrl).getObject(geoJsonUrl);
+  await pipeline(getObjectResponse.createReadStream(), fs.createWriteStream(tempFile.name));
+  formData.append('shapefile', fs.createReadStream(tempFile.name), {
+    contentType: 'application/geo+json',
   });
+  return tempFile;
 }
 
 /**
@@ -148,15 +152,12 @@ async function processShapefile(metadata, formData) {
  */
 async function cmrPostSearchBase(path, form, token) {
   const formData = new FormData();
+  let shapefile = null;
   await Promise.all(Object.keys(form).map(async (key) => {
     const value = form[key];
     if (value) {
-      if (key === 'shapefileInfo') {
-        // after attempting to use various different solutions to stream
-        // directly from S3 to the CMR and failing I'm giving up for now
-        // and downloading the shapefile from S3 to a temporary file before
-        // uploading it to the CMR
-        await processShapefile(value, formData);
+      if (key === 'geojson') {
+        shapefile = await processGeoJson(value, formData);
       } else if (Array.isArray(value)) {
         value.forEach((v) => {
           formData.append(key, v);
@@ -173,7 +174,11 @@ async function cmrPostSearchBase(path, form, token) {
     ...formData.getHeaders(),
   };
 
-  return module.exports.fetchPost(path, formData, headers);
+  try {
+    return module.exports.fetchPost(path, formData, headers);
+  } finally {
+    shapefile.removeCallback();
+  }
 }
 
 /**
