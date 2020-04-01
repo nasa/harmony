@@ -16,6 +16,7 @@
 - [ ] Update [harmony-service-lib-py/example/service-operation.json](../../../../harmony-service-lib-py/example/service-operation.json) to use the new schema
 - [ ] Update [harmony-gdal/example/harmony-operation.json](../../../../harmony-gdal/example/harmony-operation.json) to use the new schema
 - [ ] Update [config/services.yml](../../../config/services.yml) to supply the new library version for any services that will be automatically or manually upgraded with the change
+- [ ] Update [docs/adapting-new-services.md](../../../docs/adapting-new-services.md) to specify the updated version
 - [ ] Update any Harmony-owned services that need to use the new features or may be incompatible with the change
 - [ ] Notify service authors that the schema was updated
 - [ ] Swear that next time around you'll make the process a little easier

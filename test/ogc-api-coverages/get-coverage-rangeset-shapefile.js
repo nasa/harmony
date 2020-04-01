@@ -49,10 +49,9 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
   const cmrResp = JSON.parse(cmrRespStr);
 
-  // ESRI shapefile
   describe('when provided a valid set of parameters', function () {
     let form = {
-      subset: ['time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+      subset: ['lon(17:98)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
       interpolation: 'near',
       scaleExtent: '0,2500000.3,1500000,3300000',
       scaleSize: '1.1,2',
@@ -62,9 +61,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' },
     };
 
-    // GeoJSON - NOTE: It makes no sense to run this test without relay, so it's marked as pending.
-    // If you want to run it, comment out relay in `caching-hooks.js`. Setting the
-    // RELAY environment variable won't work
     describe('calling the backend service with a GeoJSON shapefile', function () {
       form = { ...form, shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
@@ -129,7 +125,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       });
     });
 
-    // ESRI shapefile
+    // TODO Marked as pending as it currently provides no value over GeoJSON (HARMONY-243 will implement)
     describe('calling the backend service with an ESRI shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
@@ -143,9 +139,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       });
     });
 
-    // KML - NOTE: It makes no sense to run this test without relay, so it's marked as pending.
-    // If you want to run it, comment out relay in `caching-hooks.js`. Setting the
-    // RELAY environment variable won't work
+    // TODO Marked as pending as it currently provides no value over GeoJSON (HARMONY-243 will implement)
     describe('calling the backend service with a KML shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.kml', mimetype: 'application/vnd.google-earth.kml+xml' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
