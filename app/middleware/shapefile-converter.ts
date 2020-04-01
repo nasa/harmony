@@ -1,7 +1,11 @@
 const get = require('lodash.get');
 const fs = require('fs');
+const path = require('path');
+const rewind = require('@mapbox/geojson-rewind');
+const esriShapefile = require('shapefile');
 const tmp = require('tmp');
 const util = require('util');
+const unzipper = require('unzipper');
 const { cookieOptions } = require('../util/cookies');
 const { RequestValidationError } = require('../util/errors');
 const { defaultObjectStore } = require('../util/object-store');
@@ -11,15 +15,88 @@ const createTmpFile = util.promisify(tmp.file);
 const unlink = util.promisify(fs.unlink);
 
 /**
- * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
- * the caller MUST unlink the result to delete it
+ * The string that starts a GeoJSON file when converting from ESRI. We need to
+ * use a FeatureCollection because we don't know if we will have one or many
+ * features when streaming.
+ */
+const geoJsonFileStart = `{
+  "type": "FeatureCollection",
+  "features": [
+`;
+
+/**
+ * The string that ends a GeoJSON file when converting from ESRI. This closes
+ * the FeatureCollection
+ */
+const geoJsonFileEnd = ']}';
+
+/**
+ * Find a .shp file in a directory of files extracted from an ESRI shapefile .zip
  *
- * @param {string} filename the path to the ESRI shapefile to convert
+ * @param {*} dir The directory where the shapefile was extracted
+ * @return {string} The path to the .shp file
+ */
+function findShpFile(dir) {
+  const shpFiles = fs.readdirSync(dir).filter((file) => path.extname(file) === '.shp');
+  if (shpFiles.length !== 1) {
+    throw new RequestValidationError(
+      `Error: shapefiles must contain exactly one .shp file, found ${shpFiles.length}`,
+    );
+  }
+
+  return path.join(dir, shpFiles[0]);
+}
+
+/**
+ * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
+ * the caller MUST unlink the result to delete it by calling `result.removeCallback()`
+ *
+ * @param {string} filename the path to the ESRI shapefile to convert (must be a .zip file)
  * @returns {string} path to a temporary file containing the GeoJSON
+ * @throws {RequestValidationError} if something goes wrong
+ * TODO:
+ *   * enable tests with the ESRI format
+ *   * write tests to make sure things get cleaned up,
+ *   * write tests for error cases
  */
 async function esriToGeoJson(filename) {
-  const tempFile = await createTmpFile();
-  console.log('TODO: Implement esriToGeoJson, writing the result to tempFile');
+  const tempFile = tmp.fileSync();
+  const tempDir = tmp.dirSync();
+  // unzip the shapefile
+  await fs.createReadStream(filename)
+    .pipe(unzipper.Extract({ path: tempDir.name }))
+    .promise()
+    .catch((error) => {
+      tempDir.removeCallback();
+      throw new RequestValidationError(`Error: failed to unzip shapefile: ${error}`);
+    });
+
+  // convert to GeoJSON
+  const shpFilePath = findShpFile(tempDir.name);
+  fs.writeFileSync(tempFile.name, geoJsonFileStart, 'utf8');
+  let firstLine = true;
+  await esriShapefile.open(shpFilePath)
+    .then((source) => source.read()
+      .then(function log(result) {
+        if (result.done) return;
+        // Add commas between the Features
+        if (firstLine) {
+          firstLine = false;
+        } else {
+          fs.appendFileSync(tempFile.name, ',\n', 'utf8');
+        }
+        // set the correct winding on the outer and inner rings of polygons
+        const feature = rewind(result.value, false);
+        fs.appendFileSync(tempFile.name, JSON.stringify(feature), 'utf8');
+        return source.read().then(log);
+      }))
+    .catch((error) => {
+      tempDir.removeCallback();
+      throw new RequestValidationError(`Error: failed to process shapefile: ${error}`);
+    });
+  fs.appendFileSync(tempFile.name, geoJsonFileEnd, 'utf8');
+  tempDir.removeCallback();
+
   return tempFile;
 }
 
@@ -89,4 +166,5 @@ async function shapefileConverter(req, res, next) {
   next();
 }
 
-module.exports = shapefileConverter;
+// module.exports = shapefileConverter;
+module.exports = { esriToGeoJson };
