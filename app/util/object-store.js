@@ -1,6 +1,14 @@
-const { URL } = require('url');
-const querystring = require('querystring');
 const aws = require('aws-sdk');
+const fs = require('fs');
+const querystring = require('querystring');
+const stream = require('stream');
+const tmp = require('tmp');
+const { URL } = require('url');
+const util = require('util');
+
+const pipeline = util.promisify(stream.pipeline);
+const createTmpFileName = util.promisify(tmp.tmpName);
+const readFile = util.promisify(fs.readFile);
 
 /**
  * Class to use when interacting with S3
@@ -65,7 +73,7 @@ class S3ObjectStore {
    * Get an object from the object store (see AWS S3 SDK `getObject`)
    *
    * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
-   * be retrieved or the object URL
+   *   be retrieved or the object URL
    * @param {*} callback an optional callback function
    * @returns  {AWS.Request} An object with a `promise` function that can be called to obtain a
    *   promise containing the retrieved object
@@ -73,6 +81,20 @@ class S3ObjectStore {
    * @memberof S3ObjectStore
    */
   getObject(paramsOrUrl, callback) {
+    return this.s3.getObject(this._paramsOrUrlToParams(paramsOrUrl), callback);
+  }
+
+  /**
+   * Helper method for converting a param that is either S3 parameters (Bucket, Key, etc) or
+   * a URL into a param that is S3 parameters.
+   *
+   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   *   be retrieved or the object URL
+   * @returns {Object} S3 parameters corresponding to the input
+   * @throws {TypeError} if an invalid URL is supplied
+   * @memberof S3ObjectStore
+   */
+  _paramsOrUrlToParams(paramsOrUrl) {
     let params = paramsOrUrl;
     if (typeof params === 'string') {
       const match = params.match(new RegExp('s3://([^/]+)/(.*)'));
@@ -81,7 +103,43 @@ class S3ObjectStore {
       }
       params = { Bucket: match[1], Key: match[2] };
     }
-    return this.s3.getObject(params, callback);
+    return params;
+  }
+
+  /**
+   * Downloads the given object from the store, returning a temporary file location containing the
+   * object.  Note, the caller MUST remove the file when complete
+   *
+   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   *   be retrieved or the object URL
+   * @returns {string} path to a temporary file containing the object
+   * @throws {TypeError} if an invalid URL is supplied
+   * @memberof S3ObjectStore
+   */
+  async downloadFile(paramsOrUrl) {
+    const tempFile = await createTmpFileName();
+    const getObjectResponse = this.getObject(paramsOrUrl);
+    await pipeline(getObjectResponse.createReadStream(), fs.createWriteStream(tempFile));
+    return tempFile;
+  }
+
+
+  /**
+   * Uploads the given file from the store, returning the URL to the uploaded file
+   *
+   * @param {string} fileName the path to the file to upload
+   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   *   be uploaded or a URL location
+   * @returns {Promise<string>} a URL to the uploaded file
+   * @throws {TypeError} if an invalid URL is supplied
+   * @memberof S3ObjectStore
+   */
+  async uploadFile(fileName, paramsOrUrl) {
+    const fileContent = await readFile(fileName);
+    const params = this._paramsOrUrlToParams(paramsOrUrl);
+    params.Body = fileContent;
+    await this.s3.upload(params).promise();
+    return this.getUrlString(params.Bucket, params.Key);
   }
 
   /**
