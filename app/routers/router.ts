@@ -146,15 +146,23 @@ function router({ skipEarthdataLogin }) {
   const objectStore = objectStoreForProtocol(env.objectStoreType);
   const shapefilePrefix = 'temp-user-uploads';
 
-  const upload = multer({ storage: multerS3({
-    s3: objectStore.s3,
-    key: (_request, _file, callback) => {
-      crypto.randomBytes(16, (err, raw) => {
-        callback(err, err ? undefined : `${shapefilePrefix}/${raw.toString('hex')}`);
-      });
+  const upload = multer({
+    storage: multerS3({
+      s3: objectStore.s3,
+      key: (_request, _file, callback) => {
+        crypto.randomBytes(16, (err, raw) => {
+          callback(err, err ? undefined : `${shapefilePrefix}/${raw.toString('hex')}`);
+        });
+      },
+      bucket: uploadBucket,
+    }),
+    limits: {
+      fields: 100, // Maximum number of non-file fields to accept
+      fileSize: 2000000000, // 2 GB maximum size for shapefiles
+      files: 1, // Maximum number of files to accept
+      parts: 100, // Maximum number of multipart parts to accept
     },
-    bucket: uploadBucket,
-  }) });
+  });
   const uploadFields = [{ name: 'shapefile', maxCount: 1 }];
   result.post(collectionPrefix('(ogc-api-coverages)'), upload.fields(uploadFields));
 
