@@ -32,6 +32,7 @@ const schemaVersions = [
     down: (model) => {
       const revertedModel = cloneDeep(model);
       delete revertedModel.subset.shape;
+      delete revertedModel.stagingLocation;
       return revertedModel;
     },
   },
@@ -478,6 +479,27 @@ class DataOperation {
    */
   set requestId(value) {
     this.model.requestId = value;
+  }
+
+  /**
+   * Gets the staging location URL for data produced by this request
+   *
+   * @returns {String} the staging location URL
+   * @memberof DataOperation
+   */
+  get stagingLocation() {
+    return this.model.stagingLocation;
+  }
+
+  /**
+   * Sets the staging location URL for data produced by this request
+   *
+   * @param {String} value the staging location URL
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set stagingLocation(value) {
+    this.model.stagingLocation = value;
   }
 
   /**

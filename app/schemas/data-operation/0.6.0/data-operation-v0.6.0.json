@@ -38,6 +38,14 @@
             "https"
           ]
         },
+        "stagingLocation": {
+          "name": "Result staging prefix",
+          "description": "An object store (S3) URL prefix under which services may elect to put their output.  Services must have write access to the Harmony staging bucket for the deployed environment to use this value.  The location will be unique per Harmony request but services are responsible for ensuring no name clashes occur within a single request.  The prefix will end in a \"/\" character",
+          "type": "string",
+          "examples": [
+            "s3://example-bucket/public/organization-name/service-name/1234567/"
+          ]
+        },
         "user": {
           "name": "Earthdata Login Username",
           "description": "The name of the user on behalf of whom Harmony is acting",
@@ -72,7 +80,8 @@
         "user",
         "client",
         "version",
-        "requestId"
+        "requestId",
+        "stagingLocation"
       ]
     },
     "Format": {

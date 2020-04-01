@@ -2,6 +2,7 @@
 ### Added
 - subset.shape - Reference to a location containing a shape within which the service should spatially subset.
   If present, the resource will always be GeoJSON (application/geo+json) in an object store (S3)
+- stagingLocation - A URL prefix to a staging location where services place their results
 
 ## [0.5.0] - 2020-03-03
 ### Changed

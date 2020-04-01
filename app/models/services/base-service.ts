@@ -1,6 +1,8 @@
+const uuid = require('uuid');
 const getIn = require('lodash.get');
 const serviceResponse = require('../../backends/service-response');
 const db = require('../../util/db');
+const { defaultObjectStore } = require('../../util/object-store');
 const Job = require('../job');
 const { ServerError } = require('../../util/errors');
 const env = require('../../util/env');
@@ -29,6 +31,9 @@ class BaseService {
     this.params = (type && type.params) ? type.params : {};
     this.operation = operation;
     this.operation.isSynchronous = this.isSynchronous;
+
+    const prefix = `public/${config.name}/${uuid()}/`;
+    this.operation.stagingLocation = defaultObjectStore().getUrlString(env.stagingBucket, prefix);
   }
 
   /**
