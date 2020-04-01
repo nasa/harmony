@@ -1,0 +1,26 @@
+GET /search/collections.json?concept_id=C1234-MISSING&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 200
+connection: close
+date: Mon, 30 Mar 2020 22:05:35 GMT
+set-cookie: AWSALB=5FSpfD4QZjpJ9/FLTDRBci80r4zmPMt24MoHn3mVbfgbO/9sXsxBgvv8FvxCnBK2vt1nXLlCfU2/DwUglPdS91AXH4ObV7Z/70lyB8FqRwWx+jjOo5WYsbf4Vb4Z; Expires=Mon, 06 Apr 2020 22:05:35 GMT; Path=/
+set-cookie: AWSALBCORS=5FSpfD4QZjpJ9/FLTDRBci80r4zmPMt24MoHn3mVbfgbO/9sXsxBgvv8FvxCnBK2vt1nXLlCfU2/DwUglPdS91AXH4ObV7Z/70lyB8FqRwWx+jjOo5WYsbf4Vb4Z; Expires=Mon, 06 Apr 2020 22:05:35 GMT; Path=/; SameSite=None
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out
+access-control-allow-origin: *
+cmr-hits: 0
+cmr-took: 5
+cmr-request-id: b8a8ec73-9227-4a83-b82f-141820bf68d0
+x-request-id: b8a8ec73-9227-4a83-b82f-141820bf68d0
+vary: Accept-Encoding, User-Agent
+server: Jetty(9.4.z-SNAPSHOT)
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+x-cache: Miss from cloudfront
+via: 1.1 3924198dd88678a1cab97875f32b6f20.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-C2
+x-amz-cf-id: yB6fZIt9rAtiBp2kUYK7iV0nfrE6WtRGzRDRaBJMaCcesx4vnWRqmg==
+
+{"feed":{"updated":"2020-03-30T22:05:35.429Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1234-MISSING&page_size=2000","title":"ECHO dataset metadata","entry":[]}}

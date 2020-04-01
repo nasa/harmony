@@ -5,6 +5,7 @@ const path = require('path');
 const getLandingPage = require('./get-landing-page');
 const getRequirementsClasses = require('./get-requirements-classes');
 const getCoverageRangeset = require('./get-coverage-rangeset');
+const postCoverageRangeset = require('./post-coverage-rangeset');
 const { describeCollection, describeCollections } = require('./describe-collections');
 
 const version = '1.0.0';
@@ -63,6 +64,7 @@ function addOpenApiRoutes(app) {
       getCoverageRangeType: TODO,
       getCoverageMetadata: TODO,
       getCoverageRangeset,
+      postCoverageRangeset,
       getCoverageAll: TODO,
     },
   });

@@ -7,6 +7,9 @@ class HttpError extends Error {
   }
 }
 
+// Class for errors returned by the CMR
+class CmrError extends HttpError {}
+
 // Tag class for backend errors
 class ServiceError extends HttpError {}
 
@@ -36,6 +39,7 @@ class RequestValidationError extends HttpError {
 
 module.exports = {
   HttpError,
+  CmrError,
   ServiceError,
   NotFoundError,
   ServerError,

@@ -1,8 +1,8 @@
 const process = require('process');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const fetch = require('node-fetch');
 const path = require('path');
-const axios = require('axios');
 const querystring = require('querystring');
 
 const BaseService = require('./base-service');
@@ -75,11 +75,10 @@ function logProcessOutput(child, logger) {
  */
 function childProcessAborted(callbackUrl, logger) {
   logger.error('Child did not hit the callback URL. Returning service request failed with an unknown error to the user.');
-  const callbackRequest = axios.create({
-    baseURL: `${callbackUrl}/response`,
-  });
   const querystr = querystring.stringify({ error: 'Service request failed with an unknown error.' });
-  callbackRequest.post(`?${querystr}`);
+  fetch(`${callbackUrl}/response?${querystr}`, {
+    method: 'POST',
+  });
 }
 
 /**

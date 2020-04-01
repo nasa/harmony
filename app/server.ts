@@ -1,19 +1,19 @@
 const dotenvResult = require('dotenv').config();
 const express = require('express');
-const winston = require('winston');
 const expressWinston = require('express-winston');
-const favicon = require('serve-favicon');
 const path = require('path');
-const uuid = require('uuid');
+const favicon = require('serve-favicon');
 const url = require('url');
 const { promisify } = require('util');
-const logger = require('./util/log');
+const uuid = require('uuid');
+const winston = require('winston');
 const serviceResponse = require('./backends/service-response');
-const serviceResponseRouter = require('./routers/service-response-router');
-const router = require('./routers/router');
-const errorHandler = require('./middleware/error-handler');
-const exampleBackend = require('../example/http-backend');
 const ogcCoveragesApi = require('./frontends/ogc-coverages');
+const errorHandler = require('./middleware/error-handler');
+const router = require('./routers/router');
+const serviceResponseRouter = require('./routers/service-response-router');
+const logger = require('./util/log');
+const exampleBackend = require('../example/http-backend');
 const RequestContext = require('./models/request-context');
 
 if (dotenvResult.error) {
@@ -97,7 +97,7 @@ function start(config = {}) {
   // Allow requests to take 20 minutes
   frontend.setTimeout(1200000);
 
-  // Setup the backend server to acccept callbacks from backend services
+  // Setup the backend server to accept callbacks from backend services
   const backend = buildServer('backend', backendPort, (app) => {
     app.use('/service', serviceResponseRouter(config));
 

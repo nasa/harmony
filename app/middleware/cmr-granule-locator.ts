@@ -1,6 +1,8 @@
+const get = require('lodash.get');
 const cmr = require('../util/cmr');
 const env = require('../util/env');
-const { RequestValidationError } = require('../util/errors');
+const { cookieOptions } = require('../util/cookies');
+const { CmrError, RequestValidationError } = require('../util/errors');
 
 /**
  * Express.js middleware which extracts parameters from the Harmony operation
@@ -16,6 +18,11 @@ async function cmrGranuleLocator(req, res, next) {
   const { operation } = req;
 
   if (!operation) return next();
+
+  const shapefileInfo = get(req, ['files', 'shapefile', 0]) || req.signedCookies.shapefile;
+  res.clearCookie('shapefile', cookieOptions);
+
+  let cmrResponse;
 
   const cmrQuery = {};
 
@@ -35,15 +42,30 @@ async function cmrGranuleLocator(req, res, next) {
     const queries = sources.map(async (source) => {
       req.context.logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
-      const { hits, granules: atomGranules } = await cmr.queryGranulesForCollection(
-        source.collection,
-        cmrQuery,
-        req.accessToken,
-        env.maxAsynchronousGranules,
-      );
+
+      if (shapefileInfo) {
+        cmrQuery.shapefileInfo = shapefileInfo;
+        cmrResponse = await cmr.queryGranulesForCollectionWithMultipartForm(
+          source.collection,
+          cmrQuery,
+          req.accessToken,
+          env.maxAsynchronousGranules,
+        );
+      } else {
+        cmrResponse = await cmr.queryGranulesForCollection(
+          source.collection,
+          cmrQuery,
+          req.accessToken,
+          env.maxAsynchronousGranules,
+        );
+      }
+
+      const { hits, granules: atomGranules } = cmrResponse;
+
       operation.cmrHits += hits;
       const msTaken = new Date().getTime() - startTime;
       req.context.logger.info('Completed granule query', { durationMs: msTaken });
+      req.context.logger.info(`Found ${hits} granules`);
       const granules = [];
       for (const granule of atomGranules) {
         const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);
@@ -59,7 +81,7 @@ async function cmrGranuleLocator(req, res, next) {
 
     await Promise.all(queries);
   } catch (e) {
-    if (e instanceof RequestValidationError) {
+    if (e instanceof RequestValidationError || e instanceof CmrError) {
       return next(e);
     }
     req.context.logger.error(e);
