@@ -1,8 +1,43 @@
+const { parse } = require('cookie');
 const url = require('url');
 const request = require('supertest');
 const { before, after, it, describe } = require('mocha');
 const { expect } = require('chai');
 const { auth } = require('./auth');
+
+/**
+ * Strip the signature from a signed cookie value
+ *
+ * @param {string} value The value portion of the cookie
+ * @returns {string} the unsigned cookie value
+ * @private
+ */
+function stripSignature(value) {
+  let m = value.match(/^s:j:(.*)\..*$/);
+  if (m) {
+    return JSON.parse(m[1]);
+  }
+  m = value.match(/^s:(.*)\..*$/);
+  if (m) {
+    return m[1];
+  }
+
+  return value;
+}
+
+/**
+ * Get value string from encoded cookie
+ *
+ * @param {string} encodedValue The encoded cookie value
+ * @param {string} key The key for the cookie
+ * @returns {string} The unencoded cookie string
+ * @private
+ */
+function cookieValue(encodedValue, key) {
+  const decoded = decodeURIComponent(encodedValue);
+  const parsed = parse(decoded);
+  return stripSignature(parsed[key]);
+}
 
 /**
  * Adds before/after hooks to navigate from the coverages landing page to a related resource
@@ -31,13 +66,52 @@ function hookLandingPage(collection, version) {
  * @param {Object} options additional options for the request
  * @param {Object} [options.query] The query parameters to pass to the rangeset request
  * @param {String} [options.headers] The headers to pass to the rangeset request
+ * @param {String} [options.cookies] The cookies to set on the call
  * @returns {Promise<Response>} The response
  */
-function rangesetRequest(app, version, collection, coverageId, { query = {}, headers = {} }) {
-  return request(app)
+function rangesetRequest(
+  app,
+  version,
+  collection,
+  coverageId,
+  { query = {}, headers = {}, cookies = null },
+) {
+  const req = request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`)
     .query(query)
     .set(headers);
+
+  if (cookies) {
+    req.set('Cookie', [cookies]);
+  }
+
+  return req;
+}
+
+/**
+ * Performs getCoverageRangeset request on the given collection with the given params
+ * using a multipart/form-data POST
+ *
+ * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {String} version The OGC version
+ * @param {string} collection The CMR Collection ID to perform a service on
+ * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
+ * @param {object} form The form parameters to pass to the request
+ * @returns {supertest.Test} An 'awaitable' object that resolves to a Response
+ */
+function postRangesetRequest(app, version, collection, coverageId, form) {
+  const req = request(app)
+    .post(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`);
+
+  Object.keys(form).forEach((key) => {
+    if (key === 'shapefile') {
+      req.attach(key, form[key].path, { contentType: form[key].mimetype });
+    } else {
+      req.field(key, form[key]);
+    }
+  });
+
+  return req;
 }
 
 /**
@@ -78,6 +152,60 @@ function hookRangesetRequest(
     delete this.res;
   });
 }
+
+/**
+ * Adds before/after hooks to run a POST getCoverageRangeset request
+ *
+ * @param {string} version The OGC API version
+ * @param {string} collection The CMR Collection ID to perform a service on
+ * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
+ * @param {object} form The form data to be POST'd
+ * @returns {void}
+ */
+function hookPostRangesetRequest(version, collection, coverageId, form) {
+  before(async function () {
+    this.res = await postRangesetRequest(
+      this.frontend,
+      version,
+      collection,
+      coverageId,
+      form,
+    );
+
+    const shapefileHeader = this.res.headers['set-cookie'].filter((cookie) => {
+      const decoded = decodeURIComponent(cookie);
+      const parsed = parse(decoded);
+      return parsed.shapefile;
+    })[0];
+
+    const value = cookieValue(shapefileHeader, 'shapefile');
+    const cookies = { shapefile: value };
+
+    const redirectHeader = this.res.headers['set-cookie'].filter((cookie) => {
+      const decoded = decodeURIComponent(cookie);
+      const parsed = parse(decoded);
+      return !parsed.shapefile;
+    })[0];
+
+    const redirect = cookieValue(redirectHeader, 'redirect');
+    const query = redirect.split('?')[1];
+
+    this.res = await rangesetRequest(
+      this.frontend,
+      version,
+      collection,
+      coverageId,
+      {
+        query,
+        cookies,
+      },
+    ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+  });
+  after(function () {
+    delete this.res;
+  });
+}
+
 
 /**
  * Asserts that a link relation exists, then loads it, allowing the passed function to provide
@@ -226,6 +354,7 @@ module.exports = {
   hookLandingPage,
   hookRangesetRequest,
   rangesetRequest,
+  postRangesetRequest,
   describeRelation,
   coveragesSpecRequest,
   coveragesLandingPageRequest,
@@ -233,4 +362,6 @@ module.exports = {
   hookDescribeCollectionRequest,
   describeCollectionsRequest,
   hookDescribeCollectionsRequest,
+  hookPostRangesetRequest,
+  stripSignature,
 };

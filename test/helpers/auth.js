@@ -54,7 +54,8 @@ function token({
   username = 'mock_user',
   expiresDelta = 3600,
   accessToken = 'fake_access',
-  refreshToken = 'fake_refresh' }) {
+  refreshToken = 'fake_refresh',
+}) {
   return {
     token_type: 'Bearer',
     access_token: accessToken,
@@ -91,11 +92,28 @@ function signedCookie(name, data, secret) {
  * @param {boolean} [options.expired=false] Whether to produce an expired token
  * @returns {supertest} The chainable supertest object with appropriate auth headers
  */
-function auth({ username = 'mock_user', secret = process.env.COOKIE_SECRET, expired = false }) {
+function auth({
+  username = 'mock_user',
+  secret = process.env.COOKIE_SECRET,
+  expired = false,
+  extraCookies,
+}) {
   const expiresIn = 3600;
   const expiresDelta = expired ? -expiresIn : expiresIn;
-  const cookieData = token({ username, expiresDelta });
-  const cookieStr = signedCookie('token', cookieData, secret);
+  const cookieData = token({
+    username,
+    expiresDelta,
+  });
+
+  let cookieStr = signedCookie('token', cookieData, secret);
+  if (extraCookies) {
+    Object.keys(extraCookies).forEach((key) => {
+      const value = extraCookies[key];
+      const newCookie = signedCookie(key, value, secret);
+      cookieStr = `${cookieStr};${newCookie}`;
+    });
+  }
+
   return (request) => request.set('Cookie', cookieStr);
 }
 

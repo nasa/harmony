@@ -1,0 +1,26 @@
+GET /search/granules.json?collection_concept_id=C1233800302-EEDTEST&page_size=20&bounding_box=-180%2C-90%2C180%2C90&concept_id=G123-BOGUS
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 269
+connection: close
+date: Mon, 30 Mar 2020 22:05:38 GMT
+set-cookie: AWSALB=rPOBdeQmMIl0/d2zz/+guPXHpC8gVFR+xrdn2iPspaT4AcdngYHvuug35jroVx4+srvN8rBp0wuy9RCvYSPWhLTuj7AWopELb8VQN4Kor/fo2kFB/ozvCynIvRLj; Expires=Mon, 06 Apr 2020 22:05:38 GMT; Path=/
+set-cookie: AWSALBCORS=rPOBdeQmMIl0/d2zz/+guPXHpC8gVFR+xrdn2iPspaT4AcdngYHvuug35jroVx4+srvN8rBp0wuy9RCvYSPWhLTuj7AWopELb8VQN4Kor/fo2kFB/ozvCynIvRLj; Expires=Mon, 06 Apr 2020 22:05:38 GMT; Path=/; SameSite=None
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out
+access-control-allow-origin: *
+cmr-hits: 0
+cmr-took: 13
+cmr-request-id: 7c9ecf36-2194-4f19-90dd-8e2b1c479ee6
+x-request-id: 7c9ecf36-2194-4f19-90dd-8e2b1c479ee6
+vary: Accept-Encoding, User-Agent
+server: Jetty(9.4.z-SNAPSHOT)
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+x-cache: Miss from cloudfront
+via: 1.1 dd6a13d6510988eea7236b9a3cd830fe.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-C2
+x-amz-cf-id: 5GGvG1FjuwZ4wbJUvuzdTVjEfQNHVgN25YRuJjtMPOOKhQ8K2LnPBg==
+
+{"feed":{"updated":"2020-03-30T22:05:38.340Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json?collection_concept_id=C1233800302-EEDTEST&page_size=20&bounding_box=-180%2C-90%2C180%2C90&concept_id=G123-BOGUS","title":"ECHO granule metadata","entry":[]}}

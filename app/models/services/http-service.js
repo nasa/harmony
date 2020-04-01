@@ -1,5 +1,3 @@
-// Use stdlib HTTP instead of axios because we need lower-level control over headers, streaming
-// and redirects than axios wants to provide
 const http = require('http');
 const https = require('https');
 const URL = require('url');

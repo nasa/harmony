@@ -336,6 +336,49 @@ paths:
                 $ref: '#/components/schemas/rangeSetImage'
         default:
           $ref: '#/components/responses/default'
+    post:
+      tags:
+      - Coverage
+      summary: Retrieve a coverage's rangeset
+      description: Retrieve the coverage's rangeset, i.e. its data values in their native format
+      operationId: postCoverageRangeset
+      parameters:
+      - $ref: '#/components/parameters/collectionId'
+      - $ref: '#/components/parameters/outputCrs'
+      - $ref: '#/components/parameters/subset'
+      - $ref: '#/components/parameters/interpolation'
+      - $ref: '#/components/parameters/scaleExtent'
+      - $ref: '#/components/parameters/scaleSize'
+      # Parameters below this line are not part of the OGC specification
+      - $ref: '#/components/parameters/granuleId'
+      - $ref: '#/components/parameters/width'
+      - $ref: '#/components/parameters/height'
+      - $ref: '#/components/parameters/format'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                shapefile:
+                  type: string
+                  format: binary
+            encoding:
+              shapefile:
+                contentType: 'application/shapefile+zip,application/geo+json,application/vnd.google-earth.kml+xml'
+
+      responses:
+        "200":
+          description: A coverage's range set.
+          content:
+            image/*:
+              schema:
+                $ref: '#/components/schemas/rangeSetImage'
+            application/*:
+              schema:
+                $ref: '#/components/schemas/rangeSetImage'
+        default:
+          $ref: '#/components/responses/default'
   /collections/{collectionId}/coverage/all:
     get:
       tags:

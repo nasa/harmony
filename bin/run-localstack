@@ -7,8 +7,9 @@ if [ -f .env ]; then
   source .env
   set +o allexport
 fi
-bucket="${STAGING_BUCKET:-localStagingBucket}"
-echo "Starting localstack and creating staging bucket s3://$bucket"
+stagingBucket="${STAGING_BUCKET:-local-staging-bucket}"
+uploadBucket="${UPLOAD_BUCKET:-local-upload-bucket}"
+echo "Starting localstack and creating staging bucket s3://$stagingBucket and temp bucket s3://$tempBucket"
 
 if [[ "$(docker images -q localstack/localstack 2> /dev/null)" == "" ]]; then
   docker pull localstack/localstack
@@ -16,7 +17,8 @@ fi
 make_bucket=0
 while read -r line ; do
   if [[ "$line" == *Ready.* ]] && [[ $make_bucket -eq 0 ]]; then
-    AWS_DEFAULT_REGION=us-west-2 AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake aws --endpoint-url=http://localhost:4572 s3 mb s3://$bucket
+    AWS_DEFAULT_REGION=us-west-2 AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake aws --endpoint-url=http://localhost:4572 s3 mb s3://$stagingBucket
+    AWS_DEFAULT_REGION=us-west-2 AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake aws --endpoint-url=http://localhost:4572 s3 mb s3://$uploadBucket
   fi
   echo "$line"
 done < <(docker run --rm -it -e SERVICES=s3 -e DEBUG=1 -p 4572:4572 localstack/localstack)
