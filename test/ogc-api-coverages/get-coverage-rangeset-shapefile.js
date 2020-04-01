@@ -52,7 +52,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   // ESRI shapefile
   describe('when provided a valid set of parameters', function () {
     let form = {
-      subset: ['time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+      subset: ['lon(17:98)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
       interpolation: 'near',
       scaleExtent: '0,2500000.3,1500000,3300000',
       scaleSize: '1.1,2',
