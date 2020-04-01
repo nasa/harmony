@@ -128,3 +128,7 @@ In order to improve user experience, metrics gathering, and to allow compatibili
 3. Log request callback URLs, which serve as unique identifiers, as well as Earthdata Login usernames when available to aid in tracing requests and debugging.
 4. Proactively protect (non-Docker) service endpoints from high request volume or computational requirements by using autoscaling with maximum thresholds, queueing, and other methods to avoid outages or non-responsiveness.
 5. Use the latest available data-operation schema. As harmony development continues the schema will evolve to support new features, which will require services be compatible with the new schema in order to take advantage of those features. In addition code to support older versions of the schema can be retired once all services have updated to later versions of the schema.
+6. Name files according to the [established conventions](https://wiki.earthdata.nasa.gov/pages/viewpage.action?spaceKey=HARMONY&title=Output+File+Naming+Convention).
+Using the Harmony-provided Python library makes this automatic for cases where the file corresponds to a single granule.  Files subset to a single variable should be
+suffixed with underscore followed by the variable name.  Files that have been regridded should be suffixed with `_regridded`.  Files that have been subsetted should
+be suffixed with `_subsetted`.  Finally, files should have the conventional file extension according to their format, e.g. `.zarr`.
