@@ -16,6 +16,7 @@ const { getServiceResult } = require('../frontends/service-results');
 const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
 const setRequestId = require('../middleware/request-id');
+const shapefileConverter = require('../middleware/shapefile-converter');
 const { NotFoundError } = require('../util/errors');
 const eoss = require('../frontends/eoss');
 const ogcCoverageApi = require('../frontends/ogc-coverages');
@@ -178,6 +179,7 @@ function router({ skipEarthdataLogin }) {
     next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
 
+  result.use(logged(shapefileConverter));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(setRequestId));
 
