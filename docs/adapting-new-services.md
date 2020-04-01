@@ -50,7 +50,7 @@ Ideally, this adaptation would consist only of necessary complexity peculiar to 
 
 ## 3. Sending results to Harmony
 
-### Synchronous request / responses
+### Synchronous responses
 
 Synchronous requests are ones where a user has made a call to Harmony and the corresponding HTTP request remains open awaiting a response.
 
@@ -84,7 +84,7 @@ All log messages should be directed to stdout, and all messages should be in JSO
 
 Unlike Docker services, HTTP services *do not* receive a callback URL in an incoming synchronous request.  When a service completes, it responds to Harmony's original HTTP request with the results in one of three ways, based on the HTTP response status code:
 
-### Asynchronous request / responses
+### Asynchronous responses
 
 Asynchronous requests are ones where a user has made a call to Harmony and Harmony has replied with a URL to poll for results as they arrive.
 
