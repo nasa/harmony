@@ -130,7 +130,7 @@ async function fetchPost(path, formData, headers) {
  *
  * @param {string} geoJsonUrl The location of the shapefile
  * @param {Object} formData the Form data
- * @returns {Promise<File>} The a promise containing the file object pointing to the temporary
+ * @returns {Promise<File>} The a promise for a temporary file containing the shapefile
  */
 async function processGeoJson(geoJsonUrl, formData) {
   const tempFile = tmp.fileSync();
