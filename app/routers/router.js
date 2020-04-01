@@ -158,7 +158,7 @@ function router({ skipEarthdataLogin }) {
     }),
     limits: {
       fields: 100, // Maximum number of non-file fields to accept
-      fileSize: 50000000, // 50 MB maximum size for shapefiles
+      fileSize: 2000000000, // 2 GB maximum size for shapefiles
       files: 1, // Maximum number of files to accept
       parts: 100, // Maximum number of multipart parts to accept
     },
