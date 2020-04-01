@@ -7,6 +7,7 @@ const CURRENT_SCHEMA_VERSION = '0.6.0';
 const validOperation = new DataOperation({
   client: 'harmony-test',
   callback: 'http://example.com/callback',
+  stagingLocation: 's3://some-bucket/public/some/prefix/',
   sources: [],
   format: {
     mime: 'image/png',
@@ -27,6 +28,7 @@ validOperation.temporal = [new Date('1999-01-01T10:00:00Z'), new Date('2020-02-2
 const invalidOperation = new DataOperation({
   client: 'harmony-test',
   callback: 'http://example.com/callback',
+  stagingLocation: 's3://some-bucket/public/some/prefix/',
   sources: [],
   format: { mime: 'image/png' },
   user: 'test-user',
@@ -36,7 +38,7 @@ const invalidOperation = new DataOperation({
   temporal: { start: '1999-01-01T10:00:00Z', end: '2020-02-20T15:00:00Z' },
 });
 
-const expectedOutput = `{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"${CURRENT_SCHEMA_VERSION}"}`;
+const expectedOutput = `{"client":"harmony-test","callback":"http://example.com/callback","stagingLocation":"s3://some-bucket/public/some/prefix/","sources":[],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"${CURRENT_SCHEMA_VERSION}"}`;
 
 describe('DataOperation', () => {
   describe('#serialize', () => {
@@ -65,7 +67,7 @@ describe('DataOperation', () => {
         });
 
         it('returns its JSON-serialized model', () => {
-          expect(call()).to.equal(`{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png"},"user":"test-user","subset":{"bbox":[-130,-45,130,45,100]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"${CURRENT_SCHEMA_VERSION}"}`);
+          expect(call()).to.equal(`{"client":"harmony-test","callback":"http://example.com/callback","stagingLocation":"s3://some-bucket/public/some/prefix/","sources":[],"format":{"mime":"image/png"},"user":"test-user","subset":{"bbox":[-130,-45,130,45,100]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"${CURRENT_SCHEMA_VERSION}"}`);
         });
       });
     });
