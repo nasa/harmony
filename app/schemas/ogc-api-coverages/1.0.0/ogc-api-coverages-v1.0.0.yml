@@ -365,7 +365,9 @@ paths:
                   format: binary
             encoding:
               shapefile:
-                contentType: 'application/shapefile+zip,application/geo+json,application/vnd.google-earth.kml+xml'
+                # TODO: Harmony 243 will re-enable ESRI shapefile and KML content types
+                #contentType: 'application/geo+json,application/shapefile+zip,application/vnd.google-earth.kml+xml'
+                contentType: 'application/geo+json'
 
       responses:
         "200":
