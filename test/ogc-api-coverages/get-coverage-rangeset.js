@@ -567,6 +567,42 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     itIncludesRequestUrl('/C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
   });
 
+  describe('when using accept headers', function () {
+    describe('*/*', function () {
+      hookRangesetRequest(version, collection, 'all', { headers: { accept: '*/*' } });
+      it('returns a 200 successful response', function () {
+        expect(this.res.status).to.equal(200);
+      });
+      it('returns a JSON body in the format of a job status', function () {
+        const job = JSON.parse(this.res.text);
+        expect(Object.keys(job)).to.eql(expectedJobKeys);
+      });
+    });
+    describe('application/json', function () {
+      hookRangesetRequest(version, collection, 'all', { headers: { accept: 'application/json' } });
+      it('returns a 200 successful response', function () {
+        expect(this.res.status).to.equal(200);
+      });
+      it('returns a JSON body in the format of a job status', function () {
+        const job = JSON.parse(this.res.text);
+        expect(Object.keys(job)).to.eql(expectedJobKeys);
+      });
+    });
+    describe('image/png', function () {
+      hookRangesetRequest(version, collection, 'all', { headers: { accept: 'image/png' } });
+      it('returns a 404 response', function () {
+        expect(this.res.status).to.equal(404);
+      });
+      it('returns an error indicating the unsupported format for the no-op service', function () {
+        const error = JSON.parse(this.res.text);
+        expect(error).to.eql({
+          code: 'harmony.NotFoundError',
+          description: 'Error: Could not find a service to reformat to any of the requested formats [image/png] for the given collection',
+        });
+      });
+    });
+  });
+
   describe('when only one granule is identified', function () {
     const collectionWithSingleGranule = 'C1000000099-ORNL_DAAC';
     hookRangesetRequest(version, collectionWithSingleGranule, 'all', {});
@@ -621,7 +657,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
   });
 });
 
-describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
+describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services and using EDL', function () {
   const collection = 'C446398-ORNL_DAAC';
   const version = '1.0.0';
 
