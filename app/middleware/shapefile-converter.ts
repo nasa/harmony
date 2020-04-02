@@ -59,10 +59,6 @@ async function findShpFile(dir) {
  * @param {string} filename the path to the ESRI shapefile to convert (must be a .zip file)
  * @returns {string} path to a temporary file containing the GeoJSON
  * @throws {RequestValidationError} if something goes wrong
- * TODO:
- *   * enable tests with the ESRI format
- *   * write tests to make sure things get cleaned up,
- *   * write tests for error cases
  */
 async function esriToGeoJson(filename) {
   const tempFile = await tmp.file();
@@ -122,7 +118,6 @@ async function esriToGeoJson(filename) {
  */
 async function kmlToGeoJson(filename) {
   const tempFile = await tmp.file();
-  // TODO: would be better if we could find a way to avoid holding both kml and geojson in memory
   const parserOpts = {
     /**
      * locator is always need for error position info
