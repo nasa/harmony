@@ -98,7 +98,7 @@ async function esriToGeoJson(filename) {
   fs.appendFileSync(tempFile.name, geoJsonFileEnd, 'utf8');
   tempDir.removeCallback();
 
-  return tempFile;
+  return tempFile.name;
 }
 
 /**
@@ -115,7 +115,7 @@ async function kmlToGeoJson(filename) {
   const converted = togeojson.kml(kml);
   fs.writeFileSync(tempFile.name, JSON.stringify(converted), 'utf8');
 
-  return tempFile;
+  return tempFile.name;
 }
 
 const contentTypesToConverters = {
@@ -157,7 +157,10 @@ async function shapefileConverter(req, res, next) {
     let convertedFile;
     try {
       convertedFile = await converter.geoJsonConverter(originalFile);
-      operation.geojson = await store.uploadFile(`${url}.geojson`, convertedFile);
+      operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
+    } catch (e) {
+      req.logger.error(e);
+      throw new RequestValidationError('Unable to convert the provided shapefile');
     } finally {
       unlink(originalFile);
       if (convertedFile) {
