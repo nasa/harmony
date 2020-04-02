@@ -221,7 +221,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         expect(this.res.status).to.equal(400);
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.RequestValidationError',
-          description: 'FIXME',
+          description: 'Error: Failed to process kml file: [xmldom error]\telement parse error: Error: Failed to process kml file: [xmldom warning]\tunclosed xml attribute\n@#[line:2,col:1]\n@#[line:2,col:1]',
         });
       });
     });
