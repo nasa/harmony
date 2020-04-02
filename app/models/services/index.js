@@ -116,6 +116,11 @@ function _selectFormat(operation, context, configs) {
   return outputFormat;
 }
 
+const noOpService = {
+  type: { name: 'noOp' },
+  capabilities: { output_formats: ['application/json'] },
+};
+
 /**
  * Given a data operation, returns a service instance appropriate for performing that operation.
  * The operation may also be mutated to set additional properties as part of this function.
@@ -135,7 +140,7 @@ function forOperation(operation, context, configs = serviceConfigs) {
     matches = configs.filter((config) => isCollectionMatch(operation, config));
   }
   if (matches.length === 0) {
-    matches = [{ type: { name: 'noOp' } }];
+    matches = [noOpService];
   }
 
   const outputFormat = _selectFormat(operation, context, matches);
