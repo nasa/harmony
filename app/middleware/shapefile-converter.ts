@@ -186,11 +186,13 @@ async function shapefileConverter(req, res, next) {
       operation.geojson = url;
     }
   } catch (e) {
-    req.context.logger.error(e);
     if (e instanceof HttpError) {
       next(e);
+      return;
     }
+    req.context.logger.error(e);
     next(new ServerError('A problem occurred when attempting to convert the provided shapefile'));
+    return;
   }
   next();
 }
