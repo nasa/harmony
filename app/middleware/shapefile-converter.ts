@@ -5,7 +5,7 @@ const rewind = require('@mapbox/geojson-rewind');
 const togeojson = require('@mapbox/togeojson');
 const { DOMParser } = require('xmldom');
 const esriShapefile = require('shapefile');
-const tmp = require('tmp');
+const tmp = require('tmp-promise');
 const util = require('util');
 const unzipper = require('unzipper');
 const { cookieOptions } = require('../util/cookies');
@@ -14,6 +14,10 @@ const { defaultObjectStore } = require('../util/object-store');
 const { listToText } = require('../util/string');
 
 const unlink = util.promisify(fs.unlink);
+const readFile = util.promisify(fs.readFile);
+const writeFile = util.promisify(fs.writeFile);
+const appendFile = util.promisify(fs.appendFile);
+const readdir = util.promisify(fs.readdir);
 
 /**
  * The string that starts a GeoJSON file when converting from ESRI. We need to
@@ -37,8 +41,8 @@ const geoJsonFileEnd = ']}';
  * @param {*} dir The directory where the shapefile was extracted
  * @return {string} The path to the .shp file
  */
-function findShpFile(dir) {
-  const shpFiles = fs.readdirSync(dir).filter((file) => path.extname(file) === '.shp');
+async function findShpFile(dir) {
+  const shpFiles = (await readdir(dir)).filter((file) => path.extname(file) === '.shp');
   if (shpFiles.length !== 1) {
     throw new RequestValidationError(
       `Error: shapefiles must contain exactly one .shp file, found ${shpFiles.length}`,
@@ -50,7 +54,7 @@ function findShpFile(dir) {
 
 /**
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
- * the caller MUST unlink the result to delete it by calling `result.removeCallback()`
+ * the caller MUST unlink the result to delete it by calling `result.cleanup()`
  *
  * @param {string} filename the path to the ESRI shapefile to convert (must be a .zip file)
  * @returns {string} path to a temporary file containing the GeoJSON
@@ -61,61 +65,65 @@ function findShpFile(dir) {
  *   * write tests for error cases
  */
 async function esriToGeoJson(filename) {
-  const tempFile = tmp.fileSync();
-  const tempDir = tmp.dirSync();
+  const tempFile = await tmp.file();
+  // let the `cleanup` function delete the directory even if it has files in it
+  const tempDir = await tmp.dir({ unsafeCleanup: true });
+
   // unzip the shapefile
-  await fs.createReadStream(filename)
-    .pipe(unzipper.Extract({ path: tempDir.name }))
-    .promise()
-    .catch((error) => {
-      tempDir.removeCallback();
-      throw new RequestValidationError(`Error: failed to unzip shapefile: ${error}`);
-    });
+  try {
+    await fs.createReadStream(filename)
+      .pipe(unzipper.Extract({ path: tempDir.path }))
+      .promise();
+  } catch (e) {
+    tempDir.cleanup();
+    throw new RequestValidationError(`Error: failed to unzip shapefile: ${e}`);
+  }
 
   // convert to GeoJSON
-  const shpFilePath = findShpFile(tempDir.name);
-  fs.writeFileSync(tempFile.name, geoJsonFileStart, 'utf8');
+  const shpFilePath = await findShpFile(tempDir.path);
+  await writeFile(tempFile.path, geoJsonFileStart, 'utf8');
   let firstLine = true;
   await esriShapefile.open(shpFilePath)
     .then((source) => source.read()
-      .then(function log(result) {
+      .then(async function log(result) {
         if (result.done) return;
         // Add commas between the Features
         if (firstLine) {
           firstLine = false;
         } else {
-          fs.appendFileSync(tempFile.name, ',\n', 'utf8');
+          await appendFile(tempFile.path, ',\n', 'utf8');
         }
         // set the correct winding on the outer and inner rings of polygons
         const feature = rewind(result.value, false);
-        fs.appendFileSync(tempFile.name, JSON.stringify(feature), 'utf8');
+        await appendFile(tempFile.path, JSON.stringify(feature), 'utf8');
         return source.read().then(log);
       }))
     .catch((error) => {
-      tempDir.removeCallback();
+      tempDir.cleanup();
       throw new RequestValidationError(`Error: failed to process shapefile: ${error}`);
     });
-  fs.appendFileSync(tempFile.name, geoJsonFileEnd, 'utf8');
-  tempDir.removeCallback();
+  await appendFile(tempFile.path, geoJsonFileEnd, 'utf8');
+  tempDir.cleanup();
 
-  return tempFile.name;
+  return tempFile;
 }
 
 /**
  * Converts the given KML file to GeoJSON and returns the resulting file.   Note, the caller MUST
- * unlink the result to delete it by calling `result.removeCallback()`
+ * unlink the result to delete it by calling `result.cleanup()`
  *
  * @param {string} filename the path to the KML file to convert
  * @returns {string} path to a temporary file containing the GeoJSON
  */
 async function kmlToGeoJson(filename) {
-  const tempFile = tmp.fileSync();
+  const tempFile = await tmp.file();
   // TODO: would be better if we could find a way to avoid holding both kml and geojson in memory
-  const kml = new DOMParser().parseFromString(fs.readFileSync(filename, 'utf8'));
+  const file = await readFile(filename, 'utf8');
+  const kml = new DOMParser().parseFromString(file);
   const converted = togeojson.kml(kml);
-  fs.writeFileSync(tempFile.name, JSON.stringify(converted), 'utf8');
+  await writeFile(tempFile.path, JSON.stringify(converted), 'utf8');
 
-  return tempFile.name;
+  return tempFile;
 }
 
 const contentTypesToConverters = {
@@ -173,4 +181,5 @@ async function shapefileConverter(req, res, next) {
   next();
 }
 
-module.exports = shapefileConverter;
+// module.exports = shapefileConverter;
+module.exports = { esriToGeoJson, kmlToGeoJson };
