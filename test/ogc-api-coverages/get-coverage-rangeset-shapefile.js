@@ -7,10 +7,10 @@ const fs = require('fs');
 const { hookServersStartStop } = require('../helpers/servers');
 const StubService = require('../helpers/stub-service');
 const { auth } = require('../helpers/auth');
-const { hookMockS3 } = require('../helpers/object-store');
 const { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } = require('../helpers/ogc-api-coverages');
 const { hookCmr } = require('../helpers/stub-cmr');
 const isUUID = require('../../app/util/uuid');
+const { hookMockS3 } = require('../helpers/object-store');
 
 /**
  * Common steps in the validation tests
@@ -49,7 +49,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
   const cmrResp = JSON.parse(cmrRespStr);
 
-  // ESRI shapefile
   describe('when provided a valid set of parameters', function () {
     let form = {
       subset: ['lon(17:98)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
@@ -62,9 +61,8 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' },
     };
 
-    // ESRI shapefile
-    describe('calling the backend service with an ESRI shapefile', function () {
-      form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' } } };
+    describe('calling the backend service with a GeoJSON shapefile', function () {
+      form = { ...form, shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       cmrResp.headers = new fetch.Headers(cmrResp.headers);
       hookCmr('fetchPost', cmrResp);
@@ -127,11 +125,9 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       });
     });
 
-    // GeoJSON - NOTE: It makes no sense to run this test without relay, so it's marked as pending.
-    // If you want to run it, comment out relay in `caching-hooks.js`. Setting the
-    // RELAY environment variable won't work
-    describe('calling the backend service with a GeoJSON shapefile', function () {
-      form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } } };
+    // TODO Marked as pending as it currently provides no value over GeoJSON (HARMONY-243 will implement)
+    describe('calling the backend service with an ESRI shapefile', function () {
+      form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
@@ -143,9 +139,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       });
     });
 
-    // KML - NOTE: It makes no sense to run this test without relay, so it's marked as pending.
-    // If you want to run it, comment out relay in `caching-hooks.js`. Setting the
-    // RELAY environment variable won't work
+    // TODO Marked as pending as it currently provides no value over GeoJSON (HARMONY-243 will implement)
     describe('calling the backend service with a KML shapefile', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.kml', mimetype: 'application/vnd.google-earth.kml+xml' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
@@ -173,8 +167,8 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         variableName,
         {
           shapefile: {
-            path: './test/resources/southern_africa.zip',
-            mimetype: 'application/shapefile+zip',
+            path: './test/resources/southern_africa.geojson',
+            mimetype: 'application/geo+json',
           },
           format: 'image/png',
           subset: ['time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
@@ -198,7 +192,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
             version,
             collection,
             variableName,
-            { shapefile: { path: './test/resources/corrupt_file.zip', mimetype: 'application/shapefile+zip' } },
+            { shapefile: { path: './test/resources/corrupt_file.geojson', mimetype: 'application/geo+json' } },
           );
           // we get redirected to EDL before the shapefile gets processed
           expect(res.status).to.equal(303);
@@ -222,7 +216,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
           version,
           collection,
           variableName,
-          { shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' } },
+          { shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } },
         );
         // we get redirected to EDL before the shapefile gets processed
         expect(res.status).to.equal(303);

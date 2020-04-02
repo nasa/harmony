@@ -1,0 +1,25 @@
+GET /search/collections.json?concept_id=C1000000099-ORNL_DAAC&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+connection: close
+date: Tue, 31 Mar 2020 14:05:38 GMT
+set-cookie: AWSALB=ObIhY+u/4vibpSkuB0LFMJ8TPLzdsHscDGXLS/m9kB69JOfKnfVy4JbgPivXwkZ9l9970if8khPw8p9E0okALk6Lbnv5m6uZoIxlZCnv/WwgSbTbb/3LECrwQ/TX; Expires=Tue, 07 Apr 2020 14:05:38 GMT; Path=/
+set-cookie: AWSALBCORS=ObIhY+u/4vibpSkuB0LFMJ8TPLzdsHscDGXLS/m9kB69JOfKnfVy4JbgPivXwkZ9l9970if8khPw8p9E0okALk6Lbnv5m6uZoIxlZCnv/WwgSbTbb/3LECrwQ/TX; Expires=Tue, 07 Apr 2020 14:05:38 GMT; Path=/; SameSite=None
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out
+access-control-allow-origin: *
+cmr-hits: 1
+cmr-took: 8
+cmr-request-id: a7cda4a1-6962-4346-88cc-d31d3ba765ab
+x-request-id: a7cda4a1-6962-4346-88cc-d31d3ba765ab
+vary: Accept-Encoding, User-Agent
+server: Jetty(9.4.z-SNAPSHOT)
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+x-cache: Miss from cloudfront
+via: 1.1 77a52be30020596b6a87a26e3dcc75e7.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR52-C3
+x-amz-cf-id: VhIwJQ0eRTghjnJZ4_TBSJ7af1_N8U1KX8-HG5Gz6-PpkL4oK_u9-A==
+
+{"feed":{"updated":"2020-03-31T14:05:38.511Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1000000099-ORNL_DAAC&page_size=2000","title":"ECHO dataset metadata","entry":[{"processing_level_id":"3","boxes":["-42.5 -117.86 63.23 117.6"],"time_start":"1985-01-01T00:00:00.000Z","version_id":"1","updated":"2014-07-18T00:00:00.000Z","dataset_id":"A Global Database of Soil Phosphorus Compiled from Studies Using Hedley Fractionation","has_spatial_subsetting":true,"has_transforms":true,"associations":{"services":["S1229667736-ORNL_DAAC"]},"has_variables":true,"data_center":"ORNL_DAAC","short_name":"GLOBAL_PHOSPHORUS_HEDLEY_FRACT_1230","organizations":["ORNL_DAAC"],"title":"A Global Database of Soil Phosphorus Compiled from Studies Using Hedley Fractionation","coordinate_system":"CARTESIAN","summary":"This data set provides concentrations of soil phosphorus (P) compiled from the peer-reviewed literature that cited the Hedley fractionation method (Hedley and Stewart, 1982). This database contains estimates of different forms of naturally occurring soil phosphorus, including labile inorganic P, organic P, occluded P, secondary mineral P, apatite P, and total P, based on the analyses of the various Hedley soil fractions.The recent literature survey (Yang and Post, 2011) was restricted to studies of natural, unfertilized, and uncultivated soils since 1995. Ninety measurements of soil P fractions were identified. These were added to the 88 values from soils in natural ecosystems that Cross and Schlesinger (1995) had compiled. Cross and Schlesinger provided a comprehensive survey on Hedley P data prior to 1995. Measurement data are provided for studies published from 1985 through 2010. In addition to the Hedley P fraction measurement data Yang and Post (2011) also compiled information on soil order, soil pH, organic carbon and nitrogen content, as well as the geographic location (longitude and latitude) of the measurement sites. ","time_end":"2010-12-31T23:59:59.000Z","orbit_parameters":{},"id":"C1000000099-ORNL_DAAC","has_formats":false,"original_format":"ECHO10","archive_center":"ORNL_DAAC","has_temporal_subsetting":false,"browse_flag":true,"online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract//"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/SOILS/guides/Global_Phosphorus_Hedley_Fract.html"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","hreflang":"en-US","href":"https://doi.org/10.3334/ORNLDAAC/1230"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract//comp/Global_Phosphorus_Hedley_Fract.pdf"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract//comp/References_HedleyPdatabase.pdf"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract//comp/Yang_and_Post_2011_bg-8-2907-2011.pdf"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/browse#","hreflang":"en-US","href":"https://daac.ornl.gov/graphics/browse/project/tokul_profile_small.jpg"}]}]}}

@@ -10,10 +10,7 @@ const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
 const originalUpload = S3MockPrototype.upload;
 S3MockPrototype.upload = function (...args) {
   const result = originalUpload.call(this, ...args);
-  return {
-    on: () => {},
-    ...result,
-  };
+  return { on: () => {}, ...result };
 };
 
 /**

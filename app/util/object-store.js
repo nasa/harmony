@@ -64,15 +64,50 @@ class S3ObjectStore {
   /**
    * Get an object from the object store (see AWS S3 SDK `getObject`)
    *
-   * @param {Object} params a map of parameters (Bucket, Key) indicating the object to be
-   *   retrieved
+   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   * be retrieved or the object URL
    * @param {*} callback an optional callback function
    * @returns  {AWS.Request} An object with a `promise` function that can be called to obtain a
    *   promise containing the retrieved object
+   * @throws {TypeError} if a URL is provided and can't be parsed
    * @memberof S3ObjectStore
    */
-  getObject(params, callback) {
+  getObject(paramsOrUrl, callback) {
+    let params = paramsOrUrl;
+    if (typeof params === 'string') {
+      const match = params.match(new RegExp('s3://([^/]+)/(.*)'));
+      if (!match) {
+        throw new TypeError(`getObject string does not seem to be an S3 URL: ${params}`);
+      }
+      params = { Bucket: match[1], Key: match[2] };
+    }
     return this.s3.getObject(params, callback);
+  }
+
+  /**
+   * Stream upload an object to S3 (see AWS S3 SDK `upload`)
+   *
+   * @param {Object} params an object describing the upload
+   * @param {Object} options an optional object containing settings to control the upload
+   * @param {*} callback an optional callback function
+   * @returns {AWS.S3.ManagedUpload} the managed upload object that can call send() or track
+   * progress.
+   * @memberof S3ObjectStore
+   */
+  upload(params, options, callback) {
+    return this.s3.upload(params, options, callback);
+  }
+
+  /**
+   * Returns a URL string for an object with the given bucket and key (prefix)
+   *
+   * @param {string} bucket the bucket containing the URL to construct
+   * @param {string} key the key or key prefix for the location
+   * @returns {string} the URL for the object
+   * @memberof S3ObjectStore
+   */
+  getUrlString(bucket, key) {
+    return `s3://${bucket}/${key}`;
   }
 }
 
@@ -80,7 +115,8 @@ class S3ObjectStore {
  * Returns a class to interact with the object store appropriate for
  * the provided protocol, or null if no such store exists.
  *
- * @param {string} protocol the protocol used in object store URLs
+ * @param {string} protocol the protocol used in object store URLs.  This may be a full URL, in
+ *   which case the protocol will be read from the front of the URL.
  * @returns {ObjectStore} an object store for interacting with the given protocol
  */
 function objectStoreForProtocol(protocol) {
@@ -88,14 +124,25 @@ function objectStoreForProtocol(protocol) {
     return null;
   }
   // Make sure the protocol is lowercase and does not end in a colon (as URL parsing produces)
-  const normalizedProtocol = protocol.toLowerCase().replace(/:$/, '');
+  const normalizedProtocol = protocol.toLowerCase().split(':')[0];
   if (normalizedProtocol === 's3') {
     return new S3ObjectStore();
   }
   return null;
 }
 
+/**
+ * Returns the default object store for this instance of Harmony.  Allows requesting an
+ * object store without first knowing a protocol.
+ *
+ * @returns {ObjectStore} the default object store for Harmony.
+ */
+function defaultObjectStore() {
+  return new S3ObjectStore();
+}
+
 module.exports = {
   objectStoreForProtocol,
+  defaultObjectStore,
   S3ObjectStore,
 };
