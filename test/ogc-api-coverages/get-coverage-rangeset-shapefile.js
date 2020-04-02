@@ -126,13 +126,13 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     });
 
     // TODO Marked as pending as it currently provides no value over GeoJSON (HARMONY-243 will implement)
-    describe('calling the backend service with an ESRI shapefile', function () {
+    describe('calling the backend service with an ESRI shapefile @wip', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
-      xit('correctly identifies the granules based on the shapefile', function () {
+      it('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
         expect(source.granules[0].id).to.equal(expectedGranuleId);
@@ -140,13 +140,13 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     });
 
     // TODO Marked as pending as it currently provides no value over GeoJSON (HARMONY-243 will implement)
-    describe('calling the backend service with a KML shapefile', function () {
+    describe('calling the backend service with a KML shapefile @wip', function () {
       form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.kml', mimetype: 'application/vnd.google-earth.kml+xml' } } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
-      xit('correctly identifies the granules based on the shapefile', function () {
+      it('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
         expect(source.granules[0].id).to.equal(expectedGranuleId);
