@@ -54,7 +54,7 @@ async function findShpFile(dir) {
 
 /**
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
- * the caller MUST unlink the result to delete it by calling `result.cleanup()`
+ * the caller MUST unlink the result to delete it
  *
  * @param {string} filename the path to the ESRI shapefile to convert (must be a .zip file)
  * @returns {string} path to a temporary file containing the GeoJSON
@@ -79,38 +79,43 @@ async function esriToGeoJson(filename) {
     throw new RequestValidationError(`Error: failed to unzip shapefile: ${e}`);
   }
 
-  // convert to GeoJSON
+  /**  convert to GeoJSON */
+
   const shpFilePath = await findShpFile(tempDir.path);
+  // write the start of the FeatureCollection
   await writeFile(tempFile.path, geoJsonFileStart, 'utf8');
   let firstLine = true;
-  await esriShapefile.open(shpFilePath)
-    .then((source) => source.read()
-      .then(async function log(result) {
-        if (result.done) return;
-        // Add commas between the Features
-        if (firstLine) {
-          firstLine = false;
-        } else {
-          await appendFile(tempFile.path, ',\n', 'utf8');
-        }
-        // set the correct winding on the outer and inner rings of polygons
-        const feature = rewind(result.value, false);
-        await appendFile(tempFile.path, JSON.stringify(feature), 'utf8');
-        return source.read().then(log);
-      }))
-    .catch((error) => {
-      tempDir.cleanup();
-      throw new RequestValidationError(`Error: failed to process shapefile: ${error}`);
-    });
+  try {
+    const featureSource = await esriShapefile.open(shpFilePath);
+    let result = await featureSource.read();
+    while (result && !result.done) {
+      if (firstLine) {
+        firstLine = false;
+      } else {
+        await appendFile(tempFile.path, ',\n', 'utf8');
+      }
+      // set the correct winding on the outer and inner rings of polygons
+      const feature = rewind(result.value, false);
+      await appendFile(tempFile.path, JSON.stringify(feature), 'utf8');
+
+      result = await featureSource.read();
+    }
+  } catch (e) {
+    tempDir.cleanup();
+    throw new RequestValidationError(`Error: failed to process shapefile: ${e}`);
+  }
+
+  // write out the end of the FeatureCollection
   await appendFile(tempFile.path, geoJsonFileEnd, 'utf8');
+  // remove the temporary directory and its contents
   tempDir.cleanup();
 
-  return tempFile;
+  return tempFile.path;
 }
 
 /**
  * Converts the given KML file to GeoJSON and returns the resulting file.   Note, the caller MUST
- * unlink the result to delete it by calling `result.cleanup()`
+ * unlink the result to delete it
  *
  * @param {string} filename the path to the KML file to convert
  * @returns {string} path to a temporary file containing the GeoJSON
@@ -123,7 +128,7 @@ async function kmlToGeoJson(filename) {
   const converted = togeojson.kml(kml);
   await writeFile(tempFile.path, JSON.stringify(converted), 'utf8');
 
-  return tempFile;
+  return tempFile.path;
 }
 
 const contentTypesToConverters = {
@@ -181,5 +186,4 @@ async function shapefileConverter(req, res, next) {
   next();
 }
 
-// module.exports = shapefileConverter;
-module.exports = { esriToGeoJson, kmlToGeoJson };
+module.exports = shapefileConverter;
