@@ -8,7 +8,6 @@ const esriShapefile = require('shapefile');
 const tmp = require('tmp-promise');
 const util = require('util');
 const unzipper = require('unzipper');
-const { parseXml } = require('libxmljs');
 const { cookieOptions } = require('../util/cookies');
 const { RequestValidationError, HttpError, ServerError } = require('../util/errors');
 const { defaultObjectStore } = require('../util/object-store');
