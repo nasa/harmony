@@ -21,7 +21,7 @@ class StubService extends BaseService {
    * @memberof StubService
    */
   constructor(operation, callbackOptions, serviceName) {
-    super({}, operation);
+    super({ name: 'harmony/stub' }, operation);
     this.callbackOptions = callbackOptions;
     this.isComplete = false;
     this.isRun = false;

@@ -41,6 +41,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, variableName, { query });
 
+      it('provides a staging location to the backend', function () {
+        const location = this.service.operation.stagingLocation;
+        expect(location).to.match(new RegExp('^s3://[^/]+/public/harmony/stub/[^/]+/$'));
+      });
+
       it('passes the source collection to the backend', function () {
         const source = this.service.operation.sources[0];
         expect(source.collection).to.equal(collection);

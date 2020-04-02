@@ -1,0 +1,22 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=--------------------------197006539291414298157968
+accept-encoding: gzip,deflate
+
+HTTP/1.1 400 Bad Request
+content-type: application/json
+content-length: 520
+connection: close
+date: Fri, 27 Mar 2020 22:27:17 GMT
+set-cookie: AWSALB=Ix5U2CYFkbOCB242mwpBjXcWtf2F/vTvFL3JY2O0AC+yA9ngYbtZscBHGhxpSwEiaPbbKj6uRVY4GbdZlv53mm2lCHQgnGPnnAxQaG3Q8OG7T0OC6niP6OA3zGlO; Expires=Fri, 03 Apr 2020 22:27:17 GMT; Path=/
+set-cookie: AWSALBCORS=Ix5U2CYFkbOCB242mwpBjXcWtf2F/vTvFL3JY2O0AC+yA9ngYbtZscBHGhxpSwEiaPbbKj6uRVY4GbdZlv53mm2lCHQgnGPnnAxQaG3Q8OG7T0OC6niP6OA3zGlO; Expires=Fri, 03 Apr 2020 22:27:17 GMT; Path=/; SameSite=None
+access-control-allow-origin: *
+cmr-request-id: a1207476-b893-47e1-82aa-a85afbd7ee5c
+x-request-id: a1207476-b893-47e1-82aa-a85afbd7ee5c
+server: Jetty(9.4.z-SNAPSHOT)
+x-cache: Error from cloudfront
+via: 1.1 170a9cb5b4951d3141f3cdf6b50b780c.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C2
+x-amz-cf-id: 9HdFwK16B8gfyyUWYNrZNGxmU03ikf8yy4s6uf_1qz_DaL-WfC0MDg==
+
+{"errors":["The CMR does not allow querying across granules in all collections. To help optimize your search, you should limit your query using conditions that identify one or more collections, such as provider, provider_id, concept_id, collection_concept_id, short_name, version or entry_title. Visit the CMR Client Developer Forum at https://wiki.earthdata.nasa.gov/display/CMR/Granule+Queries+Now+Require+Collection+Identifiers for more information, and for any questions please contact support@earthdata.nasa.gov."]}
