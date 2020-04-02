@@ -9,7 +9,7 @@ const tmp = require('tmp-promise');
 const util = require('util');
 const unzipper = require('unzipper');
 const { cookieOptions } = require('../util/cookies');
-const { RequestValidationError } = require('../util/errors');
+const { RequestValidationError, HttpError, ServerError } = require('../util/errors');
 const { defaultObjectStore } = require('../util/object-store');
 const { listToText } = require('../util/string');
 
@@ -45,7 +45,7 @@ async function findShpFile(dir) {
   const shpFiles = (await readdir(dir)).filter((file) => path.extname(file) === '.shp');
   if (shpFiles.length !== 1) {
     throw new RequestValidationError(
-      `Error: shapefiles must contain exactly one .shp file, found ${shpFiles.length}`,
+      `Shapefiles must contain exactly one .shp file, found ${shpFiles.length}`,
     );
   }
 
@@ -76,7 +76,7 @@ async function esriToGeoJson(filename) {
       .promise();
   } catch (e) {
     tempDir.cleanup();
-    throw new RequestValidationError(`Error: failed to unzip shapefile: ${e}`);
+    throw new RequestValidationError(`Failed to unzip shapefile: ${e}`);
   }
 
   /**  convert to GeoJSON */
@@ -102,7 +102,7 @@ async function esriToGeoJson(filename) {
     }
   } catch (e) {
     tempDir.cleanup();
-    throw new RequestValidationError(`Error: failed to process shapefile: ${e}`);
+    throw new RequestValidationError(`Failed to process shapefile: ${e}`);
   }
 
   // write out the end of the FeatureCollection
@@ -149,39 +149,44 @@ const contentTypesToConverters = {
 async function shapefileConverter(req, res, next) {
   const { operation } = req;
 
-  const shapefile = get(req, 'files.shapefile[0]') || req.signedCookies.shapefile;
-  res.clearCookie('shapefile', cookieOptions);
+  try {
+    const shapefile = get(req, 'files.shapefile[0]') || req.signedCookies.shapefile;
+    res.clearCookie('shapefile', cookieOptions);
 
-  if (!shapefile) {
-    next();
-    return;
-  }
-  const store = defaultObjectStore();
-
-  const { mimetype, bucket, key } = shapefile;
-  const converter = contentTypesToConverters[mimetype];
-  if (!converter) {
-    const humanContentTypes = Object.entries(contentTypesToConverters).map(([k, v]) => `"${k}" (${v.name})`);
-    throw new RequestValidationError(`Unrecognized shapefile type "${mimetype}".  Valid types are ${listToText(humanContentTypes)}`);
-  }
-  const url = store.getUrlString(bucket, key);
-  if (converter.geoJsonConverter) {
-    const originalFile = await store.downloadFile(url);
-    let convertedFile;
-    try {
-      convertedFile = await converter.geoJsonConverter(originalFile);
-      operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
-    } catch (e) {
-      req.logger.error(e);
-      throw new RequestValidationError('Unable to convert the provided shapefile');
-    } finally {
-      unlink(originalFile);
-      if (convertedFile) {
-        unlink(convertedFile);
-      }
+    if (!shapefile) {
+      next();
+      return;
     }
-  } else {
-    operation.geojson = url;
+    const store = defaultObjectStore();
+
+    const { mimetype, bucket, key } = shapefile;
+    const converter = contentTypesToConverters[mimetype];
+    if (!converter) {
+      const humanContentTypes = Object.entries(contentTypesToConverters).map(([k, v]) => `"${k}" (${v.name})`);
+      throw new RequestValidationError(`Unrecognized shapefile type "${mimetype}".  Valid types are ${listToText(humanContentTypes)}`);
+    }
+    const url = store.getUrlString(bucket, key);
+    if (converter.geoJsonConverter) {
+      const originalFile = await store.downloadFile(url);
+      let convertedFile;
+      try {
+        convertedFile = await converter.geoJsonConverter(originalFile);
+        operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
+      } finally {
+        unlink(originalFile);
+        if (convertedFile) {
+          unlink(convertedFile);
+        }
+      }
+    } else {
+      operation.geojson = url;
+    }
+  } catch (e) {
+    req.context.logger.error(e);
+    if (e instanceof HttpError) {
+      next(e);
+    }
+    next(new ServerError('A problem occurred when attempting to convert the provided shapefile'));
   }
   next();
 }
