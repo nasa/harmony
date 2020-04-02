@@ -70,6 +70,7 @@
     "simple-oauth2": "git+https://github.com/bilts/simple-oauth2.git#fix-encoding",
     "sqlite3": "^4.1.1",
     "tmp": "^0.1.0",
+    "tmp-promise": "^2.0.2",
     "unzipper": "^0.10.10",
     "uuid": "^3.4.0",
     "winston": "^3.2.1",
