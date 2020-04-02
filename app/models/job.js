@@ -246,11 +246,13 @@ class Job extends Record {
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     serializedJob.jobID = this.requestId;
-    serializedJob.links = serializedJob.links.map((link) => ({
-      href: createPublicPermalink(link.href, urlRoot, link.type),
-      title: link.title,
-      type: link.type,
-    }));
+    if (urlRoot) {
+      serializedJob.links = serializedJob.links.map((link) => ({
+        href: createPublicPermalink(link.href, urlRoot, link.type),
+        title: link.title,
+        type: link.type,
+      }));
+    }
     return serializedJob;
   }
 }

@@ -87,15 +87,19 @@ async function serviceInvoker(req, res) {
   }
   const msTaken = new Date().getTime() - startTime;
   const { model } = service.operation;
-  const spatialSubset = model.subset && Object.keys(model.subset).length > 0;
+  const { frontend, logger } = req.context;
+  const spatialSubset = model.subset !== undefined && Object.keys(model.subset).length > 0;
+  const temporalSubset = model.temporal !== undefined && Object.keys(model.temporal).length > 0;
   // eslint-disable-next-line max-len
   const varSources = model.sources.filter((source) => source.variables && source.variables.length > 0);
   const variableSubset = varSources.length > 0;
-  req.context.logger.info('Backend service request complete',
+  logger.info('Backend service request complete',
     { durationMs: msTaken,
+      frontend,
       ...model,
       service: service.config.name,
       spatialSubset,
+      temporalSubset,
       variableSubset });
   return serviceResult;
 }

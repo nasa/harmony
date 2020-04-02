@@ -10,6 +10,12 @@ describe('RequestContext', function () {
       expect(context.id).to.equal('2');
     });
   });
+  describe('setting frontend', function () {
+    context.frontend = 'wms';
+    it('is allowed', function () {
+      expect(context.frontend).to.equal('wms');
+    });
+  });
   describe('setting logger', function () {
     context.logger = 'logger';
     it('is allowed', function () {
