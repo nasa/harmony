@@ -8,6 +8,7 @@ const esriShapefile = require('shapefile');
 const tmp = require('tmp-promise');
 const util = require('util');
 const unzipper = require('unzipper');
+const { parseXml } = require('libxmljs');
 const { cookieOptions } = require('../util/cookies');
 const { RequestValidationError, HttpError, ServerError } = require('../util/errors');
 const { defaultObjectStore } = require('../util/object-store');
@@ -123,8 +124,17 @@ async function esriToGeoJson(filename) {
 async function kmlToGeoJson(filename) {
   const tempFile = await tmp.file();
   // TODO: would be better if we could find a way to avoid holding both kml and geojson in memory
+  const parserOpts = {
+    /**
+     * locator is always need for error position info
+     */
+    locator: {},
+    errorHandler: (_level, msg) => {
+      throw new RequestValidationError(`Failed to process kml file: ${msg}`);
+    },
+  };
   const file = await readFile(filename, 'utf8');
-  const kml = new DOMParser().parseFromString(file);
+  const kml = new DOMParser(parserOpts).parseFromString(file);
   const converted = togeojson.kml(kml);
   await writeFile(tempFile.path, JSON.stringify(converted), 'utf8');
 
