@@ -132,3 +132,7 @@ In order to improve user experience, metrics gathering, and to allow compatibili
 Using the Harmony-provided Python library makes this automatic for cases where the file corresponds to a single granule.  Files subset to a single variable should be
 suffixed with underscore followed by the variable name.  Files that have been regridded should be suffixed with `_regridded`.  Files that have been subsetted should
 be suffixed with `_subsetted`.  Finally, files should have the conventional file extension according to their format, e.g. `.zarr`.
+7. The `stagingLocation` property of the Harmony message contains a prefix of a recommended place to stage your output.  If your service is running in the Harmony
+account or has access to the Harmony staging bucket, we recommend you place results under that location, as it will allow users to access your data via the S3 API
+and ensure correct retention policies and access logging as features are added to Harmony. It is not mandatory that you make use of this location, but highly recommended
+if your service produces files that need to be staged.
