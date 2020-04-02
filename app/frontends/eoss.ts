@@ -38,6 +38,7 @@ function addOpenApiRoutes(app) {
         res.send(openApiContent);
       },
       getGranule(req, res, next) {
+        req.context.frontend = 'eoss';
         if (!req.collections.every(services.isCollectionSupported)) {
           throw new NotFoundError('There is no service configured to support transformations on the provided collection via EOSS.');
         }
