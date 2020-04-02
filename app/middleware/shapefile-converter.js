@@ -2,6 +2,8 @@ const get = require('lodash.get');
 const fs = require('fs');
 const path = require('path');
 const rewind = require('@mapbox/geojson-rewind');
+const togeojson = require('@mapbox/togeojson');
+const { DOMParser } = require('xmldom');
 const esriShapefile = require('shapefile');
 const tmp = require('tmp');
 const util = require('util');
@@ -11,7 +13,6 @@ const { RequestValidationError } = require('../util/errors');
 const { defaultObjectStore } = require('../util/object-store');
 const { listToText } = require('../util/string');
 
-const createTmpFile = util.promisify(tmp.file);
 const unlink = util.promisify(fs.unlink);
 
 /**
@@ -102,14 +103,18 @@ async function esriToGeoJson(filename) {
 
 /**
  * Converts the given KML file to GeoJSON and returns the resulting file.   Note, the caller MUST
- * unlink the result to delete it
+ * unlink the result to delete it by calling `result.removeCallback()`
  *
  * @param {string} filename the path to the KML file to convert
  * @returns {string} path to a temporary file containing the GeoJSON
  */
 async function kmlToGeoJson(filename) {
-  const tempFile = await createTmpFile();
-  console.log('TODO: Implement kmlToGeoJson, writing the result to tempFile');
+  const tempFile = tmp.fileSync();
+  // TODO: would be better if we could find a way to avoid holding both kml and geojson in memory
+  const kml = new DOMParser().parseFromString(fs.readFileSync(filename, 'utf8'));
+  const converted = togeojson.kml(kml);
+  fs.writeFileSync(tempFile.name, JSON.stringify(converted), 'utf8');
+
   return tempFile;
 }
 
@@ -152,8 +157,7 @@ async function shapefileConverter(req, res, next) {
     let convertedFile;
     try {
       convertedFile = await converter.geoJsonConverter(originalFile);
-      console.log('TODO: Uncomment setting operation.geojson after file conversion, once implemented');
-      // operation.geojson = await store.uploadFile(`${url}.geojson`, convertedFile);
+      operation.geojson = await store.uploadFile(`${url}.geojson`, convertedFile);
     } finally {
       unlink(originalFile);
       if (convertedFile) {
@@ -166,5 +170,4 @@ async function shapefileConverter(req, res, next) {
   next();
 }
 
-// module.exports = shapefileConverter;
-module.exports = { esriToGeoJson };
+module.exports = shapefileConverter;
