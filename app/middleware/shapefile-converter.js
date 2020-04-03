@@ -38,7 +38,7 @@ const geoJsonFileEnd = ']}';
 /**
  * Find a .shp file in a directory of files extracted from an ESRI shapefile .zip
  *
- * @param {*} dir The directory where the shapefile was extracted
+ * @param {string} dir The directory where the shapefile was extracted
  * @return {string} The path to the .shp file
  */
 async function findShpFile(dir) {
@@ -59,58 +59,60 @@ async function findShpFile(dir) {
  * @param {string} filename the path to the ESRI shapefile to convert (must be a .zip file)
  * @returns {string} path to a temporary file containing the GeoJSON
  * @throws {RequestValidationError} if something goes wrong
- * TODO:
- *   * enable tests with the ESRI format
- *   * write tests to make sure things get cleaned up,
- *   * write tests for error cases
  */
 async function esriToGeoJson(filename) {
-  const tempFile = await tmp.file();
-  // let the `cleanup` function delete the directory even if it has files in it
-  const tempDir = await tmp.dir({ unsafeCleanup: true });
+  let geoJsonFile;
+  let tempDir;
 
-  // unzip the shapefile
   try {
-    await fs.createReadStream(filename)
-      .pipe(unzipper.Extract({ path: tempDir.path }))
-      .promise();
-  } catch (e) {
-    tempDir.cleanup();
-    throw new RequestValidationError(`Failed to unzip shapefile: ${e}`);
-  }
+    geoJsonFile = await tmp.file();
+    // let the `cleanup` function delete the directory even if it has files in it
+    tempDir = await tmp.dir({ unsafeCleanup: true });
 
-  /**  convert to GeoJSON */
+    // unzip the shapefile
+    try {
+      await fs.createReadStream(filename)
+        .pipe(unzipper.Extract({ path: tempDir.path }))
+        .promise();
+    } catch (e) {
+      throw new RequestValidationError(`Failed to unzip shapefile: ${e}`);
+    }
 
-  const shpFilePath = await findShpFile(tempDir.path);
-  // write the start of the FeatureCollection
-  await writeFile(tempFile.path, geoJsonFileStart, 'utf8');
-  let firstLine = true;
-  try {
+    /**  convert to GeoJSON */
+
+    const shpFilePath = await findShpFile(tempDir.path);
+    // write the start of the FeatureCollection
+    await writeFile(geoJsonFile.path, geoJsonFileStart, 'utf8');
+    let isFirstLine = true;
     const featureSource = await esriShapefile.open(shpFilePath);
     let result = await featureSource.read();
+
+    // write out each Feature
     while (result && !result.done) {
-      if (firstLine) {
-        firstLine = false;
+      if (isFirstLine) {
+        isFirstLine = false;
       } else {
-        await appendFile(tempFile.path, ',\n', 'utf8');
+        await appendFile(geoJsonFile.path, ',\n', 'utf8');
       }
       // set the correct winding on the outer and inner rings of polygons
       const feature = rewind(result.value, false);
-      await appendFile(tempFile.path, JSON.stringify(feature), 'utf8');
+      await appendFile(geoJsonFile.path, JSON.stringify(feature), 'utf8');
 
       result = await featureSource.read();
     }
+
+    // write out the end of the FeatureCollection
+    await appendFile(geoJsonFile.path, geoJsonFileEnd, 'utf8');
   } catch (e) {
-    tempDir.cleanup();
+    if (geoJsonFile) geoJsonFile.cleanup();
+    if (e instanceof RequestValidationError) throw e;
     throw new RequestValidationError(`Failed to process shapefile: ${e}`);
+  } finally {
+    // remove the temporary directory and its contents
+    if (tempDir) tempDir.cleanup();
   }
 
-  // write out the end of the FeatureCollection
-  await appendFile(tempFile.path, geoJsonFileEnd, 'utf8');
-  // remove the temporary directory and its contents
-  tempDir.cleanup();
-
-  return tempFile.path;
+  return geoJsonFile.path;
 }
 
 /**
@@ -121,23 +123,30 @@ async function esriToGeoJson(filename) {
  * @returns {string} path to a temporary file containing the GeoJSON
  */
 async function kmlToGeoJson(filename) {
-  const tempFile = await tmp.file();
-  // TODO: would be better if we could find a way to avoid holding both kml and geojson in memory
-  const parserOpts = {
-    /**
-     * locator is always need for error position info
-     */
-    locator: {},
-    errorHandler: (_level, msg) => {
-      throw new RequestValidationError(`Failed to process kml file: ${msg}`);
-    },
-  };
-  const file = await readFile(filename, 'utf8');
-  const kml = new DOMParser(parserOpts).parseFromString(file);
-  const converted = togeojson.kml(kml);
-  await writeFile(tempFile.path, JSON.stringify(converted), 'utf8');
+  let geoJsonFile;
+  try {
+    geoJsonFile = await tmp.file();
+    // TODO: would be better if we could find a way to avoid holding both kml and geojson in memory
+    const parserOpts = {
+      /**
+       * locator is always need for error position info
+       */
+      locator: {},
+      errorHandler: (_level, msg) => {
+        throw new RequestValidationError(`Failed to process kml file: ${msg}`);
+      },
+    };
+    const file = await readFile(filename, 'utf8');
+    const kml = new DOMParser(parserOpts).parseFromString(file);
+    const converted = togeojson.kml(kml);
+    await writeFile(geoJsonFile.path, JSON.stringify(converted), 'utf8');
+  } catch (e) {
+    if (geoJsonFile) geoJsonFile.cleanup();
+    if (e instanceof RequestValidationError) throw e;
+    throw new RequestValidationError(`Failed to process kml file: ${e}`);
+  }
 
-  return tempFile.path;
+  return geoJsonFile.path;
 }
 
 const contentTypesToConverters = {
