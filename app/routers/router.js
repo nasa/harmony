@@ -1,11 +1,6 @@
 const process = require('process');
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const multer = require('multer');
-const multerS3 = require('multer-s3');
-const crypto = require('crypto');
-const env = require('../util/env');
-const { objectStoreForProtocol } = require('../util/object-store');
 
 // Middleware requires in outside-in order
 const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authorizer');
@@ -17,6 +12,7 @@ const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
 const setRequestId = require('../middleware/request-id');
 const shapefileConverter = require('../middleware/shapefile-converter');
+const shapefileUpload = require('../middleware/shapefile-upload');
 const { NotFoundError } = require('../util/errors');
 const eoss = require('../frontends/eoss');
 const ogcCoverageApi = require('../frontends/ogc-coverages');
@@ -137,35 +133,11 @@ function router({ skipEarthdataLogin }) {
     throw new Error('The "COOKIE_SECRET" environment variable must be set to a random secret string.');
   }
 
-  const { uploadBucket } = env;
-
   result.use(cookieParser(secret));
 
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
   // a bucket.
-  const objectStore = objectStoreForProtocol(env.objectStoreType);
-  const shapefilePrefix = 'temp-user-uploads';
-
-  const upload = multer({
-    storage: multerS3({
-      s3: objectStore.s3,
-      key: (_request, _file, callback) => {
-        crypto.randomBytes(16, (err, raw) => {
-          callback(err, err ? undefined : `${shapefilePrefix}/${raw.toString('hex')}`);
-        });
-      },
-      bucket: uploadBucket,
-    }),
-    limits: {
-      fields: 100, // Maximum number of non-file fields to accept
-      fileSize: 2000000000, // 2 GB maximum size for shapefiles
-      files: 1, // Maximum number of files to accept
-      parts: 100, // Maximum number of multipart parts to accept
-    },
-  });
-  const uploadFields = [{ name: 'shapefile', maxCount: 1 }];
-  result.post(collectionPrefix('(ogc-api-coverages)'), upload.fields(uploadFields));
-
+  result.post(collectionPrefix('(ogc-api-coverages)'), shapefileUpload());
 
   if (`${skipEarthdataLogin}` !== 'true') {
     result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex, '/jobs*', '/service-results/*'])));
