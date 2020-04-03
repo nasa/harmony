@@ -77,7 +77,7 @@ class S3ObjectStore {
    * @param {*} callback an optional callback function
    * @returns  {AWS.Request} An object with a `promise` function that can be called to obtain a
    *   promise containing the retrieved object
-   * @throws {TypeError} if a URL is provided and can't be parsed
+   * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
   getObject(paramsOrUrl, callback) {
