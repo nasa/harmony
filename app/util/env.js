@@ -1,7 +1,8 @@
 const { camelCase } = require('change-case');
 
 /**
- * Add a symbol to module.exports with an appropriate value. This has the drawback that these
+ * Add a symbol to module.exports with an appropriate value. The exported symbol will be in
+ * camel case, e.g., `maxPostFileSize`. This approach has the drawback that these
  * config variables don't show up in VS Code autocomplete, but the reduction in repeated
  * boilerplate code is probably worth it.
  *
