@@ -101,7 +101,7 @@ function _selectFormat(operation, context, configs) {
   if (outputFormat) {
     const matches = configs.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(outputFormat));
     if (matches.length === 0) {
-      throw new NotFoundError(`Could not find a service to reformat to ${outputFormat} for the given collection`);
+      throw new NotFoundError(`Could not find a service to reformat to any of the requested formats [${outputFormat}] for the given collection`);
     }
   } else if (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
     for (const mimeType of context.requestedMimeTypes) {
