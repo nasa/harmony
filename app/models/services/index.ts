@@ -6,7 +6,7 @@ const getIn = require('lodash.get');
 const LocalDockerService = require('./local-docker-service');
 const HttpService = require('./http-service');
 const NoOpService = require('./no-op-service');
-const { NotFoundError } = require('../../util/errors');
+const { NotFoundError, InvalidFormatError } = require('../../util/errors');
 const { isMimeTypeAccepted } = require('../../util/content-negotiation');
 
 let serviceConfigs = null;
@@ -101,7 +101,7 @@ function _selectFormat(operation, context, configs) {
   if (outputFormat) {
     const matches = configs.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(outputFormat));
     if (matches.length === 0) {
-      throw new NotFoundError(`Could not find a service to reformat to any of the requested formats [${outputFormat}] for the given collection`);
+      throw new InvalidFormatError([outputFormat]);
     }
   } else if (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
     for (const mimeType of context.requestedMimeTypes) {
@@ -111,7 +111,7 @@ function _selectFormat(operation, context, configs) {
         return supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType));
       }
     }
-    throw new NotFoundError(`Could not find a service to reformat to any of the requested formats [${context.requestedMimeTypes}] for the given collection`);
+    throw new InvalidFormatError(context.requestedMimeTypes);
   }
   return outputFormat;
 }

@@ -320,7 +320,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       it('indicates the format as the reason the request was rejected', function () {
         const error = JSON.parse(this.res.text);
         expect(error).to.eql({
-          code: 'harmony.NotFoundError',
+          code: 'harmony.InvalidFormatError',
           description: 'Error: Could not find a service to reformat to any of the requested formats [text/plain] for the given collection',
         });
       });
@@ -596,7 +596,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       it('returns an error indicating the unsupported format for the no-op service', function () {
         const error = JSON.parse(this.res.text);
         expect(error).to.eql({
-          code: 'harmony.NotFoundError',
+          code: 'harmony.InvalidFormatError',
           description: 'Error: Could not find a service to reformat to any of the requested formats [image/png] for the given collection',
         });
       });
