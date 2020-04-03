@@ -54,7 +54,7 @@ describe('services.forOperation', function () {
         this.operation.outputFormat = 'image/gif';
       });
       it('selects the first service for the collection from the service configuration', function () {
-        expect(() => forOperation(this.operation, {}, this.config)).to.throw('Could not find a service to reformat to image/gif for the given collection');
+        expect(() => forOperation(this.operation, {}, this.config)).to.throw('Could not find a service to reformat to any of the requested formats [image/gif] for the given collection');
       });
     });
   });
