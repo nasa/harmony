@@ -43,7 +43,6 @@ class InvalidFormatError extends HttpError {
   }
 }
 
-
 module.exports = {
   HttpError,
   CmrError,
