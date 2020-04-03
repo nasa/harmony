@@ -75,7 +75,7 @@ async function esriToGeoJson(filename) {
         .pipe(unzipper.Extract({ path: tempDir.path }))
         .promise();
     } catch (e) {
-      throw new RequestValidationError(`Failed to unzip shapefile: ${e}`);
+      throw new RequestValidationError('Failed to unzip shapefile');
     }
 
     /**  convert to GeoJSON */

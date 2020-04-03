@@ -48,7 +48,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
 
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
   const cmrResp = JSON.parse(cmrRespStr);
-  const testGeoJson = JSON.parse(fs.readFileSync('./test/resources/southern_africa.geojson'));
+  const testGeoJson = JSON.parse(fs.readFileSync('./test/resources/complex_multipoly.geojson'));
 
   describe('when provided a valid set of field parameters', function () {
     let form = {
@@ -62,7 +62,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     };
 
     describe('and a valid GeoJSON shapefile', function () {
-      form = { ...form, shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } };
+      form = { ...form, shapefile: { path: './test/resources/complex_multipoly.geojson', mimetype: 'application/geo+json' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       cmrResp.headers = new fetch.Headers(cmrResp.headers);
       hookCmr('fetchPost', cmrResp);
@@ -142,7 +142,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
 
 
     describe('and a valid ESRI shapefile', function () {
-      form = { ...form, shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' } };
+      form = { ...form, shapefile: { path: './test/resources/complex_multipoly.zip', mimetype: 'application/shapefile+zip' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
@@ -182,13 +182,13 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         expect(this.res.status).to.equal(400);
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.RequestValidationError',
-          description: 'Error: Failed to unzip shapefile: Error: invalid signature: 0x813c5050',
+          description: 'Error: Failed to unzip shapefile',
         });
       });
     });
 
     describe('and a valid KML shapefile', function () {
-      form = { ...form, shapefile: { path: './test/resources/southern_africa.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
+      form = { ...form, shapefile: { path: './test/resources/complex_multipoly.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
@@ -203,12 +203,9 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         expect(this.service.operation.geojson).to.match(new RegExp('^s3://[^/]+/temp-user-uploads/[^/]+.geojson$'));
 
         const geojson = await getJson(this.service.operation.geojson);
-
-        // Test the different properties set by our test data file
-        expect(geojson.features[0].properties).to.eql({ 'fill-opacity': 0, stroke: '#ff0000', 'stroke-opacity': 1 });
-
-        // Apart from the properties, assert everything else is the same
-        geojson.features[0].properties = { id: null };
+        for (const feature of geojson.features) { // Adapt null vs undefined id property
+          feature.properties.id = feature.properties.id || null;
+        }
         expect(geojson).to.deep.equal(testGeoJson);
       });
     });
@@ -253,7 +250,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         variableName,
         {
           shapefile: {
-            path: './test/resources/southern_africa.geojson',
+            path: './test/resources/complex_multipoly.geojson',
             mimetype: 'application/geo+json',
           },
           format: 'image/png',
@@ -302,7 +299,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
           version,
           collection,
           variableName,
-          { shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } },
+          { shapefile: { path: './test/resources/complex_multipoly.geojson', mimetype: 'application/geo+json' } },
         );
         // we get redirected to EDL before the shapefile gets processed
         expect(res.status).to.equal(303);
