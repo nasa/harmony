@@ -19,3 +19,6 @@ test-results.xml
 
 # Dev and test databases
 db/*.sqlite3
+
+# Quokka repl/playground
+playground.js
