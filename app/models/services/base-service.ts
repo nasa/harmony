@@ -7,7 +7,6 @@ const Job = require('../job');
 const { ServerError } = require('../../util/errors');
 const env = require('../../util/env');
 
-
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
  * callback plumbing.
@@ -218,6 +217,14 @@ class BaseService {
       if (error || !job || job.isComplete()) {
         if (this.resolveInvocation) this.resolveInvocation(true);
         serviceResponse.unbindResponseUrl(this.operation.callback);
+        let durationMs;
+        let numOutputs;
+        const serializedJob = job.serialize();
+        if (job.isComplete()) {
+          durationMs = job.updatedAt - job.createdAt;
+          numOutputs = job.links.length;
+        }
+        req.context.logger.info('Async job complete.', { durationMs, numOutputs, job: serializedJob });
       }
     }
     if (err) {

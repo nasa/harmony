@@ -22,6 +22,7 @@ const { defaultObjectStore } = require('../../util/object-store');
  *   cannot be performed
  */
 function getCoverageRangeset(req, res, next) {
+  req.context.frontend = 'ogcCoverages';
   const query = keysToLowerCase(req.query);
 
   const operation = new DataOperation();
