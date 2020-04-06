@@ -1,4 +1,4 @@
-const fields = ['id', 'logger', 'requestedMimeTypes'];
+const fields = ['id', 'logger', 'requestedMimeTypes', 'shapefile'];
 
 /**
  * Contains additional information about a request
@@ -83,6 +83,27 @@ class RequestContext {
    */
   set requestedMimeTypes(requestedMimeTypes) {
     this.model.requestedMimeTypes = requestedMimeTypes;
+  }
+
+  /**
+   * Returns the shapefile
+   *
+   * @returns {object} The shapefile
+   * @memberof RequestContext
+   */
+  get shapefile() {
+    return this.model.shapefile;
+  }
+
+  /**
+   * Sets the shapefile
+   *
+   * @param {object} shapefile The shapefile
+   * @returns {void}
+   * @memberof RequestContext
+   */
+  set shapefile(shapefile) {
+    this.model.shapefile = shapefile;
   }
 }
 

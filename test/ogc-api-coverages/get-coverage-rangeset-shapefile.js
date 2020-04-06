@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 const { parse } = require('cookie');
 const fetch = require('node-fetch');
-const { describe, it, xit } = require('mocha');
+const { describe, it } = require('mocha');
 const { expect } = require('chai');
 const fs = require('fs');
 const { hookServersStartStop } = require('../helpers/servers');
@@ -136,11 +136,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       });
     });
 
-    describe('and an invalid GeoJSON shapefile', function () {
-      xit('returns an error');
-    });
-
-
     describe('and a valid ESRI shapefile', function () {
       form = { ...form, shapefile: { path: './test/resources/complex_multipoly.zip', mimetype: 'application/shapefile+zip' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
@@ -157,6 +152,15 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         expect(this.service.operation.geojson).to.match(new RegExp('^s3://[^/]+/temp-user-uploads/[^/]+.geojson$'));
 
         const geojson = await getJson(this.service.operation.geojson);
+        // Ignore helpful bbox and filename attributes added from ESRI Shapefile
+        delete geojson.features[0].geometry.bbox;
+        delete geojson.features[1].geometry.bbox;
+        delete geojson.fileName;
+
+        // Round coordinates to 6 decimal places to deal with floating point representation differences
+        for (const feature of geojson.features) {
+          feature.geometry.coordinates = feature.geometry.coordinates.map((c) => c.map(([x, y]) => [+x.toFixed(6), +y.toFixed(6)]));
+        }
         expect(geojson).to.deep.equal(testGeoJson);
       });
     });
@@ -169,7 +173,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         expect(this.res.status).to.equal(400);
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.RequestValidationError',
-          description: 'Error: Shapefiles must contain exactly one .shp file, found 2',
+          description: 'Error: The provided ESRI Shapefile file could not be parsed. Please check its validity before retrying.',
         });
       });
     });
@@ -182,7 +186,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         expect(this.res.status).to.equal(400);
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.RequestValidationError',
-          description: 'Error: Failed to unzip shapefile',
+          description: 'Error: The provided ESRI Shapefile file could not be parsed. Please check its validity before retrying.',
         });
       });
     });
@@ -218,7 +222,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         expect(this.res.status).to.equal(400);
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.RequestValidationError',
-          description: 'Error: Failed to process kml file: [xmldom error]\telement parse error: Error: Failed to process kml file: [xmldom warning]\tunclosed xml attribute\n@#[line:2,col:1]\n@#[line:2,col:1]',
+          description: 'Error: The provided KML file could not be parsed. Please check its validity before retrying.',
         });
       });
     });
@@ -265,17 +269,17 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
 
   describe('Validation', function () {
     describe('when the CMR returns a 4xx', function () {
-      const cmrErrorMessage = 'Corrupt zip file';
+      const cmrErrorMessage = 'Corrupt GeoJSON';
       const cmrStatus = 400;
       hookCmr('cmrPostSearchBase', { status: cmrStatus, data: { errors: [cmrErrorMessage] } });
-      it('returns an HTTP 400 "Bad Request" error with explanatory message when the shapefile is corrupt',
+      it('returns an HTTP 400 "Bad Request" error with message reflecting the original shapefile type',
         async function () {
           let res = await postRangesetRequest(
             this.frontend,
             version,
             collection,
             variableName,
-            { shapefile: { path: './test/resources/corrupt_file.geojson', mimetype: 'application/geo+json' } },
+            { shapefile: { path: './test/resources/complex_multipoly.zip', mimetype: 'application/shapefile+zip' } },
           );
           // we get redirected to EDL before the shapefile gets processed
           expect(res.status).to.equal(303);
@@ -286,7 +290,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
           expect(res.status).to.equal(cmrStatus);
           expect(res.body).to.eql({
             code: 'harmony.CmrError',
-            description: `Error: ${cmrErrorMessage}`,
+            description: 'Error: Corrupt ESRI Shapefile',
           });
         });
     });
