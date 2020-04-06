@@ -27,7 +27,7 @@ function listToText(items) {
 
 /**
  * Truncates a string to the specified number of characters. The last
- * three characters are replaced with ...
+ * three characters are replaced with '...'.
  *
  * @param {string} s The string to truncate
  * @param {integer} n The maximum number of characters to keep
