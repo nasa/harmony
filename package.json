@@ -67,7 +67,7 @@
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
     "serve-favicon": "^2.5.0",
-    "shapefile": "0.6.6",
+    "shpjs": "^3.4.3",
     "simple-oauth2": "git+https://github.com/bilts/simple-oauth2.git#fix-encoding",
     "sqlite3": "^4.1.1",
     "tmp": "^0.1.0",
