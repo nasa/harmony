@@ -1,0 +1,105 @@
+openapi: 3.0.3
+info:
+  title: Callback API for Harmony backend services
+  description: TODO
+  version: 1.0.0
+  contact:
+    name: Harmony API Support
+    url: https://bugs.earthdata.nasa.gov/browse/HARMONY
+    email: support@earthdata.nasa.gov  # Avoid email.  For best response, reach out in Slack or file a JIRA issue
+    x-eosdis-slack-channel: '#harmony'
+servers:
+- url: /{callback-id}
+  description: Harmony callback root
+  variables:
+    callback-id:
+      default: no-default-uuid
+      description: An opaque callback ID provided by the Harmony message
+tags:
+- name: Response
+  description: Response callback
+paths:
+  /response:
+    post:
+      tags:
+      - Response
+      summary: TODO
+      description: TODO
+      operationId: response
+      parameters:
+      # redirect
+      # error, item, status, redirect, progress
+      # item:
+      #   href, type, title, temporal, bbox
+      - name: bbox
+        in: query
+        description: TODO
+        required: false
+        style: form
+        explode: false
+        schema:
+          maxItems: 4
+          minItems: 4
+          type: array
+          items:
+            type: number
+      - name: time
+        in: query
+        description: Not yet implemented
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: links to the API capabilities
+          content:
+            application/json:
+              schema:
+                type: string
+                description: The string literal "Ok".  Indicates the callback was processed successfully
+
+        "400":
+          description:
+            Indicates that the request was incorrect, for example due to a parameter being out of the acceptable
+            range or an invalid combination of parameters being provided.  The message field in the response provides
+            additional details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
+        "404":
+          description:
+            Indicates that there is no callback available at the given URL.  If Harmony provided the URL in the first
+            place, the most likely cause of this is that you have already called back in a way that indicates your
+            service has completed, either with an error, a callback, or a status=complete parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
+        "500":
+          description:
+            Indicates an unexpected error in accepting the response.  Contact the Harmony team or file a bug to help
+            resolve it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
+components:
+  schemas:
+    error:
+      required:
+        - code
+        - message
+      type: object
+      properties:
+        code:
+          type: integer
+          description: The error code (400)
+        message:
+          type: string
+          description: The error message
