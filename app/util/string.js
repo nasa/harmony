@@ -25,6 +25,27 @@ function listToText(items) {
   return result.join(', ');
 }
 
+/**
+ * Truncates a string to the specified number of characters. The last
+ * three characters are replaced with '...'.
+ *
+ * @param {string} s The string to truncate
+ * @param {integer} n The maximum number of characters to keep
+ *
+ * @returns {string} The truncated string
+ */
+function truncateString(s, n) {
+  let truncatedString = s;
+  if (s.length > n) {
+    if (n < 3) {
+      truncatedString = '...';
+    } else {
+      truncatedString = `${s.slice(0, n - 3)}...`;
+    }
+  }
+  return truncatedString;
+}
 module.exports = {
   listToText,
+  truncateString,
 };
