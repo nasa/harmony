@@ -1,6 +1,7 @@
 const pick = require('lodash.pick');
 const Record = require('./record');
 const { createPublicPermalink } = require('../frontends/service-results');
+const { truncateString } = require('../util/string');
 
 const statesToDefaultMessages = {
   accepted: 'The job has been accepted and is waiting to be processed',
@@ -108,6 +109,8 @@ class Job extends Record {
    */
   constructor(fields) {
     super(fields);
+    // Allow up to 4096 chars for the request string
+    this.request = fields.request && truncateString(fields.request, 4096);
     this.updateStatus(fields.status || 'accepted', fields.message);
     this.progress = fields.progress || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
@@ -246,11 +249,13 @@ class Job extends Record {
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     serializedJob.jobID = this.requestId;
-    serializedJob.links = serializedJob.links.map((link) => ({
-      href: createPublicPermalink(link.href, urlRoot, link.type),
-      title: link.title,
-      type: link.type,
-    }));
+    if (urlRoot) {
+      serializedJob.links = serializedJob.links.map((link) => ({
+        href: createPublicPermalink(link.href, urlRoot, link.type),
+        title: link.title,
+        type: link.type,
+      }));
+    }
     return serializedJob;
   }
 }

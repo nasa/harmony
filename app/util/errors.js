@@ -37,6 +37,12 @@ class RequestValidationError extends HttpError {
   }
 }
 
+class InvalidFormatError extends HttpError {
+  constructor(formats) {
+    super(404, `Could not find a service to reformat to any of the requested formats [${formats}] for the given collection`);
+  }
+}
+
 module.exports = {
   HttpError,
   CmrError,
@@ -45,4 +51,5 @@ module.exports = {
   ServerError,
   RequestValidationError,
   ForbiddenError,
+  InvalidFormatError,
 };

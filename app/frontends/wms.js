@@ -251,6 +251,7 @@ function getMap(req, res, next) {
  * @returns {void}
  */
 async function wmsFrontend(req, res, next) {
+  req.context.frontend = 'wms';
   const query = keysToLowerCase(req.query);
   req.wmsQuery = query;
 
