@@ -232,7 +232,7 @@ class BaseService {
       res.json(err);
     } else {
       res.status(200);
-      res.send('Ok');
+      res.json('Ok');
     }
   }
 
