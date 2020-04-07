@@ -5,7 +5,7 @@ const env = require('../util/env');
 const { objectStoreForProtocol } = require('../util/object-store');
 
 /**
- * Build the middleware
+ * Build a middleware for uploading shapefiles passed in with the request to S3
  *
  * @returns {*} A middleware object that handles shapefile uploads
  */

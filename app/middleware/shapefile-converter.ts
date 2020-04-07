@@ -14,7 +14,6 @@ const { listToText } = require('../util/string');
 const unlink = util.promisify(fs.unlink);
 const readFile = util.promisify(fs.readFile);
 const writeFile = util.promisify(fs.writeFile);
-const appendFile = util.promisify(fs.appendFile);
 
 /**
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
@@ -24,18 +23,14 @@ const appendFile = util.promisify(fs.appendFile);
  * @returns {string} path to a temporary file containing the GeoJSON
  * @throws {RequestValidationError} if something goes wrong
  */
-async function esriToGeoJson(filename) {
+async function _esriToGeoJson(filename) {
   let geoJsonFile;
 
   try {
     geoJsonFile = await tmp.file();
-    // let the `cleanup` function delete the directory even if it has files in it
-
     const buffer = await readFile(filename);
     const geojson = rewind(await shpjs.parseZip(buffer));
-
-    // write out the end of the FeatureCollection
-    await appendFile(geoJsonFile.path, JSON.stringify(geojson), 'utf8');
+    await writeFile(geoJsonFile.path, JSON.stringify(geojson), 'utf8');
   } catch (e) {
     if (geoJsonFile) geoJsonFile.cleanup();
     if (e instanceof RequestValidationError) throw e;
@@ -52,7 +47,7 @@ async function esriToGeoJson(filename) {
  * @param {Logger} logger the logger to use for errors
  * @returns {string} path to a temporary file containing the GeoJSON
  */
-async function kmlToGeoJson(filename, logger) {
+async function _kmlToGeoJson(filename, logger) {
   let geoJsonFile;
   try {
     geoJsonFile = await tmp.file();
@@ -83,8 +78,8 @@ async function kmlToGeoJson(filename, logger) {
 
 const contentTypesToConverters = {
   'application/geo+json': { name: 'GeoJSON', geoJsonConverter: null },
-  'application/vnd.google-earth.kml+xml': { name: 'KML', geoJsonConverter: kmlToGeoJson },
-  'application/shapefile+zip': { name: 'ESRI Shapefile', geoJsonConverter: esriToGeoJson },
+  'application/vnd.google-earth.kml+xml': { name: 'KML', geoJsonConverter: _kmlToGeoJson },
+  'application/shapefile+zip': { name: 'ESRI Shapefile', geoJsonConverter: _esriToGeoJson },
 };
 
 /**

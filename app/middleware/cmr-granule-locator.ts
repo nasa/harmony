@@ -79,7 +79,7 @@ async function cmrGranuleLocator(req, res, next) {
     if (e instanceof RequestValidationError || e instanceof CmrError) {
       // Avoid giving confusing errors about GeoJSON due to upstream converted files
       if (e.message.indexOf('GeoJSON') !== -1 && req.context.shapefile) {
-        e.message = e.message.replace('GeoJSON', req.context.shapefile.typeName);
+        e.message = e.message.replace('GeoJSON', `GeoJSON (converted from the provided ${req.context.shapefile.typeName})`);
       }
       return next(e);
     }
