@@ -290,7 +290,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
           expect(res.status).to.equal(cmrStatus);
           expect(res.body).to.eql({
             code: 'harmony.CmrError',
-            description: 'Error: Corrupt ESRI Shapefile',
+            description: 'Error: Corrupt GeoJSON (converted from the provided ESRI Shapefile)',
           });
         });
     });
