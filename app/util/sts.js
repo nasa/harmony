@@ -15,9 +15,9 @@ class SecureTokenService {
    */
   constructor(overrides) {
     const endpointSettings = {};
-    // if (process.env.USE_LOCALSTACK === 'true') {
-    //   endpointSettings.endpoint = 'http://localhost:4592';
-    // }
+    if (process.env.USE_LOCALSTACK === 'true') {
+      endpointSettings.endpoint = 'http://localhost:4592';
+    }
 
     this.sts = new aws.STS({
       apiVersion: '2011-06-15',
@@ -34,7 +34,7 @@ class SecureTokenService {
    * @returns {Object} credentials with access to the role provided
    * @memberof SecureTokenService
    */
-  async assumeRole(params) {
+  assumeRole(params) {
     const response = this.sts.assumeRole(params)
       .promise()
       .then(
