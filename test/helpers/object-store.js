@@ -1,6 +1,7 @@
 const { before, after } = require('mocha');
 const sinon = require('sinon');
 const aws = require('aws-sdk');
+const fs = require('fs');
 const mockAws = require('mock-aws-s3');
 const tmp = require('tmp');
 const { S3ObjectStore } = require('../../app/util/object-store');
@@ -53,7 +54,23 @@ function hookSignS3Object() {
   return prefix;
 }
 
+/**
+ * Gets JSON from the given object store URL.  Uses synchronous functions only suitable for testing
+ * @param {string} url the Object store URL to get
+ * @returns {*} the JSON contents of the file at the given URL
+ */
+async function getJson(url) {
+  const objectStore = new S3ObjectStore();
+  const filename = await objectStore.downloadFile(url);
+  try {
+    return JSON.parse(fs.readFileSync(filename));
+  } finally {
+    fs.unlinkSync(filename);
+  }
+}
+
 module.exports = {
   hookMockS3,
   hookSignS3Object,
+  getJson,
 };
