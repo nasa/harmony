@@ -35,12 +35,13 @@ async function cloudAccessJson(req, res) {
     res.status(500);
     res.json({
       code: 'harmony:ServerError',
-      description: 'Error: Failed to assume role',
+      description: 'Error: Failed to assume role to generate access keys',
     });
   }
 }
 
-const shebang = '!#/bin/sh';
+const preamble = '#!/bin/sh\n# Source this file to set keys to access Harmony S3 outputs within the us-west-2 region.\n\n';
+const accessKeyFields = ['AccessKeyId', 'SecretAccessKey', 'SessionToken'];
 
 /**
  * Express.js handler that handles the cloud access shell endpoint (/cloud-access.sh)
@@ -49,14 +50,24 @@ const shebang = '!#/bin/sh';
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-function cloudAccessSh(req, res) {
-  let { logger } = req.context;
-  logger = logger.child({ component: 'cloudAccess.cloudAccessSh' });
-  const accessKey = 'foo';
-  const secretAccessKey = 'bar';
-  const response = `${shebang}\nexport ACCESS_KEY=${accessKey}\nexport SECRET_ACCESS_KEY=${secretAccessKey}\n`;
-  res.set('Content-Type', 'application/x-sh');
-  res.send(response);
+async function cloudAccessSh(req, res) {
+  req.context.logger = req.context.logger.child({ component: 'cloudAccess.cloudAccessSh' });
+  try {
+    const credentials = await _assumeS3OutputsRole(req.context, req.user);
+    let response = preamble;
+    for (const key of accessKeyFields) {
+      response += `export ${key}='${credentials[key]}'\n`;
+    }
+    res.set('Content-Type', 'application/x-sh');
+    res.send(response);
+  } catch (e) {
+    req.context.logger.error(e);
+    res.status(500);
+    res.json({
+      code: 'harmony:ServerError',
+      description: 'Error: Failed to assume role to generate access keys',
+    });
+  }
 }
 
 module.exports = { cloudAccessJson, cloudAccessSh };
