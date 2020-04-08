@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 const { parse } = require('cookie');
 const fetch = require('node-fetch');
-const { describe, it, xit } = require('mocha');
+const { describe, it } = require('mocha');
 const { expect } = require('chai');
 const fs = require('fs');
 const { hookServersStartStop } = require('../helpers/servers');
@@ -10,7 +10,7 @@ const { auth } = require('../helpers/auth');
 const { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } = require('../helpers/ogc-api-coverages');
 const { hookCmr } = require('../helpers/stub-cmr');
 const isUUID = require('../../app/util/uuid');
-const { hookMockS3 } = require('../helpers/object-store');
+const { hookMockS3, getJson } = require('../helpers/object-store');
 
 /**
  * Common steps in the validation tests
@@ -48,8 +48,9 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
 
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
   const cmrResp = JSON.parse(cmrRespStr);
+  const testGeoJson = JSON.parse(fs.readFileSync('./test/resources/complex_multipoly.geojson'));
 
-  describe('when provided a valid set of parameters', function () {
+  describe('when provided a valid set of field parameters', function () {
     let form = {
       subset: ['lon(17:98)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
       interpolation: 'near',
@@ -58,11 +59,10 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       height: 500,
       width: 1000,
       outputCrs: 'CRS:84',
-      shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' },
     };
 
-    describe('calling the backend service with a GeoJSON shapefile', function () {
-      form = { ...form, shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } };
+    describe('and a valid GeoJSON shapefile', function () {
+      form = { ...form, shapefile: { path: './test/resources/complex_multipoly.geojson', mimetype: 'application/geo+json' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       cmrResp.headers = new fetch.Headers(cmrResp.headers);
       hookCmr('fetchPost', cmrResp);
@@ -108,48 +108,135 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       it('passes the interpolation parameter to the backend', function () {
         expect(this.service.operation.interpolationMethod).to.equal('near');
       });
+
       it('passes the scaleExtent parameter to the backend', function () {
         expect(this.service.operation.scaleExtent).to.eql({
           x: { min: 0, max: 1500000 },
           y: { min: 2500000.3, max: 3300000 },
         });
       });
+
       it('passes the scaleSize parameter to the backend', function () {
         expect(this.service.operation.scaleSize).to.eql({ x: 1.1, y: 2 });
       });
+
       it('passes the height parameter to the backend', function () {
         expect(this.service.operation.outputHeight).to.equal(500);
       });
+
       it('passes the width parameter to the backend', function () {
         expect(this.service.operation.outputWidth).to.equal(1000);
       });
+
+      it('passes a shapefile URI to the backend', async function () {
+        expect(this.service.operation.geojson).to.match(new RegExp('^s3://[^/]+/temp-user-uploads/[^/]+$'));
+
+        const geojson = await getJson(this.service.operation.geojson);
+        expect(geojson).to.deep.equal(testGeoJson);
+      });
     });
 
-    // TODO Marked as pending as it currently provides no value over GeoJSON (HARMONY-243 will implement)
-    describe('calling the backend service with an ESRI shapefile', function () {
-      form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.zip', mimetype: 'application/shapefile+zip' } } };
+    describe('and a valid ESRI shapefile', function () {
+      form = { ...form, shapefile: { path: './test/resources/complex_multipoly.zip', mimetype: 'application/shapefile+zip' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
-      xit('correctly identifies the granules based on the shapefile', function () {
+      it('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
         expect(source.granules[0].id).to.equal(expectedGranuleId);
       });
+
+      it('passes a URL to the ESRI Shapefile converted to GeoJSON to the backend', async function () {
+        expect(this.service.operation.geojson).to.match(new RegExp('^s3://[^/]+/temp-user-uploads/[^/]+.geojson$'));
+
+        const geojson = await getJson(this.service.operation.geojson);
+        // Ignore helpful bbox and filename attributes added from ESRI Shapefile
+        delete geojson.features[0].geometry.bbox;
+        delete geojson.features[1].geometry.bbox;
+        delete geojson.fileName;
+
+        // Round coordinates to 6 decimal places to deal with floating point representation differences
+        for (const feature of geojson.features) {
+          feature.geometry.coordinates = feature.geometry.coordinates.map((c) => c.map(([x, y]) => [+x.toFixed(6), +y.toFixed(6)]));
+        }
+        expect(geojson).to.deep.equal(testGeoJson);
+      });
     });
 
-    // TODO Marked as pending as it currently provides no value over GeoJSON (HARMONY-243 will implement)
-    describe('calling the backend service with a KML shapefile', function () {
-      form = { ...form, ...{ shapefile: { path: './test/resources/southern_africa.kml', mimetype: 'application/vnd.google-earth.kml+xml' } } };
+    describe('and an ESRI shapefile containing more than one .shp', function () {
+      form = { ...form, shapefile: { path: './test/resources/two_shp_file.zip', mimetype: 'application/shapefile+zip' } };
+      hookPostRangesetRequest(version, collection, variableName, form);
+
+      it('returns a shapefile conversion error', function () {
+        expect(this.res.status).to.equal(400);
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: The provided ESRI Shapefile file could not be parsed. Please check its validity before retrying.',
+        });
+      });
+    });
+
+    describe('and an ESRI shapefile that cannot be parsed', function () {
+      form = { ...form, shapefile: { path: './test/resources/corrupt_file.zip', mimetype: 'application/shapefile+zip' } };
+      hookPostRangesetRequest(version, collection, variableName, form);
+
+      it('returns a shapefile conversion error', function () {
+        expect(this.res.status).to.equal(400);
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: The provided ESRI Shapefile file could not be parsed. Please check its validity before retrying.',
+        });
+      });
+    });
+
+    describe('and a valid KML shapefile', function () {
+      form = { ...form, shapefile: { path: './test/resources/complex_multipoly.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, form);
 
-      xit('correctly identifies the granules based on the shapefile', function () {
+      it('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
         expect(source.granules.length === 1);
         expect(source.granules[0].id).to.equal(expectedGranuleId);
+      });
+
+      it('passes a URL to the KML converted to GeoJSON to the backend', async function () {
+        expect(this.service.operation.geojson).to.match(new RegExp('^s3://[^/]+/temp-user-uploads/[^/]+.geojson$'));
+
+        const geojson = await getJson(this.service.operation.geojson);
+        for (const feature of geojson.features) { // Adapt null vs undefined id property
+          feature.properties.id = feature.properties.id || null;
+        }
+        expect(geojson).to.deep.equal(testGeoJson);
+      });
+    });
+
+    describe('and a KML shapefile that cannot be parsed', function () {
+      form = { ...form, shapefile: { path: './test/resources/corrupt_file.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
+      hookPostRangesetRequest(version, collection, variableName, form);
+
+      it('returns a shapefile conversion error', function () {
+        expect(this.res.status).to.equal(400);
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: The provided KML file could not be parsed. Please check its validity before retrying.',
+        });
+      });
+    });
+
+    describe('and an unrecognized shapefile type', function () {
+      form = { ...form, shapefile: { path: './test/resources/corrupt_file.kml', mimetype: 'text/plain' } };
+      hookPostRangesetRequest(version, collection, variableName, form);
+
+      it('returns a shapefile conversion error', function () {
+        expect(this.res.status).to.equal(400);
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: Unrecognized shapefile type "text/plain".  Valid types are "application/geo+json" (GeoJSON), "application/vnd.google-earth.kml+xml" (KML), and "application/shapefile+zip" (ESRI Shapefile)',
+        });
       });
     });
   });
@@ -167,7 +254,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         variableName,
         {
           shapefile: {
-            path: './test/resources/southern_africa.geojson',
+            path: './test/resources/complex_multipoly.geojson',
             mimetype: 'application/geo+json',
           },
           format: 'image/png',
@@ -182,17 +269,17 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
 
   describe('Validation', function () {
     describe('when the CMR returns a 4xx', function () {
-      const cmrErrorMessage = 'Corrupt zip file';
+      const cmrErrorMessage = 'Corrupt GeoJSON';
       const cmrStatus = 400;
       hookCmr('cmrPostSearchBase', { status: cmrStatus, data: { errors: [cmrErrorMessage] } });
-      it('returns an HTTP 400 "Bad Request" error with explanatory message when the shapefile is corrupt',
+      it('returns an HTTP 400 "Bad Request" error with message reflecting the original shapefile type',
         async function () {
           let res = await postRangesetRequest(
             this.frontend,
             version,
             collection,
             variableName,
-            { shapefile: { path: './test/resources/corrupt_file.geojson', mimetype: 'application/geo+json' } },
+            { shapefile: { path: './test/resources/complex_multipoly.zip', mimetype: 'application/shapefile+zip' } },
           );
           // we get redirected to EDL before the shapefile gets processed
           expect(res.status).to.equal(303);
@@ -203,7 +290,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
           expect(res.status).to.equal(cmrStatus);
           expect(res.body).to.eql({
             code: 'harmony.CmrError',
-            description: `Error: ${cmrErrorMessage}`,
+            description: 'Error: Corrupt GeoJSON (converted from the provided ESRI Shapefile)',
           });
         });
     });
@@ -216,7 +303,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
           version,
           collection,
           variableName,
-          { shapefile: { path: './test/resources/southern_africa.geojson', mimetype: 'application/geo+json' } },
+          { shapefile: { path: './test/resources/complex_multipoly.geojson', mimetype: 'application/geo+json' } },
         );
         // we get redirected to EDL before the shapefile gets processed
         expect(res.status).to.equal(303);
