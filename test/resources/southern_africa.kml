@@ -7,7 +7,7 @@
 <Folder><name>southern_africa</name>
   <Placemark>
 	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
-      <MultiGeometry><Polygon><outerBoundaryIs><LinearRing><coordinates>3.74205090945293,2.29188740200492 15.2177260827149,-35.2853234594607 33.2187851780278,-36.1853764142263 53.9200031376375,11.2924169496614 39.9691823387701,15.3426552461067  -2.78333301259798,8.1422316079816 3.74205090945293,2.29188740200492</coordinates></LinearRing></outerBoundaryIs></Polygon></MultiGeometry>
+      <MultiGeometry><Polygon><outerBoundaryIs><LinearRing><coordinates>3.742050909452928,2.2918874020049174 15.217726082714876,-35.28532345946067 33.21878517802776,-36.18537641422631 53.920003137637536,11.292416949661359 39.96918233877008,15.342655246106744 -2.7833330125979785,8.1422316079816 3.742050909452928,2.2918874020049174</coordinates></LinearRing></outerBoundaryIs></Polygon></MultiGeometry>
   </Placemark>
 </Folder>
 </Document></kml>
