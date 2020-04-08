@@ -60,7 +60,7 @@ The following are the options for how to call back to the Harmony URL:
 
 `${operation.callback}/response?error=<message>` If an error occurs, it can be provided in the "message" query parameter and Harmony will convey it to the user in a format suitable for the protocol.
 
-`${operation.callback}/response` If no query parameters are provided and a POST body is present, Harmony will stream the POST body directly to the user as it receives data, conveying the appropriate `Content-Type` and `Content-Size` headers set in the callback.  Use this method if the service builds its response incrementally and the user would benefit from a partial response while waiting on the remainder.
+`${operation.callback}/response` If no query parameters are provided and a POST body is present, Harmony will stream the POST body directly to the user as it receives data, conveying the appropriate `Content-Type` and `Content-Length` headers set in the callback.  Use this method if the service builds its response incrementally and the user would benefit from a partial response while waiting on the remainder.
 
 All log messages should be directed to stdout, and all messages should be in JSON format. Harmony will capture all output on both stdout and stderr, and those logs will be available in the metrics system. By using JSON, metrics from the backend services can easily be extracted.
 

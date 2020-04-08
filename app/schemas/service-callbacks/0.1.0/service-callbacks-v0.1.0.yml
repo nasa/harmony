@@ -23,34 +23,181 @@ paths:
     post:
       tags:
       - Response
-      summary: TODO
-      description: TODO
+      summary: The primary (only) callback endpoint
+      description: All communication from backend service to Harmony is sent on this endpoint, including
+        indciation of errors, partial results, full results, and progress
       operationId: response
       parameters:
-      # redirect
-      # error, item, status, redirect, progress
-      # item:
-      #   href, type, title, temporal, bbox
-      - name: bbox
-        in: query
-        description: TODO
+        # Common parameters between sync and async requests
+        - name: error
+          in: query
+          description:
+            Valid in both synchronous and asynchronous service requests.
+
+            Passing this parameter indicates that an error has occurred in performing the service with a
+            user-facing message as the value of the parameter.  Internal error diagnostics should be logged
+            to STDOUT or STDERR.  The logger provided by the Harmony Python library will provide a common
+            format if used.
+
+            Once a service calls back with this parameter, no further callbacks will be accepted.
+
+            For synchronous requests, Harmony returns the message to the user in an appropriate format for
+            the request with an HTTP 400 response.  For asynchronous requests, Harmony marks the request
+            as failed and places the error message in a user-accessible field.  Harmony maintains user access
+            to any prior partial results sent by the service as well as the progress percentage of the request
+          example:
+            - error=
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+
+        # Parameters for responding to synchronous requests
+        - name: redirect
+          description:
+            Valid in synchronous service requests only. Deprecated support for asynchronous requests.
+
+            Indicates that the service request has completed successfully and the user can retrieve the response
+            at the URL value of this parameter.  The URL can either be an HTTPS URL or a URL to an S3 staging
+            location to a bucket and key where Harmony has permission to sign GetObject requests.  If it is an
+            HTTPS URL, Harmony will redirect the user to its location.  If it is an S3 staging location, Harmony
+            will pre-sign a URL that can be used for a subsequent GetObject request.  Staged S3 objects should
+            have the correct "Content-Type" tag set.  The Harmony Python library does this automatically when using
+            the "completed_with_redirect" helper method.  Harmony provides services with a preferred staging prefix
+            with each request of the form "s3://<staging-bucket>/public/<org-name>/<service-name>/<uuid>/", which
+            services should use whenever possible to maintain appropriate ACLs and user-facing utilities.
+
+            Harmony prefers to use S3 locations as it can cache subsequent requests and control retention.
+          example:
+            - redirect=s3://example-staging-bucket/public/my-daac/my-service/11111111-2222-3333-4444-555555555555/output.tif
+            - redirect=https://my-daac.example.com//output.tif
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+            format: uri
+
+        # Parameters for responding to asynchronous requests
+        - name: status
+          description:
+            Valid for asynchronous service requests only.  Ignored for synchronous requests.
+
+            Updates the status of the request.  Harmony maintains all status transitions up to "successful", which is
+            the only value services should provide here.  status=successful indicates the service request completed.
+            Once Harmony receives this final status, it de-registers the service callback and any subsequent attempts
+            to call back will fail.
+          example:
+            - status=successful
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+            enum: [ successful ]
+
+        - name: progress
+          description:
+            Valid for asynchronous service requests only.  Ignored for synchronous requests.
+
+            Indicates an approximate percentage progress through the overall request, as a percentage.  Harmony
+            automatically starts this value at 0 and sets it to 100 for a successful response.  Services should
+            only use this parameter to provide intermediate feedback to users.
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+
+        - name: item
+          description:
+            Valid for asynchronous service requests only.  Ignored for synchronous requests.
+
+            Provides a single output for an asynchronous service call.  Depending on the call and service, this may
+            be the only output or one of several.  See the example for syntax on providing this as a query parameter.
+
+            Services must provide, at a minimum, the href, type, bbox, and temporal properties for each item.  This
+            list of required fields is likely to be expanded at a future date to include additinal provenance tracking
+            and metadata.  As we add more required fields, they will be marked required here but Harmony will provide
+            graceful degradation for services not yet upgraded.  For example, Harmony allows services to not provide
+            bbox or temporal fields, but this is deprecated behavior and will result in outputs from those services not
+            producing STAC catalogs.
+          example:
+            - item[href]=s3://some-location/myfile.nc&item[type]='application/netcdf'&item[temporal]=2020-01-01T00:00:00Z,2020-01-01T00:00:00Z&item[bbox]=-100,-70,100,70
+          in: query
+          required: false
+          style: deepObject
+          explode: true
+          schema:
+            type: object
+            properties:
+              href:
+                type: string
+                description:
+                  A URL where the data can be located. This URL can either be an HTTPS URL or a URL to an S3 staging
+                  location to a bucket and key where Harmony has permission to sign GetObject requests.  If it is an
+                  HTTPS URL, Harmony will redirect the user to its location.  If it is an S3 staging location, Harmony
+                  will pre-sign a URL that can be used for a subsequent GetObject request.  Staged S3 objects should
+                  have the correct "Content-Type" tag set.  The Harmony Python library does this automatically when using
+                  the "completed_with_redirect" helper method.  Harmony provides services with a preferred staging prefix
+                  with each request of the form "s3://<staging-bucket>/public/<org-name>/<service-name>/<uuid>/", which
+                  services should use whenever possible to maintain appropriate ACLs and user-facing utilities.
+
+                  Harmony prefers to use S3 locations as it can cache subsequent requests and control retention.
+                format: uri
+              type:
+                type: string
+                description:
+                  The media type of the data contained at the href property's URL
+                format: media-type
+                example:
+                  - image/tiff;subtype=geotiff
+                  - application/netcdf
+                  - application/x-zarr
+              title:
+                type: string
+                description:
+                  A short human-readable name indicating the contents of the file.  Optional.  Consider setting this to
+                  the basename of the file, as is the default when using the Harmony Python library.
+              temporal:
+                type: string
+                description:
+                  Two RFC-3339 date/time strings (with optional fractional seconds) separated by a comma indicating the start and
+                  end time of the data in the result item. Harmony provides a "temporal" field with each input granule in the input
+                  message which has "start" and "end" fields containing an RFC-3339 date/time for the granule temporal range to aid
+                  in producing this output.
+                example:
+                  - 2020-01-01T00:00:00.000Z,2020-01-02T12:00:00.000Z
+              bbox:
+                type: string
+                description:
+                  Four comma-separated numbers corresponding to the [West, South, East, North] minimum bounding rectangle of the resulting
+                  file.  Harmony provides a "bbox" field with each input granule in the input message for aid in producing the output.
+                  Set the East coordinate lower than the West coordinate to indicate a bounding box that crosses the antimeridian.
+            required:
+              - href
+              - type
+              - temporal
+              - spatial
+      requestBody:
+        description:
+          Valid in synchronous service requests only.
+
+          Contains bytes to be streamed directly to the user as a result of the service output.  This marks the request complete and
+          deregisters its callback, causing any further callbacks to produce an error.  Services should set appropriate "Content-Type"
+          and "Content-Length" headers according to the file contents.
         required: false
-        style: form
-        explode: false
-        schema:
-          maxItems: 4
-          minItems: 4
-          type: array
-          items:
-            type: number
-      - name: time
-        in: query
-        description: Not yet implemented
-        required: false
-        style: form
-        explode: false
-        schema:
-          type: string
+        content:
+          default:
+            schema:
+              description: The data bytes to be streamed to the user, verbatim, as a result of the service call.
+
       responses:
         "200":
           description: links to the API capabilities

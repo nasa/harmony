@@ -6,10 +6,19 @@ const db = require('../../app/util/db');
 
 const tables = ['jobs'];
 
+/**
+ * Truncates all database tables
+ *
+ * @returns {Promise<void>} A promise that resolves to nothing on completion
+ */
+async function truncateAll() {
+  await Promise.all(tables.map((t) => db(t).truncate()));
+}
+
 before(async function () {
   await db.migrate.latest();
   // Truncate all tables
-  await Promise.all(tables.map((t) => db(t).truncate()));
+  await truncateAll();
 });
 
 /**
@@ -71,4 +80,4 @@ function hookTransactionFailure() {
   });
 }
 
-module.exports = { hookTransaction, hookTransactionEach, hookTransactionFailure };
+module.exports = { hookTransaction, hookTransactionEach, hookTransactionFailure, truncateAll };
