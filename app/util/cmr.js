@@ -3,15 +3,13 @@ const fs = require('fs');
 const get = require('lodash.get');
 const fetch = require('node-fetch');
 const querystring = require('querystring');
-const stream = require('stream');
-const tmp = require('tmp');
 const util = require('util');
 const env = require('./env');
 const { CmrError } = require('./errors');
 const logger = require('./log');
 const { objectStoreForProtocol } = require('./object-store');
 
-const pipeline = util.promisify(stream.pipeline);
+const unlink = util.promisify(fs.unlink);
 
 const clientIdHeader = {
   'Client-id': `${env.harmonyClientId}`,
@@ -133,10 +131,8 @@ async function fetchPost(path, formData, headers) {
  * @returns {Promise<File>} The a promise for a temporary file containing the shapefile
  */
 async function processGeoJson(geoJsonUrl, formData) {
-  const tempFile = tmp.fileSync();
-  const getObjectResponse = await objectStoreForProtocol(geoJsonUrl).getObject(geoJsonUrl);
-  await pipeline(getObjectResponse.createReadStream(), fs.createWriteStream(tempFile.name));
-  formData.append('shapefile', fs.createReadStream(tempFile.name), {
+  const tempFile = await objectStoreForProtocol(geoJsonUrl).downloadFile(geoJsonUrl);
+  formData.append('shapefile', fs.createReadStream(tempFile), {
     contentType: 'application/geo+json',
   });
   return tempFile;
@@ -177,7 +173,9 @@ async function cmrPostSearchBase(path, form, token) {
   try {
     return module.exports.fetchPost(path, formData, headers);
   } finally {
-    shapefile.removeCallback();
+    if (shapefile) {
+      unlink(shapefile);
+    }
   }
 }
 

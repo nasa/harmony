@@ -1,4 +1,4 @@
-const fields = ['id', 'logger', 'requestedMimeTypes', 'frontend'];
+const fields = ['id', 'logger', 'requestedMimeTypes', 'frontend', 'shapefile'];
 
 /**
  * Contains additional information about a request
@@ -86,6 +86,27 @@ class RequestContext {
   }
 
   /**
+   * Returns the shapefile
+   *
+   * @returns {object} The shapefile
+   * @memberof RequestContext
+   */
+  get shapefile() {
+    return this.model.shapefile;
+  }
+
+  /**
+   * Sets the shapefile
+   *
+   * @param {object} shapefile The shapefile
+   * @returns {void}
+   * @memberof RequestContext
+   */
+  set shapefile(shapefile) {
+    this.model.shapefile = shapefile;
+  }
+
+  /*
    * Returns the frontend used to make the request
    *
    * @returns {String} The frontend used to make the request
