@@ -1,5 +1,5 @@
 {
-  "$schema": "../app/schemas/data-operation/0.6.0/data-operation-v0.6.0.json",
+  "$schema": "../app/schemas/data-operation/0.6.0/data-operation-v0.7.0.json",
   "version": "0.6.0",
   "callback": "http://localhost/some-path",
   "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
@@ -17,7 +17,12 @@
         {
           "id": "G1233800343-EEDTEST",
           "name": "001_00_7f00ff_global.nc",
-          "url": "file://./tmp/001_00_7f00ff_global.nc"
+          "url": "file://./tmp/001_00_7f00ff_global.nc",
+          "bbox": [-100.5, 30.4, -99.5, 31.4],
+          "temporal": {
+            "start": "1999-01-01T10:00:00Z",
+            "end": "2020-02-20T15:00:00Z"
+          }
         },
         {
           "id": "G1233800344-EEDTEST",

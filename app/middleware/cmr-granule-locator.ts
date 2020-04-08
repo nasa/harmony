@@ -1,6 +1,7 @@
 const cmr = require('../util/cmr');
 const env = require('../util/env');
 const { CmrError, RequestValidationError, ServerError } = require('../util/errors');
+const boxStringsToBox = require('../util/bounding-box');
 
 /**
  * Express.js middleware which extracts parameters from the Harmony operation
@@ -65,7 +66,16 @@ async function cmrGranuleLocator(req, res, next) {
       for (const granule of atomGranules) {
         const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);
         if (link) {
-          granules.push({ id: granule.id, name: granule.title, url: link.href });
+          granules.push({
+            id: granule.id,
+            name: granule.title,
+            url: link.href,
+            bbox: boxStringsToBox(granule.boxes),
+            temporal: {
+              start: granule.time_start,
+              end: granule.time_end,
+            },
+          });
         }
       }
       if (granules.length === 0) {

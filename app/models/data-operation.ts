@@ -27,6 +27,24 @@ function readSchema(version) {
  */
 const schemaVersions = [
   {
+    version: '0.7.0',
+    schema: readSchema('0.7.0'),
+    down: (model) => {
+      const revertedModel = cloneDeep(model);
+      // remove the `bbox` and `temporal` fields from all the granules in all the sources
+      revertedModel.sources.forEach((s) => {
+        s.granules.forEach((g) => {
+          // eslint-disable-next-line no-param-reassign
+          delete g.bbox;
+          // eslint-disable-next-line no-param-reassign
+          delete g.temporal;
+        });
+      });
+
+      return revertedModel;
+    },
+  },
+  {
     version: '0.6.0',
     schema: readSchema('0.6.0'),
     down: (model) => {

@@ -1,44 +1,19 @@
 const { expect } = require('chai');
 const { describe, it } = require('mocha');
+const fs = require('fs');
 const DataOperation = require('../../app/models/data-operation');
 
-const CURRENT_SCHEMA_VERSION = '0.6.0';
+const CURRENT_SCHEMA_VERSION = '0.7.0';
 
-const validOperation = new DataOperation({
-  client: 'harmony-test',
-  callback: 'http://example.com/callback',
-  stagingLocation: 's3://some-bucket/public/some/prefix/',
-  sources: [],
-  format: {
-    mime: 'image/png',
-    interpolation: 'near',
-    scaleExtent: { x: { min: 0.5, max: 125 }, y: { min: 52, max: 75.22 } },
-    scaleSize: { x: 14.2, y: 35 },
-    width: 120,
-    height: 225,
-  },
-  user: 'test-user',
-  subset: { bbox: [-130, -45, 130, 45] },
-  isSynchronous: true,
-  requestId: 'c045c793-19f1-43b5-9547-c87a5c7dfadb',
-});
-// Verifying that setting the temporal with dates converts them to strings
+const validOperationJson = fs.readFileSync('./test/resources/data-operation-samples/valid-operation.json');
+const validOperation = new DataOperation(JSON.parse(validOperationJson));
 validOperation.temporal = [new Date('1999-01-01T10:00:00Z'), new Date('2020-02-20T15:00:00Z')];
 
-const invalidOperation = new DataOperation({
-  client: 'harmony-test',
-  callback: 'http://example.com/callback',
-  stagingLocation: 's3://some-bucket/public/some/prefix/',
-  sources: [],
-  format: { mime: 'image/png' },
-  user: 'test-user',
-  subset: { bbox: [-130, -45, 130, 45, 100] }, // bbox has one too many numbers
-  isSynchronous: true,
-  requestId: 'c045c793-19f1-43b5-9547-c87a5c7dfadb',
-  temporal: { start: '1999-01-01T10:00:00Z', end: '2020-02-20T15:00:00Z' },
-});
+// bbox has one too many numbers
+const invalidOperationJson = fs.readFileSync('./test/resources/data-operation-samples/invalid-operation.json');
+const invalidOperation = new DataOperation(JSON.parse(invalidOperationJson));
 
-const expectedOutput = `{"client":"harmony-test","callback":"http://example.com/callback","stagingLocation":"s3://some-bucket/public/some/prefix/","sources":[],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"${CURRENT_SCHEMA_VERSION}"}`;
+const expectedOutput = `{"client":"harmony-test","callback":"http://example.com/callback","stagingLocation":"s3://some-bucket/public/some/prefix/","sources":[{"collection":"C1233800302-EEDTEST","granules":[{"id":"G1233800343-EEDTEST","name":"001_00_7f00ff_global.nc","url":"http://example.com","bbox":[-100.5,30.4,-99.5,31.4],"temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"}}]}],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"${CURRENT_SCHEMA_VERSION}"}`;
 
 describe('DataOperation', () => {
   describe('#serialize', () => {
@@ -116,15 +91,21 @@ describe('DataOperation', () => {
       };
 
       describeOldSchemaOutput(
+        '0.6.0',
+        'without granule bbox or temporal',
+        '{"client":"harmony-test","callback":"http://example.com/callback","stagingLocation":"s3://some-bucket/public/some/prefix/","sources":[{"collection":"C1233800302-EEDTEST","granules":[{"id":"G1233800343-EEDTEST","name":"001_00_7f00ff_global.nc","url":"http://example.com"}]}],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.6.0"}',
+      );
+
+      describeOldSchemaOutput(
         '0.5.0',
         'without shapefile locations',
-        '{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.5.0"}',
+        '{"client":"harmony-test","callback":"http://example.com/callback","sources":[{"collection":"C1233800302-EEDTEST","granules":[{"id":"G1233800343-EEDTEST","name":"001_00_7f00ff_global.nc","url":"http://example.com"}]}],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.5.0"}',
       );
 
       describeOldSchemaOutput(
         '0.4.0',
         'without temporal parameters',
-        '{"client":"harmony-test","callback":"http://example.com/callback","sources":[],"format":{"mime":"image/png","width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}',
+        '{"client":"harmony-test","callback":"http://example.com/callback","sources":[{"collection":"C1233800302-EEDTEST","granules":[{"id":"G1233800343-EEDTEST","name":"001_00_7f00ff_global.nc","url":"http://example.com"}]}],"format":{"mime":"image/png","width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}',
       );
     });
   });
