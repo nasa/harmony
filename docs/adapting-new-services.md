@@ -18,8 +18,6 @@ Harmony provides a Python library, [harmony-service-lib-py](https://git.earthdat
 ease the process of adapting Harmony messages to subsetter code.  It provides helpers for message parsing, command line interactions, data staging,
 and Harmony callbacks.  Full details as well as an example can be found in the project's README and code.
 
-At present, Harmony only provides one way of packaging a service for invocation: Docker container images.
-
 ### Docker Container Images
 
 The service and all necessary code and dependencies to allow it to run can be packaged in a Docker container image.  Docker images can be staged anywhere Harmony can reach them, e.g. Dockerhub or AWS ECR.  Harmony will run the Docker image, passing the following command-line parameters:
@@ -49,6 +47,8 @@ When invoking a service, Harmony provides an input detailing the specific operat
 Ideally, this adaptation would consist only of necessary complexity peculiar to the service in question.  Please let the team know if there are components that can make this process easier and consider sending a pull request or publishing your code if you believe it can help future services.
 
 ## 3. Sending results to Harmony
+
+In addition to the examples below, we provide an [Open API schema](../app/schemas/service-callbacks/0.1.0/service-callbacks-v0.1.0.yml) detailing all of the parameters available and their constraints
 
 ### Synchronous responses
 
