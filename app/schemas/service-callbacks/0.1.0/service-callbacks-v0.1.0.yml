@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: Callback API for Harmony backend services
-  description: TODO
-  version: 1.0.0
+  description: Describes the parameters necessary to call back to Harmony and their constraints
+  version: 0.1.0
   contact:
     name: Harmony API Support
     url: https://bugs.earthdata.nasa.gov/browse/HARMONY
