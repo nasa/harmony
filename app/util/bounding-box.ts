@@ -8,8 +8,14 @@ const { max, min } = Math;
  * @private
  */
 function _boundingBoxStringToBoundingBox(str) {
-  const oords = str.split(' ').map(parseFloat);
-  return [oords[1], oords[0], oords[3], oords[2]];
+  if (!str) return null;
+
+  const ords = str.split(' ').map(parseFloat);
+  if (ords.length !== 4) {
+    throw new Error(`expected bounding box to have 4 bounds, got ${ords.length}`);
+  }
+
+  return [ords[1], ords[0], ords[3], ords[2]];
 }
 
 /**
@@ -129,7 +135,7 @@ function _joinBoundingBoxes(box1, box2) {
 function boxStringsToBox(boxStrings) {
   if (!boxStrings || boxStrings.length === 0) return [];
 
-  const boxes = boxStrings.map(_boundingBoxStringToBoundingBox);
+  const boxes = boxStrings.map(_boundingBoxStringToBoundingBox).filter((val) => val);
   if (boxes.length === 1) return boxes[0];
 
   // find a single minimal bounding box that contains all the boxes
