@@ -125,6 +125,19 @@ function itIncludesRequestUrl(expectedPath) {
   });
 }
 
+const cloudAccessLinks = [{
+  href: 's3://localStagingBucket/public/harmony/gdal/<uuid>/',
+  title: 'S3 bucket and prefix where all job outputs can be directly accessed using S3 APIs from within the us-west-2 region. Use the harmony /cloud-access or /cloud-access.sh endpoints to obtain keys for direct in region S3 access.',
+}, {
+  href: 'http://localhost:3000/cloud-access.sh',
+  title: 'Obtain AWS access keys for in-region (us-west-2) S3 access to job outputs. The credentials are returned as a shell script that can be sourced.',
+  type: 'application/x-sh',
+}, {
+  href: 'http://localhost:3000/cloud-access',
+  title: 'Obtain AWS access keys for in-region (us-west-2) S3 access to job outputs. The credentials are returned as JSON.',
+  type: 'application/json',
+}];
+
 module.exports = {
   jobsEqual,
   containsJob,
@@ -133,4 +146,5 @@ module.exports = {
   hookJobListing,
   hookJobStatus,
   itIncludesRequestUrl,
+  cloudAccessLinks,
 };
