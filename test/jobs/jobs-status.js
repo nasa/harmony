@@ -255,7 +255,9 @@ describe('Individual job status route', function () {
 
       it('returns the links in its response', function () {
         const job = JSON.parse(this.res.text);
-        expect(job.links).to.eql(links);
+        // eslint-disable-next-line no-unused-vars
+        const [_bucketLink, _cloudAccessShLink, _cloudAccessJsonLink, ...otherLinks] = job.links;
+        expect(otherLinks).to.eql(links);
       });
 
       it('maintains a status of "running"', function () {
@@ -322,8 +324,8 @@ describe('Individual job status route', function () {
 
       it('provides a permanent link to a Harmony HTTP URL', function () {
         const job = JSON.parse(this.res.text);
-        expect(job.links[0].href).to.match(/^http/);
-        expect(job.links[0].href).to.have.string('/service-results/example-bucket/public/example/path.tif');
+        expect(job.links[3].href).to.match(/^http/);
+        expect(job.links[3].href).to.have.string('/service-results/example-bucket/public/example/path.tif');
       });
 
       describe('loading the provided Harmony HTTP URL', function () {
@@ -336,7 +338,7 @@ describe('Individual job status route', function () {
         });
 
         hookUrl(function () {
-          return JSON.parse(this.res.text).links[0].href.split(/:\d+/)[1];
+          return JSON.parse(this.res.text).links[3].href.split(/:\d+/)[1];
         }, 'jdoe1');
 
         it('temporarily redirects to a presigned URL for the data', function () {
@@ -357,7 +359,7 @@ describe('Individual job status route', function () {
 
       it('returns the S3 URL', function () {
         const job = JSON.parse(this.res.text);
-        expect(job.links[0].href).to.equal(s3Uri);
+        expect(job.links[3].href).to.equal(s3Uri);
       });
     });
 
