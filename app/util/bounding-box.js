@@ -127,6 +127,8 @@ function _joinBoundingBoxes(box1, box2) {
  * @returns {Array<number>} an array of floats in `[W,S,E,N]` format
  */
 function boxStringsToBox(boxStrings) {
+  if (!boxStrings || boxStrings.length === 0) return [];
+
   const boxes = boxStrings.map(_boundingBoxStringToBoundingBox);
   if (boxes.length === 1) return boxes[0];
 
