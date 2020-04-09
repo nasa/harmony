@@ -81,7 +81,7 @@ class BaseService {
     const isAsync = !this.isSynchronous;
     let job;
     if (isAsync) {
-      job = await this._createJob(db, logger, requestUrl);
+      job = await this._createJob(db, logger, requestUrl, this.operation.stagingLocation);
     }
     // Promise that can be awaited to ensure the service has completed its work
     this.invocation = new Promise((resolve) => {
@@ -222,7 +222,8 @@ class BaseService {
         const serializedJob = job.serialize();
         if (job.isComplete()) {
           durationMs = job.updatedAt - job.createdAt;
-          numOutputs = job.links.length;
+          // Assumes there is exactly one link that is not a job output (the staging bucket)
+          numOutputs = job.links.length - 1;
         }
         req.context.logger.info('Async job complete.', { durationMs, numOutputs, job: serializedJob });
       }
@@ -243,14 +244,16 @@ class BaseService {
    * @param {knex.Transaction} transaction The transaction to use when creating the job
    * @param {Logger} logger The logger associated with this request
    * @param {String} requestUrl The URL the end user invoked
+   * @param {String} stagingLocation The staging location for this job
    * @returns {Job} The created job
    * @memberof BaseService
    * @throws {ServerError} if the job cannot be created
    */
-  async _createJob(transaction, logger, requestUrl) {
+  async _createJob(transaction, logger, requestUrl, stagingLocation) {
     const { requestId, user } = this.operation;
     logger.info(`Creating job for ${requestId}`);
     const job = new Job({ username: user, requestId, status: 'running', request: requestUrl });
+    job.addStagingBucketLink(stagingLocation);
     if (this.warningMessage) {
       job.message = this.warningMessage;
     }
