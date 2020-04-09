@@ -321,7 +321,7 @@ class DataOperation {
 
   /**
    * Returns the temporal range to be acted upon by services where each time
-   * is expressed in ISO 8601 format without milliseconds
+   * is expressed in RFC-3339 format
    *
    * @returns {Object} The temporal range with two keys start and end
    * @memberof DataOperation
@@ -334,7 +334,7 @@ class DataOperation {
 
   /**
    * Sets the temporal range to be acted upon by services, [ start, end ], storing each time
-   * as a string expressed in ISO 8601 format without milliseconds
+   * as a string expressed in RFC-3339 format
    *
    * @param {Array<Date>} The [ start, end ] temporal range
    * @returns {void}
@@ -343,10 +343,10 @@ class DataOperation {
   set temporal([startTime, endTime]) {
     this.model.temporal = {};
     if (startTime) {
-      this.model.temporal.start = (typeof startTime === 'string') ? startTime : toISODateTime(startTime);
+      this.model.temporal.start = (typeof startTime === 'string') ? startTime : startTime.toISOString();
     }
     if (endTime) {
-      this.model.temporal.end = (typeof endTime === 'string') ? endTime : toISODateTime(endTime);
+      this.model.temporal.end = (typeof endTime === 'string') ? endTime : endTime.toISOString();
     }
   }
 

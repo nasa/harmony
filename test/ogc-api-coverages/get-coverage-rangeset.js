@@ -259,8 +259,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('passes the temporal range to the backend service', function () {
         const { start, end } = this.service.operation.temporal;
-        expect(start).to.equal('2020-01-02T00:00:00Z');
-        expect(end).to.equal('2020-01-02T01:00:00Z');
+        expect(start).to.equal('2020-01-02T00:00:00.000Z');
+        expect(end).to.equal('2020-01-02T01:00:00.000Z');
       });
 
       it('identifies the correct granule based on time range', function () {

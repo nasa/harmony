@@ -26,6 +26,7 @@
           "$ref": "#/definitions/Subset"
         },
         "temporal": {
+          "description": "The time which should be used as the range for temporal subsetting",
           "$ref": "#/definitions/Temporal"
         },
         "callback": {
@@ -208,6 +209,7 @@
           "maxItems": 4
         },
         "temporal": {
+          "description": "Time range for the granule",
           "$ref": "#/definitions/Temporal"
         }
       },
@@ -269,18 +271,18 @@
     "Temporal": {
       "type": "object",
       "title": "Temporal",
-      "description": "Temporal parameters",
+      "description": "Temporal parameters for a date/time range",
       "additionalProperties": false,
       "properties": {
         "start": {
           "name": "Start time",
-          "description": "The time which should be used as the starting time for temporal subsetting. The format is an ISO 8601 datetime.",
+          "description": "The start date/time. The format is an RFC-3339 datetime.",
           "type": "string",
           "format": "date-time"
         },
         "end": {
-          "name": "Start time",
-          "description": "The time which should be used as the ending time for temporal subsetting. The format is an ISO 8601 datetime.",
+          "name": "End time",
+          "description": "The end date/time. The format is an RFC-3339 datetime.",
           "type": "string",
           "format": "date-time"
         }
