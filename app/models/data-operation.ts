@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const Ajv = require('ajv');
 const cloneDeep = require('lodash.clonedeep');
-const { toISODateTime } = require('../util/date');
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
