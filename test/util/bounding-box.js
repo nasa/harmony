@@ -22,13 +22,20 @@ describe('util/bounding-box', function () {
       expect(boxStringsToBox(input)).to.eql([-100, -40.1, 17.4, 35.0]);
     });
 
-    it('it handles boxes that cross the antimeridian', function () {
+    it('handles boxes that cross the antimeridian', function () {
       const input = [
         '-35.0 100.0 35.0 -100.0', // crosses AM
         '10.0 11.0 15.1 17.4',
         '-40.1 -90, 30.2 10.4',
       ];
       expect(boxStringsToBox(input)).to.eql([100, -40.1, 17.4, 35]);
+    });
+  });
+
+  describe('when given an empty input', function () {
+    it('returns an empty array', function () {
+      const input = [];
+      expect(boxStringsToBox(input)).to.eql([]);
     });
   });
 });
