@@ -38,4 +38,18 @@ describe('util/bounding-box', function () {
       expect(boxStringsToBox(input)).to.eql([]);
     });
   });
+
+  describe('when given a null input', function () {
+    it('returns an empty array', function () {
+      const input = null;
+      expect(boxStringsToBox(input)).to.eql([]);
+    });
+  });
+
+  describe('when given a bad input', function () {
+    it('throws an exception', function () {
+      const input = ['1 2 3 4', '1 2'];
+      expect(() => boxStringsToBox(input)).to.throw(/expected bounding box to have 4 bounds, got 2/);
+    });
+  });
 });

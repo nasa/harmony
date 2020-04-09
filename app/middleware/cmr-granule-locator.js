@@ -15,6 +15,7 @@ const boxStringsToBox = require('../util/bounding-box');
  */
 async function cmrGranuleLocator(req, res, next) {
   const { operation } = req;
+  const { logger } = req.context;
 
   if (!operation) return next();
 
@@ -36,7 +37,7 @@ async function cmrGranuleLocator(req, res, next) {
   try {
     const { sources } = operation;
     const queries = sources.map(async (source) => {
-      req.context.logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
+      logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
 
       if (operation.geojson) {
@@ -60,22 +61,29 @@ async function cmrGranuleLocator(req, res, next) {
 
       operation.cmrHits += hits;
       const msTaken = new Date().getTime() - startTime;
-      req.context.logger.info('Completed granule query', { durationMs: msTaken });
-      req.context.logger.info(`Found ${hits} granules`);
+      logger.info('Completed granule query', { durationMs: msTaken });
+      logger.info(`Found ${hits} granules`);
       const granules = [];
       for (const granule of atomGranules) {
         const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);
         if (link) {
-          granules.push({
+          let box;
+          try {
+            box = boxStringsToBox(granule.boxes);
+          } catch (e) {
+            logger.error(e);
+          }
+          const gran = {
             id: granule.id,
             name: granule.title,
             url: link.href,
-            bbox: boxStringsToBox(granule.boxes),
             temporal: {
               start: granule.time_start,
               end: granule.time_end,
             },
-          });
+          };
+          if (box) gran.bbox = box;
+          granules.push(gran);
         }
       }
       if (granules.length === 0) {
@@ -93,7 +101,7 @@ async function cmrGranuleLocator(req, res, next) {
       }
       return next(e);
     }
-    req.context.logger.error(e);
+    logger.error(e);
     next(new ServerError('Failed to query the CMR'));
   }
   return next();
