@@ -1,6 +1,6 @@
 {
   "$schema": "../app/schemas/data-operation/0.6.0/data-operation-v0.7.0.json",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "callback": "http://localhost/some-path",
   "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
   "user": "jdoe",
@@ -44,8 +44,8 @@
     "scaleSize": { "x": 14.2, "y": 35 }
   },
   "temporal": {
-    "start": "1999-01-01T10:00:00Z",
-    "end": "2020-02-20T15:00:00Z"
+    "start": "1999-01-01T00:00:00.000Z",
+    "end": "2020-02-20T15:00:00.000Z"
   },
   "subset": {
     "bbox": [

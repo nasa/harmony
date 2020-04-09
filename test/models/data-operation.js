@@ -1,19 +1,28 @@
 const { expect } = require('chai');
 const { describe, it } = require('mocha');
 const fs = require('fs');
+const path = require('path');
 const DataOperation = require('../../app/models/data-operation');
+
+const samplesDir = './test/resources/data-operation-samples';
 
 const CURRENT_SCHEMA_VERSION = '0.7.0';
 
-const validOperationJson = fs.readFileSync('./test/resources/data-operation-samples/valid-operation.json');
-const validOperation = new DataOperation(JSON.parse(validOperationJson));
-validOperation.temporal = [new Date('1999-01-01T10:00:00Z'), new Date('2020-02-20T15:00:00Z')];
+const versions = [
+  '0.7.0',
+  '0.6.0',
+  '0.5.0',
+  '0.4.0',
+];
+let validOperation = JSON.parse(fs.readFileSync(path.join(samplesDir, `valid-operation-v${versions[0]}.json`)));
+const expectedOutput = JSON.stringify(validOperation);
+validOperation = new DataOperation(validOperation);
+delete validOperation.version;
+
+validOperation.temporal = [new Date('1999-01-01T10:00:00.000Z'), new Date('2020-02-20T15:00:00.000Z')];
 
 // bbox has one too many numbers
-const invalidOperationJson = fs.readFileSync('./test/resources/data-operation-samples/invalid-operation.json');
-const invalidOperation = new DataOperation(JSON.parse(invalidOperationJson));
-
-const expectedOutput = `{"client":"harmony-test","callback":"http://example.com/callback","stagingLocation":"s3://some-bucket/public/some/prefix/","sources":[{"collection":"C1233800302-EEDTEST","granules":[{"id":"G1233800343-EEDTEST","name":"001_00_7f00ff_global.nc","url":"http://example.com","bbox":[-100.5,30.4,-99.5,31.4],"temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"}}]}],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"${CURRENT_SCHEMA_VERSION}"}`;
+const invalidOperation = new DataOperation(JSON.parse(fs.readFileSync(path.join(samplesDir, 'invalid-operation.json'))));
 
 describe('DataOperation', () => {
   describe('#serialize', () => {
@@ -76,7 +85,9 @@ describe('DataOperation', () => {
     });
 
     describe('serializing to older schema versions', () => {
-      const describeOldSchemaOutput = function (version, description, output) {
+      const describeOldSchemaOutput = function (version, outputFile) {
+        const outputJson = fs.readFileSync(path.join(samplesDir, outputFile));
+        const output = JSON.stringify(JSON.parse(outputJson));
         describe(`when using the ${version} schema version`, () => {
           const call = () => validOperation.serialize(version);
 
@@ -84,29 +95,20 @@ describe('DataOperation', () => {
             expect(call).to.not.throw();
           });
 
-          it(`returns its JSON-serialized model ${description}`, () => {
+          it('returns its JSON-serialized model', () => {
             expect(call()).equal(output);
           });
         });
       };
 
-      describeOldSchemaOutput(
-        '0.6.0',
-        'without granule bbox or temporal',
-        '{"client":"harmony-test","callback":"http://example.com/callback","stagingLocation":"s3://some-bucket/public/some/prefix/","sources":[{"collection":"C1233800302-EEDTEST","granules":[{"id":"G1233800343-EEDTEST","name":"001_00_7f00ff_global.nc","url":"http://example.com"}]}],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.6.0"}',
-      );
-
-      describeOldSchemaOutput(
-        '0.5.0',
-        'without shapefile locations',
-        '{"client":"harmony-test","callback":"http://example.com/callback","sources":[{"collection":"C1233800302-EEDTEST","granules":[{"id":"G1233800343-EEDTEST","name":"001_00_7f00ff_global.nc","url":"http://example.com"}]}],"format":{"mime":"image/png","interpolation":"near","scaleExtent":{"x":{"min":0.5,"max":125},"y":{"min":52,"max":75.22}},"scaleSize":{"x":14.2,"y":35},"width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.5.0"}',
-      );
-
-      describeOldSchemaOutput(
-        '0.4.0',
-        'without temporal parameters',
-        '{"client":"harmony-test","callback":"http://example.com/callback","sources":[{"collection":"C1233800302-EEDTEST","granules":[{"id":"G1233800343-EEDTEST","name":"001_00_7f00ff_global.nc","url":"http://example.com"}]}],"format":{"mime":"image/png","width":120,"height":225},"user":"test-user","subset":{"bbox":[-130,-45,130,45]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"0.4.0"}',
-      );
+      versions.forEach((version) => {
+        if (version !== CURRENT_SCHEMA_VERSION) {
+          describeOldSchemaOutput(
+            version,
+            `valid-operation-v${version}.json`,
+          );
+        }
+      });
     });
   });
 });
