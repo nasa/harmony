@@ -132,4 +132,5 @@ module.exports = {
   jobStatus,
   hookJobListing,
   hookJobStatus,
-  itIncludesRequestUrl };
+  itIncludesRequestUrl,
+};

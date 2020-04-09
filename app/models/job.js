@@ -24,6 +24,10 @@ const serializedJobFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
 ];
 
+// TODO figure out correct location for this
+const region = process.env.AWS_DEFAULT_REGION || 'us-west-2';
+const stagingBucketTitle = `S3 bucket and prefix where all job outputs can be directly accessed using S3 APIs from within the ${region} region. Use the harmony /cloud-access or /cloud-access.sh endpoints to obtain keys for direct in region S3 access.`;
+
 /**
  *
  * Wrapper object for persisted jobs
@@ -115,8 +119,8 @@ class Job extends Record {
     this.progress = fields.progress || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     this.links = fields.links
-    || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : fields._json_links)
-    || [];
+      || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : fields._json_links)
+      || [];
   }
 
   /**
@@ -144,13 +148,32 @@ class Job extends Record {
    * @param {Object<{
    *   href: string,
    *   title: string,
-   *   type: string
+   *   type: string,
+   *   description: string,
    * }>} link Adds a link to the list of links for the object.
    * @returns {void}
    * @memberof Job
    */
   addLink(link) {
     this.links.push(link);
+  }
+
+  /**
+   * Adds a staging location link to the list of result links for the job.
+   * You must call `#save` to persist the change
+   *
+   * @param {stagingLocation} stagingLocation Adds link to the staging bucket to the list of links.
+   * @returns {void}
+   * @memberof Job
+   */
+  addStagingBucketLink(stagingLocation) {
+    if (stagingLocation) {
+      const stagingLocationLink = {
+        href: stagingLocation,
+        title: stagingBucketTitle,
+      };
+      this.links.push(stagingLocationLink);
+    }
   }
 
   /**
@@ -250,11 +273,33 @@ class Job extends Record {
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     serializedJob.jobID = this.requestId;
     if (urlRoot) {
-      serializedJob.links = serializedJob.links.map((link) => ({
-        href: createPublicPermalink(link.href, urlRoot, link.type),
-        title: link.title,
-        type: link.type,
-      }));
+      let s3StagingLink;
+      serializedJob.links = serializedJob.links.map((link) => {
+        // Leave the S3 output staging location as an S3 link
+        let { href } = link;
+        if (link.title === stagingBucketTitle) {
+          s3StagingLink = link;
+        } else {
+          href = createPublicPermalink(link.href, urlRoot, link.type);
+        }
+        return {
+          href,
+          title: link.title,
+          type: link.type,
+        };
+      });
+      if (s3StagingLink) {
+        serializedJob.links.unshift({
+          href: `${urlRoot}/cloud-access`,
+          title: `Obtain AWS access keys for in-region (${region}) S3 access to job outputs. The credentials are returned as JSON.`,
+          type: 'application/json',
+        });
+        serializedJob.links.unshift({
+          href: `${urlRoot}/cloud-access.sh`,
+          title: `Obtain AWS access keys for in-region (${region}) S3 access to job outputs. The credentials are returned as a shell script that can be sourced.`,
+          type: 'application/x-sh',
+        });
+      }
     }
     return serializedJob;
   }
