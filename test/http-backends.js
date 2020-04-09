@@ -17,8 +17,6 @@ function describeHttpBackendBehavior(performRequestFn) {
     hookFunction(performRequestFn, 'res', 'SUCCESS');
 
     it('propagates the service response verbatim to the user', function () {
-      // const resp = this.res;
-      // console.log(resp);
       expect(this.res.body.format.crs).to.equal('SUCCESS');
     });
 
