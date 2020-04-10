@@ -3,6 +3,7 @@ const Record = require('./record');
 const { createPublicPermalink } = require('../frontends/service-results');
 const { truncateString } = require('../util/string');
 const { awsDefaultRegion } = require('../util/env');
+const { getCloudAccessJsonLink, getCloudAccessShLink } = require('../util/links');
 
 const statesToDefaultMessages = {
   accepted: 'The job has been accepted and is waiting to be processed',
@@ -288,16 +289,8 @@ class Job extends Record {
         };
       });
       if (s3StagingLink) {
-        serializedJob.links.unshift({
-          href: `${urlRoot}/cloud-access`,
-          title: `Obtain AWS access keys for in-region (${awsDefaultRegion}) S3 access to job outputs. The credentials are returned as JSON.`,
-          type: 'application/json',
-        });
-        serializedJob.links.unshift({
-          href: `${urlRoot}/cloud-access.sh`,
-          title: `Obtain AWS access keys for in-region (${awsDefaultRegion}) S3 access to job outputs. The credentials are returned as a shell script that can be sourced.`,
-          type: 'application/x-sh',
-        });
+        serializedJob.links.unshift(getCloudAccessJsonLink(urlRoot));
+        serializedJob.links.unshift(getCloudAccessShLink(urlRoot));
       }
     }
     return serializedJob;

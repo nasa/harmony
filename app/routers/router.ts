@@ -17,6 +17,7 @@ const { NotFoundError } = require('../util/errors');
 const eoss = require('../frontends/eoss');
 const ogcCoverageApi = require('../frontends/ogc-coverages');
 const { cloudAccessJson, cloudAccessSh } = require('../frontends/cloud-access');
+const { landingPage } = require('../frontends/landing-page');
 const serviceInvoker = require('../backends/service-invoker');
 
 /**
@@ -163,7 +164,7 @@ function router({ skipEarthdataLogin }) {
   result.use(logged(cmrGranuleLocator));
   result.use(logged(setRequestId));
 
-  result.get('/', (req, res) => res.status(200).send('ok'));
+  result.get('/', landingPage);
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);

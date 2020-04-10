@@ -61,6 +61,7 @@ function hookCloudAccessSh(username = undefined) {
   });
 }
 
+// These are not real AWS credentials
 const sampleCloudAccessJsonResponse = {
   Credentials: {
     AccessKeyId: 'ASIA8NWMTLYQWIFCXH53',
