@@ -2,6 +2,7 @@ const pick = require('lodash.pick');
 const Record = require('./record');
 const { createPublicPermalink } = require('../frontends/service-results');
 const { truncateString } = require('../util/string');
+const { awsDefaultRegion } = require('../util/env');
 
 const statesToDefaultMessages = {
   accepted: 'The job has been accepted and is waiting to be processed',
@@ -24,9 +25,7 @@ const serializedJobFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
 ];
 
-// TODO figure out correct location for this
-const region = process.env.AWS_DEFAULT_REGION || 'us-west-2';
-const stagingBucketTitle = `S3 bucket and prefix where all job outputs can be directly accessed using S3 APIs from within the ${region} region. Use the harmony /cloud-access or /cloud-access.sh endpoints to obtain keys for direct in region S3 access.`;
+const stagingBucketTitle = `S3 bucket and prefix where all job outputs can be directly accessed using S3 APIs from within the ${awsDefaultRegion} region. Use the harmony /cloud-access or /cloud-access.sh endpoints to obtain keys for direct in region S3 access.`;
 
 /**
  *
@@ -291,12 +290,12 @@ class Job extends Record {
       if (s3StagingLink) {
         serializedJob.links.unshift({
           href: `${urlRoot}/cloud-access`,
-          title: `Obtain AWS access keys for in-region (${region}) S3 access to job outputs. The credentials are returned as JSON.`,
+          title: `Obtain AWS access keys for in-region (${awsDefaultRegion}) S3 access to job outputs. The credentials are returned as JSON.`,
           type: 'application/json',
         });
         serializedJob.links.unshift({
           href: `${urlRoot}/cloud-access.sh`,
-          title: `Obtain AWS access keys for in-region (${region}) S3 access to job outputs. The credentials are returned as a shell script that can be sourced.`,
+          title: `Obtain AWS access keys for in-region (${awsDefaultRegion}) S3 access to job outputs. The credentials are returned as a shell script that can be sourced.`,
           type: 'application/x-sh',
         });
       }

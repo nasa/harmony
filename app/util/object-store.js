@@ -5,6 +5,7 @@ const stream = require('stream');
 const tmp = require('tmp');
 const { URL } = require('url');
 const util = require('util');
+const { awsDefaultRegion } = require('./env');
 
 const pipeline = util.promisify(stream.pipeline);
 const createTmpFileName = util.promisify(tmp.tmpName);
@@ -32,7 +33,7 @@ class S3ObjectStore {
 
     this.s3 = new aws.S3({
       apiVersion: '2006-03-01',
-      region: process.env.AWS_DEFAULT_REGION || 'us-west-2',
+      region: awsDefaultRegion,
       signatureVersion: 'v4',
       ...endpointSettings,
       ...overrides,
