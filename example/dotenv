@@ -82,6 +82,10 @@ DATABASE_URL=
 # requests are in flight
 UPLOAD_BUCKET=local-upload-bucket
 
+# An IAM role that allows access to a bucket and prefix where outputs for asynchronous
+# requests are stored by backend services.
+SAME_REGION_ACCESS_ROLE=same-region-access-role
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #

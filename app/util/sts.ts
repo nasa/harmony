@@ -1,4 +1,5 @@
 const aws = require('aws-sdk');
+const { awsDefaultRegion } = require('./env');
 
 /**
  * Class to use when interacting with AWS STS
@@ -21,7 +22,7 @@ class SecureTokenService {
 
     this.sts = new aws.STS({
       apiVersion: '2011-06-15',
-      region: process.env.AWS_DEFAULT_REGION || 'us-west-2',
+      region: awsDefaultRegion,
       ...endpointSettings,
       ...overrides,
     });
