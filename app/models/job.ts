@@ -149,7 +149,6 @@ class Job extends Record {
    *   href: string,
    *   title: string,
    *   type: string,
-   *   description: string,
    * }>} link Adds a link to the list of links for the object.
    * @returns {void}
    * @memberof Job
