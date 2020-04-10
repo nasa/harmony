@@ -361,6 +361,26 @@ describe('Individual job status route', function () {
         const job = JSON.parse(this.res.text);
         expect(job.links[3].href).to.equal(s3Uri);
       });
+
+      it('includes a link to the staging bucket', function () {
+        const { links } = JSON.parse(this.res.text);
+        expect(links[2].href).to.match(/^s3:\/\/localStagingBucket\/public\/harmony\/stub\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/$/);
+        expect(links[2].title).to.equal('S3 bucket and prefix where all job outputs can be directly accessed using S3 APIs from within the us-west-2 region. Use the harmony /cloud-access or /cloud-access.sh endpoints to obtain keys for direct in region S3 access.');
+      });
+
+      it('includes a link to the /cloud-access json endpoint', function () {
+        const { links } = JSON.parse(this.res.text);
+        expect(links[1].href).to.match(/^http.*\/cloud-access$/);
+        expect(links[1].title).to.equal('Obtain AWS access keys for in-region (us-west-2) S3 access to job outputs. The credentials are returned as JSON.');
+        expect(links[1].type).to.equal('application/json');
+      });
+
+      it('includes a link to the /cloud-access.sh endpoint', function () {
+        const { links } = JSON.parse(this.res.text);
+        expect(links[0].href).to.match(/^http.*\/cloud-access.sh$/);
+        expect(links[0].title).to.equal('Obtain AWS access keys for in-region (us-west-2) S3 access to job outputs. The credentials are returned as a shell script that can be sourced.');
+        expect(links[0].type).to.equal('application/x-sh');
+      });
     });
 
     describe('when the job has completed successfully', function () {
