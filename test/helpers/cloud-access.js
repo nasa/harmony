@@ -1,5 +1,8 @@
 const request = require('supertest');
 const { before, after } = require('mocha');
+const sinon = require('sinon');
+const fs = require('fs');
+const aws = require('aws-sdk');
 const { auth } = require('./auth');
 
 /**
@@ -36,7 +39,7 @@ function hookCloudAccessJson(username = undefined) {
  * @returns {Promise<Response>} The response
  */
 function cloudAccessSh(app) {
-  return request(app).get('/cloud-access');
+  return request(app).get('/cloud-access.sh');
 }
 
 /**
@@ -58,9 +61,40 @@ function hookCloudAccessSh(username = undefined) {
   });
 }
 
+const sampleCloudAccessJsonResponse = {
+  Credentials: {
+    AccessKeyId: 'ASIA8NWMTLYQWIFCXH53',
+    SecretAccessKey: 'Q5DzjpRCxXxgNCbLnsHbec+qDgqQcQZXDd+qEGEc',
+    SessionToken: '***REMOVED***',
+    Expiration: '2020-04-10T18:03:46.337Z',
+  },
+};
+
+/**
+ * Adds before and after hooks to stub out calls to AWS STS.
+ * @returns {void}
+ */
+function hookAwsSts() {
+  let stub;
+  before(function () {
+    stub = sinon.stub(aws, 'STS')
+      .returns({
+        assumeRole: () => ({ promise: () => ({ then: () => sampleCloudAccessJsonResponse }) }),
+      });
+  });
+  after(function () {
+    stub.restore();
+  });
+}
+
+const sampleCloudAccessShResponse = fs.readFileSync('./test/resources/cloud-access-example-response.sh', 'utf-8');
+
 module.exports = {
   cloudAccessJson,
   hookCloudAccessJson,
   cloudAccessSh,
   hookCloudAccessSh,
+  sampleCloudAccessJsonResponse,
+  sampleCloudAccessShResponse,
+  hookAwsSts,
 };
