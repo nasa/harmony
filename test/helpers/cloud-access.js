@@ -61,11 +61,10 @@ function hookCloudAccessSh(username = undefined) {
   });
 }
 
-// These are not real AWS credentials
 const sampleCloudAccessJsonResponse = {
   Credentials: {
-    AccessKeyId: 'ASIA8NWMTLYQWIFCXH53',
-    SecretAccessKey: 'Q5DzjpRCxXxgNCbLnsHbec+qDgqQcQZXDd+qEGEc',
+    AccessKeyId: 'XXXXXXXXXXXXXXXXXXXX',
+    SecretAccessKey: 'XXXXXXXXXXXXXXXXXXXX1111111111+++++/////',
     SessionToken: '***REMOVED***',
     Expiration: '2020-04-10T18:03:46.337Z',
   },
