@@ -70,6 +70,7 @@
   enabled: !Env ${EXAMPLE_SERVICES}
   type:
     name: http
+    synchronous_only: true
     params:
       url: http://localhost:3000/example/harmony
   collections:
