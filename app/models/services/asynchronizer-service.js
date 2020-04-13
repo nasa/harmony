@@ -29,15 +29,17 @@ class AsynchronizerService extends BaseService {
    * async
    *
    * @param {Logger} logger The logger to use for details about this request
+   * @param {String} harmonyRoot The harmony root URL
    * @param {string} requestUrl The request's URL to record in Job records
    * @returns {Promise<object>} A promise for the invocation result. @see BaseService#invoke
    * @memberof AsynchronizerService
    */
-  async invoke(logger, requestUrl) {
+  async invoke(logger, harmonyRoot, requestUrl) {
+    this._invokeArgs = [logger, harmonyRoot, requestUrl];
     if (this.isSynchronous) {
       try {
         const delegate = new this.SyncServiceClass(this.config, this.operation);
-        const result = delegate.invoke(logger, requestUrl);
+        const result = delegate.invoke(...this._invokeArgs);
         this.isComplete = true;
         if (result.error) {
           this._completionCallbacks.reject(result.error);
@@ -46,13 +48,11 @@ class AsynchronizerService extends BaseService {
         }
         return result;
       } catch (e) {
-        logger.error('Failed to invoke service');
-        logger.error(e);
         this._completionCallbacks.reject(e.message);
         throw e;
       }
     }
-    return super.invoke(logger, requestUrl);
+    return super.invoke(...this._invokeArgs);
   }
 
   /**
@@ -120,7 +120,7 @@ class AsynchronizerService extends BaseService {
   async _invokeServiceSync(logger, job, name, syncOperation) {
     logger.info(`Invoking service on ${name}`);
     const service = new this.SyncServiceClass(this.config, syncOperation);
-    const result = await service.invoke(logger);
+    const result = await service.invoke(...this._invokeArgs);
 
     try {
       if (result.error) {

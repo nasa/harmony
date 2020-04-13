@@ -68,8 +68,8 @@ class StubService extends BaseService {
    * @returns {request} an awaitable response
    * @memberof StubService
    */
-  async sendResponse(query) {
-    const options = typeof this.callbackOptions === 'function' ? await this.callbackOptions() : this.callbackOptions;
+  sendResponse(query) {
+    const options = typeof this.callbackOptions === 'function' ? this.callbackOptions() : this.callbackOptions;
     const params = query || options.params;
     const responseUrl = `${this.operation.callback}/response`;
     const { body, headers } = options;
@@ -103,7 +103,13 @@ class StubService extends BaseService {
       sinon.stub(services, 'forOperation')
         .callsFake((operation, context, configs) => {
           const chosenService = origForOperation(operation, context, configs);
-          ctx.service = new StubService(operation, callbackOptions, chosenService.config.name);
+          // Notes from testing HARMONY-273: This stub has been partly relying on mutations
+          // happening in origForOperation and after to set up content type, isSynchronous,
+          // stagingLocation, and probably others.  Setting stagingLocation is undesirable as
+          // behavior has changed to not overwrite stagingLocation if it's already set in the
+          // operation, so we reset it after the above call.
+          operation.stagingLocation = null; // eslint-disable-line no-param-reassign
+          ctx.service = new StubService(callbackOptions, operation, chosenService.config.name);
           return ctx.service;
         });
     };
