@@ -5,6 +5,11 @@ const { before, after, it, describe } = require('mocha');
 const { expect } = require('chai');
 const { auth } = require('./auth');
 
+const defaultCollection = 'C1233800302-EEDTEST';
+const defaultGranuleId = 'G1233800352-EEDTEST';
+const defaultCoverageId = 'all';
+const defaultVersion = '1.0.0';
+
 /**
  * Strip the signature from a signed cookie value
  *
@@ -71,10 +76,10 @@ function hookLandingPage(collection, version) {
  */
 function rangesetRequest(
   app,
-  version,
-  collection,
-  coverageId,
-  { query = {}, headers = {}, cookies = null },
+  version = defaultVersion,
+  collection = defaultCollection,
+  coverageId = defaultCoverageId,
+  { query = {}, headers = {}, cookies = null } = {},
 ) {
   const req = request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`)
@@ -127,7 +132,7 @@ function postRangesetRequest(app, version, collection, coverageId, form) {
  * @returns {void}
  */
 function hookRangesetRequest(
-  version, collection, coverageId, { query = {}, headers = {}, username = undefined },
+  version, collection, coverageId, { query = {}, headers = {}, username = undefined } = {},
 ) {
   before(async function () {
     if (!username) {
@@ -151,6 +156,31 @@ function hookRangesetRequest(
   after(function () {
     delete this.res;
   });
+}
+
+/**
+ * Adds before/after hooks to run an OGC API coverages rangeset request synchronously
+ * by adding a default granule ID to the request.  Caller must ensure that the resulting
+ * request is not constrained such that the granule is excluded
+ *
+ * @param {String} version The OGC coverages API version
+ * @param {String} collection The CMR Collection ID to perform a service on
+ * @param {String} coverageId The coverage ID(s) / variable name(s), or "all"
+ * @param {Object} options additional options for the request
+ * @param {Object} [options.query] The query parameters to pass to the rangeset request
+ * @param {String} [options.headers] The headers to pass to the rangeset request
+ * @param {String} [options.username] Optional username to simulate logging in
+ * @returns {void}
+ */
+function hookSyncRangesetRequest(
+  version, collection, coverageId, { query = {}, headers = {}, username = undefined } = {},
+) {
+  hookRangesetRequest(
+    version,
+    collection,
+    coverageId,
+    { query: { granuleId: defaultGranuleId, ...query }, headers, username },
+  );
 }
 
 /**
@@ -353,6 +383,7 @@ function hookDescribeCollectionRequest(collection, version, variableName, query 
 module.exports = {
   hookLandingPage,
   hookRangesetRequest,
+  hookSyncRangesetRequest,
   rangesetRequest,
   postRangesetRequest,
   describeRelation,

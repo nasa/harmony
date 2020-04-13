@@ -18,6 +18,7 @@ rules:
   valid-jsdoc: ["warn"]
   no-await-in-loop: ["off"]
   object-curly-newline: ["off"]
+  no-plusplus: ["off"]
   no-unused-vars:
     - error
     - argsIgnorePattern: "^_"
