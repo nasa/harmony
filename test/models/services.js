@@ -135,9 +135,9 @@ describe('services.forOperation', function () {
         const service = forOperation(operation, {}, this.config);
         expect(service.constructor.name).to.equal('NoOpService');
       });
-      xit('indicates the reason for choosing the no op service is the combination of variable subsetting and the format', function () {
+      it('indicates the reason for choosing the no op service is the combination of variable subsetting and the format', function () {
         const service = forOperation(operation, {}, this.config);
-        expect(service.config.message).to.equal('bad');
+        expect(service.config.message).to.equal('none of the services support the combination of both variable subsetting and any of the requested formats [application/x-zarr]');
       });
     });
 

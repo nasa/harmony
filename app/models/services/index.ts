@@ -151,18 +151,22 @@ const noOpService = {
  * @throws {NotFoundError} If no service can perform the given operation
  */
 function forOperation(operation, context, configs = serviceConfigs) {
-  let matches = [];
+  let collectionMatches = [];
   if (operation) {
-    matches = configs.filter((config) => isCollectionMatch(operation, config));
+    collectionMatches = configs.filter((config) => isCollectionMatch(operation, config));
   }
 
   let noOpReason;
-  if (matches.length === 0) {
+  if (collectionMatches.length === 0) {
     noOpReason = 'no services are configured for the collection';
   }
 
-  if (_requiresVariableSubsetting(operation)) {
-    matches = _supportsVariableSubsetting(matches);
+  let matches = [];
+  const variableSubsettingNeeded = _requiresVariableSubsetting(operation);
+  if (variableSubsettingNeeded) {
+    matches = _supportsVariableSubsetting(collectionMatches);
+  } else {
+    matches = collectionMatches;
   }
 
   if (matches.length === 0 && !noOpReason) {
@@ -183,7 +187,17 @@ function forOperation(operation, context, configs = serviceConfigs) {
   }
 
   if (!service && !noOpReason) {
-    noOpReason = `none of the services configured for the collection support reformatting to any of the requested formats [${operation.outputFormat || context.requestedMimeTypes}]`;
+    // Either the requested formats are not supported by any services or the format is supported by
+    // a service, but that service does not support variable subsetting
+    let outputFormat;
+    if (variableSubsettingNeeded) {
+      outputFormat = _selectFormat(operation, context, collectionMatches);
+    }
+    if (outputFormat) {
+      noOpReason = `none of the services support the combination of both variable subsetting and any of the requested formats [${operation.outputFormat || context.requestedMimeTypes}]`;
+    } else {
+      noOpReason = `none of the services configured for the collection support reformatting to any of the requested formats [${operation.outputFormat || context.requestedMimeTypes}]`;
+    }
   }
 
   if (!service) {
