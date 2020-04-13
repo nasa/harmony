@@ -89,6 +89,7 @@ Add an entry to [services.yml](../config/services.yml) and send a pull request t
   data_operation_version: '0.6.0' # The version of the data-operation messaging schema to use
   type:                           # Configuration for service invocation
     name: docker                  # The type of service invocation, currently only "docker"
+    synchronous_only: true        # Indicates the service can only handle synchronous, one-granule requests (default: false)
     params:                       # Parameters specific to the service invocation type
       image: harmony/example      # The Docker container image to run
       env:                        # Environment variables to pass to the image

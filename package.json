@@ -62,6 +62,7 @@
     "multer-s3": "^2.9.0",
     "mustache": "^3.2.1",
     "node-fetch": "^2.6.0",
+    "p-queue": "^6.3.0",
     "pg": "7.18.1",
     "pg-native": "^3.0.0",
     "request": "^2.88.2",

@@ -37,7 +37,7 @@ function bindResponseUrl(responseCallback) {
   idsToCallbacks.set(callbackUUID, {
     response: responseCallback,
   });
-  log.info('Callbacks size', idsToCallbacks.size);
+  log.info(`Callbacks size ${idsToCallbacks.size}`);
   return config.baseUrl + callbackUUID;
 }
 

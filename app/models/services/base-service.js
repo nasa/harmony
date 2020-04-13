@@ -4,7 +4,7 @@ const serviceResponse = require('../../backends/service-response');
 const db = require('../../util/db');
 const { defaultObjectStore } = require('../../util/object-store');
 const Job = require('../job');
-const { ServerError } = require('../../util/errors');
+const { ServerError, RequestValidationError } = require('../../util/errors');
 const env = require('../../util/env');
 
 /**
@@ -31,8 +31,10 @@ class BaseService {
     this.operation = operation;
     this.operation.isSynchronous = this.isSynchronous;
 
-    const prefix = `public/${config.name}/${uuid()}/`;
-    this.operation.stagingLocation = defaultObjectStore().getUrlString(env.stagingBucket, prefix);
+    if (!this.operation.stagingLocation) {
+      const prefix = `public/${config.name || this.constructor.name}/${uuid()}/`;
+      this.operation.stagingLocation = defaultObjectStore().getUrlString(env.stagingBucket, prefix);
+    }
   }
 
   /**
@@ -52,7 +54,7 @@ class BaseService {
    *
    * error: An error message.  If set, the invocation was an error and the provided
    *   message should be sent to the client
-   * errorCode: (optional) An HTTP status code for the error.  If set and there is an
+   * statusCode: (optional) An HTTP status code for the response.  If set and there is an
    *   error, the HTTP status code will be set to this value
    * redirect: A redirect URL.  If set, the client should be redirected
    *   to this URL
@@ -60,18 +62,20 @@ class BaseService {
    * headers: An object mapping key/value headers.  Any headers starting with "harmony" should
    *   be passed to the client.  When streaming a result, content-type and content-length
    *   should also be set.
+   * content: String literal content to send back to the caller
    * onComplete: (optional) A callback function with no arguments to be invoked when the
    *   client receives its response
    * @param {Logger} logger The logger associated with this request
-   * @param {String} harmonyRoot The harmony request root
+   * @param {String} harmonyRoot The harmony root URL
    * @param {String} requestUrl The URL the end user invoked
    *
    * @returns {Promise<{
    *     error: string,
-   *     errorCode: number,
+   *     statusCode: number,
    *     redirect: string,
    *     stream: Stream,
    *     headers: object,
+   *     content: string,
    *     onComplete: Function
    *   }>} A promise resolving to the result of the callback. See method description
    * for properties
@@ -89,7 +93,6 @@ class BaseService {
     });
     return new Promise((resolve, reject) => {
       try {
-        // eslint-disable-next-line no-param-reassign
         this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
           if (isAsync) {
             this._processAsyncCallback(req, res, logger);
@@ -172,24 +175,49 @@ class BaseService {
    * @memberof BaseService
    */
   async _processAsyncCallback(req, res, logger) {
-    const { error, item, status, redirect, progress } = req.query;
     const trx = await db.transaction();
-    let err = null;
 
-    let job;
+    const { user, requestId } = this.operation;
+    const job = await Job.byUsernameAndRequestId(trx, user, requestId);
+    if (!job) {
+      trx.rollback();
+      res.status(404);
+      logger.error(`Received a callback for a missing job: user=${user}, requestId=${requestId}`);
+      res.json({ code: 404, message: 'could not find a job with the given ID' });
+      return;
+    }
+
     try {
-      const { user, requestId } = this.operation;
-      job = await Job.byUsernameAndRequestId(trx, user, requestId);
-      if (!job) {
-        res.status(404);
-        logger.error(`Received a callback for a missing job: user=${user}, requestId=${requestId}`);
-        res.json({ code: 404, message: 'could not find a job with the given ID' });
-        trx.rollback();
-        return;
-      }
+      await this._performAsyncJobUpdate(logger, trx, job, req.query);
+      await trx.commit();
+      res.status(200);
+      res.send('Ok');
+    } catch (e) {
+      await trx.rollback();
+      res.status(e.code);
+      res.json({ code: e.code, message: e.message });
+    }
+  }
 
+  /**
+   * Helper for updating a job, given a query string provided in a callback
+   *
+   * Note: parameter reassignment is allowed, since it's the purpose of this function.
+   *
+   * @param {Logger} logger The logger associated with this request
+   * @param {knex.Transaction} trx The transaction to use when updating the job
+   * @param {Job} job The job record to update
+   * @param {object} query The parsed query coming from a service callback
+   * @returns {void}
+   * @throws {RequestValidationError} If the callback parameters fail validation
+   * @throws {ServerError} If job update fails unexpectedly
+   * @memberof BaseService
+   */
+  async _performAsyncJobUpdate(logger, trx, job, query) { /* eslint-disable no-param-reassign */
+    const { error, item, status, redirect, progress } = query;
+    try {
       if (item) {
-        job.links.push(item);
+        job.addLink(item);
       }
       if (progress) {
         if (Number.isNaN(+progress)) {
@@ -207,12 +235,10 @@ class BaseService {
         job.succeed();
       }
       await job.save(trx);
-      await trx.commit();
     } catch (e) {
-      const code = (e instanceof TypeError) ? 400 : 500;
+      const ErrorClass = (e instanceof TypeError) ? RequestValidationError : ServerError;
       logger.error(e);
-      err = { code, message: e.message };
-      await trx.rollback();
+      throw new ErrorClass(e.message);
     } finally {
       if (error || !job || job.isComplete()) {
         if (this.resolveInvocation) this.resolveInvocation(true);
@@ -224,15 +250,8 @@ class BaseService {
           durationMs = job.updatedAt - job.createdAt;
           numOutputs = job.links.length;
         }
-        req.context.logger.info('Async job complete.', { durationMs, numOutputs, job: serializedJob });
+        logger.info('Async job complete.', { durationMs, numOutputs, job: serializedJob });
       }
-    }
-    if (err) {
-      res.status(err.code);
-      res.json(err);
-    } else {
-      res.status(200);
-      res.send('Ok');
     }
   }
 

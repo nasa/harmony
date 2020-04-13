@@ -1,5 +1,4 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const { responseHandler } = require('../backends/service-response');
 
 /**
@@ -10,9 +9,6 @@ const { responseHandler } = require('../backends/service-response');
  */
 function router() {
   const result = express.Router();
-
-  result.use(bodyParser.raw({ type: '*/*' }));
-
   result.post('/:uuid/response', responseHandler);
   return result;
 }

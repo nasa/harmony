@@ -503,6 +503,16 @@ class DataOperation {
   }
 
   /**
+   *  Returns a deep copy of this operation
+   *
+   * @returns {DataOperation} a deep copy of this operation
+   * @memberof DataOperation
+   */
+  clone() {
+    return new DataOperation(cloneDeep(this.model));
+  }
+
+  /**
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
