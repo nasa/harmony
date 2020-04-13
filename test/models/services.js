@@ -153,7 +153,7 @@ describe('services.forOperation', function () {
 
     describe('requesting variable subsetting and a format not supported by any services', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, { id: 'V123-PROV1', name: 'the-var' });
+      operation.addSource(collectionId, [{ id: 'V123-PROV1', name: 'the-var' }]);
       operation.outputFormat = 'image/foo';
       it('returns the no op service', function () {
         const service = forOperation(operation, {}, this.config);

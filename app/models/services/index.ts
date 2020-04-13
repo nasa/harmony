@@ -188,12 +188,15 @@ function forOperation(operation, context, configs = serviceConfigs) {
 
   if (!service && !noOpReason) {
     // Either the requested formats are not supported by any services or the format is supported by
-    // a service, but that service does not support variable subsetting
-    let outputFormat;
+    // a service, but that service does not support variable subsetting.
+    let serviceWithoutVarSubsetting;
     if (variableSubsettingNeeded) {
-      outputFormat = _selectFormat(operation, context, collectionMatches);
+      const outputFormat = _selectFormat(operation, context, collectionMatches);
+      if (outputFormat) {
+        serviceWithoutVarSubsetting = _selectServiceForFormat(outputFormat, collectionMatches);
+      }
     }
-    if (outputFormat) {
+    if (serviceWithoutVarSubsetting) {
       noOpReason = `none of the services support the combination of both variable subsetting and any of the requested formats [${operation.outputFormat || context.requestedMimeTypes}]`;
     } else {
       noOpReason = `none of the services configured for the collection support reformatting to any of the requested formats [${operation.outputFormat || context.requestedMimeTypes}]`;
