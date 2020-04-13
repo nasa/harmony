@@ -2,7 +2,7 @@ const services = require('../models/services');
 const env = require('../util/env');
 const { ServiceError } = require('../util/errors');
 const { objectStoreForProtocol } = require('../util/object-store');
-const { getRequestRoot, getRequestUrl } = require('../util/url');
+const { getRequestUrl } = require('../util/url');
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -78,7 +78,7 @@ async function serviceInvoker(req, res) {
     component: `${service.constructor.name}`,
   });
   try {
-    serviceResult = await service.invoke(serviceLogger, getRequestRoot(req), getRequestUrl(req));
+    serviceResult = await service.invoke(serviceLogger, getRequestUrl(req));
     await translateServiceResult(serviceResult, req.operation.user, res);
   } finally {
     if (serviceResult && serviceResult.onComplete) {

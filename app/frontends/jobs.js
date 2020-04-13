@@ -15,7 +15,7 @@ async function getJobsListing(req, res) {
   try {
     const root = getRequestRoot(req);
     await db.transaction(async (tx) => {
-      const listing = await Job.forUser(tx, req.user);
+      const listing = await Job.forUser(tx, req.user || 'anonymous');
       res.send(listing.map((j) => j.serialize(root)));
     });
   } catch (e) {
@@ -45,7 +45,7 @@ async function getJobStatus(req, res) {
   } else {
     try {
       await db.transaction(async (tx) => {
-        const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
+        const job = await Job.byUsernameAndRequestId(tx, req.user || 'anonymous', jobId);
         if (job) {
           res.send(job.serialize(getRequestRoot(req)));
         } else {

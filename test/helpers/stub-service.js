@@ -3,6 +3,7 @@ const sinon = require('sinon');
 const request = require('superagent');
 const BaseService = require('../../app/models/services/base-service');
 const services = require('../../app/models/services');
+const AsynchronizerService = require('../../app/models/services/asynchronizer-service');
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -14,13 +15,15 @@ class StubService extends BaseService {
   /**
    * Creates an instance of StubService.
    *
+   * @param {Object|Function} callbackOptions The request options to be used for the callback, with
+   *   keys for params (query parameter object), headers (headers to set), and body (body to POST).
+   *   If a function is passed instead of an object, it will be called with no arguments to a
+   *   callback options object.
    * @param {DataOperation} operation The data operation being requested of the service
-   * @param {object} callbackOptions The request options to be used for the callback (merged with
-   *   request method and URL)
    * @param {String} serviceName The service name
    * @memberof StubService
    */
-  constructor(operation, callbackOptions, serviceName) {
+  constructor(callbackOptions, operation, serviceName) {
     super({ name: 'harmony/stub' }, operation);
     this.callbackOptions = callbackOptions;
     this.isComplete = false;
@@ -53,26 +56,29 @@ class StubService extends BaseService {
     // by only executing this if something has tried to run the service and has not called back yet.
     if (!this.isRun || this.isComplete) return;
     this.isComplete = true;
-    await this.sendResponse(this.callbackOptions.params);
+    await this.sendResponse();
   }
 
   /**
    * Asynchronously POSTs a response to the backend using the supplied
    * query parameters but not marking the service complete.
    *
-   * @param {object} query an object to be serialized as query params to the callback
-   * @returns {void}
+   * @param {object} query an object to be serialized as query params to the callback, defaults to
+   *   the callback options parameters
+   * @returns {request} an awaitable response
    * @memberof StubService
    */
-  sendResponse(query) {
+  async sendResponse(query) {
+    const options = typeof this.callbackOptions === 'function' ? await this.callbackOptions() : this.callbackOptions;
+    const params = query || options.params;
     const responseUrl = `${this.operation.callback}/response`;
-    const { body, headers } = this.callbackOptions;
+    const { body, headers } = options;
     let req = request.post(responseUrl);
     if (headers) {
       req = req.set(headers);
     }
-    if (query) {
-      req = req.query(query);
+    if (params) {
+      req = req.query(params);
     }
     if (body) {
       req = req.send(body);
@@ -149,6 +155,56 @@ class StubService extends BaseService {
   static hookEach(callbackOptions = { params: { redirect: 'http://example.com' } }) {
     beforeEach(StubService.beforeHook(callbackOptions));
     afterEach(StubService.afterHook());
+  }
+
+  /**
+   * Sets up a synchronous StubService to be invoked by the AsynchronizerService.  Be careful
+   * to ensure the Asynchronizer completes its work before ending the test
+   *
+   * @static
+   * @param {object} callbackOptions The options to be used for _each_ callback
+   * @returns {void}
+   * @memberof StubService
+   */
+  static hookAsynchronized(callbackOptions = { params: { redirect: 'http://example.com' } }) {
+    before(async function () {
+      const ctx = this;
+      this.callbackOptions = callbackOptions;
+      sinon.stub(services, 'forOperation')
+        .callsFake((operation) => {
+          ctx.service = new AsynchronizerService(StubService, callbackOptions, operation);
+          return ctx.service;
+        });
+    });
+
+    after(async function () {
+      if (services.forOperation.restore) services.forOperation.restore();
+      try {
+        await this.service.promiseCompletion();
+      } catch { /* Normal for expected errors. Logs captured by the AsynchronizerService */
+      } finally {
+        delete this.service;
+        delete this.callbackOptions;
+      }
+    });
+  }
+
+  /**
+   * Adds before hooks for asynchronized service completion
+   *
+   * @static
+   * @param {boolean} [allowError=false] Whether a service error should fail the before hook
+   * @returns {void}
+   * @memberof StubService
+   */
+  static hookAsynchronizedServiceCompletion(allowError = false) {
+    before(async function () {
+      try {
+        await this.service.promiseCompletion();
+      } catch (e) {
+        if (!allowError) throw e;
+      }
+    });
   }
 
   /**
