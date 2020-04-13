@@ -93,6 +93,8 @@
       url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
   collections:
     - C1225996408-POCUMULUS
+    - C1234530532-EEDTEST
+    - C1234530533-EEDTEST
   capabilities:
     output_formats:
       - application/netcdf
