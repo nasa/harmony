@@ -172,7 +172,9 @@ class AsynchronizerService extends BaseService {
       await this._performAsyncJobUpdate(logger, db, job, { item, progress });
       logger.info(`Completed service on ${name}`);
     } finally {
-      result.onComplete();
+      if (result.onComplete) {
+        result.onComplete();
+      }
     }
   }
 
