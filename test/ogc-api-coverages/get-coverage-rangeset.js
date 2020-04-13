@@ -268,11 +268,22 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const unsupportedFormat = 'text/plain';
     const query = { granuleId };
 
+    describe('when providing an accept header for an unsupported format', function () {
+      const headers = { accept: unsupportedFormat };
+      hookRangesetRequest(version, collection, variableName, { headers, query });
+      it('returns a 200 successful response', function () {
+        expect(this.res.status).to.equal(200);
+      });
+      it('indicates the format as the reason the no op service was used', function () {
+        const noOpResponse = JSON.parse(this.res.text);
+        expect(noOpResponse.message).to.equal('Returning direct download links because none of the services configured for the collection support reformatting to any of the requested formats [text/plain].');
+      });
+    });
 
-    StubService.hook({ params: { redirect: 'http://example.com' } });
     describe('when providing an accept header and a format parameter', function () {
       const pngQuery = { granuleId, format: png };
       const headers = { accept: tiff };
+      StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, variableName, { query: pngQuery, headers });
       it('gives the format parameter precedence over the accept header', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
@@ -281,6 +292,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing */* for the accept header', function () {
       const headers = { accept: anyWildcard };
+      StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, variableName, { headers, query });
       it('chooses the first output format supported by the service (see services.yml)', function () {
         expect(this.service.operation.outputFormat).to.equal(tiff);
@@ -289,6 +301,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing */tiff for the accept header', function () {
       const headers = { accept: imageWildcard };
+      StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, variableName, { headers, query });
       it('selects the first valid tiff format supported', function () {
         expect(this.service.operation.outputFormat).to.equal(tiff);
@@ -297,6 +310,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing image/* for the accept header', function () {
       const headers = { accept: wildcardTiff };
+      StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, variableName, { headers, query });
       it('selects the first valid image format supported', function () {
         expect(this.service.operation.outputFormat).to.equal(tiff);
@@ -305,40 +319,41 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing an accept header with a parameter', function () {
       const headers = { accept: `${zarr};q=0.9` };
-      hookRangesetRequest(version, collection, variableName, { headers, query });
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, collection, 'all', { headers, query });
       it('correctly parses the format from the header', function () {
         expect(this.service.operation.outputFormat).to.equal(zarr);
       });
     });
 
-    describe('when providing an accept header for an unsupported format', function () {
-      const headers = { accept: unsupportedFormat };
-      hookRangesetRequest(version, collection, variableName, { headers, query });
-      it('returns a 404 error', function () {
-        expect(this.res.status).to.equal(404);
-      });
-      it('indicates the format as the reason the request was rejected', function () {
-        const error = JSON.parse(this.res.text);
-        expect(error).to.eql({
-          code: 'harmony.InvalidFormatError',
-          description: 'Error: Could not find a service to reformat to any of the requested formats [text/plain] for the given collection',
-        });
-      });
-    });
-
     describe('when providing multiple formats supported by different services', function () {
       const headers = { accept: `${zarr}, ${tiff}` };
-      hookRangesetRequest(version, collection, variableName, { headers, query });
-      it('uses the first format in the list', function () {
-        expect(this.service.operation.outputFormat).to.equal(zarr);
+      describe('when requesting variable subsetting only supported by harmony/gdal', function () {
+        StubService.hook({ params: { redirect: 'http://example.com' } });
+        hookRangesetRequest(version, collection, variableName, { headers, query });
+        it('uses the correct harmony/gdal backend service', function () {
+          expect(this.service.name).to.equal('harmony/gdal');
+        });
+        it('chooses the first tiff format rather than zarr because harmonly/gdal does not support zarr', function () {
+          expect(this.service.operation.outputFormat).to.equal(tiff);
+        });
       });
-      it('uses the correct backend service', function () {
-        expect(this.service.name).to.equal('harmony/netcdf-to-zarr');
+
+      describe('when not requesting variable subsetting so either harmony/gdal or harmony/netcdf-to-zarr could be used', function () {
+        StubService.hook({ params: { redirect: 'http://example.com' } });
+        hookRangesetRequest(version, collection, 'all', { headers, query });
+        it('uses the first format in the list', function () {
+          expect(this.service.operation.outputFormat).to.equal(zarr);
+        });
+        it('uses the correct backend service', function () {
+          expect(this.service.name).to.equal('harmony/netcdf-to-zarr');
+        });
       });
     });
 
     describe('when providing multiple formats with the highest priority being unsupported', function () {
       const headers = { accept: `${unsupportedFormat};q=1.0, ${zarr};q=0.5, ${tiff};q=0.8, ${png};q=0.85` };
+      StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, variableName, { headers, query });
       it('uses the highest quality value format that is supported', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
@@ -350,6 +365,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing multiple formats and not specifying a quality value for one of them', function () {
       const headers = { accept: `${zarr};q=0.5, ${tiff};q=0.8, ${png}` };
+      StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, variableName, { headers, query });
       it('treats the unspecified quality value as 1.0', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
@@ -358,6 +374,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when requesting an unsupported format followed by */*', function () {
       const headers = { accept: `${unsupportedFormat}, ${anyWildcard}` };
+      StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, collection, variableName, { headers, query });
       it('returns a redirect 303 (and not a 404 error)', function () {
         expect(this.res.status).to.equal(303);
@@ -549,7 +566,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links, no transformation was performed because no known service exists to perform this transformation on the data. CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
+      expect(job.message).to.eql('Returning direct download links because no services are configured for the collection. CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
@@ -588,19 +605,6 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
         expect(Object.keys(job)).to.eql(expectedJobKeys);
       });
     });
-    describe('image/png', function () {
-      hookRangesetRequest(version, collection, 'all', { headers: { accept: 'image/png' } });
-      it('returns a 404 response', function () {
-        expect(this.res.status).to.equal(404);
-      });
-      it('returns an error indicating the unsupported format for the no-op service', function () {
-        const error = JSON.parse(this.res.text);
-        expect(error).to.eql({
-          code: 'harmony.InvalidFormatError',
-          description: 'Error: Could not find a service to reformat to any of the requested formats [image/png] for the given collection',
-        });
-      });
-    });
   });
 
   describe('when only one granule is identified', function () {
@@ -616,7 +620,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message indicating no transformations were performed', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links, no transformation was performed because no known service exists to perform this transformation on the data.');
+      expect(job.message).to.eql('Returning direct download links because no services are configured for the collection.');
     });
   });
 

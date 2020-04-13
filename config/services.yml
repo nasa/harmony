@@ -22,7 +22,7 @@
   capabilities:
     subsetting:
       bbox: true
-      variable: true # Default
+      variable: true
       multiple_variable: true
     output_formats:
       - image/tiff
@@ -78,6 +78,8 @@
     # and not yet on the services roadmap.
     - C1104-PVC_TS2
   capabilities:
+    subsetting:
+      variable: true
     output_formats:
       - image/tiff
 
@@ -90,6 +92,8 @@
   collections:
     - C1225996408-POCUMULUS
   capabilities:
+    subsetting:
+      variable: true
     output_formats:
       - application/netcdf
 
@@ -113,5 +117,7 @@
     - C1234088182-EEDTEST
   maximum_sync_granules: 0
   capabilities:
+    subsetting:
+      variable: false
     output_formats:
       - application/x-zarr
