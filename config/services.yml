@@ -70,6 +70,8 @@
   enabled: !Env ${EXAMPLE_SERVICES}
   type:
     name: http
+    # Uncomment the following line to make the example service only return synchronous
+    # results in order to test our sync -> async conversion.
     #synchronous_only: true
     params:
       url: http://localhost:3000/example/harmony
