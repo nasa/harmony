@@ -150,7 +150,6 @@ class AsynchronizerService extends BaseService {
         if (result.headers['content-disposition']) {
           const filenameMatch = result.headers['content-disposition'].match(/filename="([^"]+)"/);
           if (filenameMatch) {
-            // eslint-disable-next-line prefer-destructuring
             filename = filenameMatch[1];
           }
         }

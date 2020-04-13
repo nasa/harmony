@@ -22,6 +22,11 @@ rules:
   no-unused-vars:
     - error
     - argsIgnorePattern: "^_"
+  prefer-destructuring:
+    - error
+    - array: false
+      object: true
+    - enforceForRenamedProperties: false
 overrides:
   - files: [ "test/**/*" ]
     rules:

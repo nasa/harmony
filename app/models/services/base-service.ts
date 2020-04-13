@@ -93,7 +93,6 @@ class BaseService {
     });
     return new Promise((resolve, reject) => {
       try {
-        // eslint-disable-next-line no-param-reassign
         this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
           if (isAsync) {
             this._processAsyncCallback(req, res, logger);

@@ -21,7 +21,7 @@ function alternateCallbacks(...values) {
 }
 
 describe('Asynchronizer Service', function () {
-  hookServersStartStop();
+  hookServersStartStop({ skipEarthdataLogin: false });
   hookMockS3();
 
   describe('when a service is configured to receive one granule at a time', function () {
@@ -113,6 +113,8 @@ describe('Asynchronizer Service', function () {
       });
 
       it('provides a link to the contents of the streaming response', async function () {
+        // Check a result somewhere toward the middle of the list that we expect to be the same as
+        // the first result to have some assurance that the async/await code is working properly.
         const obj = job.links[12].href.split('/service-results/')[1];
         const getObject = util.promisify((...args) => defaultObjectStore().getObject(...args));
         const contents = await getObject(`s3://${obj}`);

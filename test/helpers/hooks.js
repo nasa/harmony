@@ -28,7 +28,7 @@ function hookFunction(fn, returnValueName, ...params) {
  * @param {string} username optional username to provide for auth
  * @returns {void}
  */
-function hookUrl(urlOrFn, username = undefined) {
+function hookUrl(urlOrFn, username = 'anonymous') {
   before(async function () {
     const url = typeof urlOrFn === 'string' ? urlOrFn : urlOrFn.call(this);
     this.urlRes = this.res;
