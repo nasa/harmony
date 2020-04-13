@@ -6,7 +6,7 @@ const getIn = require('lodash.get');
 const LocalDockerService = require('./local-docker-service');
 const HttpService = require('./http-service');
 const NoOpService = require('./no-op-service');
-const { NotFoundError, InvalidFormatError } = require('../../util/errors');
+const { NotFoundError } = require('../../util/errors');
 const { isMimeTypeAccepted } = require('../../util/content-negotiation');
 
 let serviceConfigs = null;
@@ -91,29 +91,45 @@ function _selectServiceForFormat(format, configs) {
  * @param {DataOperation} operation The operation to perform.
  * @param {Object} context Additional context that's not part of the operation, but influences the
  *    choice regarding the service to use
- * @param {Object} configs The configuration to use for finding the operation, with all variables
- *    resolved (default: the contents of config/services.yml)
+ * @param {Object} configs The potential matching service configurations
  * @returns {String} The output format to use
  * @private
  */
 function _selectFormat(operation, context, configs) {
-  const { outputFormat } = operation;
-  if (outputFormat) {
-    const matches = configs.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(outputFormat));
-    if (matches.length === 0) {
-      throw new InvalidFormatError([outputFormat]);
-    }
-  } else if (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
+  let { outputFormat } = operation;
+  if (!outputFormat && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
     for (const mimeType of context.requestedMimeTypes) {
       const service = _selectServiceForFormat(mimeType, configs);
       if (service) {
         const supportedFormats = getIn(service, 'capabilities.output_formats', []);
-        return supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType));
+        outputFormat = supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType));
       }
+      if (outputFormat) break;
     }
-    throw new InvalidFormatError(context.requestedMimeTypes);
   }
   return outputFormat;
+}
+
+/**
+ * Returns true if the operation requires variable subsetting
+ * @param {DataOperation} operation The operation to perform. Note that this function may mutate
+ *    the operation.
+ * @returns {Boolean} true if the provided operation requires variable subsetting
+ * @private
+ */
+function _requiresVariableSubsetting(operation) {
+  const varSources = operation.sources.filter((s) => s.variables && s.variables.length > 0);
+  return varSources.length > 0;
+}
+
+/**
+ * Returns any services that support variable subsetting from the list of configs
+ * @param {Array<Object>} configs The potential matching service configurations
+ * @returns {Array<Object>} Any configurations that support variable subsetting
+ * @private
+ */
+function _supportsVariableSubsetting(configs) {
+  return configs.filter((config) => getIn(config, 'capabilities.subsetting.variable', false));
 }
 
 const noOpService = {
@@ -139,15 +155,41 @@ function forOperation(operation, context, configs = serviceConfigs) {
   if (operation) {
     matches = configs.filter((config) => isCollectionMatch(operation, config));
   }
+
+  let noOpReason;
   if (matches.length === 0) {
-    matches = [noOpService];
+    noOpReason = 'no services are configured for the collection';
   }
 
-  const outputFormat = _selectFormat(operation, context, matches);
-  const service = outputFormat ? _selectServiceForFormat(outputFormat, matches) : matches[0];
+  if (_requiresVariableSubsetting(operation)) {
+    matches = _supportsVariableSubsetting(matches);
+  }
 
-  // eslint-disable-next-line no-param-reassign
-  operation.outputFormat = outputFormat;
+  if (matches.length === 0 && !noOpReason) {
+    noOpReason = 'none of the services configured for the collection support variable subsetting';
+  }
+
+  let service;
+  if (operation.outputFormat
+    || (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0)) {
+    const outputFormat = _selectFormat(operation, context, matches);
+    if (outputFormat) {
+      // eslint-disable-next-line no-param-reassign
+      operation.outputFormat = outputFormat;
+      service = _selectServiceForFormat(outputFormat, matches);
+    }
+  } else {
+    [service] = matches;
+  }
+
+  if (!service && !noOpReason) {
+    noOpReason = `none of the services configured for the collection support reformatting to any of the requested formats [${operation.outputFormat || context.requestedMimeTypes}]`;
+  }
+
+  if (!service) {
+    noOpService.message = noOpReason;
+    service = noOpService;
+  }
   return buildService(service, operation);
 }
 
