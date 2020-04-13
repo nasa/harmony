@@ -66,6 +66,7 @@ class BaseService {
    * onComplete: (optional) A callback function with no arguments to be invoked when the
    *   client receives its response
    * @param {Logger} logger The logger associated with this request
+   * @param {String} harmonyRoot The harmony root URL
    * @param {String} requestUrl The URL the end user invoked
    *
    * @returns {Promise<{
@@ -80,7 +81,7 @@ class BaseService {
    * for properties
    * @memberof BaseService
    */
-  async invoke(logger, requestUrl) {
+  async invoke(logger, harmonyRoot, requestUrl) {
     const isAsync = !this.isSynchronous;
     let job;
     if (isAsync) {

@@ -85,6 +85,7 @@
   data_operation_version: '0.5.0'
   type:
     name: http
+    synchronous_only: true
     params:
       url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
   collections:

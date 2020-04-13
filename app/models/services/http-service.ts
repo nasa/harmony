@@ -19,6 +19,7 @@ class HttpService extends BaseService {
    * a job if the result is async.
    *
    * @param {Logger} logger The logger associated with this request
+   * @param {String} harmonyRoot The harmony root URL
    * @param {String} requestUrl The URL the end user invoked
    * @returns {Promise<{
    *     error: string,
@@ -31,11 +32,11 @@ class HttpService extends BaseService {
    * for properties
    * @memberof HttpService
    */
-  invoke(logger, requestUrl) {
+  invoke(logger, harmonyRoot, requestUrl) {
     if (this.operation.isSynchronous) {
       return this._run(logger);
     }
-    return super.invoke(logger, requestUrl);
+    return super.invoke(logger, harmonyRoot, requestUrl);
   }
 
   /**
