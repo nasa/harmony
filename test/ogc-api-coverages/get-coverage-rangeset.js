@@ -669,7 +669,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     describe('attempting to retrieve the job via the job status route', function () {
       it('returns a 404 because no job is created', async function () {
         const job = JSON.parse(this.res.text);
-        const jobRes = await jobStatus(this.frontend, job.jobID).use(auth({ username: 'joe' }));
+        const jobRes = await jobStatus(this.frontend, { jobId: job.jobID }).use(auth({ username: 'joe' }));
         const error = JSON.parse(jobRes.text);
         expect(error).to.eql({
           code: 'harmony:NotFoundError',

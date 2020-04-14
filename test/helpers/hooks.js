@@ -58,8 +58,29 @@ function hookRedirect(username = undefined) {
   }, username);
 }
 
+/**
+ * Adds before / after hooks to execute an HTTP request against a harmony endpoint and setting
+ * the result to this.res
+ *
+ * @param {function} requestFn The request function to execute
+ * @returns {void}
+ */
+function hookRequest(requestFn, { username, ...options } = {}) {
+  before(async function () {
+    let req = requestFn(this.frontend, options);
+    if (username) {
+      req = req.use(auth({ username }));
+    }
+    this.res = await req;
+  });
+  after(function () {
+    delete this.res;
+  });
+}
+
 module.exports = {
   hookFunction,
   hookRedirect,
   hookUrl,
+  hookRequest,
 };

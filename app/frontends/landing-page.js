@@ -14,7 +14,15 @@ function landingPage(req, res) {
   const root = getRequestRoot(req);
   const cloudAccessJsonLink = getCloudAccessJsonLink(root);
   const cloudAccessShLink = getCloudAccessShLink(root);
-  const description = `Harmony allows users to submit requests to perform transformations on EOSDIS data. Transformations can be performed using one of several Open Geospatial Consortium (OGC) inspired APIs. Each API requires a collection concept ID from https://cmr.uat.earthdata.nasa.gov/search/collections, and then transformations can be performed using one of the following: ${root}/{collectionId}/ogc-api-coverages/1.0.0, ${root}/{collectionId}/wms, or (deprecated) ${root}/{collectionId}/eoss/0.1.0. All users will need an Earthdata login account from https://urs.earthdata.nasa.gov in order to perform transformations. See the links field for additional Harmony routes.`;
+  const description = 'Harmony allows users to submit requests to perform transformations '
+    + 'on EOSDIS data. Transformations can be performed using one of several Open Geospatial '
+    + 'Consortium (OGC) inspired APIs. Each API requires a collection concept ID from '
+    + 'https://cmr.uat.earthdata.nasa.gov/search/collections, and then transformations can be '
+    + `performed using ${root}/{collectionId}/ogc-api-coverages/1.0.0 or `
+    + `${root}/{collectionId}/wms. 'All users will need an Earthdata login account from `
+    + 'https://urs.earthdata.nasa.gov in order to perform transformations. See the links '
+    + 'field for additional Harmony routes.';
+
   const links = [
     {
       title: 'Harmony landing page',
