@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { before, after } = require('mocha');
+const { hookRequest } = require('./hooks');
 
 /**
  * Makes a cloud-access JSON request
@@ -10,19 +10,7 @@ function landingPage(app) {
   return request(app).get('/');
 }
 
-/**
- * Adds before/after hooks to navigate to the cloud-access.sh route
- *
- * @returns {void}
- */
-function hookLandingPage() {
-  before(async function () {
-    this.res = await landingPage(this.frontend);
-  });
-  after(function () {
-    delete this.res;
-  });
-}
+const hookLandingPage = hookRequest.bind(this, landingPage);
 
 module.exports = {
   landingPage,
