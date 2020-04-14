@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const Ajv = require('ajv');
 const cloneDeep = require('lodash.clonedeep');
-const { toISODateTime } = require('../util/date');
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -26,6 +25,24 @@ function readSchema(version) {
  *      be unable to downgrade from the version
  */
 const schemaVersions = [
+  {
+    version: '0.7.0',
+    schema: readSchema('0.7.0'),
+    down: (model) => {
+      const revertedModel = cloneDeep(model);
+      // remove the `bbox` and `temporal` fields from all the granules in all the sources
+      revertedModel.sources.forEach((s) => {
+        s.granules.forEach((g) => {
+          // eslint-disable-next-line no-param-reassign
+          delete g.bbox;
+          // eslint-disable-next-line no-param-reassign
+          delete g.temporal;
+        });
+      });
+
+      return revertedModel;
+    },
+  },
   {
     version: '0.6.0',
     schema: readSchema('0.6.0'),
@@ -303,7 +320,7 @@ class DataOperation {
 
   /**
    * Returns the temporal range to be acted upon by services where each time
-   * is expressed in ISO 8601 format without milliseconds
+   * is expressed in RFC-3339 format
    *
    * @returns {Object} The temporal range with two keys start and end
    * @memberof DataOperation
@@ -316,7 +333,7 @@ class DataOperation {
 
   /**
    * Sets the temporal range to be acted upon by services, [ start, end ], storing each time
-   * as a string expressed in ISO 8601 format without milliseconds
+   * as a string expressed in RFC-3339 format
    *
    * @param {Array<Date>} The [ start, end ] temporal range
    * @returns {void}
@@ -325,10 +342,10 @@ class DataOperation {
   set temporal([startTime, endTime]) {
     this.model.temporal = {};
     if (startTime) {
-      this.model.temporal.start = (typeof startTime === 'string') ? startTime : toISODateTime(startTime);
+      this.model.temporal.start = (typeof startTime === 'string') ? startTime : startTime.toISOString();
     }
     if (endTime) {
-      this.model.temporal.end = (typeof endTime === 'string') ? endTime : toISODateTime(endTime);
+      this.model.temporal.end = (typeof endTime === 'string') ? endTime : endTime.toISOString();
     }
   }
 
