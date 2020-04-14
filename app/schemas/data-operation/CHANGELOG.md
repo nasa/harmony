@@ -1,3 +1,8 @@
+## [0.7.0] -2020-04-07
+### Added
+- granule.bbox - Bounding box provided by the CMR
+- granule.temporal - Temporal object for Granule start and stop times as provided by the CMR
+
 ## [0.6.0] - 2020-03-27
 ### Added
 - subset.shape - Reference to a location containing a shape within which the service should spatially subset.
