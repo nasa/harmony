@@ -15,7 +15,7 @@ async function _assumeS3OutputsRole(context, username) {
   const { id } = context;
   const params = {
     RoleArn: sameRegionAccessRole,
-    RoleSessionName: `${username}-${id}`,
+    RoleSessionName: username,
     DurationSeconds: expirationSeconds,
     ExternalId: id,
   };
