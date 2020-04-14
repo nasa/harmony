@@ -217,6 +217,21 @@ class BaseService {
     const { error, item, status, redirect, progress } = query;
     try {
       if (item) {
+        if (item.bbox) {
+          const bbox = item.bbox.split(',').map(parseFloat);
+          if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
+            throw new TypeError('Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North');
+          }
+          item.bbox = bbox;
+        }
+        if (item.temporal) {
+          const temporal = item.temporal.split(',').map((t) => Date.parse(t));
+          if (temporal.length !== 2 || temporal.some(Number.isNaN)) {
+            throw new TypeError('Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End');
+          }
+          const [start, end] = temporal.map((t) => new Date(t).toISOString());
+          item.temporal = { start, end };
+        }
         job.addLink(item);
       }
       if (progress) {
