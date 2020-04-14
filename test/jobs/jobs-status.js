@@ -340,7 +340,7 @@ describe('Individual job status route', function () {
         });
 
         hookUrl(function () {
-          return JSON.parse(this.res.text).links[3].href.split(/:\d+/)[1];
+          return JSON.parse(this.res.text).links[0].href.split(/:\d+/)[1];
         }, 'jdoe1');
 
         it('temporarily redirects to a presigned URL for the data', function () {

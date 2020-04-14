@@ -3,7 +3,6 @@ const Record = require('./record');
 const { createPublicPermalink } = require('../frontends/service-results');
 const { truncateString } = require('../util/string');
 const { awsDefaultRegion } = require('../util/env');
-const { getCloudAccessJsonLink, getCloudAccessShLink } = require('../util/links');
 
 const statesToDefaultMessages = {
   accepted: 'The job has been accepted and is waiting to be processed',
@@ -287,26 +286,15 @@ class Job extends Record {
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     serializedJob.jobID = this.requestId;
     if (urlRoot) {
-      let s3StagingLink;
       serializedJob.links = serializedJob.links.map((link) => {
-        // Leave the S3 output staging location as an S3 link
         let { href } = link;
-        if (link.title === stagingBucketTitle) {
-          s3StagingLink = link;
-        } else {
-          href = createPublicPermalink(link.href, urlRoot, link.type);
+        const { title, type, rel } = link;
+        // Leave the S3 output staging location as an S3 link
+        if (rel !== 'bucket') {
+          href = createPublicPermalink(href, urlRoot, type);
         }
-        return {
-          href,
-          title: link.title,
-          type: link.type,
-          rel: link.rel,
-        };
+        return { href, title, type, rel };
       });
-      if (s3StagingLink) {
-        serializedJob.links.unshift(getCloudAccessJsonLink(urlRoot));
-        serializedJob.links.unshift(getCloudAccessShLink(urlRoot));
-      }
     }
     return serializedJob;
   }
