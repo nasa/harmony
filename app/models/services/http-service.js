@@ -19,7 +19,7 @@ class HttpService extends BaseService {
    * a job if the result is async.
    *
    * @param {Logger} logger The logger associated with this request
-   * @param {String} harmonyRoot The harmony request root
+   * @param {String} harmonyRoot The harmony root URL
    * @param {String} requestUrl The URL the end user invoked
    * @returns {Promise<{
    *     error: string,

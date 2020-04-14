@@ -3,8 +3,9 @@ const path = require('path');
 const yaml = require('js-yaml');
 const getIn = require('lodash.get');
 
-const LocalDockerService = require('./local-docker-service');
+const AsynchronizerService = require('./asynchronizer-service');
 const HttpService = require('./http-service');
+const LocalDockerService = require('./local-docker-service');
 const NoOpService = require('./no-op-service');
 const { NotFoundError, InvalidFormatError } = require('../../util/errors');
 const { isMimeTypeAccepted } = require('../../util/content-negotiation');
@@ -47,14 +48,18 @@ const serviceTypesToServiceClasses = {
  * @param {object} serviceConfig The configuration from services.yml
  * @param {DataOperation} operation The operation to perform
  * @returns {Service} An appropriate service for the given config
+ * @throws {NotFoundError} If no appropriate service can be found
  */
 function buildService(serviceConfig, operation) {
   const ServiceClass = serviceTypesToServiceClasses[serviceConfig.type.name];
-  if (ServiceClass) {
-    return new ServiceClass(serviceConfig, operation);
+  if (!ServiceClass) {
+    throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
   }
 
-  throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
+  if (serviceConfig.type.synchronous_only) {
+    return new AsynchronizerService(ServiceClass, serviceConfig, operation);
+  }
+  return new ServiceClass(serviceConfig, operation);
 }
 
 /**
