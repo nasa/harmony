@@ -232,6 +232,7 @@ class BaseService {
           const [start, end] = temporal.map((t) => new Date(t).toISOString());
           item.temporal = { start, end };
         }
+        item.rel = item.rel || 'data';
         job.addLink(item);
       }
       if (progress) {
@@ -246,7 +247,7 @@ class BaseService {
       } else if (status) {
         job.updateStatus(status);
       } else if (redirect) {
-        job.addLink({ href: redirect });
+        job.addLink({ href: redirect, rel: 'data' });
         job.succeed();
       }
       await job.save(trx);
@@ -263,8 +264,8 @@ class BaseService {
         const serializedJob = job.serialize();
         if (job.isComplete()) {
           durationMs = job.updatedAt - job.createdAt;
-          // Assumes there is exactly one link that is not a job output (the staging bucket)
-          numOutputs = job.links.length - 1;
+          const outputLinks = Job.getOutputLinks(job.links);
+          numOutputs = outputLinks.length;
         }
         logger.info('Async job complete.', { durationMs, numOutputs, job: serializedJob });
       }

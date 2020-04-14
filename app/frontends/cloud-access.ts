@@ -60,6 +60,7 @@ const accessKeyFields = ['AccessKeyId', 'SecretAccessKey', 'SessionToken'];
 async function cloudAccessSh(req, res) {
   req.context.logger = req.context.logger.child({ component: 'cloudAccess.cloudAccessSh' });
   req.context.logger.info(`Generating same region access keys for ${req.user}`);
+  res.set('Content-Type', 'application/x-sh');
   try {
     const credentials = await _assumeS3OutputsRole(req.context, req.user);
     let response = preamble;
@@ -67,15 +68,11 @@ async function cloudAccessSh(req, res) {
     for (const key of accessKeyFields) {
       response += `export ${key}='${credentials[key]}'\n`;
     }
-    res.set('Content-Type', 'application/x-sh');
     res.send(response);
   } catch (e) {
     req.context.logger.error(e);
     res.status(500);
-    res.json({
-      code: 'harmony:ServerError',
-      description: 'Error: Failed to assume role to generate access keys',
-    });
+    res.send('>&2 echo "Error: Failed to assume role to generate access keys"');
   }
 }
 

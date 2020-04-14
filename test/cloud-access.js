@@ -26,7 +26,7 @@ describe('Cloud access', function () {
 
   describe('When authenticated', function () {
     describe('Calls to the cloud access json endpoint', function () {
-      hookCloudAccessJson('joe-tester');
+      hookCloudAccessJson({ username: 'joe-tester' });
 
       it('returns a 200 success', function () {
         expect(this.res.statusCode).to.equal(200);
@@ -58,7 +58,7 @@ describe('Cloud access', function () {
     });
 
     describe('Calls to the cloud access shell script endpoint', function () {
-      hookCloudAccessSh('joe-tester');
+      hookCloudAccessSh({ username: 'joe-tester' });
       it('returns a 200 success', function () {
         expect(this.res.statusCode).to.equal(200);
       });

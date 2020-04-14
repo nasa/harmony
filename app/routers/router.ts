@@ -141,7 +141,12 @@ function router({ skipEarthdataLogin }) {
   result.post(collectionPrefix('(ogc-api-coverages)'), shapefileUpload());
 
   if (`${skipEarthdataLogin}` !== 'true') {
-    result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex, '/jobs*', '/service-results/*', '/cloud-access*'])));
+    result.use(logged(earthdataLoginAuthorizer([
+      cmrCollectionReader.collectionRegex,
+      '/jobs*',
+      '/service-results/*',
+      '/cloud-access*',
+    ])));
   }
 
   // Routes and middleware not dealing with service requests

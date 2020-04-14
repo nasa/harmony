@@ -1,7 +1,7 @@
 const request = require('supertest');
-const { before, after, it } = require('mocha');
+const { it } = require('mocha');
 const { expect } = require('chai');
-const { auth } = require('./auth');
+const { hookRequest } = require('./hooks');
 
 /**
  * Returns true if the passed in job record matches the serialized Job
@@ -46,54 +46,18 @@ function jobListing(app) {
 }
 
 /**
- * Adds before/after hooks to navigate to the job listing route
- *
- * @param {String} username optional user to simulate logging in as
- * @returns {void}
- */
-function hookJobListing(username = undefined) {
-  before(async function () {
-    if (username) {
-      this.res = await jobListing(this.frontend).use(auth({ username }));
-    } else {
-      this.res = await jobListing(this.frontend);
-    }
-  });
-  after(function () {
-    delete this.res;
-  });
-}
-
-/**
  * Navigates to the job status route as the given user
  *
  * @param {Express.Application} app The express application (typically this.frontend)
- * @param {String} jobId The job ID
+ * @param {Object} [optionss.jobId] The job ID
  * @returns {void}
  */
-function jobStatus(app, jobId) {
+function jobStatus(app, { jobId }) {
   return request(app).get(`/jobs/${jobId}`);
 }
 
-/**
- * Adds before/after hooks to navigate to the job status route
- *
- * @param {String} jobId The job ID
- * @param {String} username optional user to simulate logging in as
- * @returns {void}
- */
-function hookJobStatus(jobId, username = undefined) {
-  before(async function () {
-    if (username) {
-      this.res = await jobStatus(this.frontend, jobId).use(auth({ username }));
-    } else {
-      this.res = await jobStatus(this.frontend, jobId);
-    }
-  });
-  after(function () {
-    delete this.res;
-  });
-}
+const hookJobListing = hookRequest.bind(this, jobListing);
+const hookJobStatus = hookRequest.bind(this, jobStatus);
 
 /**
  * Given a string returns a new string with all characters escaped such that the string

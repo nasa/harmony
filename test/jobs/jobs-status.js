@@ -32,7 +32,7 @@ describe('Individual job status route', function () {
   const jobId = aJob.requestId;
   describe('For a user who is not logged in', function () {
     before(async function () {
-      this.res = await jobStatus(this.frontend, jobId).redirects(0);
+      this.res = await jobStatus(this.frontend, { jobId }).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
       expect(this.res.statusCode).to.equal(303);
@@ -45,7 +45,7 @@ describe('Individual job status route', function () {
   });
 
   describe('For a logged-in user who owns the job', function () {
-    hookJobStatus(jobId, 'joe');
+    hookJobStatus({ jobId, username: 'joe' });
     it('returns an HTTP success response', function () {
       expect(this.res.statusCode).to.equal(200);
     });
@@ -57,7 +57,7 @@ describe('Individual job status route', function () {
   });
 
   describe('For a logged-in user who does not own the job', function () {
-    hookJobStatus(jobId, 'jill');
+    hookJobStatus({ jobId, username: 'jill' });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(404);
     });
@@ -72,7 +72,7 @@ describe('Individual job status route', function () {
 
   describe('For a non-existent job ID', function () {
     const unknownRequest = uuid();
-    hookJobStatus(unknownRequest, 'joe');
+    hookJobStatus({ jobId: unknownRequest, username: 'joe' });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(404);
     });
@@ -86,7 +86,7 @@ describe('Individual job status route', function () {
   });
 
   describe('For an invalid job ID format', function () {
-    hookJobStatus('not-a-uuid', 'joe');
+    hookJobStatus({ jobId: 'not-a-uuid', username: 'joe' });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(400);
     });
@@ -103,7 +103,7 @@ describe('Individual job status route', function () {
   describe('When the database catches fire', function () {
     hookTransactionFailure();
     describe('for a user that should have jobs', function () {
-      hookJobStatus(jobId, 'joe');
+      hookJobStatus({ jobId, username: 'joe' });
       it('returns an internal server error status code', function () {
         expect(this.res.statusCode).to.equal(500);
       });
@@ -237,11 +237,13 @@ describe('Individual job status route', function () {
           href: 'http://example.com/1',
           title: 'Example 1',
           type: 'text/plain',
+          rel: 'data',
         },
         {
           href: 'http://example.com/2',
           title: 'Example 2',
           type: 'text/ornate',
+          rel: 'data',
         },
       ];
 
@@ -255,9 +257,8 @@ describe('Individual job status route', function () {
 
       it('returns the links in its response', function () {
         const job = JSON.parse(this.res.text);
-        // eslint-disable-next-line no-unused-vars
-        const [_bucketLink, _cloudAccessShLink, _cloudAccessJsonLink, ...otherLinks] = job.links;
-        expect(otherLinks).to.eql(links);
+        const outputLinks = Job.getOutputLinks(job.links);
+        expect(outputLinks).to.eql(links);
       });
 
       it('maintains a status of "running"', function () {

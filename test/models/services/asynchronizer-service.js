@@ -8,6 +8,7 @@ const { hookRangesetRequest, hookSyncRangesetRequest } = require('../../helpers/
 const { hookRedirect } = require('../../helpers/hooks');
 const { hookMockS3 } = require('../../helpers/object-store');
 const { defaultObjectStore } = require('../../../app/util/object-store');
+const Job = require('../../../app/models/job');
 
 /**
  * Returns a function whose return value alternates between the supplied values
@@ -75,12 +76,14 @@ describe('Asynchronizer Service', function () {
       StubService.hookAsynchronizedServiceCompletion();
       hookRedirect();
       let job;
+      let jobOutputLinks;
       before(function () {
         job = JSON.parse(this.res.text);
+        jobOutputLinks = Job.getOutputLinks(job.links);
       });
 
       it('provides the redirect URL to the result as a link href', function () {
-        expect(job.links[0].href).to.equal('https://example.com/test');
+        expect(jobOutputLinks[0].href).to.equal('https://example.com/test');
       });
 
       it('updates the progress of the response', function () {
@@ -88,12 +91,12 @@ describe('Asynchronizer Service', function () {
       });
 
       it('defaults the item type to "application/octet-stream"', function () {
-        expect(job.links[0].type).to.equal('application/octet-stream');
+        expect(jobOutputLinks[0].type).to.equal('application/octet-stream');
       });
 
       describe('and the redirect points to an object store location with Content-Type metadata', function () {
         it('sets the item to type to the Content-Type stored in the object store', function () {
-          expect(job.links[1].type).to.equal('application/json');
+          expect(jobOutputLinks[1].type).to.equal('application/json');
         });
       });
     });
@@ -108,32 +111,34 @@ describe('Asynchronizer Service', function () {
       StubService.hookAsynchronizedServiceCompletion();
       hookRedirect();
       let job;
+      let jobOutputLinks;
       before(function () {
         job = JSON.parse(this.res.text);
+        jobOutputLinks = Job.getOutputLinks(job.links);
       });
 
       it('provides a link to the contents of the streaming response', async function () {
         // Check a result somewhere toward the middle of the list that we expect to be the same as
         // the first result to have some assurance that the async/await code is working properly.
-        const obj = job.links[12].href.split('/service-results/')[1];
+        const obj = jobOutputLinks[12].href.split('/service-results/')[1];
         const getObject = util.promisify((...args) => defaultObjectStore().getObject(...args));
         const contents = await getObject(`s3://${obj}`);
         expect(contents.Body.toString('utf-8')).to.equal('["response1"]');
       });
 
       it('derives a default uploaded file name from the granule name', function () {
-        expect(job.links[0].href).to.match(/\/001_00_7f00ff_global_processed$/);
+        expect(jobOutputLinks[0].href).to.match(/\/001_00_7f00ff_global_processed$/);
       });
 
       describe('and the response contains a "Content-Disposition" header', function () {
         it('sets the uploaded file name to the value in the header', function () {
-          expect(job.links[1].href).to.match(/\/myfile.json$/);
+          expect(jobOutputLinks[1].href).to.match(/\/myfile.json$/);
         });
       });
 
       describe('and the response contains a "Content-Type" header', function () {
         it('sets the item type to the value in the header', function () {
-          expect(job.links[2].type).to.equal('application/json');
+          expect(jobOutputLinks[2].type).to.equal('application/json');
         });
       });
     });

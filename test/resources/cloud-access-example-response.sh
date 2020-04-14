@@ -4,4 +4,4 @@
 
 export AccessKeyId='XXXXXXXXXXXXXXXXXXXX'
 export SecretAccessKey='XXXXXXXXXXXXXXXXXXXX1111111111+++++/////'
-export SessionToken='***REMOVED***'
+export SessionToken='XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa++++++++++++++++++++++++++++++++++++++++++++++++++00000000000000000000000000000000000000000000000000//////////////////////////////////////////////////XXXXXX=================================================='

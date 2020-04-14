@@ -40,7 +40,7 @@ describe('Backend Callbacks', function () {
         expect(response.status).to.equal(400);
         expect(error).to.eql({ code: 400, message: 'Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End' });
         const job = (await Job.forUser(db, 'anonymous'))[0];
-        expect(job.links).to.eql([]);
+        expect(Job.getOutputLinks(job.links)).to.eql([]);
       });
 
       it('rejects temporal params containing an incorrect number of dates', async function () {
@@ -49,7 +49,7 @@ describe('Backend Callbacks', function () {
         expect(response.status).to.equal(400);
         expect(error).to.eql({ code: 400, message: 'Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End' });
         const job = (await Job.forUser(db, 'anonymous'))[0];
-        expect(job.links).to.eql([]);
+        expect(Job.getOutputLinks(job.links)).to.eql([]);
       });
 
       it('accepts temporal params containing the correct number of dates', async function () {
@@ -60,8 +60,8 @@ describe('Backend Callbacks', function () {
       it('saves parsed temporal params to the database', async function () {
         await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z,2020-01-02T00:00:00Z' } });
         const job = (await Job.forUser(db, 'anonymous'))[0];
-        expect(job.links.length).to.equal(1);
-        expect(job.links[0].temporal).to.eql({ start: '2020-01-01T00:00:00.000Z', end: '2020-01-02T00:00:00.000Z' });
+        expect(Job.getOutputLinks(job.links).length).to.equal(1);
+        expect(Job.getOutputLinks(job.links)[0].temporal).to.eql({ start: '2020-01-01T00:00:00.000Z', end: '2020-01-02T00:00:00.000Z' });
       });
     });
 
@@ -72,7 +72,7 @@ describe('Backend Callbacks', function () {
         expect(response.status).to.equal(400);
         expect(error).to.eql({ code: 400, message: 'Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North' });
         const job = (await Job.forUser(db, 'anonymous'))[0];
-        expect(job.links).to.eql([]);
+        expect(Job.getOutputLinks(job.links)).to.eql([]);
       });
 
       it('rejects bbox params containing an incorrect number of dates', async function () {
@@ -81,7 +81,7 @@ describe('Backend Callbacks', function () {
         expect(response.status).to.equal(400);
         expect(error).to.eql({ code: 400, message: 'Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North' });
         const job = (await Job.forUser(db, 'anonymous'))[0];
-        expect(job.links).to.eql([]);
+        expect(Job.getOutputLinks(job.links)).to.eql([]);
       });
 
       it('accepts bbox params containing the correct number of dates', async function () {
@@ -92,8 +92,8 @@ describe('Backend Callbacks', function () {
       it('saves parsed bbox params to the database', async function () {
         await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,2.2,3.3' } });
         const job = (await Job.forUser(db, 'anonymous'))[0];
-        expect(job.links.length).to.equal(1);
-        expect(job.links[0].bbox).to.eql([0.0, 1.1, 2.2, 3.3]);
+        expect(Job.getOutputLinks(job.links).length).to.equal(1);
+        expect(Job.getOutputLinks(job.links)[0].bbox).to.eql([0.0, 1.1, 2.2, 3.3]);
       });
     });
   });

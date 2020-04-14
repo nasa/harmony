@@ -26,7 +26,19 @@ const serializedJobFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
 ];
 
-const stagingBucketTitle = `S3 bucket and prefix where all job outputs can be directly accessed using S3 APIs from within the ${awsDefaultRegion} region. Use the harmony /cloud-access or /cloud-access.sh endpoints to obtain keys for direct in region S3 access.`;
+const stagingBucketTitle = 'S3 bucket and prefix where all job outputs can be directly accessed '
+ + `using S3 APIs from within the ${awsDefaultRegion} region. Use the harmony /cloud-access or `
+ + '/cloud-access.sh endpoints to obtain keys for direct in region S3 access.';
+
+/**
+ * Returns only the links that are job outputs from the provided list of links
+ *
+ * @param {Array<Object>} links all of the links for a job
+ * @returns {Array<Object>} the job output links
+ */
+function getOutputLinks(links) {
+  return links.filter((link) => link.rel === 'data');
+}
 
 /**
  *
@@ -39,7 +51,8 @@ const stagingBucketTitle = `S3 bucket and prefix where all job outputs can be di
  *   - status: (enum string) job status ['accepted', 'running', 'successful', 'failed']
  *   - message: (string) human readable status message
  *   - progress: (integer) 0-100 approximate completion percentage
- *   - links: (JSON) links to output files, array of objects containing "href", "title", "type"
+ *   - links: (JSON) links to output files, array of objects containing the following keys:
+ *       "href", "title", "type", and "rel"
  *   - request: (string) Original user request URL that created this job
  *   - createdAt: (Date) the date / time at which the job was created
  *   - updatedAt: (Date) the date / time at which the job was last updated
@@ -149,6 +162,7 @@ class Job extends Record {
    *   href: string,
    *   title: string,
    *   type: string,
+   *   rel: string,
    * }>} link Adds a link to the list of links for the object.
    * @returns {void}
    * @memberof Job
@@ -170,6 +184,7 @@ class Job extends Record {
       const stagingLocationLink = {
         href: stagingLocation,
         title: stagingBucketTitle,
+        rel: 'bucket',
       };
       this.links.push(stagingLocationLink);
     }
@@ -285,6 +300,7 @@ class Job extends Record {
           href,
           title: link.title,
           type: link.type,
+          rel: link.rel,
         };
       });
       if (s3StagingLink) {
@@ -298,5 +314,6 @@ class Job extends Record {
 
 Job.table = 'jobs';
 Job.statuses = statuses;
+Job.getOutputLinks = getOutputLinks;
 
 module.exports = Job;
