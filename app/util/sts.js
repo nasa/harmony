@@ -35,16 +35,8 @@ class SecureTokenService {
    * @returns {Promise<Object>} resolves to credentials with access to the role provided
    * @memberof SecureTokenService
    */
-  assumeRole(params) {
-    const response = this.sts.assumeRole(params)
-      .promise()
-      .then(
-        (data) => data,
-        (error) => {
-          throw new Error(error);
-        },
-      );
-    return response;
+  async assumeRole(params) {
+    return this.sts.assumeRole(params).promise();
   }
 }
 
