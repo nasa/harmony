@@ -44,7 +44,8 @@ function hookAwsSts() {
   before(function () {
     stub = sinon.stub(aws, 'STS')
       .returns({
-        assumeRole: () => ({ promise: () => ({ then: () => sampleCloudAccessJsonResponse }) }),
+        assumeRole: () => (
+          { promise: async () => sampleCloudAccessJsonResponse }),
       });
   });
   after(function () {
