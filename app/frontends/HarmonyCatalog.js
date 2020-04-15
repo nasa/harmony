@@ -38,8 +38,8 @@ export default class HarmonyCatalog {
       this.description = `Harmony output for ${job.request}`
     }
     this.links = []
-    this.addLink('./catalog.json', 'self', 'self', undefined)
-    this.addLink('./catalog.json', 'root', 'root', undefined)
+    this.addLink('./catalog.json', 'self', 'self')
+    this.addLink('./catalog.json', 'root', 'root')
     if (Object.hasOwnProperty.call(job, 'links') && (Array.isArray(job.links))) {
       for (const index in job.links) {
         this.addLink(`./${index}`, 'item', job.links[index].title)
