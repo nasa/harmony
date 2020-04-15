@@ -21,4 +21,4 @@ while read -r line ; do
     AWS_DEFAULT_REGION=us-west-2 AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake aws --endpoint-url=http://localhost:4572 s3 mb s3://$uploadBucket
   fi
   echo "$line"
-done < <(docker run --rm -it -e SERVICES=s3 -e DEBUG=1 -p 4572:4572 localstack/localstack)
+done < <(docker run --rm -it -e SERVICES=s3,sts -e DEBUG=1 -p 4572:4572 -p 4592:4592 localstack/localstack)

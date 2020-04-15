@@ -35,6 +35,8 @@ function makeConfigVar(envName, defaultValue) {
   ['MAX_SYNCHRONOUS_GRANULES', 1],
   ['MAX_ASYNCHRONOUS_GRANULES', 20],
   ['.OBJECT_STORE_TYPE', 's3'],
+  ['AWS_DEFAULT_REGION', 'us-west-2'],
+  ['SAME_REGION_ACCESS_ROLE'],
   // shapefile upload related configs
   ['MAX_POST_FIELDS', 100],
   ['MAX_POST_FILE_SIZE', 2000000000],
