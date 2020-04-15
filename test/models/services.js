@@ -116,7 +116,7 @@ describe('services.forOperation', function () {
       ];
     });
 
-    describe('requesting variable subsetting and tiff', function () {
+    describe('requesting variable subsetting with an output format available on the variable subsetter service', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId, [{ id: 'V123-PROV1', name: 'the-var' }]);
       operation.outputFormat = 'image/tiff';
@@ -127,7 +127,7 @@ describe('services.forOperation', function () {
       });
     });
 
-    describe('requesting variable subsetting and zarr', function () {
+    describe('requesting variable subsetting with an output format that is not supported by the variable subsetting service, but is supported by other services', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId, [{ id: 'V123-PROV1', name: 'the-var' }]);
       operation.outputFormat = 'application/x-zarr';
@@ -135,17 +135,17 @@ describe('services.forOperation', function () {
         const service = forOperation(operation, {}, this.config);
         expect(service.constructor.name).to.equal('NoOpService');
       });
-      it('indicates the reason for choosing the no op service is the combination of variable subsetting and the format', function () {
+      it('indicates the reason for choosing the no op service is the combination of variable subsetting and the output format', function () {
         const service = forOperation(operation, {}, this.config);
         expect(service.config.message).to.equal('none of the services support the combination of both variable subsetting and any of the requested formats [application/x-zarr]');
       });
     });
 
-    describe('requesting no variable subsetting and zarr', function () {
+    describe('requesting no variable subsetting and a format supported by the service that does not support variable subsetting', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId);
       operation.outputFormat = 'application/x-zarr';
-      it('returns the service configured for variable subsetting', function () {
+      it('returns the non-variable subsetter service that does support the format', function () {
         const service = forOperation(operation, {}, this.config);
         expect(service.config.name).to.equal('non-variable-subsetter');
       });

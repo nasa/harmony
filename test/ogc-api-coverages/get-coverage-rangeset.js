@@ -328,24 +328,24 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('when providing multiple formats supported by different services', function () {
       const headers = { accept: `${zarr}, ${tiff}` };
-      describe('when requesting variable subsetting only supported by harmony/gdal', function () {
+      describe('when requesting variable subsetting which is only supported by one of the services', function () {
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookRangesetRequest(version, collection, variableName, { headers, query });
-        it('uses the correct harmony/gdal backend service', function () {
+        it('uses the backend service that supports variable subsetting', function () {
           expect(this.service.name).to.equal('harmony/gdal');
         });
-        it('chooses the first tiff format rather than zarr because harmonly/gdal does not support zarr', function () {
+        it('chooses the tiff format since zarr is not supported by the variable subsetting service', function () {
           expect(this.service.operation.outputFormat).to.equal(tiff);
         });
       });
 
-      describe('when not requesting variable subsetting so either harmony/gdal or harmony/netcdf-to-zarr could be used', function () {
+      describe('when not requesting variable subsetting so either service could be used', function () {
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookRangesetRequest(version, collection, 'all', { headers, query });
         it('uses the first format in the list', function () {
           expect(this.service.operation.outputFormat).to.equal(zarr);
         });
-        it('uses the correct backend service', function () {
+        it('uses the backend service that supports that output format', function () {
           expect(this.service.name).to.equal('harmony/netcdf-to-zarr');
         });
       });
