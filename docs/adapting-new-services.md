@@ -18,8 +18,6 @@ Harmony provides a Python library, [harmony-service-lib-py](https://git.earthdat
 ease the process of adapting Harmony messages to subsetter code.  It provides helpers for message parsing, command line interactions, data staging,
 and Harmony callbacks.  Full details as well as an example can be found in the project's README and code.
 
-At present, Harmony only provides one way of packaging a service for invocation: Docker container images.
-
 ### Docker Container Images
 
 The service and all necessary code and dependencies to allow it to run can be packaged in a Docker container image.  Docker images can be staged anywhere Harmony can reach them, e.g. Dockerhub or AWS ECR.  Harmony will run the Docker image, passing the following command-line parameters:
@@ -50,23 +48,79 @@ Ideally, this adaptation would consist only of necessary complexity peculiar to 
 
 ## 3. Sending results to Harmony
 
-### For Docker services
+In addition to the examples below, we provide an [Open API schema](../app/schemas/service-callbacks/0.1.0/service-callbacks-v0.1.0.yml) detailing all of the parameters available and their constraints
+
+### Synchronous responses
+
+Synchronous requests are ones where a user has made a call to Harmony and the corresponding HTTP request remains open awaiting a response.
+
+#### For Docker services
 
 Once complete, a service must send an HTTP POST request to the URL provided in the `callback` field of the Harmony input.  Failing to do so will cause user requests to hang until a timeout that is likely long in order to accommodate large, synchronous operations.  Please be mindful of this and provide ample error handling.
 
 The following are the options for how to call back to the Harmony URL:
 
-`${operation.callback}/response?redirect=<url>` If data has been staged at an accessible location, for instance by pre-signing an S3 URL, the URL can be provided in the "redirect" query parameter and Harmony will issue an HTTP redirect to the staged data.  This is the preferred callback method if there is not substantial performance to be gained by streaming data to the user.  For best compatibility, ensure the `Content-Type` header will be sent by the staging URL.
+##### Staged response data
 
-`${operation.callback}/response?error=<message>` If an error occurs, it can be provided in the "message" query parameter and Harmony will convey it to the user in a format suitable for the protocol.
+`${operation.callback}/response?redirect=<url>`
 
-`${operation.callback}/response` If no query parameters are provided and a POST body is present, Harmony will stream the POST body directly to the user as it receives data, conveying the appropriate `Content-Type` and `Content-Size` headers set in the callback.  Use this method if the service builds its response incrementally and the user would benefit from a partial response while waiting on the remainder.
+If data has been staged at an accessible location, for instance by pre-signing an S3 URL, the URL can be provided in the "redirect" query parameter and Harmony will issue an HTTP redirect to the staged data.  This is the preferred callback method if there is not substantial performance to be gained by streaming data to the user.  For best compatibility, ensure the `Content-Type` header will be sent by the staging URL.
+
+##### Streaming response data
+
+`${operation.callback}/response`
+
+If no query parameters are provided and a POST body is present, Harmony will stream the POST body directly to the user as it receives data, conveying the appropriate `Content-Type` and `Content-Size` headers set in the callback.  Use this method if the service builds its response incrementally and the user would benefit from a partial response while waiting on the remainder.
+
+##### Response errors
+
+`${operation.callback}/response?error=<message>`
+
+If an error occurs, it can be provided in the "message" query parameter and Harmony will convey it to the user in a format suitable for the protocol.
 
 All log messages should be directed to stdout, and all messages should be in JSON format. Harmony will capture all output on both stdout and stderr, and those logs will be available in the metrics system. By using JSON, metrics from the backend services can easily be extracted.
 
-### For Synchronous HTTP Services
+#### For HTTP services
 
-Unlike Docker services, synchronous HTTP services *do not* receive a callback URL in their incoming request.  When a service completes, it responds to Harmony's original HTTP request with the results in one of three ways, based on the HTTP response status code:
+Unlike Docker services, HTTP services *do not* receive a callback URL in an incoming synchronous request.  When a service completes, it responds to Harmony's original HTTP request with the results in one of three ways, based on the HTTP response status code:
+
+### Asynchronous responses
+
+Asynchronous requests are ones where a user has made a call to Harmony and Harmony has replied with a URL to poll for results as they arrive.
+
+Similar to synchronous requests to Docker services, Harmony provides a callback URL for all asynchronous requests, in the input's `callback` field.
+
+##### Callback with partial result
+
+`${operation.callback}/response?item[href]=<url>&item[type]=<media-type>&item[title]=<title>`
+
+When the service completes a file, it can indicate the file is complete by calling back to this endpoint.  `item[href]` and `item[type]` query parameters are required.  `item[href]` must contain the location (typically an S3 object URI) of the resulting item and `item[type]` must contain the media type of the file, e.g. `application/geo+tiff`.  `item[title]` is an optional human-readable name for the result.
+
+##### Callback with progress update
+
+`${operation.callback}/response?progress=<percentage>`
+
+To provide better feedback to users, a service can estimate its percent complete by performing this callback, providing an integer percentage from 0-100.  Harmony automatically starts the percentage at 0 and automatically sets it to 100 when the service completes, so this is only necessary for providing intermediate status.
+
+This query parameter can be provided with partial results, if a service is tracking percent complete by the number of files it has completed, e.g. `${operation.callback}/response?item[href]=s3://example/file&item[type]=image/png&progress=25`
+
+##### Indicate the service has been completed
+
+`${operation.callback}/response?status=successful`
+
+Once a service completes, it *must* call back to Harmony with either a successful status or an error (see below).  The above URL template indicates a success status.  The `status=successful` query parameter may also be provided with partial results.  Harmony will also accept a `progress=` parameter but will ignore it and set the progress to 100, as the service is completed.
+
+##### Callback with single result
+
+`${operation.callback}/response?redirect=<url>`
+
+For the convenience of services that only ever produce a single result and cannot provide status, Harmony will accept the same callback
+as in the synchronous case.
+
+##### Response errors
+`${operation.callback}/response?error=<message>`
+
+If an error occurs, it can be provided in the "message" query parameter and Harmony will convey it to the user in a format suitable for the protocol.  Harmony captures STDOUT from Docker containers for further diagnostics.  On error, the job's progress will remain set at the most recently set progress value and it will retain any partial results.  Services can use this to provide partial results to users in the case of recoverable errors.
 
 #### Status 2xx, success
 
@@ -86,9 +140,10 @@ Add an entry to [services.yml](../config/services.yml) and send a pull request t
 
 ```yaml
 - name: harmony/docker-example    # A unique identifier string for the service, conventionally <team>/<service>
-  data_operation_version: '0.6.0' # The version of the data-operation messaging schema to use
+  data_operation_version: '0.7.0' # The version of the data-operation messaging schema to use
   type:                           # Configuration for service invocation
     name: docker                  # The type of service invocation, currently only "docker"
+    synchronous_only: true        # Indicates the service can only handle synchronous, one-granule requests (default: false)
     params:                       # Parameters specific to the service invocation type
       image: harmony/example      # The Docker container image to run
       env:                        # Environment variables to pass to the image

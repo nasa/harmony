@@ -18,9 +18,13 @@ rules:
   valid-jsdoc: ["warn"]
   no-await-in-loop: ["off"]
   object-curly-newline: ["off"]
-  no-unused-vars:
+  no-plusplus: ["off"]
+  no-unused-vars: ["error", { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }]
+  prefer-destructuring:
     - error
-    - argsIgnorePattern: "^_"
+    - array: false
+      object: true
+    - enforceForRenamedProperties: false
 overrides:
   - files: [ "test/**/*" ]
     rules:

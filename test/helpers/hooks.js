@@ -28,7 +28,7 @@ function hookFunction(fn, returnValueName, ...params) {
  * @param {string} username optional username to provide for auth
  * @returns {void}
  */
-function hookUrl(urlOrFn, username = undefined) {
+function hookUrl(urlOrFn, username = 'anonymous') {
   before(async function () {
     const url = typeof urlOrFn === 'string' ? urlOrFn : urlOrFn.call(this);
     this.urlRes = this.res;
@@ -58,8 +58,29 @@ function hookRedirect(username = undefined) {
   }, username);
 }
 
+/**
+ * Adds before / after hooks to execute an HTTP request against a harmony endpoint and setting
+ * the result to this.res
+ *
+ * @param {function} requestFn The request function to execute
+ * @returns {void}
+ */
+function hookRequest(requestFn, { username, ...options } = {}) {
+  before(async function () {
+    let req = requestFn(this.frontend, options);
+    if (username) {
+      req = req.use(auth({ username }));
+    }
+    this.res = await req;
+  });
+  after(function () {
+    delete this.res;
+  });
+}
+
 module.exports = {
   hookFunction,
   hookRedirect,
   hookUrl,
+  hookRequest,
 };

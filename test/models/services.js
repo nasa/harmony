@@ -192,4 +192,25 @@ describe('services.forOperation', function () {
       expect(service.config.message).to.equal('no services are configured for the collection');
     });
   });
+
+  describe('when the service configuration indicates the service can only handle synchronous, one-granule requests', function () {
+    beforeEach(function () {
+      const collectionId = 'C123-TEST';
+      const operation = new DataOperation();
+      operation.addSource(collectionId);
+      this.operation = operation;
+      this.config = [
+        {
+          name: 'matching-service',
+          type: { name: 'docker', synchronous_only: true },
+          collections: [collectionId],
+        },
+      ];
+    });
+    it('returns a service configured to allow asynchronous calls through a wrapper', function () {
+      const service = forOperation(this.operation, {}, this.config);
+      expect(service.constructor.name).to.equal('AsynchronizerService');
+      expect(service.SyncServiceClass.name).to.equal('LocalDockerService');
+    });
+  });
 });

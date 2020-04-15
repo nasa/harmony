@@ -5,6 +5,7 @@ const stream = require('stream');
 const tmp = require('tmp');
 const { URL } = require('url');
 const util = require('util');
+const { awsDefaultRegion } = require('./env');
 
 const pipeline = util.promisify(stream.pipeline);
 const createTmpFileName = util.promisify(tmp.tmpName);
@@ -32,7 +33,7 @@ class S3ObjectStore {
 
     this.s3 = new aws.S3({
       apiVersion: '2006-03-01',
-      region: process.env.AWS_DEFAULT_REGION || 'us-west-2',
+      region: awsDefaultRegion,
       signatureVersion: 'v4',
       ...endpointSettings,
       ...overrides,
@@ -85,6 +86,20 @@ class S3ObjectStore {
   }
 
   /**
+   * Call HTTP HEAD on an object to get its headers without retrieving it (see AWS S3 SDK
+   * `headObject`)
+   *
+   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   *   be retrieved or the object URL
+   * @returns  {Promise<Object>} A promise for the object's header to value pairs
+   * @throws {TypeError} if an invalid URL is supplied
+   * @memberof S3ObjectStore
+   */
+  headObject(paramsOrUrl) {
+    return this.s3.headObject(this._paramsOrUrlToParams(paramsOrUrl)).promise();
+  }
+
+  /**
    * Helper method for converting a param that is either S3 parameters (Bucket, Key, etc) or
    * a URL into a param that is S3 parameters.
    *
@@ -123,7 +138,6 @@ class S3ObjectStore {
     return tempFile;
   }
 
-
   /**
    * Uploads the given file from the store, returning the URL to the uploaded file
    *
@@ -145,15 +159,46 @@ class S3ObjectStore {
   /**
    * Stream upload an object to S3 (see AWS S3 SDK `upload`)
    *
-   * @param {Object} params an object describing the upload
-   * @param {Object} options an optional object containing settings to control the upload
-   * @param {*} callback an optional callback function
-   * @returns {AWS.S3.ManagedUpload} the managed upload object that can call send() or track
-   * progress.
+   * @param {Object} stringOrStream the text string or stream to upload
+   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   *   be uploaded or a URL location
+   * @param {number} contentLength The length of the stream, required if a stream is provided
+   * @param {string} contentType The content type to associate with the object
+   * @returns {Promise<AWS.Request>} The response from the store
+   * @throws {TypeError} if an invalid URL is supplied or contentLength is not supplied
    * @memberof S3ObjectStore
    */
-  upload(params, options, callback) {
-    return this.s3.upload(params, options, callback);
+  async upload(stringOrStream, paramsOrUrl, contentLength = null, contentType = null) {
+    const params = this._paramsOrUrlToParams(paramsOrUrl);
+
+    let body = stringOrStream;
+    const isStream = typeof body !== 'string';
+
+    let srcStream;
+    if (isStream) {
+      if (contentLength === null) {
+        throw new TypeError('Content length must be provided when a stream is supplied');
+      }
+      params.ContentLength = contentLength;
+      // Getting non-zero-byte files streaming a req to S3 is wonky
+      // https://stackoverflow.com/a/54153557
+      srcStream = new stream.PassThrough();
+      body.pipe(srcStream);
+      body = new stream.PassThrough();
+    }
+
+    params.Body = body;
+    if (contentType) {
+      params.Metadata = params.Metadata || {};
+      params.Metadata['Content-Type'] = contentType; // Helps tests
+      params.ContentType = contentType;
+    }
+    const upload = this.s3.upload(params);
+    if (isStream) {
+      srcStream.on('data', (chunk) => { body.write(chunk); });
+      srcStream.on('end', () => { body.end(); });
+    }
+    return upload.promise();
   }
 
   /**

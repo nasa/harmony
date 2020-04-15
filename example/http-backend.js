@@ -29,6 +29,18 @@ const request = require('request-promise');
 // A mapping of request IDs to callback URLs for use in demonstrating and testing async requests.
 const idsToCallbacks = {};
 
+let callbackResolutions = [];
+
+/**
+ * Returns a promise that will resolve to the callback URL the next time the service is invoked
+ * to allow exploration of what various callback options do.
+ *
+ * @returns {Promise<string>} a promise that will resolve to the next callback URL
+ */
+function getNextCallback() {
+  return new Promise((resolve) => { callbackResolutions.push(resolve); });
+}
+
 /**
  * Express.js handler demonstrating an example Harmony handler.
  *
@@ -67,6 +79,10 @@ async function handleHarmonyMessage(req, res) {
     res.redirect(303, '/example/redirected');
   } else if (!body.isSynchronous) {
     idsToCallbacks[body.requestId] = body.callback;
+    for (const resolve of callbackResolutions) {
+      resolve(body.callback);
+    }
+    callbackResolutions = [];
     // Asynchronous request.
     res.status(202).send('accepted');
   } else {
@@ -94,8 +110,8 @@ async function sendAsyncHarmonyStatus(req, res) {
     res.status(400).send(`no callback found for id="${id}"`);
     return;
   }
-  await request.post({ url: `${callback}/response`, qs: req.query });
-  res.send('ok');
+  const result = await request.post({ url: `${callback}/response`, qs: req.query });
+  res.json({ status: result.status, text: result.body });
 }
 
 /**
@@ -151,7 +167,7 @@ function stop(server) {
   return promisify(server.close.bind(server));
 }
 
-module.exports = { start, stop, router };
+module.exports = { start, stop, router, getNextCallback };
 
 if (require.main === module) {
   start(process.env);
