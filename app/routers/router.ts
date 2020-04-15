@@ -16,7 +16,8 @@ const shapefileUpload = require('../middleware/shapefile-upload');
 const { NotFoundError } = require('../util/errors');
 const eoss = require('../frontends/eoss');
 const ogcCoverageApi = require('../frontends/ogc-coverages');
-
+const { cloudAccessJson, cloudAccessSh } = require('../frontends/cloud-access');
+const { landingPage } = require('../frontends/landing-page');
 const serviceInvoker = require('../backends/service-invoker');
 
 /**
@@ -140,7 +141,12 @@ function router({ skipEarthdataLogin }) {
   result.post(collectionPrefix('(ogc-api-coverages)'), shapefileUpload());
 
   if (`${skipEarthdataLogin}` !== 'true') {
-    result.use(logged(earthdataLoginAuthorizer([cmrCollectionReader.collectionRegex, '/jobs*', '/service-results/*'])));
+    result.use(logged(earthdataLoginAuthorizer([
+      cmrCollectionReader.collectionRegex,
+      '/jobs*',
+      '/service-results/*',
+      '/cloud-access*',
+    ])));
   }
 
   // Routes and middleware not dealing with service requests
@@ -163,11 +169,13 @@ function router({ skipEarthdataLogin }) {
   result.use(logged(cmrGranuleLocator));
   result.use(logged(setRequestId));
 
-  result.get('/', (req, res) => res.status(200).send('ok'));
+  result.get('/', landingPage);
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
-  result.get('/jobs/:jobId', getJobStatus);
+  result.get('/jobs/:jobID', getJobStatus);
+  result.get('/cloud-access', cloudAccessJson);
+  result.get('/cloud-access.sh', cloudAccessSh);
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
   return result;

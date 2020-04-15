@@ -2,6 +2,7 @@ const pick = require('lodash.pick');
 const Record = require('./record');
 const { createPublicPermalink } = require('../frontends/service-results');
 const { truncateString } = require('../util/string');
+const { awsDefaultRegion } = require('../util/env');
 
 const statesToDefaultMessages = {
   accepted: 'The job has been accepted and is waiting to be processed',
@@ -24,6 +25,8 @@ const serializedJobFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
 ];
 
+const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
+
 /**
  *
  * Wrapper object for persisted jobs
@@ -35,7 +38,8 @@ const serializedJobFields = [
  *   - status: (enum string) job status ['accepted', 'running', 'successful', 'failed']
  *   - message: (string) human readable status message
  *   - progress: (integer) 0-100 approximate completion percentage
- *   - links: (JSON) links to output files, array of objects containing "href", "title", "type"
+ *   - links: (JSON) links to output files, array of objects containing the following keys:
+ *       "href", "title", "type", and "rel"
  *   - request: (string) Original user request URL that created this job
  *   - createdAt: (Date) the date / time at which the job was created
  *   - updatedAt: (Date) the date / time at which the job was last updated
@@ -115,8 +119,8 @@ class Job extends Record {
     this.progress = fields.progress || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     this.links = fields.links
-    || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : fields._json_links)
-    || [];
+      || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : fields._json_links)
+      || [];
   }
 
   /**
@@ -144,13 +148,33 @@ class Job extends Record {
    * @param {Object<{
    *   href: string,
    *   title: string,
-   *   type: string
+   *   type: string,
+   *   rel: string,
    * }>} link Adds a link to the list of links for the object.
    * @returns {void}
    * @memberof Job
    */
   addLink(link) {
     this.links.push(link);
+  }
+
+  /**
+   * Adds a staging location link to the list of result links for the job.
+   * You must call `#save` to persist the change
+   *
+   * @param {stagingLocation} stagingLocation Adds link to the staging bucket to the list of links.
+   * @returns {void}
+   * @memberof Job
+   */
+  addStagingBucketLink(stagingLocation) {
+    if (stagingLocation) {
+      const stagingLocationLink = {
+        href: stagingLocation,
+        title: stagingBucketTitle,
+        rel: 's3-access',
+      };
+      this.links.push(stagingLocationLink);
+    }
   }
 
   /**
@@ -250,13 +274,27 @@ class Job extends Record {
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     serializedJob.jobID = this.requestId;
     if (urlRoot) {
-      serializedJob.links = serializedJob.links.map((link) => ({
-        href: createPublicPermalink(link.href, urlRoot, link.type),
-        title: link.title,
-        type: link.type,
-      }));
+      serializedJob.links = serializedJob.links.map((link) => {
+        let { href } = link;
+        const { title, type, rel } = link;
+        // Leave the S3 output staging location as an S3 link
+        if (rel !== 's3-access') {
+          href = createPublicPermalink(href, urlRoot, type);
+        }
+        return { href, title, type, rel };
+      });
     }
-    return serializedJob;
+    return new Job(serializedJob);
+  }
+
+  /**
+   * Returns only the links with a rel that matches the passed in value
+   *
+   * @param {String} rel the relation to return links for
+   * @returns {Array<Object>} the job output links with the given rel
+   */
+  getRelatedLinks(rel) {
+    return this.links.filter((link) => link.rel === rel);
   }
 }
 
