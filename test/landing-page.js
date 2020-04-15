@@ -40,7 +40,8 @@ describe('Landing page', function () {
 
     it('returns a link to the cloud access JSON route', function () {
       const { links } = JSON.parse(this.res.text);
-      expect(links[2].title).to.include('Obtain AWS access keys');
+      expect(links[2].title).to.include('Access keys for s3:// URLs, usable from AWS ');
+      expect(links[2].title).to.include('(JSON format)');
       expect(links[2].href).to.match(/^http.*\/cloud-access$/);
       expect(links[2].rel).to.equal('cloud-access-json');
       expect(links[2].type).to.equal('application/json');
@@ -48,7 +49,8 @@ describe('Landing page', function () {
 
     it('returns a link to the cloud access shell script route', function () {
       const { links } = JSON.parse(this.res.text);
-      expect(links[3].title).to.include('Obtain AWS access keys');
+      expect(links[3].title).to.include('Access keys for s3:// URLs, usable from AWS ');
+      expect(links[3].title).to.include('(Shell format)');
       expect(links[3].href).to.match(/^http.*\/cloud-access.sh$/);
       expect(links[3].rel).to.equal('cloud-access-sh');
       expect(links[3].type).to.equal('application/x-sh');
