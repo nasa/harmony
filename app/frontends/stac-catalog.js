@@ -18,8 +18,7 @@ export default class HarmonyCatalog {
   /**
      *
      * @param {Object} job - The Harmony Job object; id, request, and links fields are used.
-     * @param {string} job.id - ID of the Harmony Job
-     * @param {string} job.requestId - ID of the Harmony Request
+     * @param {string} job.jobID - ID of the Harmony Job
      * @param {string} [job.request] - URL for the Harmony Request
      * @param {Object} [job.links] - Links object in Harmony Job
      */
@@ -27,13 +26,13 @@ export default class HarmonyCatalog {
     if (typeof job === 'undefined') {
       throw new TypeError('Constructor accepts Harmony Job object')
     }
-    if (!Object.hasOwnProperty.call(job, 'id') || !Object.hasOwnProperty.call(job, 'requestId')) {
-      throw new TypeError('Failed to find request and job ID')
+    if (!Object.hasOwnProperty.call(job, 'jobID')) {
+      throw new TypeError('Failed to find job ID')
     }
-    // Catalog ID = <requestID>-<jobID>
-    this.id = `${job.requestId}-${job.id}`
+    // Catalog ID = <jobID>
+    this.id = `${job.jobID}`
     this.stac_version = '0.9.0'
-    this.title = `Harmony output (Request= ${job.requestId}, Job=${job.id})`
+    this.title = `Harmony output for ${job.jobID}`
     if (Object.hasOwnProperty.call(job, 'request')) {
       this.description = `Harmony output for ${job.request}`
     }
