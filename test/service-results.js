@@ -50,7 +50,7 @@ describe('service-results', function () {
   });
 
   describe('When a request provides no token', function () {
-    hookUrl('/service-results/some-bucket/public/some/path.tif');
+    hookUrl('/service-results/some-bucket/public/some/path.tif', null);
 
     it('redirects to Earthdata Login', function () {
       expect(this.res.statusCode).to.equal(303);

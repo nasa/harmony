@@ -1,0 +1,37 @@
+{
+  "client": "harmony-test",
+  "callback": "http://example.com/callback",
+  "sources": [
+    {
+      "collection": "C1233800302-EEDTEST",
+      "granules": [
+        {
+          "id": "G1233800343-EEDTEST",
+          "name": "001_00_7f00ff_global.nc",
+          "url": "http://example.com"
+        }
+      ]
+    }
+  ],
+  "format": {
+    "mime": "image/png",
+    "width": 120,
+    "height": 225
+  },
+  "user": "test-user",
+  "subset": {
+    "bbox": [
+      -130,
+      -45,
+      130,
+      45
+    ]
+  },
+  "isSynchronous": true,
+  "requestId": "c045c793-19f1-43b5-9547-c87a5c7dfadb",
+  "temporal": {
+    "start": "1999-01-01T10:00:00.000Z",
+    "end": "2020-02-20T15:00:00.000Z"
+  },
+  "version": "0.4.0"
+}

@@ -63,6 +63,19 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(source.granules[0].id).to.equal(granuleId);
       });
 
+      it('adds the bbox field to the granules', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.granules[0].bbox).to.eql([-180.0, -90.0, 180.0, 90.0]);
+      });
+
+      it('adds the temporal field to the granules', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.granules[0].temporal).to.eql({
+          start: '2020-01-02T00:00:00.000Z',
+          end: '2020-01-02T01:59:59.000Z',
+        });
+      });
+
       it('passes the outputCrs parameter to the backend in Proj4 format', function () {
         expect(this.service.operation.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
       });
@@ -246,8 +259,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('passes the temporal range to the backend service', function () {
         const { start, end } = this.service.operation.temporal;
-        expect(start).to.equal('2020-01-02T00:00:00Z');
-        expect(end).to.equal('2020-01-02T01:00:00Z');
+        expect(start).to.equal('2020-01-02T00:00:00.000Z');
+        expect(end).to.equal('2020-01-02T01:00:00.000Z');
       });
 
       it('identifies the correct granule based on time range', function () {
@@ -673,7 +686,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     describe('attempting to retrieve the job via the job status route', function () {
       it('returns a 404 because no job is created', async function () {
         const job = JSON.parse(this.res.text);
-        const jobRes = await jobStatus(this.frontend, job.jobID).use(auth({ username: 'joe' }));
+        const jobRes = await jobStatus(this.frontend, { jobID: job.jobID }).use(auth({ username: 'joe' }));
         const error = JSON.parse(jobRes.text);
         expect(error).to.eql({
           code: 'harmony:NotFoundError',

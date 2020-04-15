@@ -64,7 +64,7 @@ describe('Jobs listing route', function () {
     });
 
     describe('Who has no jobs', function () {
-      hookJobListing('andy');
+      hookJobListing({ username: 'andy' });
       it('returns an HTTP success response', function () {
         expect(this.res.statusCode).to.equal(200);
       });
@@ -75,7 +75,7 @@ describe('Jobs listing route', function () {
     });
 
     describe('Who has jobs', function () {
-      hookJobListing('woody');
+      hookJobListing({ username: 'woody' });
       it('returns an HTTP success response', function () {
         expect(this.res.statusCode).to.equal(200);
       });
@@ -93,7 +93,7 @@ describe('Jobs listing route', function () {
   });
   describe('When the database catches fire', function () {
     hookTransactionFailure();
-    hookJobListing('woody');
+    hookJobListing({ username: 'woody' });
     describe('for a user that should have jobs', function () {
       it('returns an internal server error status code', function () {
         expect(this.res.statusCode).to.equal(500);
