@@ -8,7 +8,7 @@ const { awsDefaultRegion } = require('./env');
  */
 function getCloudAccessJsonLink(urlRoot) {
   return {
-    title: `Obtain AWS access keys for in-region (${awsDefaultRegion}) S3 access to job outputs. The credentials are returned as JSON.`,
+    title: `Access keys for s3:// URLs, usable from AWS ${awsDefaultRegion} (JSON format)`,
     href: `${urlRoot}/cloud-access`,
     rel: 'cloud-access-json',
     type: 'application/json',
@@ -23,7 +23,7 @@ function getCloudAccessJsonLink(urlRoot) {
  */
 function getCloudAccessShLink(urlRoot) {
   return {
-    title: `Obtain AWS access keys for in-region (${awsDefaultRegion}) S3 access to job outputs. The credentials are returned as a shell script that can be sourced.`,
+    title: `Access keys for s3:// URLs, usable from AWS ${awsDefaultRegion} (Shell format)`,
     href: `${urlRoot}/cloud-access.sh`,
     rel: 'cloud-access-sh',
     type: 'application/x-sh',

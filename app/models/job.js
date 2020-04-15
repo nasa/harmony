@@ -25,9 +25,7 @@ const serializedJobFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
 ];
 
-const stagingBucketTitle = 'S3 bucket and prefix where all job outputs can be directly accessed '
- + `using S3 APIs from within the ${awsDefaultRegion} region. Use the harmony /cloud-access or `
- + '/cloud-access.sh endpoints to obtain keys for direct in region S3 access.';
+const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
 
 /**
  *
@@ -173,7 +171,7 @@ class Job extends Record {
       const stagingLocationLink = {
         href: stagingLocation,
         title: stagingBucketTitle,
-        rel: 'bucket',
+        rel: 's3-access',
       };
       this.links.push(stagingLocationLink);
     }
@@ -280,7 +278,7 @@ class Job extends Record {
         let { href } = link;
         const { title, type, rel } = link;
         // Leave the S3 output staging location as an S3 link
-        if (rel !== 'bucket') {
+        if (rel !== 's3-access') {
           href = createPublicPermalink(href, urlRoot, type);
         }
         return { href, title, type, rel };

@@ -21,7 +21,7 @@ function _getLinksForDisplay(job, urlRoot) {
     links.unshift(getCloudAccessShLink(urlRoot));
   } else {
     // Remove the S3 bucket and prefix link
-    links = links.filter((link) => link.rel !== 'bucket');
+    links = links.filter((link) => link.rel !== 's3-access');
   }
   return links;
 }
