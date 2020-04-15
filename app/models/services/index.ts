@@ -78,8 +78,8 @@ function isCollectionMatch(operation, serviceConfig) {
  * Returns the services that can be used based on the requested format
  * @param {String} format Additional context that's not part of the operation, but influences the
  *    choice regarding the service to use
- * @param {Object} configs The configuration to use for finding the operation, with all variables
- *    resolved (default: the contents of config/services.yml)
+ * @param {Array<Object>} configs The configuration to use for finding the operation, with all
+ *    variables resolved (default: the contents of config/services.yml)
  * @returns {Object} An object with two properties - service and format for the service and format
  * that should be used to fulfill the given request context
  * @private
@@ -94,9 +94,9 @@ function selectServicesForFormat(format, configs) {
 /**
  * Returns the format to use based on the operation, request context, and service configs
  * @param {DataOperation} operation The operation to perform.
- * @param {Object} context Additional context that's not part of the operation, but influences the
- *    choice regarding the service to use
- * @param {Object} configs The potential matching service configurations
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
  * @returns {String} The output format to use
  * @private
  */
@@ -152,9 +152,9 @@ class UnsupportedOperation extends Error {}
  * Returns any services that support variable subsetting from the list of configs
  * @param {DataOperation} operation The operation to perform. Note that this function may mutate
  *    the operation.
- * @param {Object} context Additional context that's not part of the operation, but influences the
- *    choice regarding the service to use
- * @param {Object} configs The potential matching service configurations
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
  * @returns {Array<Object>} Any service configurations that support the provided collection
  * @private
  */
@@ -170,9 +170,9 @@ function filterCollectionMatches(operation, context, configs) {
  * Returns any services that support variable subsetting from the list of configs
  * @param {DataOperation} operation The operation to perform. Note that this function may mutate
  *    the operation.
- * @param {Object} context Additional context that's not part of the operation, but influences the
- *    choice regarding the service to use
- * @param {Object} configs The potential matching service configurations
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
  * @returns {Array<Object>} Any service configurations that support this operation based on variable
  * subsetting constraints
  * @private
@@ -190,15 +190,13 @@ function filterVariableSubsettingMatches(operation, context, configs) {
  * Returns any services that support variable subsetting from the list of configs
  * @param {DataOperation} operation The operation to perform. Note that this function may mutate
  *    the operation.
- * @param {Object} context Additional context that's not part of the operation, but influences the
- *    choice regarding the service to use
- * @param {Object} configs All service configurations that have matched up to this call
- * @param {Object} originalConfigs The original list of service configurations - useful if trying
- * to determine if a combination of parameters caused no services to match
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
  * @returns {Array<Object>} Any service configurations that support the requested output format
  * @private
  */
-function filterOutputFormatMatches(operation, context, configs) { // , originalConfigs) {
+function filterOutputFormatMatches(operation, context, configs) {
   // If the user requested a certain output format
   let services = [];
   if (operation.outputFormat
@@ -227,9 +225,9 @@ function filterOutputFormatMatches(operation, context, configs) { // , originalC
  * This function will return a detailed message on what combination was unsupported.
  * @param {DataOperation} operation The operation to perform. Note that this function may mutate
  *    the operation.
- * @param {Object} context Additional context that's not part of the operation, but influences the
- *    choice regarding the service to use
- * @param {Object} configs All service configurations that have matched up to this call
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
  * @param {String} originalReason The original reason the operation was considered invalid
  * @returns {String} the reason the operation was not supported
  */
@@ -252,14 +250,27 @@ function unsupportedCombinationMessage(operation, context, configs, originalReas
   return reason;
 }
 
+// List of filter functions to call to identify the services that can support an operation.
+// The functions will be chained in the specified order passing in the list of services
+// that would work for each into the next filter function in the chain.
+// All filter functions need to accept three arguments:
+// 'operation' DataOperation The operation to perform.
+// 'context' RequestContext request specific context that is not part of the operation model.
+// 'configs' Array<Object> configs All service configurations that have matched so far.
+const operationFilterFns = [
+  filterCollectionMatches,
+  filterVariableSubsettingMatches,
+  filterOutputFormatMatches,
+];
+
 /**
  * Given a data operation, returns a service instance appropriate for performing that operation.
  * The operation may also be mutated to set additional properties as part of this function.
  *
  * @param {DataOperation} operation The operation to perform. Note that this function may mutate
  *    the operation.
- * @param {Object} context Additional context that's not part of the operation, but influences the
- *    choice regarding the service to use
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
  * @param {Object} configs The configuration to use for finding the operation, with all variables
  *    resolved (default: the contents of config/services.yml)
  * @returns {BaseService} A service instance appropriate for performing the operation
@@ -267,11 +278,12 @@ function unsupportedCombinationMessage(operation, context, configs, originalReas
  */
 function forOperation(operation, context, configs = serviceConfigs) {
   let service;
+  let matches = configs;
   try {
-    const collectionMatches = filterCollectionMatches(operation, context, configs);
-    const varSubsetMatches = filterVariableSubsettingMatches(operation, context, collectionMatches);
-    const formatMatches = filterOutputFormatMatches(operation, context, varSubsetMatches);
-    [service] = formatMatches;
+    for (const filterFn of operationFilterFns) {
+      matches = filterFn(operation, context, matches);
+    }
+    [service] = matches;
   } catch (e) {
     if (e instanceof UnsupportedOperation) {
       const message = unsupportedCombinationMessage(operation, context, configs, e.message);
