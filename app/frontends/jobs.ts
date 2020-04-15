@@ -14,8 +14,8 @@ const { getCloudAccessJsonLink, getCloudAccessShLink } = require('../util/links'
  */
 function _getLinksForDisplay(job, urlRoot) {
   let { links } = job;
-  const outputLinks = Job.getOutputLinks(links);
-  const directS3AccessLink = outputLinks.find((l) => l.href.match(/^s3:\/\/.*$/));
+  const dataLinks = job.getRelatedLinks('data');
+  const directS3AccessLink = dataLinks.find((l) => l.href.match(/^s3:\/\/.*$/));
   if (directS3AccessLink) {
     links.unshift(getCloudAccessJsonLink(urlRoot));
     links.unshift(getCloudAccessShLink(urlRoot));
@@ -56,24 +56,24 @@ async function getJobsListing(req, res) {
 }
 
 /**
- * Express.js handler that returns job status for a single job (/jobs/{jobId})
+ * Express.js handler that returns job status for a single job (/jobs/{jobID})
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
 async function getJobStatus(req, res) {
-  const { jobId } = req.params;
-  req.context.logger.info(`Get job status for job ${jobId} and user ${req.user}`);
-  if (!isUUID(jobId)) {
+  const { jobID } = req.params;
+  req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
+  if (!isUUID(jobID)) {
     res.status(400);
     res.json({
       code: 'harmony:BadRequestError',
-      description: `Error: jobId ${jobId} is in invalid format.` });
+      description: `Error: jobID ${jobID} is in invalid format.` });
   } else {
     try {
       await db.transaction(async (tx) => {
-        const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
+        const job = await Job.byUsernameAndRequestId(tx, req.user, jobID);
         if (job) {
           const urlRoot = getRequestRoot(req);
           const serializedJob = job.serialize(urlRoot);
@@ -81,7 +81,7 @@ async function getJobStatus(req, res) {
           res.send(serializedJob);
         } else {
           res.status(404);
-          res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
+          res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobID}` });
         }
       });
     } catch (e) {
@@ -89,7 +89,7 @@ async function getJobStatus(req, res) {
       res.status(500);
       res.json({
         code: 'harmony:ServerError',
-        description: `Error: Internal server error trying to retrieve job status for job ${jobId}` });
+        description: `Error: Internal server error trying to retrieve job status for job ${jobID}` });
     }
   }
 }

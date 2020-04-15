@@ -173,7 +173,7 @@ function router({ skipEarthdataLogin }) {
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
-  result.get('/jobs/:jobId', getJobStatus);
+  result.get('/jobs/:jobID', getJobStatus);
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });

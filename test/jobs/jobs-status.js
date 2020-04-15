@@ -29,10 +29,10 @@ describe('Individual job status route', function () {
     await new Job(aJob).save(this.trx);
     this.trx.commit();
   });
-  const jobId = aJob.requestId;
+  const jobID = aJob.requestId;
   describe('For a user who is not logged in', function () {
     before(async function () {
-      this.res = await jobStatus(this.frontend, { jobId }).redirects(0);
+      this.res = await jobStatus(this.frontend, { jobID }).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
       expect(this.res.statusCode).to.equal(303);
@@ -40,12 +40,12 @@ describe('Individual job status route', function () {
     });
 
     it('sets the "redirect" cookie to the originally-requested resource', function () {
-      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/jobs/${jobId}`));
+      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/jobs/${jobID}`));
     });
   });
 
   describe('For a logged-in user who owns the job', function () {
-    hookJobStatus({ jobId, username: 'joe' });
+    hookJobStatus({ jobID, username: 'joe' });
     it('returns an HTTP success response', function () {
       expect(this.res.statusCode).to.equal(200);
     });
@@ -57,7 +57,7 @@ describe('Individual job status route', function () {
   });
 
   describe('For a logged-in user who does not own the job', function () {
-    hookJobStatus({ jobId, username: 'jill' });
+    hookJobStatus({ jobID, username: 'jill' });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(404);
     });
@@ -66,13 +66,13 @@ describe('Individual job status route', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony:NotFoundError',
-        description: `Error: Unable to find job ${jobId}` });
+        description: `Error: Unable to find job ${jobID}` });
     });
   });
 
   describe('For a non-existent job ID', function () {
     const unknownRequest = uuid();
-    hookJobStatus({ jobId: unknownRequest, username: 'joe' });
+    hookJobStatus({ jobID: unknownRequest, username: 'joe' });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(404);
     });
@@ -86,7 +86,7 @@ describe('Individual job status route', function () {
   });
 
   describe('For an invalid job ID format', function () {
-    hookJobStatus({ jobId: 'not-a-uuid', username: 'joe' });
+    hookJobStatus({ jobID: 'not-a-uuid', username: 'joe' });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(400);
     });
@@ -95,7 +95,7 @@ describe('Individual job status route', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony:BadRequestError',
-        description: 'Error: jobId not-a-uuid is in invalid format.',
+        description: 'Error: jobID not-a-uuid is in invalid format.',
       });
     });
   });
@@ -103,7 +103,7 @@ describe('Individual job status route', function () {
   describe('When the database catches fire', function () {
     hookTransactionFailure();
     describe('for a user that should have jobs', function () {
-      hookJobStatus({ jobId, username: 'joe' });
+      hookJobStatus({ jobID, username: 'joe' });
       it('returns an internal server error status code', function () {
         expect(this.res.statusCode).to.equal(500);
       });
@@ -111,7 +111,7 @@ describe('Individual job status route', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
           code: 'harmony:ServerError',
-          description: `Error: Internal server error trying to retrieve job status for job ${jobId}`,
+          description: `Error: Internal server error trying to retrieve job status for job ${jobID}`,
         });
       });
     });
@@ -256,8 +256,8 @@ describe('Individual job status route', function () {
       hookRedirect('jdoe1');
 
       it('returns the links in its response', function () {
-        const job = JSON.parse(this.res.text);
-        const outputLinks = Job.getOutputLinks(job.links);
+        const job = new Job(JSON.parse(this.res.text));
+        const outputLinks = job.getRelatedLinks('data');
         expect(outputLinks).to.eql(links);
       });
 
@@ -324,8 +324,8 @@ describe('Individual job status route', function () {
       hookRedirect('jdoe1');
 
       it('provides a permanent link to a Harmony HTTP URL', function () {
-        const job = JSON.parse(this.res.text);
-        const jobOutputLinks = Job.getOutputLinks(job.links);
+        const job = new Job(JSON.parse(this.res.text));
+        const jobOutputLinks = job.getRelatedLinks('data');
         expect(jobOutputLinks[0].href).to.match(/^http/);
         expect(jobOutputLinks[0].href).to.have.string('/service-results/example-bucket/public/example/path.tif');
       });
@@ -360,8 +360,8 @@ describe('Individual job status route', function () {
       hookRedirect('jdoe1');
 
       it('returns the S3 URL', function () {
-        const job = JSON.parse(this.res.text);
-        const jobOutputLinks = Job.getOutputLinks(job.links);
+        const job = new Job(JSON.parse(this.res.text));
+        const jobOutputLinks = job.getRelatedLinks('data');
         expect(jobOutputLinks[0].href).to.equal(s3Uri);
       });
 

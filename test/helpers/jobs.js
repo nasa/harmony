@@ -49,11 +49,11 @@ function jobListing(app) {
  * Navigates to the job status route as the given user
  *
  * @param {Express.Application} app The express application (typically this.frontend)
- * @param {Object} [optionss.jobId] The job ID
+ * @param {Object} [options.jobID] The job ID
  * @returns {void}
  */
-function jobStatus(app, { jobId }) {
-  return request(app).get(`/jobs/${jobId}`);
+function jobStatus(app, { jobID }) {
+  return request(app).get(`/jobs/${jobID}`);
 }
 
 const hookJobListing = hookRequest.bind(this, jobListing);

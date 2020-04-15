@@ -30,16 +30,6 @@ const stagingBucketTitle = 'S3 bucket and prefix where all job outputs can be di
  + '/cloud-access.sh endpoints to obtain keys for direct in region S3 access.';
 
 /**
- * Returns only the links that are job outputs from the provided list of links
- *
- * @param {Array<Object>} links all of the links for a job
- * @returns {Array<Object>} the job output links
- */
-function getOutputLinks(links) {
-  return links.filter((link) => link.rel === 'data');
-}
-
-/**
  *
  * Wrapper object for persisted jobs
  *
@@ -296,12 +286,21 @@ class Job extends Record {
         return { href, title, type, rel };
       });
     }
-    return serializedJob;
+    return new Job(serializedJob);
+  }
+
+  /**
+   * Returns only the links with a rel that matches the passed in value
+   *
+   * @param {String} rel the relation to return links for
+   * @returns {Array<Object>} the job output links with the given rel
+   */
+  getRelatedLinks(rel) {
+    return this.links.filter((link) => link.rel === rel);
   }
 }
 
 Job.table = 'jobs';
 Job.statuses = statuses;
-Job.getOutputLinks = getOutputLinks;
 
 module.exports = Job;
