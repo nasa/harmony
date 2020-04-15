@@ -264,8 +264,8 @@ class BaseService {
         const serializedJob = job.serialize();
         if (job.isComplete()) {
           durationMs = job.updatedAt - job.createdAt;
-          const outputLinks = Job.getOutputLinks(job.links);
-          numOutputs = outputLinks.length;
+          const dataLinks = job.getRelatedLinks('data');
+          numOutputs = dataLinks.length;
         }
         logger.info('Async job complete.', { durationMs, numOutputs, job: serializedJob });
       }

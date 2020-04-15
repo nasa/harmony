@@ -78,8 +78,8 @@ describe('Asynchronizer Service', function () {
       let job;
       let jobOutputLinks;
       before(function () {
-        job = JSON.parse(this.res.text);
-        jobOutputLinks = Job.getOutputLinks(job.links);
+        job = new Job(JSON.parse(this.res.text));
+        jobOutputLinks = job.getRelatedLinks('data');
       });
 
       it('provides the redirect URL to the result as a link href', function () {
@@ -113,8 +113,8 @@ describe('Asynchronizer Service', function () {
       let job;
       let jobOutputLinks;
       before(function () {
-        job = JSON.parse(this.res.text);
-        jobOutputLinks = Job.getOutputLinks(job.links);
+        job = new Job(JSON.parse(this.res.text));
+        jobOutputLinks = job.getRelatedLinks('data');
       });
 
       it('provides a link to the contents of the streaming response', async function () {

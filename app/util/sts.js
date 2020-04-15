@@ -12,7 +12,7 @@ class SecureTokenService {
    * Will use localstack if USE_LOCALSTACK is true (default false) and AWS_DEFAULT_REGION
    * (default "us-west-2")
    *
-   * @param {object} overrides values to set when constructing the underlying S3 store
+   * @param {Object} overrides values to set when constructing the underlying S3 store
    */
   constructor(overrides) {
     const endpointSettings = {};
@@ -32,7 +32,7 @@ class SecureTokenService {
    * Calls AWS STS assumeRole returning credentials (see AWS S3 SDK `assumeRole`)
    *
    * @param {Object} params an object describing the role to assume
-   * @returns {Object} credentials with access to the role provided
+   * @returns {Promise<Object>} resolves to credentials with access to the role provided
    * @memberof SecureTokenService
    */
   assumeRole(params) {
