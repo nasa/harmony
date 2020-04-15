@@ -7,6 +7,7 @@ const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authoriz
 const wmsFrontend = require('../frontends/wms');
 const wcsFrontend = require('../frontends/wcs');
 const { getJobsListing, getJobStatus } = require('../frontends/jobs');
+const { getStacCatalog } = require('../frontends/stac');
 const { getServiceResult } = require('../frontends/service-results');
 const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
@@ -146,6 +147,7 @@ function router({ skipEarthdataLogin }) {
       '/jobs*',
       '/service-results/*',
       '/cloud-access*',
+      '/stac*',
     ])));
   }
 
@@ -173,9 +175,14 @@ function router({ skipEarthdataLogin }) {
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
+<<<<<<< HEAD
   result.get('/jobs/:jobID', getJobStatus);
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
+=======
+  result.get('/jobs/:jobId', getJobStatus);
+  result.get('/stac/:jobId', getStacCatalog);
+>>>>>>> HARMONY-269: Add /stac/<job_id> route for STAC catalog
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
   return result;
