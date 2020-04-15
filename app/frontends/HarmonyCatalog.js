@@ -10,6 +10,9 @@
  *   - description: Description of the Catalog
  *   - links: An array of STAC Link objects
  *
+ * @example
+ * catalog = new HarmonyCatalog(job);
+ * catalog.
  * @class HarmonyCatalog
  */
 export default class HarmonyCatalog {
@@ -52,5 +55,12 @@ export default class HarmonyCatalog {
      */
     addLink(url, relType, title) {
         this.links.push({url:url, rel:relType, title:title});
+    }
+
+    /**
+     * Placeholder method to support custom stringification
+     */
+    toJSON() {
+        return this;
     }
 }
