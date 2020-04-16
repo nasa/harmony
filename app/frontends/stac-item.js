@@ -194,14 +194,15 @@ function create(job, index = 0) {
   // TBD: may be it should be a metadata for a Harmony service
   item.setProperty('license', 'various');
   // Add assets
-  if (Object.hasOwnProperty.call(job, 'links')
-    && (Array.isArray(job.links))
-    && (index >= 0)
-    && (index < job.links.length)) {
-    item.addSpatialExtent(job.links[index].bbox);
-    item.addTemporalExtent(job.links[index].temporal.start, job.links[index].temporal.end);
-    item.addAsset(job.links[index].href, job.links[index].title, job.links[index].type);
+  const dataLinks = job.getRelatedLinks('data');
+  if (index < 0 || index >= dataLinks.length) {
+    throw new TypeError('STAC item index is out of bounds');
   }
+  const { bbox, temporal, href, title: linkTitle, type } = dataLinks[index];
+  item.addSpatialExtent(bbox);
+  item.addTemporalExtent(temporal.start, temporal.end);
+  item.addAsset(href, linkTitle, type);
+
   item.addLink('../', 'self', 'self');
   item.addLink('../', 'root', 'parent');
   return item.toJSON();
