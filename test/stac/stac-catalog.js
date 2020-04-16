@@ -9,7 +9,7 @@ const jobProps = {
   request: 'example.com',
   links: [
     {
-      href: 'file1.nc',
+      href: 'file_1.nc',
       title: 'Item #1',
       type: 'application/nc',
       bbox: [-80, -30, -100, 20],
@@ -19,7 +19,7 @@ const jobProps = {
       },
     },
     {
-      href: 'file_1.png',
+      href: 'file_2.png',
       title: 'Item #2',
       type: 'image/png',
       bbox: [-100, -30, -80, 20],
@@ -56,6 +56,18 @@ describe('stac-catalog', function () {
     });
     it('catalog ID matches Job ID', function (done) {
       expect(jsonObj.id).to.equal(jobProps.jobID);
+      done();
+    });
+    it('has links', function (done) {
+      expect(jsonObj.links.length).to.equal(4);
+      done();
+    });
+    it('has link with an item', function (done) {
+      expect(jsonObj.links[3].rel).to.equal('item');
+      done();
+    });
+    it('has link with href to item index', function (done) {
+      expect(jsonObj.links[3].href).to.equal('./1');
       done();
     });
   });
