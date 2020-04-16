@@ -1,3 +1,5 @@
+const pick = require('lodash.pick');
+
 /**
  *
  * Class for creating STAC catalog for data produced by a Harmony Job
@@ -9,57 +11,83 @@
  *   - links: An array of STAC Link objects
  *
  * @example
- * catalog = new HarmonyCatalog(job);
+ * catalog = new HarmonyCatalog("123", "AIRX3STD (2003-2004)", "AIRS/Aqua L3 Daily for 2003-2004");
  * jsonObj = catalog.toJSON();
  * jsonStr = JSON.stringify(catalog, null, 2);
+ *
  * @class HarmonyCatalog
  */
-export default class HarmonyCatalog {
+class HarmonyCatalog {
   /**
-     *
-     * @param {Object} job - The Harmony Job object; id, request, and links fields are used.
-     * @param {string} job.jobID - ID of the Harmony Job
-     * @param {string} [job.request] - URL for the Harmony Request
-     * @param {Object} [job.links] - Links object in Harmony Job
-     */
-  constructor (job) {
-    if (typeof job === 'undefined') {
-      throw new TypeError('Constructor accepts Harmony Job object')
-    }
-    if (!Object.hasOwnProperty.call(job, 'jobID')) {
-      throw new TypeError('Failed to find job ID')
-    }
-    // Catalog ID = <jobID>
-    this.id = `${job.jobID}`
-    this.stac_version = '0.9.0'
-    this.title = `Harmony output for ${job.jobID}`
-    if (Object.hasOwnProperty.call(job, 'request')) {
-      this.description = `Harmony output for ${job.request}`
-    }
-    this.links = []
-    this.addLink('./catalog.json', 'self', 'self')
-    this.addLink('./catalog.json', 'root', 'root')
-    if (Object.hasOwnProperty.call(job, 'links') && (Array.isArray(job.links))) {
-      for (const index in job.links) {
-        this.addLink(`./${index}`, 'item', job.links[index].title)
-      }
-    }
+   *
+   * @param {string} id - ID of the STAC Catalog
+   * @param {string} title - Title of the STAC Catalog
+   * @param {string} description - Description of the STAC Catalog
+   */
+  constructor(id, title = '', description = '') {
+    this.id = id;
+    this.stac_version = '0.9.0';
+    this.title = title;
+    this.description = description;
+    this.links = [];
   }
 
   /**
+     * Adds a member to 'links' property of a STAC Catalog
      *
      * @param {string} url - Link URL
      * @param {string} relType - Relation type: [self, root, item]
      * @param {string} title - Link title (human readable)
+     *
+     * @returns {void}
      */
-  addLink (url, relType, title) {
-    this.links.push({ url: url, rel: relType, title: title })
+  addLink(url, relType, title) {
+    this.links.push({ href: url, rel: relType, title });
   }
 
   /**
-     * Placeholder method to support custom stringification
-     */
-  toJSON () {
-    return this
+   * Placeholder method to support custom stringification
+   *
+   * @returns {Object} - STAC Catalog JSON
+   */
+  toJSON() {
+    const paths = ['id', 'stac_version', 'title', 'description', 'links'];
+    return pick(this, paths);
   }
 }
+
+/**
+ * Function to create the STAC Catalog given a Harmony Job object
+ *
+ * @param {Job} job - Harmony Job object
+ *
+ * @returns {Object} - STAC Catalog JSON
+ *
+ * @example
+ * const catalog = require('HarmonyCatalog');
+ * let jsonObj = catalog.create(job);
+ * let jsonStr = JSON.stringify(jsonObj, null, 2);
+ */
+function create(job) {
+  if (typeof job === 'undefined') {
+    throw new TypeError('Constructor accepts Harmony Job object');
+  }
+  if (!Object.hasOwnProperty.call(job, 'jobID')) {
+    throw new TypeError('Failed to find job ID');
+  }
+  const title = `Harmony output for ${job.jobID}`;
+  const description = `Harmony output for ${job.request}`;
+  const catalog = new HarmonyCatalog(job.jobID, title, description);
+  catalog.addLink('./catalog.json', 'self', 'self');
+  catalog.addLink('./catalog.json', 'root', 'root');
+  if (Object.hasOwnProperty.call(job, 'links') && (Array.isArray(job.links))) {
+    let index = 0;
+    for (const link of job.links) {
+      catalog.addLink(`./${index}`, 'item', link.title);
+      index++;
+    }
+  }
+  return catalog.toJSON();
+}
+
+module.exports.create = create;
