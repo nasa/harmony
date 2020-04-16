@@ -2,21 +2,8 @@ const Job = require('../models/job');
 const db = require('../util/db');
 const { needsStacLink } = require('../util/stac');
 const isUUID = require('../util/uuid');
-
-/**
- * Make the STAC catalog object for the given Job
- *  NOTE: This is just a place-holder for Hegde's work
- *
- * @param {Job} _job A Job object representing a completed job
- * @returns {Object} The serializable Object representing the catalog fields
- */
-function makeCatalog(_job) {
-  return {};
-}
-
-function makeItem(_job, _index) {
-  return {};
-}
+const stacItem = require('./stac-item');
+const stacCatalog = require('./stac-catalog');
 
 /**
  * Express.js handler that returns a STAC catalog for a single job
@@ -42,7 +29,7 @@ async function getStacCatalog(req, res) {
           res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
         } else if (job.status === 'successful') {
           if (needsStacLink(job.getRelatedLinks('data'))) {
-            res.send(JSON.stringify(makeCatalog(job.serialize())));
+            res.send(JSON.stringify(stacCatalog.create(job.serialize())));
           } else {
             res.status(501);
             res.json({ code: 'harmony:ServiceError', description: `Error: Service did not provide STAC items for job ${jobId}` });
@@ -86,7 +73,7 @@ async function getStacItem(req, res) {
           res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
         } else if (job.status === 'successful') {
           if (needsStacLink(job.getRelatedLinks('data'))) {
-            res.send(JSON.stringify(makeItem(job.serialize(), itemIndex)));
+            res.send(JSON.stringify(stacItem.create(job.serialize(), itemIndex)));
           } else {
             res.status(501);
             res.json({ code: 'harmony:ServiceError', description: `Error: Service did not provide STAC items for job ${jobId}` });
