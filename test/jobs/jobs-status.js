@@ -392,6 +392,30 @@ describe('Individual job status route', function () {
       });
     });
 
+    describe('when a job has links with temporal and bbox fields @wip', function () {
+      StubService.hook({ params: { status: 'successful' } });
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      before(async function () {
+        await this.service.sendResponse({ item: {
+          href: 'https://example.com',
+          type: 'image/gif',
+          bbox: '-10,-10,10,10',
+          temporal: '2020-01-01T00:00:00.000Z,2020-01-02T00:00:00.000Z',
+        } });
+      });
+      hookRedirect('jdoe1');
+
+      it('includes the temporal range in the link', function () {
+        const response = JSON.parse(this.res.text);
+        expect(response.links[0].temporal).to.eql({ start: '2020-01-01T00:00:00.000Z', end: '2020-01-02T00:00:00.000Z' });
+      });
+
+      it('includes the bbox in the link', function () {
+        const response = JSON.parse(this.res.text);
+        expect(response.links[0].bbox).to.eql([-10, -10, 10, 10]);
+      });
+    });
+
     describe('when the job has completed successfully', function () {
       const query = { subset: ['lat(-80:80)', 'lon(-100:100)'] };
       hookRangesetRequest(version, collection, variableName, { query, username: 'jdoe3' });
