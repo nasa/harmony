@@ -42,7 +42,7 @@ function getStacCatalogLink(urlRoot, jobID) {
     title: 'STAC catalog',
     href: `${urlRoot}/stac/${jobID}`,
     rel: 'stac-catalog-json',
-    type: 'application/x-sh',
+    type: 'application/json',
   };
 }
 
