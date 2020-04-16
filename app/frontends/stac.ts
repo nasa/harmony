@@ -37,7 +37,7 @@ async function getStacCatalog(req, res) {
           res.status(404);
           res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
         } else if (job.status === 'successful') {
-          res.send(JSON.stringify(makeCatalog(job)));
+          res.send(JSON.stringify(makeCatalog(job.serialize())));
         } else {
           res.status(409);
           res.json({ code: 'harmony:BadRequestError', description: `Error: Job ${jobId} is not complete` });

@@ -2,7 +2,7 @@ const Job = require('../models/job');
 const db = require('../util/db');
 const { getRequestRoot } = require('../util/url');
 const isUUID = require('../util/uuid');
-const { getCloudAccessJsonLink, getCloudAccessShLink } = require('../util/links');
+const { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink } = require('../util/links');
 
 /**
  * Analyze the links in the job to determine what links should be returned to
@@ -22,6 +22,9 @@ function _getLinksForDisplay(job, urlRoot) {
   } else {
     // Remove the S3 bucket and prefix link
     links = links.filter((link) => link.rel !== 's3-access');
+  }
+  if (job.status === Job.statuses.SUCCESSFUL) {
+    links.unshift(getStacCatalogLink(job, urlRoot));
   }
   return links;
 }
