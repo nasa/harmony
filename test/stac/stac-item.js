@@ -29,6 +29,26 @@ const jobProps = {
         end: '1996-11-15T00:05:32.000Z',
       },
     },
+    {
+      href: 'file_3.json',
+      title: 'Item #3',
+      type: 'application/json',
+      bbox: [-100, -30, -80, 20],
+      temporal: {
+        start: '1996-10-15T00:05:32.000Z',
+        end: '1996-11-15T00:05:32.000Z',
+      },
+    },
+    {
+      href: 'file_4.csv',
+      title: 'Item #4',
+      type: 'text/csv',
+      bbox: [-100, -30, -80, 20],
+      temporal: {
+        start: '1996-10-15T00:05:32.000Z',
+        end: '1996-11-15T00:05:32.000Z',
+      },
+    },
   ],
 };
 const job = new Job(jobProps);
@@ -94,6 +114,22 @@ describe('stac-item', function () {
     });
     it('has roles for the asset', function (done) {
       expect(jsonObj.assets['file_2.png'].roles[0]).to.equal('overview');
+      done();
+    });
+  });
+
+  describe('STAC Item creation with a Harmony Job object: case of metadata assets', function () {
+    const jsonObj = stacItem.create(job, 2);
+    it('has an asset with metadata role', function (done) {
+      expect(jsonObj.assets['file_3.json'].roles[0]).to.equal('metadata');
+      done();
+    });
+  });
+
+  describe('STAC Item creation with a Harmony Job object: case of textual data', function () {
+    const jsonObj = stacItem.create(job, 3);
+    it('has an text asset with data role', function (done) {
+      expect(jsonObj.assets['file_4.csv'].roles[0]).to.equal('data');
       done();
     });
   });
