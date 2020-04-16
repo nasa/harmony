@@ -1,5 +1,6 @@
 const pick = require('lodash.pick');
 const uuid = require('uuid');
+const HarmonyJob = require('../models/job');
 
 class HarmonyItem {
   /**
@@ -174,6 +175,15 @@ class HarmonyItem {
  * @returns {Object} - STAC Item JSON
  */
 function create(job, index = 0) {
+  if (!(job instanceof HarmonyJob)) {
+    throw new TypeError('Constructor accepts Harmony Job object as the first argument');
+  }
+  if (!Object.hasOwnProperty.call(job, 'jobID')) {
+    throw new TypeError('Failed to find job ID');
+  }
+  if (!Object.hasOwnProperty.call(job, 'request')) {
+    throw new TypeError('Failed to find request');
+  }
   const title = `Harmony output #${index} in job ${job.jobID}`;
   const description = `Harmony out for ${job.request}`;
   const item = new HarmonyItem(job.jobID, title, description);
