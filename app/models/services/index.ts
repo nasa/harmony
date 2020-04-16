@@ -7,7 +7,7 @@ const AsynchronizerService = require('./asynchronizer-service');
 const HttpService = require('./http-service');
 const LocalDockerService = require('./local-docker-service');
 const NoOpService = require('./no-op-service');
-const { NotFoundError, InvalidFormatError } = require('../../util/errors');
+const { NotFoundError } = require('../../util/errors');
 const { isMimeTypeAccepted } = require('../../util/content-negotiation');
 
 let serviceConfigs = null;
@@ -75,50 +75,70 @@ function isCollectionMatch(operation, serviceConfig) {
 }
 
 /**
- * Returns the service to use based on the requested format
+ * Returns the services that can be used based on the requested format
  * @param {String} format Additional context that's not part of the operation, but influences the
  *    choice regarding the service to use
- * @param {Object} configs The configuration to use for finding the operation, with all variables
- *    resolved (default: the contents of config/services.yml)
+ * @param {Array<Object>} configs The configuration to use for finding the operation, with all
+ *    variables resolved (default: the contents of config/services.yml)
  * @returns {Object} An object with two properties - service and format for the service and format
  * that should be used to fulfill the given request context
  * @private
  */
-function _selectServiceForFormat(format, configs) {
-  return configs.find((config) => {
+function selectServicesForFormat(format, configs) {
+  return configs.filter((config) => {
     const supportedFormats = getIn(config, 'capabilities.output_formats', []);
     return supportedFormats.find((f) => isMimeTypeAccepted(f, format));
   });
 }
 
 /**
- * Returns the service and format to use based on the request context and service configs
+ * Returns the format to use based on the operation, request context, and service configs
  * @param {DataOperation} operation The operation to perform.
- * @param {Object} context Additional context that's not part of the operation, but influences the
- *    choice regarding the service to use
- * @param {Object} configs The configuration to use for finding the operation, with all variables
- *    resolved (default: the contents of config/services.yml)
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
  * @returns {String} The output format to use
  * @private
  */
-function _selectFormat(operation, context, configs) {
-  const { outputFormat } = operation;
-  if (outputFormat) {
-    const matches = configs.filter((config) => getIn(config, 'capabilities.output_formats', []).includes(outputFormat));
-    if (matches.length === 0) {
-      throw new InvalidFormatError([outputFormat]);
-    }
-  } else if (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
+function selectFormat(operation, context, configs) {
+  let { outputFormat } = operation;
+  if (!outputFormat && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
     for (const mimeType of context.requestedMimeTypes) {
-      const service = _selectServiceForFormat(mimeType, configs);
-      if (service) {
-        const supportedFormats = getIn(service, 'capabilities.output_formats', []);
-        return supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType));
+      const services = selectServicesForFormat(mimeType, configs);
+      // Any of the provided services will work for the mimetype, but we only need to
+      // check the first service to determine which format matches that. This is needed
+      // to match a wildcard mime-type like */* or image/* to a format to request on the
+      // backend service.
+      if (services && services.length > 0) {
+        const supportedFormats = getIn(services[0], 'capabilities.output_formats', []);
+        outputFormat = supportedFormats.find((f) => isMimeTypeAccepted(f, mimeType));
       }
+      if (outputFormat) break;
     }
-    throw new InvalidFormatError(context.requestedMimeTypes);
   }
   return outputFormat;
+}
+
+/**
+ * Returns true if the operation requires variable subsetting
+ * @param {DataOperation} operation The operation to perform. Note that this function may mutate
+ *    the operation.
+ * @returns {Boolean} true if the provided operation requires variable subsetting
+ * @private
+ */
+function requiresVariableSubsetting(operation) {
+  const varSources = operation.sources.filter((s) => s.variables && s.variables.length > 0);
+  return varSources.length > 0;
+}
+
+/**
+ * Returns any services that support variable subsetting from the list of configs
+ * @param {Array<Object>} configs The potential matching service configurations
+ * @returns {Array<Object>} Any configurations that support variable subsetting
+ * @private
+ */
+function supportsVariableSubsetting(configs) {
+  return configs.filter((config) => getIn(config, 'capabilities.subsetting.variable', false));
 }
 
 const noOpService = {
@@ -126,33 +146,153 @@ const noOpService = {
   capabilities: { output_formats: ['application/json'] },
 };
 
+class UnsupportedOperation extends Error {}
+
+/**
+ * Returns any services that support variable subsetting from the list of configs
+ * @param {DataOperation} operation The operation to perform. Note that this function may mutate
+ *    the operation.
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
+ * @returns {Array<Object>} Any service configurations that support the provided collection
+ * @private
+ */
+function filterCollectionMatches(operation, context, configs) {
+  const matches = configs.filter((config) => isCollectionMatch(operation, config));
+  if (matches.length === 0) {
+    throw new UnsupportedOperation('no services are configured for the collection');
+  }
+  return matches;
+}
+
+/**
+ * Returns any services that support variable subsetting from the list of configs
+ * @param {DataOperation} operation The operation to perform. Note that this function may mutate
+ *    the operation.
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
+ * @returns {Array<Object>} Any service configurations that support this operation based on variable
+ * subsetting constraints
+ * @private
+ */
+function filterVariableSubsettingMatches(operation, context, configs) {
+  const variableSubsettingNeeded = requiresVariableSubsetting(operation);
+  const matches = variableSubsettingNeeded ? supportsVariableSubsetting(configs) : configs;
+  if (matches.length === 0) {
+    throw new UnsupportedOperation('none of the services configured for the collection support variable subsetting');
+  }
+  return matches;
+}
+
+/**
+ * Returns any services that support variable subsetting from the list of configs
+ * @param {DataOperation} operation The operation to perform. Note that this function may mutate
+ *    the operation.
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
+ * @returns {Array<Object>} Any service configurations that support the requested output format
+ * @private
+ */
+function filterOutputFormatMatches(operation, context, configs) {
+  // If the user requested a certain output format
+  let services = [];
+  if (operation.outputFormat
+    || (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0)) {
+    const outputFormat = selectFormat(operation, context, configs);
+    if (outputFormat) {
+      // eslint-disable-next-line no-param-reassign
+      operation.outputFormat = outputFormat;
+      services = selectServicesForFormat(outputFormat, configs);
+    }
+  } else {
+    services = configs;
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation('none of the services configured for the collection support '
+      + 'reformatting to any of the requested formats '
+      + `[${operation.outputFormat || context.requestedMimeTypes}]`);
+  }
+  return services;
+}
+
+/**
+ * For certain UnsupportedOperation errors the root cause will be a combination of multiple
+ * request parameters such as requesting variable subsetting and a specific output format.
+ * This function will return a detailed message on what combination was unsupported.
+ * @param {DataOperation} operation The operation to perform. Note that this function may mutate
+ *    the operation.
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
+ * @param {String} originalReason The original reason the operation was considered invalid
+ * @returns {String} the reason the operation was not supported
+ */
+function unsupportedCombinationMessage(operation, context, configs, originalReason) {
+  let reason = originalReason;
+  if (originalReason.includes('reformatting to any of the requested formats')) {
+    if (requiresVariableSubsetting(operation)) {
+      const matches = filterCollectionMatches(operation, context, configs);
+      const outputFormat = selectFormat(operation, context, matches);
+      if (outputFormat) {
+        const servicesWithoutVarSubsetting = selectServicesForFormat(outputFormat, matches);
+        if (servicesWithoutVarSubsetting.length > 0) {
+          reason = 'none of the services support the combination of both variable subsetting '
+            + 'and any of the requested formats '
+            + `[${operation.outputFormat || context.requestedMimeTypes}]`;
+        }
+      }
+    }
+  }
+  return reason;
+}
+
+// List of filter functions to call to identify the services that can support an operation.
+// The functions will be chained in the specified order passing in the list of services
+// that would work for each into the next filter function in the chain.
+// All filter functions need to accept three arguments:
+// 'operation' DataOperation The operation to perform.
+// 'context' RequestContext request specific context that is not part of the operation model.
+// 'configs' Array<Object> configs All service configurations that have matched so far.
+const operationFilterFns = [
+  filterCollectionMatches,
+  filterVariableSubsettingMatches,
+  filterOutputFormatMatches,
+];
+
 /**
  * Given a data operation, returns a service instance appropriate for performing that operation.
  * The operation may also be mutated to set additional properties as part of this function.
  *
  * @param {DataOperation} operation The operation to perform. Note that this function may mutate
  *    the operation.
- * @param {Object} context Additional context that's not part of the operation, but influences the
- *    choice regarding the service to use
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
  * @param {Object} configs The configuration to use for finding the operation, with all variables
  *    resolved (default: the contents of config/services.yml)
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @throws {NotFoundError} If no service can perform the given operation
  */
 function forOperation(operation, context, configs = serviceConfigs) {
-  let matches = [];
-  if (operation) {
-    matches = configs.filter((config) => isCollectionMatch(operation, config));
+  let service;
+  let matches = configs;
+  try {
+    for (const filterFn of operationFilterFns) {
+      matches = filterFn(operation, context, matches);
+    }
+    service = matches[0];
+  } catch (e) {
+    if (e instanceof UnsupportedOperation) {
+      const message = unsupportedCombinationMessage(operation, context, configs, e.message);
+      noOpService.message = message;
+      service = noOpService;
+    } else {
+      throw e;
+    }
   }
-  if (matches.length === 0) {
-    matches = [noOpService];
-  }
-
-  const outputFormat = _selectFormat(operation, context, matches);
-  const service = outputFormat ? _selectServiceForFormat(outputFormat, matches) : matches[0];
-
-  // eslint-disable-next-line no-param-reassign
-  operation.outputFormat = outputFormat;
   return buildService(service, operation);
 }
 
