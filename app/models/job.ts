@@ -276,12 +276,12 @@ class Job extends Record {
     if (urlRoot) {
       serializedJob.links = serializedJob.links.map((link) => {
         let { href } = link;
-        const { title, type, rel } = link;
+        const { title, type, rel, bbox, temporal } = link;
         // Leave the S3 output staging location as an S3 link
         if (rel !== 's3-access') {
           href = createPublicPermalink(href, urlRoot, type);
         }
-        return { href, title, type, rel };
+        return { href, title, type, rel, bbox, temporal };
       });
     }
     return new Job(serializedJob);
