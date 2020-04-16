@@ -57,8 +57,21 @@ function getRequestRoot(req) {
   });
 }
 
+/**
+ * Construct the url for the STAC catalog associated with the given job
+ *
+ * @param {Job} job The job for which to create the STAC catalog link
+ * @returns {string} A URL string that is the link to the STAC catalog for the job
+ */
+function getJobStacCatalogUrl(job) {
+  const { request, requestId } = job;
+  const requestUrl = new URL(request);
+  return `${requestUrl.origin}/stac/${requestId}`;
+}
+
 module.exports = {
   getRequestUrl,
   getSanitizedRequestUrl,
   getRequestRoot,
+  getJobStacCatalogUrl,
 };
