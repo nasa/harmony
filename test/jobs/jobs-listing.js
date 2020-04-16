@@ -82,6 +82,7 @@ describe('Jobs listing route', function () {
 
       it('returns a list of the user’s job records in JSON format', function () {
         const listing = JSON.parse(this.res.text);
+        console.log(this.res.text);
         expect(containsJob(woodyJob1, listing)).to.be.true;
         expect(containsJob(woodyJob2, listing)).to.be.true;
       });

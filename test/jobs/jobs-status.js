@@ -18,7 +18,15 @@ const aJob = {
   status: 'running',
   message: 'it is running',
   progress: 42,
-  links: [{ href: 'http://example.com' }],
+  links: [
+    {
+      href: 'http://example.com',
+      bbox: '',
+      temporal: {
+        start: '',
+        end: '',
+      },
+    }],
   request: 'http://example.com/harmony?job=aJob',
 };
 
