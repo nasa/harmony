@@ -1,4 +1,6 @@
 const pick = require('lodash.pick');
+const HarmonyJob = require('../models/job');
+
 
 /**
  *
@@ -69,11 +71,14 @@ class HarmonyCatalog {
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
 function create(job) {
-  if (typeof job === 'undefined') {
-    throw new TypeError('Constructor accepts Harmony Job object');
+  if (!(job instanceof HarmonyJob)) {
+    throw new TypeError('Constructor expects a Harmony Job object as argument');
   }
   if (!Object.hasOwnProperty.call(job, 'jobID')) {
     throw new TypeError('Failed to find job ID');
+  }
+  if (!Object.hasOwnProperty.call(job, 'request')) {
+    throw new TypeError('Failed to find request');
   }
   const title = `Harmony output for ${job.jobID}`;
   const description = `Harmony output for ${job.request}`;
