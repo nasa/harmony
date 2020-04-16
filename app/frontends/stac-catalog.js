@@ -78,8 +78,8 @@ function create(job) {
   const title = `Harmony output for ${job.jobID}`;
   const description = `Harmony output for ${job.request}`;
   const catalog = new HarmonyCatalog(job.jobID, title, description);
-  catalog.addLink('./catalog.json', 'self', 'self');
-  catalog.addLink('./catalog.json', 'root', 'root');
+  catalog.addLink('.', 'self', 'self');
+  catalog.addLink('.', 'root', 'root');
   if (Object.hasOwnProperty.call(job, 'links') && (Array.isArray(job.links))) {
     let index = 0;
     for (const link of job.links) {
