@@ -26,7 +26,7 @@ const completedJob = {
   request: 'http://example.com/harmony?job=completedJob',
 };
 
-const expectedCatalog = {
+const expectedItem = {
 
 };
 
@@ -114,17 +114,34 @@ describe('STAC item route', function () {
     });
 
     describe('when the job is complete', function () {
-      describe('when the service supplies the necessary fields', async function () {
+      describe('when the service does not supply the necessary fields', async function () {
         const completedJobId = completedJob.requestId;
         hookStacItem(completedJobId, 0, 'joe');
 
         it('returns an HTTP conflict response', function () {
+          expect(this.res.statusCode).to.equal(501);
+        });
+
+        it('returns a JSON error response', function () {
+          const response = JSON.parse(this.res.text);
+          expect(response).to.eql({
+            code: 'harmony:ServiceError',
+            description: `Error: Service did not provide STAC items for job ${completedJobId}`,
+          });
+        });
+      });
+
+      describe('when the service supplies the necessary fields', async function () {
+        const completedJobId = completedJob.requestId;
+        hookStacItem(completedJobId, 0, 'joe');
+
+        it('returns an HTTP OK response', function () {
           expect(this.res.statusCode).to.equal(200);
         });
 
         it('returns a STAC catalog in JSON format', function () {
-          const catalog = JSON.parse(this.res.text);
-          expect(catalog).to.eql(expectedCatalog);
+          const item = JSON.parse(this.res.text);
+          expect(item).to.eql(expectedItem);
         });
       });
     });
