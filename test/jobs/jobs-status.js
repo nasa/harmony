@@ -137,6 +137,11 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.include('the request has been limited to process');
         });
+
+        it('does not supply a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.stac).to.be.undefined;
+        });
       });
     });
 
@@ -159,6 +164,11 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.eql('something broke');
         });
+
+        it('does not supply a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.stac).to.be.undefined;
+        });
       });
     });
 
@@ -180,6 +190,11 @@ describe('Individual job status route', function () {
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.include('the request has been limited to process');
+        });
+
+        it('supplies a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.stac).to.include('/stac');
         });
       });
     });
@@ -205,6 +220,11 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.include('the request has been limited to process');
         });
+
+        it('does not supply a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.stac).to.be.undefined;
+        });
       });
     });
 
@@ -227,6 +247,11 @@ describe('Individual job status route', function () {
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.eql('something broke');
+        });
+
+        it('does not supply a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.stac).to.be.undefined;
         });
       });
     });
@@ -436,6 +461,11 @@ describe('Individual job status route', function () {
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.include('the request has been limited to process');
+        });
+
+        it('supplies a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.stac).to.include('/stac');
         });
 
         itIncludesRequestUrl('/C1104-PVC_TS2/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(-80%3A80)&subset=lon(-100%3A100)');

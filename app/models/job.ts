@@ -2,7 +2,11 @@ const pick = require('lodash.pick');
 const Record = require('./record');
 const { createPublicPermalink } = require('../frontends/service-results');
 const { truncateString } = require('../util/string');
+<<<<<<< HEAD
 const { awsDefaultRegion } = require('../util/env');
+=======
+const { getJobStacCatalogUrl } = require('../util/url');
+>>>>>>> HARMONY-269: Intermittent commit
 
 const statesToDefaultMessages = {
   accepted: 'The job has been accepted and is waiting to be processed',
@@ -283,6 +287,9 @@ class Job extends Record {
         }
         return { href, title, type, rel, bbox, temporal };
       });
+    }
+    if (serializedJob.status === statuses.SUCCESSFUL) {
+      serializedJob.stac = getJobStacCatalogUrl(this);
     }
     return new Job(serializedJob);
   }
