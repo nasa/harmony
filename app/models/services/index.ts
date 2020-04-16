@@ -283,7 +283,7 @@ function forOperation(operation, context, configs = serviceConfigs) {
     for (const filterFn of operationFilterFns) {
       matches = filterFn(operation, context, matches);
     }
-    [service] = matches;
+    service = matches[0];
   } catch (e) {
     if (e instanceof UnsupportedOperation) {
       const message = unsupportedCombinationMessage(operation, context, configs, e.message);
