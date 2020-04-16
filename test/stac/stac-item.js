@@ -10,7 +10,7 @@ const jobProps = {
   createdAt: '2020-02-02T00:00:00Z',
   links: [
     {
-      href: 'file1.nc',
+      href: 'file_1.nc',
       title: 'Item #1',
       type: 'application/nc',
       bbox: [-80, -30, -100, 20],
@@ -20,7 +20,7 @@ const jobProps = {
       },
     },
     {
-      href: 'file_1.png',
+      href: 'file_2.png',
       title: 'Item #2',
       type: 'image/png',
       bbox: [-100, -30, -80, 20],
@@ -31,12 +31,13 @@ const jobProps = {
     },
   ],
 };
+const job = new Job(jobProps);
 
 describe('stac-item', function () {
   describe('STAC Item creation with invalid argument', function () {
-    const job = { jobID: 1 };
+    const obj = { jobID: 1 };
     it('should fail', function (done) {
-      expect(function () { stacItem.create(job); }).to.throw();
+      expect(function () { stacItem.create(obj); }).to.throw();
       done();
     });
   });
@@ -48,8 +49,7 @@ describe('stac-item', function () {
     });
   });
 
-  describe('STAC Item creation with a Harmony Job object', function () {
-    const job = new Job(jobProps);
+  describe('STAC Item creation with a Harmony Job object: case of anti-meridian crossing', function () {
     let jsonObj = {};
     it('created Harmony STAC Item', function (done) {
       expect(function () { jsonObj = stacItem.create(job, 0); }).to.not.throw();
@@ -77,7 +77,23 @@ describe('stac-item', function () {
       done();
     });
     it('has roles for the asset', function (done) {
-      expect(jsonObj.assets['file1.nc'].roles[0]).to.equal('data');
+      expect(jsonObj.assets['file_1.nc'].roles[0]).to.equal('data');
+      done();
+    });
+  });
+
+  describe('STAC Item creation with a Harmony Job object: case without anti-meridian crossing', function () {
+    let jsonObj = {};
+    it('created Harmony STAC Item', function (done) {
+      expect(function () { jsonObj = stacItem.create(job, 1); }).to.not.throw();
+      done();
+    });
+    it('has a bounding box that doesn\'t anti-meridian', function (done) {
+      expect(jsonObj.geometry.type).to.equal('Polygon');
+      done();
+    });
+    it('has roles for the asset', function (done) {
+      expect(jsonObj.assets['file_2.png'].roles[0]).to.equal('overview');
       done();
     });
   });
