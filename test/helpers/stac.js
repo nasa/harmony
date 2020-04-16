@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { before, after, it } = require('mocha');
+const { before, after } = require('mocha');
 const { auth } = require('./auth');
 
 /**
