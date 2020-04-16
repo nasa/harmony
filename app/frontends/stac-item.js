@@ -191,8 +191,8 @@ function create(job, index = 0) {
   // Set creation time
   const creationTime = Object.hasOwnProperty.call(job, 'createdAt') ? job.createdAt : new Date().toISOString();
   item.setProperty('created', creationTime);
-  // TBD: set to the right value; may be it should be a metadata for a Harmony service
-  item.setProperty('license', 'Apache-2.0');
+  // TBD: may be it should be a metadata for a Harmony service
+  item.setProperty('license', 'various');
   // Add assets
   if (Object.hasOwnProperty.call(job, 'links')
     && (Array.isArray(job.links))
