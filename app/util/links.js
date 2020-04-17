@@ -30,4 +30,20 @@ function getCloudAccessShLink(urlRoot) {
   };
 }
 
-module.exports = { getCloudAccessJsonLink, getCloudAccessShLink };
+/**
+ * Returns a link to the STAC catalog for the given job
+ *
+ * @param {string} urlRoot The harmony root URL
+ * @param {string} jobID The UUID of the job
+ * @returns {Object} the link to the STAC catalog
+ */
+function getStacCatalogLink(urlRoot, jobID) {
+  return {
+    title: 'STAC catalog',
+    href: `${urlRoot}/stac/${jobID}`,
+    rel: 'stac-catalog-json',
+    type: 'application/json',
+  };
+}
+
+module.exports = { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink };

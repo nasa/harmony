@@ -7,6 +7,7 @@ const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authoriz
 const wmsFrontend = require('../frontends/wms');
 const wcsFrontend = require('../frontends/wcs');
 const { getJobsListing, getJobStatus } = require('../frontends/jobs');
+const { getStacCatalog, getStacItem } = require('../frontends/stac');
 const { getServiceResult } = require('../frontends/service-results');
 const cmrCollectionReader = require('../middleware/cmr-collection-reader');
 const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
@@ -146,6 +147,7 @@ function router({ skipEarthdataLogin }) {
       '/jobs*',
       '/service-results/*',
       '/cloud-access*',
+      '/stac*',
     ])));
   }
 
@@ -176,6 +178,8 @@ function router({ skipEarthdataLogin }) {
   result.get('/jobs/:jobID', getJobStatus);
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
+  result.get('/stac/:jobId', getStacCatalog);
+  result.get('/stac/:jobId/:itemIndex', getStacItem);
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
   return result;

@@ -18,7 +18,15 @@ const aJob = {
   status: 'running',
   message: 'it is running',
   progress: 42,
-  links: [{ href: 'http://example.com' }],
+  links: [
+    {
+      href: 'http://example.com',
+      bbox: '[-100, -30, -80, 20]',
+      temporal: {
+        start: '1996-10-15T00:05:32.000Z',
+        end: '1996-11-15T00:05:32.000Z',
+      },
+    }],
   request: 'http://example.com/harmony?job=aJob',
 };
 
@@ -137,6 +145,11 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.include('the request has been limited to process');
         });
+
+        it('does not supply a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.stac).to.be.undefined;
+        });
       });
     });
 
@@ -158,6 +171,11 @@ describe('Individual job status route', function () {
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.eql('something broke');
+        });
+
+        it('does not supply a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.stac).to.be.undefined;
         });
       });
     });
@@ -205,6 +223,11 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.include('the request has been limited to process');
         });
+
+        it('does not supply a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.stac).to.be.undefined;
+        });
       });
     });
 
@@ -227,6 +250,11 @@ describe('Individual job status route', function () {
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.eql('something broke');
+        });
+
+        it('does not supply a link to the STAC catalog', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.stac).to.be.undefined;
         });
       });
     });
@@ -392,7 +420,7 @@ describe('Individual job status route', function () {
       });
     });
 
-    describe('when a job has links with temporal and bbox fields @wip', function () {
+    describe('when a job has links with temporal and bbox fields', function () {
       StubService.hook({ params: { status: 'successful' } });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
