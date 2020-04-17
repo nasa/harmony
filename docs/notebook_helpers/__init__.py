@@ -20,22 +20,27 @@ import requests
 from cachecontrol import CacheController, CacheControlAdapter
 
 def _build_session():
-    result = requests.session()
+  """Builds a requests session that caches responses where possible, making redirects faster.
 
-    # Set up caching.  Particularly obey and cache 307 redirects to avoid duplicate expensive calls when we already
-    # have a result
-    cache_adapter = CacheControlAdapter()
-    cache_adapter.controller = CacheController(cache=cache_adapter.cache, status_codes=(200, 203, 300, 301, 307))
+  Returns:
+      requests.Session -- A shared session to use for the notebook
+  """
+  result = requests.session()
 
-    result.mount('http://', cache_adapter)
-    result.mount('https://', cache_adapter)
-    return result
+  # Set up caching.  Particularly obey and cache 307 redirects to avoid duplicate expensive calls when we already
+  # have a result
+  cache_adapter = CacheControlAdapter()
+  cache_adapter.controller = CacheController(cache=cache_adapter.cache, status_codes=(200, 203, 300, 301, 307))
 
+  result.mount('http://', cache_adapter)
+  result.mount('https://', cache_adapter)
+  return result
+
+# Session accessible by callers
 session = _build_session()
 
 def debug_http():
-  """
-  Adds debugging output to HTTP requests to show redirects, headers, etc
+  """Adds debugging output to HTTP requests to show redirects, headers, etc
   """
   http_client.HTTPConnection.debuglevel = 1
   logging.basicConfig()
@@ -45,6 +50,13 @@ def debug_http():
   requests_log.propagate = True
 
 def request(*args, **kwargs):
+  """Thin wrapper around requests.Request, logging URL sent and Content-Type received
+
+  See https://requests.readthedocs.io/en/master/api/#requests.Request for args
+
+  Returns:
+      requests.Response -- The response to the request
+  """
   req = requests.Request(*args, **kwargs)
   prepped = session.prepare_request(req)
 
@@ -54,22 +66,58 @@ def request(*args, **kwargs):
   return response
 
 def get(*args, **kwargs):
+  """Performs a GET request using the request wrapper
+
+  See https://requests.readthedocs.io/en/master/api/#requests.Request for args
+
+  Returns:
+      requests.Response -- The response to the request
+  """
   return request('GET', *args, **kwargs)
 
 def post(*args, **kwargs):
+  """Performs a POST request using the request wrapper
+
+  See https://requests.readthedocs.io/en/master/api/#requests.Request for args
+
+  Returns:
+      requests.Response -- The response to the request
+  """
   return request('POST', *args, **kwargs)
 
 def show_shape(filename, basemap=True):
+  """Plots the shapefile in the given filename with optional basemap (ESRI or GeoJSON)
+
+  Arguments:
+      filename {string} -- The filename of the shapefile to display
+
+  Keyword Arguments:
+      basemap {bool} -- Whether to display a basemap under the shapefile (default: {True})
+  """
   shape = gpd.read_file(filename).to_crs(epsg=3857)
   plot = shape.plot(alpha=0.5, edgecolor='k', figsize=(8, 8))
   if basemap:
     ctx.add_basemap(plot)
 
 def show(response, color_index=None, immediate=True):
+  """Shows a variety of responses possible from Harmony for its example data
+
+  Handles NetCDF files with red_var, green_var, blue_var, and alpha_var bands, compositing output
+  into a single colored image, ESRI Shapefiles with basemaps, and any type of image that can be
+  read by PIL, including GeoTIFF
+
+  Arguments:
+      response {requests.Response} -- The response containing the data to display
+
+  Keyword Arguments:
+      color_index {number} -- Set for monochromatic images to put the output in a color band (0=red, 1=green, 2=blue) (default: {None})
+      immediate {bool} -- True if the data should be shown immediately in the notebook (default: {True})
+  """
   plt.rcParams["figure.figsize"] = [16, 8]
 
   content_type = response.headers['Content-Type']
   if content_type == 'application/x-netcdf':
+    # NetCDF4
     data = H5File(BytesIO(response.content), 'r')
     datasets = [data[v] for v in ['red_var', 'green_var', 'blue_var', 'alpha_var'] if v in data]
     arrays = []
@@ -82,13 +130,15 @@ def show(response, color_index=None, immediate=True):
       arrays.append(array)
     plt.imshow(np.dstack(arrays))
   elif content_type in ['application/octet-stream', 'application/zip', 'application/shapefile+zip']:
+    # ESRI Shapefiles
     tmp = tempfile.NamedTemporaryFile(suffix='.shp.zip', delete=False)
     try:
       tmp.write(response.content)
       show_shape('zip://' + tmp.name, immediate)
     finally:
-      pass #os.unlink(tmp.name)
+      os.unlink(tmp.name)
   else:
+    # Images
     if color_index == None:
       plt.imshow(Image.open(BytesIO(response.content)))
     else:
@@ -107,9 +157,29 @@ def show(response, color_index=None, immediate=True):
     plt.show()
 
 def get_data_urls(response):
+  """Returns the data URLs in an async response
+
+  Arguments:
+      response {response.Response} -- The async job response
+
+  Returns:
+      string[] -- An array of URLs for data links
+  """
   return [link['href'] for link in response.json()['links'] if link.get('rel', 'data') == 'data']
 
 def show_async(response):
+  """Shows an asynchronous Harmony response.
+
+  Polls the output, displaying it as it changes, displaying any http data
+  links in the response as they arrive, and ultimately ending once the request
+  is successful or failed
+
+  Arguments:
+      response {response.Response} -- the response to display
+
+  Returns:
+      response.Response -- the response from the final successful or failed poll
+  """
   def show_response(response, link_count):
     print('Async response at', datetime.now().strftime("%H:%M:%S"))
     print(json.dumps(response.json(), indent=2))
@@ -138,4 +208,3 @@ def show_async(response):
       waiting_message_printed = False
   print('Async request is complete')
   return response
-
