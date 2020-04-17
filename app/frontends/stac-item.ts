@@ -11,9 +11,10 @@ class HarmonyItem {
    * @param {string} id - ID of the STAC Item
    * @param {string} title - Title of the STAC Item
    * @param {string} description - Description of the STAC Item
+   * @param {number} index - The index of this item in the STAC catalog
    */
-  constructor(id = uuid.v4(), title = '', description = '') {
-    this.id = id;
+  constructor(id = uuid.v4(), title = '', description = '', index) {
+    this.id = `${id}_${index}`;
     this.stac_version = '0.9.0';
     this.title = title;
     this.description = description;
@@ -199,7 +200,7 @@ function create(job, index) {
   }
   const title = `Harmony output #${index} in job ${job.jobID}`;
   const description = `Harmony out for ${job.request}`;
-  const item = new HarmonyItem(job.jobID, title, description);
+  const item = new HarmonyItem(job.jobID, title, description, index);
 
   // Set creation time
   const creationTime = Object.hasOwnProperty.call(job, 'createdAt') ? job.createdAt : new Date().toISOString();
