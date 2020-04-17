@@ -1,0 +1,9 @@
+requests >= 2.23.0
+CacheControl >= 0.12.6
+matplotlib >= 3.2.1
+Pillow >= 7.1.1
+h5py >= 2.10.0
+numpy >= 1.18.2
+geopandas >= 0.7.0
+descartes >= 1.1.0
+contextily >= 1.0.0
