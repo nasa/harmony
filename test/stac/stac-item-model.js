@@ -53,6 +53,13 @@ const jobProps = {
         end: '1996-11-15T00:05:32.000Z',
       },
     },
+    {
+      // no STAC metadata
+      href: 'file_5.nc',
+      title: 'Item #1',
+      type: 'application/nc',
+      rel: 'data',
+    },
   ],
 };
 const job = new Job(jobProps);
@@ -79,7 +86,7 @@ describe('stac-item', function () {
     it('has a bounding box that crosses anti-meridian', function () {
       expect(jsonObj.geometry.type).to.equal('MultiPolygon');
     });
-    // TODO: validate GeoJSON geometry
+    // TODO: [HARMONY-294] validate GeoJSON geometry
     it('has the creation time', function () {
       expect(jsonObj.properties.created).to.equal('2020-02-02T00:00:00Z');
     });

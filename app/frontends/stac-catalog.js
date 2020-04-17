@@ -1,6 +1,8 @@
 const pick = require('lodash.pick');
 const HarmonyJob = require('../models/job');
-const { linksWithStacData } = require('../util/stac');
+const {
+  linksWithStacData,
+} = require('../util/stac');
 
 
 /**
@@ -36,16 +38,20 @@ class HarmonyCatalog {
   }
 
   /**
-     * Adds a member to 'links' property of a STAC Catalog
-     *
-     * @param {string} url - Link URL
-     * @param {string} relType - Relation type: [self, root, item]
-     * @param {string} title - Link title (human readable)
-     *
-     * @returns {void}
-     */
+   * Adds a member to 'links' property of a STAC Catalog
+   *
+   * @param {string} url - Link URL
+   * @param {string} relType - Relation type: [self, root, item]
+   * @param {string} title - Link title (human readable)
+   *
+   * @returns {void}
+   */
   addLink(url, relType, title) {
-    this.links.push({ href: url, rel: relType, title });
+    this.links.push({
+      href: url,
+      rel: relType,
+      title,
+    });
   }
 
   /**

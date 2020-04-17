@@ -6,6 +6,42 @@ const stacItem = require('./stac-item');
 const stacCatalog = require('./stac-catalog');
 
 /**
+ * Generic handler for STAC requests
+ *
+ * @param {http.IncomingMessage} req The request sent by the client
+ * @param {http.ServerResponse} res The response to send to the client
+ * @param {*} callback A function that excepts a single serialized Job as its parameter
+ * @returns {Promise<void>} Resolves when the request is complete
+ */
+async function handleStacRequest(req, res, callback) {
+  const { jobId } = req.params;
+  if (!isUUID(jobId)) {
+    res.status(400);
+    res.json({
+      code: 'harmony:BadRequestError',
+      description: `Error: jobId ${jobId} is in invalid format.` });
+  } else {
+    await db.transaction(async (tx) => {
+      const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
+      if (!job) {
+        res.status(404);
+        res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
+      } else if (job.status === 'successful') {
+        if (needsStacLink(job.getRelatedLinks('data'))) {
+          res.send(JSON.stringify(callback(job.serialize())));
+        } else {
+          res.status(501);
+          res.json({ code: 'harmony:ServiceError', description: `Error: Service did not provide STAC items for job ${jobId}` });
+        }
+      } else {
+        res.status(409);
+        res.json({ code: 'harmony:BadRequestError', description: `Error: Job ${jobId} is not complete` });
+      }
+    });
+  }
+}
+
+/**
  * Express.js handler that returns a STAC catalog for a single job
  *
  * @param {http.IncomingMessage} req The request sent by the client
@@ -14,39 +50,15 @@ const stacCatalog = require('./stac-catalog');
  */
 async function getStacCatalog(req, res) {
   const { jobId } = req.params;
-  req.context.logger.info(`Get STAC catalog for job ${jobId} and user ${req.user}`);
-  // TODO extract this code into a common function that can be called by this and getStacItem
-  if (!isUUID(jobId)) {
-    res.status(400);
+
+  try {
+    await handleStacRequest(req, res, (data) => stacCatalog.create(data));
+  } catch (e) {
+    req.context.logger.error(e);
+    res.status(500);
     res.json({
-      code: 'harmony:BadRequestError',
-      description: `Error: jobId ${jobId} is in invalid format.` });
-  } else {
-    try {
-      await db.transaction(async (tx) => {
-        const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
-        if (!job) {
-          res.status(404);
-          res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
-        } else if (job.status === 'successful') {
-          if (needsStacLink(job.getRelatedLinks('data'))) {
-            res.send(JSON.stringify(stacCatalog.create(job.serialize())));
-          } else {
-            res.status(501);
-            res.json({ code: 'harmony:ServiceError', description: `Error: Service did not provide STAC items for job ${jobId}` });
-          }
-        } else {
-          res.status(409);
-          res.json({ code: 'harmony:BadRequestError', description: `Error: Job ${jobId} is not complete` });
-        }
-      });
-    } catch (e) {
-      req.context.logger.error(e);
-      res.status(500);
-      res.json({
-        code: 'harmony:ServerError',
-        description: `Error: Internal server error trying to retrieve STAC catalog for job ${jobId}` });
-    }
+      code: 'harmony:ServerError',
+      description: `Error: Internal server error trying to retrieve STAC catalog for job ${jobId}` });
   }
 }
 
@@ -59,44 +71,21 @@ async function getStacCatalog(req, res) {
  */
 async function getStacItem(req, res) {
   const { jobId, itemIndex } = req.params;
-  req.context.logger.info(`Get STAC catalog for job ${jobId} and user ${req.user}`);
-  if (!isUUID(jobId)) {
-    res.status(400);
-    res.json({
-      code: 'harmony:BadRequestError',
-      description: `Error: jobId ${jobId} is in invalid format.` });
-  } else {
-    try {
-      await db.transaction(async (tx) => {
-        const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
-        if (!job) {
-          res.status(404);
-          res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
-        } else if (job.status === 'successful') {
-          if (needsStacLink(job.getRelatedLinks('data'))) {
-            res.send(JSON.stringify(stacItem.create(job.serialize(), itemIndex)));
-          } else {
-            res.status(501);
-            res.json({ code: 'harmony:ServiceError', description: `Error: Service did not provide STAC items for job ${jobId}` });
-          }
-        } else {
-          res.status(409);
-          res.json({ code: 'harmony:BadRequestError', description: `Error: Job ${jobId} is not complete` });
-        }
-      });
-    } catch (e) {
-      req.context.logger.error(e);
-      if (e instanceof RangeError) {
-        res.status(400);
-        res.json({
-          code: 'harmony:RequestError',
-          description: e.message });
-      } else {
-        res.status(500);
-        res.json({
-          code: 'harmony:ServerError',
-          description: `Error: Internal server error trying to retrieve STAC item for job ${jobId} index ${itemIndex}` });
-      }
+
+  try {
+    await handleStacRequest(req, res, (data) => stacItem.create.apply(null, [data, itemIndex]));
+  } catch (e) {
+    req.context.logger.error(e);
+    if (e instanceof RangeError) {
+      res.status(400);
+      res.json({
+        code: 'harmony:RequestError',
+        description: e.message });
+    } else {
+      res.status(500);
+      res.json({
+        code: 'harmony:ServerError',
+        description: `Error: Internal server error trying to retrieve STAC item for job ${jobId} index ${itemIndex}` });
     }
   }
 }

@@ -1,6 +1,8 @@
 const pick = require('lodash.pick');
 const uuid = require('uuid');
-const { linksWithStacData } = require('../util/stac');
+const {
+  linksWithStacData,
+} = require('../util/stac');
 const HarmonyJob = require('../models/job');
 
 class HarmonyItem {
@@ -24,22 +26,28 @@ class HarmonyItem {
   }
 
   /**
-     * Adds GeoJSON Feature to the STAC Item
-     * In future, this should take a polygon and derive a bounding box.
-     *
-     * @param {number[]} bbox - GeoJSON bounding box
-     * @returns {void}
-     */
+   * Adds GeoJSON Feature to the STAC Item
+   * In future, this should take a polygon and derive a bounding box.
+   *
+   * @param {number[]} bbox - GeoJSON bounding box
+   * @returns {void}
+   */
   addSpatialExtent(bbox) {
     // Validate bounding box; should compliant with GeoJSON spec
     if (bbox.length < 4) {
       throw new TypeError('Bounding box');
     }
 
-    const west = bbox[0]; const south = bbox[1]; const east = bbox[2]; const
+    const west = bbox[0];
+    const south = bbox[1];
+    const east = bbox[2];
+    const
       north = bbox[3];
 
-    const geometry = { type: undefined, coordinates: [] };
+    const geometry = {
+      type: undefined,
+      coordinates: [],
+    };
     if (west > east) {
       // Case of bounding box crossing anti-meridian
       geometry.type = 'MultiPolygon';
@@ -72,26 +80,30 @@ class HarmonyItem {
   }
 
   /**
-     * Adds links to a STAC Item
-     *
-     * @param {string} url - Link URL
-     * @param {string} relType - Relation type: [self, root, item]
-     * @param {string} title - Link title (human readable)
-     *
-     * @returns {void}
-     */
+   * Adds links to a STAC Item
+   *
+   * @param {string} url - Link URL
+   * @param {string} relType - Relation type: [self, root, item]
+   * @param {string} title - Link title (human readable)
+   *
+   * @returns {void}
+   */
   addLink(url, relType, title) {
-    this.links.push({ href: url, rel: relType, title });
+    this.links.push({
+      href: url,
+      rel: relType,
+      title,
+    });
   }
 
   /**
-     * Adds temporal properties for a STAC Item
-     *
-     * @param {string} start - Data start datetime
-     * @param {string} end - Data end datetime
-     *
-     * @returns {void}
-     */
+   * Adds temporal properties for a STAC Item
+   *
+   * @param {string} start - Data start datetime
+   * @param {string} end - Data end datetime
+   *
+   * @returns {void}
+   */
   addTemporalExtent(start, end) {
     // Validate
     this.setProperty('start_datetime', start);
@@ -111,16 +123,16 @@ class HarmonyItem {
   }
 
   /**
-     *
-     * Adds an asset to the STAC Item
-     *
-     * @param {string} href - Asset URL
-     * @param {string} title - Asset title
-     * @param {string} mimetype - Asset mimetype
-     * @param {string} role - Asset role [thumbnail,overview,data,metadata]
-     *
-     * @returns {void}
-     */
+   *
+   * Adds an asset to the STAC Item
+   *
+   * @param {string} href - Asset URL
+   * @param {string} title - Asset title
+   * @param {string} mimetype - Asset mimetype
+   * @param {string} role - Asset role [thumbnail,overview,data,metadata]
+   *
+   * @returns {void}
+   */
   addAsset(href, title, mimetype) {
     let role = 'data';
     // Determine the role based on mimetype
@@ -159,7 +171,7 @@ class HarmonyItem {
   /**
    * Placeholder method to support custom stringification
    *
-   * @returns {Object} - STAC Catalog JSON
+   * @returns {Object} - STAC item JSON
    */
   toJSON() {
     const paths = ['id', 'stac_version', 'title', 'description', 'type', 'bbox', 'geometry', 'properties', 'assets', 'links'];
@@ -175,7 +187,7 @@ class HarmonyItem {
  *
  * @returns {Object} - STAC Item JSON
  */
-function create(job, index = 0) {
+function create(job, index) {
   if (!(job instanceof HarmonyJob)) {
     throw new TypeError('Constructor accepts Harmony Job object as the first argument');
   }
@@ -199,7 +211,13 @@ function create(job, index = 0) {
   if (index < 0 || index >= stacLinks.length) {
     throw new RangeError('Error: STAC item index is out of bounds');
   }
-  const { bbox, temporal, href, title: linkTitle, type } = stacLinks[index];
+  const {
+    bbox,
+    temporal,
+    href,
+    title: linkTitle,
+    type,
+  } = stacLinks[index];
   item.addSpatialExtent(bbox);
   item.addTemporalExtent(temporal.start, temporal.end);
   item.addAsset(href, linkTitle, type);
