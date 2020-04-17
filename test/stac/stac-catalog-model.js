@@ -42,41 +42,34 @@ const jobProps = {
 describe('stac-catalog', function () {
   describe('catalog creation with invalid argument', function () {
     const job = { jobID: 1 };
-    it('should fail', function (done) {
+    it('should fail', function () {
       expect(function () { catalog.create(job); }).to.throw();
-      done();
     });
   });
 
   describe('catalog creation with an object matching Harmony Job properties', function () {
-    it('should fail', function (done) {
+    it('should fail', function () {
       expect(function () { catalog.create(jobProps); }).to.throw();
-      done();
     });
   });
 
   describe('catalog creation with a Harmony Job object', function () {
     const job = new Job(jobProps);
     let jsonObj = {};
-    it('created Harmony STAC Catalog', function (done) {
+    it('created Harmony STAC Catalog', function () {
       expect(function () { jsonObj = catalog.create(job); }).to.not.throw();
-      done();
     });
-    it('catalog ID matches Job ID', function (done) {
+    it('catalog ID matches Job ID', function () {
       expect(jsonObj.id).to.equal(jobProps.jobID);
-      done();
     });
-    it('has links', function (done) {
+    it('has links', function () {
       expect(jsonObj.links.length).to.equal(4);
-      done();
     });
-    it('has link with an item', function (done) {
+    it('has link with an item', function () {
       expect(jsonObj.links[3].rel).to.equal('item');
-      done();
     });
-    it('has link with href to item index', function (done) {
+    it('has link with href to item index', function () {
       expect(jsonObj.links[3].href).to.equal('./1');
-      done();
     });
   });
 });
