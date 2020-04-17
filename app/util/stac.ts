@@ -6,7 +6,7 @@
  */
 function needsStacLink(links) {
   if (!links) return false;
-  return links.some((link) => link.bbox && link.temporal);
+  return links.some((link) => link.rel === 'data' && link.bbox && link.temporal);
 }
 
 /**
@@ -16,7 +16,7 @@ function needsStacLink(links) {
  * @returns {Array<Object>} the subset of links that have STAC metadata
  */
 function linksWithStacData(links) {
-  return links.filter((link) => link.bbox && link.temporal);
+  return links.filter((link) => link.rel === 'data' && link.bbox && link.temporal);
 }
 
 module.exports = {

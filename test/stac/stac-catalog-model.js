@@ -11,6 +11,7 @@ const jobProps = {
     {
       href: 'file_1.nc',
       title: 'Item #1',
+      rel: 'data',
       type: 'application/nc',
       bbox: [-80, -30, -100, 20],
       temporal: {
@@ -21,12 +22,19 @@ const jobProps = {
     {
       href: 'file_2.png',
       title: 'Item #2',
+      rel: 'data',
       type: 'image/png',
       bbox: [-100, -30, -80, 20],
       temporal: {
         start: '1996-10-15T00:05:32.000Z',
         end: '1996-11-15T00:05:32.000Z',
       },
+    },
+    {
+      href: 'http://data.example.org/',
+      title: 'this catalog',
+      rel: 'self',
+      type: 'application/json',
     },
   ],
 };

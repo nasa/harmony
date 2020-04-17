@@ -33,7 +33,7 @@ function getCloudAccessShLink(urlRoot) {
 /**
  * Returns a link to the STAC catalog for the given job
  *
- * @param {string} urlRoot The harmony rot URL
+ * @param {string} urlRoot The harmony root URL
  * @param {string} jobID The UUID of the job
  * @returns {Object} the link to the STAC catalog
  */

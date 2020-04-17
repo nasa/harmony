@@ -21,10 +21,10 @@ const aJob = {
   links: [
     {
       href: 'http://example.com',
-      bbox: '',
+      bbox: '[-100, -30, -80, 20]',
       temporal: {
-        start: '',
-        end: '',
+        start: '1996-10-15T00:05:32.000Z',
+        end: '1996-11-15T00:05:32.000Z',
       },
     }],
   request: 'http://example.com/harmony?job=aJob',
