@@ -15,6 +15,7 @@ const stacCatalog = require('./stac-catalog');
 async function getStacCatalog(req, res) {
   const { jobId } = req.params;
   req.context.logger.info(`Get STAC catalog for job ${jobId} and user ${req.user}`);
+  // TODO extract this code into a common function that can be called by this and getStacItem
   if (!isUUID(jobId)) {
     res.status(400);
     res.json({
@@ -85,10 +86,17 @@ async function getStacItem(req, res) {
       });
     } catch (e) {
       req.context.logger.error(e);
-      res.status(500);
-      res.json({
-        code: 'harmony:ServerError',
-        description: `Error: Internal server error trying to retrieve STAC item for job ${jobId} index ${itemIndex}` });
+      if (e instanceof RangeError) {
+        res.status(400);
+        res.json({
+          code: 'harmony:RequestError',
+          description: e.message });
+      } else {
+        res.status(500);
+        res.json({
+          code: 'harmony:ServerError',
+          description: `Error: Internal server error trying to retrieve STAC item for job ${jobId} index ${itemIndex}` });
+      }
     }
   }
 }

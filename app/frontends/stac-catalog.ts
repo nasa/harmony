@@ -1,5 +1,6 @@
 const pick = require('lodash.pick');
 const HarmonyJob = require('../models/job');
+const { linksWithStacData } = require('../util/stac');
 
 
 /**
@@ -85,12 +86,10 @@ function create(job) {
   const catalog = new HarmonyCatalog(job.jobID, title, description);
   catalog.addLink('.', 'self', 'self');
   catalog.addLink('.', 'root', 'root');
-  if (Object.hasOwnProperty.call(job, 'links') && (Array.isArray(job.links))) {
-    let index = 0;
-    for (const link of job.links) {
-      catalog.addLink(`./${index}`, 'item', link.title);
-      index++;
-    }
+  let index = 0;
+  for (const link of linksWithStacData(job.links)) {
+    catalog.addLink(`./${index}`, 'item', link.title);
+    index++;
   }
   return catalog.toJSON();
 }

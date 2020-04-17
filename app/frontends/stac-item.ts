@@ -1,5 +1,6 @@
 const pick = require('lodash.pick');
 const uuid = require('uuid');
+const { linksWithStacData } = require('../util/stac');
 const HarmonyJob = require('../models/job');
 
 class HarmonyItem {
@@ -194,11 +195,11 @@ function create(job, index = 0) {
   // TBD: may be it should be a metadata for a Harmony service
   item.setProperty('license', 'various');
   // Add assets
-  const dataLinks = job.getRelatedLinks('data');
-  if (index < 0 || index >= dataLinks.length) {
-    throw new TypeError('STAC item index is out of bounds');
+  const stacLinks = linksWithStacData(job.links);
+  if (index < 0 || index >= stacLinks.length) {
+    throw new RangeError('Error: STAC item index is out of bounds');
   }
-  const { bbox, temporal, href, title: linkTitle, type } = dataLinks[index];
+  const { bbox, temporal, href, title: linkTitle, type } = stacLinks[index];
   item.addSpatialExtent(bbox);
   item.addTemporalExtent(temporal.start, temporal.end);
   item.addAsset(href, linkTitle, type);
