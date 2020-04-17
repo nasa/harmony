@@ -28,7 +28,7 @@ async function handleStacRequest(req, res, callback) {
         res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
       } else if (job.status === 'successful') {
         if (needsStacLink(job.getRelatedLinks('data'))) {
-          res.send(JSON.stringify(callback(job.serialize())));
+          res.json(callback(job.serialize()));
         } else {
           res.status(501);
           res.json({ code: 'harmony:ServiceError', description: `Error: Service did not provide STAC items for job ${jobId}` });
