@@ -199,6 +199,22 @@ describe('STAC item route', function () {
           });
         });
       });
+
+      describe('when the item index is out of bounds', function () {
+        const completedJobId = completedJob.requestId;
+        hookStacItem(completedJobId, 100, 'joe');
+        it('returns an HTTP bad request response', function () {
+          expect(this.res.statusCode).to.equal(400);
+        });
+
+        it('returns a JSON error response', function () {
+          const response = JSON.parse(this.res.text);
+          expect(response).to.eql({
+            code: 'harmony:RequestError',
+            description: 'Error: STAC item index is out of bounds',
+          });
+        });
+      });
     });
   });
 });

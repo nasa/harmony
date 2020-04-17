@@ -9,6 +9,17 @@ function needsStacLink(links) {
   return links.some((link) => link.bbox && link.temporal);
 }
 
+/**
+ * Return the subset of links that have STAC metadata elements `bbox` and `temporal`
+ *
+ * @param {Array<Object>} links An array of link objects
+ * @returns {Array<Object>} the subset of links that have STAC metadata
+ */
+function linksWithStacData(links) {
+  return links.filter((link) => link.bbox && link.temporal);
+}
+
 module.exports = {
   needsStacLink,
+  linksWithStacData,
 };
