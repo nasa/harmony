@@ -19,6 +19,9 @@
   collections:
     - C1233800302-EEDTEST
     - C1234088182-EEDTEST
+    - C1234410736-POCLOUD
+    - C1234082763-POCLOUD
+    - C1234071416-POCLOUD
   capabilities:
     subsetting:
       bbox: true
@@ -51,6 +54,9 @@
     - C1233147317-EEDTEST
     - C1233147319-EEDTEST
     - C1233860183-EEDTEST
+    - C1234410736-POCLOUD
+    - C1234082763-POCLOUD
+    - C1234071416-POCLOUD
   capabilities:
     subsetting:
       bbox: false
@@ -87,7 +93,7 @@
       - image/tiff
 
 - name: podaac/http-service
-  data_operation_version: '0.5.0'
+  data_operation_version: '0.7.0'
   type:
     name: http
     synchronous_only: true
@@ -97,11 +103,15 @@
     - C1225996408-POCUMULUS
     - C1234530532-EEDTEST
     - C1234530533-EEDTEST
+    - C1234208437-POCLOUD
+    - C1234208436-POCLOUD
+    - C1234208438-POCLOUD
   capabilities:
     subsetting:
       variable: true
     output_formats:
       - application/netcdf
+      - application/shapefile+zip
 
 - name: harmony/netcdf-to-zarr
   data_operation_version: '0.7.0'
@@ -121,6 +131,12 @@
     - C1233800302-EEDTEST
     - C1233860183-EEDTEST
     - C1234088182-EEDTEST
+    - C1234410736-POCLOUD
+    - C1234082763-POCLOUD
+    - C1234071416-POCLOUD
+    - C1234208437-POCLOUD
+    - C1234208436-POCLOUD
+    - C1234208438-POCLOUD
   maximum_sync_granules: 0
   capabilities:
     subsetting:
