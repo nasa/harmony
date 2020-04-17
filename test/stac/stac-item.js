@@ -12,7 +12,16 @@ const runningJob = {
   status: 'running',
   message: 'it is running',
   progress: 42,
-  links: [{ href: 'http://example.com' }],
+  links: [{
+    href: 'http://example.com',
+    type: 'application/octet-stream',
+    rel: 'data',
+    bbox: [-10, -10, 10, 10],
+    temporal: {
+      start: '2020-01-01T00:00:00.000Z',
+      end: '2020-01-01T01:00:00.000Z',
+    },
+  }],
   request: 'http://example.com/harmony?job=runningJob',
 };
 
@@ -22,7 +31,30 @@ const completedJob = {
   status: 'successful',
   message: 'it is done',
   progress: 100,
-  links: [{ href: 'http://example.com' }],
+  links: [{
+    href: 'http://example.com',
+    type: 'application/octet-stream',
+    rel: 'data',
+    bbox: [-10, -10, 10, 10],
+    temporal: {
+      start: '2020-01-01T00:00:00.000Z',
+      end: '2020-01-01T01:00:00.000Z',
+    },
+  }],
+  request: 'http://example.com/harmony?job=completedJob',
+};
+
+const completedNonStacJob = {
+  username: 'joe',
+  requestId: uuid().toString(),
+  status: 'successful',
+  message: 'it is done',
+  progress: 100,
+  links: [{
+    href: 'http://example.com',
+    type: 'application/octet-stream',
+    rel: 'data',
+  }],
   request: 'http://example.com/harmony?job=completedJob',
 };
 
@@ -36,6 +68,7 @@ describe('STAC item route', function () {
   before(async function () {
     await new Job(runningJob).save(this.trx);
     await new Job(completedJob).save(this.trx);
+    await new Job(completedNonStacJob).save(this.trx);
     this.trx.commit();
   });
   const jobId = runningJob.requestId;
@@ -115,10 +148,10 @@ describe('STAC item route', function () {
 
     describe('when the job is complete', function () {
       describe('when the service does not supply the necessary fields', async function () {
-        const completedJobId = completedJob.requestId;
+        const completedJobId = completedNonStacJob.requestId;
         hookStacItem(completedJobId, 0, 'joe');
 
-        it('returns an HTTP conflict response', function () {
+        it('returns an HTTP not implemented response', function () {
           expect(this.res.statusCode).to.equal(501);
         });
 
@@ -141,7 +174,33 @@ describe('STAC item route', function () {
 
         it('returns a STAC catalog in JSON format', function () {
           const item = JSON.parse(this.res.text);
-          expect(item).to.eql(expectedItem);
+          expect(item).to.eql({
+            id: completedJob.requestId,
+            stac_version: '0.9.0',
+            title: `Harmony output #0 in job ${completedJob.requestId}`,
+            description: 'Harmony out for http://example.com/harmony?job=completedJob',
+            type: 'Feature',
+            bbox: [-10, -10, 10, 10],
+            geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
+            properties: {
+              created: item.properties.created,
+              license: 'various',
+              start_datetime: '2020-01-01T00:00:00.000Z',
+              end_datetime: '2020-01-01T01:00:00.000Z',
+              datetime: '2020-01-01T00:00:00.000Z',
+            },
+            assets: {
+              'http://example.com': {
+                href: 'http://example.com',
+                type: 'application/octet-stream',
+                roles: ['data'],
+              },
+            },
+            links: [
+              { href: '../', rel: 'self', title: 'self' },
+              { href: '../', rel: 'root', title: 'parent' },
+            ],
+          });
         });
       });
     });

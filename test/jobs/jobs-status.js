@@ -420,7 +420,7 @@ describe('Individual job status route', function () {
       });
     });
 
-    describe('when a job has links with temporal and bbox fields @wip', function () {
+    describe('when a job has links with temporal and bbox fields', function () {
       StubService.hook({ params: { status: 'successful' } });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
