@@ -5,11 +5,16 @@ from datetime import datetime
 from time import sleep
 import json
 
+import tempfile
+import os
+
 from io import BytesIO
 from matplotlib import pyplot as plt
 from PIL import Image
 from h5py import File as H5File
 import numpy as np
+import geopandas as gpd
+import contextily as ctx
 
 import requests
 from cachecontrol import CacheController, CacheControlAdapter
@@ -54,7 +59,13 @@ def get(*args, **kwargs):
 def post(*args, **kwargs):
   return request('POST', *args, **kwargs)
 
-def show(response, color_index=None):
+def show_shape(filename, basemap=True):
+  shape = gpd.read_file(filename).to_crs(epsg=3857)
+  plot = shape.plot(alpha=0.5, edgecolor='k', figsize=(8, 8))
+  if basemap:
+    ctx.add_basemap(plot)
+
+def show(response, color_index=None, immediate=True):
   plt.rcParams["figure.figsize"] = [16, 8]
 
   content_type = response.headers['Content-Type']
@@ -70,6 +81,13 @@ def show(response, color_index=None):
       array = np.where(where, values * scale + offset, values)
       arrays.append(array)
     plt.imshow(np.dstack(arrays))
+  elif content_type in ['application/octet-stream', 'application/zip', 'application/shapefile+zip']:
+    tmp = tempfile.NamedTemporaryFile(suffix='.shp.zip', delete=False)
+    try:
+      tmp.write(response.content)
+      show_shape('zip://' + tmp.name, immediate)
+    finally:
+      pass #os.unlink(tmp.name)
   else:
     if color_index == None:
       plt.imshow(Image.open(BytesIO(response.content)))
@@ -85,7 +103,8 @@ def show(response, color_index=None):
       if color_index == 2:
         image.putdata([(0, 0, g) for g in gray_image.getdata()])
       plt.imshow(image)
-  plt.show()
+  if immediate:
+    plt.show()
 
 def get_data_urls(response):
   return [link['href'] for link in response.json()['links'] if link.get('rel', 'data') == 'data']
