@@ -115,7 +115,7 @@ describe('STAC catalog route', function () {
     describe('when the job is incomplete', function () {
       hookStacCatalog(jobId, 'joe');
       it('returns an HTTP not implemented response', function () {
-        expect(this.res.statusCode).to.equal(501);
+        expect(this.res.statusCode).to.equal(409);
       });
 
       it('returns a JSON error response', function () {

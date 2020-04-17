@@ -58,10 +58,6 @@ const completedNonStacJob = {
   request: 'http://example.com/harmony?job=completedJob',
 };
 
-const expectedItem = {
-
-};
-
 describe('STAC item route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
