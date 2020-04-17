@@ -16,6 +16,7 @@ test-results.xml
 .env
 .vscode
 .ipynb*
+__pycache__
 
 # Dev and test databases
 db/*.sqlite3
