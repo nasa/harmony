@@ -171,7 +171,7 @@ describe('STAC item route', function () {
         it('returns a STAC catalog in JSON format', function () {
           const item = JSON.parse(this.res.text);
           expect(item).to.eql({
-            id: completedJob.requestId,
+            id: `${completedJob.requestId}_0`,
             stac_version: '0.9.0',
             title: `Harmony output #0 in job ${completedJob.requestId}`,
             description: 'Harmony out for http://example.com/harmony?job=completedJob',

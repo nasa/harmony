@@ -40,7 +40,7 @@ function getCloudAccessShLink(urlRoot) {
 function getStacCatalogLink(urlRoot, jobID) {
   return {
     title: 'STAC catalog',
-    href: `${urlRoot}/stac/${jobID}`,
+    href: `${urlRoot}/stac/${jobID}/`,
     rel: 'stac-catalog-json',
     type: 'application/json',
   };

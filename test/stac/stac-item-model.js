@@ -68,7 +68,7 @@ describe('stac-item', function () {
   describe('STAC Item creation with invalid argument', function () {
     const obj = { jobID: 1 };
     it('should fail', function () {
-      expect(function () { stacItem.create(obj); }).to.throw();
+      expect(function () { stacItem.create(obj, 0); }).to.throw();
     });
   });
 
@@ -80,8 +80,8 @@ describe('stac-item', function () {
 
   describe('STAC Item creation with a Harmony Job object: case of anti-meridian crossing', function () {
     const jsonObj = stacItem.create(job, 0);
-    it('Item ID matches Job ID', function () {
-      expect(jsonObj.id).to.equal(jobProps.jobID);
+    it('Item has correct ID', function () {
+      expect(jsonObj.id).to.equal(`${jobProps.jobID}_0`);
     });
     it('has a bounding box that crosses anti-meridian', function () {
       expect(jsonObj.geometry.type).to.equal('MultiPolygon');
