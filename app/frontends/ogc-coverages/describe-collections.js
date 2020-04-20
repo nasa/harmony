@@ -1,4 +1,4 @@
-const { getSanitizedRequestUrl } = require('../../util/url');
+const { getSanitizedRequestUrl, encodeString } = require('../../util/url');
 const { keysToLowerCase } = require('../../util/object');
 const { RequestValidationError } = require('../../util/errors');
 const { parseVariables } = require('./util/variable-parsing');
@@ -94,7 +94,7 @@ function describeCollections(req, res) {
     const allVariables = { name: 'all', concept_id: 'all', long_name: 'All variables' };
     ogcCollections.push(_buildCollectionInfo(collection, allVariables, `${requestUrl}/all`, extent));
     for (const variable of collection.variables) {
-      const collectionInfo = _buildCollectionInfo(collection, variable, `${requestUrl}/${variable.name}`, extent);
+      const collectionInfo = _buildCollectionInfo(collection, variable, `${requestUrl}/${encodeString(variable.name)}`, extent);
       ogcCollections.push(collectionInfo);
     }
   }

@@ -104,6 +104,18 @@ describe('OGC API Coverages - describeCollections', function () {
       });
     });
   });
+
+  describe('when provided a collection with a nested variable such as /group/foo/var', function () {
+    const nestedCollection = 'C1225776654-ASF';
+    const nestedVar = '/science/grids/data/amplitude';
+    hookDescribeCollectionsRequest(nestedCollection, version);
+    it('URL encodes the nested variable', function () {
+      const listing = JSON.parse(this.res.text);
+      const amplitudeLink = listing.collections.find((c) => c.title.includes(nestedVar));
+      expect(amplitudeLink.links[0].href).to.contain('C1225776654-ASF/ogc-api-coverages/1.0.0/collections/%2Fscience%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
+    });
+  });
+
   describe('Validation', function () {
     describe('When requesting an invalid response format', function () {
       hookDescribeCollectionsRequest(collection, version, { f: 'bad-value' });

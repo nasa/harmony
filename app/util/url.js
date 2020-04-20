@@ -57,8 +57,19 @@ function getRequestRoot(req) {
   });
 }
 
+/**
+ * Returns the url encoded string - also replacing '/' with %2F
+ *
+ * @param {string} str The string to url encode
+ * @returns {string} The URL encoded string
+ */
+function encodeString(str) {
+  return encodeURIComponent(str);
+}
+
 module.exports = {
   getRequestUrl,
   getSanitizedRequestUrl,
   getRequestRoot,
+  encodeString,
 };
