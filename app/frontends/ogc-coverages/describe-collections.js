@@ -36,8 +36,9 @@ function generateExtent(collection) {
  * @param {String} requestUrl The request URL to use within links
  * @param {Object} extent The spatial and temporal extent information for the CMR collection.
  * @returns {Object} The collection info matching the collectionInfo OGC schema.
+ * @private
  */
-function _buildCollectionInfo(collection, variable, requestUrl, extent) {
+function buildCollectionInfo(collection, variable, requestUrl, extent) {
   const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
   const collectionLongLabel = `${collectionShortLabel} (${collection.archive_center || collection.data_center})`;
   return {
@@ -92,9 +93,11 @@ function describeCollections(req, res) {
     const extent = generateExtent(collection);
     // Include a link to perform a request asking for all variables in the EOSDIS collection
     const allVariables = { name: 'all', concept_id: 'all', long_name: 'All variables' };
-    ogcCollections.push(_buildCollectionInfo(collection, allVariables, `${requestUrl}/all`, extent));
+    ogcCollections.push(buildCollectionInfo(collection, allVariables, `${requestUrl}/all`, extent));
     for (const variable of collection.variables) {
-      const collectionInfo = _buildCollectionInfo(collection, variable, `${requestUrl}/${variable.name}`, extent);
+      const collectionInfo = buildCollectionInfo(
+        collection, variable, `${requestUrl}/${encodeURIComponent(variable.name)}`, extent,
+      );
       ogcCollections.push(collectionInfo);
     }
   }
@@ -124,7 +127,7 @@ function describeCollection(req, res) {
   const extent = generateExtent(collection);
   const variableInfo = parseVariables([collection], req.params.collectionId);
   const variable = variableInfo[0].variables[0];
-  const collectionInfo = _buildCollectionInfo(collection, variable, requestUrl, extent);
+  const collectionInfo = buildCollectionInfo(collection, variable, requestUrl, extent);
   res.send(collectionInfo);
 }
 
