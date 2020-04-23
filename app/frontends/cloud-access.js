@@ -48,7 +48,7 @@ async function cloudAccessJson(req, res) {
 }
 
 const preamble = `#!/bin/sh\n# Source this file to set keys to access Harmony S3 outputs within the ${awsDefaultRegion} region.\n`;
-const awsKeyFields = {
+const awsFieldMappings = {
   AccessKeyId: 'AWS_ACCESS_KEY_ID',
   SecretAccessKey: 'AWS_SECRET_ACCESS_KEY',
   SessionToken: 'AWS_SESSION_TOKEN',
@@ -69,8 +69,8 @@ async function cloudAccessSh(req, res) {
     const credentials = await _assumeS3OutputsRole(req.context, req.user);
     let response = preamble;
     response += `# Keys will expire on ${credentials.Expiration}\n\n`;
-    for (const key of Object.keys(awsKeyFields)) {
-      response += `export ${awsKeyFields[key]}='${credentials[key]}'\n`;
+    for (const key of Object.keys(awsFieldMappings)) {
+      response += `export ${awsFieldMappings[key]}='${credentials[key]}'\n`;
     }
     res.send(response);
   } catch (e) {
