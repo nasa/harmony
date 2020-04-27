@@ -1,4 +1,4 @@
-const FormData = require('form-data');
+import * as FormData from 'form-data'
 const fs = require('fs');
 const get = require('lodash.get');
 const fetch = require('node-fetch');

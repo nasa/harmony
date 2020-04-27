@@ -1,6 +1,6 @@
 const simpleOAuth2 = require('simple-oauth2');
 const { ForbiddenError } = require('../util/errors');
-const { listToText } = require('../util/string');
+import { listToText } from '../util/string';
 const { setCookiesForEdl } = require('../util/cookies');
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];

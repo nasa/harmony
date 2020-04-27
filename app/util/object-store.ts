@@ -1,11 +1,12 @@
-const aws = require('aws-sdk');
-const fs = require('fs');
-const querystring = require('querystring');
-const stream = require('stream');
-const tmp = require('tmp');
-const { URL } = require('url');
-const util = require('util');
-const { awsDefaultRegion } = require('./env');
+import * as aws from 'aws-sdk';
+import * as fs from 'fs';
+import * as querystring from 'querystring';
+import * as stream from 'stream';
+import * as tmp from 'tmp';
+import { URL } from 'url';
+import * as util from 'util';
+import env = require('./env');
+const { awsDefaultRegion } = env;
 
 const pipeline = util.promisify(stream.pipeline);
 const createTmpFileName = util.promisify(tmp.tmpName);
@@ -17,6 +18,8 @@ const readFile = util.promisify(fs.readFile);
  * @class S3ObjectStore
  */
 class S3ObjectStore {
+  s3: aws.S3;
+
   /**
    * Builds and returns an S3 object store configured according to environment variables
    * Will use localstack if USE_LOCALSTACK is true (default false) and AWS_DEFAULT_REGION
@@ -25,7 +28,7 @@ class S3ObjectStore {
    * @param {object} overrides values to set when constructing the underlying S3 store
    */
   constructor(overrides) {
-    const endpointSettings = {};
+    const endpointSettings: any = {};
     if (process.env.USE_LOCALSTACK === 'true') {
       endpointSettings.endpoint = 'http://localhost:4572';
       endpointSettings.s3ForcePathStyle = true;
@@ -81,7 +84,7 @@ class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  getObject(paramsOrUrl, callback) {
+  getObject(paramsOrUrl, callback?) {
     return this.s3.getObject(this._paramsOrUrlToParams(paramsOrUrl), callback);
   }
 
@@ -229,7 +232,7 @@ function objectStoreForProtocol(protocol) {
   // Make sure the protocol is lowercase and does not end in a colon (as URL parsing produces)
   const normalizedProtocol = protocol.toLowerCase().split(':')[0];
   if (normalizedProtocol === 's3') {
-    return new S3ObjectStore();
+    return new S3ObjectStore({});
   }
   return null;
 }
@@ -241,7 +244,7 @@ function objectStoreForProtocol(protocol) {
  * @returns {ObjectStore} the default object store for Harmony.
  */
 function defaultObjectStore() {
-  return new S3ObjectStore();
+  return new S3ObjectStore({});
 }
 
 module.exports = {

@@ -1,11 +1,11 @@
-const { SpatialReference } = require('gdal-next');
-const DataOperation = require('../../models/data-operation');
-const { keysToLowerCase } = require('../../util/object');
-const { RequestValidationError } = require('../../util/errors');
-const { wrap } = require('../../util/array');
-const { parseVariables } = require('./util/variable-parsing');
-const { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } = require('./util/parameter-parsing');
-const { parseAcceptHeader } = require('../../util/content-negotiation');
+import { SpatialReference } from 'gdal-next';
+import DataOperation = require('../../models/data-operation');
+import { keysToLowerCase } from '../../util/object';
+import { RequestValidationError } from '../../util/errors';
+import { wrap } from '../../util/array';
+import { parseVariables } from './util/variable-parsing';
+import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
+import { parseAcceptHeader } from '../../util/content-negotiation';
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -86,4 +86,4 @@ function getCoverageRangeset(req, res, next) {
   next();
 }
 
-module.exports = getCoverageRangeset;
+export = getCoverageRangeset;

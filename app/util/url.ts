@@ -1,4 +1,4 @@
-const url = require('url');
+import * as url from 'url';
 
 /**
  * Returns the protocol (http or https) depending on whether using localhost or not
@@ -18,7 +18,7 @@ function _getProtocol(req) {
  * @param {boolean} includeQuery Include the query string in the returned URL (default: true)
  * @returns {string} The URL the incoming request is requesting
  */
-function getRequestUrl(req, includeQuery = true) {
+export function getRequestUrl(req, includeQuery = true) {
   return url.format({
     protocol: _getProtocol(req),
     host: req.get('host'),
@@ -35,7 +35,7 @@ function getRequestUrl(req, includeQuery = true) {
  * @param {boolean} includeQuery Include the query string in the returned URL (default: true)
  * @returns {string} The URL the incoming request is requesting
  */
-function getSanitizedRequestUrl(req, includeQuery = true) {
+export function getSanitizedRequestUrl(req, includeQuery = true) {
   return url.format({
     protocol: _getProtocol(req),
     host: req.get('host'),
@@ -50,15 +50,9 @@ function getSanitizedRequestUrl(req, includeQuery = true) {
  * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
  * @returns {string} The URL the incoming request is requesting
  */
-function getRequestRoot(req) {
+export function getRequestRoot(req) {
   return url.format({
     protocol: _getProtocol(req),
     host: req.get('host'),
   });
 }
-
-module.exports = {
-  getRequestUrl,
-  getSanitizedRequestUrl,
-  getRequestRoot,
-};

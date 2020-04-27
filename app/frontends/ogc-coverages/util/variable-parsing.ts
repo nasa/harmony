@@ -1,4 +1,4 @@
-const { RequestValidationError } = require('../../../util/errors');
+import { RequestValidationError } from '../../../util/errors';
 
 /**
  * Given a list of EOSDIS collections and variables parsed from the CMR and an OGC
@@ -11,7 +11,7 @@ const { RequestValidationError } = require('../../../util/errors');
  * @throws {RequestValidationError} if the requested OGC collection ID parameter is not valid
  * based on the variables in the collections
  */
-function parseVariables(eosdisCollections, collectionIdParam) {
+export function parseVariables(eosdisCollections, collectionIdParam) {
   // Note that "collectionId" from the Open API spec is an OGC API Collection, which is
   // what we would call a variable (or sometimes a named group of variables).  In the
   // OpenAPI spec doc, a "collection" refers to a UMM-Var variable, and a "CMR collection" refers
@@ -50,5 +50,3 @@ function parseVariables(eosdisCollections, collectionIdParam) {
   }
   return variableInfo;
 }
-
-module.exports = { parseVariables };

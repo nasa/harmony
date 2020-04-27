@@ -49,7 +49,7 @@ const dimensionConfig = {
  * @class ParameterParseError
  * @extends {Error}
  */
-class ParameterParseError extends Error {}
+export class ParameterParseError extends Error {}
 
 /**
  * Helper function for subset parameters that parses and validates numeric values
@@ -131,8 +131,8 @@ function _getDimensionName(value) {
  * @throws {ParameterParseError} if a subset parameter cannot be parsed, has unrecognized
  *   axis names, or is otherwise invalid
  */
-function parseSubsetParams(values, dimConfig = dimensionConfig) {
-  const result = {};
+export function parseSubsetParams(values, dimConfig = dimensionConfig) {
+  const result: any = {};
   for (const value of values) {
     const dimName = _getDimensionName(value);
     const dim = dimConfig[dimName];
@@ -147,7 +147,7 @@ function parseSubsetParams(values, dimConfig = dimensionConfig) {
     const minStr = matches[2];
     // When just a single value is provided treat it as a range with the same min and max
     const maxStr = matches[3] || minStr;
-    const parsed = {};
+    const parsed: any = {};
 
     if (result[dim.name]) {
       throw new ParameterParseError(`subset dimension "${dim.name}" was specified multiple times`);
@@ -184,7 +184,7 @@ function parseSubsetParams(values, dimConfig = dimensionConfig) {
  * @returns {number[]} An array of 4 numbers corresponding to the [West, South, East, North]
  *   bounding box, or null if there is no lat or lon subsetting in values
  */
-function subsetParamsToBbox(values) {
+export function subsetParamsToBbox(values) {
   let { lat, lon } = values;
   if (!lat && !lon) {
     return null;
@@ -205,9 +205,9 @@ function subsetParamsToBbox(values) {
  * @param {Object} values parsed, valid subset params, as returned by `parseSubsetParams`
  * @returns {Object} An object with startTime and stopTime fields if applicable
  */
-function subsetParamsToTemporal(values) {
+export function subsetParamsToTemporal(values) {
   const { time } = values;
-  const temporal = {};
+  const temporal: any = {};
   if (time) {
     if (time.min) {
       temporal.startTime = time.min;
@@ -218,10 +218,3 @@ function subsetParamsToTemporal(values) {
   }
   return temporal;
 }
-
-module.exports = {
-  parseSubsetParams,
-  subsetParamsToTemporal,
-  subsetParamsToBbox,
-  ParameterParseError,
-};

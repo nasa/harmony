@@ -1,4 +1,4 @@
-const Job = require('../models/job');
+import * as Job from '../models/job';
 const db = require('../util/db');
 const { needsStacLink } = require('../util/stac');
 const { getRequestRoot } = require('../util/url');

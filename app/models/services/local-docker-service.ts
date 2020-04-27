@@ -1,4 +1,4 @@
-const process = require('process');
+import * as process from 'process';
 const { spawn } = require('child_process');
 const fs = require('fs');
 const fetch = require('node-fetch');

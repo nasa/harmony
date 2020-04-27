@@ -1,9 +1,9 @@
 /**
  * Converts all of the keys in the passed in object to lowercase strings.
  * @param {Object} object The object
- * @returns {Object} The object passed in with all of the keys converted to lowercase strings
+ * @returns {any} The object passed in with all of the keys converted to lowercase strings
  */
-function keysToLowerCase(object) {
+export function keysToLowerCase(object: ObjectConstructor): any {
   if (object) {
     const updatedObject = {};
     for (const k of Object.keys(object)) {
@@ -13,7 +13,3 @@ function keysToLowerCase(object) {
   }
   return null;
 }
-
-module.exports = {
-  keysToLowerCase,
-};

@@ -4,7 +4,7 @@
  * @param {Array<Object>} links The 'data' links from a serialized Job
  * @returns {boolean} True if a STAC catalog should be generated
  */
-function needsStacLink(links) {
+export function needsStacLink(links) {
   if (!links) return false;
   return links.some((link) => link.rel === 'data' && link.bbox && link.temporal);
 }
@@ -15,11 +15,6 @@ function needsStacLink(links) {
  * @param {Array<Object>} links An array of link objects
  * @returns {Array<Object>} the subset of links that have STAC metadata
  */
-function linksWithStacData(links) {
+export function linksWithStacData(links) {
   return links.filter((link) => link.rel === 'data' && link.bbox && link.temporal);
 }
-
-module.exports = {
-  needsStacLink,
-  linksWithStacData,
-};

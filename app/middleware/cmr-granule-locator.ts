@@ -1,5 +1,5 @@
 const cmr = require('../util/cmr');
-const env = require('../util/env');
+import env = require('../util/env');
 const { CmrError, RequestValidationError, ServerError } = require('../util/errors');
 const boxStringsToBox = require('../util/bounding-box');
 
@@ -21,7 +21,7 @@ async function cmrGranuleLocator(req, res, next) {
 
   let cmrResponse;
 
-  const cmrQuery = {};
+  const cmrQuery: any = {};
 
   if (operation.temporal) {
     const { start, end } = operation.temporal;

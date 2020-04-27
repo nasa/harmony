@@ -1,5 +1,5 @@
 const dotenvResult = require('dotenv').config();
-const express = require('express');
+import * as express from 'express';
 const expressWinston = require('express-winston');
 const path = require('path');
 const favicon = require('serve-favicon');

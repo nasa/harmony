@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const Ajv = require('ajv');
-const cloneDeep = require('lodash.clonedeep');
+import * as fs from 'fs';
+import * as path from 'path';
+import * as Ajv from 'ajv';
+import cloneDeep = require('lodash.clonedeep');
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -12,7 +12,7 @@ const cloneDeep = require('lodash.clonedeep');
  */
 function readSchema(version) {
   const schemaPath = path.join(__dirname, '..', 'schemas', 'data-operation', version, `data-operation-v${version}.json`);
-  return JSON.parse(fs.readFileSync(schemaPath));
+  return JSON.parse(fs.readFileSync(schemaPath).toString());
 }
 
 /**
@@ -84,6 +84,9 @@ for (const { schema, version } of schemaVersions) {
  * @class DataOperation
  */
 class DataOperation {
+  model: any;
+  granuleIds: any;
+  
   /**
    * Creates an instance of DataOperation.
    *
@@ -577,4 +580,4 @@ class DataOperation {
   }
 }
 
-module.exports = DataOperation;
+export = DataOperation;

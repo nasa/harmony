@@ -8,7 +8,7 @@ const qualityValueRegex = /^q=(.*)$/;
  * @return {Array<Object>} an array of objects with two fields, mimeType (String) and
  *     qualityValue (Float);
  */
-function parseAcceptHeader(acceptHeader) {
+export function parseAcceptHeader(acceptHeader) {
   const values = acceptHeader.split(',').map((v) => v.trim());
   const mimeTypeMaps = values.map((v) => {
     const [mimeType, ...parameters] = v.split(';').map((p) => p.trim());
@@ -31,7 +31,7 @@ function parseAcceptHeader(acceptHeader) {
  * @param {String} acceptHeader The accept header
  * @return {Boolean} true if the mimeType is a match for the accept header and false otherwise
  */
-function isMimeTypeAccepted(mimeType, acceptHeader) {
+export function isMimeTypeAccepted(mimeType, acceptHeader) {
   if (acceptHeader === anyWildcard) {
     return true;
   }
@@ -42,5 +42,3 @@ function isMimeTypeAccepted(mimeType, acceptHeader) {
   const re = new RegExp(`^${headerValue}$`);
   return !!mimeType.match(re);
 }
-
-module.exports = { parseAcceptHeader, isMimeTypeAccepted };

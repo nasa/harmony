@@ -1,4 +1,7 @@
-const { camelCase } = require('change-case');
+import { camelCase } from 'change-case';
+import { integer } from 'aws-sdk/clients/lightsail';
+
+const envVars: any = {};
 
 /**
  * Add a symbol to module.exports with an appropriate value. The exported symbol will be in
@@ -12,7 +15,7 @@ const { camelCase } = require('change-case');
  *   and integers are supported
  * @returns {void}
  */
-function makeConfigVar(envName, defaultValue) {
+function makeConfigVar(envName: string, defaultValue: string|integer) {
   const envValue = process.env[envName];
   let value;
 
@@ -24,7 +27,7 @@ function makeConfigVar(envName, defaultValue) {
     value = envValue;
   }
 
-  module.exports[camelCase(envName)] = value;
+  envVars[camelCase(envName)] = value;
 }
 
 // create exported config variables
@@ -46,6 +49,8 @@ function makeConfigVar(envName, defaultValue) {
 
 // special cases
 
-module.exports.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
-module.exports.isDevelopment = process.env.NODE_ENV === 'development';
-module.exports.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
+envVars['harmonyClientId'] = process.env.CLIENT_ID || 'harmony-unknown';
+envVars['isDevelopment'] = process.env.NODE_ENV === 'development';
+envVars['uploadBucket'] = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
+
+export = envVars;

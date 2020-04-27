@@ -1,4 +1,5 @@
-const { awsDefaultRegion } = require('./env');
+import env = require('./env');
+const { awsDefaultRegion } = env;
 
 /**
  * Returns a link to the cloud-access JSON endpoint

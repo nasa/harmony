@@ -1,4 +1,4 @@
-const aws = require('aws-sdk');
+import * as aws from 'aws-sdk';
 const { awsDefaultRegion } = require('./env');
 
 /**
@@ -7,6 +7,8 @@ const { awsDefaultRegion } = require('./env');
  * @class SecureTokenService
  */
 class SecureTokenService {
+  sts: aws.STS;
+  
   /**
    * Builds and returns an AWS STS client configured according to environment variables
    * Will use localstack if USE_LOCALSTACK is true (default false) and AWS_DEFAULT_REGION
@@ -15,7 +17,7 @@ class SecureTokenService {
    * @param {Object} overrides values to set when constructing the underlying S3 store
    */
   constructor(overrides) {
-    const endpointSettings = {};
+    const endpointSettings = <any>{};
     if (process.env.USE_LOCALSTACK === 'true') {
       endpointSettings.endpoint = 'http://localhost:4592';
     }

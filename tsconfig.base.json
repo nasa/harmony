@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+      "module": "commonjs",
+      "paths": {
+        "*": ["node_modules/*"]
+      },
+      "baseUrl": ".",
+      "moduleResolution": "node",
+      "target": "es6",
+      "allowJs": true, 
+      "noImplicitAny": false,
+      "sourceMap": true,
+      "outDir": "built"
+  }
+}

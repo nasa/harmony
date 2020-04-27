@@ -11,4 +11,4 @@ function isUUID(s) {
   return false;
 }
 
-module.exports = isUUID;
+export = isUUID;

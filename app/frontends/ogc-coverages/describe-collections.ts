@@ -1,7 +1,7 @@
-const { getSanitizedRequestUrl } = require('../../util/url');
-const { keysToLowerCase } = require('../../util/object');
-const { RequestValidationError } = require('../../util/errors');
-const { parseVariables } = require('./util/variable-parsing');
+import { getSanitizedRequestUrl } from '../../util/url';
+import { keysToLowerCase } from '../../util/object';
+import { RequestValidationError } from '../../util/errors';
+import { parseVariables } from './util/variable-parsing';
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
@@ -11,7 +11,7 @@ const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
  * @param {Object} collection the collection info as returned by the CMR
  * @returns {Object} the extent object
  */
-function generateExtent(collection) {
+export function generateExtent(collection) {
   let spatial;
   if (collection.boxes && collection.boxes.length > 0) {
     const bbox = collection.boxes[0].split(' ').map((v) => parseFloat(v));
@@ -66,7 +66,7 @@ function buildCollectionInfo(collection, variable, requestUrl, extent) {
  * @throws {RequestValidationError} Thrown if the request has validation problems and
  *   cannot be performed
  */
-function describeCollections(req, res) {
+export function describeCollections(req, res) {
   const query = keysToLowerCase(req.query);
   if (query.f && query.f !== 'json') {
     throw new RequestValidationError(`Unsupported format "${query.f}". Currently only the json format is supported.`);
@@ -117,7 +117,7 @@ function describeCollections(req, res) {
  * @throws {RequestValidationError} Thrown if the request has validation problems and
  *   cannot be performed
  */
-function describeCollection(req, res) {
+export function describeCollection(req, res) {
   const query = keysToLowerCase(req.query);
   if (query.f && query.f !== 'json') {
     throw new RequestValidationError(`Unsupported format "${query.f}". Currently only the json format is supported.`);
@@ -130,9 +130,3 @@ function describeCollection(req, res) {
   const collectionInfo = buildCollectionInfo(collection, variable, requestUrl, extent);
   res.send(collectionInfo);
 }
-
-module.exports = {
-  describeCollections,
-  describeCollection,
-  generateExtent,
-};

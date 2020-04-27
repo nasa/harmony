@@ -1,4 +1,4 @@
-const pick = require('lodash.pick');
+import * as pick from 'lodash.pick';
 const Record = require('./record');
 const { createPublicPermalink } = require('../frontends/service-results');
 const { truncateString } = require('../util/string');

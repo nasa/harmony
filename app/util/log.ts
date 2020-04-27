@@ -1,5 +1,5 @@
 const winston = require('winston');
-const env = require('./env');
+import env = require('./env');
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
 
@@ -68,4 +68,4 @@ function createTextLogger() {
 
 const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger() : createJsonLogger();
 
-module.exports = logger;
+export = logger;

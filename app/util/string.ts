@@ -11,7 +11,7 @@
  * @param {Array<string>} items The items to be converted to text
  * @returns {string} The resulting textual string
  */
-function listToText(items) {
+export function listToText(items) {
   let result;
   if (!items) return '';
   switch (items.length) {
@@ -34,7 +34,7 @@ function listToText(items) {
  *
  * @returns {string} The truncated string
  */
-function truncateString(s, n) {
+export function truncateString(s, n) {
   let truncatedString = s;
   if (s.length > n) {
     if (n < 3) {
@@ -45,7 +45,3 @@ function truncateString(s, n) {
   }
   return truncatedString;
 }
-module.exports = {
-  listToText,
-  truncateString,
-};

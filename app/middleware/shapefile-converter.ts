@@ -1,5 +1,5 @@
-const get = require('lodash.get');
-const fs = require('fs');
+import * as get from 'lodash.get';
+import * as fs from 'fs';
 const rewind = require('@mapbox/geojson-rewind');
 const togeojson = require('@mapbox/togeojson');
 const { DOMParser } = require('xmldom');
