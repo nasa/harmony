@@ -1,7 +1,7 @@
-const uuid = require('uuid');
-const getIn = require('lodash.get');
-const serviceResponse = require('../../backends/service-response');
-const db = require('../../util/db');
+import * as uuid from 'uuid';
+import * as getIn from 'lodash.get';
+import * as serviceResponse from '../../backends/service-response';
+import * as db from '../../util/db';
 const { defaultObjectStore } = require('../../util/object-store');
 const Job = require('../job');
 const { ServerError, RequestValidationError } = require('../../util/errors');

@@ -1,9 +1,9 @@
-const http = require('http');
-const https = require('https');
-const URL = require('url');
-const BaseService = require('./base-service');
-const db = require('../../util/db');
-const Job = require('../job');
+import * as http from 'http';
+import * as https from 'https';
+import * as URL from 'url';
+import * as BaseService from './base-service';
+import * as db from '../../util/db';
+import * as Job from '../job';
 
 /**
  * Service implementation which invokes a backend over HTTP, POSTing the Harmony

@@ -1,11 +1,13 @@
 const environment = process.env.NODE_ENV || 'development';
-const config = require('../../db/knexfile')[environment];
+import knexfile = require('../../db/knexfile');
+const config = knexfile[environment];
 
 // Import has to happen after the knexfile, so disable that rule
 // eslint-disable-next-line import/order
-const database = require('knex')(config);
+import knex = require('knex');
+const database: any = knex(config);
 
 database.engine = config.client;
 database.config = config;
 
-module.exports = database;
+export = database;
