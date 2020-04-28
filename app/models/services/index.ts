@@ -1,14 +1,14 @@
-const fs = require('fs');
-const path = require('path');
-const yaml = require('js-yaml');
-const getIn = require('lodash.get');
+import * as fs from 'fs';
+import * as path from 'path';
+import * as yaml from 'js-yaml';
+import getIn = require('lodash.get');
 
-const AsynchronizerService = require('./asynchronizer-service');
-const HttpService = require('./http-service');
-const LocalDockerService = require('./local-docker-service');
-const NoOpService = require('./no-op-service');
-const { NotFoundError } = require('../../util/errors');
-const { isMimeTypeAccepted } = require('../../util/content-negotiation');
+import * as AsynchronizerService from './asynchronizer-service';
+import * as HttpService from './http-service';
+import * as LocalDockerService from './local-docker-service';
+import * as NoOpService from './no-op-service';
+import { NotFoundError } from '../../util/errors';
+import { isMimeTypeAccepted } from '../../util/content-negotiation';
 
 let serviceConfigs = null;
 

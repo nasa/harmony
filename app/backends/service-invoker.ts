@@ -1,4 +1,4 @@
-import * as services from '../models/services';
+import * as services from '../models/services/index';
 const env = require('../util/env');
 const { ServiceError } = require('../util/errors');
 const { objectStoreForProtocol } = require('../util/object-store');
