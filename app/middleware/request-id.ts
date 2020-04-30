@@ -7,7 +7,7 @@
  * @returns {void}
  *
  */
-function setRequestId(req, res, next) {
+export default function setRequestId(req, res, next) {
   const { operation } = req;
 
   if (!operation) return next();
@@ -15,5 +15,3 @@ function setRequestId(req, res, next) {
   operation.requestId = req.context.id;
   return next();
 }
-
-module.exports = setRequestId;

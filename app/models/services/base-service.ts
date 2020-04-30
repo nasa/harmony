@@ -1,11 +1,14 @@
-import * as uuid from 'uuid';
-import * as getIn from 'lodash.get';
-import * as serviceResponse from '../../backends/service-response';
-import * as db from '../../util/db';
-const { defaultObjectStore } = require('../../util/object-store');
-const Job = require('../job');
-const { ServerError, RequestValidationError } = require('../../util/errors');
-const env = require('../../util/env');
+import getIn from 'lodash.get';
+import * as serviceResponse from 'backends/service-response';
+import { defaultObjectStore } from 'util/object-store';
+import { ServerError, RequestValidationError } from 'util/errors';
+import Job from 'models/job';
+import { v4 as uuid } from 'uuid';
+import DataOperation from 'models/data-operation';
+
+import db = require('util/db');
+
+import env = require('util/env');
 
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
@@ -14,14 +17,25 @@ const env = require('../../util/env');
  * @class BaseService
  * @abstract
  */
-class BaseService {
+export default class BaseService {
+  config: any;
+
+  params: any;
+
+  operation: any;
+
+  invocation: Promise<unknown>;
+
+  resolveInvocation: (value?: unknown) => void;
+
+
   /**
    * Creates an instance of BaseService.
    * @param {object} config The service configuration from config/services.yml
    * @param {DataOperation} operation The data operation being requested of the service
    * @memberof BaseService
    */
-  constructor(config, operation) {
+  constructor(config: any, operation: DataOperation) {
     if (new.target === BaseService) {
       throw new TypeError('BaseService is abstract and cannot be instantiated directly');
     }
@@ -81,7 +95,15 @@ class BaseService {
    * for properties
    * @memberof BaseService
    */
-  async invoke(logger, harmonyRoot, requestUrl) {
+  async invoke(logger?, harmonyRoot?, requestUrl?): Promise<{
+    error: string;
+    statusCode: number;
+    redirect: string;
+    stream: any;
+    headers: object;
+    content: string;
+    onComplete: Function;
+  }> {
     const isAsync = !this.isSynchronous;
     let job;
     if (isAsync) {
@@ -102,7 +124,7 @@ class BaseService {
         });
         this._run(logger);
         if (isAsync) {
-          resolve({ redirect: `/jobs/${job.requestId}`, headers: {} });
+          resolve({ redirect: `/jobs/${job.requestId}`, headers: {} } as any);
         }
       } catch (e) {
         serviceResponse.unbindResponseUrl(this.operation.callback);
@@ -336,5 +358,3 @@ class BaseService {
     return undefined;
   }
 }
-
-module.exports = BaseService;

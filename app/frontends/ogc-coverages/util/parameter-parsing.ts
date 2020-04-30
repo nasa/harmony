@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 const rangeSeparator = ':';
 const unbounded = '*';
 // Regex to match lat(-10:10) or lon(*:20)
@@ -153,18 +154,18 @@ export function parseSubsetParams(values, dimConfig = dimensionConfig) {
       throw new ParameterParseError(`subset dimension "${dim.name}" was specified multiple times`);
     }
     switch (dim.type) {
-    case Number:
-      parsed.min = parseNumeric(dim, minStr, dim.min);
-      parsed.max = parseNumeric(dim, maxStr, dim.max);
-      break;
-    case Date:
-      parsed.min = parseDate(dim, minStr);
-      parsed.max = parseDate(dim, maxStr);
-      break;
-    default:
+      case Number:
+        parsed.min = parseNumeric(dim, minStr, dim.min);
+        parsed.max = parseNumeric(dim, maxStr, dim.max);
+        break;
+      case Date:
+        parsed.min = parseDate(dim, minStr);
+        parsed.max = parseDate(dim, maxStr);
+        break;
+      default:
       // Cannot be reached with current config.
-      if (minStr !== unbounded) parsed.min = minStr;
-      if (maxStr !== unbounded) parsed.max = maxStr;
+        if (minStr !== unbounded) parsed.min = minStr;
+        if (maxStr !== unbounded) parsed.max = maxStr;
     }
     const { min, max } = parsed;
     if (dim.lowToHigh && min !== undefined && max !== undefined && min > max) {

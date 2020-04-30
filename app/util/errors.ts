@@ -1,9 +1,8 @@
 /* eslint-disable max-classes-per-file */ // This file creates multiple tag classes
 
-import { integer } from "aws-sdk/clients/cloudfront";
-
 export class HttpError extends Error {
-  code: integer;
+  code: number;
+
   constructor(code, message) {
     super(message);
     this.code = code;

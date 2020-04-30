@@ -1,9 +1,7 @@
-const pick = require('lodash.pick');
-const HarmonyJob = require('../models/job');
-const {
-  linksWithStacData,
-} = require('../util/stac');
-
+/* eslint-disable import/prefer-default-export */
+import pick from 'lodash.pick';
+import Job from 'models/job';
+import { linksWithStacData } from 'util/stac';
 
 /**
  *
@@ -23,6 +21,16 @@ const {
  * @class HarmonyCatalog
  */
 class HarmonyCatalog {
+  id: string;
+
+  stac_version: string;
+
+  title: string;
+
+  description: string;
+
+  links: Array<any>;
+
   /**
    *
    * @param {string} id - ID of the STAC Catalog
@@ -68,7 +76,7 @@ class HarmonyCatalog {
 /**
  * Function to create the STAC Catalog given a Harmony Job object
  *
- * @param {Job} job - Harmony Job object
+ * @param {any} job - Harmony Job object
  *
  * @returns {Object} - STAC Catalog JSON
  *
@@ -77,8 +85,8 @@ class HarmonyCatalog {
  * let jsonObj = catalog.create(job);
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
-function create(job) {
-  if (!(job instanceof HarmonyJob)) {
+export function create(job: any): object {
+  if (!(job instanceof Job)) {
     throw new TypeError('Constructor expects a Harmony Job object as argument');
   }
   if (!Object.hasOwnProperty.call(job, 'jobID')) {
@@ -87,9 +95,9 @@ function create(job) {
   if (!Object.hasOwnProperty.call(job, 'request')) {
     throw new TypeError('Failed to find request');
   }
-  const title = `Harmony output for ${job.jobID}`;
+  const title = `Harmony output for ${(job as any).jobID}`;
   const description = `Harmony output for ${job.request}`;
-  const catalog = new HarmonyCatalog(job.jobID, title, description);
+  const catalog = new HarmonyCatalog((job as any).jobID, title, description);
   catalog.addLink('.', 'self', 'self');
   catalog.addLink('.', 'root', 'root');
   let index = 0;
@@ -99,5 +107,3 @@ function create(job) {
   }
   return catalog.toJSON();
 }
-
-module.exports.create = create;

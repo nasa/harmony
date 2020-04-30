@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 
 /**
  * Converts the array of string items to a single textual string where elements are
@@ -15,12 +16,12 @@ export function listToText(items) {
   let result;
   if (!items) return '';
   switch (items.length) {
-  case 0: return '';
-  case 1: return items[0];
-  case 2: return items.join(' and ');
-  default:
-    result = items.concat(); // Copies the array
-    result[result.length - 1] = `and ${result[result.length - 1]}`;
+    case 0: return '';
+    case 1: return items[0];
+    case 2: return items.join(' and ');
+    default:
+      result = items.concat(); // Copies the array
+      result[result.length - 1] = `and ${result[result.length - 1]}`;
   }
   return result.join(', ');
 }

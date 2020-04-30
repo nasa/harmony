@@ -1,14 +1,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import getIn = require('lodash.get');
+import getIn from 'lodash.get';
 
-import * as AsynchronizerService from './asynchronizer-service';
-import * as HttpService from './http-service';
-import * as LocalDockerService from './local-docker-service';
-import * as NoOpService from './no-op-service';
-import { NotFoundError } from '../../util/errors';
-import { isMimeTypeAccepted } from '../../util/content-negotiation';
+import { NotFoundError } from 'util/errors';
+import { isMimeTypeAccepted } from 'util/content-negotiation';
+import AsynchronizerService from './asynchronizer-service';
+import HttpService from './http-service';
+import LocalDockerService from './local-docker-service';
+import NoOpService from './no-op-service';
 
 let serviceConfigs = null;
 
@@ -17,7 +17,7 @@ let serviceConfigs = null;
  *
  * @returns {void}
  */
-function loadServiceConfigs() {
+function loadServiceConfigs(): void {
   // Setup a type, !Env, that when placed in front of a string resolves substrings like
   // "${some_env_var}" to the corresponding environment variable
   const regex = /\$\{(\w+)\}/g;
@@ -30,7 +30,7 @@ function loadServiceConfigs() {
   // Load the config
   const buffer = fs.readFileSync(path.join(__dirname, '../../../config/services.yml'));
   const schema = yaml.Schema.create([EnvType]);
-  serviceConfigs = yaml.load(buffer, { schema }).filter((config) => config.enabled !== false && config.enabled !== 'false');
+  serviceConfigs = yaml.load(buffer.toString(), { schema }).filter((config) => config.enabled !== false && config.enabled !== 'false');
 }
 
 // Load config at require-time to ensure presence / validity early
@@ -141,7 +141,7 @@ function supportsVariableSubsetting(configs) {
   return configs.filter((config) => getIn(config, 'capabilities.subsetting.variable', false));
 }
 
-const noOpService = {
+const noOpService: any = {
   type: { name: 'noOp' },
   capabilities: { output_formats: ['application/json'] },
 };
@@ -276,7 +276,7 @@ const operationFilterFns = [
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @throws {NotFoundError} If no service can perform the given operation
  */
-function forOperation(operation, context, configs = serviceConfigs) {
+export function forOperation(operation, context, configs = serviceConfigs) {
   let service;
   let matches = configs;
   try {
@@ -302,10 +302,6 @@ function forOperation(operation, context, configs = serviceConfigs) {
  * @param {string} collection The CMR collection to check
  * @returns {boolean} true if the collection has available backends, false otherwise
  */
-function isCollectionSupported(collection) {
+export function isCollectionSupported(collection) {
   return serviceConfigs.find((sc) => sc.collections.includes(collection.id)) !== undefined;
 }
-
-// Don't set module.exports or ChainService breaks
-exports.forOperation = forOperation;
-exports.isCollectionSupported = isCollectionSupported;

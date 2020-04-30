@@ -7,7 +7,7 @@ const { awsDefaultRegion } = env;
  * @param {String} urlRoot The harmony root URL
  * @returns {Object} the link to the cloud-access JSON endpoint
  */
-function getCloudAccessJsonLink(urlRoot) {
+export function getCloudAccessJsonLink(urlRoot) {
   return {
     title: `Access keys for s3:// URLs, usable from AWS ${awsDefaultRegion} (JSON format)`,
     href: `${urlRoot}/cloud-access`,
@@ -22,7 +22,7 @@ function getCloudAccessJsonLink(urlRoot) {
  * @param {String} urlRoot The harmony root URL
  * @returns {Object} the link to the cloud-access shell script endpoint
  */
-function getCloudAccessShLink(urlRoot) {
+export function getCloudAccessShLink(urlRoot) {
   return {
     title: `Access keys for s3:// URLs, usable from AWS ${awsDefaultRegion} (Shell format)`,
     href: `${urlRoot}/cloud-access.sh`,
@@ -38,7 +38,7 @@ function getCloudAccessShLink(urlRoot) {
  * @param {string} jobID The UUID of the job
  * @returns {Object} the link to the STAC catalog
  */
-function getStacCatalogLink(urlRoot, jobID) {
+export function getStacCatalogLink(urlRoot, jobID) {
   return {
     title: 'STAC catalog',
     href: `${urlRoot}/stac/${jobID}/`,
@@ -46,5 +46,3 @@ function getStacCatalogLink(urlRoot, jobID) {
     type: 'application/json',
   };
 }
-
-module.exports = { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink };

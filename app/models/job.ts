@@ -1,8 +1,12 @@
-import * as pick from 'lodash.pick';
-const Record = require('./record');
-const { createPublicPermalink } = require('../frontends/service-results');
-const { truncateString } = require('../util/string');
-const { awsDefaultRegion } = require('../util/env');
+import pick from 'lodash.pick';
+import { createPublicPermalink } from 'frontends/service-results';
+import { truncateString } from 'util/string';
+import Record from './record';
+
+import env = require('util/env');
+
+
+const { awsDefaultRegion } = env;
 
 const statesToDefaultMessages = {
   accepted: 'The job has been accepted and is waiting to be processed',
@@ -46,7 +50,29 @@ const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegio
  *
  * @class Job
  */
-class Job extends Record {
+export default class Job extends Record {
+  static table = 'jobs';
+
+  static statuses: any = statuses;
+
+  fields: any;
+
+  links: any;
+
+  message: string;
+
+  username: string;
+
+  requestId: string;
+
+  progress: number;
+
+  request: any;
+
+  _json_links: any;
+
+  status: string;
+
   /**
    * Returns an array of all jobs for the given username using the given transaction
    *
@@ -108,10 +134,10 @@ class Job extends Record {
   /**
    * Creates a Job instance.
    *
-   * @param {object} fields Object containing fields to set on the record
+   * @param {any} fields Object containing fields to set on the record
    * @memberof Job
    */
-  constructor(fields) {
+  constructor(fields: any) {
     super(fields);
     // Allow up to 4096 chars for the request string
     this.request = fields.request && truncateString(fields.request, 4096);
@@ -268,8 +294,8 @@ class Job extends Record {
    * @param {string} urlRoot the root URL to be used when constructing links
    * @returns {Object} an object with the serialized job fields.
    */
-  serialize(urlRoot) {
-    const serializedJob = pick(this, serializedJobFields);
+  serialize(urlRoot?) {
+    const serializedJob: any = pick(this, serializedJobFields);
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     serializedJob.jobID = this.requestId;
@@ -297,8 +323,3 @@ class Job extends Record {
     return this.links.filter((link) => link.rel === rel);
   }
 }
-
-Job.table = 'jobs';
-Job.statuses = statuses;
-
-module.exports = Job;

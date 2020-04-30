@@ -1,5 +1,6 @@
-const { getRequestRoot } = require('../util/url');
-const { getCloudAccessJsonLink, getCloudAccessShLink } = require('../util/links');
+/* eslint-disable import/prefer-default-export */
+import { getRequestRoot } from 'util/url';
+import { getCloudAccessJsonLink, getCloudAccessShLink } from 'util/links';
 
 /**
  * Express.js handler that returns the main Harmony landing page content.
@@ -10,7 +11,7 @@ const { getCloudAccessJsonLink, getCloudAccessShLink } = require('../util/links'
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  */
-function landingPage(req, res) {
+export function landingPage(req, res) {
   const root = getRequestRoot(req);
   const cloudAccessJsonLink = getCloudAccessJsonLink(root);
   const cloudAccessShLink = getCloudAccessShLink(root);
@@ -41,5 +42,3 @@ function landingPage(req, res) {
   ];
   res.json({ description, links });
 }
-
-module.exports = { landingPage };

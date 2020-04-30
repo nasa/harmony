@@ -1,9 +1,10 @@
 import * as http from 'http';
 import * as https from 'https';
 import * as URL from 'url';
-import * as BaseService from './base-service';
-import * as db from '../../util/db';
-import * as Job from '../job';
+import Job from 'models/job';
+import BaseService from './base-service';
+
+import db = require('util/db');
 
 /**
  * Service implementation which invokes a backend over HTTP, POSTing the Harmony
@@ -13,7 +14,7 @@ import * as Job from '../job';
  * @class HttpService
  * @extends {BaseService}
  */
-class HttpService extends BaseService {
+export default class HttpService extends BaseService {
   /**
    * Calls the HTTP backend and returns a promise for its result, or a redirect to
    * a job if the result is async.
@@ -32,7 +33,15 @@ class HttpService extends BaseService {
    * for properties
    * @memberof HttpService
    */
-  invoke(logger, harmonyRoot, requestUrl) {
+  invoke(logger?, harmonyRoot?, requestUrl?): Promise<{
+    error: string;
+    statusCode: number;
+    redirect: string;
+    stream: any;
+    headers: object;
+    content: string;
+    onComplete: Function;
+  }> {
     if (this.operation.isSynchronous) {
       return this._run(logger);
     }
@@ -53,7 +62,15 @@ class HttpService extends BaseService {
    * for properties
    * @memberof HttpService
    */
-  _run(logger) {
+  _run(logger): Promise<{
+    error: string;
+    statusCode: number;
+    redirect: string;
+    stream: any;
+    headers: object;
+    content: string;
+    onComplete: Function;
+  }> {
     return new Promise((resolve, reject) => {
       try {
         const body = this.operation.serialize(this.config.data_operation_version);
@@ -78,7 +95,7 @@ class HttpService extends BaseService {
         const httplib = url.startsWith('https') ? https : http;
 
         const request = httplib.request(requestOptions, async (res) => {
-          const result = {
+          const result: any = {
             headers: res.headers,
             statusCode: res.statusCode,
           };
@@ -130,5 +147,3 @@ class HttpService extends BaseService {
     });
   }
 }
-
-module.exports = HttpService;

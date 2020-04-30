@@ -5,6 +5,7 @@ import * as stream from 'stream';
 import * as tmp from 'tmp';
 import { URL } from 'url';
 import * as util from 'util';
+
 import env = require('./env');
 const { awsDefaultRegion } = env;
 
@@ -17,7 +18,7 @@ const readFile = util.promisify(fs.readFile);
  *
  * @class S3ObjectStore
  */
-class S3ObjectStore {
+export class S3ObjectStore {
   s3: aws.S3;
 
   /**
@@ -64,7 +65,7 @@ class S3ObjectStore {
     };
     // Verifies that the object exists, or throws NotFound
     await this.s3.headObject(object).promise();
-    const req = this.s3.getObject(object);
+    const req: any = this.s3.getObject(object);
 
     if (params) {
       req.on('build', () => { req.httpRequest.path += `?${querystring.stringify(params)}`; });
@@ -225,7 +226,7 @@ class S3ObjectStore {
  *   which case the protocol will be read from the front of the URL.
  * @returns {ObjectStore} an object store for interacting with the given protocol
  */
-function objectStoreForProtocol(protocol) {
+export function objectStoreForProtocol(protocol) {
   if (!protocol) {
     return null;
   }
@@ -243,12 +244,6 @@ function objectStoreForProtocol(protocol) {
  *
  * @returns {ObjectStore} the default object store for Harmony.
  */
-function defaultObjectStore() {
+export function defaultObjectStore() {
   return new S3ObjectStore({});
 }
-
-module.exports = {
-  objectStoreForProtocol,
-  defaultObjectStore,
-  S3ObjectStore,
-};

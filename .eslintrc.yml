@@ -3,16 +3,25 @@ plugins:
   - jsdoc
   - node
 extends:
-  - airbnb-base
+  - airbnb-typescript/base
   - plugin:import/errors
   - plugin:import/warnings
+  - plugin:import/typescript
   - plugin:node/recommended
+  - plugin:@typescript-eslint/recommended
+settings:
+  import/resolver:
+    node:
+      paths: ["app", "test"]
+      extensions: [".js", ".ts"]
 env:
   node: true
   es6: true
+parser: "@typescript-eslint/parser"
 parserOptions:
   sourceType: "module"
   ecmaVersion: 2017
+  project: "./tsconfig.json"
 rules:
   indent: ["error", 2]
   no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]
@@ -29,6 +38,8 @@ rules:
     - array: false
       object: true
     - enforceForRenamedProperties: false
+  "@typescript-eslint/explicit-function-return-type": "warn"
+  node/no-unsupported-features/es-syntax: 0
 overrides:
   - files: [ "test/**/*" ]
     rules:
@@ -38,3 +49,4 @@ overrides:
       # the preferred method described in the Mocha docs
       prefer-arrow-callback: "off"
       func-names: "off"
+  

@@ -1,9 +1,9 @@
 import { SpatialReference } from 'gdal-next';
-import DataOperation = require('../../models/data-operation');
+import DataOperation from 'models/data-operation';
 import { keysToLowerCase } from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import { wrap } from '../../util/array';
-import { parseVariables } from './util/variable-parsing';
+import parseVariables from './util/variable-parsing';
 import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
 import { parseAcceptHeader } from '../../util/content-negotiation';
 
@@ -18,7 +18,7 @@ import { parseAcceptHeader } from '../../util/content-negotiation';
  * @throws {RequestValidationError} Thrown if the request has validation problems and
  *   cannot be performed
  */
-function getCoverageRangeset(req, res, next) {
+export default function getCoverageRangeset(req, res, next) {
   req.context.frontend = 'ogcCoverages';
   const query = keysToLowerCase(req.query);
 
@@ -85,5 +85,3 @@ function getCoverageRangeset(req, res, next) {
   req.operation = operation;
   next();
 }
-
-export = getCoverageRangeset;

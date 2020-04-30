@@ -1,11 +1,31 @@
-const pick = require('lodash.pick');
-const uuid = require('uuid');
-const {
-  linksWithStacData,
-} = require('../util/stac');
-const HarmonyJob = require('../models/job');
+/* eslint-disable import/prefer-default-export */
+import { v4 as uuid } from 'uuid';
+import pick from 'lodash.pick';
+import { linksWithStacData } from 'util/stac';
+
+import Job from 'models/job';
 
 class HarmonyItem {
+  id: string;
+
+  stac_version: string;
+
+  title: string;
+
+  description: string;
+
+  type: string;
+
+  bbox: Array<any>;
+
+  geometry: {};
+
+  properties: {};
+
+  assets: {};
+
+  links: Array<any>;
+
   /**
    *
    * @param {string} id - ID of the STAC Item
@@ -13,7 +33,7 @@ class HarmonyItem {
    * @param {string} description - Description of the STAC Item
    * @param {number} index - The index of this item in the STAC catalog
    */
-  constructor(id = uuid.v4(), title = '', description = '', index) {
+  constructor(id = uuid(), title = '', description = '', index) {
     this.id = `${id}_${index}`;
     this.stac_version = '0.9.0';
     this.title = title;
@@ -188,8 +208,8 @@ class HarmonyItem {
  *
  * @returns {Object} - STAC Item JSON
  */
-function create(job, index) {
-  if (!(job instanceof HarmonyJob)) {
+export function create(job, index) {
+  if (!(job instanceof Job)) {
     throw new TypeError('Constructor accepts Harmony Job object as the first argument');
   }
   if (!Object.hasOwnProperty.call(job, 'jobID')) {
@@ -198,9 +218,9 @@ function create(job, index) {
   if (!Object.hasOwnProperty.call(job, 'request')) {
     throw new TypeError('Failed to find request');
   }
-  const title = `Harmony output #${index} in job ${job.jobID}`;
+  const title = `Harmony output #${index} in job ${(job as any).jobID}`;
   const description = `Harmony out for ${job.request}`;
-  const item = new HarmonyItem(job.jobID, title, description, index);
+  const item = new HarmonyItem((job as any).jobID, title, description, index);
 
   // Set creation time
   const creationTime = Object.hasOwnProperty.call(job, 'createdAt') ? job.createdAt : new Date().toISOString();
@@ -227,5 +247,3 @@ function create(job, index) {
   item.addLink('../', 'root', 'parent');
   return item.toJSON();
 }
-
-module.exports.create = create;

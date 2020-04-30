@@ -11,7 +11,7 @@ import { RequestValidationError } from '../../../util/errors';
  * @throws {RequestValidationError} if the requested OGC collection ID parameter is not valid
  * based on the variables in the collections
  */
-export function parseVariables(eosdisCollections, collectionIdParam) {
+export default function parseVariables(eosdisCollections, collectionIdParam) {
   // Note that "collectionId" from the Open API spec is an OGC API Collection, which is
   // what we would call a variable (or sometimes a named group of variables).  In the
   // OpenAPI spec doc, a "collection" refers to a UMM-Var variable, and a "CMR collection" refers

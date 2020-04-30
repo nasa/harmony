@@ -1,4 +1,4 @@
-const urlUtil = require('./url');
+import * as urlUtil from './url';
 
 /**
  * This module provides functions to support setting cookies associated with the
@@ -9,7 +9,7 @@ const urlUtil = require('./url');
  * containing the cookie name, value, and options.
  */
 
-const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === 'true' };
+export const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === 'true' };
 
 /**
  * Recipe for a cookie to support handling shapefiles
@@ -62,7 +62,7 @@ const authorizedRecipes = [
  * @param {object} options The options to use when setting the cookie
  * @returns {void}
  */
-function setCookiesForEdl(req, res, options) {
+export function setCookiesForEdl(req, res, options) {
   edlRecipes.forEach((recipe) => {
     const [name, value] = recipe(req);
     if (name) {
@@ -79,7 +79,7 @@ function setCookiesForEdl(req, res, options) {
  * @param {object} options The options to use when setting the cookie
  * @returns {void}
  */
-function setCookiesForAuthorized(req, res, options) {
+export function setCookiesForAuthorized(req, res, options) {
   authorizedRecipes.forEach((recipe) => {
     const [name, value] = recipe(req);
     if (name) {
@@ -87,5 +87,3 @@ function setCookiesForAuthorized(req, res, options) {
     }
   });
 }
-
-module.exports = { setCookiesForEdl, setCookiesForAuthorized, cookieOptions };

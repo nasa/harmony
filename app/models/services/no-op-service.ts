@@ -1,5 +1,5 @@
-const BaseService = require('./base-service');
-const Job = require('../job');
+import Job from 'models/job';
+import BaseService from './base-service';
 
 /**
  * Service implementation that does not actually perform any transformation
@@ -9,7 +9,9 @@ const Job = require('../job');
  * @class NoOpService
  * @extends {BaseService}
  */
-class NoOpService extends BaseService {
+export default class NoOpService extends BaseService {
+  message: string;
+
   /**
    * Creates an instance of the NoOpService. The NoOpService will include a message
    * to indicate the reason the NoOpService is being used rather than a transformation.
@@ -32,7 +34,15 @@ class NoOpService extends BaseService {
    * @returns {Object} Job status response
    * @memberof HttpService
    */
-  invoke(logger, harmonyRoot, requestUrl) {
+  async invoke(logger, harmonyRoot, requestUrl): Promise<{
+    error: string;
+    statusCode: number;
+    redirect: string;
+    stream: any;
+    headers: object;
+    content: string;
+    onComplete: Function;
+  }> {
     const now = new Date();
     const granules = this.operation.sources.flatMap((source) => source.granules);
     const links = granules.map((granule) => ({ title: granule.id, href: granule.url }));
@@ -50,13 +60,15 @@ class NoOpService extends BaseService {
     });
 
     const response = {
+      error: null,
+      redirect: null,
+      stream: null,
+      onComplete: null,
       headers: { contentType: 'application/json' },
       statusCode: 200,
-      content: job.serialize(harmonyRoot),
+      content: JSON.stringify(job.serialize(harmonyRoot)),
     };
 
     return response;
   }
 }
-
-module.exports = NoOpService;

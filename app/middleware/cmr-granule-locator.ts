@@ -1,7 +1,8 @@
-const cmr = require('../util/cmr');
-import env = require('../util/env');
-const { CmrError, RequestValidationError, ServerError } = require('../util/errors');
-const boxStringsToBox = require('../util/bounding-box');
+import * as cmr from 'util/cmr';
+import { CmrError, RequestValidationError, ServerError } from 'util/errors';
+import boxStringsToBox from 'util/bounding-box';
+
+import env = require('util/env');
 
 /**
  * Express.js middleware which extracts parameters from the Harmony operation
@@ -13,7 +14,7 @@ const boxStringsToBox = require('../util/bounding-box');
  * @param {function} next The next function in the middleware chain
  * @returns {void}
  */
-async function cmrGranuleLocator(req, res, next) {
+export default async function cmrGranuleLocator(req, res, next) {
   const { operation } = req;
   const { logger } = req.context;
 
@@ -73,7 +74,7 @@ async function cmrGranuleLocator(req, res, next) {
           } catch (e) {
             logger.error(e);
           }
-          const gran = {
+          const gran: any = {
             id: granule.id,
             name: granule.title,
             url: link.href,
@@ -106,5 +107,3 @@ async function cmrGranuleLocator(req, res, next) {
   }
   return next();
 }
-
-module.exports = cmrGranuleLocator;

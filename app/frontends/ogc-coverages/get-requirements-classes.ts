@@ -6,7 +6,7 @@
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  */
-function getRequirementsClasses(req, res) {
+export default function getRequirementsClasses(req, res): void {
   res.json({
     conformsTo: [
       'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core',
@@ -15,5 +15,3 @@ function getRequirementsClasses(req, res) {
     ],
   });
 }
-
-module.exports = getRequirementsClasses;

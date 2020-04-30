@@ -1,4 +1,4 @@
-const getCoverageRangeset = require('./get-coverage-rangeset');
+import getCoverageRangeset from './get-coverage-rangeset';
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -14,11 +14,9 @@ const getCoverageRangeset = require('./get-coverage-rangeset');
  * @throws {RequestValidationError} Thrown if the request has validation problems and
  *   cannot be performed
  */
-function postCoverageRangeset(req, res, next) {
+export default function postCoverageRangeset(req, res, next) {
   // copy form parameters into the query
   req.query = req.body;
 
   getCoverageRangeset(req, res, next);
 }
-
-module.exports = postCoverageRangeset;

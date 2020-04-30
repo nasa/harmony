@@ -1,7 +1,7 @@
-const simpleOAuth2 = require('simple-oauth2');
-const { ForbiddenError } = require('../util/errors');
-import { listToText } from '../util/string';
-const { setCookiesForEdl } = require('../util/cookies');
+import simpleOAuth2 from 'simple-oauth2';
+import { listToText } from 'util/string';
+import { ForbiddenError } from 'util/errors';
+import { setCookiesForEdl } from 'util/cookies';
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
@@ -150,7 +150,7 @@ async function handleAuthorized(oauth2, req, res, next) {
  * @param {Array<string>} paths Paths that require auth
  * @returns {Function} Express.js middleware for doing EDL
  */
-module.exports = function buildEdlAuthorizer(paths = []) {
+export default function buildEdlAuthorizer(paths = []) {
   return async function earthdataLoginAuthorizer(req, res, next) {
     const oauth2 = simpleOAuth2.create(oauthOptions);
     const { token } = req.signedCookies;
@@ -188,4 +188,4 @@ module.exports = function buildEdlAuthorizer(paths = []) {
       next(e);
     }
   };
-};
+}

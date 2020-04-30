@@ -1,20 +1,22 @@
+import express from 'express';
+import { v4 as uuid } from 'uuid';
+import expressWinston from 'express-winston';
+import * as path from 'path';
+import favicon from 'serve-favicon';
+import * as url from 'url';
+import { promisify } from 'util';
+import * as winston from 'winston';
+import * as serviceResponse from 'backends/service-response';
+import errorHandler from 'middleware/error-handler';
+import router from 'routers/router';
+import RequestContext from 'models/request-context';
+import * as ogcCoveragesApi from './frontends/ogc-coverages';
+import serviceResponseRouter from './routers/service-response-router';
+
+import logger = require('util/log');
+import exampleBackend = require('../example/http-backend');
+
 const dotenvResult = require('dotenv').config();
-import * as express from 'express';
-const expressWinston = require('express-winston');
-const path = require('path');
-const favicon = require('serve-favicon');
-const url = require('url');
-const { promisify } = require('util');
-const uuid = require('uuid');
-const winston = require('winston');
-const serviceResponse = require('./backends/service-response');
-const ogcCoveragesApi = require('./frontends/ogc-coverages');
-const errorHandler = require('./middleware/error-handler');
-const router = require('./routers/router');
-const serviceResponseRouter = require('./routers/service-response-router');
-const logger = require('./util/log');
-const exampleBackend = require('../example/http-backend');
-const RequestContext = require('./models/request-context');
 
 if (dotenvResult.error) {
   winston.warn('Did not read a .env file');
@@ -77,7 +79,7 @@ function buildServer(name, port, setupFn) {
  *
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
-function start(config = {}) {
+function start(config: any = {}) {
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
   const backendHost = config.BACKEND_HOST || 'localhost';
@@ -99,7 +101,7 @@ function start(config = {}) {
 
   // Setup the backend server to accept callbacks from backend services
   const backend = buildServer('backend', backendPort, (app) => {
-    app.use('/service', serviceResponseRouter(config));
+    app.use('/service', serviceResponseRouter());
 
     serviceResponse.configure({
       baseUrl: url.format({

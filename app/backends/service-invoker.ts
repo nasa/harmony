@@ -1,8 +1,10 @@
-import * as services from '../models/services/index';
-const env = require('../util/env');
-const { ServiceError } = require('../util/errors');
-const { objectStoreForProtocol } = require('../util/object-store');
-const { getRequestRoot, getRequestUrl } = require('../util/url');
+import * as services from 'models/services/index';
+import { objectStoreForProtocol } from 'util/object-store';
+import { getRequestRoot, getRequestUrl } from 'util/url';
+import { ServiceError } from '../util/errors';
+
+
+import env = require('util/env');
 
 /**
  * Copies the header with the given name from the given request to the given response
@@ -67,7 +69,7 @@ async function translateServiceResult(serviceResult, user, res) {
  * @throws {ServiceError} if the service call fails or returns an error
  * @throws {NotFoundError} if no service can handle the callback
  */
-async function serviceInvoker(req, res) {
+export default async function serviceInvoker(req, res) {
   const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
   req.operation.client = env.harmonyClientId;
@@ -103,5 +105,3 @@ async function serviceInvoker(req, res) {
       variableSubset });
   return serviceResult;
 }
-
-module.exports = serviceInvoker;
