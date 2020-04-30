@@ -1,25 +1,28 @@
-const process = require('process');
-const express = require('express');
-const cookieParser = require('cookie-parser');
+import process from 'process';
+import express from 'express';
+import cookieParser from 'cookie-parser';
 
 // Middleware requires in outside-in order
-const earthdataLoginAuthorizer = require('../middleware/earthdata-login-authorizer');
-const wmsFrontend = require('../frontends/wms');
-const wcsFrontend = require('../frontends/wcs');
-const { getJobsListing, getJobStatus } = require('../frontends/jobs');
-const { getStacCatalog, getStacItem } = require('../frontends/stac');
-const { getServiceResult } = require('../frontends/service-results');
-const cmrCollectionReader = require('../middleware/cmr-collection-reader');
-const cmrGranuleLocator = require('../middleware/cmr-granule-locator');
-const setRequestId = require('../middleware/request-id');
-const shapefileConverter = require('../middleware/shapefile-converter');
-const shapefileUpload = require('../middleware/shapefile-upload');
-const { NotFoundError } = require('../util/errors');
-const eoss = require('../frontends/eoss');
-const ogcCoverageApi = require('../frontends/ogc-coverages');
-const { cloudAccessJson, cloudAccessSh } = require('../frontends/cloud-access');
-const { landingPage } = require('../frontends/landing-page');
-const serviceInvoker = require('../backends/service-invoker');
+import earthdataLoginAuthorizer from 'middleware/earthdata-login-authorizer';
+import wmsFrontend from 'frontends/wms';
+import { getJobsListing, getJobStatus } from 'frontends/jobs';
+import { getStacCatalog, getStacItem } from 'frontends/stac';
+import { getServiceResult } from 'frontends/service-results';
+import shapefileUpload from 'middleware/shapefile-upload';
+import cmrGranuleLocator from 'middleware/cmr-granule-locator';
+import setRequestId from 'middleware/request-id';
+import shapefileConverter from 'middleware/shapefile-converter';
+import { NotFoundError } from 'util/errors';
+import * as eoss from 'frontends/eoss';
+import * as ogcCoverageApi from 'frontends/ogc-coverages/index';
+import { cloudAccessJson, cloudAccessSh } from 'frontends/cloud-access';
+import { landingPage } from 'frontends/landing-page';
+import serviceInvoker from 'backends/service-invoker';
+// TODO fix this
+// import wcsFrontend from 'frontends/wcs';
+const wcsFrontend = {};
+
+import cmrCollectionReader = require('middleware/cmr-collection-reader');
 
 /**
  * Given an Express.js middleware handler function, returns another
@@ -127,7 +130,7 @@ function validateCollectionRoute(req, res, next) {
  * @param {string} skipEarthdataLogin Opt to skip Earthdata Login
  * @returns {express.Router} A router which can respond to frontend service requests
  */
-function router({ skipEarthdataLogin }) {
+export default function router({ skipEarthdataLogin }) {
   const result = express.Router();
 
   const secret = process.env.COOKIE_SECRET;
@@ -184,5 +187,3 @@ function router({ skipEarthdataLogin }) {
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
   return result;
 }
-
-module.exports = router;

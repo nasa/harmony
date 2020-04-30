@@ -1,4 +1,5 @@
-const winston = require('winston');
+import * as winston from 'winston';
+
 import env = require('./env');
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));

@@ -1,9 +1,12 @@
-const { default: PromiseQueue } = require('p-queue');
-const BaseService = require('./base-service');
-const Job = require('../job');
-const db = require('../../util/db');
-const { ServiceError } = require('../../util/errors');
-const { objectStoreForProtocol } = require('../../util/object-store');
+import PromiseQueue from 'p-queue';
+import BaseService from 'models/services/base-service';
+import Job from 'models/job';
+
+import { ServiceError } from '../../util/errors';
+import { objectStoreForProtocol } from '../../util/object-store';
+
+import db = require('util/db');
+
 
 /**
  * A wrapper for a service that takes a service class for a service that is only able
@@ -13,14 +16,31 @@ const { objectStoreForProtocol } = require('../../util/object-store');
  * @class AsynchronizerService
  * @extends {BaseService}
  */
-class AsynchronizerService extends BaseService {
-  constructor(SyncServiceClass, config, operation) {
+export default class AsynchronizerService extends BaseService {
+  SyncServiceClass: typeof BaseService;
+
+  queue: any;
+
+  completionPromise: Promise<unknown>;
+
+  completedCount: number;
+
+  totalCount: number;
+
+  private _completionCallbacks: {
+    resolve: (value?: unknown) => void; reject: (reason?: any) => void;
+  };
+
+  _invokeArgs: any[];
+
+  isComplete: boolean;
+
+  constructor(SyncServiceClass: typeof BaseService, config: any, operation: any) {
     super(config, operation);
     this.SyncServiceClass = SyncServiceClass;
     this.queue = new PromiseQueue({ concurrency: this.config.concurrency || 1 });
-    const self = this;
     this.completionPromise = new Promise((resolve, reject) => {
-      self._completionCallbacks = { resolve, reject };
+      this._completionCallbacks = { resolve, reject };
     });
   }
 
@@ -39,7 +59,7 @@ class AsynchronizerService extends BaseService {
     if (this.isSynchronous) {
       try {
         const delegate = new this.SyncServiceClass(this.config, this.operation);
-        const result = delegate.invoke(...this._invokeArgs);
+        const result = await delegate.invoke(...this._invokeArgs);
         this.isComplete = true;
         if (result.error) {
           this._completionCallbacks.reject(result.error);
@@ -128,7 +148,7 @@ class AsynchronizerService extends BaseService {
       }
 
       const granule = syncOperation.sources[0].granules[0];
-      const item = {
+      const item: any = {
         type: 'application/octet-stream', // Generic default in case we can't find anything else
         temporal: granule.temporal && [granule.temporal.start, granule.temporal.end].join(','),
         bbox: granule.bbox && granule.bbox.join(','),
@@ -241,5 +261,3 @@ class AsynchronizerService extends BaseService {
     return this.completionPromise;
   }
 }
-
-module.exports = AsynchronizerService;

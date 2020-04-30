@@ -15,7 +15,7 @@ const envVars: any = {};
  *   and integers are supported
  * @returns {void}
  */
-function makeConfigVar(envName: string, defaultValue: string|integer) {
+function makeConfigVar(envName: string, defaultValue: string|integer): void {
   const envValue = process.env[envName];
   let value;
 
@@ -49,8 +49,8 @@ function makeConfigVar(envName: string, defaultValue: string|integer) {
 
 // special cases
 
-envVars['harmonyClientId'] = process.env.CLIENT_ID || 'harmony-unknown';
-envVars['isDevelopment'] = process.env.NODE_ENV === 'development';
-envVars['uploadBucket'] = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
+envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
+envVars.isDevelopment = process.env.NODE_ENV === 'development';
+envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
 
 export = envVars;

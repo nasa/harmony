@@ -1,6 +1,6 @@
-const cmrutil = require('../util/cmr');
-const { listToText } = require('../util/string');
-const { NotFoundError } = require('../util/errors');
+import * as cmrutil from 'util/cmr';
+import { listToText } from 'util/string';
+import { NotFoundError } from 'util/errors';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
@@ -86,4 +86,4 @@ async function cmrCollectionReader(req, res, next) {
 
 cmrCollectionReader.collectionRegex = COLLECTION_URL_PATH_REGEX;
 
-module.exports = cmrCollectionReader;
+export = cmrCollectionReader;

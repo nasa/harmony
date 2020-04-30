@@ -1,14 +1,17 @@
+/* eslint-disable import/prefer-default-export */
 import * as aws from 'aws-sdk';
-const { awsDefaultRegion } = require('./env');
+
+import env = require('./env');
+const { awsDefaultRegion } = env;
 
 /**
  * Class to use when interacting with AWS STS
  *
  * @class SecureTokenService
  */
-class SecureTokenService {
+export class SecureTokenService {
   sts: aws.STS;
-  
+
   /**
    * Builds and returns an AWS STS client configured according to environment variables
    * Will use localstack if USE_LOCALSTACK is true (default false) and AWS_DEFAULT_REGION
@@ -16,8 +19,8 @@ class SecureTokenService {
    *
    * @param {Object} overrides values to set when constructing the underlying S3 store
    */
-  constructor(overrides) {
-    const endpointSettings = <any>{};
+  constructor(overrides?) {
+    const endpointSettings: any = {};
     if (process.env.USE_LOCALSTACK === 'true') {
       endpointSettings.endpoint = 'http://localhost:4592';
     }
@@ -41,5 +44,3 @@ class SecureTokenService {
     return this.sts.assumeRole(params).promise();
   }
 }
-
-module.exports = { SecureTokenService };

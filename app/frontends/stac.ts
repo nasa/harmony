@@ -1,9 +1,10 @@
-const Job = require('../models/job');
-const db = require('../util/db');
-const { needsStacLink } = require('../util/stac');
-const isUUID = require('../util/uuid');
-const stacItem = require('./stac-item');
-const stacCatalog = require('./stac-catalog');
+import Job from 'models/job';
+import { needsStacLink } from 'util/stac';
+import isUUID from 'util/uuid';
+import * as stacItem from './stac-item';
+import * as stacCatalog from './stac-catalog';
+
+import db = require('util/db');
 
 /**
  * Generic handler for STAC requests
@@ -48,7 +49,7 @@ async function handleStacRequest(req, res, callback) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function getStacCatalog(req, res) {
+export async function getStacCatalog(req, res) {
   const { jobId } = req.params;
 
   try {
@@ -69,7 +70,7 @@ async function getStacCatalog(req, res) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function getStacItem(req, res) {
+export async function getStacItem(req, res) {
   const { jobId, itemIndex } = req.params;
 
   try {
@@ -89,8 +90,3 @@ async function getStacItem(req, res) {
     }
   }
 }
-
-module.exports = {
-  getStacCatalog,
-  getStacItem,
-};

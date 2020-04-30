@@ -1,13 +1,14 @@
-import * as FormData from 'form-data'
-const fs = require('fs');
-const get = require('lodash.get');
-const fetch = require('node-fetch');
-const querystring = require('querystring');
-const util = require('util');
-const env = require('./env');
-const { CmrError } = require('./errors');
-const logger = require('./log');
-const { objectStoreForProtocol } = require('./object-store');
+import FormData from 'form-data';
+import fs from 'fs';
+import get from 'lodash.get';
+import fetch from 'node-fetch';
+import * as querystring from 'querystring';
+import * as util from 'util';
+import { CmrError } from './errors';
+import { objectStoreForProtocol } from './object-store';
+
+import env = require('./env');
+import logger = require('./log');
 
 const unlink = util.promisify(fs.unlink);
 
@@ -15,7 +16,8 @@ const clientIdHeader = {
   'Client-id': `${env.harmonyClientId}`,
 };
 
-const cmrApiConfig = {
+// Exported to allow tests to override cmrApiConfig
+export const cmrApiConfig = {
   baseURL: env.CMR_URL || 'https://cmr.uat.earthdata.nasa.gov',
   useToken: true,
 };
@@ -68,14 +70,14 @@ function _handleCmrErrors(response) {
  * @param {string} token Access token for user request
  * @returns {Promise<object>} The CMR query result
  */
-async function cmrSearchBase(path, query, token) {
+export async function cmrSearchBase(path, query, token) {
   const querystr = querystring.stringify(query);
   const headers = {
     ...clientIdHeader,
     ..._makeTokenHeader(token),
     ...acceptJsonHeader,
   };
-  const response = await fetch(`${cmrApiConfig.baseURL}${path}?${querystr}`,
+  const response: any = await fetch(`${cmrApiConfig.baseURL}${path}?${querystr}`,
     {
       method: 'GET',
       headers,
@@ -112,8 +114,8 @@ async function _cmrSearch(path, query, token) {
  * @param {object} headers The headers to be sent with the POST
  * @returns {Response} A SuperAgent Response object
  */
-async function fetchPost(path, formData, headers) {
-  const response = await fetch(`${cmrApiConfig.baseURL}${path}`, {
+export async function fetchPost(path, formData, headers) {
+  const response: any = await fetch(`${cmrApiConfig.baseURL}${path}`, {
     method: 'POST',
     body: formData,
     headers,
@@ -146,7 +148,7 @@ async function processGeoJson(geoJsonUrl, formData) {
  * @param {string} token Access token for the user
  * @returns {Promise<object>} The CMR query result
  */
-async function cmrPostSearchBase(path, form, token) {
+export async function cmrPostSearchBase(path, form, token) {
   const formData = new FormData();
   let shapefile = null;
   await Promise.all(Object.keys(form).map(async (key) => {
@@ -267,7 +269,7 @@ async function queryGranuleUsingMultipartForm(form, token) {
  * @param {string} token Access token for user request
  * @returns {Promise<Array<CmrCollection>>} The collections with the given ids
  */
-function getCollectionsByIds(ids, token) {
+export function getCollectionsByIds(ids, token) {
   return queryCollections({
     concept_id: ids,
     page_size: 2000,
@@ -281,7 +283,7 @@ function getCollectionsByIds(ids, token) {
  * @param {string} token Access token for user request
  * @returns {Promise<Array<CmrVariable>>} The variables with the given ids
  */
-function getVariablesByIds(ids, token) {
+export function getVariablesByIds(ids, token) {
   return queryVariables({
     concept_id: ids,
     page_size: 2000,
@@ -295,7 +297,7 @@ function getVariablesByIds(ids, token) {
  * @param {string} token Access token for user request
  * @returns {Promise<Array<CmrVariable>>} The variables associated with the input collection
  */
-async function getVariablesForCollection(collection, token) {
+export async function getVariablesForCollection(collection, token) {
   const varIds = collection.associations && collection.associations.variables;
   if (varIds) {
     return getVariablesByIds(varIds, token);
@@ -313,7 +315,7 @@ async function getVariablesForCollection(collection, token) {
  * @param {number} [limit=10] The maximum number of granules to return
  * @returns {Promise<Array<CmrGranule>>} The granules associated with the input collection
  */
-function queryGranulesForCollection(collectionId, query, token, limit = 10) {
+export function queryGranulesForCollection(collectionId, query, token, limit = 10) {
   const baseQuery = {
     collection_concept_id: collectionId,
     page_size: limit,
@@ -331,7 +333,7 @@ function queryGranulesForCollection(collectionId, query, token, limit = 10) {
  * @param {number} [limit=10] The maximum number of granules to return
  * @returns  {Promise<Array<CmrGranule>>} The granules associated with the input collection
  */
-function queryGranulesForCollectionWithMultipartForm(collectionId, form, token, limit = 10) {
+export function queryGranulesForCollectionWithMultipartForm(collectionId, form, token, limit = 10) {
   const baseQuery = {
     collection_concept_id: collectionId,
     page_size: limit,
@@ -342,17 +344,3 @@ function queryGranulesForCollectionWithMultipartForm(collectionId, form, token, 
     ...form,
   }, token);
 }
-
-module.exports = {
-  getCollectionsByIds,
-  getVariablesByIds,
-  getVariablesForCollection,
-  queryGranulesForCollection,
-  queryGranulesForCollectionWithMultipartForm,
-  // The following are exported to allow test stubbing
-  cmrSearchBase,
-  fetchPost,
-  cmrPostSearchBase,
-  // Allow tests to override cmrApiConfig
-  cmrApiConfig,
-};

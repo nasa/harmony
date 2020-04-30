@@ -1,9 +1,10 @@
-import * as Job from '../models/job';
-const db = require('../util/db');
-const { needsStacLink } = require('../util/stac');
-const { getRequestRoot } = require('../util/url');
-const isUUID = require('../util/uuid');
-const { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink } = require('../util/links');
+import Job from 'models/job';
+import isUUID from 'util/uuid';
+import { needsStacLink } from '../util/stac';
+import { getRequestRoot } from '../util/url';
+import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink } from '../util/links';
+
+import db = require('util/db');
 
 /**
  * Analyze the links in the job to determine what links should be returned to
@@ -37,7 +38,7 @@ function _getLinksForDisplay(job, urlRoot) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function getJobsListing(req, res) {
+export async function getJobsListing(req, res) {
   req.context.logger.info(`Get job listing for user ${req.user}`);
   try {
     const root = getRequestRoot(req);
@@ -66,7 +67,7 @@ async function getJobsListing(req, res) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function getJobStatus(req, res) {
+export async function getJobStatus(req, res) {
   const { jobID } = req.params;
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   if (!isUUID(jobID)) {
@@ -97,5 +98,3 @@ async function getJobStatus(req, res) {
     }
   }
 }
-
-module.exports = { getJobsListing, getJobStatus };

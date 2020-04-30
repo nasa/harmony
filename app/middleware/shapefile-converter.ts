@@ -1,15 +1,18 @@
-import * as get from 'lodash.get';
+import get from 'lodash.get';
 import * as fs from 'fs';
-const rewind = require('@mapbox/geojson-rewind');
-const togeojson = require('@mapbox/togeojson');
-const { DOMParser } = require('xmldom');
-const shpjs = require('shpjs');
-const tmp = require('tmp-promise');
-const util = require('util');
-const { cookieOptions } = require('../util/cookies');
-const { RequestValidationError, HttpError, ServerError } = require('../util/errors');
-const { defaultObjectStore } = require('../util/object-store');
-const { listToText } = require('../util/string');
+// TODO - the next two imports need declaration files
+import rewind from '@mapbox/geojson-rewind';
+import * as togeojson from '@mapbox/togeojson';
+
+import { DOMParser } from 'xmldom';
+import * as shpjs from 'shpjs';
+import * as tmp from 'tmp-promise';
+import * as util from 'util';
+
+import { cookieOptions } from 'util/cookies';
+import { RequestValidationError, HttpError, ServerError } from 'util/errors';
+import { defaultObjectStore } from 'util/object-store';
+import { listToText } from 'util/string';
 
 const unlink = util.promisify(fs.unlink);
 const readFile = util.promisify(fs.readFile);
@@ -91,7 +94,7 @@ const contentTypesToConverters = {
  * @param {function} next The next function in the middleware chain
  * @returns {void}
  */
-async function shapefileConverter(req, res, next) {
+export default async function shapefileConverter(req, res, next) {
   const { operation } = req;
 
   try {
@@ -139,5 +142,3 @@ async function shapefileConverter(req, res, next) {
   }
   next();
 }
-
-module.exports = shapefileConverter;

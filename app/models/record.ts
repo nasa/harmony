@@ -1,4 +1,4 @@
-const db = require('../util/db');
+import db = require('util/db');
 
 /**
  * Abstract class describing a database record.  Subclass database tables
@@ -11,7 +11,15 @@ const db = require('../util/db');
  * @class Record
  * @abstract
  */
-class Record {
+export default abstract class Record {
+  updatedAt: Date;
+
+  createdAt: Date;
+
+  id: any;
+
+  static table: string;
+
   /**
    * Creates a Record instance (Should not be called directly)
    *
@@ -53,15 +61,13 @@ class Record {
     const newRecord = !this.createdAt;
     if (newRecord) {
       this.createdAt = this.updatedAt;
-      let stmt = transaction(this.constructor.table).insert(this);
+      let stmt = transaction((this.constructor as any).table).insert(this);
       if (db.engine === 'pg') {
         stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
       }
       [this.id] = await stmt;
     } else {
-      await transaction(this.constructor.table).where({ id: this.id }).update(this);
+      await transaction((this.constructor as any).table).where({ id: this.id }).update(this);
     }
   }
 }
-
-module.exports = Record;

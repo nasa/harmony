@@ -1,15 +1,16 @@
-const multer = require('multer');
-const multerS3 = require('multer-s3');
-const crypto = require('crypto');
-const env = require('../util/env');
-const { objectStoreForProtocol } = require('../util/object-store');
+import multer from 'multer';
+import multerS3 from 'multer-s3';
+import * as crypto from 'crypto';
+import { objectStoreForProtocol } from 'util/object-store';
+
+import env = require('util/env');
 
 /**
  * Build a middleware for uploading shapefiles passed in with the request to S3
  *
  * @returns {*} A middleware object that handles shapefile uploads
  */
-function buildShapefileUploadMiddleware() {
+export default function buildShapefileUploadMiddleware() {
   const { uploadBucket } = env;
   const objectStore = objectStoreForProtocol(env.objectStoreType);
   const shapefilePrefix = 'temp-user-uploads';
@@ -34,5 +35,3 @@ function buildShapefileUploadMiddleware() {
   const uploadFields = [{ name: 'shapefile', maxCount: 1 }];
   return upload.fields(uploadFields);
 }
-
-module.exports = buildShapefileUploadMiddleware;

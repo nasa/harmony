@@ -1,3 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 /**
  * Converts all of the keys in the passed in object to lowercase strings.
  * @param {Object} object The object

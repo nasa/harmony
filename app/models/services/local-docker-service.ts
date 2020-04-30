@@ -1,13 +1,20 @@
 import * as process from 'process';
-const { spawn } = require('child_process');
-const fs = require('fs');
-const fetch = require('node-fetch');
-const path = require('path');
-const querystring = require('querystring');
 
-const BaseService = require('./base-service');
-const { isUrlBound } = require('../../backends/service-response');
-const { isDevelopment } = require('../../util/env');
+import { spawn } from 'child_process';
+
+import * as fs from 'fs';
+
+import fetch from 'node-fetch';
+
+import * as path from 'path';
+
+import * as querystring from 'querystring';
+
+import { isUrlBound } from 'backends/service-response';
+import BaseService from './base-service';
+
+import env = require('util/env');
+const { isDevelopment } = env;
 
 const blankStrings = ['\n', '\r', ''];
 
@@ -87,7 +94,7 @@ function childProcessAborted(callbackUrl, logger) {
  * @class LocalDockerService
  * @extends {BaseService}
  */
-class LocalDockerService extends BaseService {
+export default class LocalDockerService extends BaseService {
   /**
    * Invoke the service at the local command line, passing --harmony-action and --harmony-input
    * parameters to the Docker container
@@ -174,5 +181,3 @@ class LocalDockerService extends BaseService {
     return result;
   }
 }
-
-module.exports = LocalDockerService;

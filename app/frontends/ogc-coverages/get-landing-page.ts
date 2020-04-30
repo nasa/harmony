@@ -1,4 +1,4 @@
-const { getRequestUrl } = require('../../util/url');
+import { getRequestUrl } from 'util/url';
 
 /**
  *  Returns the URL of the request with no trailing slash
@@ -6,7 +6,7 @@ const { getRequestUrl } = require('../../util/url');
  * @param {http.Request} req the incoming request
  * @returns {string} The URL of the request with no trailing slash
  */
-function requestRoot(req) {
+function requestRoot(req): string {
   const root = getRequestUrl(req, false);
   return root.replace(/\/$/, '');
 }
@@ -18,7 +18,7 @@ function requestRoot(req) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  */
-function getLandingPage(req, res) {
+export default function getLandingPage(req, res): void {
   const root = requestRoot(req);
   res.json({
     links: [
@@ -49,5 +49,3 @@ function getLandingPage(req, res) {
     ],
   });
 }
-
-module.exports = getLandingPage;

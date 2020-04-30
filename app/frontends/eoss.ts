@@ -1,10 +1,11 @@
-const { initialize } = require('express-openapi');
-const fs = require('fs');
-const path = require('path');
-const DataOperation = require('../models/data-operation');
-const { keysToLowerCase } = require('../util/object');
-const { RequestValidationError, NotFoundError } = require('../util/errors');
-const services = require('../models/services');
+/* eslint-disable import/prefer-default-export */
+import { initialize } from 'express-openapi';
+import * as fs from 'fs';
+import * as path from 'path';
+import { keysToLowerCase } from 'util/object';
+import { RequestValidationError, NotFoundError } from 'util/errors';
+import DataOperation from 'models/data-operation';
+import * as services from 'models/services';
 
 
 const version = '0.1.0';
@@ -20,7 +21,7 @@ const GRANULE_URL_PATH_REGEX = /\/(?:G\d+-\w+)/g;
  * @param {express.Application} app The express application
  * @returns {void}
  */
-function addOpenApiRoutes(app) {
+export function addOpenApiRoutes(app) {
   initialize({
     app,
     apiDoc: openApiPath,
@@ -105,5 +106,3 @@ function addOpenApiRoutes(app) {
     }
   });
 }
-
-module.exports = { addOpenApiRoutes };

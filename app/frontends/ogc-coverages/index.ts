@@ -1,12 +1,13 @@
-const { initialize } = require('express-openapi');
-const fs = require('fs');
-const path = require('path');
+import { initialize } from 'express-openapi';
+import * as fs from 'fs';
+import * as path from 'path';
+import getLandingPage from './get-landing-page';
+import getRequirementsClasses from './get-requirements-classes';
 
-const getLandingPage = require('./get-landing-page');
-const getRequirementsClasses = require('./get-requirements-classes');
-const getCoverageRangeset = require('./get-coverage-rangeset');
-const postCoverageRangeset = require('./post-coverage-rangeset');
-const { describeCollection, describeCollections } = require('./describe-collections');
+import getCoverageRangeset from './get-coverage-rangeset';
+import postCoverageRangeset from './post-coverage-rangeset';
+
+import { describeCollection, describeCollections } from './describe-collections';
 
 const version = '1.0.0';
 const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverages', version);
@@ -44,7 +45,7 @@ function getSpecification(req, res) {
  * @param {express.Application} app The express application
  * @returns {void}
  */
-function addOpenApiRoutes(app) {
+export function addOpenApiRoutes(app) {
   initialize({
     app,
     apiDoc: openApiContent,
@@ -75,7 +76,7 @@ function addOpenApiRoutes(app) {
  * @param {express.Application} app The express application which needs error handling routes
  * @returns {void}
  */
-function handleOpenApiErrors(app) {
+export function handleOpenApiErrors(app) {
   app.use((err, req, res, next) => {
     if (req.path.indexOf('/ogc-api-coverages/') === -1) {
       next(err);
@@ -109,5 +110,3 @@ function handleOpenApiErrors(app) {
     }
   });
 }
-
-module.exports = { addOpenApiRoutes, handleOpenApiErrors };

@@ -7,7 +7,7 @@ const { max, min } = Math;
  * @returns {Array<number>} A bounding box in `[W,S,E,N]` format
  * @private
  */
-function _boundingBoxStringToBoundingBox(str) {
+function _boundingBoxStringToBoundingBox(str: string): Array<number> {
   if (!str) return null;
 
   const ords = str.split(' ').map(parseFloat);
@@ -25,7 +25,7 @@ function _boundingBoxStringToBoundingBox(str) {
  * @returns {boolean} true if the box crosses the antimeridian, false otherwise
  * @private
  */
-function _crossesAntimeridian(box) {
+function _crossesAntimeridian(box: Array<number>): boolean {
   // true if W > E
   return box[0] > box[2];
 }
@@ -40,7 +40,7 @@ function _crossesAntimeridian(box) {
  * @returns {Array<number>} A box in `[W,S,E,N]` format
  * @private
  */
-function _joinBoundingBoxes(box1, box2) {
+function _joinBoundingBoxes(box1: Array<number>, box2: Array<number>): Array<number> {
   // longitude range union
   let w;
   let e;
@@ -132,7 +132,7 @@ function _joinBoundingBoxes(box1, box2) {
  * @param {Array<string>} boxStrings a list of strings in `'S W N E'` format
  * @returns {Array<number>} an array of floats in `[W,S,E,N]` format
  */
-function boxStringsToBox(boxStrings) {
+export default function boxStringsToBox(boxStrings: Array<string>): Array<number> {
   if (!boxStrings || boxStrings.length === 0) return [];
 
   const boxes = boxStrings.map(_boundingBoxStringToBoundingBox).filter((val) => val);
@@ -141,5 +141,3 @@ function boxStringsToBox(boxStrings) {
   // find a single minimal bounding box that contains all the boxes
   return boxes.reduce((mbr, nextBox) => _joinBoundingBoxes(mbr, nextBox));
 }
-
-module.exports = boxStringsToBox;

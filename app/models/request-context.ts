@@ -5,7 +5,9 @@ const fields = ['id', 'logger', 'requestedMimeTypes', 'frontend', 'shapefile'];
  *
  * @class RequestContext
  */
-class RequestContext {
+export default class RequestContext {
+  model: any;
+
   /**
    * Creates an instance of RequestContext.
    *
@@ -127,5 +129,3 @@ class RequestContext {
     this.model.frontend = frontend;
   }
 }
-
-module.exports = RequestContext;

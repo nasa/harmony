@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as Ajv from 'ajv';
+import Ajv from 'ajv';
+
 import cloneDeep = require('lodash.clonedeep');
 
 /**
@@ -83,10 +84,13 @@ for (const { schema, version } of schemaVersions) {
  *
  * @class DataOperation
  */
-class DataOperation {
+export default class DataOperation {
   model: any;
+
   granuleIds: any;
-  
+
+  requireSynchronous: boolean;
+
   /**
    * Creates an instance of DataOperation.
    *
@@ -128,12 +132,12 @@ class DataOperation {
    * Adds a new service data source to the list of those to operate on
    *
    * @param {string} collection The CMR ID of the collection being operated on
-   * @param {Array<object>} variables An array of objects containing variable id and name
-   * @param {Array<object>} granules An array of objects containing granule id, name, and url
+   * @param {Array<object>?} variables An array of objects containing variable id and name
+   * @param {Array<object>?} granules An array of objects containing granule id, name, and url
    * @returns {void}
    * @memberof DataOperation
    */
-  addSource(collection, variables, granules) {
+  addSource(collection, variables?, granules?): void {
     this.model.sources.push({ collection, variables, granules });
   }
 
@@ -143,7 +147,7 @@ class DataOperation {
    * @returns {string} The CRS into which the data should be transformed
    * @memberof DataOperation
    */
-  get crs() {
+  get crs(): string {
     return this.model.format.crs;
   }
 
@@ -278,6 +282,18 @@ class DataOperation {
   }
 
   /**
+   * Sets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
+   *   [ East, South, West, North ]
+   *
+   * @param {Array<number>} bbox The subsetting bounding rectangle, [ East, South, West, North ]
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set boundingRectangle(bbox: Array<number>) {
+    this.model.subset.bbox = bbox;
+  }
+
+  /**
    * Gets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
    *   [ East, South, West, North ]
    *
@@ -307,18 +323,6 @@ class DataOperation {
    */
   get geojson() {
     return this.model.subset.shape && this.model.subset.shape.href;
-  }
-
-  /**
-   * Sets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
-   *   [ East, South, West, North ]
-   *
-   * @param {Array<number>} bbox The subsetting bounding rectangle, [ East, South, West, North ]
-   * @returns {void}
-   * @memberof DataOperation
-   */
-  set boundingRectangle(bbox) {
-    this.model.subset.bbox = bbox;
   }
 
   /**
@@ -579,5 +583,3 @@ class DataOperation {
     return JSON.stringify(toWrite);
   }
 }
-
-export = DataOperation;

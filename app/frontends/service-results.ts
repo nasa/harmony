@@ -1,6 +1,6 @@
-const { URL } = require('url');
-const { objectStoreForProtocol } = require('../util/object-store');
-const { NotFoundError } = require('../util/errors');
+import { URL } from 'url';
+import { objectStoreForProtocol } from 'util/object-store';
+import { NotFoundError } from 'util/errors';
 
 /**
  * Given a URL that is not necessarily public-facing, produces a URL to that data
@@ -21,7 +21,7 @@ const { NotFoundError } = require('../util/errors');
  * @returns {string} a URL which getServiceResult can route to when mounted to the site root
  * @throws {TypeError} If the provided URL cannot be handled
  */
-function createPublicPermalink(url, frontendRoot, mimeType) {
+export function createPublicPermalink(url, frontendRoot, mimeType) {
   const parsed = new URL(url);
   const protocol = parsed.protocol.toLowerCase().replace(/:$/, '');
   if (protocol === 's3') {
@@ -52,7 +52,7 @@ function createPublicPermalink(url, frontendRoot, mimeType) {
  * @returns {Promise<void>} Resolves when the request is complete
  * @throws {NotFoundError} if the given URL cannot be signed, typically due to permissions
  */
-async function getServiceResult(req, res, next) {
+export async function getServiceResult(req, res, next) {
   const { bucket, key } = req.params;
   const url = `s3://${bucket}/${key}`;
 
@@ -76,5 +76,3 @@ async function getServiceResult(req, res, next) {
     next(new NotFoundError());
   }
 }
-
-module.exports = { getServiceResult, createPublicPermalink };

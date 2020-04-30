@@ -1,12 +1,12 @@
-const mustache = require('mustache');
-const fs = require('fs');
-const path = require('path');
-const { promisify } = require('util');
-const DataOperation = require('../models/data-operation');
-const urlUtil = require('../util/url');
-const { keysToLowerCase } = require('../util/object');
-const { RequestValidationError, NotFoundError } = require('../util/errors');
-const services = require('../models/services');
+import * as mustache from 'mustache';
+import * as fs from 'fs';
+import * as path from 'path';
+import { promisify } from 'util';
+import DataOperation from 'models/data-operation';
+import * as urlUtil from 'util/url';
+import { keysToLowerCase } from 'util/object';
+import { RequestValidationError, NotFoundError } from 'util/errors';
+import * as services from 'models/services';
 
 const readFile = promisify(fs.readFile);
 
@@ -109,9 +109,11 @@ function requestError(res, message) {
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
+ * @param {Function} _next An unsued parameter that is included to provide the correct function
+ *  signature for an Express.js handler
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function getCapabilities(req, res /* , next */) {
+async function getCapabilities(req, res, _next) {
   const collections = [];
 
   for (const collection of req.collections) {
@@ -130,7 +132,7 @@ async function getCapabilities(req, res /* , next */) {
     const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
     const collectionLongLabel = `${collectionShortLabel} (${collection.archive_center || collection.data_center})`;
 
-    const collectionData = {
+    const collectionData: any = {
       bbox,
       label: collectionLongLabel,
       variables: [],
@@ -250,7 +252,7 @@ function getMap(req, res, next) {
  * @param {function} next The next function in the chain
  * @returns {void}
  */
-async function wmsFrontend(req, res, next) {
+export default async function wmsFrontend(req, res, next) {
   req.context.frontend = 'wms';
   const query = keysToLowerCase(req.query);
   req.wmsQuery = query;
@@ -281,5 +283,3 @@ async function wmsFrontend(req, res, next) {
     throw e;
   }
 }
-
-module.exports = wmsFrontend;

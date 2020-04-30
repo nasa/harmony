@@ -1,5 +1,8 @@
-const { SecureTokenService } = require('../util/sts');
-const { sameRegionAccessRole, awsDefaultRegion } = require('../util/env');
+import { SecureTokenService } from 'util/sts';
+
+import env = require('util/env');
+
+const { sameRegionAccessRole, awsDefaultRegion } = env;
 
 // Allow tokens to last up to 8 hours - no reason to make this a configuration yet
 const expirationSeconds = 3600 * 8;
@@ -31,7 +34,7 @@ async function _assumeS3OutputsRole(context, username) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function cloudAccessJson(req, res) {
+export async function cloudAccessJson(req, res) {
   req.context.logger = req.context.logger.child({ component: 'cloudAccess.cloudAccessJson' });
   req.context.logger.info(`Generating same region access keys for ${req.user}`);
   try {
@@ -61,7 +64,7 @@ const awsFieldMappings = {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function cloudAccessSh(req, res) {
+export async function cloudAccessSh(req, res) {
   req.context.logger = req.context.logger.child({ component: 'cloudAccess.cloudAccessSh' });
   req.context.logger.info(`Generating same region access keys for ${req.user}`);
   res.set('Content-Type', 'application/x-sh');
@@ -79,5 +82,3 @@ async function cloudAccessSh(req, res) {
     res.send('>&2 echo "Error: Failed to assume role to generate access keys"');
   }
 }
-
-module.exports = { cloudAccessJson, cloudAccessSh };

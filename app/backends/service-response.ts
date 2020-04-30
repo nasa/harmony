@@ -1,5 +1,6 @@
-import * as uuid from 'uuid';
-import * as  log from '../util/log';
+import { v4 as uuid } from 'uuid';
+
+import log = require('util/log');
 
 const config: any = {
 };

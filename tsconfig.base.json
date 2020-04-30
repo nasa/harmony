@@ -1,12 +1,19 @@
 {
   "compilerOptions": {
       "module": "commonjs",
+      "baseUrl": ".",
       "paths": {
+        "frontends/*": ["app/frontends/*"],
+        "backends/*": ["app/backends/*"],
+        "middleware/*": ["app/middleware/*"],
+        "models/*": ["app/models/*"],
+        "routers/*": ["app/routers/*"],
+        "util/*": ["app/util/*"],
         "*": ["node_modules/*"]
       },
-      "baseUrl": ".",
       "moduleResolution": "node",
       "target": "es6",
+      "esModuleInterop": true,
       "allowJs": true, 
       "noImplicitAny": false,
       "sourceMap": true,
