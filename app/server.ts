@@ -1,3 +1,11 @@
+/* eslint-disable import/first */
+import * as dotenv from 'dotenv';
+import * as winston from 'winston';
+
+if (dotenv.config().error) {
+  winston.warn('Did not read a .env file');
+}
+
 import express from 'express';
 import { v4 as uuid } from 'uuid';
 import expressWinston from 'express-winston';
@@ -5,7 +13,6 @@ import * as path from 'path';
 import favicon from 'serve-favicon';
 import * as url from 'url';
 import { promisify } from 'util';
-import * as winston from 'winston';
 import * as serviceResponse from 'backends/service-response';
 import errorHandler from 'middleware/error-handler';
 import router from 'routers/router';
@@ -15,12 +22,6 @@ import serviceResponseRouter from './routers/service-response-router';
 
 import logger = require('util/log');
 import exampleBackend = require('../example/http-backend');
-
-const dotenvResult = require('dotenv').config();
-
-if (dotenvResult.error) {
-  winston.warn('Did not read a .env file');
-}
 
 /**
  * Builds an express server with appropriate logging and default routing and starts the server
@@ -80,6 +81,7 @@ function buildServer(name, port, setupFn) {
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
 function start(config: any = {}) {
+  console.log('STARTING SERVER');
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
   const backendHost = config.BACKEND_HOST || 'localhost';

@@ -6,13 +6,13 @@
   "scripts": {
     "test": "eslint . && nyc mocha && npm audit",
     "coverage": "nyc mocha",
-    "start": "node app/server.js",
+    "start": "ts-node -r tsconfig-paths/register app/server.ts",
     "start-dev": "supervisor app/server.js",
     "build-image": "bin/build-image",
     "push-image": "bin/push-image",
     "build": "tsc",
     "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
-    "ts-test": "mocha --require ts-node/register test"
+    "ts-test": "mocha  -r ts-node/register -r tsconfig-paths/register test"
   },
   "keywords": [
     "NASA",
@@ -42,6 +42,7 @@
   "dependencies": {
     "@mapbox/geojson-rewind": "^0.5.0",
     "@mapbox/togeojson": "^0.16.0",
+    "@types/express-winston": "^4.0.0",
     "@types/js-yaml": "^3.12.3",
     "@types/knex": "^0.16.1",
     "@types/lodash.get": "^4.4.6",
@@ -125,6 +126,7 @@
     "supertest": "^4.0.2",
     "supervisor": "^0.12.0",
     "ts-node": "^8.9.1",
+    "tsconfig-paths": "^3.9.0",
     "typescript": "^3.8.3"
   }
 }
