@@ -1,7 +1,7 @@
-const { expect } = require('chai');
-const { describe, it, beforeEach } = require('mocha');
-const DataOperation = require('../../app/models/data-operation');
-const { forOperation } = require('../../app/models/services');
+import { expect } from 'chai';
+import { describe, it, beforeEach } from 'mocha';
+import DataOperation from '../../app/models/data-operation';
+import { forOperation } from '../../app/models/services';
 
 describe('services.forOperation', function () {
   describe("when the operation's collection is configured for two services", function () {

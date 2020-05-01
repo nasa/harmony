@@ -1,10 +1,10 @@
-const { expect } = require('chai');
-const { describe, it, before } = require('mocha');
-const uuid = require('uuid');
-const { hookServersStartStop } = require('../helpers/servers');
-const { hookTransaction } = require('../helpers/db');
-const { stacItem, hookStacItem } = require('../helpers/stac');
-const Job = require('../../app/models/job');
+import { expect } from 'chai';
+import { describe, it, before } from 'mocha';
+import { v4 as uuid } from 'uuid';
+import { hookServersStartStop } from '../helpers/servers';
+import { hookTransaction } from '../helpers/db';
+import { stacItem, hookStacItem } from '../helpers/stac';
+import Job from '../../app/models/job';
 
 const runningJob = {
   username: 'joe',

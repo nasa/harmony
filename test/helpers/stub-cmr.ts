@@ -1,6 +1,7 @@
-const { before, after } = require('mocha');
-const sinon = require('sinon');
-const cmr = require('../../app/util/cmr');
+/* eslint-disable import/namespace */
+import { before, after } from 'mocha';
+import * as sinon from 'sinon';
+import * as cmr from 'util/cmr';
 
 /**
  * Replace a function in the `cmr` module with a given function. This is needed because

@@ -80,7 +80,7 @@ function buildServer(name, port, setupFn) {
  *
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
-function start(config: any = {}) {
+export function start(config: any = {}) {
   console.log('STARTING SERVER');
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
@@ -125,13 +125,11 @@ function start(config: any = {}) {
  *   objects, as returned by start()
  * @returns {Promise<void>} A promise that completes when the servers close
  */
-async function stop({ frontend, backend }) {
+export async function stop({ frontend, backend }) {
   const closeFrontend = promisify(frontend.close.bind(frontend));
   const closeBackend = promisify(backend.close.bind(backend));
   await Promise.all([closeFrontend(), closeBackend()]);
 }
-
-module.exports = { start, stop };
 
 if (require.main === module) {
   start(process.env);

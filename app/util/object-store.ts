@@ -28,7 +28,7 @@ export class S3ObjectStore {
    *
    * @param {object} overrides values to set when constructing the underlying S3 store
    */
-  constructor(overrides) {
+  constructor(overrides?) {
     const endpointSettings: any = {};
     if (process.env.USE_LOCALSTACK === 'true') {
       endpointSettings.endpoint = 'http://localhost:4572';

@@ -1,5 +1,5 @@
-const { before, after } = require('mocha');
-const request = require('supertest');
+import { before, after } from 'mocha';
+import request from 'supertest';
 
 /**
  * Performs an EOS service request on the given collection with the given params
@@ -11,7 +11,7 @@ const request = require('supertest');
  * @param {object} query The query parameters to pass to the EOSS request
  * @returns {Promise<Response>} The response
  */
-function eossGetGranule(app, version, collection, granule, query) {
+export function eossGetGranule(app, version, collection, granule, query) {
   return request(app)
     .get(`/${collection}/eoss/${version}/items/${granule}`)
     .query(query);
@@ -26,7 +26,7 @@ function eossGetGranule(app, version, collection, granule, query) {
  * @param {object} query The query parameters to pass to the EOSS request
  * @returns {void}
  */
-function hookEossGetGranule(version, collection, granule, query) {
+export function hookEossGetGranule(version, collection, granule, query) {
   before(async function () {
     this.res = await eossGetGranule(this.frontend, version, collection, granule, query);
   });
@@ -42,7 +42,7 @@ function hookEossGetGranule(version, collection, granule, query) {
  * @param {String} version The specification version
  * @returns {Promise<Response>} The response
  */
-function eossSpecRequest(app, version) {
+export function eossSpecRequest(app, version) {
   return request(app).get(`/docs/eoss/${version}/spec`);
 }
 
@@ -52,13 +52,6 @@ function eossSpecRequest(app, version) {
  * @param {Express.Application} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-function eossLandingPageRequest(app) {
+export function eossLandingPageRequest(app) {
   return request(app).get('/docs/eoss');
 }
-
-module.exports = {
-  eossGetGranule,
-  eossSpecRequest,
-  eossLandingPageRequest,
-  hookEossGetGranule,
-};

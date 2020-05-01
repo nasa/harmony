@@ -1,9 +1,10 @@
-const { describe, it } = require('mocha');
-const chai = require('chai');
-const fs = require('fs');
-const path = require('path');
-const { hookServersStartStop } = require('../helpers/servers');
-const { eossLandingPageRequest, eossSpecRequest } = require('../helpers/eoss');
+import { describe, it } from 'mocha';
+import chai from 'chai';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { hookServersStartStop } from '../helpers/servers';
+import default from '../helpers/eoss';
+const { eossLandingPageRequest, eossSpecRequest } = default;
 
 const { expect } = chai;
 
@@ -20,8 +21,8 @@ describe('EOSS static content endpoints', function () {
   });
 
   describe('OpenAPI spec', function () {
-    const openApiPath = path.join(__dirname, '..', '..', 'app', 'schemas', 'eoss', '0.1.0', 'eoss-v0.1.0.yml');
-    const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
+    const openApiPath = join(__dirname, '..', '..', 'app', 'schemas', 'eoss', '0.1.0', 'eoss-v0.1.0.yml');
+    const openApiContent = readFileSync(openApiPath, 'utf-8');
     it('returns an HTTP 200 and the OpenAPI spec for an EOSS request', async function () {
       const res = await eossSpecRequest(this.frontend, '0.1.0');
       expect(res.status).to.equal(200);

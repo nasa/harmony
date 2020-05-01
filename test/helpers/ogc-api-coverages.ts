@@ -1,9 +1,9 @@
-const { parse } = require('cookie');
-const url = require('url');
-const request = require('supertest');
-const { before, after, it, describe } = require('mocha');
-const { expect } = require('chai');
-const { auth } = require('./auth');
+import { parse } from 'cookie';
+import * as url from 'url';
+import request from 'supertest';
+import { before, after, it, describe } from 'mocha';
+import { expect } from 'chai';
+import { auth } from './auth';
 
 const defaultCollection = 'C1233800302-EEDTEST';
 const defaultGranuleId = 'G1233800352-EEDTEST';
@@ -17,7 +17,7 @@ const defaultVersion = '1.0.0';
  * @returns {string} the unsigned cookie value
  * @private
  */
-function stripSignature(value) {
+export function stripSignature(value) {
   let m = value.match(/^s:j:(.*)\..*$/);
   if (m) {
     return JSON.parse(m[1]);
@@ -51,7 +51,7 @@ function cookieValue(encodedValue, key) {
  * @param {string} version The OGC API - Coverages version to use
  * @returns {void}
  */
-function hookLandingPage(collection, version) {
+export function hookLandingPage(collection, version) {
   before(async function () {
     this.res = await request(this.frontend).get(`/${collection}/ogc-api-coverages/${version}/`);
   });
@@ -74,7 +74,7 @@ function hookLandingPage(collection, version) {
  * @param {String} [options.cookies] The cookies to set on the call
  * @returns {Promise<Response>} The response
  */
-function rangesetRequest(
+export function rangesetRequest(
   app,
   version = defaultVersion,
   collection = defaultCollection,
@@ -104,7 +104,7 @@ function rangesetRequest(
  * @param {object} form The form parameters to pass to the request
  * @returns {supertest.Test} An 'awaitable' object that resolves to a Response
  */
-function postRangesetRequest(app, version, collection, coverageId, form) {
+export function postRangesetRequest(app, version, collection, coverageId, form) {
   const req = request(app)
     .post(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`);
 
@@ -131,7 +131,7 @@ function postRangesetRequest(app, version, collection, coverageId, form) {
  * @param {String} [options.username] Optional username to simulate logging in
  * @returns {void}
  */
-function hookRangesetRequest(
+export function hookRangesetRequest(
   version, collection, coverageId, { query = {}, headers = {}, username = 'anonymous' } = {},
 ) {
   before(async function () {
@@ -172,7 +172,7 @@ function hookRangesetRequest(
  * @param {String} [options.username] Optional username to simulate logging in
  * @returns {void}
  */
-function hookSyncRangesetRequest(
+export function hookSyncRangesetRequest(
   version, collection, coverageId, { query = {}, headers = {}, username = 'anonymous' } = {},
 ) {
   hookRangesetRequest(
@@ -192,7 +192,7 @@ function hookSyncRangesetRequest(
  * @param {object} form The form data to be POST'd
  * @returns {void}
  */
-function hookPostRangesetRequest(version, collection, coverageId, form) {
+export function hookPostRangesetRequest(version, collection, coverageId, form) {
   before(async function () {
     this.res = await postRangesetRequest(
       this.frontend,
@@ -248,7 +248,7 @@ function hookPostRangesetRequest(version, collection, coverageId, form) {
  * @param {function} fn The body of the describe statement
  * @returns {void}
  */
-function describeRelation(rel, description, fn) {
+export function describeRelation(rel, description, fn) {
   it(`provides a link relation, \`${rel}\`, to ${description}`, function () {
     const parsedBody = JSON.parse(this.res.text);
     expect(parsedBody).to.have.key('links');
@@ -290,7 +290,7 @@ function describeRelation(rel, description, fn) {
  * @param {String} version The specification version
  * @returns {Promise<Response>} The response
  */
-function coveragesSpecRequest(app, collection, version) {
+export function coveragesSpecRequest(app, collection, version) {
   return request(app).get(`/${collection}/ogc-api-coverages/${version}/api`);
 }
 
@@ -302,7 +302,7 @@ function coveragesSpecRequest(app, collection, version) {
  * @param {String} version The specification version
  * @returns {Promise<Response>} The response
  */
-function coveragesLandingPageRequest(app, collection, version) {
+export function coveragesLandingPageRequest(app, collection, version) {
   return request(app).get(`/${collection}/ogc-api-coverages/${version}/`);
 }
 
@@ -315,7 +315,7 @@ function coveragesLandingPageRequest(app, collection, version) {
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {Promise<Response>} The response
  */
-function describeCollectionsRequest(app, collection, version, query) {
+export function describeCollectionsRequest(app, collection, version, query) {
   return request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections`)
     .query(query);
@@ -329,7 +329,7 @@ function describeCollectionsRequest(app, collection, version, query) {
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {void}
  */
-function hookDescribeCollectionsRequest(collection, version, query = {}) {
+export function hookDescribeCollectionsRequest(collection, version, query = {}) {
   before(async function () {
     this.res = await describeCollectionsRequest(this.frontend, collection, version, query);
   });
@@ -349,7 +349,7 @@ function hookDescribeCollectionsRequest(collection, version, query = {}) {
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {Promise<Response>} The response
  */
-function describeCollectionRequest(app, collection, version, variableName, query) {
+export function describeCollectionRequest(app, collection, version, variableName, query) {
   return request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${variableName}`)
     .query(query);
@@ -364,7 +364,7 @@ function describeCollectionRequest(app, collection, version, variableName, query
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {void}
  */
-function hookDescribeCollectionRequest(collection, version, variableName, query = {}) {
+export function hookDescribeCollectionRequest(collection, version, variableName, query = {}) {
   before(async function () {
     this.res = await describeCollectionRequest(
       this.frontend,
@@ -379,20 +379,3 @@ function hookDescribeCollectionRequest(collection, version, variableName, query 
     delete this.res;
   });
 }
-
-module.exports = {
-  hookLandingPage,
-  hookRangesetRequest,
-  hookSyncRangesetRequest,
-  rangesetRequest,
-  postRangesetRequest,
-  describeRelation,
-  coveragesSpecRequest,
-  coveragesLandingPageRequest,
-  describeCollectionRequest,
-  hookDescribeCollectionRequest,
-  describeCollectionsRequest,
-  hookDescribeCollectionsRequest,
-  hookPostRangesetRequest,
-  stripSignature,
-};

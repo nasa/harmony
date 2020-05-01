@@ -1,9 +1,9 @@
-const { before, after, beforeEach, afterEach } = require('mocha');
-const sinon = require('sinon');
-const request = require('superagent');
-const BaseService = require('../../app/models/services/base-service');
-const services = require('../../app/models/services');
-const AsynchronizerService = require('../../app/models/services/asynchronizer-service');
+import { before, after, beforeEach, afterEach } from 'mocha';
+import sinon from 'sinon';
+import request from 'superagent';
+import AsynchronizerService from 'models/services/asynchronizer-service';
+import BaseService from 'models/services/base-service';
+import * as services from 'models/services/index';
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -12,6 +12,14 @@ const AsynchronizerService = require('../../app/models/services/asynchronizer-se
  * @extends {BaseService}
  */
 class StubService extends BaseService {
+  callbackOptions: any;
+
+  isComplete: boolean;
+
+  isRun: boolean;
+
+  name: any;
+
   /**
    * Creates an instance of StubService.
    *
@@ -68,7 +76,7 @@ class StubService extends BaseService {
    * @returns {request} an awaitable response
    * @memberof StubService
    */
-  sendResponse(query) {
+  sendResponse(query?) {
     const options = typeof this.callbackOptions === 'function' ? this.callbackOptions() : this.callbackOptions;
     const params = query || options.params;
     const responseUrl = `${this.operation.callback}/response`;
@@ -98,7 +106,6 @@ class StubService extends BaseService {
    */
   static beforeHook(callbackOptions = { params: { redirect: 'http://example.com' } }) {
     return function () {
-      const ctx = this;
       const origForOperation = services.forOperation;
       sinon.stub(services, 'forOperation')
         .callsFake((operation, context, configs) => {
@@ -109,8 +116,8 @@ class StubService extends BaseService {
           // behavior has changed to not overwrite stagingLocation if it's already set in the
           // operation, so we reset it after the above call.
           operation.stagingLocation = null; // eslint-disable-line no-param-reassign
-          ctx.service = new StubService(callbackOptions, operation, chosenService.config.name);
-          return ctx.service;
+          this.service = new StubService(callbackOptions, operation, chosenService.config.name);
+          return this.service;
         });
     };
   }
@@ -124,7 +131,7 @@ class StubService extends BaseService {
    */
   static afterHook() {
     return async function () {
-      if (services.forOperation.restore) services.forOperation.restore();
+      if ((services.forOperation as any).restore) (services.forOperation as any).restore();
       if (this.service) await this.service.complete();
       if (this.service && this.service.invocation) await this.service.invocation;
       delete this.service;
@@ -174,17 +181,16 @@ class StubService extends BaseService {
    */
   static hookAsynchronized(callbackOptions = { params: { redirect: 'http://example.com' } }) {
     before(async function () {
-      const ctx = this;
       this.callbackOptions = callbackOptions;
       sinon.stub(services, 'forOperation')
         .callsFake((operation) => {
-          ctx.service = new AsynchronizerService(StubService, callbackOptions, operation);
-          return ctx.service;
+          this.service = new AsynchronizerService(StubService, callbackOptions, operation);
+          return this.service;
         });
     });
 
     after(async function () {
-      if (services.forOperation.restore) services.forOperation.restore();
+      if ((services.forOperation as any).restore) (services.forOperation as any).restore();
       try {
         await this.service.promiseCompletion();
       } catch { /* Normal for expected errors. Logs captured by the AsynchronizerService */

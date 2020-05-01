@@ -1,7 +1,7 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const Job = require('../../app/models/job');
-const catalog = require('../../app/frontends/stac-catalog');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import Job from 'models/job';
+import { create } from 'frontends/stac-catalog';
 
 // Prop for testing
 const jobProps = {
@@ -43,21 +43,21 @@ describe('stac-catalog', function () {
   describe('catalog creation with invalid argument', function () {
     const job = { jobID: 1 };
     it('should fail', function () {
-      expect(function () { catalog.create(job); }).to.throw();
+      expect(function () { create(job); }).to.throw();
     });
   });
 
   describe('catalog creation with an object matching Harmony Job properties', function () {
     it('should fail', function () {
-      expect(function () { catalog.create(jobProps); }).to.throw();
+      expect(function () { create(jobProps); }).to.throw();
     });
   });
 
   describe('catalog creation with a Harmony Job object', function () {
     const job = new Job(jobProps);
-    let jsonObj = {};
+    let jsonObj: any = {};
     it('created Harmony STAC Catalog', function () {
-      expect(function () { jsonObj = catalog.create(job); }).to.not.throw();
+      expect(function () { jsonObj = create(job); }).to.not.throw();
     });
     it('catalog ID matches Job ID', function () {
       expect(jsonObj.id).to.equal(jobProps.jobID);

@@ -1,6 +1,6 @@
-const { before, after } = require('mocha');
-const request = require('supertest');
-const { auth } = require('./auth');
+import { before, after } from 'mocha';
+import request from 'supertest';
+import { auth } from './auth';
 
 /**
  * Adds before / after hooks which call the given function with the given params, awaiting
@@ -12,7 +12,7 @@ const { auth } = require('./auth');
  * @param {...any} params the parameters to the function call
  * @returns {void}
  */
-function hookFunction(fn, returnValueName, ...params) {
+export function hookFunction(fn, returnValueName, ...params) {
   before(async function () {
     this[returnValueName] = await fn.bind(this)(...params);
   });
@@ -28,7 +28,7 @@ function hookFunction(fn, returnValueName, ...params) {
  * @param {string} username optional username to provide for auth
  * @returns {void}
  */
-function hookUrl(urlOrFn, username = 'anonymous') {
+export function hookUrl(urlOrFn, username = 'anonymous') {
   before(async function () {
     const url = typeof urlOrFn === 'string' ? urlOrFn : urlOrFn.call(this);
     this.urlRes = this.res;
@@ -50,7 +50,7 @@ function hookUrl(urlOrFn, username = 'anonymous') {
  * @param {string} username optional username to provide for auth
  * @returns {void}
  */
-function hookRedirect(username = undefined) {
+export function hookRedirect(username = undefined) {
   hookUrl(function () {
     const { location } = this.res.headers;
     if (!location) throw new TypeError('Attempted to hook an HTTP redirect with no Location header');
@@ -65,7 +65,7 @@ function hookRedirect(username = undefined) {
  * @param {function} requestFn The request function to execute
  * @returns {void}
  */
-function hookRequest(requestFn, { username, ...options } = {}) {
+export function hookRequest(requestFn, { username, ...options } = { username: undefined }) {
   before(async function () {
     let req = requestFn(this.frontend, options);
     if (username) {
@@ -77,10 +77,3 @@ function hookRequest(requestFn, { username, ...options } = {}) {
     delete this.res;
   });
 }
-
-module.exports = {
-  hookFunction,
-  hookRedirect,
-  hookUrl,
-  hookRequest,
-};

@@ -1,6 +1,6 @@
-const { expect } = require('chai');
-const { describe, it } = require('mocha');
-const RequestContext = require('../../app/models/request-context');
+import { expect } from 'chai';
+import { describe, it } from 'mocha';
+import RequestContext from '../../app/models/request-context';
 
 describe('RequestContext', function () {
   const context = new RequestContext('1');
@@ -28,16 +28,18 @@ describe('RequestContext', function () {
       expect(context.requestedMimeTypes).to.eql(['application/json', 'image/tiff']);
     });
   });
-  describe('setting a property that is not part of the model', function () {
-    context.foo = 'bar';
-    it('ignores the field', function () {
-      expect(context.foo).to.be.undefined;
-    });
-  });
-  describe('setting a property on the model that is not part of the model', function () {
-    context.model.alpha = 'omega';
-    it('ignores the field', function () {
-      expect(context.model.alpha).to.be.undefined;
-    });
-  });
+  // These tests is deprecated since TypeScript ensures that we can't add properties
+  // to a non-extensible object
+  // describe('setting a property that is not part of the model', function () {
+  //   context.foo = 'bar';
+  //   it('ignores the field', function () {
+  //     expect(context.foo).to.be.undefined;
+  //   });
+  // });
+  // describe('setting a property on the model that is not part of the model', function () {
+  //   context.model.alpha = 'omega';
+  //   it('ignores the field', function () {
+  //     expect(context.model.alpha).to.be.undefined;
+  //   });
+  // });
 });

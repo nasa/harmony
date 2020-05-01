@@ -1,7 +1,8 @@
-process.env.EXAMPLE_SERVICES = 'true';
+/* eslint-disable import/prefer-default-export */
+import { before, after } from 'mocha';
+import * as harmony from '../../app/server';
 
-const { before, after } = require('mocha');
-const harmony = require('../../app/server');
+process.env.EXAMPLE_SERVICES = 'true';
 
 /**
  * Add before / after hooks to start up and shut down Harmony's servers
@@ -10,7 +11,7 @@ const harmony = require('../../app/server');
  * @param {object} opts Options to pass to the server start method
  * @returns {void}
  */
-function hookServersStartStop(opts = {}) {
+export function hookServersStartStop(opts: any = {}) {
   let servers = null;
   before(function () {
     // Skip Earthdata Login unless the test says to do otherwise
@@ -26,7 +27,3 @@ function hookServersStartStop(opts = {}) {
     delete this.backend;
   });
 }
-
-module.exports = {
-  hookServersStartStop,
-};

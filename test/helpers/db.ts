@@ -1,8 +1,13 @@
-process.env.NODE_ENV = 'test'; // Ensure we're immediately using the right DB
+// Ensure we're immediately using the right DB
 
-const { before, after, beforeEach, afterEach } = require('mocha');
-const sinon = require('sinon');
-const db = require('../../app/util/db');
+import { before, after, beforeEach, afterEach } from 'mocha';
+import { stub } from 'sinon';
+
+import db = require('util/db');
+
+const { migrate, transaction } = db;
+
+process.env.NODE_ENV = 'test';
 
 const tables = ['jobs'];
 
@@ -11,12 +16,12 @@ const tables = ['jobs'];
  *
  * @returns {Promise<void>} A promise that resolves to nothing on completion
  */
-async function truncateAll() {
+export async function truncateAll() {
   await Promise.all(tables.map((t) => db(t).truncate()));
 }
 
 before(async function () {
-  await db.migrate.latest();
+  await migrate.latest();
   // Truncate all tables
   await truncateAll();
 });
@@ -28,11 +33,11 @@ before(async function () {
  *
  * @returns {void}
  */
-function hookTransaction() {
+export function hookTransaction() {
   let transactionSet = false;
   before(async function () {
     transactionSet = !this.trx;
-    this.trx = this.trx || await db.transaction();
+    this.trx = this.trx || await transaction();
   });
 
   after(async function () {
@@ -50,11 +55,11 @@ function hookTransaction() {
  *
  * @returns {void}
  */
-function hookTransactionEach() {
+export function hookTransactionEach() {
   let transactionSet = false;
   beforeEach(async function () {
     transactionSet = !this.trx;
-    this.trx = this.trx || await db.transaction();
+    this.trx = this.trx || await transaction();
   });
 
   afterEach(async function () {
@@ -71,13 +76,11 @@ function hookTransactionEach() {
  *
  * @returns {void}
  */
-function hookTransactionFailure() {
+export function hookTransactionFailure() {
   before(function () {
-    sinon.stub(db, 'transaction').throws();
+    stub(db, 'transaction').throws();
   });
   after(function () {
-    if (db.transaction.restore) db.transaction.restore();
+    if (transaction.restore) transaction.restore();
   });
 }
-
-module.exports = { hookTransaction, hookTransactionEach, hookTransactionFailure, truncateAll };

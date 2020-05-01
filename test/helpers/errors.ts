@@ -1,7 +1,6 @@
-const { describe, it, before, after } = require('mocha');
-
-const request = require('supertest');
-const { expect } = require('chai');
+import { describe, it, before, after } from 'mocha';
+import request from 'supertest';
+import { expect } from 'chai';
 
 /**
  * Adds `it` statements that assert that the given error has occurred on the
@@ -12,7 +11,7 @@ const { expect } = require('chai');
  * @param {number} html assert the page is EUI-themed HTML (default: true)
  * @returns {void}
  */
-function itRespondsWithError(code, message, html = true) {
+export function itRespondsWithError(code, message, html = true) {
   it(`returns an error page with status code ${code}`, function () {
     expect(this.res.status).to.equal(code);
   });
@@ -43,7 +42,7 @@ function itRespondsWithError(code, message, html = true) {
  * @param {number} [config.html] assert the page is EUI-themed HTML (default: true)
  * @returns {void}
  */
-function describeErrorCondition({ condition, path, message, code = 404, html = true }) {
+export function describeErrorCondition({ condition, path, message, code = 404, html = true }) {
   describe(`when ${condition}`, function () {
     before(async function () {
       this.res = await request(this.frontend).get(path);
@@ -55,8 +54,3 @@ function describeErrorCondition({ condition, path, message, code = 404, html = t
     itRespondsWithError(code, message, html);
   });
 }
-
-module.exports = {
-  describeErrorCondition,
-  itRespondsWithError,
-};

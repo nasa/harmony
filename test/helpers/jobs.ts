@@ -1,7 +1,8 @@
-const request = require('supertest');
-const { it } = require('mocha');
-const { expect } = require('chai');
-const { hookRequest } = require('./hooks');
+import request from 'supertest';
+import { it } from 'mocha';
+import { expect } from 'chai';
+
+import { hookRequest } from './hooks';
 
 /**
  * Returns true if the passed in job record matches the serialized Job
@@ -9,7 +10,7 @@ const { hookRequest } = require('./hooks');
  * @param {Object} serializedJob a job record serialized
  * @returns {Boolean} true if the jobs are the same
  */
-function jobsEqual(jobRecord, serializedJob) {
+export function jobsEqual(jobRecord, serializedJob) {
   return (jobRecord.requestId === serializedJob.jobID
     && jobRecord.username === serializedJob.username
     && jobRecord.message && serializedJob.message
@@ -26,7 +27,7 @@ function jobsEqual(jobRecord, serializedJob) {
  * @param {Array} jobList An array of jobs
  * @returns {Boolean} true if the object is found
  */
-function containsJob(job, jobList) {
+export function containsJob(job, jobList) {
   let found = false;
   jobList.forEach((j) => {
     if (jobsEqual(j, job)) {
@@ -41,7 +42,7 @@ function containsJob(job, jobList) {
  * @param {Express.Application} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-function jobListing(app) {
+export function jobListing(app) {
   return request(app).get('/jobs');
 }
 
@@ -52,12 +53,12 @@ function jobListing(app) {
  * @param {Object} [options.jobID] The job ID
  * @returns {void}
  */
-function jobStatus(app, { jobID }) {
+export function jobStatus(app, { jobID }) {
   return request(app).get(`/jobs/${jobID}`);
 }
 
-const hookJobListing = hookRequest.bind(this, jobListing);
-const hookJobStatus = hookRequest.bind(this, jobStatus);
+export const hookJobListing = hookRequest.bind(this, jobListing);
+export const hookJobStatus = hookRequest.bind(this, jobStatus);
 
 /**
  * Given a string returns a new string with all characters escaped such that the string
@@ -78,7 +79,7 @@ function _escapeRegExp(s) {
  * @param {string} expectedPath the expected relative path and query string
  * @returns {void}
  */
-function itIncludesRequestUrl(expectedPath) {
+export function itIncludesRequestUrl(expectedPath) {
   it('returns a request field with the URL used to generate the request', function () {
     const job = JSON.parse(this.res.text);
     // If the request is not a URL this will throw an exception
@@ -88,13 +89,3 @@ function itIncludesRequestUrl(expectedPath) {
     expect(job.request).to.match(regex);
   });
 }
-
-module.exports = {
-  jobsEqual,
-  containsJob,
-  jobListing,
-  jobStatus,
-  hookJobListing,
-  hookJobStatus,
-  itIncludesRequestUrl,
-};

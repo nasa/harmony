@@ -1,7 +1,8 @@
-const { before } = require('mocha');
-const winston = require('winston');
+import { before } from 'mocha';
 
-const logger = require('../../app/util/log');
+import * as winston from 'winston';
+
+import logger = require('util/log');
 
 before(() => {
   // Ensure logs go to a file so they don't muck with test output

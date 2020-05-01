@@ -1,7 +1,7 @@
-const sinon = require('sinon');
-const cookie = require('cookie');
-const { sign } = require('cookie-signature');
-const Client = require('simple-oauth2/lib/client');
+import { stub } from 'sinon';
+import { serialize } from 'cookie';
+import { sign } from 'cookie-signature';
+import { prototype } from 'simple-oauth2/lib/client';
 
 /**
  * Stubs Earthdata Login HTTP calls exactly matching the given URL and parameters, returning the
@@ -13,8 +13,8 @@ const Client = require('simple-oauth2/lib/client');
  *   Login would return
  * @returns {sinon.stub} The sinon stub that was created
  */
-function stubEdlRequest(url, params, response) {
-  return sinon.stub(Client.prototype, 'request').withArgs(url, params).resolves(response);
+export function stubEdlRequest(url, params, response) {
+  return stub(prototype, 'request').withArgs(url, params).resolves(response);
 }
 
 /**
@@ -27,17 +27,17 @@ function stubEdlRequest(url, params, response) {
  * @param {string} message The thrown exception's message
  * @returns {sinon.stub} The sinon stub that was created
  */
-function stubEdlError(url, params, message) {
+export function stubEdlError(url, params, message) {
   const error = new Error(message);
-  return sinon.stub(Client.prototype, 'request').withArgs(url, params).throws(error);
+  return stub(prototype, 'request').withArgs(url, params).throws(error);
 }
 
 /**
  * Removes stubs from Earthdata Login requests
  * @returns {void}
  */
-function unstubEdlRequest() {
-  Client.prototype.request.restore();
+export function unstubEdlRequest() {
+  prototype.request.restore();
 }
 
 /**
@@ -50,7 +50,7 @@ function unstubEdlRequest() {
  * @param {string} [options.refreshToken] The value of the OAuth2 refresh_token field
  * @returns {object} An OAuth2-structured object representing the token
  */
-function token({
+export function token({
   username = 'mock_user',
   expiresDelta = 3600,
   accessToken = 'fake_access',
@@ -80,7 +80,7 @@ function signedCookie(name, data, secret) {
   const serialized = `j:${JSON.stringify(data)}`;
   // Sign and then prefix with 's:' so express recognizes it as a signed cookie when deserializing
   const signed = `s:${sign(serialized, secret)}`;
-  return cookie.serialize(name, signed);
+  return serialize(name, signed);
 }
 
 /**
@@ -92,11 +92,11 @@ function signedCookie(name, data, secret) {
  * @param {boolean} [options.expired=false] Whether to produce an expired token
  * @returns {supertest} The chainable supertest object with appropriate auth headers
  */
-function auth({
+export function auth({
   username = 'mock_user',
   secret = process.env.COOKIE_SECRET,
   expired = false,
-  extraCookies,
+  extraCookies = null,
 }) {
   const expiresIn = 3600;
   const expiresDelta = expired ? -expiresIn : expiresIn;
@@ -125,16 +125,7 @@ function auth({
  * @param {string} [secret=process.env.COOKIE_SECRET] The cookie signing secret
  * @returns {Function} A function that sets the redirect cookie
  */
-function authRedirect(location, secret = process.env.COOKIE_SECRET) {
+export function authRedirect(location, secret = process.env.COOKIE_SECRET) {
   const cookieStr = signedCookie('redirect', location, secret);
   return (request) => request.set('Cookie', cookieStr);
 }
-
-module.exports = {
-  auth,
-  authRedirect,
-  token,
-  stubEdlRequest,
-  stubEdlError,
-  unstubEdlRequest,
-};

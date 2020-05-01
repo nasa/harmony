@@ -4,3 +4,4 @@ rules:
   prefer-arrow-callback: "off"
   func-names: "off"
   no-unused-expressions: "off" # Required for chai `to.be.empty`
+  "@typescript-eslint/no-unused-expressions": ["off"]

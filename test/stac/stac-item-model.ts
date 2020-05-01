@@ -1,7 +1,7 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const Job = require('../../app/models/job');
-const stacItem = require('../../app/frontends/stac-item');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import Job from 'models/job';
+import { create } from 'frontends/stac-item';
 
 // Prop for testing
 const jobProps = {
@@ -68,18 +68,18 @@ describe('stac-item', function () {
   describe('STAC Item creation with invalid argument', function () {
     const obj = { jobID: 1 };
     it('should fail', function () {
-      expect(function () { stacItem.create(obj, 0); }).to.throw();
+      expect(function () { create(obj, 0); }).to.throw();
     });
   });
 
   describe('STAC Item creation with an object matching Harmony Job properties', function () {
     it('should fail', function () {
-      expect(function () { stacItem.create(jobProps); }).to.throw();
+      expect(function () { create(jobProps, 0); }).to.throw();
     });
   });
 
   describe('STAC Item creation with a Harmony Job object: case of anti-meridian crossing', function () {
-    const jsonObj = stacItem.create(job, 0);
+    const jsonObj: any = create(job, 0);
     it('Item has correct ID', function () {
       expect(jsonObj.id).to.equal(`${jobProps.jobID}_0`);
     });
@@ -102,7 +102,7 @@ describe('stac-item', function () {
   });
 
   describe('STAC Item creation with a Harmony Job object: case without anti-meridian crossing', function () {
-    const jsonObj = stacItem.create(job, 1);
+    const jsonObj: any = create(job, 1);
     it('has a bounding box that doesn\'t anti-meridian', function () {
       expect(jsonObj.geometry.type).to.equal('Polygon');
     });
@@ -113,14 +113,14 @@ describe('stac-item', function () {
 
   describe('STAC Item creation with a Harmony Job object: case of metadata assets', function () {
     it('has an asset with metadata role', function () {
-      const jsonObj = stacItem.create(job, 2);
+      const jsonObj = create(job, 2);
       expect(jsonObj.assets['file_3.json'].roles[0]).to.equal('metadata');
     });
   });
 
   describe('STAC Item creation with a Harmony Job object: case of textual data', function () {
     it('has an text asset with data role', function () {
-      const jsonObj = stacItem.create(job, 3);
+      const jsonObj = create(job, 3);
       expect(jsonObj.assets['file_4.csv'].roles[0]).to.equal('data');
     });
   });

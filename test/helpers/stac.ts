@@ -1,6 +1,6 @@
-const request = require('supertest');
-const { before, after } = require('mocha');
-const { auth } = require('./auth');
+import request from 'supertest';
+import { before, after } from 'mocha';
+import { auth } from './auth';
 
 /**
  * Navigates to the STAC catalog route for the given job ID
@@ -9,7 +9,7 @@ const { auth } = require('./auth');
  * @param {String} jobId The job ID
  * @returns {Response} An awaitable object that resolves to the request response
  */
-function stacCatalog(app, jobId) {
+export function stacCatalog(app, jobId) {
   return request(app).get(`/stac/${jobId}`);
 }
 
@@ -21,7 +21,7 @@ function stacCatalog(app, jobId) {
  * @param {number} index The index of the stac item in the stac catalog
  * @returns {Response} An awaitable object that resolves to the request response
  */
-function stacItem(app, jobId, index) {
+export function stacItem(app, jobId, index) {
   return request(app).get(`/stac/${jobId}/${index}`);
 }
 
@@ -32,7 +32,7 @@ function stacItem(app, jobId, index) {
  * @param {String} username optional user to simulate logging in as
  * @returns {void}
  */
-function hookStacCatalog(jobId, username = undefined) {
+export function hookStacCatalog(jobId, username = undefined) {
   before(async function () {
     if (username) {
       this.res = await stacCatalog(this.frontend, jobId).use(auth({ username }));
@@ -53,7 +53,7 @@ function hookStacCatalog(jobId, username = undefined) {
 * @param {String} username optional user to simulate logging in as
 * @returns {void}
 */
-function hookStacItem(jobId, index, username = undefined) {
+export function hookStacItem(jobId, index, username = undefined) {
   before(async function () {
     if (username) {
       this.res = await stacItem(this.frontend, jobId, index).use(auth({ username }));
@@ -65,10 +65,3 @@ function hookStacItem(jobId, index, username = undefined) {
     delete this.res;
   });
 }
-
-module.exports = {
-  stacCatalog,
-  stacItem,
-  hookStacCatalog,
-  hookStacItem,
-};

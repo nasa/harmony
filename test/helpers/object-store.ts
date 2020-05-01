@@ -1,10 +1,10 @@
-const { before, after } = require('mocha');
-const sinon = require('sinon');
-const aws = require('aws-sdk');
-const fs = require('fs');
-const mockAws = require('mock-aws-s3');
-const tmp = require('tmp');
-const { S3ObjectStore } = require('../../app/util/object-store');
+import { before, after } from 'mocha';
+import sinon from 'sinon';
+import aws from 'aws-sdk';
+import fs from 'fs';
+import mockAws from 'mock-aws-s3';
+import * as tmp from 'tmp';
+import { S3ObjectStore } from 'util/object-store';
 
 // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
 const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
@@ -46,10 +46,10 @@ function hookSignS3Object() {
   const prefix = 'https://example.com/s3/signed/';
   before(function () {
     sinon.stub(S3ObjectStore.prototype, 'signGetObject')
-      .callsFake((url, params) => `${prefix}${params['A-userid']}`);
+      .callsFake(async (url, params) => `${prefix}${params['A-userid']}`);
   });
   after(function () {
-    S3ObjectStore.prototype.signGetObject.restore();
+    (S3ObjectStore.prototype.signGetObject as any).restore();
   });
   return prefix;
 }
@@ -63,7 +63,7 @@ async function getJson(url) {
   const objectStore = new S3ObjectStore();
   const filename = await objectStore.downloadFile(url);
   try {
-    return JSON.parse(fs.readFileSync(filename));
+    return JSON.parse(fs.readFileSync(filename).toString());
   } finally {
     fs.unlinkSync(filename);
   }

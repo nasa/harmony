@@ -1,9 +1,9 @@
-const request = require('supertest');
-const { before, after } = require('mocha');
-const sinon = require('sinon');
-const fs = require('fs');
-const aws = require('aws-sdk');
-const { hookRequest } = require('./hooks');
+import request from 'supertest';
+import { before, after } from 'mocha';
+import { stub as _stub } from 'sinon';
+import { readFileSync } from 'fs';
+import aws from 'aws-sdk';
+import { hookRequest } from './hooks';
 
 /**
  * Makes a cloud-access JSON request
@@ -42,7 +42,7 @@ const sampleCloudAccessJsonResponse = {
 function hookAwsSts() {
   let stub;
   before(function () {
-    stub = sinon.stub(aws, 'STS')
+    stub = _stub(aws, 'STS')
       .returns({
         assumeRole: () => (
           { promise: async () => sampleCloudAccessJsonResponse }),
@@ -53,9 +53,9 @@ function hookAwsSts() {
   });
 }
 
-const sampleCloudAccessShResponse = fs.readFileSync('./test/resources/cloud-access-example-response.sh', 'utf-8');
+const sampleCloudAccessShResponse = readFileSync('./test/resources/cloud-access-example-response.sh', 'utf-8');
 
-module.exports = {
+export default {
   cloudAccessJson,
   hookCloudAccessJson,
   cloudAccessSh,

@@ -1,7 +1,7 @@
-const { expect } = require('chai');
-const { describe, it } = require('mocha');
-const { hookServersStartStop } = require('./helpers/servers');
-const { hookCloudAccessJson, hookCloudAccessSh, hookAwsSts, sampleCloudAccessShResponse } = require('./helpers/cloud-access');
+import { expect } from 'chai';
+import { describe, it } from 'mocha';
+import { hookServersStartStop } from './helpers/servers';
+import { hookCloudAccessJson, hookCloudAccessSh, hookAwsSts, sampleCloudAccessShResponse } from './helpers/cloud-access';
 
 describe('Cloud access', function () {
   hookServersStartStop({ skipEarthdataLogin: false });

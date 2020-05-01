@@ -1,8 +1,8 @@
-const { expect } = require('chai');
-const { describe, it } = require('mocha');
-const fs = require('fs');
-const path = require('path');
-const DataOperation = require('../../app/models/data-operation');
+import { expect } from 'chai';
+import { describe, it } from 'mocha';
+import * as fs from 'fs';
+import * as path from 'path';
+import DataOperation from 'models/data-operation';
 
 const samplesDir = './test/resources/data-operation-samples';
 
