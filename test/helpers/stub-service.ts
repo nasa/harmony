@@ -243,7 +243,7 @@ class StubService extends BaseService {
         });
     });
     after(function () {
-      if (services.forOperation.restore) services.forOperation.restore();
+      if ((services.forOperation as any).restore) (services.forOperation as any).restore();
     });
   }
 }

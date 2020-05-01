@@ -35,7 +35,7 @@ export default class AsynchronizerService extends BaseService {
 
   isComplete: boolean;
 
-  constructor(SyncServiceClass: typeof BaseService, config: any, operation: any) {
+  constructor(SyncServiceClass: { new(...args): BaseService }, config: any, operation: any) {
     super(config, operation);
     this.SyncServiceClass = SyncServiceClass;
     this.queue = new PromiseQueue({ concurrency: this.config.concurrency || 1 });

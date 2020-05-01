@@ -5,8 +5,6 @@ import { stub } from 'sinon';
 
 import db = require('util/db');
 
-const { migrate, transaction } = db;
-
 process.env.NODE_ENV = 'test';
 
 const tables = ['jobs'];
@@ -21,7 +19,7 @@ export async function truncateAll() {
 }
 
 before(async function () {
-  await migrate.latest();
+  await db.migrate.latest();
   // Truncate all tables
   await truncateAll();
 });
@@ -37,7 +35,7 @@ export function hookTransaction() {
   let transactionSet = false;
   before(async function () {
     transactionSet = !this.trx;
-    this.trx = this.trx || await transaction();
+    this.trx = this.trx || await db.transaction();
   });
 
   after(async function () {
@@ -59,7 +57,7 @@ export function hookTransactionEach() {
   let transactionSet = false;
   beforeEach(async function () {
     transactionSet = !this.trx;
-    this.trx = this.trx || await transaction();
+    this.trx = this.trx || await db.transaction();
   });
 
   afterEach(async function () {
@@ -81,6 +79,6 @@ export function hookTransactionFailure() {
     stub(db, 'transaction').throws();
   });
   after(function () {
-    if (transaction.restore) transaction.restore();
+    if (db.transaction.restore) db.transaction.restore();
   });
 }

@@ -276,7 +276,7 @@ const operationFilterFns = [
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @throws {NotFoundError} If no service can perform the given operation
  */
-export function forOperation(operation, context, configs = serviceConfigs) {
+export function forOperation(operation, context?, configs = serviceConfigs) {
   let service;
   let matches = configs;
   try {
