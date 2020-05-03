@@ -1,7 +1,6 @@
 import { SecureTokenService } from 'util/sts';
 
 import env = require('util/env');
-
 const { sameRegionAccessRole, awsDefaultRegion } = env;
 
 // Allow tokens to last up to 8 hours - no reason to make this a configuration yet

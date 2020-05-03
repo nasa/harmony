@@ -1,11 +1,4 @@
 /* eslint-disable import/first */
-import * as dotenv from 'dotenv';
-import * as winston from 'winston';
-
-if (dotenv.config().error) {
-  winston.warn('Did not read a .env file');
-}
-
 import express from 'express';
 import { v4 as uuid } from 'uuid';
 import expressWinston from 'express-winston';

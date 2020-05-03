@@ -1,5 +1,10 @@
 import { camelCase } from 'change-case';
-import { integer } from 'aws-sdk/clients/lightsail';
+import * as dotenv from 'dotenv';
+import * as winston from 'winston';
+
+if (dotenv.config().error) {
+  winston.warn('Did not read a .env file');
+}
 
 const envVars: any = {};
 
@@ -15,7 +20,7 @@ const envVars: any = {};
  *   and integers are supported
  * @returns {void}
  */
-function makeConfigVar(envName: string, defaultValue: string|integer): void {
+function makeConfigVar(envName: string, defaultValue?: string|number): void {
   const envValue = process.env[envName];
   let value;
 

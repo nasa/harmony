@@ -12,7 +12,7 @@
     "push-image": "bin/push-image",
     "build": "tsc",
     "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
-    "ts-test": "nyc mocha  -r ts-node/register -r tsconfig-paths/register -r source-map-support/register test/*.ts test/**/*.ts"
+    "ts-test": "./node_modules/.bin/nyc ./node_modules/.bin/mocha  -r ts-node/register -r tsconfig-paths/register test/*.ts test/**/*.ts"
   },
   "keywords": [
     "NASA",
