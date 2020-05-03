@@ -81,7 +81,6 @@ function buildServer(name, port, setupFn) {
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
 export function start(config: any = {}) {
-  console.log('STARTING SERVER');
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
   const backendHost = config.BACKEND_HOST || 'localhost';

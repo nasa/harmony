@@ -12,7 +12,7 @@
     "push-image": "bin/push-image",
     "build": "tsc",
     "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
-    "ts-test": "mocha  -r ts-node/register -r tsconfig-paths/register test"
+    "ts-test": "nyc mocha  -r ts-node/register -r tsconfig-paths/register -r source-map-support/register test/*.ts test/**/*.ts"
   },
   "keywords": [
     "NASA",
@@ -27,14 +27,21 @@
   "nyc": {
     "all": true,
     "check-coverage": true,
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "**/*.d.ts"
+    ],
     "lines": 70,
     "reporter": [
       "lcov",
       "text"
     ],
     "include": [
-      "app/**/*.js",
-      "example/**/*.js"
+      "app/**/*.ts",
+      "example/**/*.ts"
     ]
   },
   "author": "Patrick Quinn",

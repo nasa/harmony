@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /**
  * Example of a service backend that communicates with Harmony over HTTP.
  *
@@ -21,10 +22,11 @@
  * for `handleHarmonyMessage` below for details.
  */
 
-const express = require('express');
-const { promisify } = require('util');
-const winston = require('winston');
-const request = require('request-promise');
+import express from 'express';
+import { promisify } from 'util';
+import * as winston from 'winston';
+import * as request from 'request-promise';
+import * as http from 'http';
 
 // A mapping of request IDs to callback URLs for use in demonstrating and testing async requests.
 const idsToCallbacks = {};
@@ -37,7 +39,7 @@ let callbackResolutions = [];
  *
  * @returns {Promise<string>} a promise that will resolve to the next callback URL
  */
-function getNextCallback() {
+export function getNextCallback(): Promise<string> {
   return new Promise((resolve) => { callbackResolutions.push(resolve); });
 }
 
@@ -54,11 +56,11 @@ function getNextCallback() {
  *   can GET for a 200 response
  * Default: Return a 200 response containing the incoming message
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
+ * @param {express.Request} req The request sent by the client
+ * @param {express.Response} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function handleHarmonyMessage(req, res) {
+async function handleHarmonyMessage(req: express.Request, res: express.Response): Promise<void> {
   const { body } = req;
 
   if (!body || !body.format) {
@@ -87,7 +89,7 @@ async function handleHarmonyMessage(req, res) {
     res.status(202).send('accepted');
   } else {
     res.type('application/json');
-    res.send(req.rawBody);
+    res.send((req as any).rawBody);
   }
 }
 
@@ -95,11 +97,11 @@ async function handleHarmonyMessage(req, res) {
  * Shows how to send asynchronous status.  Whenever something external sends a GET
  * request to this endpoint, we forward a status onto Harmony.
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
+ * @param {express.Request} req The request sent by the client
+ * @param {express.Response} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function sendAsyncHarmonyStatus(req, res) {
+async function sendAsyncHarmonyStatus(req: express.Request, res: express.Response): Promise<void> {
   const { id } = req.query;
   if (!id) {
     res.status(400).send('parameter "id" is required');
@@ -120,11 +122,13 @@ async function sendAsyncHarmonyStatus(req, res) {
  *
  * @returns {express.Router} A router which can respond to example service requests
  */
-function router() {
+export function router(): express.Router {
   const result = express.Router();
 
   // Parse JSON POST bodies automatically, stashing the original text in req.rawBody
-  result.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf.toString(); } }));
+  result.use(express.json({ verify: (req, res, buf) => {
+    (req as any).rawBody = buf.toString();
+  } }));
 
   // Endpoint to give to Harmony.  Note that other endpoints could be set up for general use
   result.post('/harmony', handleHarmonyMessage);
@@ -148,7 +152,7 @@ function router() {
  *
  * @returns {http.Server} The started server
  */
-function start(config = {}) {
+export function start(config: any = {}): http.Server {
   const port = config.PORT || 3002;
   const app = express();
 
@@ -163,11 +167,9 @@ function start(config = {}) {
  * @param {http.Server} server A running server as returned by start()
  * @returns {Promise<void>} A promise that completes when the server closes
  */
-function stop(server) {
-  return promisify(server.close.bind(server));
+export function stop(server: http.Server): Promise<void> {
+  return promisify(server.close.bind(server))(server);
 }
-
-module.exports = { start, stop, router, getNextCallback };
 
 if (require.main === module) {
   start(process.env);

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-this-alias */
 import { before, after, beforeEach, afterEach } from 'mocha';
 import sinon from 'sinon';
 import request from 'superagent';
@@ -106,6 +107,7 @@ export default class StubService extends BaseService {
    */
   static beforeHook(callbackOptions = { params: { redirect: 'http://example.com' } }) {
     return function () {
+      const ctx = this;
       const origForOperation = services.forOperation;
       sinon.stub(services, 'forOperation')
         .callsFake((operation, context, configs) => {
@@ -116,8 +118,8 @@ export default class StubService extends BaseService {
           // behavior has changed to not overwrite stagingLocation if it's already set in the
           // operation, so we reset it after the above call.
           operation.stagingLocation = null; // eslint-disable-line no-param-reassign
-          this.service = new StubService(callbackOptions, operation, chosenService.config.name);
-          return this.service;
+          ctx.service = new StubService(callbackOptions, operation, chosenService.config.name);
+          return ctx.service;
         });
     };
   }
@@ -181,11 +183,12 @@ export default class StubService extends BaseService {
    */
   static hookAsynchronized(callbackOptions: any = { params: { redirect: 'http://example.com' } }) {
     before(async function () {
+      const ctx = this;
       this.callbackOptions = callbackOptions;
       sinon.stub(services, 'forOperation')
         .callsFake((operation) => {
-          this.service = new AsynchronizerService(StubService, callbackOptions, operation);
-          return this.service;
+          ctx.service = new AsynchronizerService(StubService, callbackOptions, operation);
+          return ctx.service;
         });
     });
 
