@@ -1,6 +1,6 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const { listToText, truncateString } = require('../../app/util/string');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { listToText, truncateString } from '../../app/util/string';
 
 describe('util/string', function () {
   describe('#listToText', function () {

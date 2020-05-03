@@ -1,10 +1,10 @@
-const { expect } = require('chai');
-const sinon = require('sinon');
-const { describe, it, before, after } = require('mocha');
-const { hookServersStartStop } = require('./helpers/servers');
-const { createPublicPermalink } = require('../app/frontends/service-results');
-const { S3ObjectStore } = require('../app/util/object-store');
-const { hookUrl } = require('./helpers/hooks');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import { describe, it, before, after } from 'mocha';
+import { createPublicPermalink } from 'frontends/service-results';
+import { S3ObjectStore } from 'util/object-store';
+import { hookServersStartStop } from './helpers/servers';
+import { hookUrl } from './helpers/hooks';
 
 describe('service-results', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -63,7 +63,7 @@ describe('service-results', function () {
       let stub;
       before(function () {
         stub = sinon.stub(S3ObjectStore.prototype, 'signGetObject')
-          .callsFake((url, params) => `https://example.com/signed/${params['A-userid']}`);
+          .callsFake(async (url, params) => `https://example.com/signed/${params['A-userid']}`);
       });
       hookUrl('/service-results/some-bucket/public/some/path.tif', 'jdoe');
       after(function () {

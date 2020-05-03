@@ -22,7 +22,7 @@ S3MockPrototype.upload = function (...args) {
  * yet)
  * @returns {void}
  */
-function hookMockS3(_buckets) {
+export function hookMockS3(_buckets?) {
   const s3 = aws.S3;
   let dir;
   before(async function () {
@@ -42,7 +42,7 @@ function hookMockS3(_buckets) {
  *
  * @returns {string} The URL prefix for use in matching responses
  */
-function hookSignS3Object() {
+export function hookSignS3Object() {
   const prefix = 'https://example.com/s3/signed/';
   before(function () {
     sinon.stub(S3ObjectStore.prototype, 'signGetObject')
@@ -59,7 +59,7 @@ function hookSignS3Object() {
  * @param {string} url the Object store URL to get
  * @returns {*} the JSON contents of the file at the given URL
  */
-async function getJson(url) {
+export async function getJson(url) {
   const objectStore = new S3ObjectStore();
   const filename = await objectStore.downloadFile(url);
   try {
@@ -68,9 +68,3 @@ async function getJson(url) {
     fs.unlinkSync(filename);
   }
 }
-
-module.exports = {
-  hookMockS3,
-  hookSignS3Object,
-  getJson,
-};

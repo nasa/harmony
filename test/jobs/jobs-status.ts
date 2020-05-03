@@ -1,16 +1,16 @@
-const { expect } = require('chai');
-const sinon = require('sinon');
-const { describe, it, before, after } = require('mocha');
-const uuid = require('uuid');
-const request = require('supertest');
-const { hookServersStartStop } = require('../helpers/servers');
-const { hookTransaction, hookTransactionFailure } = require('../helpers/db');
-const { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl } = require('../helpers/jobs');
-const Job = require('../../app/models/job');
-const StubService = require('../helpers/stub-service');
-const { hookRedirect, hookUrl } = require('../helpers/hooks');
-const { hookRangesetRequest } = require('../helpers/ogc-api-coverages');
-const { S3ObjectStore } = require('../../app/util/object-store');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import { describe, it, before, after } from 'mocha';
+import { v4 as uuid } from 'uuid';
+import request from 'supertest';
+import Job from 'models/job';
+import { hookServersStartStop } from '../helpers/servers';
+import { hookTransaction, hookTransactionFailure } from '../helpers/db';
+import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl } from '../helpers/jobs';
+import StubService from '../helpers/stub-service';
+import { hookRedirect, hookUrl } from '../helpers/hooks';
+import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
+import { S3ObjectStore } from '../../app/util/object-store';
 
 const aJob = {
   username: 'joe',
@@ -361,10 +361,10 @@ describe('Individual job status route', function () {
       describe('loading the provided Harmony HTTP URL', function () {
         before(function () {
           sinon.stub(S3ObjectStore.prototype, 'signGetObject')
-            .callsFake((url, params) => `https://example.com/signed/${params['A-userid']}`);
+            .callsFake(async (url, params) => `https://example.com/signed/${params['A-userid']}`);
         });
         after(function () {
-          S3ObjectStore.prototype.signGetObject.restore();
+          (S3ObjectStore.prototype.signGetObject as any).restore();
         });
 
         hookUrl(function () {

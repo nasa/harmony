@@ -1,8 +1,8 @@
-const { describe, it, xit } = require('mocha');
-const { expect } = require('chai');
-const { hookServersStartStop } = require('../helpers/servers');
-const { hookGetCapabilities } = require('../helpers/wms');
-const { describeErrorCondition } = require('../helpers/errors');
+import { describe, it, xit } from 'mocha';
+import { expect } from 'chai';
+import { hookServersStartStop } from '../helpers/servers';
+import { hookGetCapabilities } from '../helpers/wms';
+import { describeErrorCondition } from '../helpers/errors';
 
 describe('WMS GetCapabilities', function () {
   hookServersStartStop();

@@ -1,13 +1,12 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const { hookServersStartStop } = require('../helpers/servers');
-const { hookRangesetRequest, rangesetRequest } = require('../helpers/ogc-api-coverages');
-const { jobStatus, itIncludesRequestUrl } = require('../helpers/jobs');
-const { auth } = require('../helpers/auth');
-const { hookSignS3Object } = require('../helpers/object-store');
-const StubService = require('../helpers/stub-service');
-
-const isUUID = require('../../app/util/uuid');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { hookServersStartStop } from '../helpers/servers';
+import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
+import { jobStatus, itIncludesRequestUrl } from '../helpers/jobs';
+import { auth } from '../helpers/auth';
+import { hookSignS3Object } from '../helpers/object-store';
+import StubService from '../helpers/stub-service';
+import isUUID from '../../app/util/uuid';
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';

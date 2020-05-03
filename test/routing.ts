@@ -1,7 +1,7 @@
-const { describe } = require('mocha');
+import { describe } from 'mocha';
 
-const { describeErrorCondition } = require('./helpers/errors');
-const { hookServersStartStop } = require('./helpers/servers');
+import { describeErrorCondition } from './helpers/errors';
+import { hookServersStartStop } from './helpers/servers';
 
 describe('Routing', function () {
   const wms = 'wms?service=WMS&request=GetCapabilities';

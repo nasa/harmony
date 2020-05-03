@@ -1,9 +1,7 @@
-const { describe, it } = require('mocha');
-const chai = require('chai');
-const { hookServersStartStop } = require('../helpers/servers');
-const { wmsRequest } = require('../helpers/wms');
-
-const { expect } = chai;
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { hookServersStartStop } from '../helpers/servers';
+import { wmsRequest } from '../helpers/wms';
 
 describe('WMS Endpoint', function () {
   const collection = 'C1233800302-EEDTEST';

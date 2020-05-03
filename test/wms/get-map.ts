@@ -1,9 +1,9 @@
-const { describe, it, xit } = require('mocha');
-const { expect } = require('chai');
-const { hookServersStartStop } = require('../helpers/servers');
-const { hookGetMap, wmsRequest, validGetMapQuery } = require('../helpers/wms');
-const StubService = require('../helpers/stub-service');
-const isUUID = require('../../app/util/uuid');
+import { describe, it, xit } from 'mocha';
+import { expect } from 'chai';
+import isUUID from 'util/uuid';
+import { hookServersStartStop } from '../helpers/servers';
+import { hookGetMap, wmsRequest, validGetMapQuery } from '../helpers/wms';
+import StubService from '../helpers/stub-service';
 
 describe('WMS GetMap', function () {
   const collection = 'C1233800302-EEDTEST';

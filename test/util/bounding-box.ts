@@ -1,6 +1,6 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const boxStringsToBox = require('../../app/util/bounding-box');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import boxStringsToBox from 'util/bounding-box';
 
 describe('util/bounding-box', function () {
   describe('boxStringsToBox', function () {

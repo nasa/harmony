@@ -21,7 +21,7 @@ import { NotFoundError } from 'util/errors';
  * @returns {string} a URL which getServiceResult can route to when mounted to the site root
  * @throws {TypeError} If the provided URL cannot be handled
  */
-export function createPublicPermalink(url, frontendRoot, mimeType) {
+export function createPublicPermalink(url, frontendRoot, mimeType?) {
   const parsed = new URL(url);
   const protocol = parsed.protocol.toLowerCase().replace(/:$/, '');
   if (protocol === 's3') {

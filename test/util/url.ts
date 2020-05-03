@@ -1,6 +1,6 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const { getRequestUrl, getSanitizedRequestUrl, getRequestRoot } = require('../../app/util/url');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { getRequestUrl, getSanitizedRequestUrl, getRequestRoot } from '../../app/util/url';
 
 /**
  * Returns a request object to be used in tests to simulate different URLs
@@ -10,7 +10,7 @@ const { getRequestUrl, getSanitizedRequestUrl, getRequestRoot } = require('../..
  * @param {Object} params the query parameters
  * @returns {Object} An object emulating an http.IncomingMessage
  */
-function createRequest(hostname, path = '/example/path', params = { param1: 'foo', param2: 2 }) {
+function createRequest(hostname, path = '/example/path', params: any = { param1: 'foo', param2: 2 }) {
   return {
     originalUrl: `${path}?${params}`,
     query: params,

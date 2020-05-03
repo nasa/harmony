@@ -132,7 +132,7 @@ export function postRangesetRequest(app, version, collection, coverageId, form) 
  * @returns {void}
  */
 export function hookRangesetRequest(
-  version, collection, coverageId, { query = {}, headers = {}, username = 'anonymous' } = {},
+  version?, collection?, coverageId?, { query = {}, headers = {}, username = 'anonymous' } = {},
 ) {
   before(async function () {
     if (!username) {
@@ -173,7 +173,7 @@ export function hookRangesetRequest(
  * @returns {void}
  */
 export function hookSyncRangesetRequest(
-  version, collection, coverageId, { query = {}, headers = {}, username = 'anonymous' } = {},
+  version?, collection?, coverageId?, { query = {}, headers = {}, username = 'anonymous' } = {},
 ) {
   hookRangesetRequest(
     version,

@@ -1,16 +1,16 @@
 /* eslint-disable max-len */
-const { parse } = require('cookie');
-const fetch = require('node-fetch');
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const fs = require('fs');
-const { hookServersStartStop } = require('../helpers/servers');
-const StubService = require('../helpers/stub-service');
-const { auth } = require('../helpers/auth');
-const { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } = require('../helpers/ogc-api-coverages');
-const { hookCmr } = require('../helpers/stub-cmr');
-const isUUID = require('../../app/util/uuid');
-const { hookMockS3, getJson } = require('../helpers/object-store');
+import { parse } from 'cookie';
+import * as fetch from 'node-fetch';
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import * as fs from 'fs';
+import isUUID from 'util/uuid';
+import { hookServersStartStop } from '../helpers/servers';
+import StubService from '../helpers/stub-service';
+import { auth } from '../helpers/auth';
+import { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } from '../helpers/ogc-api-coverages';
+import { hookCmr } from '../helpers/stub-cmr';
+import { hookMockS3, getJson } from '../helpers/object-store';
 
 /**
  * Common steps in the validation tests
@@ -33,7 +33,7 @@ async function commonValidationSteps(app, res, version, collection, variableName
   const cookieValue = stripSignature(parsed.shapefile);
   const cookies = { shapefile: cookieValue };
   // we 'follow' the redirect from EDL
-  return rangesetRequest(app, version, collection, variableName, res.body, cookies).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+  return rangesetRequest(app, version, collection, variableName, { query: res.body, cookies }).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
 }
 
 describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
@@ -47,11 +47,11 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
 
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
-  const cmrResp = JSON.parse(cmrRespStr);
-  const testGeoJson = JSON.parse(fs.readFileSync('./test/resources/complex_multipoly.geojson'));
+  const cmrResp = JSON.parse(cmrRespStr.toString());
+  const testGeoJson = JSON.parse(fs.readFileSync('./test/resources/complex_multipoly.geojson').toString());
 
   describe('when provided a valid set of field parameters', function () {
-    let form = {
+    let form: any = {
       subset: ['lon(17:98)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
       interpolation: 'near',
       scaleExtent: '0,2500000.3,1500000,3300000',

@@ -1,8 +1,8 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const { hookServersStartStop } = require('../helpers/servers');
-const { hookDescribeCollectionRequest, hookDescribeCollectionsRequest } = require('../helpers/ogc-api-coverages');
-const { generateExtent } = require('../../app/frontends/ogc-coverages/describe-collections');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { hookServersStartStop } from '../helpers/servers';
+import { hookDescribeCollectionRequest, hookDescribeCollectionsRequest } from '../helpers/ogc-api-coverages';
+import { generateExtent } from '../../app/frontends/ogc-coverages/describe-collections';
 
 describe('OGC API Coverages - describeCollections', function () {
   const collection = 'C1215669046-GES_DISC';

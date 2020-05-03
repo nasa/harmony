@@ -1,12 +1,12 @@
-const { expect } = require('chai');
-const { describe, it, beforeEach, afterEach } = require('mocha');
-const request = require('supertest');
+import { expect } from 'chai';
+import { describe, it, beforeEach, afterEach } from 'mocha';
+import request from 'supertest';
 
-const { hookServersStartStop } = require('./helpers/servers');
-const { auth, authRedirect, token, stubEdlRequest, stubEdlError, unstubEdlRequest } = require('./helpers/auth');
-const { itRespondsWithError } = require('./helpers/errors');
-const StubService = require('./helpers/stub-service');
-const { wmsRequest } = require('./helpers/wms');
+import { hookServersStartStop } from './helpers/servers';
+import { auth, authRedirect, token, stubEdlRequest, stubEdlError, unstubEdlRequest } from './helpers/auth';
+import { itRespondsWithError } from './helpers/errors';
+import StubService from './helpers/stub-service';
+import { wmsRequest } from './helpers/wms';
 
 const blankToken = /^token=s%3A\./; // The start of a signed empty token cookie
 const nonBlankToken = /^token=s%3A[^.]/; // The start of a signed non-empty token cookie

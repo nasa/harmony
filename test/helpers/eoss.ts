@@ -11,7 +11,7 @@ import request from 'supertest';
  * @param {object} query The query parameters to pass to the EOSS request
  * @returns {Promise<Response>} The response
  */
-export function eossGetGranule(app, version, collection, granule, query) {
+export function eossGetGranule(app, version, collection, granule, query = {}) {
   return request(app)
     .get(`/${collection}/eoss/${version}/items/${granule}`)
     .query(query);

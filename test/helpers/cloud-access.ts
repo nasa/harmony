@@ -10,7 +10,7 @@ import { hookRequest } from './hooks';
  * @param {Express.Application} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-function cloudAccessJson(app) {
+export function cloudAccessJson(app) {
   return request(app).get('/cloud-access');
 }
 
@@ -19,14 +19,14 @@ function cloudAccessJson(app) {
  * @param {Express.Application} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-function cloudAccessSh(app) {
+export function cloudAccessSh(app) {
   return request(app).get('/cloud-access.sh');
 }
 
-const hookCloudAccessSh = hookRequest.bind(this, cloudAccessSh);
-const hookCloudAccessJson = hookRequest.bind(this, cloudAccessJson);
+export const hookCloudAccessSh = hookRequest.bind(this, cloudAccessSh);
+export const hookCloudAccessJson = hookRequest.bind(this, cloudAccessJson);
 
-const sampleCloudAccessJsonResponse = {
+export const sampleCloudAccessJsonResponse = {
   Credentials: {
     AccessKeyId: 'XXXXXXXXXXXXXXXXXXXX',
     SecretAccessKey: 'XXXXXXXXXXXXXXXXXXXX1111111111+++++/////',
@@ -39,7 +39,7 @@ const sampleCloudAccessJsonResponse = {
  * Adds before and after hooks to stub out calls to AWS STS.
  * @returns {void}
  */
-function hookAwsSts() {
+export function hookAwsSts() {
   let stub;
   before(function () {
     stub = _stub(aws, 'STS')
@@ -53,14 +53,4 @@ function hookAwsSts() {
   });
 }
 
-const sampleCloudAccessShResponse = readFileSync('./test/resources/cloud-access-example-response.sh', 'utf-8');
-
-export default {
-  cloudAccessJson,
-  hookCloudAccessJson,
-  cloudAccessSh,
-  hookCloudAccessSh,
-  sampleCloudAccessJsonResponse,
-  sampleCloudAccessShResponse,
-  hookAwsSts,
-};
+export const sampleCloudAccessShResponse = readFileSync('./test/resources/cloud-access-example-response.sh', 'utf-8');

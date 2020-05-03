@@ -1,9 +1,9 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const { hookServersStartStop } = require('./helpers/servers');
-const { validGetMapQuery, wmsRequest } = require('./helpers/wms');
-const { eossGetGranule } = require('./helpers/eoss');
-const { hookFunction } = require('./helpers/hooks');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { hookServersStartStop } from './helpers/servers';
+import { validGetMapQuery, wmsRequest } from './helpers/wms';
+import { eossGetGranule } from './helpers/eoss';
+import { hookFunction } from './helpers/hooks';
 
 /**
  * Define common test cases for HTTP backends that don't vary by access protocol.

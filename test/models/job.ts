@@ -1,8 +1,8 @@
-const { describe, it, beforeEach } = require('mocha');
-const { expect } = require('chai');
-const uuid = require('uuid');
-const { hookTransactionEach } = require('../helpers/db');
-const Job = require('../../app/models/job');
+import { describe, it, beforeEach } from 'mocha';
+import { expect } from 'chai';
+import { v4 as uuid } from 'uuid';
+import Job from 'models/job';
+import { hookTransactionEach } from '../helpers/db';
 
 const exampleProps = {
   username: 'joe',

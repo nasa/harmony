@@ -81,6 +81,7 @@
     "serve-favicon": "^2.5.0",
     "shpjs": "^3.4.3",
     "simple-oauth2": "git+https://github.com/bilts/simple-oauth2.git#fix-encoding",
+    "source-map-support": "^0.5.19",
     "sqlite3": "^4.1.1",
     "tmp": "^0.1.0",
     "tmp-promise": "^2.0.2",

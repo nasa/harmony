@@ -14,7 +14,7 @@ const versions = [
   '0.5.0',
   '0.4.0',
 ];
-let validOperation = JSON.parse(fs.readFileSync(path.join(samplesDir, `valid-operation-v${versions[0]}.json`)));
+let validOperation = JSON.parse(fs.readFileSync(path.join(samplesDir, `valid-operation-v${versions[0]}.json`)).toString());
 const expectedOutput = JSON.stringify(validOperation);
 validOperation = new DataOperation(validOperation);
 delete validOperation.version;
@@ -22,7 +22,7 @@ delete validOperation.version;
 validOperation.temporal = [new Date('1999-01-01T10:00:00.000Z'), new Date('2020-02-20T15:00:00.000Z')];
 
 // bbox has one too many numbers
-const invalidOperation = new DataOperation(JSON.parse(fs.readFileSync(path.join(samplesDir, 'invalid-operation.json'))));
+const invalidOperation = new DataOperation(JSON.parse(fs.readFileSync(path.join(samplesDir, 'invalid-operation.json')).toString()));
 
 describe('DataOperation', () => {
   describe('#serialize', () => {
@@ -86,7 +86,7 @@ describe('DataOperation', () => {
 
     describe('serializing to older schema versions', () => {
       const describeOldSchemaOutput = function (version, outputFile) {
-        const outputJson = fs.readFileSync(path.join(samplesDir, outputFile));
+        const outputJson = fs.readFileSync(path.join(samplesDir, outputFile)).toString();
         const output = JSON.stringify(JSON.parse(outputJson));
         describe(`when using the ${version} schema version`, () => {
           const call = () => validOperation.serialize(version);

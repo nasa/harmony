@@ -1,15 +1,15 @@
-const { before, after } = require('mocha');
-const request = require('supertest');
+import { before, after } from 'mocha';
+import request from 'supertest';
 
 /**
  * Example of a collection that can be hooked up to WMS
  */
-const validCollection = 'C1233800302-EEDTEST';
+export const validCollection = 'C1233800302-EEDTEST';
 
 /**
  * Example of a valid WMS query for use in tests.
  */
-const validGetMapQuery = {
+export const validGetMapQuery: any = {
   service: 'WMS',
   request: 'GetMap',
   layers: validCollection,
@@ -33,7 +33,7 @@ const validGetMapQuery = {
  * @param {object} query The query parameters to pass to the WMS request
  * @returns {Promise<Response>} The response
  */
-function wmsRequest(app, collection = validCollection, query = validGetMapQuery) {
+export function wmsRequest(app, collection = validCollection, query = validGetMapQuery) {
   return request(app)
     .get(`/${collection}/wms`)
     .query(query);
@@ -45,7 +45,7 @@ function wmsRequest(app, collection = validCollection, query = validGetMapQuery)
  * @param {string} collection The CMR Collection ID to query
  * @returns {void}
  */
-function hookGetCapabilities(collection) {
+export function hookGetCapabilities(collection) {
   before(async function () {
     this.res = await wmsRequest(this.frontend, collection, { service: 'WMS', request: 'GetCapabilities' });
   });
@@ -64,7 +64,7 @@ function hookGetCapabilities(collection) {
  * @param {object} query Query parameters other than "service" and "request" to send
  * @returns {void}
  */
-function hookGetMap(collection = validCollection, query = validGetMapQuery) {
+export function hookGetMap(collection = validCollection, query = validGetMapQuery) {
   before(async function () {
     this.res = await wmsRequest(this.frontend, collection, { service: 'WMS', request: 'GetMap', ...query });
   });
@@ -72,11 +72,3 @@ function hookGetMap(collection = validCollection, query = validGetMapQuery) {
     delete this.res;
   });
 }
-
-module.exports = {
-  hookGetCapabilities,
-  hookGetMap,
-  wmsRequest,
-  validGetMapQuery,
-  validCollection,
-};

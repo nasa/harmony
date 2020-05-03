@@ -1,14 +1,14 @@
-const { describe, it, beforeEach, afterEach, after } = require('mocha');
-const { expect } = require('chai');
-const request = require('supertest');
-const url = require('url');
-const { truncateAll } = require('./helpers/db');
-const { hookServersStartStop } = require('./helpers/servers');
-const { rangesetRequest } = require('./helpers/ogc-api-coverages');
+import { describe, it, beforeEach, afterEach, after } from 'mocha';
+import { expect } from 'chai';
+import request from 'supertest';
+import url from 'url';
+import Job from 'models/job';
+import { truncateAll } from './helpers/db';
+import { hookServersStartStop } from './helpers/servers';
+import { rangesetRequest } from './helpers/ogc-api-coverages';
+import { getNextCallback } from '../example/http-backend';
 
-const { getNextCallback } = require('../example/http-backend');
-const Job = require('../app/models/job');
-const db = require('../app/util/db');
+import db = require('util/db');
 
 describe('Backend Callbacks', function () {
   const collection = 'C1104-PVC_TS2';
@@ -36,7 +36,7 @@ describe('Backend Callbacks', function () {
     describe('temporal validation', function () {
       it('rejects temporal params containing invalid dates', async function () {
         const response = await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z,broken' } });
-        const error = JSON.parse(response.error.text);
+        const error = JSON.parse((response.error as any).text);
         expect(response.status).to.equal(400);
         expect(error).to.eql({ code: 400, message: 'Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End' });
         const job = (await Job.forUser(db, 'anonymous'))[0];
@@ -45,7 +45,7 @@ describe('Backend Callbacks', function () {
 
       it('rejects temporal params containing an incorrect number of dates', async function () {
         const response = await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z' } });
-        const error = JSON.parse(response.error.text);
+        const error = JSON.parse((response.error as any).text);
         expect(response.status).to.equal(400);
         expect(error).to.eql({ code: 400, message: 'Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End' });
         const job = (await Job.forUser(db, 'anonymous'))[0];
@@ -68,7 +68,7 @@ describe('Backend Callbacks', function () {
     describe('bbox validation', function () {
       it('rejects bbox params containing invalid numbers', async function () {
         const response = await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,broken,3.3' } });
-        const error = JSON.parse(response.error.text);
+        const error = JSON.parse((response.error as any).text);
         expect(response.status).to.equal(400);
         expect(error).to.eql({ code: 400, message: 'Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North' });
         const job = (await Job.forUser(db, 'anonymous'))[0];
@@ -77,7 +77,7 @@ describe('Backend Callbacks', function () {
 
       it('rejects bbox params containing an incorrect number of dates', async function () {
         const response = await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,2.2' } });
-        const error = JSON.parse(response.error.text);
+        const error = JSON.parse((response.error as any).text);
         expect(response.status).to.equal(400);
         expect(error).to.eql({ code: 400, message: 'Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North' });
         const job = (await Job.forUser(db, 'anonymous'))[0];

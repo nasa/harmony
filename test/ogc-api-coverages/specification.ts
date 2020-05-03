@@ -1,7 +1,7 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const { hookServersStartStop } = require('../helpers/servers');
-const { hookLandingPage, describeRelation } = require('../helpers/ogc-api-coverages');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { hookServersStartStop } from '../helpers/servers';
+import { hookLandingPage, describeRelation } from '../helpers/ogc-api-coverages';
 
 const version = '1.0.0';
 const collection = 'C1233800302-EEDTEST';

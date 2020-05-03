@@ -1,7 +1,7 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const sinon = require('sinon');
-const { objectStoreForProtocol, defaultObjectStore, S3ObjectStore } = require('../../app/util/object-store');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import sinon from 'sinon';
+import { objectStoreForProtocol, defaultObjectStore, S3ObjectStore } from '../../app/util/object-store';
 
 describe('util/object-store', function () {
   describe('objectStoreForProtocol', function () {

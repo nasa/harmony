@@ -1,14 +1,13 @@
-const { describe, it, before } = require('mocha');
-const { expect } = require('chai');
-const sinon = require('sinon');
-const util = require('util');
-const { hookServersStartStop } = require('../../helpers/servers');
-const StubService = require('../../helpers/stub-service');
-const { hookRangesetRequest, hookSyncRangesetRequest } = require('../../helpers/ogc-api-coverages');
-const { hookRedirect } = require('../../helpers/hooks');
-const { hookMockS3 } = require('../../helpers/object-store');
-const { defaultObjectStore } = require('../../../app/util/object-store');
-const Job = require('../../../app/models/job');
+import { describe, it, before } from 'mocha';
+import { expect } from 'chai';
+import sinon from 'sinon';
+import Job from 'models/job';
+import { defaultObjectStore } from 'util/object-store';
+import { hookServersStartStop } from '../../helpers/servers';
+import StubService from '../../helpers/stub-service';
+import { hookRangesetRequest, hookSyncRangesetRequest } from '../../helpers/ogc-api-coverages';
+import { hookRedirect } from '../../helpers/hooks';
+import { hookMockS3 } from '../../helpers/object-store';
 
 /**
  * Returns a function whose return value alternates between the supplied values
@@ -121,8 +120,7 @@ describe('Asynchronizer Service', function () {
         // Check a result somewhere toward the middle of the list that we expect to be the same as
         // the first result to have some assurance that the async/await code is working properly.
         const obj = jobOutputLinks[12].href.split('/service-results/')[1];
-        const getObject = util.promisify((...args) => defaultObjectStore().getObject(...args));
-        const contents = await getObject(`s3://${obj}`);
+        const contents = await defaultObjectStore().getObject(`s3://${obj}`).promise();
         expect(contents.Body.toString('utf-8')).to.equal('["response1"]');
       });
 

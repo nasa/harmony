@@ -1,6 +1,6 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const { wrap } = require('../../app/util/array');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { wrap } from '../../app/util/array';
 
 describe('util/array', function () {
   describe('wrap', function () {

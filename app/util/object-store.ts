@@ -226,7 +226,7 @@ export class S3ObjectStore {
  *   which case the protocol will be read from the front of the URL.
  * @returns {ObjectStore} an object store for interacting with the given protocol
  */
-export function objectStoreForProtocol(protocol) {
+export function objectStoreForProtocol(protocol?) {
   if (!protocol) {
     return null;
   }

@@ -11,7 +11,7 @@ import * as services from 'models/services/index';
  * @class StubService
  * @extends {BaseService}
  */
-class StubService extends BaseService {
+export default class StubService extends BaseService {
   callbackOptions: any;
 
   isComplete: boolean;
@@ -149,7 +149,7 @@ class StubService extends BaseService {
    * @returns {void}
    * @memberof StubService
    */
-  static hook(callbackOptions = { params: { redirect: 'http://example.com' } }) {
+  static hook(callbackOptions: any = { params: { redirect: 'http://example.com' } }) {
     before(StubService.beforeHook(callbackOptions));
     after(StubService.afterHook());
   }
@@ -179,7 +179,7 @@ class StubService extends BaseService {
    * @returns {void}
    * @memberof StubService
    */
-  static hookAsynchronized(callbackOptions = { params: { redirect: 'http://example.com' } }) {
+  static hookAsynchronized(callbackOptions: any = { params: { redirect: 'http://example.com' } }) {
     before(async function () {
       this.callbackOptions = callbackOptions;
       sinon.stub(services, 'forOperation')
@@ -247,5 +247,3 @@ class StubService extends BaseService {
     });
   }
 }
-
-module.exports = StubService;

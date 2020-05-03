@@ -1,6 +1,6 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const { parseAcceptHeader, isMimeTypeAccepted } = require('../../app/util/content-negotiation');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { parseAcceptHeader, isMimeTypeAccepted } from 'util/content-negotiation';
 
 describe('util/content-negotiation', function () {
   describe('parseAcceptHeader', function () {

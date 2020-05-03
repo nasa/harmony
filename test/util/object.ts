@@ -1,6 +1,6 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-const { keysToLowerCase } = require('../../app/util/object');
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { keysToLowerCase } from 'util/object';
 
 describe('util/object', function () {
   describe('#keysToLowerCase', function () {

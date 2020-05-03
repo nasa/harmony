@@ -1,9 +1,9 @@
-const { describe, it, xit } = require('mocha');
-const { expect } = require('chai');
-const { hookServersStartStop } = require('../helpers/servers');
-const { eossGetGranule, hookEossGetGranule } = require('../helpers/eoss');
-const StubService = require('../helpers/stub-service');
-const isUUID = require('../../app/util/uuid');
+import { describe, it, xit } from 'mocha';
+import { expect } from 'chai';
+import { hookServersStartStop } from '../helpers/servers';
+import { eossGetGranule, hookEossGetGranule } from '../helpers/eoss';
+import StubService from '../helpers/stub-service';
+import isUUID from '../../app/util/uuid';
 
 describe('EOSS GetGranule', function () {
   const collection = 'C1233800302-EEDTEST';

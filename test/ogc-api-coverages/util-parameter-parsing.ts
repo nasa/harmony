@@ -1,12 +1,11 @@
-const { describe, it } = require('mocha');
-const { expect } = require('chai');
-
-const {
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import {
   parseSubsetParams,
   subsetParamsToBbox,
   subsetParamsToTemporal,
   ParameterParseError,
-} = require('../../app/frontends/ogc-coverages/util/parameter-parsing');
+} from 'frontends/ogc-coverages/util/parameter-parsing';
 
 describe('OGC API Coverages - Utilities', function () {
   describe('parseSubsetParams', function () {

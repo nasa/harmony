@@ -1,7 +1,7 @@
-const { expect } = require('chai');
-const { describe, it } = require('mocha');
-const { hookServersStartStop } = require('./helpers/servers');
-const { hookLandingPage } = require('./helpers/landing-page');
+import { expect } from 'chai';
+import { describe, it } from 'mocha';
+import { hookServersStartStop } from './helpers/servers';
+import { hookLandingPage } from './helpers/landing-page';
 
 describe('Landing page', function () {
   hookServersStartStop();
