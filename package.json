@@ -4,15 +4,14 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "eslint . && nyc mocha && npm audit",
+    "test": "eslint --ext .ts . && nyc mocha && npm audit",
     "coverage": "nyc mocha",
     "start": "ts-node -r tsconfig-paths/register app/server.ts",
     "start-dev": "supervisor app/server.js",
     "build-image": "bin/build-image",
     "push-image": "bin/push-image",
     "build": "tsc",
-    "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
-    "ts-test": "./node_modules/.bin/nyc ./node_modules/.bin/mocha  -r ts-node/register -r tsconfig-paths/register test/*.ts test/**/*.ts"
+    "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built"
   },
   "keywords": [
     "NASA",

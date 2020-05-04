@@ -3,14 +3,17 @@ plugins:
   - jsdoc
   - node
 extends:
+  - airbnb-typescript/base
+  - plugin:import/typescript
+  - plugin:@typescript-eslint/recommended
   - plugin:import/errors
   - plugin:import/warnings
   - plugin:node/recommended
-settings:
-  import/resolver:
-    node:
-      paths: ["app", "test"]
-      extensions: [".js", ".ts"]
+parser: "@typescript-eslint/parser"
+parserOptions:
+  sourceType: "module"
+  ecmaVersion: 2020
+  project: "./tsconfig.json"
 env:
   node: true
   es6: true
@@ -31,22 +34,8 @@ rules:
       object: true
     - enforceForRenamedProperties: false
   node/no-unsupported-features/es-syntax: 0
+  "@typescript-eslint/explicit-function-return-type": "warn"
 overrides:
-  - files: [ "*.ts" ]
-    parser: "@typescript-eslint/parser"
-    parserOptions:
-      sourceType: "module"
-      ecmaVersion: 2017
-      project: "./tsconfig.json"
-    extends:
-      - airbnb-typescript/base
-      - plugin:import/typescript
-      - plugin:@typescript-eslint/recommended
-      - plugin:import/errors
-      - plugin:import/warnings
-      - plugin:node/recommended
-    rules:
-      "@typescript-eslint/explicit-function-return-type": "warn"
   - files: [ "test/**/*" ]
     rules:
       import/no-extraneous-dependencies: ["off"]
@@ -55,6 +44,3 @@ overrides:
       # the preferred method described in the Mocha docs
       prefer-arrow-callback: "off"
       func-names: "off"
-  - files: [ "db/**/*" ]
-    rules:
-      typescript-eslint/no-var-requires: ["off"]
