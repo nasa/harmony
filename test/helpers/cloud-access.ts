@@ -2,9 +2,8 @@ import request from 'supertest';
 import { before, after } from 'mocha';
 import { stub as sinonStub } from 'sinon';
 import { readFileSync } from 'fs';
-import aws from 'aws-sdk';
-import { hookRequest } from './hooks';
 import { SecureTokenService } from 'harmony/util/sts';
+import { hookRequest } from './hooks';
 
 /**
  * Makes a cloud-access JSON request
@@ -28,17 +27,17 @@ export const hookCloudAccessSh = hookRequest.bind(this, cloudAccessSh);
 export const hookCloudAccessJson = hookRequest.bind(this, cloudAccessJson);
 
 export const sampleCloudAccessJsonResponse = {
-    $response: {
-      hasNextPage: () => false,
-      nextPage: null,
-      data: null,
-      error: null,
-      requestId: null,
-      redirectCount: 0,
-      retryCount: 0,
-      httpResponse: null
-    },
-    Credentials: {
+  $response: {
+    hasNextPage: (): boolean => false,
+    nextPage: null,
+    data: null,
+    error: null,
+    requestId: null,
+    redirectCount: 0,
+    retryCount: 0,
+    httpResponse: null,
+  },
+  Credentials: {
     AccessKeyId: 'XXXXXXXXXXXXXXXXXXXX',
     SecretAccessKey: 'XXXXXXXXXXXXXXXXXXXX1111111111+++++/////',
     SessionToken: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa++++++++++++++++++++++++++++++++++++++++++++++++++00000000000000000000000000000000000000000000000000//////////////////////////////////////////////////XXXXXX==================================================',
@@ -55,19 +54,18 @@ export function hookAwsSts() {
   before(function () {
     stub = sinonStub(SecureTokenService.prototype, '_getAssumeRole')
       .returns(() => (
-          {
-             promise: async () => sampleCloudAccessJsonResponse,
-             abort: () => null,
-             createReadStream: () => null,
-             eachPage: () => null,
-             isPageable: () => false,
-             send: () => null,
-             on: () => null,
-             onAsync: () => null,
-             startTime: new Date(),
-             httpRequest: null
-          }),
-      );
+        {
+          promise: async () => sampleCloudAccessJsonResponse,
+          abort: () => null,
+          createReadStream: () => null,
+          eachPage: () => null,
+          isPageable: () => false,
+          send: () => null,
+          on: () => null,
+          onAsync: () => null,
+          startTime: new Date(),
+          httpRequest: null,
+        }));
   });
   after(function () {
     stub.restore();

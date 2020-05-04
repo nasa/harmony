@@ -120,8 +120,12 @@ describe('Asynchronizer Service', function () {
         // Check a result somewhere toward the middle of the list that we expect to be the same as
         // the first result to have some assurance that the async/await code is working properly.
         const obj = jobOutputLinks[12].href.split('/service-results/')[1];
-        const callback = (resolve, reject) => defaultObjectStore().getObject(`s3://${obj}`, (err, body) => err ? reject(err) : resolve(body));
-        const contents : any = await new Promise(callback);
+        const contents: any = await new Promise((resolve, reject) => {
+          defaultObjectStore().getObject(`s3://${obj}`, (err, body) => {
+            if (err) reject(err);
+            else resolve(body);
+          });
+        });
         expect(contents.Body.toString('utf-8')).to.equal('["response1"]');
       });
 

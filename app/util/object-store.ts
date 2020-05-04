@@ -29,7 +29,7 @@ export class S3ObjectStore {
    * @param {object} overrides values to set when constructing the underlying S3 store
    */
   constructor(overrides?) {
-    this.s3 = this._getS3(overrides)
+    this.s3 = this._getS3(overrides);
   }
 
   _getS3(overrides?): any {
