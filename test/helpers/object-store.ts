@@ -1,6 +1,5 @@
 import { before, after } from 'mocha';
 import sinon from 'sinon';
-import aws from 'aws-sdk';
 import fs from 'fs';
 import mockAws from 'mock-aws-s3';
 import * as tmp from 'tmp';
@@ -23,7 +22,6 @@ S3MockPrototype.upload = function (...args) {
  * @returns {void}
  */
 export function hookMockS3(_buckets?) {
-  const s3 = aws.S3;
   let dir;
   let stub;
   before(async function () {
