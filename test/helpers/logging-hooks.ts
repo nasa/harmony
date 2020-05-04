@@ -2,7 +2,7 @@ import { before } from 'mocha';
 
 import * as winston from 'winston';
 
-import logger = require('util/log');
+import logger = require('harmony/util/log');
 
 before(() => {
   // Ensure logs go to a file so they don't muck with test output

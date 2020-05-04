@@ -29,13 +29,17 @@ export class S3ObjectStore {
    * @param {object} overrides values to set when constructing the underlying S3 store
    */
   constructor(overrides?) {
+    this.s3 = this._getS3(overrides)
+  }
+
+  _getS3(overrides?): any {
     const endpointSettings: any = {};
     if (process.env.USE_LOCALSTACK === 'true') {
       endpointSettings.endpoint = 'http://localhost:4572';
       endpointSettings.s3ForcePathStyle = true;
     }
 
-    this.s3 = new aws.S3({
+    return new aws.S3({
       apiVersion: '2006-03-01',
       region: awsDefaultRegion,
       signatureVersion: 'v4',

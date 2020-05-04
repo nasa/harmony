@@ -3,7 +3,7 @@ import { stub } from 'sinon';
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
-import env = require('util/env');
+import env = require('harmony/util/env');
 
 process.env.NODE_ENV = 'test';
 

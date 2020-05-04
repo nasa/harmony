@@ -3,18 +3,19 @@
       "module": "commonjs",
       "baseUrl": ".",
       "paths": {
+        "harmony/*": ["app/*"],
+        "harmony-test/*": ["test/helpers/*"],
         "frontends/*": ["app/frontends/*"],
         "backends/*": ["app/backends/*"],
         "middleware/*": ["app/middleware/*"],
         "models/*": ["app/models/*"],
         "routers/*": ["app/routers/*"],
-        "util/*": ["app/util/*"],
-        "*": ["node_modules/*"]
+        "util/*": ["app/util/*"]
       },
       "moduleResolution": "node",
       "target": "es6",
       "esModuleInterop": true,
-      "allowJs": true, 
+      "allowJs": true,
       "noImplicitAny": false,
       "sourceMap": true,
       "outDir": "built",

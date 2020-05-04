@@ -3,7 +3,7 @@
 import { before, after, beforeEach, afterEach } from 'mocha';
 import { stub } from 'sinon';
 
-import db = require('util/db');
+import db = require('harmony/util/db');
 
 process.env.NODE_ENV = 'test';
 

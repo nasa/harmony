@@ -23,18 +23,20 @@ S3MockPrototype.upload = function (...args) {
  * @returns {void}
  */
 export function hookMockS3(_buckets?) {
-  // const s3 = aws.S3;
-  // let dir;
-  // before(async function () {
-  //   dir = tmp.dirSync();
-  //   mockAws.config.basePath = dir.name;
-  //   aws.S3 = mockAws.S3;
-  // });
+  const s3 = aws.S3;
+  let dir;
+  let stub;
+  before(async function () {
+    dir = tmp.dirSync();
+    mockAws.config.basePath = dir.name;
+    stub = sinon.stub(S3ObjectStore.prototype, '_getS3')
+      .callsFake(() => new mockAws.S3());
+  });
 
-  // after(function () {
-  //   aws.S3 = s3;
-  //   dir.removeCallback();
-  // });
+  after(function () {
+    stub.restore();
+    dir.removeCallback();
+  });
 }
 
 /**

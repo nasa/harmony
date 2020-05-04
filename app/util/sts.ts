@@ -10,7 +10,7 @@ const { awsDefaultRegion } = env;
  * @class SecureTokenService
  */
 export class SecureTokenService {
-  sts: aws.STS;
+  _assumeRole: any;
 
   /**
    * Builds and returns an AWS STS client configured according to environment variables
@@ -20,17 +20,21 @@ export class SecureTokenService {
    * @param {Object} overrides values to set when constructing the underlying S3 store
    */
   constructor(overrides?) {
+    this._assumeRole = this._getAssumeRole(overrides);
+  }
+
+  _getAssumeRole(overrides?) {
     const endpointSettings: any = {};
     if (process.env.USE_LOCALSTACK === 'true') {
       endpointSettings.endpoint = 'http://localhost:4592';
     }
 
-    this.sts = new aws.STS({
+    return new aws.STS({
       apiVersion: '2011-06-15',
       region: awsDefaultRegion,
       ...endpointSettings,
       ...overrides,
-    });
+    }).assumeRole;
   }
 
   /**
@@ -41,6 +45,6 @@ export class SecureTokenService {
    * @memberof SecureTokenService
    */
   async assumeRole(params) {
-    return this.sts.assumeRole(params).promise();
+    return this._assumeRole(params).promise();
   }
 }

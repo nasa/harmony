@@ -1,9 +1,10 @@
 import request from 'supertest';
 import { before, after } from 'mocha';
-import { stub as _stub } from 'sinon';
+import { stub as sinonStub } from 'sinon';
 import { readFileSync } from 'fs';
 import aws from 'aws-sdk';
 import { hookRequest } from './hooks';
+import { SecureTokenService } from 'harmony/util/sts';
 
 /**
  * Makes a cloud-access JSON request
@@ -27,11 +28,21 @@ export const hookCloudAccessSh = hookRequest.bind(this, cloudAccessSh);
 export const hookCloudAccessJson = hookRequest.bind(this, cloudAccessJson);
 
 export const sampleCloudAccessJsonResponse = {
-  Credentials: {
+    $response: {
+      hasNextPage: () => false,
+      nextPage: null,
+      data: null,
+      error: null,
+      requestId: null,
+      redirectCount: 0,
+      retryCount: 0,
+      httpResponse: null
+    },
+    Credentials: {
     AccessKeyId: 'XXXXXXXXXXXXXXXXXXXX',
     SecretAccessKey: 'XXXXXXXXXXXXXXXXXXXX1111111111+++++/////',
     SessionToken: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa++++++++++++++++++++++++++++++++++++++++++++++++++00000000000000000000000000000000000000000000000000//////////////////////////////////////////////////XXXXXX==================================================',
-    Expiration: '2020-04-10T18:03:46.337Z',
+    Expiration: new Date(Date.parse('2020-04-10T18:03:46.337Z')),
   },
 };
 
@@ -42,11 +53,21 @@ export const sampleCloudAccessJsonResponse = {
 export function hookAwsSts() {
   let stub;
   before(function () {
-    stub = _stub(aws, 'STS')
-      .returns({
-        assumeRole: () => (
-          { promise: async () => sampleCloudAccessJsonResponse }),
-      });
+    stub = sinonStub(SecureTokenService.prototype, '_getAssumeRole')
+      .returns(() => (
+          {
+             promise: async () => sampleCloudAccessJsonResponse,
+             abort: () => null,
+             createReadStream: () => null,
+             eachPage: () => null,
+             isPageable: () => false,
+             send: () => null,
+             on: () => null,
+             onAsync: () => null,
+             startTime: new Date(),
+             httpRequest: null
+          }),
+      );
   });
   after(function () {
     stub.restore();
