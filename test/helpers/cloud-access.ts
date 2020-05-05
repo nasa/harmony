@@ -41,7 +41,7 @@ export const sampleCloudAccessJsonResponse = {
     AccessKeyId: 'XXXXXXXXXXXXXXXXXXXX',
     SecretAccessKey: 'XXXXXXXXXXXXXXXXXXXX1111111111+++++/////',
     SessionToken: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa++++++++++++++++++++++++++++++++++++++++++++++++++00000000000000000000000000000000000000000000000000//////////////////////////////////////////////////XXXXXX==================================================',
-    Expiration: new Date(Date.parse('2020-04-10T18:03:46.337Z')),
+    Expiration: new Date('2020-04-10T18:03:46.337Z'),
   },
 };
 

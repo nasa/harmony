@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import * as aws from 'aws-sdk';
+import { AssumeRoleResponse } from 'aws-sdk/clients/sts';
 
 import env = require('./env');
 const { awsDefaultRegion } = env;
@@ -19,7 +20,7 @@ export class SecureTokenService {
    *
    * @param {Object} overrides values to set when constructing the underlying S3 store
    */
-  constructor(overrides?) {
+  constructor(overrides?: object) {
     this._assumeRole = this._getAssumeRole(overrides);
   }
 
@@ -44,7 +45,7 @@ export class SecureTokenService {
    * @returns {Promise<Object>} resolves to credentials with access to the role provided
    * @memberof SecureTokenService
    */
-  async assumeRole(params) {
+  async assumeRole(params: object): Promise<AssumeRoleResponse> {
     return this._assumeRole(params).promise();
   }
 }
