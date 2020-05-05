@@ -73,6 +73,8 @@ export default class Job extends Record {
 
   status: string;
 
+  jobID: string;
+
   /**
    * Returns an array of all jobs for the given username using the given transaction
    *

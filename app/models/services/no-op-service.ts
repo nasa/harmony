@@ -47,7 +47,7 @@ export default class NoOpService extends BaseService {
     const granules = this.operation.sources.flatMap((source) => source.granules);
     const links = granules.map((granule) => ({ title: granule.id, href: granule.url }));
     const message = this.warningMessage ? `${this.message} ${this.warningMessage}` : this.message;
-    const job = new Job({
+    let job = new Job({
       username: this.operation.user,
       requestId: this.operation.requestId,
       status: Job.statuses.SUCCESSFUL,
@@ -58,7 +58,10 @@ export default class NoOpService extends BaseService {
       links,
       request: requestUrl,
     });
-
+    job = job.serialize(harmonyRoot);
+    // No-op service response should look like a job, but doesn't actually create one
+    // so do not include a jobID in the response.
+    delete job.jobID;
     const response = {
       error: null,
       redirect: null,
@@ -66,7 +69,7 @@ export default class NoOpService extends BaseService {
       onComplete: null,
       headers: { contentType: 'application/json' },
       statusCode: 200,
-      content: JSON.stringify(job.serialize(harmonyRoot)),
+      content: JSON.stringify(job),
     };
 
     return response;

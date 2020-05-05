@@ -2,8 +2,7 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { hookServersStartStop } from '../helpers/servers';
 import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
-import { jobStatus, itIncludesRequestUrl } from '../helpers/jobs';
-import { auth } from '../helpers/auth';
+import { itIncludesRequestUrl } from '../helpers/jobs';
 import { hookSignS3Object } from '../helpers/object-store';
 import StubService from '../helpers/stub-service';
 import isUUID from '../../app/util/uuid';
@@ -549,8 +548,8 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 });
 
-const expectedJobKeys = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'jobID',
+const expectedNoOpJobKeys = [
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
 ];
 
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
@@ -565,9 +564,9 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     it('returns a 200 successful response', function () {
       expect(this.res.status).to.equal(200);
     });
-    it('returns a JSON body in the format of a job status', function () {
+    it('returns a JSON body in the format of a job status without a job ID', function () {
       const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(expectedJobKeys);
+      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
     });
     it('returns a successful status', function () {
       const job = JSON.parse(this.res.text);
@@ -603,9 +602,9 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       it('returns a 200 successful response', function () {
         expect(this.res.status).to.equal(200);
       });
-      it('returns a JSON body in the format of a job status', function () {
+      it('returns a JSON body in the format of a job status without a job ID', function () {
         const job = JSON.parse(this.res.text);
-        expect(Object.keys(job)).to.eql(expectedJobKeys);
+        expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
       });
     });
     describe('application/json', function () {
@@ -613,9 +612,9 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       it('returns a 200 successful response', function () {
         expect(this.res.status).to.equal(200);
       });
-      it('returns a JSON body in the format of a job status', function () {
+      it('returns a JSON body in the format of a job status without a job ID', function () {
         const job = JSON.parse(this.res.text);
-        expect(Object.keys(job)).to.eql(expectedJobKeys);
+        expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
       });
     });
   });
@@ -627,9 +626,9 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     it('returns a 200 successful response', function () {
       expect(this.res.status).to.equal(200);
     });
-    it('returns a JSON body in the format of a job status', function () {
+    it('returns a JSON body in the format of a job status without a job ID', function () {
       const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(expectedJobKeys);
+      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
     });
     it('returns a message indicating no transformations were performed', function () {
       const job = JSON.parse(this.res.text);
@@ -646,9 +645,9 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     it('returns a 200 successful response', function () {
       expect(this.res.status).to.equal(200);
     });
-    it('returns a JSON body in the format of a job status', function () {
+    it('returns a JSON body in the format of a job status without a job ID', function () {
       const job = JSON.parse(this.res.text);
-      expect(Object.keys(job)).to.eql(expectedJobKeys);
+      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
     });
     it('limits results to only those that match the spatial and temporal subset', function () {
       const job = JSON.parse(this.res.text);
@@ -669,29 +668,6 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       expect(response).to.eql({
         code: 'harmony.RequestValidationError',
         description: 'Error: Coverages were not found for the provided CMR collection: badVar',
-      });
-    });
-  });
-});
-
-describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services and using EDL', function () {
-  const collection = 'C446398-ORNL_DAAC';
-  const version = '1.0.0';
-
-  hookServersStartStop({ skipEarthdataLogin: false });
-
-  describe('when provided a valid set of parameters', function () {
-    hookRangesetRequest(version, collection, 'all', { username: 'joe' });
-
-    describe('attempting to retrieve the job via the job status route', function () {
-      it('returns a 404 because no job is created', async function () {
-        const job = JSON.parse(this.res.text);
-        const jobRes = await jobStatus(this.frontend, { jobID: job.jobID }).use(auth({ username: 'joe' }));
-        const error = JSON.parse(jobRes.text);
-        expect(error).to.eql({
-          code: 'harmony:NotFoundError',
-          description: `Error: Unable to find job ${job.jobID}`,
-        });
       });
     });
   });
