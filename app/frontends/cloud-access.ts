@@ -3,7 +3,7 @@ import RequestContext from 'harmony/models/request-context';
 import { Credentials } from 'aws-sdk/clients/sts';
 
 import env = require('util/env');
-const { sameRegionAccessRole } = env;
+const { sameRegionAccessRole, awsDefaultRegion } = env;
 
 // Allow tokens to last up to 8 hours - no reason to make this a configuration yet
 const expirationSeconds = 3600 * 8;
@@ -54,7 +54,7 @@ export async function cloudAccessJson(req, res): Promise<void> {
 }
 
 const preamble = '#!/bin/sh\n# Source this file to set keys to access Harmony S3 outputs '
-  + `within the ${process.env.AWS_DEFAULT_REGION || 'us-west-2'} region.\n`;
+  + `within the ${awsDefaultRegion} region.\n`;
 
 const awsFieldMappings = {
   AccessKeyId: 'AWS_ACCESS_KEY_ID',

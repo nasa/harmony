@@ -1,5 +1,3 @@
-/* eslint-disable indent */
-
 /**
  * Converts the array of string items to a single textual string where elements are
  * comma-separated, and an "and" is inserted as necessary., e.g.

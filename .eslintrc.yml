@@ -26,7 +26,8 @@ env:
   node: true
   es6: true
 rules:
-  indent: ["error", 2]
+  indent: ["off"]
+  "@typescript-eslint/indent": ["error", 2]
   no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]
   class-methods-use-this: "off"
   no-underscore-dangle: "off"

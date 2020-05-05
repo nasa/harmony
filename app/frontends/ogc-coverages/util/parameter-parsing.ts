@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 const rangeSeparator = ':';
 const unbounded = '*';
 // Regex to match lat(-10:10) or lon(*:20)

@@ -65,19 +65,6 @@ const jobProps = {
 const job = new Job(jobProps);
 
 describe('stac-item', function () {
-  describe('STAC Item creation with invalid argument', function () {
-    const obj = { jobID: 1 };
-    it('should fail', function () {
-      expect(function () { create(obj, 0); }).to.throw();
-    });
-  });
-
-  describe('STAC Item creation with an object matching Harmony Job properties', function () {
-    it('should fail', function () {
-      expect(function () { create(jobProps, 0); }).to.throw();
-    });
-  });
-
   describe('STAC Item creation with a Harmony Job object: case of anti-meridian crossing', function () {
     const jsonObj: any = create(job, 0);
     it('Item has correct ID', function () {

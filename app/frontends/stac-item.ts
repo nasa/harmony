@@ -206,21 +206,12 @@ class HarmonyItem {
  * @param {Job} job - Harmony Job object
  * @param {number} index - Index of the Link item in Job
  *
- * @returns {Object} - STAC Item JSON
+ * @returns  {Record<string, any>} - STAC Item JSON
  */
-export function create(job, index) {
-  if (!(job instanceof Job)) {
-    throw new TypeError('Constructor accepts Harmony Job object as the first argument');
-  }
-  if (!Object.hasOwnProperty.call(job, 'jobID')) {
-    throw new TypeError('Failed to find job ID');
-  }
-  if (!Object.hasOwnProperty.call(job, 'request')) {
-    throw new TypeError('Failed to find request');
-  }
-  const title = `Harmony output #${index} in job ${(job as any).jobID}`;
+export function create(job: Job, index: number): Record<string, any> {
+  const title = `Harmony output #${index} in job ${job.jobID}`;
   const description = `Harmony out for ${job.request}`;
-  const item = new HarmonyItem((job as any).jobID, title, description, index);
+  const item = new HarmonyItem(job.jobID, title, description, index);
 
   // Set creation time
   const creationTime = Object.hasOwnProperty.call(job, 'createdAt') ? job.createdAt : new Date().toISOString();
