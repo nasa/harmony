@@ -107,7 +107,7 @@ async function sendAsyncHarmonyStatus(req: express.Request, res: express.Respons
     res.status(400).send('parameter "id" is required');
     return;
   }
-  const callback = idsToCallbacks[id];
+  const callback = idsToCallbacks[id.toString()];
   if (!callback) {
     res.status(400).send(`no callback found for id="${id}"`);
     return;
