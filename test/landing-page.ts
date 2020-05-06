@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { hookServersStartStop } from './helpers/servers';
+import hookServersStartStop from './helpers/servers';
 import { hookLandingPage } from './helpers/landing-page';
 
 describe('Landing page', function () {

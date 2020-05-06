@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { wrap } from '../../app/util/array';
+import wrap from '../../app/util/array';
 
 describe('util/array', function () {
   describe('wrap', function () {

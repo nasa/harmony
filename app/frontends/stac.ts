@@ -1,8 +1,8 @@
 import Job from 'models/job';
 import { needsStacLink } from 'util/stac';
 import isUUID from 'util/uuid';
-import * as stacItem from './stac-item';
-import * as stacCatalog from './stac-catalog';
+import stacItemCreate from './stac-item';
+import stacCatalogCreate from './stac-catalog';
 
 import db = require('util/db');
 
@@ -53,7 +53,7 @@ export async function getStacCatalog(req, res) {
   const { jobId } = req.params;
 
   try {
-    await handleStacRequest(req, res, (data) => stacCatalog.create(data));
+    await handleStacRequest(req, res, (data) => stacCatalogCreate(data));
   } catch (e) {
     req.context.logger.error(e);
     res.status(500);
@@ -74,7 +74,7 @@ export async function getStacItem(req, res) {
   const { jobId, itemIndex } = req.params;
 
   try {
-    await handleStacRequest(req, res, (data) => stacItem.create.apply(null, [data, itemIndex]));
+    await handleStacRequest(req, res, (data) => stacItemCreate.apply(null, [data, itemIndex]));
   } catch (e) {
     req.context.logger.error(e);
     if (e instanceof RangeError) {

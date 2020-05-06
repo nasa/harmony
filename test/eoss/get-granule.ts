@@ -1,6 +1,6 @@
 import { describe, it, xit } from 'mocha';
 import { expect } from 'chai';
-import { hookServersStartStop } from '../helpers/servers';
+import hookServersStartStop from '../helpers/servers';
 import { eossGetGranule, hookEossGetGranule } from '../helpers/eoss';
 import StubService from '../helpers/stub-service';
 import isUUID from '../../app/util/uuid';

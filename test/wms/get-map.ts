@@ -1,7 +1,7 @@
 import { describe, it, xit } from 'mocha';
 import { expect } from 'chai';
 import isUUID from 'util/uuid';
-import { hookServersStartStop } from '../helpers/servers';
+import hookServersStartStop from '../helpers/servers';
 import { hookGetMap, wmsRequest, validGetMapQuery } from '../helpers/wms';
 import StubService from '../helpers/stub-service';
 

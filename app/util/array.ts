@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 
 /**
  * Ensures the given parameter is an array.  If it is undefined, null, or
@@ -9,7 +8,7 @@
  * @param {any} value the object to wrap
  * @returns {object[]} an array-wrapped version of the input value
  */
-export function wrap(value: unknown): object[] {
+export default function wrap(value: unknown): object[] {
   if (value === null || typeof value === 'undefined' || value === '') {
     return [];
   }

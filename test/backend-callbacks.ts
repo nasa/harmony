@@ -4,7 +4,7 @@ import request from 'supertest';
 import url from 'url';
 import Job from 'models/job';
 import { truncateAll } from './helpers/db';
-import { hookServersStartStop } from './helpers/servers';
+import hookServersStartStop from './helpers/servers';
 import { rangesetRequest } from './helpers/ogc-api-coverages';
 import { getNextCallback } from '../example/http-backend';
 

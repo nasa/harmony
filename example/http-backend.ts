@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 /**
  * Example of a service backend that communicates with Harmony over HTTP.
  *

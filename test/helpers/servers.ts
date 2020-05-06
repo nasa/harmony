@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import { before, after } from 'mocha';
 import * as harmony from '../../app/server';
 
@@ -11,7 +10,7 @@ process.env.EXAMPLE_SERVICES = 'true';
  * @param {object} opts Options to pass to the server start method
  * @returns {void}
  */
-export function hookServersStartStop(opts: any = {}) {
+export default function hookServersStartStop(opts: any = {}) {
   let servers = null;
   before(function () {
     // Skip Earthdata Login unless the test says to do otherwise

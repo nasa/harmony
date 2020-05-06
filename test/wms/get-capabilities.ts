@@ -1,6 +1,6 @@
 import { describe, it, xit } from 'mocha';
 import { expect } from 'chai';
-import { hookServersStartStop } from '../helpers/servers';
+import hookServersStartStop from '../helpers/servers';
 import { hookGetCapabilities } from '../helpers/wms';
 import { describeErrorCondition } from '../helpers/errors';
 

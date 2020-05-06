@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import request from 'supertest';
 
-import { hookServersStartStop } from './helpers/servers';
+import hookServersStartStop from './helpers/servers';
 import { auth, authRedirect, token, stubEdlRequest, stubEdlError, unstubEdlRequest } from './helpers/auth';
 import { itRespondsWithError } from './helpers/errors';
 import StubService from './helpers/stub-service';

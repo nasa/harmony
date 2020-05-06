@@ -1,6 +1,5 @@
 import get from 'lodash.get';
 import * as fs from 'fs';
-// TODO - the next two imports need declaration files
 import rewind from '@mapbox/geojson-rewind';
 import * as togeojson from '@mapbox/togeojson';
 

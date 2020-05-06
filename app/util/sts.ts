@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import * as aws from 'aws-sdk';
 import { AssumeRoleResponse } from 'aws-sdk/clients/sts';
 
@@ -10,7 +9,7 @@ const { awsDefaultRegion } = env;
  *
  * @class SecureTokenService
  */
-export class SecureTokenService {
+export default class SecureTokenService {
   _assumeRole: any;
 
   /**

@@ -4,7 +4,7 @@ import * as path from 'path';
 import { promisify } from 'util';
 import DataOperation from 'models/data-operation';
 import * as urlUtil from 'util/url';
-import { keysToLowerCase } from 'util/object';
+import keysToLowerCase from 'util/object';
 import { RequestValidationError, NotFoundError } from 'util/errors';
 import * as services from 'models/services';
 

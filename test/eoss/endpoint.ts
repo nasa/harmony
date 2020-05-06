@@ -2,7 +2,7 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { hookServersStartStop } from '../helpers/servers';
+import hookServersStartStop from '../helpers/servers';
 import { eossLandingPageRequest, eossSpecRequest } from '../helpers/eoss';
 
 describe('EOSS static content endpoints', function () {

@@ -1,4 +1,3 @@
-/* eslint-disable import/first */
 import express from 'express';
 import { v4 as uuid } from 'uuid';
 import expressWinston from 'express-winston';

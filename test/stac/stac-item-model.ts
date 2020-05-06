@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import Job from 'models/job';
-import { create } from 'frontends/stac-item';
+import create from 'frontends/stac-item';
 
 // Prop for testing
 const jobProps = {

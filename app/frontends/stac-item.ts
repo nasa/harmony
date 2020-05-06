@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import { v4 as uuid } from 'uuid';
 import pick from 'lodash.pick';
 import { linksWithStacData } from 'util/stac';
@@ -208,7 +207,7 @@ class HarmonyItem {
  *
  * @returns  {Record<string, any>} - STAC Item JSON
  */
-export function create(job: Job, index: number): Record<string, any> {
+export default function create(job: Job, index: number): Record<string, any> {
   const title = `Harmony output #${index} in job ${job.jobID}`;
   const description = `Harmony out for ${job.request}`;
   const item = new HarmonyItem(job.jobID, title, description, index);

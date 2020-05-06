@@ -1,7 +1,7 @@
 import { describe } from 'mocha';
 
 import { describeErrorCondition } from './helpers/errors';
-import { hookServersStartStop } from './helpers/servers';
+import hookServersStartStop from './helpers/servers';
 
 describe('Routing', function () {
   const wms = 'wms?service=WMS&request=GetCapabilities';

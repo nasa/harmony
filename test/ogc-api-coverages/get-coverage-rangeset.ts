@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { hookServersStartStop } from '../helpers/servers';
+import hookServersStartStop from '../helpers/servers';
 import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import { itIncludesRequestUrl } from '../helpers/jobs';
 import { hookSignS3Object } from '../helpers/object-store';

@@ -16,13 +16,13 @@ import { NotFoundError } from 'util/errors';
 import * as eoss from 'frontends/eoss';
 import * as ogcCoverageApi from 'frontends/ogc-coverages/index';
 import { cloudAccessJson, cloudAccessSh } from 'frontends/cloud-access';
-import { landingPage } from 'frontends/landing-page';
+import landingPage from 'frontends/landing-page';
 import serviceInvoker from 'backends/service-invoker';
-// TODO fix this
-// import wcsFrontend from 'frontends/wcs';
-const wcsFrontend = {};
 
 import cmrCollectionReader = require('middleware/cmr-collection-reader');
+
+const wcsFrontend = {};
+
 
 /**
  * Given an Express.js middleware handler function, returns another

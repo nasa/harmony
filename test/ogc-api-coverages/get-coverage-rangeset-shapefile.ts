@@ -5,11 +5,11 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import * as fs from 'fs';
 import isUUID from 'util/uuid';
-import { hookServersStartStop } from '../helpers/servers';
+import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
 import { auth } from '../helpers/auth';
 import { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } from '../helpers/ogc-api-coverages';
-import { hookCmr } from '../helpers/stub-cmr';
+import hookCmr from '../helpers/stub-cmr';
 import { hookMockS3, getJson } from '../helpers/object-store';
 
 /**

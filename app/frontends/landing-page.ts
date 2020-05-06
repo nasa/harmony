@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import { getRequestRoot } from 'util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink } from 'util/links';
 
@@ -11,7 +10,7 @@ import { getCloudAccessJsonLink, getCloudAccessShLink } from 'util/links';
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  */
-export function landingPage(req, res) {
+export default function landingPage(req, res) {
   const root = getRequestRoot(req);
   const cloudAccessJsonLink = getCloudAccessJsonLink(root);
   const cloudAccessShLink = getCloudAccessShLink(root);

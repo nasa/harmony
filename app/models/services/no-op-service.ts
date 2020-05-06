@@ -28,11 +28,10 @@ export default class NoOpService extends BaseService {
   /**
    * Generates a response with a list of download links as provided by the CMR.
    *
-   * @param {Logger} logger The logger associated with this request
-   * @param {String} harmonyRoot The harmony root URL
-   * @param {String} requestUrl The URL the end user invoked
-   * @returns {Object} Job status response
-   * @memberof HttpService
+   * @param logger - The logger associated with this request
+   * @param harmonyRoot - The harmony root URL
+   * @param requestUrl - The URL the end user invoked
+   * @returns a promise with the Job status response
    */
   async invoke(logger, harmonyRoot, requestUrl): Promise<{
     error: string;

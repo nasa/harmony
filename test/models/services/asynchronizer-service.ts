@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import Job from 'harmony/models/job';
 import { defaultObjectStore } from 'harmony/util/object-store';
-import { hookServersStartStop } from 'harmony-test/servers';
+import hookServersStartStop from 'harmony-test/servers';
 import StubService from 'harmony-test/stub-service';
 import { hookRangesetRequest, hookSyncRangesetRequest } from 'harmony-test/ogc-api-coverages';
 import { hookRedirect } from 'harmony-test/hooks';

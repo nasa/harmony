@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { hookServersStartStop } from './helpers/servers';
+import hookServersStartStop from './helpers/servers';
 import { validGetMapQuery, wmsRequest } from './helpers/wms';
 import { eossGetGranule } from './helpers/eoss';
 import { hookFunction } from './helpers/hooks';

@@ -1,10 +1,9 @@
-/* eslint-disable import/prefer-default-export */
 /**
  * Converts all of the keys in the passed in object to lowercase strings.
  * @param {Object} object The object
  * @returns {Object} The object passed in with all of the keys converted to lowercase strings
  */
-export function keysToLowerCase(object: Record<string, any>): Record<string, any> {
+export default function keysToLowerCase(object: Record<string, any>): Record<string, any> {
   if (object) {
     const updatedObject = {};
     for (const k of Object.keys(object)) {

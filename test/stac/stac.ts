@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import Job from 'models/job';
-import { hookServersStartStop } from '../helpers/servers';
+import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacCatalog, hookStacCatalog } from '../helpers/stac';
 

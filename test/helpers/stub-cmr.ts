@@ -1,5 +1,3 @@
-/* eslint-disable import/prefer-default-export */
-/* eslint-disable import/namespace */
 import { before, after } from 'mocha';
 import * as sinon from 'sinon';
 import * as cmr from 'util/cmr';
@@ -47,7 +45,7 @@ function unStubCmr(functionName) {
  * @param {object} response The desired response
  * @returns {void}
  */
-export function hookCmr(functionName, response) {
+export default function hookCmr(functionName, response) {
   before(async function () {
     stubCmr(functionName, response);
   });

@@ -2,6 +2,8 @@ plugins:
   - import
   - jsdoc
   - node
+  - "@typescript-eslint/eslint-plugin"
+  - "eslint-plugin-tsdoc"
 extends:
   - plugin:node/recommended
   - plugin:import/errors
@@ -32,7 +34,7 @@ rules:
   class-methods-use-this: "off"
   no-underscore-dangle: "off"
   require-jsdoc: ["warn"]
-  valid-jsdoc: ["warn"]
+  tsdoc/syntax: ["warn"]
   no-await-in-loop: ["off"]
   object-curly-newline: ["off"]
   no-plusplus: ["off"]

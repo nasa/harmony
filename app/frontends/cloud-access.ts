@@ -1,4 +1,4 @@
-import { SecureTokenService } from 'util/sts';
+import SecureTokenService from 'util/sts';
 import RequestContext from 'harmony/models/request-context';
 import { Credentials } from 'aws-sdk/clients/sts';
 

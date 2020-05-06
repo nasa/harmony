@@ -1,8 +1,8 @@
 import { SpatialReference } from 'gdal-next';
 import DataOperation from 'models/data-operation';
-import { keysToLowerCase } from '../../util/object';
+import keysToLowerCase from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
-import { wrap } from '../../util/array';
+import wrap from '../../util/array';
 import parseVariables from './util/variable-parsing';
 import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
 import { parseAcceptHeader } from '../../util/content-negotiation';

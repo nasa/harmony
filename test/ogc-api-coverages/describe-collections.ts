@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { hookServersStartStop } from '../helpers/servers';
+import hookServersStartStop from '../helpers/servers';
 import { hookDescribeCollectionRequest, hookDescribeCollectionsRequest } from '../helpers/ogc-api-coverages';
 import { generateExtent } from '../../app/frontends/ogc-coverages/describe-collections';
 

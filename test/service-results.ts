@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import { createPublicPermalink } from 'frontends/service-results';
 import { S3ObjectStore } from 'util/object-store';
-import { hookServersStartStop } from './helpers/servers';
+import hookServersStartStop from './helpers/servers';
 import { hookUrl } from './helpers/hooks';
 
 describe('service-results', function () {

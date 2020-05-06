@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import pick from 'lodash.pick';
 import Job from 'models/job';
 import { linksWithStacData } from 'util/stac';
@@ -85,7 +84,7 @@ class HarmonyCatalog {
  * let jsonObj = catalog.create(job);
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
-export function create(job: any): object {
+export default function create(job: any): object {
   if (!(job instanceof Job)) {
     throw new TypeError('Constructor expects a Harmony Job object as argument');
   }

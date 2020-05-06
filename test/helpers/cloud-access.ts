@@ -2,7 +2,7 @@ import request from 'supertest';
 import { before, after } from 'mocha';
 import { stub as sinonStub } from 'sinon';
 import { readFileSync } from 'fs';
-import { SecureTokenService } from 'harmony/util/sts';
+import SecureTokenService from 'harmony/util/sts';
 import { hookRequest } from './hooks';
 
 /**

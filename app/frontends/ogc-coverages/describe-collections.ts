@@ -1,5 +1,5 @@
 import { getSanitizedRequestUrl } from '../../util/url';
-import { keysToLowerCase } from '../../util/object';
+import keysToLowerCase from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import parseVariables from './util/variable-parsing';
 
