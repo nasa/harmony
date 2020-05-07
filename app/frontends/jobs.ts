@@ -38,7 +38,6 @@ function _getLinksForDisplay(job, urlRoot) {
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
- * @returns {Promise<void>} Resolves when the request is complete
  */
 export async function getJobsListing(req, res): Promise<void> {
   req.context.logger.info(`Get job listing for user ${req.user}`);

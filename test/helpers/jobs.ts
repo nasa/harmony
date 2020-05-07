@@ -93,10 +93,10 @@ export function itIncludesRequestUrl(expectedPath) {
  * Creates a batch of jobs owned by the given username, using the given transaction, where the
  * `progress` int of each job is set to the index in which it should appear in the default jobs
  * array, i.e. the last job has progress 0, the second to last has progress 1, etc.
- * @param {Transaction} trx the transaction to use when creating jobs
- * @param {string} username the username of the user who owns the job
- * @param {number} count the number of jobs to create
- * @returns {Promise<Job[]>} the list of jobs created in descending order of creation time
+ * @param trx - the transaction to use when creating jobs
+ * @param username - the username of the user who owns the job
+ * @param count - the number of jobs to create
+ * @returns the list of jobs created in descending order of creation time
  */
 export async function createIndexedJobs(
   trx: Transaction,
@@ -139,10 +139,9 @@ export interface PagingRelationInfo {
  * Provides `it` statements asserting that the provided paging relations are available in `this.res`
  * and have the correct link values relative to the supplied current page.  If a page number is set
  * to null, asserts that the relation is not present.
- * @param {number} pageCount the total number of pages available
- * @param {PagingRelationInfo} relations a map of link relations to their expected page numbers
- * @param {number} limit the number of items on each page (default = 10)
- * @returns {void}
+ * @param pageCount - the total number of pages available
+ * @param relations - a map of link relations to their expected page numbers
+ * @param limit - the number of items on each page (default = 10)
  */
 export function itIncludesPagingRelations(
   pageCount: number,

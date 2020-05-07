@@ -78,8 +78,6 @@ type Trx = Transaction | Knex;
  *   - request: (string) Original user request URL that created this job
  *   - createdAt: (Date) the date / time at which the job was created
  *   - updatedAt: (Date) the date / time at which the job was last updated
- *
- * @class Job
  */
 export class Job extends Record {
   static table = 'jobs';
@@ -109,13 +107,11 @@ export class Job extends Record {
   /**
    * Returns an array of all jobs for the given username using the given transaction
    *
-   * @static
-   * @param {Trx} transaction the transaction to use for querying
-   * @param {string} username the user whose jobs should be retrieved
-   * @param {number} currentPage the index of the page to show
-   * @param {number} perPage the number of results per page
-   * @returns {Promise<IWithPagination<Job[]>>} a list of all of the user's jobs
-   * @memberof Job
+   * @param transaction - the transaction to use for querying
+   * @param username - the user whose jobs should be retrieved
+   * @param currentPage - the index of the page to show
+   * @param perPage - the number of results per page
+   * @returns a list of all of the user's jobs
    */
   static async forUser(transaction: Trx, username: string, currentPage = 0, perPage = 10):
   Promise<IWithPagination<Job[]>> {
@@ -134,12 +130,10 @@ export class Job extends Record {
    * Returns the job matching the given username and request ID, or null if
    * no such job exists.
    *
-   * @static
-   * @param {Transaction} transaction the transaction to use for querying
-   * @param {string} username the username associated with the job
-   * @param {string} requestId the UUID of the request associated with the job
-   * @returns {Promise<Job>} the matching job, or null if none exists
-   * @memberof Job
+   * @param transaction - the transaction to use for querying
+   * @param username - the username associated with the job
+   * @param requestId - the UUID of the request associated with the job
+   * @returns the matching job, or null if none exists
    */
   static async byUsernameAndRequestId(transaction, username, requestId): Promise<Job> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
@@ -149,11 +143,9 @@ export class Job extends Record {
   /**
    * Returns the job matching the given request ID, or null if no such job exists
    *
-   * @static
-   * @param {Transaction} transaction the transaction to use for querying
-   * @param {string} requestId the UUID of the request associated with the job
-   * @returns {Promise<Job>} the matching job, or null if none exists
-   * @memberof Job
+   * @param transaction - the transaction to use for querying
+   * @param requestId - the UUID of the request associated with the job
+   * @returns the matching job, or null if none exists
    */
   static async byRequestId(transaction, requestId): Promise<Job> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
@@ -163,13 +155,11 @@ export class Job extends Record {
   /**
    * Returns the job matching the given primary key id, or null if no such job exists
    *
-   * @static
-   * @param {Transaction} transaction the transaction to use for querying
-   * @param {Integer} id the primary key of the job record
-   * @returns {Promise<Job>} the matching job, or null if none exists
-   * @memberof Job
+   * @param transaction - the transaction to use for querying
+   * @param id - the primary key of the job record
+   * @returns the matching job, or null if none exists
    */
-  static async byId(transaction, id): Promise<Job> {
+  static async byId(transaction: Trx, id: number): Promise<Job> {
     const result = await transaction('jobs').select().where({ id }).forUpdate();
     return result.length === 0 ? null : new Job(result[0]);
   }
@@ -177,8 +167,7 @@ export class Job extends Record {
   /**
    * Creates a Job instance.
    *
-   * @param {any} fields Object containing fields to set on the record
-   * @memberof Job
+   * @param fields - Object containing fields to set on the record
    */
   constructor(fields: JobRecord) {
     super(fields);
@@ -196,10 +185,9 @@ export class Job extends Record {
    * Validates the job. Returns null if the job is valid.  Returns a list of errors if
    * it is invalid. Other constraints are validated via database constraints.
    *
-   * @returns {string[]} a list of validation errors, or null if the record is valid
-   * @memberof Job
+   * @returns a list of validation errors, or null if the record is valid
    */
-  validate() {
+  validate(): string[] {
     const errors = [];
     if (this.progress < 0 || this.progress > 100) {
       errors.push('Job progress must be between 0 and 100');

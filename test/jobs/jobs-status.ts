@@ -4,7 +4,7 @@ import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
 import { Job, JobRecord, JobStatus } from 'models/job';
-import { hookServersStartStop } from '../helpers/servers';
+import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
 import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl } from '../helpers/jobs';
 import StubService from '../helpers/stub-service';
