@@ -2,20 +2,39 @@ plugins:
   - import
   - jsdoc
   - node
+  - "@typescript-eslint/eslint-plugin"
+  - "eslint-plugin-tsdoc"
 extends:
-  - airbnb-base
+  - plugin:node/recommended
   - plugin:import/errors
   - plugin:import/warnings
-  - plugin:node/recommended
+  - plugin:import/typescript
+  - airbnb-typescript/base
+  - plugin:@typescript-eslint/recommended
+settings:
+  import/resolver:
+    node:
+      extensions: [".js", ".jsx", ".ts", ".tsx"]
+parser: "@typescript-eslint/parser"
+parserOptions:
+  sourceType: "module"
+  ecmaVersion: 2020
+  project: "./tsconfig.json"
+  projectFolderIgnoreList:
+    - "/node_modules/"
+    - "/db/"
+    - "/coverage/"
 env:
   node: true
+  es6: true
 rules:
-  indent: ["error", 2]
+  indent: ["off"]
+  "@typescript-eslint/indent": ["error", 2]
   no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]
   class-methods-use-this: "off"
   no-underscore-dangle: "off"
   require-jsdoc: ["warn"]
-  valid-jsdoc: ["warn"]
+  tsdoc/syntax: ["warn"]
   no-await-in-loop: ["off"]
   object-curly-newline: ["off"]
   no-plusplus: ["off"]
@@ -25,6 +44,8 @@ rules:
     - array: false
       object: true
     - enforceForRenamedProperties: false
+  node/no-unsupported-features/es-syntax: 0
+  "@typescript-eslint/explicit-function-return-type": "warn"
 overrides:
   - files: [ "test/**/*" ]
     rules:
