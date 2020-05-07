@@ -7,6 +7,7 @@ import { RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 
 import db = require('util/db');
+import { jobListing } from 'harmony-test/jobs';
 
 /**
  * Analyze the links in the job to determine what links should be returned to
@@ -54,6 +55,7 @@ export async function getJobsListing(req, res): Promise<void> {
       return serializedJob;
     });
     const response = {
+      count: listing.pagination.total,
       jobs: serializedJobs,
       links: getPagingLinks(req, listing.pagination),
     };

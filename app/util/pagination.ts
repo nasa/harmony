@@ -55,7 +55,7 @@ function parseIntegerParam(
 export function getPagingParams(req: Request): PagingParams {
   return {
     page: parseIntegerParam(req, 'page', 1, 1),
-    limit: parseIntegerParam(req, 'limit', 10, 1, 2000),
+    limit: parseIntegerParam(req, 'limit', 10, 0, 2000),
   };
 }
 
@@ -76,7 +76,7 @@ function getPagingLink(
   relName: string = rel,
 ): Link {
   const { lastPage, perPage } = pagination;
-  const suffix = lastPage === 1 && page === 1 ? '' : ` (${page} of ${lastPage})`;
+  const suffix = (lastPage === 1 && page === 1) || perPage === 0 ? '' : ` (${page} of ${lastPage})`;
   return {
     title: `The ${relName} page${suffix}`,
     href: getRequestUrl(req, true, { page, limit: perPage }),
@@ -93,12 +93,12 @@ function getPagingLink(
  */
 export function getPagingLinks(req: Request, pagination: Pagination): Link[] {
   const result = [];
-  const { currentPage, lastPage } = pagination;
-  if (currentPage > 2) result.push(getPagingLink(req, pagination, 1, 'first'));
-  if (currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous'));
+  const { currentPage, lastPage, perPage } = pagination;
+  if (perPage > 0 && currentPage > 2) result.push(getPagingLink(req, pagination, 1, 'first'));
+  if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous'));
   result.push(getPagingLink(req, pagination, currentPage, 'self', 'current'));
-  if (currentPage < lastPage) result.push(getPagingLink(req, pagination, currentPage + 1, 'next'));
-  if (currentPage < lastPage - 1) result.push(getPagingLink(req, pagination, lastPage, 'last'));
+  if (perPage > 0 && currentPage < lastPage) result.push(getPagingLink(req, pagination, currentPage + 1, 'next'));
+  if (perPage > 0 && currentPage < lastPage - 1) result.push(getPagingLink(req, pagination, lastPage, 'last'));
   return result;
 }
 

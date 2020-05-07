@@ -127,6 +127,13 @@ describe('Jobs listing route', function () {
       });
     });
 
+    describe('`count` property', function () {
+      hookJobListing({ username: 'paige' });
+      it('sets the `count` property in the response to the total number of jobs', function () {
+        const { count } = JSON.parse(this.res.text);
+        expect(count).to.equal(this.jobs.length);
+      });
+    });
 
     describe('`limit` parameter', function () {
       describe('when `limit` is not set', function () {
@@ -160,7 +167,7 @@ describe('Jobs listing route', function () {
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
             code: 'harmony:RequestValidationError',
-            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 1 and less than or equal to 2000.',
+            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
           });
         });
       });
@@ -172,19 +179,19 @@ describe('Jobs listing route', function () {
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
             code: 'harmony:RequestValidationError',
-            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 1 and less than or equal to 2000.',
+            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
           });
         });
       });
 
       describe('when `limit` is set to a value lower than the minimum allowable', function () {
-        hookJobListing({ username: 'paige', limit: 0 });
+        hookJobListing({ username: 'paige', limit: -1 });
         it('returns a validation error explaining limit parameter constraints', function () {
           const error = JSON.parse(this.res.text);
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
             code: 'harmony:RequestValidationError',
-            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 1 and less than or equal to 2000.',
+            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
           });
         });
       });
@@ -281,6 +288,16 @@ describe('Jobs listing route', function () {
 
       describe('on the only page', function () {
         hookJobListing({ username: 'paige', page: 1, limit: 500 });
+        it('includes only the relation to self, with no paging info', function () {
+          const { links } = JSON.parse(this.res.text);
+          expect(links.length).to.equal(1);
+          expect(links[0].rel).to.equal('self');
+          expect(links[0].title).to.equal('The current page');
+        });
+      });
+
+      describe('on a page with limit 0', function () {
+        hookJobListing({ username: 'paige', page: 1, limit: 0 });
         it('includes only the relation to self, with no paging info', function () {
           const { links } = JSON.parse(this.res.text);
           expect(links.length).to.equal(1);
