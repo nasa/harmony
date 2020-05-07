@@ -36,7 +36,7 @@ export enum JobStatus {
 
 export interface JobLink {
   href: string;
-  type: string;
+  type?: string;
   title?: string;
   rel: string;
   temporal?: {
@@ -221,7 +221,7 @@ export class Job extends Record {
         title: stagingBucketTitle,
         rel: 's3-access',
       };
-      this.links.push(stagingLocationLink as JobLink);
+      this.links.push(stagingLocationLink);
     }
   }
 

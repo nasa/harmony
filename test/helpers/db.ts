@@ -5,8 +5,6 @@ import { stub } from 'sinon';
 
 import db = require('harmony/util/db');
 
-process.env.NODE_ENV = 'test';
-
 const tables = ['jobs'];
 
 /**

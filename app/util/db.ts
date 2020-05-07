@@ -3,8 +3,9 @@
 import knexfile from '../../db/knexfile';
 import knex from 'knex';
 import { attachPaginate } from 'knex-paginate';
+import env from './env';
 
-const environment = process.env.NODE_ENV || 'development';
+const environment = env.nodeEnv;
 const config = knexfile[environment];
 const database = knex(config);
 

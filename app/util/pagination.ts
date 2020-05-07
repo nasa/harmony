@@ -76,7 +76,7 @@ function getPagingLink(
   relName: string = rel,
 ): Link {
   const { lastPage, perPage } = pagination;
-  const suffix = (lastPage === 1 && page === 1) || perPage === 0 ? '' : ` (${page} of ${lastPage})`;
+  const suffix = (lastPage <= 1 && page === 1) || perPage === 0 ? '' : ` (${page} of ${lastPage})`;
   return {
     title: `The ${relName} page${suffix}`,
     href: getRequestUrl(req, true, { page, limit: perPage }),
