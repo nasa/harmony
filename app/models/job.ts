@@ -1,10 +1,13 @@
 import pick from 'lodash.pick';
-import { createPublicPermalink } from 'frontends/service-results';
-import { truncateString } from 'util/string';
+import { Transaction } from 'knex'; // For types only
+import { IWithPagination } from 'knex-paginate'; // For types only
+
+import { createPublicPermalink } from '../frontends/service-results';
+import { truncateString } from '../util/string';
 import Record from './record';
 
-import env = require('util/env');
-
+import env = require('../util/env');
+import Knex = require('knex');
 
 const { awsDefaultRegion } = env;
 
@@ -15,14 +18,6 @@ const statesToDefaultMessages = {
   failed: 'The job failed with an unknown error',
 };
 
-// Enum of valid statuses
-const statuses = {
-  ACCEPTED: 'accepted',
-  RUNNING: 'running',
-  SUCCESSFUL: 'successful',
-  FAILED: 'failed',
-};
-
 const defaultMessages = Object.values(statesToDefaultMessages);
 
 const serializedJobFields = [
@@ -30,6 +25,42 @@ const serializedJobFields = [
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
+
+
+export enum JobStatus {
+  ACCEPTED = 'accepted',
+  RUNNING = 'running',
+  SUCCESSFUL = 'successful',
+  FAILED = 'failed',
+}
+
+export interface JobLink {
+  href: string;
+  type: string;
+  title: string;
+  rel: string;
+  temporal: {
+    start: string;
+    end: string;
+  };
+  bbox: number[];
+}
+
+export interface JobRecord {
+  id: number;
+  username: string;
+  requestId: string;
+  status: JobStatus;
+  message: string;
+  progress: number;
+  _json_links: string | JobLink[];
+  links: string | JobLink[];
+  request: string;
+  createdAt: Date | number;
+  updatedAt: Date | number;
+}
+
+type Trx = Transaction | Knex;
 
 /**
  *
@@ -50,14 +81,14 @@ const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegio
  *
  * @class Job
  */
-export default class Job extends Record {
+export class Job extends Record {
   static table = 'jobs';
 
-  static statuses: any = statuses;
+  static statuses: JobStatus;
 
-  fields: any;
+  static record: JobRecord;
 
-  links: any;
+  links: JobLink[];
 
   message: string;
 
@@ -67,9 +98,9 @@ export default class Job extends Record {
 
   progress: number;
 
-  request: any;
+  request: string;
 
-  _json_links: any;
+  _json_links: string | JobLink[];
 
   status: string;
 
@@ -79,14 +110,24 @@ export default class Job extends Record {
    * Returns an array of all jobs for the given username using the given transaction
    *
    * @static
-   * @param {knex.transaction} transaction the transaction to use for querying
+   * @param {Trx} transaction the transaction to use for querying
    * @param {string} username the user whose jobs should be retrieved
-   * @returns {Job[]} a list of all of the user's jobs
+   * @param {number} currentPage the index of the page to show
+   * @param {number} perPage the number of results per page
+   * @returns {Promise<IWithPagination<Job[]>>} a list of all of the user's jobs
    * @memberof Job
    */
-  static async forUser(transaction, username) {
-    // Enables users getting a list of all their jobs
-    return transaction('jobs').select().where({ username }).map((j) => new Job(j));
+  static async forUser(transaction: Trx, username: string, currentPage = 0, perPage = 10):
+  Promise<IWithPagination<Job[]>> {
+    const items = await transaction('jobs')
+      .select()
+      .where({ username })
+      .orderBy('createdAt', 'desc')
+      .paginate({ currentPage, perPage, isLengthAware: true });
+    return {
+      data: items.data.map((j) => new Job(j)),
+      pagination: items.pagination,
+    };
   }
 
   /**
@@ -94,13 +135,13 @@ export default class Job extends Record {
    * no such job exists.
    *
    * @static
-   * @param {knex.transaction} transaction the transaction to use for querying
+   * @param {Transaction} transaction the transaction to use for querying
    * @param {string} username the username associated with the job
    * @param {string} requestId the UUID of the request associated with the job
-   * @returns {Job} the matching job, or null if none exists
+   * @returns {Promise<Job>} the matching job, or null if none exists
    * @memberof Job
    */
-  static async byUsernameAndRequestId(transaction, username, requestId) {
+  static async byUsernameAndRequestId(transaction, username, requestId): Promise<Job> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     return result.length === 0 ? null : new Job(result[0]);
   }
@@ -109,12 +150,12 @@ export default class Job extends Record {
    * Returns the job matching the given request ID, or null if no such job exists
    *
    * @static
-   * @param {knex.transaction} transaction the transaction to use for querying
+   * @param {Transaction} transaction the transaction to use for querying
    * @param {string} requestId the UUID of the request associated with the job
-   * @returns {Job} the matching job, or null if none exists
+   * @returns {Promise<Job>} the matching job, or null if none exists
    * @memberof Job
    */
-  static async byRequestId(transaction, requestId) {
+  static async byRequestId(transaction, requestId): Promise<Job> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     return result.length === 0 ? null : new Job(result[0]);
   }
@@ -123,12 +164,12 @@ export default class Job extends Record {
    * Returns the job matching the given primary key id, or null if no such job exists
    *
    * @static
-   * @param {knex.transaction} transaction the transaction to use for querying
+   * @param {Transaction} transaction the transaction to use for querying
    * @param {Integer} id the primary key of the job record
-   * @returns {Job} the matching job, or null if none exists
+   * @returns {Promise<Job>} the matching job, or null if none exists
    * @memberof Job
    */
-  static async byId(transaction, id) {
+  static async byId(transaction, id): Promise<Job> {
     const result = await transaction('jobs').select().where({ id }).forUpdate();
     return result.length === 0 ? null : new Job(result[0]);
   }
@@ -139,7 +180,7 @@ export default class Job extends Record {
    * @param {any} fields Object containing fields to set on the record
    * @memberof Job
    */
-  constructor(fields: any) {
+  constructor(fields: JobRecord) {
     super(fields);
     // Allow up to 4096 chars for the request string
     this.request = fields.request && truncateString(fields.request, 4096);
@@ -201,7 +242,7 @@ export default class Job extends Record {
         title: stagingBucketTitle,
         rel: 's3-access',
       };
-      this.links.push(stagingLocationLink);
+      this.links.push(stagingLocationLink as JobLink);
     }
   }
 
@@ -216,7 +257,7 @@ export default class Job extends Record {
    * @memberof Job
    */
   fail(message = statesToDefaultMessages.failed) {
-    this.updateStatus(statuses.FAILED, message);
+    this.updateStatus(JobStatus.FAILED, message);
   }
 
   /**
@@ -230,7 +271,7 @@ export default class Job extends Record {
    * @memberof Job
    */
   succeed(message) {
-    this.updateStatus(statuses.SUCCESSFUL, message);
+    this.updateStatus(JobStatus.SUCCESSFUL, message);
   }
 
   /**
@@ -254,7 +295,7 @@ export default class Job extends Record {
       // different status
       this.message = statesToDefaultMessages[status];
     }
-    if (this.status === statuses.SUCCESSFUL) {
+    if (this.status === JobStatus.SUCCESSFUL) {
       this.progress = 100;
     }
   }
@@ -267,7 +308,7 @@ export default class Job extends Record {
    * @memberof Job
    */
   isComplete() {
-    return this.status === statuses.SUCCESSFUL || this.status === statuses.FAILED;
+    return this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.FAILED;
   }
 
   /**

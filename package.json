@@ -7,7 +7,7 @@
     "test": "eslint --ext .ts . && nyc mocha && npm audit",
     "coverage": "nyc mocha",
     "start": "ts-node -r tsconfig-paths/register app/server.ts",
-    "start-dev": "supervisor app/server.js",
+    "start-dev": "ts-node-dev --no-notify -r tsconfig-paths/register --respawn app/server",
     "build-image": "bin/build-image",
     "push-image": "bin/push-image",
     "build": "tsc",
@@ -82,6 +82,7 @@
     "gdal-next": "^0.10.0",
     "js-yaml": "^3.13.1",
     "knex": "^0.20.8",
+    "knex-paginate": "^1.2.1",
     "lodash.clonedeep": "^4.5.0",
     "lodash.get": "^4.4.2",
     "lodash.pick": "^4.4.0",
@@ -144,6 +145,6 @@
     "sinon": "^7.5.0",
     "superagent": "^5.2.2",
     "supertest": "^4.0.2",
-    "supervisor": "^0.12.0"
+    "ts-node-dev": "^1.0.0-pre.44"
   }
 }

@@ -1,5 +1,5 @@
 import pick from 'lodash.pick';
-import Job from 'models/job';
+import { Job } from 'models/job';
 import { linksWithStacData } from 'util/stac';
 
 /**

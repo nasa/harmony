@@ -1,13 +1,13 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import Job from 'models/job';
+import { Job, JobRecord } from 'models/job';
 import create from 'frontends/stac-item';
 
 // Prop for testing
 const jobProps = {
-  jobID: '1234',
+  requestId: '1234',
   request: 'example.com',
-  createdAt: '2020-02-02T00:00:00Z',
+  createdAt: new Date('2020-02-02T00:00:00Z'),
   links: [
     {
       href: 'file_1.nc',
@@ -61,21 +61,21 @@ const jobProps = {
       rel: 'data',
     },
   ],
-};
+} as JobRecord;
 const job = new Job(jobProps);
 
 describe('stac-item', function () {
   describe('STAC Item creation with a Harmony Job object: case of anti-meridian crossing', function () {
-    const jsonObj: any = create(job, 0);
+    const jsonObj = create(job.serialize(), 0);
     it('Item has correct ID', function () {
-      expect(jsonObj.id).to.equal(`${jobProps.jobID}_0`);
+      expect(jsonObj.id).to.equal(`${jobProps.requestId}_0`);
     });
     it('has a bounding box that crosses anti-meridian', function () {
       expect(jsonObj.geometry.type).to.equal('MultiPolygon');
     });
     // TODO: [HARMONY-294] validate GeoJSON geometry
     it('has the creation time', function () {
-      expect(jsonObj.properties.created).to.equal('2020-02-02T00:00:00Z');
+      expect(jsonObj.properties.created).to.equal('2020-02-02T00:00:00.000Z');
     });
     it('has the representative date time', function () {
       expect(jsonObj.properties.datetime).to.equal('1996-10-15T00:05:32.000Z');

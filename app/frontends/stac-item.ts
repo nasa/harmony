@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid';
 import pick from 'lodash.pick';
 import { linksWithStacData } from 'util/stac';
 
-import Job from 'models/job';
+import { Job } from 'models/job';
 
 class HarmonyItem {
   id: string;
@@ -213,8 +213,8 @@ export default function create(job: Job, index: number): Record<string, any> {
   const item = new HarmonyItem(job.jobID, title, description, index);
 
   // Set creation time
-  const creationTime = Object.hasOwnProperty.call(job, 'createdAt') ? job.createdAt : new Date().toISOString();
-  item.setProperty('created', creationTime);
+  const creationTime = Object.hasOwnProperty.call(job, 'createdAt') ? new Date(job.createdAt) : new Date();
+  item.setProperty('created', creationTime.toISOString());
   // TBD: may be it should be a metadata for a Harmony service
   item.setProperty('license', 'various');
   // Add assets

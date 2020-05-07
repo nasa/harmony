@@ -1,4 +1,4 @@
-import db = require('util/db');
+import db = require('../util/db');
 
 /**
  * Abstract class describing a database record.  Subclass database tables
@@ -62,7 +62,7 @@ export default abstract class Record {
     if (newRecord) {
       this.createdAt = this.updatedAt;
       let stmt = transaction((this.constructor as any).table).insert(this);
-      if (db.engine === 'pg') {
+      if (db.client.config.client === 'pg') {
         stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
       }
       [this.id] = await stmt;

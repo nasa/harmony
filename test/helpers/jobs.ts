@@ -1,7 +1,10 @@
-import request from 'supertest';
+import request, { Test } from 'supertest';
 import { it } from 'mocha';
 import { expect } from 'chai';
-
+import { v4 as uuid } from 'uuid';
+import { Transaction } from 'knex';
+import { Application } from 'express';
+import { JobRecord, Job } from 'harmony/models/job';
 import { hookRequest } from './hooks';
 
 /**
@@ -27,23 +30,18 @@ export function jobsEqual(jobRecord, serializedJob) {
  * @param {Array} jobList An array of jobs
  * @returns {Boolean} true if the object is found
  */
-export function containsJob(job, jobList) {
-  let found = false;
-  jobList.forEach((j) => {
-    if (jobsEqual(j, job)) {
-      found = true;
-    }
-  });
-  return found;
+export function containsJob(job, jobList): boolean {
+  return !!jobList.jobs.find((j) => jobsEqual(j, job));
 }
 
 /**
  * Makes a job listing request
- * @param {Express.Application} app The express application (typically this.frontend)
- * @returns {Promise<Response>} The response
+ * @param {Application} app The express application (typically this.frontend)
+ * @param {object} query Mapping of query param names to values
+ * @returns {Test} The response
  */
-export function jobListing(app) {
-  return request(app).get('/jobs');
+export function jobListing(app: Application, query: object = {}): Test {
+  return request(app).get('/jobs').query(query);
 }
 
 /**
@@ -88,4 +86,85 @@ export function itIncludesRequestUrl(expectedPath) {
     const regex = new RegExp(`^https?://.*${_escapeRegExp(expectedPath)}$`);
     expect(job.request).to.match(regex);
   });
+}
+
+
+/**
+ * Creates a batch of jobs owned by the given username, using the given transaction, where the
+ * `progress` int of each job is set to the index in which it should appear in the default jobs
+ * array, i.e. the last job has progress 0, the second to last has progress 1, etc.
+ * @param {Transaction} trx the transaction to use when creating jobs
+ * @param {string} username the username of the user who owns the job
+ * @param {number} count the number of jobs to create
+ * @returns {Promise<Job[]>} the list of jobs created in descending order of creation time
+ */
+export async function createIndexedJobs(
+  trx: Transaction,
+  username: string,
+  count: number,
+): Promise<Job[]> {
+  const result = [];
+  let created = +new Date() - 100;
+  for (let progress = count - 1; progress >= 0; progress--) {
+    const job = new Job({
+      username,
+      requestId: uuid().toString(),
+      status: 'running',
+      message: 'In progress',
+      progress,
+      links: [],
+      request: `http://example.com/${progress}`,
+    } as JobRecord);
+    await job.save(trx);
+    // Explicitly set created dates to ensure they are sequential (must be done in an update)
+    job.createdAt = new Date(created++);
+    await job.save(trx);
+    result.unshift(job);
+  }
+  return result;
+}
+
+/**
+ * Relates a link `rel` to an expected page number
+ */
+export interface PagingRelationInfo {
+  'first': number;
+  'prev': number;
+  'self': number;
+  'next': number;
+  'last': number;
+}
+
+/**
+ * Provides `it` statements asserting that the provided paging relations are available in `this.res`
+ * and have the correct link values relative to the supplied current page.  If a page number is set
+ * to null, asserts that the relation is not present.
+ * @param {number} pageCount the total number of pages available
+ * @param {PagingRelationInfo} relations a map of link relations to their expected page numbers
+ * @param {number} limit the number of items on each page (default = 10)
+ * @returns {void}
+ */
+export function itIncludesPagingRelations(
+  pageCount: number,
+  relations: PagingRelationInfo,
+  limit = 10,
+): void {
+  for (const rel of Object.keys(relations)) {
+    const expectedPage = relations[rel];
+    if (expectedPage === null || expectedPage === undefined) {
+      it(`does not provide a "${rel}" link relation`, function () {
+        const listing = JSON.parse(this.res.text);
+        const actual = listing.links.find((link) => link.rel === rel);
+        expect(actual).to.not.exist;
+      });
+    } else {
+      it(`provides a "${rel}" link relation with correctly set page and limit parameters`, function () {
+        const listing = JSON.parse(this.res.text);
+        const actual = listing.links.find((link) => link.rel === rel);
+        expect(actual).to.exist;
+        expect(actual.href).to.include(`/jobs?page=${expectedPage}&limit=${limit}`);
+        expect(actual.title).to.include(`(${expectedPage} of ${pageCount})`);
+      });
+    }
+  }
 }

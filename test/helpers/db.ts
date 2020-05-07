@@ -75,10 +75,11 @@ export function hookTransactionEach() {
  * @returns {void}
  */
 export function hookTransactionFailure() {
+  let txStub;
   before(function () {
-    stub(db, 'transaction').throws();
+    txStub = stub(db, 'transaction').throws();
   });
   after(function () {
-    if (db.transaction.restore) db.transaction.restore();
+    txStub.restore();
   });
 }

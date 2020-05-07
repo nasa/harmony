@@ -1,4 +1,4 @@
-import Job from 'models/job';
+import { Job, JobRecord, JobStatus } from 'models/job';
 import BaseService from './base-service';
 
 /**
@@ -49,14 +49,14 @@ export default class NoOpService extends BaseService {
     let job = new Job({
       username: this.operation.user,
       requestId: this.operation.requestId,
-      status: Job.statuses.SUCCESSFUL,
+      status: JobStatus.SUCCESSFUL,
       progress: 100,
       createdAt: now,
       updatedAt: now,
       message,
       links,
       request: requestUrl,
-    });
+    } as JobRecord);
     job = job.serialize(harmonyRoot);
     // No-op service response should look like a job, but doesn't actually create one
     // so do not include a jobID in the response.

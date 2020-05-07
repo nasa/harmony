@@ -3,8 +3,8 @@ import sinon from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
-import Job from 'models/job';
-import hookServersStartStop from '../helpers/servers';
+import { Job, JobRecord, JobStatus } from 'models/job';
+import { hookServersStartStop } from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
 import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl } from '../helpers/jobs';
 import StubService from '../helpers/stub-service';
@@ -15,20 +15,20 @@ import { S3ObjectStore } from '../../app/util/object-store';
 const aJob = {
   username: 'joe',
   requestId: uuid().toString(),
-  status: 'running',
+  status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
   links: [
     {
       href: 'http://example.com',
-      bbox: '[-100, -30, -80, 20]',
+      bbox: [-100, -30, -80, 20],
       temporal: {
         start: '1996-10-15T00:05:32.000Z',
         end: '1996-11-15T00:05:32.000Z',
       },
     }],
   request: 'http://example.com/harmony?job=aJob',
-};
+} as JobRecord;
 
 describe('Individual job status route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });

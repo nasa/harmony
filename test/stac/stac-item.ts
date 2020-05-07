@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
-import hookServersStartStop from '../helpers/servers';
+import { hookServersStartStop } from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacItem, hookStacItem } from '../helpers/stac';
-import Job from '../../app/models/job';
+import { Job, JobRecord } from '../../app/models/job';
 
 const runningJob = {
   username: 'joe',
@@ -23,7 +23,7 @@ const runningJob = {
     },
   }],
   request: 'http://example.com/harmony?job=runningJob',
-};
+} as JobRecord;
 
 const completedJob = {
   username: 'joe',
@@ -42,7 +42,7 @@ const completedJob = {
     },
   }],
   request: 'http://example.com/harmony?job=completedJob',
-};
+} as JobRecord;
 
 const completedNonStacJob = {
   username: 'joe',
@@ -56,7 +56,7 @@ const completedNonStacJob = {
     rel: 'data',
   }],
   request: 'http://example.com/harmony?job=completedJob',
-};
+} as JobRecord;
 
 describe('STAC item route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });

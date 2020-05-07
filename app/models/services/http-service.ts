@@ -1,7 +1,7 @@
 import * as http from 'http';
 import * as https from 'https';
 import * as URL from 'url';
-import Job from 'models/job';
+import { Job } from 'models/job';
 import BaseService from './base-service';
 
 import db = require('util/db');
