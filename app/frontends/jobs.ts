@@ -7,7 +7,6 @@ import { RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 
 import db = require('util/db');
-import { jobListing } from 'harmony-test/jobs';
 
 /**
  * Analyze the links in the job to determine what links should be returned to
