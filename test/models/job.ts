@@ -25,7 +25,7 @@ function createJob(username): Job {
     username,
     requestId: uuid().toString(),
     request: `http://example.com/${username}`,
-  } as JobRecord);
+  });
 }
 
 describe('Job', function () {
@@ -74,7 +74,7 @@ describe('Job', function () {
           username: 'jdoe',
           requestId: uuid().toString(),
           request: 'http://example.com/jdoe',
-        } as JobRecord);
+        });
         await job.save(this.trx);
       });
 

@@ -1,12 +1,13 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { Job, JobRecord } from 'models/job';
+import { Job } from 'models/job';
 import create from 'frontends/stac-item';
 
 // Prop for testing
 const jobProps = {
   requestId: '1234',
   request: 'example.com',
+  username: 'jdoe',
   createdAt: new Date('2020-02-02T00:00:00Z'),
   links: [
     {
@@ -61,7 +62,7 @@ const jobProps = {
       rel: 'data',
     },
   ],
-} as JobRecord;
+};
 const job = new Job(jobProps);
 
 describe('stac-item', function () {

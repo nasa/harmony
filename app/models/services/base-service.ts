@@ -2,7 +2,7 @@ import getIn from 'lodash.get';
 import * as serviceResponse from 'backends/service-response';
 import { defaultObjectStore } from 'util/object-store';
 import { ServerError, RequestValidationError } from 'util/errors';
-import { Job, JobStatus, JobRecord } from 'models/job';
+import { Job, JobStatus } from 'models/job';
 import { v4 as uuid } from 'uuid';
 import DataOperation from 'models/data-operation';
 
@@ -314,7 +314,7 @@ export default class BaseService {
       requestId,
       status: JobStatus.RUNNING,
       request: requestUrl,
-    } as JobRecord);
+    });
     job.addStagingBucketLink(stagingLocation);
     if (this.warningMessage) {
       job.message = this.warningMessage;

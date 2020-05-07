@@ -37,27 +37,27 @@ export enum JobStatus {
 export interface JobLink {
   href: string;
   type: string;
-  title: string;
+  title?: string;
   rel: string;
-  temporal: {
+  temporal?: {
     start: string;
     end: string;
   };
-  bbox: number[];
+  bbox?: number[];
 }
 
 export interface JobRecord {
-  id: number;
+  id?: number;
   username: string;
   requestId: string;
-  status: JobStatus;
-  message: string;
-  progress: number;
-  _json_links: string | JobLink[];
-  links: string | JobLink[];
+  status?: JobStatus;
+  message?: string;
+  progress?: number;
+  _json_links?: string | JobLink[];
+  links?: string | JobLink[];
   request: string;
-  createdAt: Date | number;
-  updatedAt: Date | number;
+  createdAt?: Date | number;
+  updatedAt?: Date | number;
 }
 
 type Trx = Transaction | Knex;
@@ -173,7 +173,7 @@ export class Job extends Record {
     super(fields);
     // Allow up to 4096 chars for the request string
     this.request = fields.request && truncateString(fields.request, 4096);
-    this.updateStatus(fields.status || 'accepted', fields.message);
+    this.updateStatus(fields.status || JobStatus.ACCEPTED, fields.message);
     this.progress = fields.progress || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     this.links = fields.links
@@ -202,16 +202,9 @@ export class Job extends Record {
    * Adds a link to the list of result links for the job.
    * You must call `#save` to persist the change
    *
-   * @param {Object<{
-   *   href: string,
-   *   title: string,
-   *   type: string,
-   *   rel: string,
-   * }>} link Adds a link to the list of links for the object.
-   * @returns {void}
-   * @memberof Job
+   * @param link - Adds a link to the list of links for the object.
    */
-  addLink(link) {
+  addLink(link: JobLink): void {
     this.links.push(link);
   }
 
@@ -219,11 +212,9 @@ export class Job extends Record {
    * Adds a staging location link to the list of result links for the job.
    * You must call `#save` to persist the change
    *
-   * @param {stagingLocation} stagingLocation Adds link to the staging bucket to the list of links.
-   * @returns {void}
-   * @memberof Job
+   * @param stagingLocation - Adds link to the staging bucket to the list of links.
    */
-  addStagingBucketLink(stagingLocation) {
+  addStagingBucketLink(stagingLocation): void {
     if (stagingLocation) {
       const stagingLocationLink = {
         href: stagingLocation,
@@ -240,11 +231,9 @@ export class Job extends Record {
    * default indicates an unknown error.
    * You must call `#save` to persist the change
    *
-   * @param {string} [message=statesToDefaultMessages.failed] an error message
-   * @returns {void}
-   * @memberof Job
+   * @param message - an error message
    */
-  fail(message = statesToDefaultMessages.failed) {
+  fail(message = statesToDefaultMessages.failed): void {
     this.updateStatus(JobStatus.FAILED, message);
   }
 
@@ -254,11 +243,9 @@ export class Job extends Record {
    * providing a message will override any prior message, including warnings.
    * You must call `#save` to persist the change
    *
-   * @param {string} message (optional) a human-readable success message.  See method description.
-   * @returns {void}
-   * @memberof Job
+   * @param message - (optional) a human-readable success message.  See method description.
    */
-  succeed(message) {
+  succeed(message: string): void {
     this.updateStatus(JobStatus.SUCCESSFUL, message);
   }
 
@@ -267,12 +254,10 @@ export class Job extends Record {
    * will use a default message corresponding to the status.
    * You must call `#save` to persist the change
    *
-   * @param {string} status The new status, one of successful, failed, running, accepted
-   * @param {string} message (optional) a human-readable status message
-   * @returns {void}
-   * @memberof Job
+   * @param status - The new status, one of successful, failed, running, accepted
+   * @param message - (optional) a human-readable status message
    */
-  updateStatus(status, message) {
+  updateStatus(status: JobStatus, message: string): void {
     this.status = status;
     if (message) {
       // Update the message if a new one was provided
@@ -292,10 +277,9 @@ export class Job extends Record {
    * Returns true if the job is complete, i.e. it expects no further interaction with
    * backend services.
    *
-   * @returns {boolean} true if the job is complete
-   * @memberof Job
+   * @returns true if the job is complete
    */
-  isComplete() {
+  isComplete(): boolean {
     return this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.FAILED;
   }
 
@@ -305,12 +289,10 @@ export class Job extends Record {
    * updatedAt fields set.  Existing jobs will be updated and have their updatedAt
    * field set.
    *
-   * @param {knex.transaction} transaction The transaction to use for saving the job
-   * @returns {void}
-   * @throws {Error} if the job is invalid
-   * @memberof Job
+   * @param transaction - The transaction to use for saving the job
+   * @throws {@link Error} if the job is invalid
    */
-  async save(transaction) {
+  async save(transaction: Trx): Promise<void> {
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     const { links } = this;
     delete this.links;
@@ -322,10 +304,10 @@ export class Job extends Record {
 
   /**
    * Serializes a Job to return from any of the jobs frontend endpoints
-   * @param {string} urlRoot the root URL to be used when constructing links
-   * @returns {Object} an object with the serialized job fields.
+   * @param urlRoot - the root URL to be used when constructing links
+   * @returns an object with the serialized job fields.
    */
-  serialize(urlRoot?) {
+  serialize(urlRoot?: string): Job {
     const serializedJob: any = pick(this, serializedJobFields);
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
@@ -347,10 +329,10 @@ export class Job extends Record {
   /**
    * Returns only the links with a rel that matches the passed in value
    *
-   * @param {String} rel the relation to return links for
-   * @returns {Array<Object>} the job output links with the given rel
+   * @param rel - the relation to return links for
+   * @returns the job output links with the given rel
    */
-  getRelatedLinks(rel) {
+  getRelatedLinks(rel: string): JobLink[] {
     return this.links.filter((link) => link.rel === rel);
   }
 }

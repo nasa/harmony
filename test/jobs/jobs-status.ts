@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
-import { Job, JobRecord, JobStatus } from 'models/job';
+import { Job, JobStatus } from 'models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
 import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl } from '../helpers/jobs';
@@ -21,6 +21,8 @@ const aJob = {
   links: [
     {
       href: 'http://example.com',
+      rel: 'link',
+      type: 'text/plain',
       bbox: [-100, -30, -80, 20],
       temporal: {
         start: '1996-10-15T00:05:32.000Z',
@@ -28,7 +30,7 @@ const aJob = {
       },
     }],
   request: 'http://example.com/harmony?job=aJob',
-} as JobRecord;
+};
 
 describe('Individual job status route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });

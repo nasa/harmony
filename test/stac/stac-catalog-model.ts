@@ -1,12 +1,13 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { Job, JobRecord } from 'models/job';
+import { Job } from 'models/job';
 import create from 'frontends/stac-catalog';
 
 // Prop for testing
 const jobProps = {
   requestId: '1234',
   request: 'example.com',
+  username: 'jdoe',
   links: [
     {
       href: 'file_1.nc',
@@ -37,7 +38,7 @@ const jobProps = {
       type: 'application/json',
     },
   ],
-} as JobRecord;
+};
 
 describe('stac-catalog', function () {
   describe('catalog creation with invalid argument', function () {

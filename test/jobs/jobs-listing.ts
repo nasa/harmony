@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
-import { Job, JobRecord } from 'models/job';
+import { Job, JobStatus } from 'models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
 import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations } from '../helpers/jobs';
@@ -11,32 +11,32 @@ import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesP
 const woodyJob1 = {
   username: 'woody',
   requestId: uuid().toString(),
-  status: 'successful',
+  status: JobStatus.SUCCESSFUL,
   message: 'Completed successfully',
   progress: 100,
-  links: [{ href: 'http://example.com/woody1' }],
+  links: [{ href: 'http://example.com/woody1', rel: 'link', type: 'text/plain' }],
   request: 'http://example.com/harmony?request=woody1',
-} as JobRecord;
+};
 
 const woodyJob2 = {
   username: 'woody',
   requestId: uuid().toString(),
-  status: 'running',
+  status: JobStatus.RUNNING,
   message: 'In progress',
   progress: 60,
   links: [],
   request: 'http://example.com/harmony?request=woody2',
-} as JobRecord;
+};
 
 const buzzJob1 = {
   username: 'buzz',
   requestId: uuid().toString(),
-  status: 'running',
+  status: JobStatus.RUNNING,
   message: 'In progress',
   progress: 30,
   links: [],
   request: 'http://example.com/harmony?request=buzz1',
-} as JobRecord;
+};
 
 describe('Jobs listing route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
