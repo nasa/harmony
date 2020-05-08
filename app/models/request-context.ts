@@ -2,8 +2,6 @@ import { Logger } from 'winston';
 
 /**
  * Contains additional information about a request
- *
- * @class RequestContext
  */
 export default class RequestContext {
   id: string;
@@ -16,14 +14,19 @@ export default class RequestContext {
 
   frontend: string;
 
+  /**
+   * True if the request is from a verified admin making a request against an admin interface
+   * (/admin/*)
+   */
+  isAdminAccess: boolean;
 
   /**
    * Creates an instance of RequestContext.
    *
-   * @param {String} id request identifier
-   * @memberof RequestContext
+   * @param id - request identifier
    */
   constructor(id) {
     this.id = id;
+    this.isAdminAccess = false;
   }
 }

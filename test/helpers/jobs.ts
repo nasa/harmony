@@ -44,6 +44,17 @@ export function jobListing(app: Application, query: object = {}): Test {
   return request(app).get('/jobs').query(query);
 }
 
+
+/**
+ * Makes a job listing request
+ * @param app - The express application (typically this.frontend)
+ * @param query - Mapping of query param names to values
+ * @returns The response
+ */
+export function adminJobListing(app: Application, query: object = {}): Test {
+  return request(app).get('/admin/jobs').query(query);
+}
+
 /**
  * Navigates to the job status route as the given user
  *
@@ -56,6 +67,7 @@ export function jobStatus(app, { jobID }) {
 }
 
 export const hookJobListing = hookRequest.bind(this, jobListing);
+export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);
 export const hookJobStatus = hookRequest.bind(this, jobStatus);
 
 /**

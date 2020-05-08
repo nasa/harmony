@@ -50,6 +50,7 @@ function makeConfigVar(envName: string, defaultValue?: string|number): void {
   ['MAX_POST_FILE_SIZE', 2000000000],
   ['MAX_POST_FILE_PARTS', 100],
   ['NODE_ENV', 'development'],
+  ['ADMIN_GROUP_ID', null],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 

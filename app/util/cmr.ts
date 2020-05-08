@@ -65,17 +65,19 @@ function _handleCmrErrors(response) {
 /**
  * Performs a CMR search at the given path with the given query string
  *
- * @param {string} path The absolute path on the CMR API to the resource being queried
- * @param {object} query The key/value pairs to send to the CMR query string
- * @param {string} token Access token for user request
- * @returns {Promise<object>} The CMR query result
+ * @param path - The absolute path on the CMR API to the resource being queried
+ * @param query - The key/value pairs to send to the CMR query string
+ * @param token - Access token for user request
+ * @param extraHeaders - Additional headers to pass with the request
+ * @returns The CMR query result
  */
-export async function cmrSearchBase(path, query, token) {
+export async function cmrSearchBase(path, query, token, extraHeaders = {}) {
   const querystr = querystring.stringify(query);
   const headers = {
     ...clientIdHeader,
     ..._makeTokenHeader(token),
     ...acceptJsonHeader,
+    ...extraHeaders,
   };
   const response: any = await fetch(`${cmrApiConfig.baseURL}${path}?${querystr}`,
     {
@@ -343,4 +345,23 @@ export function queryGranulesForCollectionWithMultipartForm(collectionId, form, 
     ...baseQuery,
     ...form,
   }, token);
+}
+
+/**
+ * Returns true if the user belongs to the given group.  Returns false if the user does not
+ * belong to the group or the token cannot be used to query the group.
+ *
+ * @param username - The EDL username to test for membership
+ * @param groupId - The group concept ID to check for membership
+ * @param token - Access token for the request
+ * @returns true if the group can be queried and the user is a member of the group
+ */
+export async function belongsToGroup(
+  username: string,
+  groupId: string,
+  token: string,
+): Promise<boolean> {
+  const path = `/access-control/groups/${groupId}/members`;
+  const response = await cmrSearchBase(path, null, token, { 'X-Harmony-User': username });
+  return response.status === 200 && response.data.indexOf(username) !== -1;
 }
