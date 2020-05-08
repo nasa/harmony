@@ -1,4 +1,4 @@
-import Job from 'models/job';
+import { Job } from 'models/job';
 import { needsStacLink } from 'util/stac';
 import isUUID from 'util/uuid';
 import stacItemCreate from './stac-item';

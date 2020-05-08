@@ -4,12 +4,12 @@ import { v4 as uuid } from 'uuid';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacItem, hookStacItem } from '../helpers/stac';
-import Job from '../../app/models/job';
+import { Job, JobStatus } from '../../app/models/job';
 
 const runningJob = {
   username: 'joe',
   requestId: uuid().toString(),
-  status: 'running',
+  status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
   links: [{
@@ -28,7 +28,7 @@ const runningJob = {
 const completedJob = {
   username: 'joe',
   requestId: uuid().toString(),
-  status: 'successful',
+  status: JobStatus.SUCCESSFUL,
   message: 'it is done',
   progress: 100,
   links: [{
@@ -47,7 +47,7 @@ const completedJob = {
 const completedNonStacJob = {
   username: 'joe',
   requestId: uuid().toString(),
-  status: 'successful',
+  status: JobStatus.SUCCESSFUL,
   message: 'it is done',
   progress: 100,
   links: [{

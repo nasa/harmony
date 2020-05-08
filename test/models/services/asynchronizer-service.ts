@@ -1,7 +1,7 @@
 import { describe, it, before } from 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import Job from 'harmony/models/job';
+import { Job } from 'harmony/models/job';
 import { defaultObjectStore } from 'harmony/util/object-store';
 import hookServersStartStop from 'harmony-test/servers';
 import StubService from 'harmony-test/stub-service';

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
-import Job from 'models/job';
+import { Job, JobStatus } from 'models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacCatalog, hookStacCatalog } from '../helpers/stac';
@@ -9,7 +9,7 @@ import { stacCatalog, hookStacCatalog } from '../helpers/stac';
 const runningJob = {
   username: 'joe',
   requestId: uuid().toString(),
-  status: 'running',
+  status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
   links: [{
@@ -28,7 +28,7 @@ const runningJob = {
 const completedJob = {
   username: 'joe',
   requestId: uuid().toString(),
-  status: 'successful',
+  status: JobStatus.SUCCESSFUL,
   message: 'it is done',
   progress: 100,
   links: [{

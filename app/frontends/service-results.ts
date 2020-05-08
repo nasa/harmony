@@ -1,6 +1,6 @@
 import { URL } from 'url';
-import { objectStoreForProtocol } from 'util/object-store';
-import { NotFoundError } from 'util/errors';
+import { objectStoreForProtocol } from '../util/object-store';
+import { NotFoundError } from '../util/errors';
 
 /**
  * Given a URL that is not necessarily public-facing, produces a URL to that data

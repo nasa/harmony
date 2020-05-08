@@ -1,12 +1,13 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import Job from 'models/job';
+import { Job } from 'models/job';
 import create from 'frontends/stac-catalog';
 
 // Prop for testing
 const jobProps = {
-  jobID: '1234',
+  requestId: '1234',
   request: 'example.com',
+  username: 'jdoe',
   links: [
     {
       href: 'file_1.nc',
@@ -57,10 +58,10 @@ describe('stac-catalog', function () {
     const job = new Job(jobProps);
     let jsonObj: any = {};
     it('created Harmony STAC Catalog', function () {
-      expect(function () { jsonObj = create(job); }).to.not.throw();
+      expect(function () { jsonObj = create(job.serialize()); }).to.not.throw();
     });
     it('catalog ID matches Job ID', function () {
-      expect(jsonObj.id).to.equal(jobProps.jobID);
+      expect(jsonObj.id).to.equal(jobProps.requestId);
     });
     it('has links', function () {
       expect(jsonObj.links.length).to.equal(4);

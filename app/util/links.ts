@@ -1,6 +1,13 @@
 import env = require('./env');
 const { awsDefaultRegion } = env;
 
+export interface Link {
+  href: string;
+  title: string;
+  rel: string;
+  type: string;
+}
+
 /**
  * Returns a link to the cloud-access JSON endpoint
  *

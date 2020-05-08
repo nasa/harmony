@@ -1,8 +1,10 @@
-import Job from 'models/job';
+import { Job, JobStatus } from 'models/job';
 import isUUID from 'util/uuid';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink } from '../util/links';
+import { RequestValidationError } from '../util/errors';
+import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 
 import db = require('util/db');
 
@@ -25,7 +27,7 @@ function _getLinksForDisplay(job, urlRoot) {
     // Remove the S3 bucket and prefix link
     links = links.filter((link) => link.rel !== 's3-access');
   }
-  if (job.status === Job.statuses.SUCCESSFUL && needsStacLink(dataLinks)) {
+  if (job.status === JobStatus.SUCCESSFUL && needsStacLink(dataLinks)) {
     links.unshift(getStacCatalogLink(urlRoot, job.jobID));
   }
   return links;
@@ -36,27 +38,42 @@ function _getLinksForDisplay(job, urlRoot) {
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
- * @returns {Promise<void>} Resolves when the request is complete
  */
-export async function getJobsListing(req, res) {
+export async function getJobsListing(req, res): Promise<void> {
   req.context.logger.info(`Get job listing for user ${req.user}`);
   try {
     const root = getRequestRoot(req);
+    const { page, limit } = getPagingParams(req);
+    let listing;
     await db.transaction(async (tx) => {
-      const listing = await Job.forUser(tx, req.user);
-      const serializedJobs = listing.map((j) => {
-        const serializedJob = j.serialize(root);
-        serializedJob.links = _getLinksForDisplay(serializedJob, root);
-        return serializedJob;
-      });
-      res.send(serializedJobs);
+      listing = await Job.forUser(tx, req.user, page, limit);
     });
+    const serializedJobs = listing.data.map((j) => {
+      const serializedJob = j.serialize(root);
+      serializedJob.links = _getLinksForDisplay(serializedJob, root);
+      return serializedJob;
+    });
+    const response = {
+      count: listing.pagination.total,
+      jobs: serializedJobs,
+      links: getPagingLinks(req, listing.pagination),
+    };
+    setPagingHeaders(res, listing.pagination);
+    res.json(response);
   } catch (e) {
-    req.context.logger.error(e);
-    res.status(500);
-    res.json({
-      code: 'harmony:ServerError',
-      description: 'Error: Internal server error trying to retrieve jobs listing' });
+    if (e instanceof RequestValidationError) {
+      res.status(e.code);
+      res.json({
+        code: 'harmony:RequestValidationError',
+        description: `Error: ${e.message}`,
+      });
+    } else {
+      req.context.logger.error(e);
+      res.status(500);
+      res.json({
+        code: 'harmony:ServerError',
+        description: 'Error: Internal server error trying to retrieve jobs listing' });
+    }
   }
 }
 
@@ -67,7 +84,7 @@ export async function getJobsListing(req, res) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-export async function getJobStatus(req, res) {
+export async function getJobStatus(req, res): Promise<void> {
   const { jobID } = req.params;
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   if (!isUUID(jobID)) {

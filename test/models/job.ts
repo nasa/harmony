@@ -1,7 +1,7 @@
 import { describe, it, beforeEach } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import Job from 'models/job';
+import { Job, JobRecord, JobStatus, JobLink } from 'models/job';
 import { hookTransactionEach } from '../helpers/db';
 
 const exampleProps = {
@@ -12,7 +12,7 @@ const exampleProps = {
   progress: 42,
   links: [{ href: 'http://example.com' }],
   request: 'http://example.com/harmony?foo=bar',
-};
+} as JobRecord;
 
 /**
  * Creates a Job object for the provided username
@@ -20,7 +20,7 @@ const exampleProps = {
  * @param {String} username The user that requested the job
  * @returns {Job} An example job for the user
  */
-function createJob(username) {
+function createJob(username): Job {
   return new Job({
     username,
     requestId: uuid().toString(),
@@ -47,14 +47,14 @@ describe('Job', function () {
 
         it("returns the user's jobs", async function () {
           const results = await Job.forUser(this.trx, 'jdoe');
-          const requestIds = results.map((r) => r.requestId);
+          const requestIds = results.data.map((r) => r.requestId);
           expect(requestIds).to.include(jobs[0].requestId);
           expect(requestIds).to.include(jobs[1].requestId);
         });
 
         it("does not return other users' jobs", async function () {
           const results = await Job.forUser(this.trx, 'jdoe');
-          const usernames = results.map((r) => r.username);
+          const usernames = results.data.map((r) => r.username);
           expect(usernames).to.eql(['jdoe', 'jdoe']);
         });
       });
@@ -62,7 +62,7 @@ describe('Job', function () {
       describe('when a user has no jobs', async function () {
         it('returns an empty array', async function () {
           const results = await Job.forUser(this.trx, 'jdoe');
-          expect(results).to.eql([]);
+          expect(results.data).to.eql([]);
         });
       });
     });
@@ -154,7 +154,7 @@ describe('Job', function () {
 
   describe('#constructor', function () {
     it('copies passed fields to the job object', function () {
-      const props = { id: 1234, exampleProps };
+      const props = { id: 1234, ...exampleProps };
       const job = new Job(props);
       for (const key of Object.keys(props)) {
         expect(job[key]).to.eql(props[key]);
@@ -162,28 +162,28 @@ describe('Job', function () {
     });
 
     it('defaults status to "accepted"', function () {
-      expect(new Job({}).status).to.eql('accepted');
+      expect(new Job({} as JobRecord).status).to.eql('accepted');
     });
 
     it('defaults progress to 0', function () {
-      expect(new Job({}).progress).to.eql(0);
+      expect(new Job({} as JobRecord).progress).to.eql(0);
     });
 
     it('defaults message to a human readable version of the status', function () {
-      expect(new Job({ status: 'failed' }).message).to.eql('The job failed with an unknown error');
+      expect(new Job({ status: JobStatus.FAILED } as JobRecord).message).to.eql('The job failed with an unknown error');
     });
 
     it('updates the message if a default was used and the status changed', function () {
-      expect(new Job({ status: 'successful', message: 'The job is being processed' }).message)
+      expect(new Job({ status: JobStatus.SUCCESSFUL, message: 'The job is being processed' } as JobRecord).message)
         .to.equal('The job has completed successfully');
     });
 
     it('defaults links to an empty array', function () {
-      expect(new Job({}).links).to.eql([]);
+      expect(new Job({} as JobRecord).links).to.eql([]);
     });
 
     it('parses _json_links into the .links property', function () {
-      expect(new Job({ _json_links: '[{"href":"https://example.com"}]' }).links)
+      expect(new Job({ _json_links: '[{"href":"https://example.com"}]' } as JobRecord).links)
         .to.eql([{ href: 'https://example.com' }]);
     });
   });
@@ -220,7 +220,7 @@ describe('Job', function () {
       let job = new Job(exampleProps);
       await job.save(this.trx);
       job = await Job.byRequestId(this.trx, job.requestId);
-      job.links.push({ href: 'http://example.com/2' });
+      job.links.push({ href: 'http://example.com/2' } as JobLink);
       await job.save(this.trx);
       const result = await Job.byRequestId(this.trx, job.requestId);
       expect(result.links).to.eql(job.links);
@@ -228,25 +228,25 @@ describe('Job', function () {
 
     it('throws an error when progress is outside of the allowable range', async function () {
       const { trx } = this;
-      const job = new Job({ username: 'jdoe', requestId: uuid().toString(), progress: 101 });
+      const job = new Job({ username: 'jdoe', requestId: uuid().toString(), progress: 101 } as JobRecord);
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
 
     it('throws an error when requestId is not provided', async function () {
       const { trx } = this;
-      const job = new Job({ username: 'jdoe' });
+      const job = new Job({ username: 'jdoe' } as JobRecord);
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
 
     it('throws an error when username is not provided', async function () {
       const { trx } = this;
-      const job = new Job({ requestId: uuid().toString() });
+      const job = new Job({ requestId: uuid().toString() } as JobRecord);
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
 
     it('throws an error when the request field is not a URL', async function () {
       const { trx } = this;
-      const job = new Job({ requestId: uuid().toString(), username: 'jdoe', request: 'foo:not//a-url' });
+      const job = new Job({ requestId: uuid().toString(), username: 'jdoe', request: 'foo:not//a-url' } as JobRecord);
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
   });

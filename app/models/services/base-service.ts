@@ -2,7 +2,7 @@ import getIn from 'lodash.get';
 import * as serviceResponse from 'backends/service-response';
 import { defaultObjectStore } from 'util/object-store';
 import { ServerError, RequestValidationError } from 'util/errors';
-import Job from 'models/job';
+import { Job, JobStatus } from 'models/job';
 import { v4 as uuid } from 'uuid';
 import DataOperation from 'models/data-operation';
 
@@ -309,7 +309,12 @@ export default class BaseService {
   async _createJob(transaction, logger, requestUrl, stagingLocation) {
     const { requestId, user } = this.operation;
     logger.info(`Creating job for ${requestId}`);
-    const job = new Job({ username: user, requestId, status: 'running', request: requestUrl });
+    const job = new Job({
+      username: user,
+      requestId,
+      status: JobStatus.RUNNING,
+      request: requestUrl,
+    });
     job.addStagingBucketLink(stagingLocation);
     if (this.warningMessage) {
       job.message = this.warningMessage;

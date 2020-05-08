@@ -5,7 +5,8 @@ import chaiAsPromised from 'chai-as-promised';
 
 import env = require('harmony/util/env');
 
-process.env.NODE_ENV = 'test';
+env.nodeEnv = 'test';
+
 process.env.AWS_DEFAULT_REGION = 'us-west-2';
 
 use(chaiAsPromised);

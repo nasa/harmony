@@ -1,6 +1,6 @@
 import PromiseQueue from 'p-queue';
 import BaseService from 'models/services/base-service';
-import Job from 'models/job';
+import { Job } from 'models/job';
 
 import { ServiceError } from '../../util/errors';
 import { objectStoreForProtocol } from '../../util/object-store';

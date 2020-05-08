@@ -184,7 +184,7 @@ paths:
               - href
               - type
               - temporal
-              - spatial
+              - bbox
       requestBody:
         description:
           Valid in synchronous service requests only.

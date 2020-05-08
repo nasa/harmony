@@ -5,8 +5,6 @@ import { stub } from 'sinon';
 
 import db = require('harmony/util/db');
 
-process.env.NODE_ENV = 'test';
-
 const tables = ['jobs'];
 
 /**
@@ -75,10 +73,11 @@ export function hookTransactionEach() {
  * @returns {void}
  */
 export function hookTransactionFailure() {
+  let txStub;
   before(function () {
-    stub(db, 'transaction').throws();
+    txStub = stub(db, 'transaction').throws();
   });
   after(function () {
-    if (db.transaction.restore) db.transaction.restore();
+    txStub.restore();
   });
 }

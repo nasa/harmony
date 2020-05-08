@@ -408,7 +408,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     after(async function () {
       // Get a new connection
-      await knex(db.config).migrate.latest();
+      await knex(db.client.config).migrate.latest();
     });
 
     it('returns an HTTP 500 error with the JSON error format', function () {

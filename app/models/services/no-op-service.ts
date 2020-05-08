@@ -1,4 +1,4 @@
-import Job from 'models/job';
+import { Job, JobStatus } from 'models/job';
 import BaseService from './base-service';
 
 /**
@@ -49,7 +49,7 @@ export default class NoOpService extends BaseService {
     let job = new Job({
       username: this.operation.user,
       requestId: this.operation.requestId,
-      status: Job.statuses.SUCCESSFUL,
+      status: JobStatus.SUCCESSFUL,
       progress: 100,
       createdAt: now,
       updatedAt: now,

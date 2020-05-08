@@ -16,14 +16,15 @@ function _getProtocol(req) {
  *
  * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
  * @param {boolean} includeQuery Include the query string in the returned URL (default: true)
+ * @param {object} queryOverrides Key/value pairs to set / override in the query
  * @returns {string} The URL the incoming request is requesting
  */
-export function getRequestUrl(req, includeQuery = true) {
+export function getRequestUrl(req, includeQuery = true, queryOverrides = {}): string {
   return url.format({
     protocol: _getProtocol(req),
     host: req.get('host'),
     pathname: req.originalUrl.split('?')[0],
-    query: includeQuery ? req.query : null,
+    query: includeQuery ? { ...req.query, ...queryOverrides } : null,
   });
 }
 
