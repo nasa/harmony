@@ -60,6 +60,18 @@ export interface JobRecord {
   updatedAt?: Date | number;
 }
 
+export interface JobQuery {
+  id?: number;
+  username?: string;
+  requestId?: string;
+  status?: JobStatus;
+  message?: string;
+  progress?: number;
+  request?: string;
+  createdAt?: number;
+  updatedAt?: number;
+}
+
 type Trx = Transaction | Knex;
 
 /**
@@ -105,6 +117,32 @@ export class Job extends Record {
   jobID: string;
 
   /**
+   * Returns an array of all jobs that match the given constraints
+   *
+   * @param transaction - the transaction to use for querying
+   * @param constraints - field / value pairs that must be matched for a record to be returned
+   * @param currentPage - the index of the page to show
+   * @param perPage - the number of results per page
+   * @returns a list of all of the user's jobs
+   */
+  static async queryAll(
+    transaction: Trx,
+    constraints: JobQuery = {},
+    currentPage = 0,
+    perPage = 10,
+  ): Promise<IWithPagination<Job[]>> {
+    const items = await transaction('jobs')
+      .select()
+      .where(constraints)
+      .orderBy('createdAt', 'desc')
+      .paginate({ currentPage, perPage, isLengthAware: true });
+    return {
+      data: items.data.map((j) => new Job(j)),
+      pagination: items.pagination,
+    };
+  }
+
+  /**
    * Returns an array of all jobs for the given username using the given transaction
    *
    * @param transaction - the transaction to use for querying
@@ -113,17 +151,9 @@ export class Job extends Record {
    * @param perPage - the number of results per page
    * @returns a list of all of the user's jobs
    */
-  static async forUser(transaction: Trx, username: string, currentPage = 0, perPage = 10):
+  static forUser(transaction: Trx, username: string, currentPage = 0, perPage = 10):
   Promise<IWithPagination<Job[]>> {
-    const items = await transaction('jobs')
-      .select()
-      .where({ username })
-      .orderBy('createdAt', 'desc')
-      .paginate({ currentPage, perPage, isLengthAware: true });
-    return {
-      data: items.data.map((j) => new Job(j)),
-      pagination: items.pagination,
-    };
+    return this.queryAll(transaction, { username }, currentPage, perPage);
   }
 
   /**

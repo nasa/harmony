@@ -3,8 +3,8 @@ import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import { Job, JobStatus } from 'models/job';
 import hookServersStartStop from '../helpers/servers';
-import { hookTransaction, hookTransactionFailure } from '../helpers/db';
-import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations } from '../helpers/jobs';
+import { hookTransaction, hookTransactionFailure, truncateAll } from '../helpers/db';
+import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations, hookAdminJobListing } from '../helpers/jobs';
 
 
 // Example jobs to use in tests
@@ -304,6 +304,31 @@ describe('Jobs listing route', function () {
           expect(links[0].rel).to.equal('self');
           expect(links[0].title).to.equal('The current page');
         });
+      });
+    });
+  });
+
+  describe('admin access', function () {
+    before(truncateAll);
+    hookTransaction();
+    before(async function () {
+      this.jobs = await createIndexedJobs(this.trx, 'paige', 51);
+      this.trx.commit();
+    });
+
+    describe('when the user is part of the admin group', function () {
+      hookAdminJobListing({ username: 'adam' });
+      it('returns jobs for all users', function () {
+        const { count } = JSON.parse(this.res.text);
+        expect(count).to.equal(this.jobs.length);
+      });
+    });
+
+    describe('when the user is not part of the admin group', function () {
+      hookAdminJobListing({ username: 'eve' });
+      it('returns an error', function () {
+        expect(this.res.statusCode).to.equal(403);
+        expect(this.res.text).to.include('You are not permitted to access this resource');
       });
     });
   });

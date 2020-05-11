@@ -1,9 +1,11 @@
 import process from 'process';
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import log from 'util/log';
 
 // Middleware requires in outside-in order
 import earthdataLoginAuthorizer from 'middleware/earthdata-login-authorizer';
+import admin from 'middleware/admin';
 import wmsFrontend from 'frontends/wms';
 import { getJobsListing, getJobStatus } from 'frontends/jobs';
 import { getStacCatalog, getStacItem } from 'frontends/stac';
@@ -20,6 +22,7 @@ import landingPage from 'frontends/landing-page';
 import serviceInvoker from 'backends/service-invoker';
 
 import cmrCollectionReader = require('middleware/cmr-collection-reader');
+import envVars = require('harmony/util/env');
 
 const wcsFrontend = {};
 
@@ -127,10 +130,10 @@ function validateCollectionRoute(req, res, next) {
  * Creates and returns an express.Router instance that has the middleware
  * and handlers necessary to respond to frontend service requests
  *
- * @param {string} skipEarthdataLogin Opt to skip Earthdata Login
- * @returns {express.Router} A router which can respond to frontend service requests
+ * @param skipEarthdataLogin - Opt to skip Earthdata Login
+ * @returns A router which can respond to frontend service requests
  */
-export default function router({ skipEarthdataLogin }) {
+export default function router({ skipEarthdataLogin }): express.Router {
   const result = express.Router();
 
   const secret = process.env.COOKIE_SECRET;
@@ -152,6 +155,14 @@ export default function router({ skipEarthdataLogin }) {
       '/cloud-access*',
       '/stac*',
     ])));
+  }
+
+  if (envVars.adminGroupId) {
+    result.use('/admin/*', admin);
+  } else {
+    // Prevent misconfiguration granting unintended access
+    log.warn('ADMIN_GROUP_ID is not set.  The admin interface will not be available');
+    result.use('/admin/*', (req, res, next) => next(new NotFoundError()));
   }
 
   // Routes and middleware not dealing with service requests
@@ -178,6 +189,7 @@ export default function router({ skipEarthdataLogin }) {
   result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
+  result.get('/admin/jobs', getJobsListing);
   result.get('/jobs/:jobID', getJobStatus);
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);

@@ -86,6 +86,9 @@ UPLOAD_BUCKET=local-upload-bucket
 # requests are stored by backend services.
 SAME_REGION_ACCESS_ROLE=same-region-access-role
 
+# The CMR concept ID for the group whose users can access the admin interface
+ADMIN_GROUP_ID=AG1222736883-EEDTEST
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #

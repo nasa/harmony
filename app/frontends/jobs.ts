@@ -1,4 +1,4 @@
-import { Job, JobStatus } from 'models/job';
+import { Job, JobStatus, JobQuery } from 'models/job';
 import isUUID from 'util/uuid';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
@@ -40,13 +40,16 @@ function _getLinksForDisplay(job, urlRoot) {
  * @param {http.ServerResponse} res The response to send to the client
  */
 export async function getJobsListing(req, res): Promise<void> {
-  req.context.logger.info(`Get job listing for user ${req.user}`);
   try {
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req);
+    const query: JobQuery = {};
+    if (!req.context.isAdminAccess) {
+      query.username = req.user;
+    }
     let listing;
     await db.transaction(async (tx) => {
-      listing = await Job.forUser(tx, req.user, page, limit);
+      listing = await Job.queryAll(tx, query, page, limit);
     });
     const serializedJobs = listing.data.map((j) => {
       const serializedJob = j.serialize(root);
