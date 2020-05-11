@@ -4,6 +4,7 @@
   "sources": [
     {
       "collection": "C1233800302-EEDTEST",
+      "variables":[{ "id": "V1233801717-EEDTEST", "name": "alpha_var" }],
       "granules": [
         {
           "id": "G1233800343-EEDTEST",

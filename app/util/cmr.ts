@@ -10,6 +10,14 @@ import { objectStoreForProtocol } from './object-store';
 import env = require('./env');
 import logger = require('./log');
 
+interface CmrVariable {
+  id: string;
+  name: string;
+  longName: string;
+  alias?: string;
+  groupPath?: string;
+}
+
 const unlink = util.promisify(fs.unlink);
 
 const clientIdHeader = {
@@ -209,9 +217,15 @@ async function _cmrPostSearch(path, form, token) {
  * @returns {Promise<Array<CmrVariable>>} The variable search results
  * @private
  */
-async function queryVariables(query, token) {
-  const variablesResponse = await _cmrSearch('/search/variables.json', query, token);
-  return variablesResponse.data.items;
+async function queryVariables(query, token): Promise<CmrVariable[]> {
+  const variablesResponse = await _cmrSearch('/search/variables.umm_json_v1_6', query, token);
+  return variablesResponse.data.items.map(({ umm, meta }) => ({
+    id: meta['concept-id'],
+    name: umm.Name,
+    longName: umm.LongName,
+    alias: umm.Alias,
+    groupPath: get(umm, 'Characteristics.GroupPath'),
+  }));
 }
 
 /**

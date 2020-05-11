@@ -1,3 +1,9 @@
+## [0.8.0] -2020-05-11
+### Added
+- variable.longName - The variable's long name, as defined by UMM-Var
+- variable.alias - The variable's alias, as defined by UMM-Var
+- variable.groupPath - The full path to the group within the file which contains the variable
+
 ## [0.7.0] -2020-04-07
 ### Added
 - granule.bbox - Bounding box provided by the CMR

@@ -42,9 +42,9 @@ function buildCollectionInfo(collection, variable, requestUrl, extent) {
   const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
   const collectionLongLabel = `${collectionShortLabel} (${collection.archive_center || collection.data_center})`;
   return {
-    id: `${collection.id}/${variable.concept_id}`,
+    id: `${collection.id}/${variable.id}`,
     title: `${variable.name} ${collectionShortLabel}`,
-    description: `${variable.long_name} ${collectionLongLabel}`,
+    description: `${variable.longName} ${collectionLongLabel}`,
     links: [{
       title: `Perform rangeset request for ${variable.name}`,
       href: `${requestUrl}/coverage/rangeset`,

@@ -72,7 +72,7 @@ export function addOpenApiRoutes(app) {
             if (!variable) {
               throw new RequestValidationError(`Invalid rangeSubset parameter: ${variableRequested}`);
             }
-            variables.push({ id: variable.concept_id, name: variable.name });
+            variables.push(variable);
           }
         }
         operation.addSource(collectionId, variables);

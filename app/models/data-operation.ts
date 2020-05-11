@@ -27,6 +27,25 @@ function readSchema(version) {
  */
 const schemaVersions = [
   {
+    version: '0.8.0',
+    schema: readSchema('0.8.0'),
+    down: (model): unknown => {
+      const revertedModel = cloneDeep(model);
+      // remove `longName`, `alias`, and `groupPath` fields from all the variables in each source
+      revertedModel.sources.forEach((s) => {
+        if (s.variables) {
+          s.variables.forEach((v) => {
+            delete v.longName; // eslint-disable-line no-param-reassign
+            delete v.alias; // eslint-disable-line no-param-reassign
+            delete v.groupPath; // eslint-disable-line no-param-reassign
+          });
+        }
+      });
+
+      return revertedModel;
+    },
+  },
+  {
     version: '0.7.0',
     schema: readSchema('0.7.0'),
     down: (model) => {
