@@ -11,7 +11,8 @@
     "build-image": "bin/build-image",
     "push-image": "bin/push-image",
     "build": "tsc",
-    "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built"
+    "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
+    "watch-debug": "nodemon --inspect=5858 -e ts,tsx --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts"
   },
   "keywords": [
     "NASA",
@@ -140,6 +141,7 @@
     "mocha-junit-reporter": "^1.23.3",
     "mocha-multi": "^1.1.3",
     "mock-aws-s3": "^4.0.1",
+    "nodemon": "^2.0.3",
     "nyc": "^15.0.0",
     "replay": "^2.4.0",
     "sinon": "^7.5.0",
