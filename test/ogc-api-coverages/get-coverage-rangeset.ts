@@ -265,6 +265,27 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when the granule spatial metadata is defined by polygons instead of a bbox', function () {
+    const query = {
+      granuleid: 'G1226018995-POCUMULUS',
+      subset: ['lat(-45.75:45)', 'lon(-90:90)'],
+    };
+
+    describe('calling the backend service', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+
+      it('synchronously makes the request', function () {
+        expect(this.service.operation.isSynchronous).to.equal(true);
+      });
+
+      it('passes the subset parameters to the backend service', function () {
+        expect(this.service.operation.boundingRectangle).to.eql([-90, -45.75, 90, 45]);
+      });
+    });
+  });
+
+
   describe('when requesting output formats', function () {
     const tiff = 'image/tiff';
     const png = 'image/png';
