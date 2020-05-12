@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
+import _ from 'lodash';
 
 import cloneDeep = require('lodash.clonedeep');
 
@@ -31,13 +32,10 @@ const schemaVersions = [
     schema: readSchema('0.8.0'),
     down: (model): unknown => {
       const revertedModel = cloneDeep(model);
-      // remove `longName`, `alias`, and `groupPath` fields from all the variables in each source
       revertedModel.sources.forEach((s) => {
         if (s.variables) {
           s.variables.forEach((v) => {
-            delete v.longName; // eslint-disable-line no-param-reassign
-            delete v.alias; // eslint-disable-line no-param-reassign
-            delete v.groupPath; // eslint-disable-line no-param-reassign
+            delete v.fullPath; // eslint-disable-line no-param-reassign
           });
         }
       });
@@ -151,12 +149,17 @@ export default class DataOperation {
    * Adds a new service data source to the list of those to operate on
    *
    * @param {string} collection The CMR ID of the collection being operated on
-   * @param {Array<object>?} variables An array of objects containing variable id and name
+   * @param {Array<object>?} vars An array of objects containing variable id and name
    * @param {Array<object>?} granules An array of objects containing granule id, name, and url
    * @returns {void}
    * @memberof DataOperation
    */
-  addSource(collection, variables?, granules?): void {
+  addSource(collection, vars?, granules?): void {
+    const variables = vars ? vars.map(({ umm, meta }) => ({
+      id: meta['concept-id'],
+      name: umm.Name,
+      fullPath: _.compact([_.get(umm, 'Characteristics.GroupPath'), umm.Name]).join('/'),
+    })) : undefined;
     this.model.sources.push({ collection, variables, granules });
   }
 

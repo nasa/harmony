@@ -1,8 +1,6 @@
 ## [0.8.0] -2020-05-11
 ### Added
-- variable.longName - The variable's long name, as defined by UMM-Var
-- variable.alias - The variable's alias, as defined by UMM-Var
-- variable.groupPath - The full path to the group within the file which contains the variable
+- variable.fullPath - The variable's absolute path within the file, including hierarchy.  Derived from UMM-Var group path combined with name.
 
 ## [0.7.0] -2020-04-07
 ### Added

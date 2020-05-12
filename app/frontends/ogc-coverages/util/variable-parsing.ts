@@ -36,7 +36,7 @@ export default function parseVariables(eosdisCollections, collectionIdParam) {
     for (const collection of eosdisCollections) {
       const variables = [];
       for (const variableId of variableIds) {
-        const variable = collection.variables.find((v) => v.name === variableId);
+        const variable = collection.variables.find((v) => v.umm.Name === variableId);
         if (variable) {
           missingVariables = missingVariables.filter((v) => v !== variableId);
           variables.push(variable);

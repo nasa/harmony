@@ -1,6 +1,6 @@
 import FormData from 'form-data';
 import fs from 'fs';
-import get from 'lodash.get';
+import { get } from 'lodash';
 import fetch from 'node-fetch';
 import * as querystring from 'querystring';
 import * as util from 'util';
@@ -9,14 +9,6 @@ import { objectStoreForProtocol } from './object-store';
 
 import env = require('./env');
 import logger = require('./log');
-
-interface CmrVariable {
-  id: string;
-  name: string;
-  longName: string;
-  alias?: string;
-  groupPath?: string;
-}
 
 const unlink = util.promisify(fs.unlink);
 
@@ -217,15 +209,9 @@ async function _cmrPostSearch(path, form, token) {
  * @returns {Promise<Array<CmrVariable>>} The variable search results
  * @private
  */
-async function queryVariables(query, token): Promise<CmrVariable[]> {
+async function queryVariables(query, token) {
   const variablesResponse = await _cmrSearch('/search/variables.umm_json_v1_6', query, token);
-  return variablesResponse.data.items.map(({ umm, meta }) => ({
-    id: meta['concept-id'],
-    name: umm.Name,
-    longName: umm.LongName,
-    alias: umm.Alias,
-    groupPath: get(umm, 'Characteristics.GroupPath'),
-  }));
+  return variablesResponse.data.items;
 }
 
 /**

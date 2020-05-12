@@ -8,9 +8,7 @@
       "variables": [{
         "id": "V1233801717-EEDTEST",
         "name": "alpha_var",
-        "longName": "Alpha channel",
-        "alias": "alpha_alias",
-        "groupPath": "/"
+        "fullPath": "data/colors/red_var"
       }],
       "granules": [
         {

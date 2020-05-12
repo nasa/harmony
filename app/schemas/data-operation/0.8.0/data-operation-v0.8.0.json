@@ -235,26 +235,16 @@
           "description": "The name of the variable in the data file",
           "examples": [ "red_var" ]
         },
-        "longName": {
+        "fullPath": {
           "type": "string",
-          "description": "The variable's long name, as defined by UMM-Var",
-          "examples": [ "Red variable" ]
-        },
-        "alias": {
-          "type": "string",
-          "description": "The variable's alias, as defined by UMM-Var.  Some providers use this to alias the full path to the variable in the file, though this is not universal and is subject to change",
-          "examples": [ "red_var" ]
-        },
-        "groupPath": {
-          "type": "string",
-          "description": "The full path to the group within the file which contains the variable",
-          "examples": [ "/", "/data/science_variables" ]
+          "description": "The variable's absolute path within the file, including hierarchy.  Derived from UMM-Var group path combined with name.  If the group path is not set, this is the name",
+          "examples": [ "data/colors/red_var", "red_var" ]
         }
       },
       "required": [
         "id",
         "name",
-        "longName"
+        "fullPath"
       ]
     },
     "Subset": {

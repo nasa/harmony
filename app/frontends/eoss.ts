@@ -68,7 +68,8 @@ export function addOpenApiRoutes(app) {
         if (query.rangesubset) {
           const variablesRequested = query.rangesubset;
           for (const variableRequested of variablesRequested) {
-            const variable = req.collections[0].variables.find((v) => v.name === variableRequested);
+            const collectionVars = req.collections[0].variables;
+            const variable = collectionVars.find((v) => v.umm.Name === variableRequested);
             if (!variable) {
               throw new RequestValidationError(`Invalid rangeSubset parameter: ${variableRequested}`);
             }
