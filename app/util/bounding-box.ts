@@ -133,7 +133,7 @@ function _joinBoundingBoxes(box1: Array<number>, box2: Array<number>): Array<num
  * @returns {Array<number>} an array of floats in `[W,S,E,N]` format
  */
 export default function boxStringsToBox(boxStrings: Array<string>): Array<number> {
-  if (!boxStrings || boxStrings.length === 0) return [];
+  if (!boxStrings || boxStrings.length === 0) return null;
 
   const boxes = boxStrings.map(_boundingBoxStringToBoundingBox).filter((val) => val);
   if (boxes.length === 1) return boxes[0];
