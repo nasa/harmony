@@ -33,16 +33,16 @@ describe('util/bounding-box', function () {
   });
 
   describe('when given an empty input', function () {
-    it('returns an empty array', function () {
+    it('returns null', function () {
       const input = [];
-      expect(boxStringsToBox(input)).to.eql([]);
+      expect(boxStringsToBox(input)).to.be.null;
     });
   });
 
   describe('when given a null input', function () {
-    it('returns an empty array', function () {
+    it('returns null', function () {
       const input = null;
-      expect(boxStringsToBox(input)).to.eql([]);
+      expect(boxStringsToBox(input)).to.be.null;
     });
   });
 
