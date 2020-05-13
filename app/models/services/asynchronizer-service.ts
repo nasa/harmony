@@ -8,10 +8,6 @@ import InvocationResult from './invocation-result';
 
 import db = require('util/db');
 
-interface ConstructibleBaseService extends BaseService {
-  new(...args): BaseService;
-}
-
 /**
  * A wrapper for a service that takes a service class for a service that is only able
  * to handle synchronous requests and feeds it granules one-at-a-time, aggregating the
