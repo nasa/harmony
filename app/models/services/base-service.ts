@@ -5,10 +5,21 @@ import { ServerError, RequestValidationError } from 'util/errors';
 import { Job, JobStatus } from 'models/job';
 import { v4 as uuid } from 'uuid';
 import DataOperation from 'models/data-operation';
+import { Stream } from 'stream';
 
 import db = require('util/db');
 
 import env = require('util/env');
+
+export type InvokeResponse = {
+  error: string;
+  statusCode: number;
+  redirect: string;
+  stream: Stream;
+  headers: object;
+  content: string;
+  onComplete: Function;
+};
 
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
@@ -24,7 +35,7 @@ export default class BaseService {
 
   operation: any;
 
-  invocation: Promise<unknown>;
+  invocation: Promise<InvokeResponse>;
 
   resolveInvocation: (value?: unknown) => void;
 
@@ -95,15 +106,7 @@ export default class BaseService {
    * for properties
    * @memberof BaseService
    */
-  async invoke(logger?, harmonyRoot?, requestUrl?): Promise<{
-    error: string;
-    statusCode: number;
-    redirect: string;
-    stream: any;
-    headers: object;
-    content: string;
-    onComplete: Function;
-  }> {
+  async invoke(logger?, harmonyRoot?, requestUrl?): Promise<InvokeResponse> {
     const isAsync = !this.isSynchronous;
     let job;
     if (isAsync) {

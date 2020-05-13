@@ -4,6 +4,7 @@ import get from 'lodash.get';
 import fetch from 'node-fetch';
 import * as querystring from 'querystring';
 import * as util from 'util';
+import { ParsedUrlQueryInput } from 'querystring';
 import { CmrError } from './errors';
 import { objectStoreForProtocol } from './object-store';
 
@@ -26,6 +27,27 @@ const acceptJsonHeader = {
   Accept: 'application/json',
 };
 
+export type CmrCollection = {
+  id: string;
+  associations: {
+    variables: string[];
+  };
+};
+
+export type CmrGranule = {
+  id: string;
+};
+
+export type CmrGranuleHits = {
+  hits: number;
+  granules: CmrGranule[];
+};
+
+export type CmrVariable = {
+  id: string;
+  name: string;
+};
+
 /**
  * Create a token header for the given access token string
  *
@@ -34,7 +56,7 @@ const acceptJsonHeader = {
  * or an empty object if the token is not set
  * @private
  */
-function _makeTokenHeader(token) {
+function _makeTokenHeader(token: string): object {
   return cmrApiConfig.useToken && token ? {
     'Echo-token': `${token}:${process.env.OAUTH_CLIENT_ID}`,
   } : {};
@@ -43,12 +65,12 @@ function _makeTokenHeader(token) {
 /**
  * Handle any errors in the CMR response
  *
- * @param {Object} response The response from the CMR
+ * @param {Response} response The response from the CMR
  * @returns {void}
  * @throws {CmrError} if the CMR response indicates an error
  * @private
  */
-function _handleCmrErrors(response) {
+function _handleCmrErrors(response: Response): void {
   const { status } = response;
   if (status >= 500) {
     logger.error(`CMR call failed with statue '${status}'`);
@@ -62,6 +84,11 @@ function _handleCmrErrors(response) {
   }
 }
 
+export interface CmrResponse extends Response {
+  // data: object | { items?: object[]; feed?: object } | string[];
+  data: any;
+}
+
 /**
  * Performs a CMR search at the given path with the given query string
  *
@@ -71,7 +98,9 @@ function _handleCmrErrors(response) {
  * @param extraHeaders - Additional headers to pass with the request
  * @returns The CMR query result
  */
-export async function cmrSearchBase(path, query, token, extraHeaders = {}) {
+export async function cmrSearchBase(
+  path: string, query: ParsedUrlQueryInput, token: string, extraHeaders = {},
+): Promise<CmrResponse> {
   const querystr = querystring.stringify(query);
   const headers = {
     ...clientIdHeader,
@@ -99,7 +128,9 @@ export async function cmrSearchBase(path, query, token, extraHeaders = {}) {
  * @throws {CmrError} If the CMR returns an error status
  * @private
  */
-async function _cmrSearch(path, query, token) {
+async function _cmrSearch(
+  path: string, query: ParsedUrlQueryInput, token: string,
+): Promise<CmrResponse> {
   const response = await cmrSearchBase(path, query, token);
   _handleCmrErrors(response);
   return response;
@@ -116,7 +147,9 @@ async function _cmrSearch(path, query, token) {
  * @param {object} headers The headers to be sent with the POST
  * @returns {Response} A SuperAgent Response object
  */
-export async function fetchPost(path, formData, headers) {
+export async function fetchPost(
+  path: string, formData: FormData, headers: {[key: string]: string},
+): Promise<CmrResponse> {
   const response: any = await fetch(`${cmrApiConfig.baseURL}${path}`, {
     method: 'POST',
     body: formData,
@@ -132,9 +165,9 @@ export async function fetchPost(path, formData, headers) {
  *
  * @param {string} geoJsonUrl The location of the shapefile
  * @param {Object} formData the Form data
- * @returns {Promise<File>} The a promise for a temporary file containing the shapefile
+ * @returns {Promise<string>} The a promise for a temporary filename containing the shapefile
  */
-async function processGeoJson(geoJsonUrl, formData) {
+async function processGeoJson(geoJsonUrl: string, formData: FormData): Promise<string> {
   const tempFile = await objectStoreForProtocol(geoJsonUrl).downloadFile(geoJsonUrl);
   formData.append('shapefile', fs.createReadStream(tempFile), {
     contentType: 'application/geo+json',
@@ -150,7 +183,9 @@ async function processGeoJson(geoJsonUrl, formData) {
  * @param {string} token Access token for the user
  * @returns {Promise<object>} The CMR query result
  */
-export async function cmrPostSearchBase(path, form, token) {
+export async function cmrPostSearchBase(
+  path: string, form: object, token: string,
+): Promise<CmrResponse> {
   const formData = new FormData();
   let shapefile = null;
   await Promise.all(Object.keys(form).map(async (key) => {
@@ -194,12 +229,17 @@ export async function cmrPostSearchBase(path, form, token) {
  * @throws {CmrError} If the CMR returns an error status
  * @private
  */
-async function _cmrPostSearch(path, form, token) {
+async function _cmrPostSearch(path: string, form: FormData, token: string): Promise<CmrResponse> {
   const response = await module.exports.cmrPostSearchBase(path, form, token);
   _handleCmrErrors(response);
 
   return response;
 }
+
+type CmrQuery = {
+  concept_id: string | string[];
+  page_size: number;
+};
 
 /**
  * Performs a CMR variables.json search with the given query string
@@ -209,7 +249,9 @@ async function _cmrPostSearch(path, form, token) {
  * @returns {Promise<Array<CmrVariable>>} The variable search results
  * @private
  */
-async function queryVariables(query, token) {
+async function queryVariables(
+  query: CmrQuery, token: string,
+): Promise<Array<CmrVariable>> {
   const variablesResponse = await _cmrSearch('/search/variables.json', query, token);
   return variablesResponse.data.items;
 }
@@ -222,7 +264,9 @@ async function queryVariables(query, token) {
  * @returns {Promise<Array<CmrCollection>>} The collection search results
  * @private
  */
-async function queryCollections(query, token) {
+async function queryCollections(
+  query: CmrQuery, token: string,
+): Promise<Array<CmrCollection>> {
   const collectionsResponse = await _cmrSearch('/search/collections.json', query, token);
   return collectionsResponse.data.feed.entry;
 }
@@ -235,7 +279,9 @@ async function queryCollections(query, token) {
  * @returns {Promise<Array<CmrGranule>>} The granule search results
  * @private
  */
-async function queryGranules(query, token) {
+async function queryGranules(
+  query: CmrQuery, token: string,
+): Promise<CmrGranuleHits> {
   // TODO: Paging / hits
   const granulesResponse = await _cmrSearch('/search/granules.json', query, token);
   const cmrHits = parseInt(granulesResponse.headers.get('cmr-hits'), 10);
@@ -254,7 +300,10 @@ async function queryGranules(query, token) {
  * @returns {Promise<Array<CmrGranule>>} The granule search results
  * @private
  */
-async function queryGranuleUsingMultipartForm(form, token) {
+async function queryGranuleUsingMultipartForm(
+  form: any, // could not figure out how to use FormData here because
+  token: string,
+): Promise<CmrGranuleHits> {
   // TODO: Paging / hits
   const granuleResponse = await _cmrPostSearch('/search/granules.json', form, token);
   const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
@@ -271,7 +320,9 @@ async function queryGranuleUsingMultipartForm(form, token) {
  * @param {string} token Access token for user request
  * @returns {Promise<Array<CmrCollection>>} The collections with the given ids
  */
-export function getCollectionsByIds(ids, token) {
+export function getCollectionsByIds(
+  ids: Array<string>, token: string,
+): Promise<Array<CmrCollection>> {
   return queryCollections({
     concept_id: ids,
     page_size: 2000,
@@ -285,7 +336,7 @@ export function getCollectionsByIds(ids, token) {
  * @param {string} token Access token for user request
  * @returns {Promise<Array<CmrVariable>>} The variables with the given ids
  */
-export function getVariablesByIds(ids, token) {
+export function getVariablesByIds(ids: Array<string>, token: string): Promise<Array<CmrVariable>> {
   return queryVariables({
     concept_id: ids,
     page_size: 2000,
@@ -299,12 +350,13 @@ export function getVariablesByIds(ids, token) {
  * @param {string} token Access token for user request
  * @returns {Promise<Array<CmrVariable>>} The variables associated with the input collection
  */
-export async function getVariablesForCollection(collection, token) {
+export async function getVariablesForCollection(
+  collection: CmrCollection, token: string,
+): Promise<Array<CmrVariable>> {
   const varIds = collection.associations && collection.associations.variables;
   if (varIds) {
     return getVariablesByIds(varIds, token);
   }
-
   return [];
 }
 
@@ -317,7 +369,9 @@ export async function getVariablesForCollection(collection, token) {
  * @param {number} [limit=10] The maximum number of granules to return
  * @returns {Promise<Array<CmrGranule>>} The granules associated with the input collection
  */
-export function queryGranulesForCollection(collectionId, query, token, limit = 10) {
+export function queryGranulesForCollection(
+  collectionId: string, query: CmrQuery, token: string, limit = 10,
+): Promise<CmrGranuleHits> {
   const baseQuery = {
     collection_concept_id: collectionId,
     page_size: limit,
@@ -335,12 +389,15 @@ export function queryGranulesForCollection(collectionId, query, token, limit = 1
  * @param {number} [limit=10] The maximum number of granules to return
  * @returns  {Promise<Array<CmrGranule>>} The granules associated with the input collection
  */
-export function queryGranulesForCollectionWithMultipartForm(collectionId, form, token, limit = 10) {
+export function queryGranulesForCollectionWithMultipartForm(
+  collectionId: string, form: FormData, token: string, limit = 10,
+): Promise<CmrGranuleHits> {
   const baseQuery = {
     collection_concept_id: collectionId,
     page_size: limit,
   };
 
+  // TODO figure out how to make the first argument have a type of FormData
   return queryGranuleUsingMultipartForm({
     ...baseQuery,
     ...form,

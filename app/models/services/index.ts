@@ -5,12 +5,40 @@ import getIn from 'lodash.get';
 
 import { NotFoundError } from 'util/errors';
 import { isMimeTypeAccepted } from 'util/content-negotiation';
+import { CmrCollection } from 'harmony/util/cmr';
 import AsynchronizerService from './asynchronizer-service';
 import HttpService from './http-service';
 import LocalDockerService from './local-docker-service';
 import NoOpService from './no-op-service';
+import DataOperation from '../data-operation';
+import BaseService from './base-service';
+import RequestContext from '../request-context';
 
 let serviceConfigs = null;
+
+export type ServiceConfig = {
+  name: string;
+  data_operation_version?: string;
+  type: {
+    name: string;
+    params?: {
+      image?: string;
+      env?: {[varname: string]: string };
+    };
+    synchronous_only?: boolean;
+  };
+  collections?: [string];
+  capabilities?: {
+    subsetting?: {
+      bbox?: boolean;
+      variable?: boolean;
+      multiple_variable?: true;
+    };
+    output_formats?: [string];
+    projection_to_proj4?: boolean;
+  };
+  message?: string;
+};
 
 /**
  * Loads the subsetter-config.yml configuration file.
@@ -45,12 +73,12 @@ const serviceTypesToServiceClasses = {
 /**
  * Given a service configuration from services.yml and an operation, returns a
  * Service object for invoking that operation using the given service
- * @param {object} serviceConfig The configuration from services.yml
+ * @param {ServiceConfig} serviceConfig The configuration from services.yml
  * @param {DataOperation} operation The operation to perform
  * @returns {Service} An appropriate service for the given config
  * @throws {NotFoundError} If no appropriate service can be found
  */
-function buildService(serviceConfig, operation) {
+function buildService(serviceConfig: ServiceConfig, operation: DataOperation): BaseService {
   const ServiceClass = serviceTypesToServiceClasses[serviceConfig.type.name];
   if (!ServiceClass) {
     throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
@@ -67,10 +95,10 @@ function buildService(serviceConfig, operation) {
  * the given service.
  *
  * @param {DataOperation} operation The operation to match
- * @param {object} serviceConfig A configuration for a single service from services.yml
+ * @param {ServiceConfig} serviceConfig A configuration for a single service from services.yml
  * @returns {boolean} true if all collections in the operation are compatible with the service
  */
-function isCollectionMatch(operation, serviceConfig) {
+function isCollectionMatch(operation: DataOperation, serviceConfig: ServiceConfig): boolean {
   return operation.sources.every((source) => serviceConfig.collections.includes(source.collection));
 }
 
@@ -84,7 +112,9 @@ function isCollectionMatch(operation, serviceConfig) {
  * that should be used to fulfill the given request context
  * @private
  */
-function selectServicesForFormat(format, configs) {
+function selectServicesForFormat(
+  format: string, configs: Array<ServiceConfig>,
+): Array<ServiceConfig> {
   return configs.filter((config) => {
     const supportedFormats = getIn(config, 'capabilities.output_formats', []);
     return supportedFormats.find((f) => isMimeTypeAccepted(f, format));
@@ -100,7 +130,9 @@ function selectServicesForFormat(format, configs) {
  * @returns {String} The output format to use
  * @private
  */
-function selectFormat(operation, context, configs) {
+function selectFormat(
+  operation: DataOperation, context: RequestContext, configs: Array<ServiceConfig>,
+): string {
   let { outputFormat } = operation;
   if (!outputFormat && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
     for (const mimeType of context.requestedMimeTypes) {
@@ -126,7 +158,7 @@ function selectFormat(operation, context, configs) {
  * @returns {Boolean} true if the provided operation requires variable subsetting
  * @private
  */
-function requiresVariableSubsetting(operation) {
+function requiresVariableSubsetting(operation: DataOperation): boolean {
   const varSources = operation.sources.filter((s) => s.variables && s.variables.length > 0);
   return varSources.length > 0;
 }
@@ -137,11 +169,12 @@ function requiresVariableSubsetting(operation) {
  * @returns {Array<Object>} Any configurations that support variable subsetting
  * @private
  */
-function supportsVariableSubsetting(configs) {
+function supportsVariableSubsetting(configs: Array<ServiceConfig>): Array<ServiceConfig> {
   return configs.filter((config) => getIn(config, 'capabilities.subsetting.variable', false));
 }
 
-const noOpService: any = {
+const noOpService: ServiceConfig = {
+  name: 'noOpService',
   type: { name: 'noOp' },
   capabilities: { output_formats: ['application/json'] },
 };
@@ -158,7 +191,9 @@ class UnsupportedOperation extends Error {}
  * @returns {Array<Object>} Any service configurations that support the provided collection
  * @private
  */
-function filterCollectionMatches(operation, context, configs) {
+function filterCollectionMatches(
+  operation: DataOperation, context: RequestContext, configs: Array<ServiceConfig>,
+): Array<ServiceConfig> {
   const matches = configs.filter((config) => isCollectionMatch(operation, config));
   if (matches.length === 0) {
     throw new UnsupportedOperation('no services are configured for the collection');
@@ -177,7 +212,9 @@ function filterCollectionMatches(operation, context, configs) {
  * subsetting constraints
  * @private
  */
-function filterVariableSubsettingMatches(operation, context, configs) {
+function filterVariableSubsettingMatches(
+  operation: DataOperation, context: RequestContext, configs: Array<ServiceConfig>,
+): Array<ServiceConfig> {
   const variableSubsettingNeeded = requiresVariableSubsetting(operation);
   const matches = variableSubsettingNeeded ? supportsVariableSubsetting(configs) : configs;
   if (matches.length === 0) {
@@ -196,7 +233,9 @@ function filterVariableSubsettingMatches(operation, context, configs) {
  * @returns {Array<Object>} Any service configurations that support the requested output format
  * @private
  */
-function filterOutputFormatMatches(operation, context, configs) {
+function filterOutputFormatMatches(
+  operation: DataOperation, context: RequestContext, configs: Array<ServiceConfig>,
+): Array<ServiceConfig> {
   // If the user requested a certain output format
   let services = [];
   if (operation.outputFormat
@@ -231,7 +270,12 @@ function filterOutputFormatMatches(operation, context, configs) {
  * @param {String} originalReason The original reason the operation was considered invalid
  * @returns {String} the reason the operation was not supported
  */
-function unsupportedCombinationMessage(operation, context, configs, originalReason) {
+function unsupportedCombinationMessage(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: Array<ServiceConfig>,
+  originalReason: string,
+): string {
   let reason = originalReason;
   if (originalReason.includes('reformatting to any of the requested formats')) {
     if (requiresVariableSubsetting(operation)) {
@@ -271,12 +315,16 @@ const operationFilterFns = [
  *    the operation.
  * @param {RequestContext} context Additional context that's not part of the operation, but
  *     influences the choice regarding the service to use
- * @param {Object} configs The configuration to use for finding the operation, with all variables
- *    resolved (default: the contents of config/services.yml)
+ * @param {Array<ServiceConfig} configs The configuration to use for finding the operation, with
+ *     all variables resolved (default: the contents of config/services.yml)
  * @returns {BaseService} A service instance appropriate for performing the operation
  * @throws {NotFoundError} If no service can perform the given operation
  */
-export function forOperation(operation, context?, configs = serviceConfigs) {
+export function forOperation(
+  operation: DataOperation,
+  context?: RequestContext,
+  configs: Array<ServiceConfig> = serviceConfigs,
+): BaseService {
   let service;
   let matches = configs;
   try {
@@ -299,9 +347,9 @@ export function forOperation(operation, context?, configs = serviceConfigs) {
 /**
  * Returns true if the collectionId has available backends
  *
- * @param {string} collection The CMR collection to check
+ * @param {CmrCollection} collection The CMR collection to check
  * @returns {boolean} true if the collection has available backends, false otherwise
  */
-export function isCollectionSupported(collection) {
+export function isCollectionSupported(collection: CmrCollection): boolean {
   return serviceConfigs.find((sc) => sc.collections.includes(collection.id)) !== undefined;
 }
