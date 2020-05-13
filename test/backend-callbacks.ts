@@ -11,7 +11,16 @@ import { validGetMapQuery, wmsRequest } from './helpers/wms';
 
 import db = require('util/db');
 
-function hookHttpBackend(fn) {
+/**
+ * Adds before / after hooks calling the http backend service, awaiting the initial invocation,
+ * and making sure the request completes in the after hook.  `this.userPromise` is a promise to
+ * the HTTP response to the Harmony request made by `fn`.  `this.callback` is the callback URL
+ * for the service request.
+ * @param {() => Promise<Test>} fn A function that makes a Harmony request, returning a promise
+ *   for its result
+ * @returns {void}
+ */
+function hookHttpBackendEach(fn): void {
   beforeEach(async function () {
     const callbackPromise = getNextCallback();
     this.userPromise = fn.call(this);
@@ -38,7 +47,7 @@ describe('Backend Callbacks', function () {
   after(truncateAll);
 
   describe('for synchronous requests with asynchronous-style backend responses', function () {
-    hookHttpBackend(function () {
+    hookHttpBackendEach(function () {
       return wmsRequest(this.frontend, collection, { ...validGetMapQuery, crs: 'ASYNC', layers: collection }).ok(() => true);
     });
 
@@ -95,7 +104,7 @@ describe('Backend Callbacks', function () {
   });
 
   describe('for asynchronous requests', function () {
-    hookHttpBackend(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', {}); });
+    hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', {}); });
 
     describe('temporal validation', function () {
       it('rejects temporal params containing invalid dates', async function () {
@@ -130,7 +139,7 @@ describe('Backend Callbacks', function () {
     });
 
     describe('bbox validation', function () {
-      hookHttpBackend(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', {}); });
+      hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', {}); });
 
       it('rejects bbox params containing invalid numbers', async function () {
         const response = await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,broken,3.3' } });
