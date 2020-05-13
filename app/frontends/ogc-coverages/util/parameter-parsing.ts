@@ -192,7 +192,7 @@ export function parseSubsetParams(values: string[], dimConfig: object = dimensio
  * @returns {number[]} An array of 4 numbers corresponding to the [West, South, East, North]
  *   bounding box, or null if there is no lat or lon subsetting in values
  */
-export function subsetParamsToBbox(values: { lat: Dimension; lon: Dimension }): number[] {
+export function subsetParamsToBbox(values: { lat?: Dimension; lon?: Dimension }): number[] {
   let { lat, lon } = values;
   if (!lat && !lon) {
     return null;
@@ -213,7 +213,7 @@ export function subsetParamsToBbox(values: { lat: Dimension; lon: Dimension }): 
  * @param {Object} values parsed, valid subset params, as returned by `parseSubsetParams`
  * @returns {Object} An object with startTime and stopTime fields if applicable
  */
-export function subsetParamsToTemporal(values: { time: Dimension }): object {
+export function subsetParamsToTemporal(values: { time?: Dimension }): object {
   const { time } = values;
   const temporal: any = {};
   if (time) {

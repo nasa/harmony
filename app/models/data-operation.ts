@@ -81,10 +81,20 @@ export interface HarmonyVariable {
   id: string;
   name: string;
 }
+export interface HarmonyGranule {
+  id: string;
+  name: string;
+  url: string;
+  temporal: {
+    start: Date;
+    end: Date;
+  };
+  bbox: number[];
+}
 
 interface DataSource {
   collection: string;
-  granules: CmrGranule[];
+  granules: HarmonyGranule[];
   variables: HarmonyVariable[];
 }
 

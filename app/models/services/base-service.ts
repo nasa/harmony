@@ -7,7 +7,7 @@ import { v4 as uuid } from 'uuid';
 import DataOperation from 'models/data-operation';
 import { Stream } from 'stream';
 import { Logger } from 'winston';
-import { Transaction } from 'knex';
+// import { Transaction } from 'knex';
 
 import db = require('util/db');
 
@@ -243,7 +243,7 @@ export default class BaseService {
    * @memberof BaseService
    */
   async _performAsyncJobUpdate(
-    logger: Logger, trx: Transaction, job: Job, query: any,
+    logger: Logger, trx: any, job: Job, query: any,
   ): Promise<void> {
     /* eslint-disable no-param-reassign */
     const { error, item, status, redirect, progress } = query;
@@ -295,7 +295,7 @@ export default class BaseService {
         let numOutputs;
         const serializedJob = job.serialize();
         if (job.isComplete()) {
-          durationMs = job.updatedAt - job.createdAt;
+          durationMs = +job.updatedAt - +job.createdAt;
           const dataLinks = job.getRelatedLinks('data');
           numOutputs = dataLinks.length;
         }
