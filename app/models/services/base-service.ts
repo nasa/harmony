@@ -1,10 +1,11 @@
-import getIn from 'lodash.get';
+import _ from 'lodash';
 import * as serviceResponse from 'backends/service-response';
 import { defaultObjectStore } from 'util/object-store';
 import { ServerError, RequestValidationError } from 'util/errors';
 import { Job, JobStatus } from 'models/job';
 import { v4 as uuid } from 'uuid';
 import DataOperation from 'models/data-operation';
+import InvocationResult from './invocation-result';
 
 import db = require('util/db');
 
@@ -27,7 +28,6 @@ export default class BaseService {
   invocation: Promise<unknown>;
 
   resolveInvocation: (value?: unknown) => void;
-
 
   /**
    * Creates an instance of BaseService.
@@ -63,72 +63,67 @@ export default class BaseService {
   }
 
   /**
-   * Invokes the service, returning a promise for the invocation result with the
-   * following properties:
+   * Invokes the service, returning a promise for the invocation result
    *
-   * error: An error message.  If set, the invocation was an error and the provided
-   *   message should be sent to the client
-   * statusCode: (optional) An HTTP status code for the response.  If set and there is an
-   *   error, the HTTP status code will be set to this value
-   * redirect: A redirect URL.  If set, the client should be redirected
-   *   to this URL
-   * stream: A byte stream.  If set, the bytes in the stream should be piped to the client
-   * headers: An object mapping key/value headers.  Any headers starting with "harmony" should
-   *   be passed to the client.  When streaming a result, content-type and content-length
-   *   should also be set.
-   * content: String literal content to send back to the caller
-   * onComplete: (optional) A callback function with no arguments to be invoked when the
-   *   client receives its response
    * @param {Logger} logger The logger associated with this request
    * @param {String} harmonyRoot The harmony root URL
    * @param {String} requestUrl The URL the end user invoked
    *
-   * @returns {Promise<{
-   *     error: string,
-   *     statusCode: number,
-   *     redirect: string,
-   *     stream: Stream,
-   *     headers: object,
-   *     content: string,
-   *     onComplete: Function
-   *   }>} A promise resolving to the result of the callback. See method description
-   * for properties
+   * @returns {Promise<InvocationResult>} A promise resolving to the result of the callback.
    * @memberof BaseService
    */
-  async invoke(logger?, harmonyRoot?, requestUrl?): Promise<{
-    error: string;
-    statusCode: number;
-    redirect: string;
-    stream: any;
-    headers: object;
-    content: string;
-    onComplete: Function;
-  }> {
+  async invoke(logger?, harmonyRoot?, requestUrl?): Promise<InvocationResult> {
     const isAsync = !this.isSynchronous;
-    let job;
+    const job = await this._createJob(db, logger, requestUrl, this.operation.stagingLocation);
     if (isAsync) {
-      job = await this._createJob(db, logger, requestUrl, this.operation.stagingLocation);
+      // All jobs are tracked internally.  Only async jobs are saved to the db
+      try {
+        await job.save(db);
+      } catch (e) {
+        logger.error(e.stack);
+        throw new ServerError('Failed to save job to database.');
+      }
     }
     // Promise that can be awaited to ensure the service has completed its work
     this.invocation = new Promise((resolve) => {
       this.resolveInvocation = resolve;
     });
     return new Promise((resolve, reject) => {
-      try {
-        this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
-          if (isAsync) {
-            this._processAsyncCallback(req, res, logger);
-          } else {
-            resolve(this._processSyncCallback(req, res));
-          }
-        });
-        this._run(logger);
-        if (isAsync) {
-          resolve({ redirect: `/jobs/${job.requestId}`, headers: {} } as any);
-        }
-      } catch (e) {
+      const handleError = (e): void => {
         serviceResponse.unbindResponseUrl(this.operation.callback);
         reject(e);
+      };
+      try {
+        if (isAsync) {
+          this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
+            // Async requests will re-query job records and not close on them to help
+            // decouple response handling from the process that created the job.
+            // Eventually, we'll want it to be the case that any Harmony process can
+            // handle callbacks for any async job.
+            this._processAsyncCallback(req, res, logger);
+          });
+        } else {
+          this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
+            // Sync callbacks need to be handled by the Harmony process that invoked them
+            // because they are holding the original request open.
+            this._processSyncCallback(req, res, job, logger)
+              .then((result) => { if (result) resolve(result); });
+          });
+        }
+        this._run(logger)
+          .then((result) => {
+            if (result) {
+              // If running produces a result, use that rather than waiting for a callback
+              serviceResponse.unbindResponseUrl(this.operation.callback);
+              resolve(result);
+              this.resolveInvocation(true);
+            } else if (isAsync) {
+              resolve({ redirect: `/jobs/${job.requestId}`, headers: {} });
+            }
+          })
+          .catch(handleError);
+      } catch (e) {
+        handleError(e);
       }
     });
   }
@@ -140,9 +135,9 @@ export default class BaseService {
    * received.
    * @param {Log} _logger the logger associated with the request
    * @memberof BaseService
-   * @returns {void}
+   * @returns {Promise<InvocationResult>}
    */
-  _run(_logger) {
+  async _run(_logger): Promise<InvocationResult> {
     throw new TypeError('BaseService subclasses must implement #_run()');
   }
 
@@ -151,37 +146,53 @@ export default class BaseService {
    *
    * @param {http.IncomingMessage} req the incoming callback request
    * @param {http.ServerResponse} res the outgoing callback response
-   * @returns {void}
+   * @param {Job} job the synchronous job being performed
+   * @param {Logger} logger The logger associated with this request
+   * @returns {Promise<InvocationResult>}
    * @memberof BaseService
    */
-  _processSyncCallback(req, res) {
-    const { error, redirect } = req.query;
-    let result;
+  async _processSyncCallback(req, res, job: Job, logger): Promise<InvocationResult> {
+    let result = null;
+
+    const respondToService = (err): void => {
+      if (err) {
+        res.status(err.code || 500);
+        res.send({ code: err.code, message: err.message });
+      } else {
+        res.status(200);
+        res.send('Ok');
+      }
+    };
 
     try {
-      result = {
-        headers: req.headers,
-        onComplete: (err) => {
-          if (err) {
-            res.status(err.code);
-            res.send(JSON.stringify(err));
-          } else {
-            res.status(200);
-            res.send('Ok');
-          }
-        },
-      };
-
-      if (error) {
-        result.error = error;
-      } else if (redirect) {
-        result.redirect = redirect;
+      if (_.isEmpty(req.query)) {
+        result = { stream: req, onComplete: respondToService, headers: req.headers };
       } else {
-        result.stream = req;
+        this._updateJobFields(logger, job, req.query);
+
+        if (job.status === JobStatus.FAILED) {
+          result = { error: job.message };
+        }
+
+        if (job.status === JobStatus.SUCCESSFUL) {
+          const links = job.getRelatedLinks('data');
+          if (links.length === 1) {
+            result = { redirect: links[0].href };
+          } else {
+            result = { error: `The backend service provided ${links.length} outputs when 1 was required`, statusCode: 500 };
+          }
+        }
+        respondToService(null);
       }
+    } catch (e) {
+      logger.error(e);
+      respondToService(e);
+      result = { error: 'The service request failed due to an internal error', statusCode: 500 };
     } finally {
-      serviceResponse.unbindResponseUrl(this.operation.callback);
-      if (this.resolveInvocation) this.resolveInvocation(true);
+      if (result) {
+        serviceResponse.unbindResponseUrl(this.operation.callback);
+        if (this.resolveInvocation) this.resolveInvocation(true);
+      }
     }
 
     return result;
@@ -210,14 +221,24 @@ export default class BaseService {
     }
 
     try {
-      await this._performAsyncJobUpdate(logger, trx, job, req.query);
+      await this._updateJobFields(logger, job, req.query);
+      await job.save(trx);
       await trx.commit();
       res.status(200);
       res.send('Ok');
     } catch (e) {
       await trx.rollback();
-      res.status(e.code);
-      res.json({ code: e.code, message: e.message });
+      const status = e.code || (e instanceof TypeError ? 400 : 500);
+      res.status(status);
+      res.json({ code: status, message: e.message });
+    } finally {
+      if (job.isComplete()) {
+        if (this.resolveInvocation) this.resolveInvocation(true);
+        serviceResponse.unbindResponseUrl(this.operation.callback);
+        const durationMs = +job.updatedAt - +job.createdAt;
+        const numOutputs = job.getRelatedLinks('data').length;
+        logger.info('Async job complete.', { durationMs, numOutputs, job: job.serialize() });
+      }
     }
   }
 
@@ -227,7 +248,6 @@ export default class BaseService {
    * Note: parameter reassignment is allowed, since it's the purpose of this function.
    *
    * @param {Logger} logger The logger associated with this request
-   * @param {knex.Transaction} trx The transaction to use when updating the job
    * @param {Job} job The job record to update
    * @param {object} query The parsed query coming from a service callback
    * @returns {void}
@@ -235,7 +255,7 @@ export default class BaseService {
    * @throws {ServerError} If job update fails unexpectedly
    * @memberof BaseService
    */
-  async _performAsyncJobUpdate(logger, trx, job, query) { /* eslint-disable no-param-reassign */
+  async _updateJobFields(logger, job, query) { /* eslint-disable no-param-reassign */
     const { error, item, status, redirect, progress } = query;
     try {
       if (item) {
@@ -272,25 +292,10 @@ export default class BaseService {
         job.addLink({ href: redirect, rel: 'data' });
         job.succeed();
       }
-      await job.save(trx);
     } catch (e) {
       const ErrorClass = (e instanceof TypeError) ? RequestValidationError : ServerError;
       logger.error(e);
       throw new ErrorClass(e.message);
-    } finally {
-      if (error || !job || job.isComplete()) {
-        if (this.resolveInvocation) this.resolveInvocation(true);
-        serviceResponse.unbindResponseUrl(this.operation.callback);
-        let durationMs;
-        let numOutputs;
-        const serializedJob = job.serialize();
-        if (job.isComplete()) {
-          durationMs = job.updatedAt - job.createdAt;
-          const dataLinks = job.getRelatedLinks('data');
-          numOutputs = dataLinks.length;
-        }
-        logger.info('Async job complete.', { durationMs, numOutputs, job: serializedJob });
-      }
     }
   }
 
@@ -319,12 +324,6 @@ export default class BaseService {
     if (this.warningMessage) {
       job.message = this.warningMessage;
     }
-    try {
-      await job.save(transaction);
-    } catch (e) {
-      logger.error(e.stack);
-      throw new ServerError('Failed to save job to database.');
-    }
     return job;
   }
 
@@ -344,7 +343,7 @@ export default class BaseService {
       return operation.isSynchronous;
     }
 
-    const maxSyncGranules = getIn(this.config, 'maximum_sync_granules', env.maxSynchronousGranules);
+    const maxSyncGranules = _.get(this.config, 'maximum_sync_granules', env.maxSynchronousGranules);
     return this.operation.cmrHits <= maxSyncGranules;
   }
 
