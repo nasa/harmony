@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import getIn from 'lodash.get';
+import { get as getIn } from 'lodash';
 
 import { NotFoundError } from 'util/errors';
 import { isMimeTypeAccepted } from 'util/content-negotiation';

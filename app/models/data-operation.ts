@@ -1,8 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
-
-import cloneDeep = require('lodash.clonedeep');
+import { cloneDeep } from 'lodash';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
