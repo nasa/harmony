@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
 import isUUID from 'util/uuid';
 import { needsStacLink } from '../util/stac';
@@ -5,6 +6,7 @@ import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink } from '../util/links';
 import { RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
+import HarmonyRequest from '../models/harmony-request';
 
 import db = require('util/db');
 
@@ -44,7 +46,7 @@ export interface JobListing {
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
  */
-export async function getJobsListing(req: any, res: any): Promise<void> {
+export async function getJobsListing(req: HarmonyRequest, res: Response): Promise<void> {
   try {
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req);
@@ -92,7 +94,7 @@ export async function getJobsListing(req: any, res: any): Promise<void> {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-export async function getJobStatus(req: any, res: any): Promise<void> {
+export async function getJobStatus(req: HarmonyRequest, res: Response): Promise<void> {
   const { jobID } = req.params;
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   if (!isUUID(jobID)) {

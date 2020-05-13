@@ -2,7 +2,12 @@ import { v4 as uuid } from 'uuid';
 
 import log = require('util/log');
 
-const config: any = {
+interface ServiceResponseConfig {
+  baseUrl: string;
+}
+
+const config: ServiceResponseConfig = {
+  baseUrl: null,
 };
 
 // TODO: As far as I can tell, there's no way to use a WeakMap here.

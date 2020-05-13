@@ -1,7 +1,7 @@
 import { initialize } from 'express-openapi';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Application } from 'express';
+import { Application, Response } from 'express';
 import getLandingPage from './get-landing-page';
 import getRequirementsClasses from './get-requirements-classes';
 
@@ -9,6 +9,7 @@ import getCoverageRangeset from './get-coverage-rangeset';
 import postCoverageRangeset from './post-coverage-rangeset';
 
 import { describeCollection, describeCollections } from './describe-collections';
+import HarmonyRequest from '../../models/harmony-request';
 
 const version = '1.0.0';
 const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverages', version);
@@ -22,7 +23,7 @@ const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  */
-function TODO(req: any, res: any): void {
+function TODO(req: HarmonyRequest, res: Response): void {
   res.status(501);
   res.json('Not yet implemented');
 }
@@ -34,7 +35,7 @@ function TODO(req: any, res: any): void {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  */
-function getSpecification(req: any, res: any): void {
+function getSpecification(req: HarmonyRequest, res: Response): void {
   // Defined inline because the index file deals with the YAML spec.
   res.append('Content-type', 'text/openapi+yaml;version=3.0');
   res.send(openApiContent.replace('no-default-cmr-collection', req.collectionIds.join('/')));
@@ -46,7 +47,7 @@ function getSpecification(req: any, res: any): void {
  * @param {Application} app The express application
  * @returns {void}
  */
-export function addOpenApiRoutes(app: any): void {
+export function addOpenApiRoutes(app: Application): void {
   initialize({
     app,
     apiDoc: openApiContent,

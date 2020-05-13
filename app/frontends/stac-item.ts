@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid';
 import pick from 'lodash.pick';
 import { linksWithStacData } from 'util/stac';
 
-import { Job } from 'models/job';
+import { Job, JobLink } from 'models/job';
 
 class HarmonyItem {
   id: string;
@@ -15,7 +15,7 @@ class HarmonyItem {
 
   type: string;
 
-  bbox: Array<any>;
+  bbox: number[];
 
   geometry: {};
 
@@ -23,7 +23,7 @@ class HarmonyItem {
 
   assets: {};
 
-  links: Array<any>;
+  links: JobLink[];
 
   /**
    *
@@ -207,7 +207,7 @@ class HarmonyItem {
  *
  * @returns  {Record<string, any>} - STAC Item JSON
  */
-export default function create(job: Job, index: number): Record<string, any> {
+export default function create(job: Job, index: number): object {
   const title = `Harmony output #${index} in job ${job.jobID}`;
   const description = `Harmony out for ${job.request}`;
   const item = new HarmonyItem(job.jobID, title, description, index);

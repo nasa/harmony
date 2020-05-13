@@ -1,5 +1,5 @@
 import pick from 'lodash.pick';
-import { Job } from 'models/job';
+import { Job, JobLink } from 'models/job';
 import { linksWithStacData } from 'util/stac';
 
 /**
@@ -28,7 +28,7 @@ class HarmonyCatalog {
 
   description: string;
 
-  links: Array<any>;
+  links: JobLink[];
 
   /**
    *
@@ -84,19 +84,10 @@ class HarmonyCatalog {
  * let jsonObj = catalog.create(job);
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
-export default function create(job: any): object {
-  if (!(job instanceof Job)) {
-    throw new TypeError('Constructor expects a Harmony Job object as argument');
-  }
-  if (!Object.hasOwnProperty.call(job, 'jobID')) {
-    throw new TypeError('Failed to find job ID');
-  }
-  if (!Object.hasOwnProperty.call(job, 'request')) {
-    throw new TypeError('Failed to find request');
-  }
-  const title = `Harmony output for ${(job as any).jobID}`;
+export default function create(job: Job): object {
+  const title = `Harmony output for ${job.jobID}`;
   const description = `Harmony output for ${job.request}`;
-  const catalog = new HarmonyCatalog((job as any).jobID, title, description);
+  const catalog = new HarmonyCatalog(job.jobID, title, description);
   catalog.addLink('.', 'self', 'self');
   catalog.addLink('.', 'root', 'root');
   let index = 0;

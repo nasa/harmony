@@ -1,12 +1,14 @@
 import { SpatialReference } from 'gdal-next';
 import DataOperation from 'models/data-operation';
 import { CmrVariable } from 'harmony/util/cmr';
+import { Response } from 'express';
 import keysToLowerCase from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import wrap from '../../util/array';
 import parseVariables from './util/variable-parsing';
 import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
 import { parseAcceptHeader } from '../../util/content-negotiation';
+import HarmonyRequest from '../../models/harmony-request';
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -19,7 +21,11 @@ import { parseAcceptHeader } from '../../util/content-negotiation';
  * @throws {RequestValidationError} Thrown if the request has validation problems and
  *   cannot be performed
  */
-export default function getCoverageRangeset(req: any, res: any, next: Function): void {
+export default function getCoverageRangeset(
+  req: HarmonyRequest,
+  res: Response,
+  next: Function,
+): void {
   req.context.frontend = 'ogcCoverages';
   const query = keysToLowerCase(req.query);
 
@@ -30,8 +36,8 @@ export default function getCoverageRangeset(req: any, res: any, next: Function):
   } else if (req.headers.accept) {
     const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
     req.context.requestedMimeTypes = acceptedMimeTypes
-      .map((v: { mimeType: any }) => v.mimeType)
-      .filter((v: any) => v);
+      .map((v: { mimeType: string }) => v.mimeType)
+      .filter((v) => v);
   }
 
   if (query.granuleid) {

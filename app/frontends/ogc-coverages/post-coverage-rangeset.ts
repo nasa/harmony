@@ -1,4 +1,6 @@
+import { Response } from 'express';
 import getCoverageRangeset from './get-coverage-rangeset';
+import HarmonyRequest from '../../models/harmony-request';
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -14,7 +16,11 @@ import getCoverageRangeset from './get-coverage-rangeset';
  * @throws {RequestValidationError} Thrown if the request has validation problems and
  *   cannot be performed
  */
-export default function postCoverageRangeset(req: any, res: any, next: Function): void {
+export default function postCoverageRangeset(
+  req: HarmonyRequest,
+  res: Response,
+  next: Function,
+): void {
   // copy form parameters into the query
   req.query = req.body;
 

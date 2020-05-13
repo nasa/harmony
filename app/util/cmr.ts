@@ -1,7 +1,7 @@
 import FormData from 'form-data';
 import fs from 'fs';
 import get from 'lodash.get';
-import fetch from 'node-fetch';
+import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import * as util from 'util';
 import { CmrError } from './errors';
@@ -50,16 +50,54 @@ export interface CmrGranuleHits {
   granules: CmrGranule[];
 }
 
+export interface CmrUmmVariable {
+  meta: object; // Contains 'concept-id' which can't be declared
+  umm: {
+    Name: string;
+    Characteristics?: {
+      GroupPath?: string;
+    };
+  };
+}
+
 export interface CmrVariable {
   concept_id: string;
   name: string;
   long_name: string;
 }
 
-interface CmrQuery {
+interface CmrQuery
+  extends NodeJS.Dict<string | string[] | number | number[] | boolean | boolean[] | null> {
   concept_id: string | string[];
   page_size: number;
 }
+
+export interface CmrResponse extends Response {
+  data?: unknown;
+}
+
+export interface CmrVariablesResponse extends CmrResponse {
+  data: {
+    items: CmrVariable[];
+  };
+}
+
+export interface CmrCollectionsResponse extends CmrResponse {
+  data: {
+    feed: {
+      entry: CmrCollection[];
+    };
+  };
+}
+
+export interface CmrGranulesResponse extends CmrResponse {
+  data: {
+    feed: {
+      entry: CmrGranule[];
+    };
+  };
+}
+
 
 /**
  * Create a token header for the given access token string
@@ -97,11 +135,6 @@ function _handleCmrErrors(response: Response): void {
   }
 }
 
-export interface CmrResponse extends Response {
-  // data: object | { items?: object[]; feed?: object } | string[];
-  data: any;
-}
-
 /**
  * Performs a CMR search at the given path with the given query string
  *
@@ -112,7 +145,7 @@ export interface CmrResponse extends Response {
  * @returns The CMR query result
  */
 export async function cmrSearchBase(
-  path: string, query: any, token: string, extraHeaders = {},
+  path: string, query: CmrQuery, token: string, extraHeaders = {},
 ): Promise<CmrResponse> {
   // TODO fix any because of:
   // Argument of type 'CmrQuery' is not assignable to parameter of type 'ParsedUrlQueryInput'.
@@ -124,7 +157,7 @@ export async function cmrSearchBase(
     ...acceptJsonHeader,
     ...extraHeaders,
   };
-  const response: any = await fetch(`${cmrApiConfig.baseURL}${path}?${querystr}`,
+  const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}${path}?${querystr}`,
     {
       method: 'GET',
       headers,
@@ -166,7 +199,7 @@ async function _cmrSearch(
 export async function fetchPost(
   path: string, formData: FormData, headers: {[key: string]: string},
 ): Promise<CmrResponse> {
-  const response: any = await fetch(`${cmrApiConfig.baseURL}${path}`, {
+  const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}${path}`, {
     method: 'POST',
     body: formData,
     headers,
@@ -263,7 +296,7 @@ async function _cmrPostSearch(path: string, form: FormData, token: string): Prom
 async function queryVariables(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrVariable>> {
-  const variablesResponse = await _cmrSearch('/search/variables.json', query, token);
+  const variablesResponse = await _cmrSearch('/search/variables.json', query, token) as CmrVariablesResponse;
   return variablesResponse.data.items;
 }
 
@@ -278,7 +311,7 @@ async function queryVariables(
 async function queryCollections(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrCollection>> {
-  const collectionsResponse = await _cmrSearch('/search/collections.json', query, token);
+  const collectionsResponse = await _cmrSearch('/search/collections.json', query, token) as CmrCollectionsResponse;
   return collectionsResponse.data.feed.entry;
 }
 
@@ -294,7 +327,7 @@ async function queryGranules(
   query: CmrQuery, token: string,
 ): Promise<CmrGranuleHits> {
   // TODO: Paging / hits
-  const granulesResponse = await _cmrSearch('/search/granules.json', query, token);
+  const granulesResponse = await _cmrSearch('/search/granules.json', query, token) as CmrGranulesResponse;
   const cmrHits = parseInt(granulesResponse.headers.get('cmr-hits'), 10);
   return {
     hits: cmrHits,
@@ -316,7 +349,7 @@ async function queryGranuleUsingMultipartForm(
   token: string,
 ): Promise<CmrGranuleHits> {
   // TODO: Paging / hits
-  const granuleResponse = await _cmrPostSearch('/search/granules.json', form, token);
+  const granuleResponse = await _cmrPostSearch('/search/granules.json', form, token) as CmrGranulesResponse;
   const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
   return {
     hits: cmrHits,
@@ -431,5 +464,5 @@ export async function belongsToGroup(
 ): Promise<boolean> {
   const path = `/access-control/groups/${groupId}/members`;
   const response = await cmrSearchBase(path, null, token, { 'X-Harmony-User': username });
-  return response.status === 200 && response.data.indexOf(username) !== -1;
+  return response.status === 200 && (response.data as string[]).indexOf(username) !== -1;
 }

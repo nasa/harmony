@@ -18,13 +18,40 @@ const singleStringRegex = new RegExp('^(\\w+)\\("(.+)"\\)$');
 // Date ranges can have several different representations
 const dateTimeRegex = new RegExp(`${twoStringsRegex.source}|${unboundedMinStringRegex.source}|${unboundedMaxStringRegex.source}|${unboundedStringRegex.source}|${singleStringRegex.source}|${singleUnboundedStringRegex.source}`);
 
-const dimensionConfig = {
+interface Dimension {
+  name?: string;
+  min?: number;
+  max?: number;
+  lowToHigh?: boolean;
+  type?: (NumberConstructor | DateConstructor | StringConstructor);
+  regex?: RegExp;
+}
+
+interface DimensionConfig {
+  [key: string]: Dimension;
+}
+
+interface Range<T> {
+  min?: T;
+  max?: T;
+}
+
+interface TemporalRange {
+  startTime?: Date;
+  stopTime?: Date;
+}
+
+interface DimensionRanges {
+  [key: string]: Range<unknown>;
+}
+
+const dimensionConfig: DimensionConfig = {
   lat: {
     name: 'lat',
     min: -90,
     max: 90,
     lowToHigh: true,
-    type: Number,
+    type: String,
     regex: numberRangeRegex,
   },
   lon: {
@@ -51,14 +78,6 @@ const dimensionConfig = {
  */
 export class ParameterParseError extends Error {}
 
-interface Dimension {
-  name?: string;
-  min: number;
-  max: number;
-  lowToHigh?: boolean;
-  type?: any; // Not sure what a type like Number or Date is
-  regex?: RegExp;
-}
 /**
  * Helper function for subset parameters that parses and validates numeric values
  * specified in subset parameters, including "*"
@@ -135,12 +154,15 @@ function _getDimensionName(value: string): string {
  * @param {object} dimConfig A mapping of dimension names to min, max, and data type values,
  *   see `dimensionInfo` (the default value) in this file.  Usually should not be specified,
  *   except for testing.
- * @returns {object} An object mapping dimension names to objects with min and max ranges
+ * @returns {DimensionRanges} An object mapping dimension names to objects with min and max ranges
  * @throws {ParameterParseError} if a subset parameter cannot be parsed, has unrecognized
  *   axis names, or is otherwise invalid
  */
-export function parseSubsetParams(values: string[], dimConfig: object = dimensionConfig): object {
-  const result: any = {};
+export function parseSubsetParams(
+  values: string[],
+  dimConfig: DimensionConfig = dimensionConfig,
+): DimensionRanges {
+  const result: DimensionRanges = {};
   for (const value of values) {
     const dimName = _getDimensionName(value);
     const dim = dimConfig[dimName];
@@ -155,7 +177,7 @@ export function parseSubsetParams(values: string[], dimConfig: object = dimensio
     const minStr = matches[2];
     // When just a single value is provided treat it as a range with the same min and max
     const maxStr = matches[3] || minStr;
-    const parsed: any = {};
+    const parsed: Range<unknown> = {};
 
     if (result[dim.name]) {
       throw new ParameterParseError(`subset dimension "${dim.name}" was specified multiple times`);
@@ -192,7 +214,7 @@ export function parseSubsetParams(values: string[], dimConfig: object = dimensio
  * @returns {number[]} An array of 4 numbers corresponding to the [West, South, East, North]
  *   bounding box, or null if there is no lat or lon subsetting in values
  */
-export function subsetParamsToBbox(values: { lat?: Dimension; lon?: Dimension }): number[] {
+export function subsetParamsToBbox(values: { lat?: Range<number>; lon?: Range<number> }): number[] {
   let { lat, lon } = values;
   if (!lat && !lon) {
     return null;
@@ -213,9 +235,9 @@ export function subsetParamsToBbox(values: { lat?: Dimension; lon?: Dimension })
  * @param {Object} values parsed, valid subset params, as returned by `parseSubsetParams`
  * @returns {Object} An object with startTime and stopTime fields if applicable
  */
-export function subsetParamsToTemporal(values: { time?: Dimension }): object {
+export function subsetParamsToTemporal(values: { time?: Range<Date> }): TemporalRange {
   const { time } = values;
-  const temporal: any = {};
+  const temporal: TemporalRange = {};
   if (time) {
     if (time.min) {
       temporal.startTime = time.min;
