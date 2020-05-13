@@ -464,7 +464,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
      * @param {String} code The error code of the message
      * @returns {void}
      */
-    function itReturnsAValidationError(queryParams, message, code = 'openapi.ValidationError') {
+    function itReturnsAValidationError(
+      queryParams: object, message: string, code = 'openapi.ValidationError',
+    ): void {
       it(`returns an HTTP 400 "Bad Request" error with explanatory message ${message}`, async function () {
         const res = await rangesetRequest(
           this.frontend,

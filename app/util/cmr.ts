@@ -4,7 +4,6 @@ import get from 'lodash.get';
 import fetch from 'node-fetch';
 import * as querystring from 'querystring';
 import * as util from 'util';
-import { ParsedUrlQueryInput } from 'querystring';
 import { CmrError } from './errors';
 import { objectStoreForProtocol } from './object-store';
 
@@ -27,26 +26,40 @@ const acceptJsonHeader = {
   Accept: 'application/json',
 };
 
-export type CmrCollection = {
+export interface CmrCollection {
   id: string;
+  short_name: string;
+  version_id: string;
+  archive_center: string;
+  data_center: string;
+  boxes: string[];
+  time_start: Date;
+  time_end: Date;
   associations: {
     variables: string[];
   };
-};
+  variables: CmrVariable[];
+}
 
-export type CmrGranule = {
+export interface CmrGranule {
   id: string;
-};
+}
 
-export type CmrGranuleHits = {
+export interface CmrGranuleHits {
   hits: number;
   granules: CmrGranule[];
-};
+}
 
-export type CmrVariable = {
-  id: string;
+export interface CmrVariable {
+  concept_id: string;
   name: string;
-};
+  long_name: string;
+}
+
+interface CmrQuery {
+  concept_id: string | string[];
+  page_size: number;
+}
 
 /**
  * Create a token header for the given access token string
@@ -99,8 +112,11 @@ export interface CmrResponse extends Response {
  * @returns The CMR query result
  */
 export async function cmrSearchBase(
-  path: string, query: ParsedUrlQueryInput, token: string, extraHeaders = {},
+  path: string, query: any, token: string, extraHeaders = {},
 ): Promise<CmrResponse> {
+  // TODO fix any because of:
+  // Argument of type 'CmrQuery' is not assignable to parameter of type 'ParsedUrlQueryInput'.
+  // Index signature is missing in type 'CmrQuery'.
   const querystr = querystring.stringify(query);
   const headers = {
     ...clientIdHeader,
@@ -129,7 +145,7 @@ export async function cmrSearchBase(
  * @private
  */
 async function _cmrSearch(
-  path: string, query: ParsedUrlQueryInput, token: string,
+  path: string, query: CmrQuery, token: string,
 ): Promise<CmrResponse> {
   const response = await cmrSearchBase(path, query, token);
   _handleCmrErrors(response);
@@ -235,11 +251,6 @@ async function _cmrPostSearch(path: string, form: FormData, token: string): Prom
 
   return response;
 }
-
-type CmrQuery = {
-  concept_id: string | string[];
-  page_size: number;
-};
 
 /**
  * Performs a CMR variables.json search with the given query string

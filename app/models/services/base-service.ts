@@ -6,12 +6,14 @@ import { Job, JobStatus } from 'models/job';
 import { v4 as uuid } from 'uuid';
 import DataOperation from 'models/data-operation';
 import { Stream } from 'stream';
+import { Logger } from 'winston';
+import { Transaction } from 'knex';
 
 import db = require('util/db');
 
 import env = require('util/env');
 
-export type InvokeResponse = {
+export interface ServiceResponse {
   error: string;
   statusCode: number;
   redirect: string;
@@ -19,7 +21,7 @@ export type InvokeResponse = {
   headers: object;
   content: string;
   onComplete: Function;
-};
+}
 
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
@@ -35,7 +37,7 @@ export default class BaseService {
 
   operation: any;
 
-  invocation: Promise<InvokeResponse>;
+  invocation: Promise<ServiceResponse>;
 
   resolveInvocation: (value?: unknown) => void;
 
@@ -69,7 +71,7 @@ export default class BaseService {
    * @memberof BaseService
    * @returns {object} The service capabilities
    */
-  get capabilities() {
+  get capabilities(): object {
     return this.config.capabilities;
   }
 
@@ -106,7 +108,9 @@ export default class BaseService {
    * for properties
    * @memberof BaseService
    */
-  async invoke(logger?, harmonyRoot?, requestUrl?): Promise<InvokeResponse> {
+  async invoke(
+    logger?: Logger, harmonyRoot?: string, requestUrl?: string,
+  ): Promise<ServiceResponse> {
     const isAsync = !this.isSynchronous;
     let job;
     if (isAsync) {
@@ -141,11 +145,11 @@ export default class BaseService {
    * Subclasses must implement this method if using the default invoke() implementation.
    * The method will be invoked asynchronously, completing when the service's callback is
    * received.
-   * @param {Log} _logger the logger associated with the request
+   * @param {Logger} _logger the logger associated with the request
    * @memberof BaseService
    * @returns {void}
    */
-  _run(_logger) {
+  _run(_logger: Logger): void {
     throw new TypeError('BaseService subclasses must implement #_run()');
   }
 
@@ -157,14 +161,14 @@ export default class BaseService {
    * @returns {void}
    * @memberof BaseService
    */
-  _processSyncCallback(req, res) {
+  _processSyncCallback(req, res): any {
     const { error, redirect } = req.query;
     let result;
 
     try {
       result = {
         headers: req.headers,
-        onComplete: (err) => {
+        onComplete: (err): void => {
           if (err) {
             res.status(err.code);
             res.send(JSON.stringify(err));
@@ -199,7 +203,7 @@ export default class BaseService {
    * @returns {void}
    * @memberof BaseService
    */
-  async _processAsyncCallback(req, res, logger) {
+  async _processAsyncCallback(req, res, logger: Logger): Promise<void> {
     const trx = await db.transaction();
 
     const { user, requestId } = this.operation;
@@ -238,7 +242,10 @@ export default class BaseService {
    * @throws {ServerError} If job update fails unexpectedly
    * @memberof BaseService
    */
-  async _performAsyncJobUpdate(logger, trx, job, query) { /* eslint-disable no-param-reassign */
+  async _performAsyncJobUpdate(
+    logger: Logger, trx: Transaction, job: Job, query: any,
+  ): Promise<void> {
+    /* eslint-disable no-param-reassign */
     const { error, item, status, redirect, progress } = query;
     try {
       if (item) {
@@ -284,7 +291,7 @@ export default class BaseService {
       if (error || !job || job.isComplete()) {
         if (this.resolveInvocation) this.resolveInvocation(true);
         serviceResponse.unbindResponseUrl(this.operation.callback);
-        let durationMs;
+        let durationMs: any;
         let numOutputs;
         const serializedJob = job.serialize();
         if (job.isComplete()) {
@@ -309,7 +316,10 @@ export default class BaseService {
    * @memberof BaseService
    * @throws {ServerError} if the job cannot be created
    */
-  async _createJob(transaction, logger, requestUrl, stagingLocation) {
+  async _createJob(
+    // TODO - db can be passed in as the transaction - no clue what the type of an import is
+    transaction: any, logger: Logger, requestUrl: string, stagingLocation: string,
+  ): Promise<Job> {
     const { requestId, user } = this.operation;
     logger.info(`Creating job for ${requestId}`);
     const job = new Job({
@@ -337,7 +347,7 @@ export default class BaseService {
    * @returns {boolean} true if the request is synchronous, false otherwise
    *
    */
-  get isSynchronous() {
+  get isSynchronous(): boolean {
     const { operation } = this;
 
     if (operation.requireSynchronous) {
@@ -358,7 +368,7 @@ export default class BaseService {
    * @readonly
    * @memberof BaseService
    */
-  get warningMessage() {
+  get warningMessage(): string {
     if (this.operation.cmrHits > env.maxAsynchronousGranules) {
       return `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
       + `to process only the first ${env.maxAsynchronousGranules} granules.`;

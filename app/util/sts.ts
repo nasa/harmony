@@ -23,7 +23,7 @@ export default class SecureTokenService {
     this._assumeRole = this._getAssumeRole(overrides);
   }
 
-  _getAssumeRole(overrides?) {
+  _getAssumeRole(overrides?: object): any {
     const endpointSettings: any = {};
     if (process.env.USE_LOCALSTACK === 'true') {
       endpointSettings.endpoint = 'http://localhost:4592';

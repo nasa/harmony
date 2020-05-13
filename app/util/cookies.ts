@@ -18,7 +18,7 @@ export const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === '
  * @return {Array} a tuple containing the name and value for the cookie
  * @private
  */
-function _shapefile(req) {
+function _shapefile(req: any): Array<any> {
   // if a shapefile was uploaded set a cookie with a url for the shapefile and
   // the other POST form parameters
   if (!req.files) return [];
@@ -35,7 +35,7 @@ function _shapefile(req) {
  * @returns {Array} a tuple containing the name and value for the cookie
  * @private
  */
-function _redirect(req) {
+function _redirect(req: any): Array<any> {
   if (req.files) {
     // copy other form parameter to the query field on req so they get used
     // when building the redirect
@@ -62,7 +62,7 @@ const authorizedRecipes = [
  * @param {object} options The options to use when setting the cookie
  * @returns {void}
  */
-export function setCookiesForEdl(req, res, options) {
+export function setCookiesForEdl(req: any, res: any, options: object): void {
   edlRecipes.forEach((recipe) => {
     const [name, value] = recipe(req);
     if (name) {
@@ -79,7 +79,7 @@ export function setCookiesForEdl(req, res, options) {
  * @param {object} options The options to use when setting the cookie
  * @returns {void}
  */
-export function setCookiesForAuthorized(req, res, options) {
+export function setCookiesForAuthorized(req: any, res: any, options: object): void {
   authorizedRecipes.forEach((recipe) => {
     const [name, value] = recipe(req);
     if (name) {

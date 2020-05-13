@@ -4,8 +4,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import keysToLowerCase from 'util/object';
 import { RequestValidationError, NotFoundError } from 'util/errors';
-import DataOperation from 'models/data-operation';
+import DataOperation, { HarmonyVariable } from 'models/data-operation';
 import * as services from 'models/services';
+// import { Application, Router } from 'express';
 
 
 const version = '0.1.0';
@@ -18,10 +19,10 @@ const GRANULE_URL_PATH_REGEX = /\/(?:G\d+-\w+)/g;
 /**
  * Sets up the express application with the OpenAPI routes for EOSS
  *
- * @param {express.Application} app The express application
+ * @param {express.Application} router The express router
  * @returns {void}
  */
-export function addOpenApiRoutes(app) {
+export function addOpenApiRoutes(app: any): void {
   initialize({
     app,
     apiDoc: openApiPath,
@@ -29,16 +30,16 @@ export function addOpenApiRoutes(app) {
      * based on a supplied directory structure. Instead we are using the operations property
      * because we want to include the paths within the OpenAPI specification itself. */
     operations: {
-      getLandingPage(req, res) {
+      getLandingPage(req, res): void {
         // HARMONY-72 will implement this functionality - stubbed out for now
         res.append('Content-type', 'text/html');
         res.send('<p>A fine landing page for now.<p>');
       },
-      getSpecification(req, res) {
+      getSpecification(req, res): void {
         res.append('Content-type', 'text/x-yaml');
         res.send(openApiContent);
       },
-      getGranule(req, res, next) {
+      getGranule(req, res, next): void {
         req.context.frontend = 'eoss';
         if (!req.collections.every(services.isCollectionSupported)) {
           throw new NotFoundError('There is no service configured to support transformations on the provided collection via EOSS.');
@@ -64,7 +65,7 @@ export function addOpenApiRoutes(app) {
 
         // Assuming one collection for now
         const collectionId = req.collections[0].id;
-        const variables = [];
+        const variables: HarmonyVariable[] = [];
         if (query.rangesubset) {
           const variablesRequested = query.rangesubset;
           for (const variableRequested of variablesRequested) {

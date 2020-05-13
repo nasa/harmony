@@ -51,6 +51,14 @@ const dimensionConfig = {
  */
 export class ParameterParseError extends Error {}
 
+interface Dimension {
+  name?: string;
+  min: number;
+  max: number;
+  lowToHigh?: boolean;
+  type?: any; // Not sure what a type like Number or Date is
+  regex?: RegExp;
+}
 /**
  * Helper function for subset parameters that parses and validates numeric values
  * specified in subset parameters, including "*"
@@ -61,7 +69,7 @@ export class ParameterParseError extends Error {}
  * @returns {Number} the parsed result
  * @throws {ParameterParseError} if there are errors while parsing
  */
-function parseNumeric(dim, valueStr, defaultValue) {
+function parseNumeric(dim: Dimension, valueStr: string, defaultValue: number): number {
   const { name, min, max } = dim;
 
   if (valueStr === unbounded) {
@@ -90,7 +98,7 @@ function parseNumeric(dim, valueStr, defaultValue) {
  * @returns {Date} the parsed date or undefined if the open range indicator is specified
  * @throws {ParameterParseError} if there are errors while parsing
  */
-function parseDate(dim, valueStr) {
+function parseDate(dim: Dimension, valueStr: string): Date {
   const { name } = dim;
 
   if (valueStr === unbounded) {
@@ -113,7 +121,7 @@ const dimensionNameRegex = /^(\w+)\(.+\)$/;
  * @param {String} value The value of the subset parameter
  * @returns {String} the dimension name
  */
-function _getDimensionName(value) {
+function _getDimensionName(value: string): string {
   const match = value.match(dimensionNameRegex);
   const [, dimName] = match;
   return dimName;
@@ -131,7 +139,7 @@ function _getDimensionName(value) {
  * @throws {ParameterParseError} if a subset parameter cannot be parsed, has unrecognized
  *   axis names, or is otherwise invalid
  */
-export function parseSubsetParams(values, dimConfig = dimensionConfig) {
+export function parseSubsetParams(values: string[], dimConfig: object = dimensionConfig): object {
   const result: any = {};
   for (const value of values) {
     const dimName = _getDimensionName(value);
@@ -184,7 +192,7 @@ export function parseSubsetParams(values, dimConfig = dimensionConfig) {
  * @returns {number[]} An array of 4 numbers corresponding to the [West, South, East, North]
  *   bounding box, or null if there is no lat or lon subsetting in values
  */
-export function subsetParamsToBbox(values) {
+export function subsetParamsToBbox(values: { lat: Dimension; lon: Dimension }): number[] {
   let { lat, lon } = values;
   if (!lat && !lon) {
     return null;
@@ -205,7 +213,7 @@ export function subsetParamsToBbox(values) {
  * @param {Object} values parsed, valid subset params, as returned by `parseSubsetParams`
  * @returns {Object} An object with startTime and stopTime fields if applicable
  */
-export function subsetParamsToTemporal(values) {
+export function subsetParamsToTemporal(values: { time: Dimension }): object {
   const { time } = values;
   const temporal: any = {};
   if (time) {

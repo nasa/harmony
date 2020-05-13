@@ -10,7 +10,7 @@ process.env.EXAMPLE_SERVICES = 'true';
  * @param {object} opts Options to pass to the server start method
  * @returns {void}
  */
-export default function hookServersStartStop(opts: any = {}) {
+export default function hookServersStartStop(opts: any = {}): void {
   let servers = null;
   before(function () {
     // Skip Earthdata Login unless the test says to do otherwise

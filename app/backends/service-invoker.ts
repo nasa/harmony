@@ -1,8 +1,9 @@
 import * as services from 'models/services/index';
 import { objectStoreForProtocol } from 'util/object-store';
 import { getRequestRoot, getRequestUrl } from 'util/url';
+import { ServiceResponse } from 'harmony/models/services/base-service';
+import { RequestHandler } from 'express';
 import { ServiceError } from '../util/errors';
-
 
 import env = require('util/env');
 
@@ -16,7 +17,7 @@ import env = require('util/env');
  * @param {string} header The name of the header to set
  * @returns {void}
  */
-function copyHeader(serviceResult, res, header) {
+function copyHeader(serviceResult: { headers: object }, res: any, header: string): void {
   res.set(header, serviceResult.headers[header.toLowerCase()]);
 }
 
@@ -34,7 +35,9 @@ function copyHeader(serviceResult, res, header) {
  * @returns {void}
  * @throws {ServiceError} If the backend service returns an error
  */
-async function translateServiceResult(serviceResult, user, res) {
+async function translateServiceResult(
+  serviceResult: ServiceResponse, user: string, res: any,
+): Promise<void> {
   for (const k of Object.keys(serviceResult.headers)) {
     if (k.toLowerCase().startsWith('harmony')) {
       copyHeader(serviceResult, res, k);
@@ -69,7 +72,9 @@ async function translateServiceResult(serviceResult, user, res) {
  * @throws {ServiceError} if the service call fails or returns an error
  * @throws {NotFoundError} if no service can handle the callback
  */
-export default async function serviceInvoker(req, res) {
+export default async function serviceInvoker(
+  req: any, res: ServiceResponse,
+): Promise<RequestHandler> {
   const startTime = new Date().getTime();
   req.operation.user = req.user || 'anonymous';
   req.operation.client = env.harmonyClientId;
@@ -92,8 +97,7 @@ export default async function serviceInvoker(req, res) {
   const { frontend, logger } = req.context;
   const spatialSubset = model.subset !== undefined && Object.keys(model.subset).length > 0;
   const temporalSubset = model.temporal !== undefined && Object.keys(model.temporal).length > 0;
-  // eslint-disable-next-line max-len
-  const varSources = model.sources.filter((source) => source.variables && source.variables.length > 0);
+  const varSources = model.sources.filter((s) => s.variables && s.variables.length > 0);
   const variableSubset = varSources.length > 0;
   logger.info('Backend service request complete',
     { durationMs: msTaken,

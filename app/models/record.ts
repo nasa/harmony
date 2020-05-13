@@ -1,3 +1,5 @@
+import { Transaction } from 'knex';
+
 import db = require('../util/db');
 
 /**
@@ -12,9 +14,9 @@ import db = require('../util/db');
  * @abstract
  */
 export default abstract class Record {
-  updatedAt: Date;
+  updatedAt: any;
 
-  createdAt: Date;
+  createdAt: any;
 
   id: any;
 
@@ -26,7 +28,7 @@ export default abstract class Record {
    * @param {object} fields Object containing to set on the record
    * @memberof Record
    */
-  constructor(fields) {
+  constructor(fields: object) {
     Object.assign(this, fields);
   }
 
@@ -37,7 +39,7 @@ export default abstract class Record {
    * @returns {string[]} a list of validation errors, or null if the record is valid
    * @memberof Record
    */
-  validate() {
+  validate(): string[] {
     return null;
   }
 
@@ -52,7 +54,7 @@ export default abstract class Record {
    * @throws {Error} if the record is invalid
    * @memberof Record
    */
-  async save(transaction) {
+  async save(transaction: Transaction): Promise<void> {
     const errors = this.validate();
     if (errors) {
       throw new TypeError(`Job record is invalid: ${JSON.stringify(errors)}`);

@@ -1,5 +1,5 @@
 import PromiseQueue from 'p-queue';
-import BaseService, { InvokeResponse } from 'models/services/base-service';
+import BaseService, { ServiceResponse } from 'models/services/base-service';
 import { Logger } from 'winston';
 
 import { Job } from 'models/job';
@@ -59,7 +59,7 @@ export default class AsynchronizerService extends BaseService {
    * @returns {Promise<object>} A promise for the invocation result. @see BaseService#invoke
    * @memberof AsynchronizerService
    */
-  async invoke(logger: Logger, harmonyRoot: string, requestUrl: string): Promise<InvokeResponse> {
+  async invoke(logger: Logger, harmonyRoot: string, requestUrl: string): Promise<ServiceResponse> {
     this._invokeArgs = [logger, harmonyRoot, requestUrl];
     if (this.isSynchronous) {
       try {

@@ -11,7 +11,7 @@ import * as cmr from 'util/cmr';
  * @returns {void}
  * @private
  */
-function stubCmr(functionName, response) {
+function stubCmr(functionName: any, response: any): void {
   sinon.stub(cmr, functionName)
     .callsFake(async () => {
       const resp = response;
@@ -26,7 +26,7 @@ function stubCmr(functionName, response) {
  * @returns {void}
  * @private
  */
-function unStubCmr(functionName) {
+function unStubCmr(functionName: string): void {
   if (cmr[functionName].restore) cmr[functionName].restore();
 }
 
@@ -45,7 +45,7 @@ function unStubCmr(functionName) {
  * @param {object} response The desired response
  * @returns {void}
  */
-export default function hookCmr(functionName, response) {
+export default function hookCmr(functionName: string, response: object): void {
   before(async function () {
     stubCmr(functionName, response);
   });

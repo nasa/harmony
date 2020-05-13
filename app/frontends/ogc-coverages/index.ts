@@ -1,6 +1,7 @@
 import { initialize } from 'express-openapi';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Application } from 'express';
 import getLandingPage from './get-landing-page';
 import getRequirementsClasses from './get-requirements-classes';
 
@@ -21,7 +22,7 @@ const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  */
-function TODO(req, res) {
+function TODO(req: any, res: any): void {
   res.status(501);
   res.json('Not yet implemented');
 }
@@ -33,7 +34,7 @@ function TODO(req, res) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  */
-function getSpecification(req, res) {
+function getSpecification(req: any, res: any): void {
   // Defined inline because the index file deals with the YAML spec.
   res.append('Content-type', 'text/openapi+yaml;version=3.0');
   res.send(openApiContent.replace('no-default-cmr-collection', req.collectionIds.join('/')));
@@ -42,10 +43,10 @@ function getSpecification(req, res) {
 /**
  * Sets up the express application with the OpenAPI routes for OGC API - Coverages
  *
- * @param {express.Application} app The express application
+ * @param {Application} app The express application
  * @returns {void}
  */
-export function addOpenApiRoutes(app) {
+export function addOpenApiRoutes(app: any): void {
   initialize({
     app,
     apiDoc: openApiContent,
@@ -73,10 +74,10 @@ export function addOpenApiRoutes(app) {
 
 /**
  * Adds error handling appropriate to the OGC API to the given app
- * @param {express.Application} app The express application which needs error handling routes
+ * @param {Application} app The express application which needs error handling routes
  * @returns {void}
  */
-export function handleOpenApiErrors(app) {
+export function handleOpenApiErrors(app: Application): void {
   app.use((err, req, res, next) => {
     if (req.path.indexOf('/ogc-api-coverages/') === -1) {
       next(err);

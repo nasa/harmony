@@ -10,11 +10,13 @@ import { getRequestUrl, getSanitizedRequestUrl, getRequestRoot } from '../../app
  * @param {Object} params the query parameters
  * @returns {Object} An object emulating an http.IncomingMessage
  */
-function createRequest(hostname, path = '/example/path', params: any = { param1: 'foo', param2: 2 }) {
+function createRequest(
+  hostname: string, path = '/example/path', params: any = { param1: 'foo', param2: 2 },
+): object {
   return {
     originalUrl: `${path}?${params}`,
     query: params,
-    get() { return hostname; },
+    get(): string { return hostname; },
   };
 }
 

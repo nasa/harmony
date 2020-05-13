@@ -10,7 +10,7 @@ import { hookRequest } from './hooks';
  * @param {Express.Application} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-export function cloudAccessJson(app) {
+export function cloudAccessJson(app: Express.Application): Promise<any> {
   return request(app).get('/cloud-access');
 }
 
@@ -19,7 +19,7 @@ export function cloudAccessJson(app) {
  * @param {Express.Application} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-export function cloudAccessSh(app) {
+export function cloudAccessSh(app: Express.Application): Promise<any> {
   return request(app).get('/cloud-access.sh');
 }
 
@@ -49,20 +49,20 @@ export const sampleCloudAccessJsonResponse = {
  * Adds before and after hooks to stub out calls to AWS STS.
  * @returns {void}
  */
-export function hookAwsSts() {
+export function hookAwsSts(): void {
   let stub;
   before(function () {
     stub = sinonStub(SecureTokenService.prototype, '_getAssumeRole')
       .returns(() => (
         {
-          promise: async () => sampleCloudAccessJsonResponse,
-          abort: () => null,
-          createReadStream: () => null,
-          eachPage: () => null,
-          isPageable: () => false,
-          send: () => null,
-          on: () => null,
-          onAsync: () => null,
+          promise: async (): Promise<any> => sampleCloudAccessJsonResponse,
+          abort: (): any => null,
+          createReadStream: (): any => null,
+          eachPage: (): any => null,
+          isPageable: (): any => false,
+          send: (): any => null,
+          on: (): any => null,
+          onAsync: (): any => null,
           startTime: new Date(),
           httpRequest: null,
         }));

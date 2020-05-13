@@ -15,9 +15,9 @@ import { hookMockS3 } from 'harmony-test/object-store';
  * @param {*} values The value to return
  * @returns {function} A function that alterates between the supplied values
  */
-function alternateCallbacks(...values) {
+function alternateCallbacks(...values: any): Function {
   let i = 0;
-  return () => values[i++ % values.length];
+  return (): any => values[i++ % values.length];
 }
 
 describe('Asynchronizer Service', function () {

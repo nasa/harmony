@@ -8,9 +8,9 @@ import { S3ObjectStore } from 'util/object-store';
 // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
 const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
 const originalUpload = S3MockPrototype.upload;
-S3MockPrototype.upload = function (...args) {
+S3MockPrototype.upload = function (...args): any {
   const result = originalUpload.call(this, ...args);
-  return { on: () => {}, ...result };
+  return { on: (): any => {}, ...result };
 };
 
 /**
@@ -21,7 +21,7 @@ S3MockPrototype.upload = function (...args) {
  * yet)
  * @returns {void}
  */
-export function hookMockS3(_buckets?) {
+export function hookMockS3(_buckets?: string[]): void {
   let dir;
   let stub;
   before(async function () {
@@ -42,7 +42,7 @@ export function hookMockS3(_buckets?) {
  *
  * @returns {string} The URL prefix for use in matching responses
  */
-export function hookSignS3Object() {
+export function hookSignS3Object(): string {
   const prefix = 'https://example.com/s3/signed/';
   before(function () {
     sinon.stub(S3ObjectStore.prototype, 'signGetObject')
@@ -59,7 +59,7 @@ export function hookSignS3Object() {
  * @param {string} url the Object store URL to get
  * @returns {*} the JSON contents of the file at the given URL
  */
-export async function getJson(url) {
+export async function getJson(url: string): Promise<any> {
   const objectStore = new S3ObjectStore();
   const filename = await objectStore.downloadFile(url);
   try {

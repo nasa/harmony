@@ -45,7 +45,7 @@ rules:
       object: true
     - enforceForRenamedProperties: false
   node/no-unsupported-features/es-syntax: 0
-  "@typescript-eslint/explicit-function-return-type": "warn"
+  "@typescript-eslint/explicit-function-return-type": "error"
 overrides:
   - files: [ "test/**/*" ]
     rules:

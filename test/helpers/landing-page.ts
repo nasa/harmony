@@ -6,7 +6,7 @@ import { hookRequest } from './hooks';
  * @param {Express.Application} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-export function landingPage(app) {
+export function landingPage(app: Express.Application): Promise<any> {
   return request(app).get('/');
 }
 

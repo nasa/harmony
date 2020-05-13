@@ -36,7 +36,7 @@ class HarmonyCatalog {
    * @param {string} title - Title of the STAC Catalog
    * @param {string} description - Description of the STAC Catalog
    */
-  constructor(id, title = '', description = '') {
+  constructor(id: string, title = '', description = '') {
     this.id = id;
     this.stac_version = '0.9.0';
     this.title = title;
@@ -53,7 +53,7 @@ class HarmonyCatalog {
    *
    * @returns {void}
    */
-  addLink(url, relType, title) {
+  addLink(url: string, relType: string, title: string): void {
     this.links.push({
       href: url,
       rel: relType,
@@ -66,7 +66,7 @@ class HarmonyCatalog {
    *
    * @returns {Object} - STAC Catalog JSON
    */
-  toJSON() {
+  toJSON(): object {
     const paths = ['id', 'stac_version', 'title', 'description', 'links'];
     return pick(this, paths);
   }

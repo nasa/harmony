@@ -5,8 +5,10 @@ import * as stream from 'stream';
 import * as tmp from 'tmp';
 import { URL } from 'url';
 import * as util from 'util';
+import { GetObjectRequest } from 'aws-sdk/clients/s3';
 
 import env = require('./env');
+
 const { awsDefaultRegion } = env;
 
 const pipeline = util.promisify(stream.pipeline);
@@ -28,7 +30,7 @@ export class S3ObjectStore {
    *
    * @param {object} overrides values to set when constructing the underlying S3 store
    */
-  constructor(overrides?) {
+  constructor(overrides?: object) {
     this.s3 = this._getS3(overrides);
   }
 
@@ -58,7 +60,7 @@ export class S3ObjectStore {
    * @throws {TypeError} if the URL is not a recognized protocol or cannot be parsed
    * @memberof S3ObjectStore
    */
-  async signGetObject(objectUrl, params) {
+  async signGetObject(objectUrl: string, params: any): Promise<string> {
     const url = new URL(objectUrl);
     if (url.protocol.toLowerCase() !== 's3:') {
       throw new TypeError(`Invalid S3 URL: ${objectUrl}`);
@@ -89,7 +91,7 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  getObject(paramsOrUrl, callback?) {
+  getObject(paramsOrUrl: any, callback?: any): any {
     return this.s3.getObject(this._paramsOrUrlToParams(paramsOrUrl), callback);
   }
 
@@ -103,7 +105,7 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  headObject(paramsOrUrl) {
+  headObject(paramsOrUrl: any): Promise<object> {
     return this.s3.headObject(this._paramsOrUrlToParams(paramsOrUrl)).promise();
   }
 
@@ -117,14 +119,14 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  _paramsOrUrlToParams(paramsOrUrl) {
-    let params = paramsOrUrl;
+  _paramsOrUrlToParams(paramsOrUrl: string | GetObjectRequest): any {
+    const params = paramsOrUrl;
     if (typeof params === 'string') {
       const match = params.match(new RegExp('s3://([^/]+)/(.*)'));
       if (!match) {
         throw new TypeError(`getObject string does not seem to be an S3 URL: ${params}`);
       }
-      params = { Bucket: match[1], Key: match[2] };
+      return { Bucket: match[1], Key: match[2] };
     }
     return params;
   }
@@ -139,7 +141,7 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  async downloadFile(paramsOrUrl) {
+  async downloadFile(paramsOrUrl: object | string): Promise<string> {
     const tempFile = await createTmpFileName();
     const getObjectResponse = this.getObject(paramsOrUrl);
     await pipeline(getObjectResponse.createReadStream(), fs.createWriteStream(tempFile));
@@ -156,7 +158,7 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  async uploadFile(fileName, paramsOrUrl) {
+  async uploadFile(fileName: string, paramsOrUrl: any): Promise<string> {
     const fileContent = await readFile(fileName);
     const params = this._paramsOrUrlToParams(paramsOrUrl);
     params.Body = fileContent;
@@ -176,7 +178,9 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied or contentLength is not supplied
    * @memberof S3ObjectStore
    */
-  async upload(stringOrStream, paramsOrUrl, contentLength = null, contentType = null) {
+  async upload(
+    stringOrStream: any, paramsOrUrl: any, contentLength: number = null, contentType: string = null,
+  ): Promise<any> {
     const params = this._paramsOrUrlToParams(paramsOrUrl);
 
     let body = stringOrStream;
@@ -217,7 +221,7 @@ export class S3ObjectStore {
    * @returns {string} the URL for the object
    * @memberof S3ObjectStore
    */
-  getUrlString(bucket, key) {
+  getUrlString(bucket: string, key: string): string {
     return `s3://${bucket}/${key}`;
   }
 }
@@ -230,7 +234,7 @@ export class S3ObjectStore {
  *   which case the protocol will be read from the front of the URL.
  * @returns {ObjectStore} an object store for interacting with the given protocol
  */
-export function objectStoreForProtocol(protocol?) {
+export function objectStoreForProtocol(protocol?: string): any {
   if (!protocol) {
     return null;
   }
@@ -248,6 +252,6 @@ export function objectStoreForProtocol(protocol?) {
  *
  * @returns {ObjectStore} the default object store for Harmony.
  */
-export function defaultObjectStore() {
+export function defaultObjectStore(): any {
   return new S3ObjectStore({});
 }

@@ -32,7 +32,7 @@ class HarmonyItem {
    * @param {string} description - Description of the STAC Item
    * @param {number} index - The index of this item in the STAC catalog
    */
-  constructor(id = uuid(), title = '', description = '', index) {
+  constructor(id: string = uuid(), title = '', description = '', index: number) {
     this.id = `${id}_${index}`;
     this.stac_version = '0.9.0';
     this.title = title;
@@ -52,7 +52,7 @@ class HarmonyItem {
    * @param {number[]} bbox - GeoJSON bounding box
    * @returns {void}
    */
-  addSpatialExtent(bbox) {
+  addSpatialExtent(bbox: number[]): void {
     // Validate bounding box; should compliant with GeoJSON spec
     if (bbox.length < 4) {
       throw new TypeError('Bounding box');
@@ -108,7 +108,7 @@ class HarmonyItem {
    *
    * @returns {void}
    */
-  addLink(url, relType, title) {
+  addLink(url: string, relType: string, title: string): void {
     this.links.push({
       href: url,
       rel: relType,
@@ -124,7 +124,7 @@ class HarmonyItem {
    *
    * @returns {void}
    */
-  addTemporalExtent(start, end) {
+  addTemporalExtent(start: string, end: string): void {
     // Validate
     this.setProperty('start_datetime', start);
     this.setProperty('end_datetime', end);
@@ -138,7 +138,7 @@ class HarmonyItem {
    *
    * @returns {void}
    */
-  setProperty(name, value) {
+  setProperty(name: string, value: string): void {
     this.properties[name] = value;
   }
 
@@ -153,7 +153,7 @@ class HarmonyItem {
    *
    * @returns {void}
    */
-  addAsset(href, title, mimetype) {
+  addAsset(href: string, title: string, mimetype: string): void {
     let role = 'data';
     // Determine the role based on mimetype
     const [type, subtype] = mimetype.split('/');
@@ -193,7 +193,7 @@ class HarmonyItem {
    *
    * @returns {Object} - STAC item JSON
    */
-  toJSON() {
+  toJSON(): object {
     const paths = ['id', 'stac_version', 'title', 'description', 'type', 'bbox', 'geometry', 'properties', 'assets', 'links'];
     return pick(this, paths);
   }

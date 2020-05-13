@@ -11,10 +11,10 @@ import env = require('util/env');
  *
  * @param {http.IncomingMessage} req The client request, containing an operation
  * @param {http.ServerResponse} res The client response
- * @param {function} next The next function in the middleware chain
+ * @param {Function} next The next function in the middleware chain
  * @returns {void}
  */
-export default async function cmrGranuleLocator(req, res, next) {
+export default async function cmrGranuleLocator(req, res, next: Function): Promise<void> {
   const { operation } = req;
   const { logger } = req.context;
 

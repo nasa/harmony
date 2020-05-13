@@ -11,7 +11,7 @@ describe('OGC API Coverages - Utilities', function () {
   describe('parseSubsetParams', function () {
     // Function that returns a function that calls parseSubsetParams with the given value,
     // necessary for setting mocha expectations about exceptions.
-    const parseSubsetParamsFn = (value) => () => parseSubsetParams(value);
+    const parseSubsetParamsFn = (value) => (): object => parseSubsetParams(value);
 
     describe('lat subsets', function () {
       it('returns a parsed object with "lat" info when passed a valid range', function () {

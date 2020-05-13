@@ -9,7 +9,7 @@ import { auth } from './auth';
  * @param {String} jobId The job ID
  * @returns {Response} An awaitable object that resolves to the request response
  */
-export function stacCatalog(app, jobId) {
+export function stacCatalog(app: Express.Application, jobId: string): any {
   return request(app).get(`/stac/${jobId}`);
 }
 
@@ -21,7 +21,7 @@ export function stacCatalog(app, jobId) {
  * @param {number} index The index of the stac item in the stac catalog
  * @returns {Response} An awaitable object that resolves to the request response
  */
-export function stacItem(app, jobId, index) {
+export function stacItem(app: Express.Application, jobId: string, index: number): any {
   return request(app).get(`/stac/${jobId}/${index}`);
 }
 
@@ -32,7 +32,7 @@ export function stacItem(app, jobId, index) {
  * @param {String} username optional user to simulate logging in as
  * @returns {void}
  */
-export function hookStacCatalog(jobId, username = undefined) {
+export function hookStacCatalog(jobId: string, username: string = undefined): void {
   before(async function () {
     if (username) {
       this.res = await stacCatalog(this.frontend, jobId).use(auth({ username }));
@@ -53,7 +53,7 @@ export function hookStacCatalog(jobId, username = undefined) {
 * @param {String} username optional user to simulate logging in as
 * @returns {void}
 */
-export function hookStacItem(jobId, index, username = undefined) {
+export function hookStacItem(jobId: string, index: number, username: string = undefined): void {
   before(async function () {
     if (username) {
       this.res = await stacItem(this.frontend, jobId, index).use(auth({ username }));

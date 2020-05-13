@@ -1,4 +1,4 @@
-import { Job, JobStatus, JobQuery } from 'models/job';
+import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
 import isUUID from 'util/uuid';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
@@ -16,7 +16,7 @@ import db = require('util/db');
  * @param {string} urlRoot the root URL to be used when constructing links
  * @returns {Object} the job with appropriate links based on the type of links
  */
-function _getLinksForDisplay(job, urlRoot) {
+function _getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
   let { links } = job;
   const dataLinks = job.getRelatedLinks('data');
   const directS3AccessLink = dataLinks.find((l) => l.href.match(/^s3:\/\/.*$/));
@@ -33,13 +33,18 @@ function _getLinksForDisplay(job, urlRoot) {
   return links;
 }
 
+export interface JobListing {
+  count: number;
+  jobs: Job[];
+  links: JobLink[];
+}
 /**
  * Express.js handler that handles the jobs listing endpoint (/jobs)
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
  */
-export async function getJobsListing(req, res): Promise<void> {
+export async function getJobsListing(req: any, res: any): Promise<void> {
   try {
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req);
@@ -56,7 +61,7 @@ export async function getJobsListing(req, res): Promise<void> {
       serializedJob.links = _getLinksForDisplay(serializedJob, root);
       return serializedJob;
     });
-    const response = {
+    const response: JobListing = {
       count: listing.pagination.total,
       jobs: serializedJobs,
       links: getPagingLinks(req, listing.pagination),
@@ -87,7 +92,7 @@ export async function getJobsListing(req, res): Promise<void> {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-export async function getJobStatus(req, res): Promise<void> {
+export async function getJobStatus(req: any, res: any): Promise<void> {
   const { jobID } = req.params;
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   if (!isUUID(jobID)) {

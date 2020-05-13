@@ -11,9 +11,12 @@ import * as path from 'path';
 import * as querystring from 'querystring';
 
 import { isUrlBound } from 'backends/service-response';
+import { Stream } from 'stream';
+import { Logger } from 'winston';
 import BaseService from './base-service';
 
 import env = require('util/env');
+
 const { isDevelopment } = env;
 
 const blankStrings = ['\n', '\r', ''];
@@ -25,7 +28,7 @@ const blankStrings = ['\n', '\r', ''];
  * @param {String} line The string to return
  * @returns {boolean} true if the passed in string is empty
  */
-function blank(line) {
+function blank(line: string): boolean {
   return blankStrings.includes(line);
 }
 
@@ -39,7 +42,9 @@ function blank(line) {
  * @param {String} field The name of the field to use in the JSON log message.
  * @returns {void}
  */
-function processLogMessagesFromStream(stream, logger, streamType, field) {
+function processLogMessagesFromStream(
+  stream: Stream, logger: Logger, streamType: string, field: string,
+): void {
   const lines = stream.toString().split('\n');
   const message = `child ${streamType}`;
   lines.forEach((line) => {
@@ -61,7 +66,7 @@ function processLogMessagesFromStream(stream, logger, streamType, field) {
  * @param {Logger} logger The logger associated with this request
  * @returns {void}
  */
-function logProcessOutput(child, logger) {
+function logProcessOutput(child, logger: Logger): void {
   child.stdout.setEncoding('utf8');
   child.stdout.on('data', (data) => {
     processLogMessagesFromStream(data, logger, 'stdout', 'dockerOut');
@@ -80,7 +85,7 @@ function logProcessOutput(child, logger) {
  * @param {Logger} logger The logger associated with this request
  * @returns {void}
  */
-function childProcessAborted(callbackUrl, logger) {
+function childProcessAborted(callbackUrl: string, logger: Logger): void {
   logger.error('Child did not hit the callback URL. Returning service request failed with an unknown error to the user.');
   const querystr = querystring.stringify({ error: 'Service request failed with an unknown error.' });
   fetch(`${callbackUrl}/response?${querystr}`, {
@@ -99,11 +104,11 @@ export default class LocalDockerService extends BaseService {
    * Invoke the service at the local command line, passing --harmony-action and --harmony-input
    * parameters to the Docker container
    *
-   * @param {Log} logger the logger associated with the request
+   * @param {Logger} logger the logger associated with the request
    * @memberof LocalDockerService
    * @returns {void}
    */
-  _run(logger) {
+  _run(logger: Logger): void {
     // DELETE ME: Hacks for PO.DAAC having granule metadata with missing files.  They will fix.
     if (this.config.name === 'podaac-cloud/l2-subsetter-service') {
       this.operation.sources[0].granules = this.operation.sources[0].granules.slice(5);
@@ -151,7 +156,7 @@ export default class LocalDockerService extends BaseService {
    * @param {string} image the name of the docker image
    * @returns {string[]} an array of additional parameters to pass to docker
    */
-  dockerParamsForEnv() {
+  dockerParamsForEnv(): string[] {
     const result = [];
     if (isDevelopment) {
       // Note that checking the fs like this should not be done in production and should be cached,

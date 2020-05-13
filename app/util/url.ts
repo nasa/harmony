@@ -6,7 +6,7 @@ import * as url from 'url';
  * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
  * @returns {string} The protocol (http or https) to use for public Harmony URLs
  */
-function _getProtocol(req) {
+function _getProtocol(req): string {
   const host = req.get('host');
   return (host.startsWith('localhost') || host.startsWith('127.0.0.1')) ? 'http' : 'https';
 }
@@ -19,7 +19,7 @@ function _getProtocol(req) {
  * @param {object} queryOverrides Key/value pairs to set / override in the query
  * @returns {string} The URL the incoming request is requesting
  */
-export function getRequestUrl(req, includeQuery = true, queryOverrides = {}): string {
+export function getRequestUrl(req, includeQuery = true, queryOverrides: object = {}): string {
   return url.format({
     protocol: _getProtocol(req),
     host: req.get('host'),
@@ -36,7 +36,7 @@ export function getRequestUrl(req, includeQuery = true, queryOverrides = {}): st
  * @param {boolean} includeQuery Include the query string in the returned URL (default: true)
  * @returns {string} The URL the incoming request is requesting
  */
-export function getSanitizedRequestUrl(req, includeQuery = true) {
+export function getSanitizedRequestUrl(req, includeQuery = true): string {
   return url.format({
     protocol: _getProtocol(req),
     host: req.get('host'),
@@ -51,7 +51,7 @@ export function getSanitizedRequestUrl(req, includeQuery = true) {
  * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
  * @returns {string} The URL the incoming request is requesting
  */
-export function getRequestRoot(req) {
+export function getRequestRoot(req): string {
   return url.format({
     protocol: _getProtocol(req),
     host: req.get('host'),

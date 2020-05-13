@@ -1,7 +1,8 @@
-import simpleOAuth2 from 'simple-oauth2';
+import simpleOAuth2, { OAuthClient } from 'simple-oauth2';
 import { listToText } from 'util/string';
 import { ForbiddenError } from 'util/errors';
 import { setCookiesForEdl } from 'util/cookies';
+// import { RequestHandler } from 'express';
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
@@ -38,10 +39,10 @@ const oauthOptions = {
  * @param {Object} oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
  * @param {http.IncomingMessage} req The client request
  * @param {http.ServerResponse} res The client response
- * @param {function} _next The next function in the middleware chain
+ * @param {Function} _next The next function in the middleware chain
  * @returns {void}
  */
-async function handleCodeValidation(oauth2, req, res, _next) {
+async function handleCodeValidation(oauth2: OAuthClient, req, res, _next: Function): Promise<void> {
   const tokenConfig = {
     code: req.query.code,
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
@@ -61,10 +62,10 @@ async function handleCodeValidation(oauth2, req, res, _next) {
  * @param {Object} oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
  * @param {http.IncomingMessage} req The client request
  * @param {http.ServerResponse} res The client response
- * @param {function} _next The next function in the middleware chain
+ * @param {Function} _next The next function in the middleware chain
  * @returns {void}
  */
-function handleLogout(oauth2, req, res, _next) {
+function handleLogout(oauth2: OAuthClient, req, res, _next: Function): void {
   const { redirect } = req.query;
 
   const { token } = req.signedCookies;
@@ -92,10 +93,10 @@ function handleLogout(oauth2, req, res, _next) {
  * @param {Object} oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
  * @param {http.IncomingMessage} req The client request
  * @param {http.ServerResponse} res The client response
- * @param {function} _next The next function in the middleware chain
+ * @param {Function} _next The next function in the middleware chain
  * @returns {void}
  */
-function handleNeedsAuthorized(oauth2, req, res, _next) {
+function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next: Function): void {
   const url = oauth2.authorizationCode.authorizeURL({
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
   });
@@ -112,18 +113,19 @@ function handleNeedsAuthorized(oauth2, req, res, _next) {
  * @param {Object} oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
  * @param {http.IncomingMessage} req The client request
  * @param {http.ServerResponse} res The client response
- * @param {function} next The next function in the middleware chain
+ * @param {Function} next The next function in the middleware chain
  * @returns {void}
  *
  * @returns {*} The result of calling the adapter's redirect method
  */
-async function handleAuthorized(oauth2, req, res, next) {
+async function handleAuthorized(oauth2: OAuthClient, req, res, next: Function): Promise<void> {
   const { token } = req.signedCookies;
   const oauthToken = oauth2.accessToken.create(token);
   req.accessToken = oauthToken.token.access_token;
   try {
     if (oauthToken.expired()) {
-      const refreshed = await oauthToken.refresh();
+      // TODO access_token does not exist on AccessToken ?
+      const refreshed: any = await oauthToken.refresh();
       res.cookie('token', refreshed.token, cookieOptions);
       req.accessToken = refreshed.access_token;
     }
@@ -150,8 +152,8 @@ async function handleAuthorized(oauth2, req, res, next) {
  * @param {Array<string>} paths Paths that require auth
  * @returns {Function} Express.js middleware for doing EDL
  */
-export default function buildEdlAuthorizer(paths = []) {
-  return async function earthdataLoginAuthorizer(req, res, next) {
+export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): Function {
+  return async function earthdataLoginAuthorizer(req, res, next): Promise<any> {
     const oauth2 = simpleOAuth2.create(oauthOptions);
     const { token } = req.signedCookies;
     const requiresAuth = paths.some((p) => req.path.match(p));

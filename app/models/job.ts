@@ -116,6 +116,10 @@ export class Job extends Record {
 
   jobID: string;
 
+  updatedAt: Date | number;
+
+  createdAt: Date | number;
+
   /**
    * Returns an array of all jobs that match the given constraints
    *
@@ -275,7 +279,7 @@ export class Job extends Record {
    *
    * @param message - (optional) a human-readable success message.  See method description.
    */
-  succeed(message: string): void {
+  succeed(message?: string): void {
     this.updateStatus(JobStatus.SUCCESSFUL, message);
   }
 
@@ -287,7 +291,7 @@ export class Job extends Record {
    * @param status - The new status, one of successful, failed, running, accepted
    * @param message - (optional) a human-readable status message
    */
-  updateStatus(status: JobStatus, message: string): void {
+  updateStatus(status: JobStatus, message?: string): void {
     this.status = status;
     if (message) {
       // Update the message if a new one was provided
@@ -322,7 +326,7 @@ export class Job extends Record {
    * @param transaction - The transaction to use for saving the job
    * @throws {@link Error} if the job is invalid
    */
-  async save(transaction: Trx): Promise<void> {
+  async save(transaction: Transaction): Promise<void> {
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     const { links } = this;
     delete this.links;

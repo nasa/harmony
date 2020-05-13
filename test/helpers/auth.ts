@@ -1,4 +1,4 @@
-import { stub } from 'sinon';
+import { stub, SinonStub } from 'sinon';
 import { serialize } from 'cookie';
 import { sign } from 'cookie-signature';
 import { prototype } from 'simple-oauth2/lib/client';
@@ -13,7 +13,7 @@ import { prototype } from 'simple-oauth2/lib/client';
  *   Login would return
  * @returns {sinon.stub} The sinon stub that was created
  */
-export function stubEdlRequest(url, params, response) {
+export function stubEdlRequest(url: string, params: object, response: object): SinonStub {
   return stub(prototype, 'request').withArgs(url, params).resolves(response);
 }
 
@@ -27,7 +27,7 @@ export function stubEdlRequest(url, params, response) {
  * @param {string} message The thrown exception's message
  * @returns {sinon.stub} The sinon stub that was created
  */
-export function stubEdlError(url, params, message) {
+export function stubEdlError(url: string, params: object, message: string): SinonStub {
   const error = new Error(message);
   return stub(prototype, 'request').withArgs(url, params).throws(error);
 }
@@ -36,7 +36,7 @@ export function stubEdlError(url, params, message) {
  * Removes stubs from Earthdata Login requests
  * @returns {void}
  */
-export function unstubEdlRequest() {
+export function unstubEdlRequest(): void {
   prototype.request.restore();
 }
 
@@ -55,7 +55,7 @@ export function token({
   expiresDelta = 3600,
   accessToken = 'fake_access',
   refreshToken = 'fake_refresh',
-}) {
+}): object {
   return {
     token_type: 'Bearer',
     access_token: accessToken,
@@ -75,7 +75,7 @@ export function token({
  * @param {*} secret The cookie signing secret
  * @returns {string} The serialized, signed cookie header
  */
-function signedCookie(name, data, secret) {
+function signedCookie(name: any, data: any, secret: any): string {
   // Serialize prefixed with 'j:' so express recognizes it as a JSON object when deserializing
   const serialized = `j:${JSON.stringify(data)}`;
   // Sign and then prefix with 's:' so express recognizes it as a signed cookie when deserializing
@@ -97,7 +97,7 @@ export function auth({
   secret = process.env.COOKIE_SECRET,
   expired = false,
   extraCookies = null,
-}) {
+}): any {
   const expiresIn = 3600;
   const expiresDelta = expired ? -expiresIn : expiresIn;
   const cookieData = token({
@@ -114,7 +114,7 @@ export function auth({
     });
   }
 
-  return (request) => request.set('Cookie', cookieStr);
+  return (request): any => request.set('Cookie', cookieStr);
 }
 
 /**
@@ -125,7 +125,9 @@ export function auth({
  * @param {string} [secret=process.env.COOKIE_SECRET] The cookie signing secret
  * @returns {Function} A function that sets the redirect cookie
  */
-export function authRedirect(location, secret = process.env.COOKIE_SECRET) {
+export function authRedirect(
+  location: string, secret: string = process.env.COOKIE_SECRET,
+): Function {
   const cookieStr = signedCookie('redirect', location, secret);
-  return (request) => request.set('Cookie', cookieStr);
+  return (request): any => request.set('Cookie', cookieStr);
 }

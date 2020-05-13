@@ -51,8 +51,8 @@ function loadServiceConfigs(): void {
   const regex = /\$\{(\w+)\}/g;
   const EnvType = new yaml.Type('!Env', {
     kind: 'scalar',
-    resolve: (data) => data,
-    construct: (data) => data.replace(regex, (env) => process.env[env.match(/\w+/)] || ''),
+    resolve: (data): any => data,
+    construct: (data): any => data.replace(regex, (env) => process.env[env.match(/\w+/)] || ''),
   });
 
   // Load the config
@@ -113,8 +113,8 @@ function isCollectionMatch(operation: DataOperation, serviceConfig: ServiceConfi
  * @private
  */
 function selectServicesForFormat(
-  format: string, configs: Array<ServiceConfig>,
-): Array<ServiceConfig> {
+  format: string, configs: ServiceConfig[],
+): ServiceConfig[] {
   return configs.filter((config) => {
     const supportedFormats = getIn(config, 'capabilities.output_formats', []);
     return supportedFormats.find((f) => isMimeTypeAccepted(f, format));
@@ -131,7 +131,7 @@ function selectServicesForFormat(
  * @private
  */
 function selectFormat(
-  operation: DataOperation, context: RequestContext, configs: Array<ServiceConfig>,
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig[],
 ): string {
   let { outputFormat } = operation;
   if (!outputFormat && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
@@ -169,7 +169,7 @@ function requiresVariableSubsetting(operation: DataOperation): boolean {
  * @returns {Array<Object>} Any configurations that support variable subsetting
  * @private
  */
-function supportsVariableSubsetting(configs: Array<ServiceConfig>): Array<ServiceConfig> {
+function supportsVariableSubsetting(configs: ServiceConfig[]): ServiceConfig[] {
   return configs.filter((config) => getIn(config, 'capabilities.subsetting.variable', false));
 }
 
@@ -192,8 +192,8 @@ class UnsupportedOperation extends Error {}
  * @private
  */
 function filterCollectionMatches(
-  operation: DataOperation, context: RequestContext, configs: Array<ServiceConfig>,
-): Array<ServiceConfig> {
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig[],
+): ServiceConfig[] {
   const matches = configs.filter((config) => isCollectionMatch(operation, config));
   if (matches.length === 0) {
     throw new UnsupportedOperation('no services are configured for the collection');
@@ -213,8 +213,8 @@ function filterCollectionMatches(
  * @private
  */
 function filterVariableSubsettingMatches(
-  operation: DataOperation, context: RequestContext, configs: Array<ServiceConfig>,
-): Array<ServiceConfig> {
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig[],
+): ServiceConfig[] {
   const variableSubsettingNeeded = requiresVariableSubsetting(operation);
   const matches = variableSubsettingNeeded ? supportsVariableSubsetting(configs) : configs;
   if (matches.length === 0) {
@@ -234,8 +234,8 @@ function filterVariableSubsettingMatches(
  * @private
  */
 function filterOutputFormatMatches(
-  operation: DataOperation, context: RequestContext, configs: Array<ServiceConfig>,
-): Array<ServiceConfig> {
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig[],
+): ServiceConfig[] {
   // If the user requested a certain output format
   let services = [];
   if (operation.outputFormat
@@ -273,7 +273,7 @@ function filterOutputFormatMatches(
 function unsupportedCombinationMessage(
   operation: DataOperation,
   context: RequestContext,
-  configs: Array<ServiceConfig>,
+  configs: ServiceConfig[],
   originalReason: string,
 ): string {
   let reason = originalReason;
@@ -323,7 +323,7 @@ const operationFilterFns = [
 export function forOperation(
   operation: DataOperation,
   context?: RequestContext,
-  configs: Array<ServiceConfig> = serviceConfigs,
+  configs: ServiceConfig[] = serviceConfigs,
 ): BaseService {
   let service;
   let matches = configs;

@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
-import { Job, JobStatus } from 'models/job';
+import { Job, JobStatus, JobRecord } from 'models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure, truncateAll } from '../helpers/db';
 import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations, hookAdminJobListing } from '../helpers/jobs';
 
 
 // Example jobs to use in tests
-const woodyJob1 = {
+const woodyJob1: JobRecord = {
   username: 'woody',
   requestId: uuid().toString(),
   status: JobStatus.SUCCESSFUL,
@@ -18,7 +18,7 @@ const woodyJob1 = {
   request: 'http://example.com/harmony?request=woody1',
 };
 
-const woodyJob2 = {
+const woodyJob2: JobRecord = {
   username: 'woody',
   requestId: uuid().toString(),
   status: JobStatus.RUNNING,
@@ -28,7 +28,7 @@ const woodyJob2 = {
   request: 'http://example.com/harmony?request=woody2',
 };
 
-const buzzJob1 = {
+const buzzJob1: JobRecord = {
   username: 'buzz',
   requestId: uuid().toString(),
   status: JobStatus.RUNNING,

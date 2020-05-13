@@ -18,7 +18,7 @@ const UUID_REGEX = /\/service\/(.*)/;
  * @param {string} url The URL of the response to forget
  * @returns {void}
  */
-export function unbindResponseUrl(url) {
+export function unbindResponseUrl(url: string): void {
   if (url) {
     idsToCallbacks.delete(url.split('/').pop());
   }
@@ -30,7 +30,7 @@ export function unbindResponseUrl(url) {
  * @param {function} responseCallback A callback run when the URL is loaded
  * @returns {string} The url the backend should call to invoke the function
  */
-export function bindResponseUrl(responseCallback) {
+export function bindResponseUrl(responseCallback: Function): string {
   if (!config.baseUrl) {
     throw new Error('Call configure({ baseUrl }) before calling createResponseUrl');
   }
@@ -49,7 +49,7 @@ export function bindResponseUrl(responseCallback) {
  * @param {string} callbackUrl The callback URL
  * @returns {boolean} true if the URL is registered and false otherwise
  */
-export function isUrlBound(callbackUrl) {
+export function isUrlBound(callbackUrl: string): boolean {
   const callbackUUIDMatch = callbackUrl.match(UUID_REGEX);
   if (callbackUUIDMatch && idsToCallbacks.get(callbackUUIDMatch[1])) {
     return true;
@@ -67,7 +67,7 @@ export function isUrlBound(callbackUrl) {
  * @returns {void}
  * @throws {Error} if no callback can be found for the given ID
  */
-export function responseHandler(req, res) {
+export function responseHandler(req: any, res: any): void {
   const id = req.params.uuid;
   if (!idsToCallbacks.get(id)) {
     throw new Error(`Could not find response callback for UUID ${id}`);
@@ -84,7 +84,7 @@ export function responseHandler(req, res) {
  * @param {{baseUrl: string}} config Configuration containing the base URL of the endpoint
  * @returns {void}
  */
-export function configure({ baseUrl }) {
+export function configure({ baseUrl }: { baseUrl: string }): void {
   if (baseUrl) {
     const newUrl = baseUrl + (baseUrl.endsWith('/') ? '' : '/');
     if (config.baseUrl && config.baseUrl !== newUrl) {

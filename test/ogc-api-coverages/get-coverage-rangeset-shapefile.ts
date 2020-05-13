@@ -5,6 +5,7 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import * as fs from 'fs';
 import isUUID from 'util/uuid';
+import { Application } from 'express';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
 import { auth } from '../helpers/auth';
@@ -22,7 +23,9 @@ import { hookMockS3, getJson } from '../helpers/object-store';
  * @param {string} variableName The variable name
  * @returns {Response} the response from the request
  */
-async function commonValidationSteps(app, res, version, collection, variableName) {
+async function commonValidationSteps(
+  app: Application, res: Response, version: string, collection: string, variableName: string,
+): Promise<any> {
   const shapefileHeader = res.headers['set-cookie'].filter((cookie) => {
     const decoded = decodeURIComponent(cookie);
     const parsed = parse(decoded);
@@ -33,7 +36,8 @@ async function commonValidationSteps(app, res, version, collection, variableName
   const cookieValue = stripSignature(parsed.shapefile);
   const cookies = { shapefile: cookieValue };
   // we 'follow' the redirect from EDL
-  return rangesetRequest(app, version, collection, variableName, { query: res.body, cookies }).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+  return rangesetRequest(app, version, collection, variableName, { query: res.body, cookies })
+    .use(auth({ username: 'fakeUsername', extraCookies: cookies }));
 }
 
 describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
