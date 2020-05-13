@@ -137,7 +137,7 @@ export default class BaseService {
    * @memberof BaseService
    * @returns {Promise<InvocationResult>}
    */
-  async _run(_logger): Promise<InvocationResult> {
+  protected async _run(_logger): Promise<InvocationResult> {
     throw new TypeError('BaseService subclasses must implement #_run()');
   }
 
@@ -151,7 +151,7 @@ export default class BaseService {
    * @returns {Promise<InvocationResult>}
    * @memberof BaseService
    */
-  async _processSyncCallback(req, res, job: Job, logger): Promise<InvocationResult> {
+  protected async _processSyncCallback(req, res, job: Job, logger): Promise<InvocationResult> {
     let result = null;
 
     const respondToService = (err): void => {
@@ -207,7 +207,7 @@ export default class BaseService {
    * @returns {void}
    * @memberof BaseService
    */
-  async _processAsyncCallback(req, res, logger) {
+  protected async _processAsyncCallback(req, res, logger) {
     const trx = await db.transaction();
 
     const { user, requestId } = this.operation;
@@ -255,7 +255,7 @@ export default class BaseService {
    * @throws {ServerError} If job update fails unexpectedly
    * @memberof BaseService
    */
-  async _updateJobFields(logger, job, query) { /* eslint-disable no-param-reassign */
+  protected async _updateJobFields(logger, job, query) { /* eslint-disable no-param-reassign */
     const { error, item, status, redirect, progress } = query;
     try {
       if (item) {
@@ -311,7 +311,7 @@ export default class BaseService {
    * @memberof BaseService
    * @throws {ServerError} if the job cannot be created
    */
-  async _createJob(transaction, logger, requestUrl, stagingLocation) {
+  protected async _createJob(transaction, logger, requestUrl, stagingLocation) {
     const { requestId, user } = this.operation;
     logger.info(`Creating job for ${requestId}`);
     const job = new Job({
