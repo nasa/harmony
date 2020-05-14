@@ -1,5 +1,6 @@
 import { Job, JobStatus } from 'models/job';
 import BaseService from './base-service';
+import InvocationResult from './invocation-result';
 
 /**
  * Service implementation that does not actually perform any transformation
@@ -33,15 +34,7 @@ export default class NoOpService extends BaseService {
    * @param requestUrl - The URL the end user invoked
    * @returns a promise with the Job status response
    */
-  async invoke(logger, harmonyRoot, requestUrl): Promise<{
-    error: string;
-    statusCode: number;
-    redirect: string;
-    stream: any;
-    headers: object;
-    content: string;
-    onComplete: Function;
-  }> {
+  async invoke(logger, harmonyRoot, requestUrl): Promise<InvocationResult> {
     const now = new Date();
     const granules = this.operation.sources.flatMap((source) => source.granules);
     const links = granules.map((granule) => ({ title: granule.id, href: granule.url }));

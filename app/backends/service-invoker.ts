@@ -1,9 +1,9 @@
 import * as services from 'models/services/index';
 import { objectStoreForProtocol } from 'util/object-store';
 import { getRequestRoot, getRequestUrl } from 'util/url';
-import { ServiceResponse } from 'harmony/models/services/base-service';
 import { RequestHandler, Response } from 'express';
 import { ServiceError } from '../util/errors';
+import InvocationResult from '../models/services/invocation-result';
 import HarmonyRequest from '../models/harmony-request';
 
 import env = require('util/env');
@@ -18,7 +18,7 @@ import env = require('util/env');
  * @param {string} header The name of the header to set
  * @returns {void}
  */
-function copyHeader(serviceResult: ServiceResponse, res: Response, header: string): void {
+function copyHeader(serviceResult: InvocationResult, res: Response, header: string): void {
   res.set(header, serviceResult.headers[header.toLowerCase()]);
 }
 
@@ -36,12 +36,8 @@ function copyHeader(serviceResult: ServiceResponse, res: Response, header: strin
  * @returns {void}
  * @throws {ServiceError} If the backend service returns an error
  */
-async function translateServiceResult(
-  serviceResult: ServiceResponse,
-  user: string,
-  res: Response,
-): Promise<void> {
-  for (const k of Object.keys(serviceResult.headers)) {
+async function translateServiceResult(serviceResult, user, res): Promise<void> {
+  for (const k of Object.keys(serviceResult.headers || {})) {
     if (k.toLowerCase().startsWith('harmony')) {
       copyHeader(serviceResult, res, k);
     }

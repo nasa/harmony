@@ -7,6 +7,7 @@ import BaseService from 'models/services/base-service';
 import * as services from 'models/services/index';
 import { Logger } from 'winston';
 import DataOperation from 'harmony/models/data-operation';
+import InvocationResult from 'models/services/invocation-result';
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -47,12 +48,13 @@ export default class StubService extends BaseService {
    * `complete` must be run for a callback to occur.
    * @param {Logger} _logger the logger associated with the request
    * @memberof StubService
-   * @returns {void}
+   * @returns {Promise<InvocationResult>}
    */
-  async _run(_logger: Logger): Promise<void> {
+  async _run(_logger: Logger): Promise<InvocationResult> {
     this.isRun = true;
-    if (!this.operation.isSynchronous) return;
+    if (!this.operation.isSynchronous) return null;
     await this.complete();
+    return null;
   }
 
   /**

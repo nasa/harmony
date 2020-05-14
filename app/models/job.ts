@@ -1,4 +1,4 @@
-import pick from 'lodash.pick';
+import { pick } from 'lodash';
 import { Transaction } from 'knex'; // For types only
 import { IWithPagination } from 'knex-paginate'; // For types only
 
