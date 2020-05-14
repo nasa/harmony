@@ -6,9 +6,10 @@ import DataOperation from 'models/data-operation';
 
 const samplesDir = './test/resources/data-operation-samples';
 
-const CURRENT_SCHEMA_VERSION = '0.7.0';
+const CURRENT_SCHEMA_VERSION = '0.8.0';
 
 const versions = [
+  '0.8.0',
   '0.7.0',
   '0.6.0',
   '0.5.0',

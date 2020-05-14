@@ -1,0 +1,25 @@
+GET /search/variables.umm_json_v1_6?concept_id=V1233801695-EEDTEST&concept_id=V1233801696-EEDTEST&concept_id=V1233801716-EEDTEST&concept_id=V1233801717-EEDTEST&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.6; charset=utf-8
+content-length: 3369
+connection: close
+date: Mon, 11 May 2020 16:43:13 GMT
+set-cookie: AWSALB=WjYBdKX7eG9DV9EMvb9X99p76NNCOW6KYsnTn4ZlaOw3y2jMXp1MOkmZHTISD++DmgxyP+HUlRgd+pFM40+0K8rzt8+tiOcaZnP1hmial87u5GD2gDB2l1Qwvl/A; Expires=Mon, 18 May 2020 16:43:13 GMT; Path=/
+set-cookie: AWSALBCORS=WjYBdKX7eG9DV9EMvb9X99p76NNCOW6KYsnTn4ZlaOw3y2jMXp1MOkmZHTISD++DmgxyP+HUlRgd+pFM40+0K8rzt8+tiOcaZnP1hmial87u5GD2gDB2l1Qwvl/A; Expires=Mon, 18 May 2020 16:43:13 GMT; Path=/; SameSite=None
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out
+access-control-allow-origin: *
+cmr-hits: 4
+cmr-took: 16
+cmr-request-id: c9486c70-406c-467e-b84d-64ad3982e11d
+x-request-id: c9486c70-406c-467e-b84d-64ad3982e11d
+server: Jetty(9.4.z-SNAPSHOT)
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+x-cache: Miss from cloudfront
+via: 1.1 2c6ca3b401fc63cf43d9316aff164af5.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR52-C1
+x-amz-cf-id: Js4KSbVv2bICuZqmGpnIERzNuqAJY6wkL8RAid5eBqaJJoVZ6XIBfg==
+
+{"hits":4,"took":15,"items":[{"meta":{"revision-id":2,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"pquinn","native-id":"mmt_variable_3972","concept-id":"V1233801717-EEDTEST","revision-date":"2020-05-11T15:19:59Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Alias":"alpha_alias","Scale":1.0,"Characteristics":{"GroupPath":"/"},"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":4.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Alpha channel value","Name":"alpha_var","AcquisitionSourceName":"COLORIMETERS","ValidRanges":[{"Min":0.0,"Max":255.0}],"LongName":"Alpha channel "},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"scantrell8277","native-id":"mmt_variable_3971","concept-id":"V1233801716-EEDTEST","revision-date":"2020-02-25T20:19:42Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":3.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Blue channel value","Name":"blue_var","AcquisitionSourceName":"COLORIMETERS","ValidRanges":[{"Min":0.0,"Max":255.0}],"LongName":"Blue channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"scantrell8277","native-id":"mmt_variable_3970","concept-id":"V1233801696-EEDTEST","revision-date":"2020-02-25T20:17:27Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":2.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Green channel value","Name":"green_var","AcquisitionSourceName":"COLORIMETERS","ValidRanges":[{"Min":0.0,"Max":255.0}],"LongName":"Green channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"scantrell8277","native-id":"mmt_variable_3969","concept-id":"V1233801695-EEDTEST","revision-date":"2020-02-25T20:14:03Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":1.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Red channel value","Name":"red_var","AcquisitionSourceName":"COLORIMETERS","ValidRanges":[{"Min":0.0,"Max":255.0}],"LongName":"Red Channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}}]}

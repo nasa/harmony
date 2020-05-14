@@ -210,7 +210,7 @@ async function _cmrPostSearch(path, form, token) {
  * @private
  */
 async function queryVariables(query, token) {
-  const variablesResponse = await _cmrSearch('/search/variables.json', query, token);
+  const variablesResponse = await _cmrSearch('/search/variables.umm_json_v1_6', query, token);
   return variablesResponse.data.items;
 }
 

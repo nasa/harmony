@@ -118,7 +118,7 @@ describe('services.forOperation', function () {
 
     describe('requesting variable subsetting with an output format available on the variable subsetter service', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ id: 'V123-PROV1', name: 'the-var' }]);
+      operation.addSource(collectionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { name: 'the-var' } }]);
       operation.outputFormat = 'image/tiff';
       it('returns the service configured for variable subsetting', function () {
         const service = forOperation(operation, {}, this.config);
@@ -129,7 +129,7 @@ describe('services.forOperation', function () {
 
     describe('requesting variable subsetting with an output format that is not supported by the variable subsetting service, but is supported by other services', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ id: 'V123-PROV1', name: 'the-var' }]);
+      operation.addSource(collectionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { name: 'the-var' } }]);
       operation.outputFormat = 'application/x-zarr';
       it('returns the no op service', function () {
         const service = forOperation(operation, {}, this.config);
@@ -153,7 +153,7 @@ describe('services.forOperation', function () {
 
     describe('requesting variable subsetting and a format not supported by any services', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ id: 'V123-PROV1', name: 'the-var' }]);
+      operation.addSource(collectionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { name: 'the-var' } }]);
       operation.outputFormat = 'image/foo';
       it('returns the no op service', function () {
         const service = forOperation(operation, {}, this.config);
