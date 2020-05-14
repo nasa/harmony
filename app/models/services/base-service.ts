@@ -41,6 +41,9 @@ export default class BaseService {
 
   resolveInvocation: (value?: unknown) => void;
 
+  SyncServiceClass?: any;
+
+  message?: string;
 
   /**
    * Creates an instance of BaseService.

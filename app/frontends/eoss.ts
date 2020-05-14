@@ -6,7 +6,7 @@ import keysToLowerCase from 'util/object';
 import { RequestValidationError, NotFoundError } from 'util/errors';
 import DataOperation, { HarmonyVariable } from 'models/data-operation';
 import * as services from 'models/services';
-import { Application } from 'express';
+// import { Application } from 'express';
 
 const version = '0.1.0';
 const openApiPath = path.join(__dirname, '..', 'schemas', 'eoss', version, `eoss-v${version}.yml`);
@@ -21,7 +21,10 @@ const GRANULE_URL_PATH_REGEX = /\/(?:G\d+-\w+)/g;
  * @param {express.Application} router The express router
  * @returns {void}
  */
-export function addOpenApiRoutes(app: Application): void {
+export function addOpenApiRoutes(app: any): void {
+  // TODO - Calls from router.js to this are failing with argument of type 'Router' is not
+  // assignable to parameter of type 'Application'. Not sure how to resolve because the calls
+  // in here are not compatible with Router.
   initialize({
     app,
     apiDoc: openApiPath,

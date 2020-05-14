@@ -1,5 +1,5 @@
 import { before, after } from 'mocha';
-import request from 'supertest';
+import request, { Test } from 'supertest';
 
 /**
  * Example of a collection that can be hooked up to WMS
@@ -9,7 +9,7 @@ export const validCollection = 'C1233800302-EEDTEST';
 /**
  * Example of a valid WMS query for use in tests.
  */
-export const validGetMapQuery: any = {
+export const validGetMapQuery = {
   service: 'WMS',
   request: 'GetMap',
   layers: validCollection,
@@ -35,7 +35,7 @@ export const validGetMapQuery: any = {
  */
 export function wmsRequest(
   app: Express.Application, collection: string = validCollection, query: object = validGetMapQuery,
-): Promise<any> {
+): Test {
   return request(app)
     .get(`/${collection}/wms`)
     .query(query);

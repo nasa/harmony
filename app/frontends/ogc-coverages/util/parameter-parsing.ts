@@ -51,7 +51,7 @@ const dimensionConfig: DimensionConfig = {
     min: -90,
     max: 90,
     lowToHigh: true,
-    type: String,
+    type: Number,
     regex: numberRangeRegex,
   },
   lon: {
@@ -214,7 +214,9 @@ export function parseSubsetParams(
  * @returns {number[]} An array of 4 numbers corresponding to the [West, South, East, North]
  *   bounding box, or null if there is no lat or lon subsetting in values
  */
-export function subsetParamsToBbox(values: { lat?: Range<number>; lon?: Range<number> }): number[] {
+export function subsetParamsToBbox(
+  values: { lat?: Range<number>; lon?: Range<number>; time?: Range<Date> },
+): number[] {
   let { lat, lon } = values;
   if (!lat && !lon) {
     return null;
@@ -235,7 +237,9 @@ export function subsetParamsToBbox(values: { lat?: Range<number>; lon?: Range<nu
  * @param {Object} values parsed, valid subset params, as returned by `parseSubsetParams`
  * @returns {Object} An object with startTime and stopTime fields if applicable
  */
-export function subsetParamsToTemporal(values: { time?: Range<Date> }): TemporalRange {
+export function subsetParamsToTemporal(
+  values: { lat?: Range<number>; lon?: Range<number>; time?: Range<Date> },
+): TemporalRange {
   const { time } = values;
   const temporal: TemporalRange = {};
   if (time) {

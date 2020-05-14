@@ -17,9 +17,14 @@ class HarmonyItem {
 
   bbox: number[];
 
-  geometry: {};
+  geometry: {
+    type?: string;
+  };
 
-  properties: {};
+  properties: {
+    created?: string;
+    datetime?: string;
+  };
 
   assets: {};
 
@@ -207,7 +212,7 @@ class HarmonyItem {
  *
  * @returns  {Record<string, any>} - STAC Item JSON
  */
-export default function create(job: Job, index: number): object {
+export default function create(job: Job, index: number): HarmonyItem {
   const title = `Harmony output #${index} in job ${job.jobID}`;
   const description = `Harmony out for ${job.request}`;
   const item = new HarmonyItem(job.jobID, title, description, index);
@@ -235,5 +240,5 @@ export default function create(job: Job, index: number): object {
 
   item.addLink('../', 'self', 'self');
   item.addLink('../', 'root', 'parent');
-  return item.toJSON();
+  return item;
 }

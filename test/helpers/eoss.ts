@@ -1,5 +1,5 @@
 import { before, after } from 'mocha';
-import request from 'supertest';
+import request, { Test } from 'supertest';
 import { Application } from 'express';
 
 /**
@@ -14,7 +14,7 @@ import { Application } from 'express';
  */
 export function eossGetGranule(
   app: Application, version: string, collection: string, granule: string, query: object = {},
-): Promise<any> {
+): Test {
   return request(app)
     .get(`/${collection}/eoss/${version}/items/${granule}`)
     .query(query);

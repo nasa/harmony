@@ -47,7 +47,10 @@ function getSpecification(req: HarmonyRequest, res: Response): void {
  * @param {Application} app The express application
  * @returns {void}
  */
-export function addOpenApiRoutes(app: Application): void {
+export function addOpenApiRoutes(app: any): void {
+  // TODO - Calls from router.js to this are failing with argument of type 'Router' is not
+  // assignable to parameter of type 'Application'. Not sure how to resolve because the calls
+  // in here are not compatible with Router.
   initialize({
     app,
     apiDoc: openApiContent,

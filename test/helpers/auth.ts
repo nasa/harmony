@@ -2,6 +2,7 @@ import { stub, SinonStub } from 'sinon';
 import { serialize } from 'cookie';
 import { sign } from 'cookie-signature';
 import { prototype } from 'simple-oauth2/lib/client';
+import { Plugin, SuperAgentRequest } from 'superagent';
 
 /**
  * Stubs Earthdata Login HTTP calls exactly matching the given URL and parameters, returning the
@@ -127,7 +128,7 @@ export function auth({
  */
 export function authRedirect(
   location: string, secret: string = process.env.COOKIE_SECRET,
-): Function {
+): Plugin {
   const cookieStr = signedCookie('redirect', location, secret);
-  return (request): any => request.set('Cookie', cookieStr);
+  return (request): SuperAgentRequest => request.set('Cookie', cookieStr);
 }

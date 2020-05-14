@@ -1,8 +1,9 @@
 import { parse } from 'cookie';
 import * as url from 'url';
-import request from 'supertest';
+import request, { Test } from 'supertest';
 import { before, after, it, describe } from 'mocha';
 import { expect } from 'chai';
+import { Application } from 'express';
 import { auth } from './auth';
 
 const defaultCollection = 'C1233800302-EEDTEST';
@@ -75,14 +76,14 @@ export function hookLandingPage(collection: string, version: string): void {
  * @returns {Promise<Response>} The response
  */
 export function rangesetRequest(
-  app: Express.Application,
+  app: Application,
   version: string = defaultVersion,
   collection: string = defaultCollection,
   coverageId: string = defaultCoverageId,
   { query = {},
     headers = {},
     cookies = null } = {},
-): Promise<any> {
+): Test {
   const req = request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`)
     .query(query)

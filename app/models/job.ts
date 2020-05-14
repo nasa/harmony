@@ -110,15 +110,11 @@ export class Job extends Record {
 
   request: string;
 
-  _json_links: string | JobLink[];
+  _json_links?: string | JobLink[];
 
   status: string;
 
   jobID: string;
-
-  updatedAt: Date | number;
-
-  createdAt: Date | number;
 
   /**
    * Returns an array of all jobs that match the given constraints

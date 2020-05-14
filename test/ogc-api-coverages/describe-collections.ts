@@ -243,9 +243,11 @@ describe('OGC API Coverages - describeCollections - generateExtent', function ()
   const bboxString = '-89.99, -179.9, 90, 180';
   const temporalStart = '2002-08-31T00:00:00.000Z';
   const temporalEnd = '2016-09-25T23:59:59.000Z';
+  const baseCollection = { short_name: 'sn', version_id: '001', id: 'C1-FOO' };
 
   describe('contains spatial bounding box, temporal start, and temporal end', function () {
     const result = generateExtent({
+      ...baseCollection,
       boxes: [bboxString],
       time_start: temporalStart,
       time_end: temporalEnd,
@@ -265,7 +267,11 @@ describe('OGC API Coverages - describeCollections - generateExtent', function ()
   });
 
   describe('contains spatial bounding box and temporal start, but no temporal end', function () {
-    const result = generateExtent({ boxes: [bboxString], time_start: temporalStart });
+    const result = generateExtent({
+      ...baseCollection,
+      boxes: [bboxString],
+      time_start: temporalStart,
+    });
     it('includes correct spatial and temporal bounds', function () {
       expect(result).to.eql({
         spatial: {
@@ -281,7 +287,11 @@ describe('OGC API Coverages - describeCollections - generateExtent', function ()
   });
 
   describe('contains spatial bounding box and temporal end, but no temporal start', function () {
-    const result = generateExtent({ boxes: [bboxString], time_end: temporalEnd });
+    const result = generateExtent({
+      ...baseCollection,
+      boxes: [bboxString],
+      time_end: temporalEnd,
+    });
     it('includes correct spatial and temporal bounds', function () {
       expect(result).to.eql({
         spatial: {
@@ -297,7 +307,7 @@ describe('OGC API Coverages - describeCollections - generateExtent', function ()
   });
 
   describe('contains spatial bounding box and no temporal', function () {
-    const result = generateExtent({ boxes: [bboxString] });
+    const result = generateExtent({ ...baseCollection, boxes: [bboxString] });
     it('includes correct spatial and temporal bounds', function () {
       expect(result).to.eql({
         spatial: {
@@ -310,7 +320,10 @@ describe('OGC API Coverages - describeCollections - generateExtent', function ()
   });
 
   describe('contains a temporal start and temporal end, but no spatial', function () {
-    const result = generateExtent({ time_start: temporalStart, time_end: temporalEnd });
+    const result = generateExtent({
+      ...baseCollection,
+      time_start: temporalStart,
+      time_end: temporalEnd });
     it('includes correct spatial and temporal bounds', function () {
       expect(result).to.eql({
         spatial: undefined,
@@ -323,7 +336,7 @@ describe('OGC API Coverages - describeCollections - generateExtent', function ()
   });
 
   describe('contains no temporal and no spatial', function () {
-    const result = generateExtent({});
+    const result = generateExtent({ ...baseCollection });
     it('includes no spatial or temporal', function () {
       expect(result).to.eql(undefined);
     });

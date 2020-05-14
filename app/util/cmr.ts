@@ -30,15 +30,15 @@ export interface CmrCollection {
   id: string;
   short_name: string;
   version_id: string;
-  archive_center: string;
-  data_center: string;
-  boxes: string[];
-  time_start: Date;
-  time_end: Date;
-  associations: {
-    variables: string[];
+  archive_center?: string;
+  data_center?: string;
+  boxes?: string[];
+  time_start?: string;
+  time_end?: string;
+  associations?: {
+    variables?: string[];
   };
-  variables: CmrVariable[];
+  variables?: CmrVariable[];
 }
 
 export interface CmrGranule {
