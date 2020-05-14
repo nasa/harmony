@@ -4,9 +4,9 @@ import { Job } from 'models/job';
 
 import { ServiceError } from '../../util/errors';
 import { objectStoreForProtocol } from '../../util/object-store';
+import InvocationResult from './invocation-result';
 
 import db = require('util/db');
-
 
 /**
  * A wrapper for a service that takes a service class for a service that is only able
@@ -79,10 +79,10 @@ export default class AsynchronizerService extends BaseService {
    * Runs the service, asynchronous at this point
    *
    * @param {Logger} logger The logger to use for details about this request
-   * @returns {void}
+   * @returns {Promise<InvocationResult>}
    * @memberof AsynchronizerService
    */
-  async _run(logger) {
+  async _run(logger): Promise<InvocationResult> {
     const { user, requestId } = this.operation;
     const job = await Job.byUsernameAndRequestId(db, user, requestId);
     try {
@@ -101,6 +101,7 @@ export default class AsynchronizerService extends BaseService {
       const message = (e instanceof ServiceError) ? e.message : 'An unexpected error occurred';
       this._fail(logger, job, message);
     }
+    return null;
   }
 
   /**
@@ -188,7 +189,8 @@ export default class AsynchronizerService extends BaseService {
         throw new ServiceError(500, 'The backend service did not respond correctly');
       }
 
-      await this._performAsyncJobUpdate(logger, db, job, { item, progress });
+      await this._updateJobFields(logger, job, { item, progress });
+      await job.save(db);
       logger.info(`Completed service on ${name}`);
     } finally {
       if (result.onComplete) {
@@ -212,7 +214,8 @@ export default class AsynchronizerService extends BaseService {
     }
     this.isComplete = true;
     try {
-      await this._performAsyncJobUpdate(logger, db, job, { status: 'successful' });
+      await this._updateJobFields(logger, job, { status: 'successful' });
+      await job.save(db);
       logger.info('Completed service request successfully');
     } catch (e) {
       logger.error('Error marking request complete');
@@ -240,7 +243,8 @@ export default class AsynchronizerService extends BaseService {
     }
     this.isComplete = true;
     try {
-      await this._performAsyncJobUpdate(logger, db, job, { error: message });
+      await this._updateJobFields(logger, job, { error: message });
+      await job.save(db);
       logger.info('Completed service request with error');
     } catch (e) {
       logger.error('Error marking request failed');

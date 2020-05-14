@@ -1,4 +1,4 @@
-import get from 'lodash.get';
+import { get } from 'lodash';
 import * as fs from 'fs';
 import rewind from '@mapbox/geojson-rewind';
 import * as togeojson from '@mapbox/togeojson';

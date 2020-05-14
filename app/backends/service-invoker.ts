@@ -35,7 +35,7 @@ function copyHeader(serviceResult, res, header) {
  * @throws {ServiceError} If the backend service returns an error
  */
 async function translateServiceResult(serviceResult, user, res) {
-  for (const k of Object.keys(serviceResult.headers)) {
+  for (const k of Object.keys(serviceResult.headers || {})) {
     if (k.toLowerCase().startsWith('harmony')) {
       copyHeader(serviceResult, res, k);
     }

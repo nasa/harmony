@@ -12,6 +12,7 @@ import * as querystring from 'querystring';
 
 import { isUrlBound } from 'backends/service-response';
 import BaseService from './base-service';
+import InvocationResult from './invocation-result';
 
 import env = require('util/env');
 const { isDevelopment } = env;
@@ -101,9 +102,9 @@ export default class LocalDockerService extends BaseService {
    *
    * @param {Log} logger the logger associated with the request
    * @memberof LocalDockerService
-   * @returns {void}
+   * @returns {Promise<InvocationResult>}
    */
-  _run(logger) {
+  async _run(logger): Promise<InvocationResult> {
     // DELETE ME: Hacks for PO.DAAC having granule metadata with missing files.  They will fix.
     if (this.config.name === 'podaac-cloud/l2-subsetter-service') {
       this.operation.sources[0].granules = this.operation.sources[0].granules.slice(5);
@@ -135,6 +136,7 @@ export default class LocalDockerService extends BaseService {
         childProcessAborted(originalCallback, logger);
       }
     }));
+    return null;
   }
 
   /**

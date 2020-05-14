@@ -1,4 +1,4 @@
-import pick from 'lodash.pick';
+import { pick } from 'lodash';
 import { Job } from 'models/job';
 import { linksWithStacData } from 'util/stac';
 

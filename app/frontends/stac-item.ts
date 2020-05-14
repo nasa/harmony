@@ -1,5 +1,5 @@
 import { v4 as uuid } from 'uuid';
-import pick from 'lodash.pick';
+import { pick } from 'lodash';
 import { linksWithStacData } from 'util/stac';
 
 import { Job } from 'models/job';

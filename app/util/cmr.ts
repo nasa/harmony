@@ -1,6 +1,6 @@
 import FormData from 'form-data';
 import fs from 'fs';
-import get from 'lodash.get';
+import { get } from 'lodash';
 import fetch from 'node-fetch';
 import * as querystring from 'querystring';
 import * as util from 'util';
