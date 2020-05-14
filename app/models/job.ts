@@ -1,13 +1,12 @@
 import { pick } from 'lodash';
-import { Transaction } from 'knex'; // For types only
 import { IWithPagination } from 'knex-paginate'; // For types only
 
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
+import { Transaction } from '../util/db';
 
 import env = require('../util/env');
-import Knex = require('knex');
 
 const { awsDefaultRegion } = env;
 
@@ -72,8 +71,6 @@ export interface JobQuery {
   updatedAt?: number;
 }
 
-type Trx = Transaction | Knex;
-
 /**
  *
  * Wrapper object for persisted jobs
@@ -126,7 +123,7 @@ export class Job extends Record {
    * @returns a list of all of the user's jobs
    */
   static async queryAll(
-    transaction: Trx,
+    transaction: Transaction,
     constraints: JobQuery = {},
     currentPage = 0,
     perPage = 10,
@@ -151,7 +148,7 @@ export class Job extends Record {
    * @param perPage - the number of results per page
    * @returns a list of all of the user's jobs
    */
-  static forUser(transaction: Trx, username: string, currentPage = 0, perPage = 10):
+  static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
   Promise<IWithPagination<Job[]>> {
     return this.queryAll(transaction, { username }, currentPage, perPage);
   }
@@ -189,7 +186,7 @@ export class Job extends Record {
    * @param id - the primary key of the job record
    * @returns the matching job, or null if none exists
    */
-  static async byId(transaction: Trx, id: number): Promise<Job> {
+  static async byId(transaction: Transaction, id: number): Promise<Job> {
     const result = await transaction('jobs').select().where({ id }).forUpdate();
     return result.length === 0 ? null : new Job(result[0]);
   }

@@ -6,12 +6,47 @@ import { Job, JobStatus } from 'models/job';
 import { v4 as uuid } from 'uuid';
 import DataOperation from 'models/data-operation';
 import { Logger } from 'winston';
-// import { Transaction } from 'knex';
 import InvocationResult from './invocation-result';
-
-import db = require('util/db');
+import db from '../../util/db';
 
 import env = require('util/env');
+
+export interface ServiceCapabilities {
+  subsetting?: {
+    bbox?: boolean;
+    variable?: boolean;
+    multiple_variable?: true;
+  };
+  output_formats?: [string];
+  projection_to_proj4?: boolean;
+}
+
+export interface ServiceConfig<ServiceParamType> {
+  name: string;
+  data_operation_version?: string;
+  type?: {
+    name: string;
+    params?: ServiceParamType;
+    synchronous_only?: boolean;
+  };
+  collections?: string[];
+  capabilities?: ServiceCapabilities;
+  concurrency?: number;
+  message?: string;
+}
+
+export interface CallbackQueryItem {
+  type: string; // Mime type
+  temporal: string;
+  bbox: string;
+  href: string;
+}
+
+export interface CallbackQuery {
+  item?: CallbackQueryItem;
+  error?: string;
+  redirect?: string;
+}
 
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
@@ -20,18 +55,16 @@ import env = require('util/env');
  * @class BaseService
  * @abstract
  */
-export default class BaseService {
-  config: any;
+export default class BaseService<ServiceParamType> {
+  config: ServiceConfig<ServiceParamType>;
 
-  params: any;
+  params: ServiceParamType;
 
-  operation: any;
+  operation: DataOperation;
 
   invocation: Promise<boolean>;
 
   resolveInvocation: (value?: unknown) => void;
-
-  SyncServiceClass?: any;
 
   message?: string;
 
@@ -41,13 +74,13 @@ export default class BaseService {
    * @param {DataOperation} operation The data operation being requested of the service
    * @memberof BaseService
    */
-  constructor(config: any, operation: DataOperation) {
+  constructor(config: ServiceConfig<ServiceParamType>, operation: DataOperation) {
     if (new.target === BaseService) {
       throw new TypeError('BaseService is abstract and cannot be instantiated directly');
     }
     this.config = config;
     const { type } = this.config;
-    this.params = (type && type.params) ? type.params : {};
+    this.params = (type && type.params) ? type.params : ({} as ServiceParamType);
     this.operation = operation;
     this.operation.isSynchronous = this.isSynchronous;
 
@@ -64,7 +97,7 @@ export default class BaseService {
    * @memberof BaseService
    * @returns {object} The service capabilities
    */
-  get capabilities(): object {
+  get capabilities(): ServiceCapabilities {
     return this.config.capabilities;
   }
 
@@ -82,11 +115,11 @@ export default class BaseService {
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
   ): Promise<InvocationResult> {
     const isAsync = !this.isSynchronous;
-    const job = await this._createJob(db, logger, requestUrl, this.operation.stagingLocation);
+    const job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
     if (isAsync) {
       // All jobs are tracked internally.  Only async jobs are saved to the db
       try {
-        await job.save(db as any);
+        await job.save(db);
       } catch (e) {
         logger.error(e.stack);
         throw new ServerError('Failed to save job to database.');
@@ -324,7 +357,9 @@ export default class BaseService {
    * @throws {ServerError} if the job cannot be created
    */
   protected async _createJob(
-    transaction: any, logger: Logger, requestUrl: string, stagingLocation: string,
+    logger: Logger,
+    requestUrl: string,
+    stagingLocation: string,
   ): Promise<Job> {
     const { requestId, user } = this.operation;
     logger.info(`Creating job for ${requestId}`);

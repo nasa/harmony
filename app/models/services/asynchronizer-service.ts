@@ -1,5 +1,5 @@
 import PromiseQueue from 'p-queue';
-import BaseService from 'models/services/base-service';
+import BaseService, { ServiceConfig, CallbackQueryItem } from 'models/services/base-service';
 import { Logger } from 'winston';
 
 import { Job } from 'models/job';
@@ -8,7 +8,7 @@ import { objectStoreForProtocol } from '../../util/object-store';
 import DataOperation from '../data-operation';
 import InvocationResult from './invocation-result';
 
-import db = require('util/db');
+import db from '../../util/db';
 
 /**
  * A wrapper for a service that takes a service class for a service that is only able
@@ -18,8 +18,8 @@ import db = require('util/db');
  * @class AsynchronizerService
  * @extends {BaseService}
  */
-export default class AsynchronizerService extends BaseService {
-  SyncServiceClass: typeof BaseService;
+export default class AsynchronizerService<ServiceParamType> extends BaseService<ServiceParamType> {
+  SyncServiceClass: { new(...args: unknown[]): BaseService<ServiceParamType> };
 
   queue: PromiseQueue;
 
@@ -33,14 +33,15 @@ export default class AsynchronizerService extends BaseService {
     resolve: (value?: unknown) => void; reject: (reason?: string) => void;
   };
 
-  _invokeArgs: any[];
+  _invokeArgs: [Logger, string, string];
 
   isComplete: boolean;
 
-  constructor(SyncServiceClass:
-  { new(...args: any): BaseService },
-  config: any,
-  operation: DataOperation) {
+  constructor(
+    SyncServiceClass: { new(...args: unknown[]): BaseService<ServiceParamType> },
+    config: ServiceConfig<ServiceParamType>,
+    operation: DataOperation,
+  ) {
     super(config, operation);
     this.SyncServiceClass = SyncServiceClass;
     this.queue = new PromiseQueue({ concurrency: this.config.concurrency || 1 });
@@ -155,10 +156,11 @@ export default class AsynchronizerService extends BaseService {
       }
 
       const granule = syncOperation.sources[0].granules[0];
-      const item: any = {
+      const item: CallbackQueryItem = {
         type: 'application/octet-stream', // Generic default in case we can't find anything else
         temporal: granule.temporal && [granule.temporal.start, granule.temporal.end].join(','),
         bbox: granule.bbox && granule.bbox.join(','),
+        href: null,
       };
 
       this.completedCount += 1;
@@ -196,7 +198,7 @@ export default class AsynchronizerService extends BaseService {
       }
 
       await this._updateJobFields(logger, job, { item, progress });
-      await job.save(db as any);
+      await job.save(db);
       logger.info(`Completed service on ${name}`);
     } finally {
       if (result.onComplete) {
@@ -221,7 +223,7 @@ export default class AsynchronizerService extends BaseService {
     this.isComplete = true;
     try {
       await this._updateJobFields(logger, job, { status: 'successful' });
-      await job.save(db as any);
+      await job.save(db);
       logger.info('Completed service request successfully');
     } catch (e) {
       logger.error('Error marking request complete');
@@ -250,7 +252,7 @@ export default class AsynchronizerService extends BaseService {
     this.isComplete = true;
     try {
       await this._updateJobFields(logger, job, { error: message });
-      await job.save(db as any);
+      await job.save(db);
       logger.info('Completed service request with error');
     } catch (e) {
       logger.error('Error marking request failed');

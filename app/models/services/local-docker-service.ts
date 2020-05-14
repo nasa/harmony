@@ -22,6 +22,11 @@ const { isDevelopment } = env;
 
 const blankStrings = ['\n', '\r', ''];
 
+interface DockerServiceParams {
+  image: string;
+  env: { [key: string]: string };
+}
+
 /**
  * Returns true if the string has no useful content such as an empty
  * string, or a newline character.
@@ -100,7 +105,7 @@ function childProcessAborted(callbackUrl: string, logger: Logger): void {
  * @class LocalDockerService
  * @extends {BaseService}
  */
-export default class LocalDockerService extends BaseService {
+export default class LocalDockerService extends BaseService<DockerServiceParams> {
   /**
    * Invoke the service at the local command line, passing --harmony-action and --harmony-input
    * parameters to the Docker container

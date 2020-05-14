@@ -4,7 +4,7 @@ import isUUID from 'util/uuid';
 import stacItemCreate from './stac-item';
 import stacCatalogCreate from './stac-catalog';
 
-import db = require('util/db');
+import db from '../util/db';
 
 /**
  * Generic handler for STAC requests

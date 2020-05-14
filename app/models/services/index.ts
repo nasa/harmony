@@ -11,34 +11,10 @@ import HttpService from './http-service';
 import LocalDockerService from './local-docker-service';
 import NoOpService from './no-op-service';
 import DataOperation from '../data-operation';
-import BaseService from './base-service';
+import BaseService, { ServiceConfig } from './base-service';
 import RequestContext from '../request-context';
 
 let serviceConfigs = null;
-
-export type ServiceConfig = {
-  name: string;
-  data_operation_version?: string;
-  type: {
-    name: string;
-    params?: {
-      image?: string;
-      env?: {[varname: string]: string };
-    };
-    synchronous_only?: boolean;
-  };
-  collections?: [string];
-  capabilities?: {
-    subsetting?: {
-      bbox?: boolean;
-      variable?: boolean;
-      multiple_variable?: true;
-    };
-    output_formats?: [string];
-    projection_to_proj4?: boolean;
-  };
-  message?: string;
-};
 
 /**
  * Loads the subsetter-config.yml configuration file.
@@ -51,8 +27,8 @@ function loadServiceConfigs(): void {
   const regex = /\$\{(\w+)\}/g;
   const EnvType = new yaml.Type('!Env', {
     kind: 'scalar',
-    resolve: (data): any => data,
-    construct: (data): any => data.replace(regex, (env) => process.env[env.match(/\w+/)] || ''),
+    resolve: (data): boolean => data,
+    construct: (data): string => data.replace(regex, (env) => process.env[env.match(/\w+/)] || ''),
   });
 
   // Load the config
@@ -78,7 +54,10 @@ const serviceTypesToServiceClasses = {
  * @returns {Service} An appropriate service for the given config
  * @throws {NotFoundError} If no appropriate service can be found
  */
-function buildService(serviceConfig: ServiceConfig, operation: DataOperation): BaseService {
+function buildService(
+  serviceConfig: ServiceConfig<unknown>,
+  operation: DataOperation,
+): BaseService<unknown> {
   const ServiceClass = serviceTypesToServiceClasses[serviceConfig.type.name];
   if (!ServiceClass) {
     throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
@@ -98,7 +77,10 @@ function buildService(serviceConfig: ServiceConfig, operation: DataOperation): B
  * @param {ServiceConfig} serviceConfig A configuration for a single service from services.yml
  * @returns {boolean} true if all collections in the operation are compatible with the service
  */
-function isCollectionMatch(operation: DataOperation, serviceConfig: ServiceConfig): boolean {
+function isCollectionMatch(
+  operation: DataOperation,
+  serviceConfig: ServiceConfig<unknown>,
+): boolean {
   return operation.sources.every((source) => serviceConfig.collections.includes(source.collection));
 }
 
@@ -113,8 +95,8 @@ function isCollectionMatch(operation: DataOperation, serviceConfig: ServiceConfi
  * @private
  */
 function selectServicesForFormat(
-  format: string, configs: ServiceConfig[],
-): ServiceConfig[] {
+  format: string, configs: ServiceConfig<unknown>[],
+): ServiceConfig<unknown>[] {
   return configs.filter((config) => {
     const supportedFormats = getIn(config, 'capabilities.output_formats', []);
     return supportedFormats.find((f) => isMimeTypeAccepted(f, format));
@@ -131,7 +113,7 @@ function selectServicesForFormat(
  * @private
  */
 function selectFormat(
-  operation: DataOperation, context: RequestContext, configs: ServiceConfig[],
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig<unknown>[],
 ): string {
   let { outputFormat } = operation;
   if (!outputFormat && context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
@@ -169,11 +151,11 @@ function requiresVariableSubsetting(operation: DataOperation): boolean {
  * @returns {Array<Object>} Any configurations that support variable subsetting
  * @private
  */
-function supportsVariableSubsetting(configs: ServiceConfig[]): ServiceConfig[] {
+function supportsVariableSubsetting(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
   return configs.filter((config) => getIn(config, 'capabilities.subsetting.variable', false));
 }
 
-const noOpService: ServiceConfig = {
+const noOpService: ServiceConfig<void> = {
   name: 'noOpService',
   type: { name: 'noOp' },
   capabilities: { output_formats: ['application/json'] },
@@ -192,8 +174,8 @@ class UnsupportedOperation extends Error {}
  * @private
  */
 function filterCollectionMatches(
-  operation: DataOperation, context: RequestContext, configs: ServiceConfig[],
-): ServiceConfig[] {
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig<unknown>[],
+): ServiceConfig<unknown>[] {
   const matches = configs.filter((config) => isCollectionMatch(operation, config));
   if (matches.length === 0) {
     throw new UnsupportedOperation('no services are configured for the collection');
@@ -213,8 +195,8 @@ function filterCollectionMatches(
  * @private
  */
 function filterVariableSubsettingMatches(
-  operation: DataOperation, context: RequestContext, configs: ServiceConfig[],
-): ServiceConfig[] {
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig<unknown>[],
+): ServiceConfig<unknown>[] {
   const variableSubsettingNeeded = requiresVariableSubsetting(operation);
   const matches = variableSubsettingNeeded ? supportsVariableSubsetting(configs) : configs;
   if (matches.length === 0) {
@@ -234,8 +216,8 @@ function filterVariableSubsettingMatches(
  * @private
  */
 function filterOutputFormatMatches(
-  operation: DataOperation, context: RequestContext, configs: ServiceConfig[],
-): ServiceConfig[] {
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig<unknown>[],
+): ServiceConfig<unknown>[] {
   // If the user requested a certain output format
   let services = [];
   if (operation.outputFormat
@@ -273,7 +255,7 @@ function filterOutputFormatMatches(
 function unsupportedCombinationMessage(
   operation: DataOperation,
   context: RequestContext,
-  configs: ServiceConfig[],
+  configs: ServiceConfig<unknown>[],
   originalReason: string,
 ): string {
   let reason = originalReason;
@@ -323,8 +305,8 @@ const operationFilterFns = [
 export function forOperation(
   operation: DataOperation,
   context?: RequestContext,
-  configs: ServiceConfig[] = serviceConfigs,
-): BaseService {
+  configs: ServiceConfig<unknown>[] = serviceConfigs,
+): BaseService<unknown> {
   let service;
   let matches = configs;
   try {

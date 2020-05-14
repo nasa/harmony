@@ -6,7 +6,6 @@ import keysToLowerCase from 'util/object';
 import { RequestValidationError, NotFoundError } from 'util/errors';
 import DataOperation, { HarmonyVariable } from 'models/data-operation';
 import * as services from 'models/services';
-// import { Application } from 'express';
 
 const version = '0.1.0';
 const openApiPath = path.join(__dirname, '..', 'schemas', 'eoss', version, `eoss-v${version}.yml`);

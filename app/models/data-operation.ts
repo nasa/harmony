@@ -112,6 +112,8 @@ export default class DataOperation {
 
   requireSynchronous: boolean;
 
+  cmrHits?: number;
+
   /**
    * Creates an instance of DataOperation.
    *

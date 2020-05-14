@@ -3,7 +3,7 @@
 import { before, after, beforeEach, afterEach } from 'mocha';
 import { stub } from 'sinon';
 
-import db = require('harmony/util/db');
+import db from 'harmony/util/db';
 
 const tables = ['jobs'];
 

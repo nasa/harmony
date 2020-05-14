@@ -7,8 +7,7 @@ import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink } from
 import { RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
-
-import db = require('util/db');
+import db from '../util/db';
 
 /**
  * Analyze the links in the job to determine what links should be returned to

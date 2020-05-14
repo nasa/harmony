@@ -8,8 +8,7 @@ import hookServersStartStop from './helpers/servers';
 import { rangesetRequest } from './helpers/ogc-api-coverages';
 import { getNextCallback } from '../example/http-backend';
 import { validGetMapQuery, wmsRequest } from './helpers/wms';
-
-import db = require('util/db');
+import db from '../app/util/db';
 
 /**
  * Adds before / after hooks calling the http backend service, awaiting the initial invocation,

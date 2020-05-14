@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { describe, it, beforeEach } from 'mocha';
 import DataOperation from '../../app/models/data-operation';
 import { forOperation } from '../../app/models/services';
+import AsynchronizerService from '../../app/models/services/asynchronizer-service';
 
 describe('services.forOperation', function () {
   describe("when the operation's collection is configured for two services", function () {
@@ -208,7 +209,8 @@ describe('services.forOperation', function () {
       ];
     });
     it('returns a service configured to allow asynchronous calls through a wrapper', function () {
-      const service = forOperation(this.operation, {}, this.config);
+      const op = this.operation;
+      const service = forOperation(op, {}, this.config) as AsynchronizerService<unknown>;
       expect(service.constructor.name).to.equal('AsynchronizerService');
       expect(service.SyncServiceClass.name).to.equal('LocalDockerService');
     });

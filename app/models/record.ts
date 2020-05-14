@@ -1,6 +1,4 @@
-import { Transaction } from 'knex';
-
-import db = require('../util/db');
+import db, { Transaction } from '../util/db';
 
 /**
  * Abstract class describing a database record.  Subclass database tables

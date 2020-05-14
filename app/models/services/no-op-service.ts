@@ -10,7 +10,7 @@ import InvocationResult from './invocation-result';
  * @class NoOpService
  * @extends {BaseService}
  */
-export default class NoOpService extends BaseService {
+export default class NoOpService extends BaseService<void> {
   message: string;
 
   /**
@@ -36,8 +36,9 @@ export default class NoOpService extends BaseService {
    */
   async invoke(logger, harmonyRoot, requestUrl): Promise<InvocationResult> {
     const now = new Date();
-    const granules = this.operation.sources.flatMap((source) => source.granules);
-    const links = granules.map((granule) => ({ title: granule.id, href: granule.url }));
+    const granuleLists = this.operation.sources.map((source) => source.granules);
+    const granules = granuleLists.reduce((acc, val) => acc.concat(val), []);
+    const links = granules.map((granule) => ({ title: granule.id, href: granule.url, rel: 'data' }));
     const message = this.warningMessage ? `${this.message} ${this.warningMessage}` : this.message;
     let job = new Job({
       username: this.operation.user,

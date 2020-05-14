@@ -4,8 +4,11 @@ import * as URL from 'url';
 import { Job } from 'models/job';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
+import db from '../../util/db';
 
-import db = require('util/db');
+export interface HttpServiceParams {
+  url: string;
+}
 
 /**
  * Service implementation which invokes a backend over HTTP, POSTing the Harmony
@@ -15,7 +18,7 @@ import db = require('util/db');
  * @class HttpService
  * @extends {BaseService}
  */
-export default class HttpService extends BaseService {
+export default class HttpService extends BaseService<HttpServiceParams> {
   /**
    * Calls the HTTP backend and returns a promise for its result
    * @returns {Promise<InvocationResult>} A promise resolving to the result of the callback.
@@ -44,7 +47,7 @@ export default class HttpService extends BaseService {
         const httplib = url.startsWith('https') ? https : http;
 
         const request = httplib.request(requestOptions, async (res) => {
-          const result: any = {
+          const result: InvocationResult = {
             headers: res.headers,
             statusCode: res.statusCode,
           };

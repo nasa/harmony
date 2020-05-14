@@ -8,6 +8,7 @@ import * as services from 'models/services/index';
 import { Logger } from 'winston';
 import DataOperation from 'harmony/models/data-operation';
 import InvocationResult from 'models/services/invocation-result';
+import LocalDockerService from 'harmony/models/services/local-docker-service';
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -15,7 +16,7 @@ import InvocationResult from 'models/services/invocation-result';
  * @class StubService
  * @extends {BaseService}
  */
-export default class StubService extends BaseService {
+export default class StubService extends BaseService<void> {
   callbackOptions: any;
 
   isComplete: boolean;
@@ -244,7 +245,7 @@ export default class StubService extends BaseService {
       const origForOperation = services.forOperation;
       sinon.stub(services, 'forOperation')
         .callsFake((operation) => {
-          const service = origForOperation(operation);
+          const service = origForOperation(operation) as LocalDockerService;
           service.params.image = dockerImage;
           return service;
         });
