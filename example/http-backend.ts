@@ -78,18 +78,20 @@ async function handleHarmonyMessage(req: express.Request, res: express.Response)
     }
   } else if (crs === 'REDIRECT') {
     res.redirect(303, '/example/redirected');
-  } else if (!body.isSynchronous) {
-    idsToCallbacks[body.requestId] = body.callback;
-    for (const resolve of callbackResolutions) {
-      resolve(body.callback);
-    }
-    callbackResolutions = [];
+  } else if (!body.isSynchronous || crs === 'ASYNC') {
     // Asynchronous request.
     res.status(202).send('accepted');
   } else {
     res.type('application/json');
     res.send((req as any).rawBody);
   }
+
+  // To support tests that need to wait until the backend is invoked before making assertions
+  idsToCallbacks[body.requestId] = body.callback;
+  for (const resolve of callbackResolutions) {
+    resolve(body.callback);
+  }
+  callbackResolutions = [];
 }
 
 /**

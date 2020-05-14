@@ -5,6 +5,7 @@ import request from 'superagent';
 import AsynchronizerService from 'models/services/asynchronizer-service';
 import BaseService from 'models/services/base-service';
 import * as services from 'models/services/index';
+import InvocationResult from 'models/services/invocation-result';
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -45,12 +46,13 @@ export default class StubService extends BaseService {
    * `complete` must be run for a callback to occur.
    * @param {Log} _logger the logger associated with the request
    * @memberof StubService
-   * @returns {void}
+   * @returns {Promise<InvocationResult>}
    */
-  async _run(_logger) {
+  async _run(_logger): Promise<InvocationResult> {
     this.isRun = true;
-    if (!this.operation.isSynchronous) return;
+    if (!this.operation.isSynchronous) return null;
     await this.complete();
+    return null;
   }
 
   /**
