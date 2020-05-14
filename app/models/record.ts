@@ -12,11 +12,11 @@ import db, { Transaction } from '../util/db';
  * @abstract
  */
 export default abstract class Record {
-  updatedAt: any;
+  updatedAt: Date;
 
-  createdAt: any;
+  createdAt: Date;
 
-  id: any;
+  id: number;
 
   static table: string;
 

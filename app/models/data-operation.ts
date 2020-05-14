@@ -108,7 +108,7 @@ interface DataSource {
 export default class DataOperation {
   model: any;
 
-  granuleIds: any;
+  granuleIds: string[];
 
   requireSynchronous: boolean;
 

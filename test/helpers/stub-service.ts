@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 import { before, after, beforeEach, afterEach } from 'mocha';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 import request from 'superagent';
 import AsynchronizerService from 'models/services/asynchronizer-service';
 import BaseService from 'models/services/base-service';
@@ -23,7 +23,7 @@ export default class StubService extends BaseService<void> {
 
   isRun: boolean;
 
-  name: any;
+  name: string;
 
   /**
    * Creates an instance of StubService.
@@ -82,7 +82,7 @@ export default class StubService extends BaseService<void> {
    * @returns {request} an awaitable response
    * @memberof StubService
    */
-  sendResponse(query?: object): any {
+  sendResponse(query?: object): request.SuperAgentRequest {
     const options = typeof this.callbackOptions === 'function' ? this.callbackOptions() : this.callbackOptions;
     const params = query || options.params;
     const responseUrl = `${this.operation.callback}/response`;
@@ -110,8 +110,8 @@ export default class StubService extends BaseService<void> {
    * @returns {Function} A function to supply to before / beforeEach
    * @memberof StubService
    */
-  static beforeHook(callbackOptions: object = { params: { redirect: 'http://example.com' } }): any {
-    return function (): any {
+  static beforeHook(callbackOptions: object = { params: { redirect: 'http://example.com' } }): () => void {
+    return function (): void {
       const ctx = this;
       const origForOperation = services.forOperation;
       sinon.stub(services, 'forOperation')
@@ -136,9 +136,10 @@ export default class StubService extends BaseService<void> {
    * @returns {Function} A function to supply to after / afterEach
    * @memberof StubService
    */
-  static afterHook(): any {
-    return async function (): Promise<any> {
-      if ((services.forOperation as any).restore) (services.forOperation as any).restore();
+  static afterHook(): () => Promise<void> {
+    return async function (): Promise<void> {
+      const stubbed = services.forOperation as SinonStub;
+      if (stubbed.restore) stubbed.restore();
       if (this.service) await this.service.complete();
       if (this.service && this.service.invocation) await this.service.invocation;
       delete this.service;
@@ -198,7 +199,8 @@ export default class StubService extends BaseService<void> {
     });
 
     after(async function () {
-      if ((services.forOperation as any).restore) (services.forOperation as any).restore();
+      const stubbed = services.forOperation as SinonStub;
+      if (stubbed.restore) stubbed.restore();
       try {
         await this.service.promiseCompletion();
       } catch { /* Normal for expected errors. Logs captured by the AsynchronizerService */
@@ -251,7 +253,8 @@ export default class StubService extends BaseService<void> {
         });
     });
     after(function () {
-      if ((services.forOperation as any).restore) (services.forOperation as any).restore();
+      const stubbed = services.forOperation as SinonStub;
+      if (stubbed.restore) stubbed.restore();
     });
   }
 }
