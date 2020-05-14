@@ -22,7 +22,7 @@ export default interface InvocationResult {
   /**
    * A readable stream.  If set, the bytes in the stream should be piped to the client
    */
-  stream?: ReadableStream;
+  stream?: NodeJS.ReadableStream;
 
   /**
    * An object mapping key/value headers.  Any headers starting with "harmony" should
