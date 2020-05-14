@@ -38,18 +38,19 @@ rules:
   no-await-in-loop: ["off"]
   object-curly-newline: ["off"]
   no-plusplus: ["off"]
-  no-unused-vars: ["error", { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }]
   prefer-destructuring:
     - error
     - array: false
       object: true
     - enforceForRenamedProperties: false
-  node/no-unsupported-features/es-syntax: 0
+  node/no-unsupported-features/es-syntax: "off"
+  "@typescript-eslint/no-explicit-any": "warn"
   "@typescript-eslint/explicit-function-return-type": "error"
+  "@typescript-eslint/no-unused-vars": ["error", { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }]
 overrides:
   - files: [ "test/**/*" ]
     rules:
-      import/no-extraneous-dependencies: ["off"]
+      import/no-extraneous-dependencies: ["error"]
       node/no-unpublished-require: ["off"]
       # These overrides let us use anonymous functions for Mocha instead of lambdas, which is
       # the preferred method described in the Mocha docs

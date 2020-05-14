@@ -94,7 +94,7 @@ export function itIncludesRequestUrl(expectedPath: string): void {
   it('returns a request field with the URL used to generate the request', function () {
     const job = JSON.parse(this.res.text);
     // If the request is not a URL this will throw an exception
-    // eslint-disable-next-line no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const parsed = new URL(job.request);
     const regex = new RegExp(`^https?://.*${_escapeRegExp(expectedPath)}$`);
     expect(job.request).to.match(regex);
