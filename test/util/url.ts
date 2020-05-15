@@ -11,7 +11,9 @@ import { getRequestUrl, getSanitizedRequestUrl, getRequestRoot } from '../../app
  * @returns {Object} An object emulating an http.IncomingMessage
  */
 function createRequest(
-  hostname: string, path = '/example/path', params: any = { param1: 'foo', param2: 2 },
+  hostname: string,
+  path = '/example/path',
+  params: object = { param1: 'foo', param2: 2 },
 ): object {
   return {
     originalUrl: `${path}?${params}`,

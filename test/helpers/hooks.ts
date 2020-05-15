@@ -12,7 +12,7 @@ import { auth } from './auth';
  * @param {...any} params the parameters to the function call
  * @returns {void}
  */
-export function hookFunction(fn: Function, returnValueName: string, ...params: any[]): void {
+export function hookFunction<T>(fn: Function, returnValueName: string, ...params: T[]): void {
   before(async function () {
     this[returnValueName] = await fn.bind(this)(...params);
   });

@@ -1,7 +1,7 @@
 import { initialize } from 'express-openapi';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Application, Response } from 'express';
+import { Application, Response, Router } from 'express';
 import getLandingPage from './get-landing-page';
 import getRequirementsClasses from './get-requirements-classes';
 
@@ -47,12 +47,9 @@ function getSpecification(req: HarmonyRequest, res: Response): void {
  * @param {Application} app The express application
  * @returns {void}
  */
-export function addOpenApiRoutes(app: any): void {
-  // TODO - Calls from router.js to this are failing with argument of type 'Router' is not
-  // assignable to parameter of type 'Application'. Not sure how to resolve because the calls
-  // in here are not compatible with Router.
+export function addOpenApiRoutes(app: Router): void {
   initialize({
-    app,
+    app: app as Application,
     apiDoc: openApiContent,
     validateApiDoc: true,
     /* Note: the default way to expose an OpenAPI endpoint is to have express handle paths

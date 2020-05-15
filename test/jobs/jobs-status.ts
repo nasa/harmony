@@ -366,7 +366,7 @@ describe('Individual job status route', function () {
             .callsFake(async (url, params) => `https://example.com/signed/${params['A-userid']}`);
         });
         after(function () {
-          (S3ObjectStore.prototype.signGetObject as any).restore();
+          (S3ObjectStore.prototype.signGetObject as sinon.SinonStub).restore();
         });
 
         hookUrl(function () {

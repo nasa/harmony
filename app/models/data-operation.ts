@@ -106,7 +106,8 @@ interface DataSource {
  * @class DataOperation
  */
 export default class DataOperation {
-  model: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  model: any; // Type checking is redundant with JSON schema checks
 
   granuleIds: string[];
 

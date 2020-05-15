@@ -2,6 +2,18 @@ import { pick } from 'lodash';
 import { Job, JobLink } from 'models/job';
 import { linksWithStacData } from 'util/stac';
 
+export interface SerializableCatalog {
+  id: string;
+
+  stac_version: string;
+
+  title: string;
+
+  description: string;
+
+  links: JobLink[];
+}
+
 /**
  *
  * Class for creating STAC catalog for data produced by a Harmony Job
@@ -19,7 +31,7 @@ import { linksWithStacData } from 'util/stac';
  *
  * @class HarmonyCatalog
  */
-class HarmonyCatalog {
+class HarmonyCatalog implements SerializableCatalog {
   id: string;
 
   stac_version: string;
@@ -64,11 +76,11 @@ class HarmonyCatalog {
   /**
    * Placeholder method to support custom stringification
    *
-   * @returns {Object} - STAC Catalog JSON
+   * @returns {SerializableCatalog} - STAC Catalog JSON
    */
-  toJSON(): object {
+  toJSON(): SerializableCatalog {
     const paths = ['id', 'stac_version', 'title', 'description', 'links'];
-    return pick(this, paths);
+    return pick(this, paths) as SerializableCatalog;
   }
 }
 
@@ -77,14 +89,14 @@ class HarmonyCatalog {
  *
  * @param {any} job - Harmony Job object
  *
- * @returns {Object} - STAC Catalog JSON
+ * @returns {SerializableCatalog} - STAC Catalog JSON
  *
  * @example
  * const catalog = require('HarmonyCatalog');
  * let jsonObj = catalog.create(job);
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
-export default function create(job: Job): object {
+export default function create(job: Job): SerializableCatalog {
   const title = `Harmony output for ${job.jobID}`;
   const description = `Harmony output for ${job.request}`;
   const catalog = new HarmonyCatalog(job.jobID, title, description);

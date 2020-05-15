@@ -1,5 +1,5 @@
 import process from 'process';
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import cookieParser from 'cookie-parser';
 import log from 'util/log';
 
@@ -20,6 +20,7 @@ import * as ogcCoverageApi from 'frontends/ogc-coverages/index';
 import { cloudAccessJson, cloudAccessSh } from 'frontends/cloud-access';
 import landingPage from 'frontends/landing-page';
 import serviceInvoker from 'backends/service-invoker';
+import HarmonyRequest from 'harmony/models/harmony-request';
 
 import cmrCollectionReader = require('middleware/cmr-collection-reader');
 import envVars = require('harmony/util/env');
@@ -33,9 +34,9 @@ import envVars = require('harmony/util/env');
  * @param {Function} fn The middleware handler to wrap with logging
  * @returns {Function} The handler wrapped with logging information
  */
-function logged(fn: Function): any {
+function logged(fn: RequestHandler): RequestHandler {
   const scope = `middleware.${fn.name}`;
-  return async (req, res, next): Promise<void> => {
+  return async (req: HarmonyRequest, res, next): Promise<void> => {
     const { logger } = req.context;
     const child = logger.child({ component: scope });
     req.context.logger = child;
@@ -66,8 +67,8 @@ function logged(fn: Function): any {
  * @returns {Function} The handler wrapped in validation
  * @throws {NotFoundError} If there are no collections in the request
  */
-function service(fn: any): any {
-  return async (req, res, next): Promise<void> => {
+function service(fn: RequestHandler): RequestHandler {
+  return async (req: HarmonyRequest, res, next): Promise<void> => {
     const { logger } = req.context;
     const child = logger.child({ component: `service.${fn.name}` });
     req.context.logger = child;
@@ -130,7 +131,7 @@ function validateCollectionRoute(req, res, next: Function): void {
  * @param skipEarthdataLogin - Opt to skip Earthdata Login
  * @returns A router which can respond to frontend service requests
  */
-export default function router({ skipEarthdataLogin }): express.Router {
+export default function router({ skipEarthdataLogin = 'false' }): express.Router {
   const result = express.Router();
 
   const secret = process.env.COOKIE_SECRET;

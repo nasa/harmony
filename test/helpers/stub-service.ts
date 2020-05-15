@@ -17,7 +17,7 @@ import LocalDockerService from 'harmony/models/services/local-docker-service';
  * @extends {BaseService}
  */
 export default class StubService extends BaseService<void> {
-  callbackOptions: any;
+  callbackOptions: object | Function;
 
   isComplete: boolean;
 
@@ -157,7 +157,7 @@ export default class StubService extends BaseService<void> {
    * @returns {void}
    * @memberof StubService
    */
-  static hook(callbackOptions: any = { params: { redirect: 'http://example.com' } }): void {
+  static hook(callbackOptions: object | Function = { params: { redirect: 'http://example.com' } }): void {
     before(StubService.beforeHook(callbackOptions));
     after(StubService.afterHook());
   }
@@ -187,7 +187,7 @@ export default class StubService extends BaseService<void> {
    * @returns {void}
    * @memberof StubService
    */
-  static hookAsynchronized(callbackOptions: any = { params: { redirect: 'http://example.com' } }): void {
+  static hookAsynchronized(callbackOptions: object = { params: { redirect: 'http://example.com' } }): void {
     before(async function () {
       const ctx = this;
       this.callbackOptions = callbackOptions;

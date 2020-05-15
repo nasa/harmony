@@ -8,6 +8,7 @@ import StubService from 'harmony-test/stub-service';
 import { hookRangesetRequest, hookSyncRangesetRequest } from 'harmony-test/ogc-api-coverages';
 import { hookRedirect } from 'harmony-test/hooks';
 import { hookMockS3 } from 'harmony-test/object-store';
+import { S3 } from 'aws-sdk';
 
 /**
  * Returns a function whose return value alternates between the supplied values
@@ -15,9 +16,9 @@ import { hookMockS3 } from 'harmony-test/object-store';
  * @param {*} values The value to return
  * @returns {function} A function that alterates between the supplied values
  */
-function alternateCallbacks(...values: any): Function {
+function alternateCallbacks<T>(...values: T[]): Function {
   let i = 0;
-  return (): any => values[i++ % values.length];
+  return (): T => values[i++ % values.length];
 }
 
 describe('Asynchronizer Service', function () {
@@ -120,7 +121,7 @@ describe('Asynchronizer Service', function () {
         // Check a result somewhere toward the middle of the list that we expect to be the same as
         // the first result to have some assurance that the async/await code is working properly.
         const obj = jobOutputLinks[12].href.split('/service-results/')[1];
-        const contents: any = await new Promise((resolve, reject) => {
+        const contents: S3.GetObjectOutput = await new Promise((resolve, reject) => {
           defaultObjectStore().getObject(`s3://${obj}`, (err, body) => {
             if (err) reject(err);
             else resolve(body);

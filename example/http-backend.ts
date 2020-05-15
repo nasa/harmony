@@ -27,6 +27,10 @@ import * as winston from 'winston';
 import * as request from 'request-promise';
 import * as http from 'http';
 
+interface BackendRequest extends express.Request {
+  rawBody?: string;
+}
+
 // A mapping of request IDs to callback URLs for use in demonstrating and testing async requests.
 const idsToCallbacks = {};
 
@@ -59,7 +63,7 @@ export function getNextCallback(): Promise<string> {
  * @param {express.Response} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function handleHarmonyMessage(req: express.Request, res: express.Response): Promise<void> {
+async function handleHarmonyMessage(req: BackendRequest, res: express.Response): Promise<void> {
   const { body } = req;
 
   if (!body || !body.format) {
@@ -83,7 +87,7 @@ async function handleHarmonyMessage(req: express.Request, res: express.Response)
     res.status(202).send('accepted');
   } else {
     res.type('application/json');
-    res.send((req as any).rawBody);
+    res.send(req.rawBody);
   }
 
   // To support tests that need to wait until the backend is invoked before making assertions
@@ -127,8 +131,8 @@ export function router(): express.Router {
   const result = express.Router();
 
   // Parse JSON POST bodies automatically, stashing the original text in req.rawBody
-  result.use(express.json({ verify: (req, res, buf) => {
-    (req as any).rawBody = buf.toString();
+  result.use(express.json({ verify: (req: BackendRequest, res, buf) => {
+    req.rawBody = buf.toString();
   } }));
 
   // Endpoint to give to Harmony.  Note that other endpoints could be set up for general use
@@ -153,8 +157,8 @@ export function router(): express.Router {
  *
  * @returns {http.Server} The started server
  */
-export function start(config: any = {}): http.Server {
-  const port = config.PORT || 3002;
+export function start(config: Record<string, string> = {}): http.Server {
+  const port = parseInt(config.PORT || '3002', 10);
   const app = express();
 
   app.use('/example', router());

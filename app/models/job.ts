@@ -335,7 +335,7 @@ export class Job extends Record {
    * @returns an object with the serialized job fields.
    */
   serialize(urlRoot?: string): Job {
-    const serializedJob: any = pick(this, serializedJobFields);
+    const serializedJob = pick(this, serializedJobFields) as Job;
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     serializedJob.jobID = this.requestId;
@@ -350,7 +350,7 @@ export class Job extends Record {
         return { href, title, type, rel, bbox, temporal };
       });
     }
-    return new Job(serializedJob);
+    return new Job(serializedJob as JobRecord);
   }
 
   /**

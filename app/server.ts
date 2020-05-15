@@ -28,7 +28,7 @@ import exampleBackend = require('../example/http-backend');
 function buildServer(name, port, setupFn): Server {
   const appLogger = logger.child({ application: name });
 
-  const addRequestId = (req, res, next): any => {
+  const addRequestId = (req, res, next): void => {
     const id = uuid();
     const context = new RequestContext(id);
     context.logger = appLogger.child({ requestId: id });
@@ -73,7 +73,8 @@ function buildServer(name, port, setupFn): Server {
  *
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
-export function start(config: any = {}): { frontend: Server; backend: Server } {
+export function start(config: Record<string, string>):
+{ frontend: Server; backend: Server } {
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
   const backendHost = config.BACKEND_HOST || 'localhost';

@@ -4,7 +4,7 @@ import { linksWithStacData } from 'util/stac';
 
 import { Job, JobLink } from 'models/job';
 
-class HarmonyItem {
+export class HarmonyItem {
   id: string;
 
   stac_version: string;

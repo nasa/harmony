@@ -76,7 +76,7 @@ export function token({
  * @param {*} secret The cookie signing secret
  * @returns {string} The serialized, signed cookie header
  */
-function signedCookie(name: any, data: any, secret: any): string {
+function signedCookie(name: string, data: string | object, secret: string): string {
   // Serialize prefixed with 'j:' so express recognizes it as a JSON object when deserializing
   const serialized = `j:${JSON.stringify(data)}`;
   // Sign and then prefix with 's:' so express recognizes it as a signed cookie when deserializing
@@ -98,7 +98,7 @@ export function auth({
   secret = process.env.COOKIE_SECRET,
   expired = false,
   extraCookies = null,
-}): any {
+}): Plugin {
   const expiresIn = 3600;
   const expiresDelta = expired ? -expiresIn : expiresIn;
   const cookieData = token({
@@ -115,7 +115,7 @@ export function auth({
     });
   }
 
-  return (request): any => request.set('Cookie', cookieStr);
+  return (request): void => { request.set('Cookie', cookieStr); };
 }
 
 /**

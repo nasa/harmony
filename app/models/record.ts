@@ -1,5 +1,9 @@
 import db, { Transaction } from '../util/db';
 
+interface RecordConstructor extends Function {
+  table: string;
+}
+
 /**
  * Abstract class describing a database record.  Subclass database tables
  * must define a unique primary key called `id` and timestamps
@@ -61,13 +65,16 @@ export default abstract class Record {
     const newRecord = !this.createdAt;
     if (newRecord) {
       this.createdAt = this.updatedAt;
-      let stmt = transaction((this.constructor as any).table).insert(this);
+      let stmt = transaction((this.constructor as RecordConstructor).table)
+        .insert(this);
       if (db.client.config.client === 'pg') {
         stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
       }
       [this.id] = await stmt;
     } else {
-      await transaction((this.constructor as any).table).where({ id: this.id }).update(this);
+      await transaction((this.constructor as RecordConstructor).table)
+        .where({ id: this.id })
+        .update(this);
     }
   }
 }

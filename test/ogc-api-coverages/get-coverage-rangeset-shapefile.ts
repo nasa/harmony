@@ -3,6 +3,7 @@ import { parse } from 'cookie';
 import * as fetch from 'node-fetch';
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
+import { Response, Test } from 'supertest';
 import * as fs from 'fs';
 import isUUID from 'util/uuid';
 import { Application } from 'express';
@@ -23,10 +24,10 @@ import { hookMockS3, getJson } from '../helpers/object-store';
  * @param {string} variableName The variable name
  * @returns {Response} the response from the request
  */
-async function commonValidationSteps(
+function commonValidationSteps(
   app: Application, res: Response, version: string, collection: string, variableName: string,
-): Promise<any> {
-  const shapefileHeader = res.headers['set-cookie'].filter((cookie) => {
+): Test {
+  const shapefileHeader = res.header['set-cookie'].filter((cookie) => {
     const decoded = decodeURIComponent(cookie);
     const parsed = parse(decoded);
     return parsed.shapefile;
@@ -55,7 +56,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const testGeoJson = JSON.parse(fs.readFileSync('./test/resources/complex_multipoly.geojson').toString());
 
   describe('when provided a valid set of field parameters', function () {
-    let form: any = {
+    const form = {
       subset: ['lon(17:98)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
       interpolation: 'near',
       scaleExtent: '0,2500000.3,1500000,3300000',
@@ -66,11 +67,11 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     };
 
     describe('and a valid GeoJSON shapefile', function () {
-      form = { ...form, shapefile: { path: './test/resources/complex_multipoly.geojson', mimetype: 'application/geo+json' } };
+      const shapeForm = { ...form, shapefile: { path: './test/resources/complex_multipoly.geojson', mimetype: 'application/geo+json' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       cmrResp.headers = new fetch.Headers(cmrResp.headers);
       hookCmr('fetchPost', cmrResp);
-      hookPostRangesetRequest(version, collection, variableName, form);
+      hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('passes the source collection to the backend', function () {
         const source = this.service.operation.sources[0];
@@ -141,10 +142,10 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     });
 
     describe('and a valid ESRI shapefile', function () {
-      form = { ...form, shapefile: { path: './test/resources/complex_multipoly.zip', mimetype: 'application/shapefile+zip' } };
+      const shapeForm = { ...form, shapefile: { path: './test/resources/complex_multipoly.zip', mimetype: 'application/shapefile+zip' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('fetchPost', cmrResp);
-      hookPostRangesetRequest(version, collection, variableName, form);
+      hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
@@ -170,8 +171,8 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     });
 
     describe('and an ESRI shapefile containing more than one .shp', function () {
-      form = { ...form, shapefile: { path: './test/resources/two_shp_file.zip', mimetype: 'application/shapefile+zip' } };
-      hookPostRangesetRequest(version, collection, variableName, form);
+      const shapeForm = { ...form, shapefile: { path: './test/resources/two_shp_file.zip', mimetype: 'application/shapefile+zip' } };
+      hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('returns a shapefile conversion error', function () {
         expect(this.res.status).to.equal(400);
@@ -183,8 +184,8 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     });
 
     describe('and an ESRI shapefile that cannot be parsed', function () {
-      form = { ...form, shapefile: { path: './test/resources/corrupt_file.zip', mimetype: 'application/shapefile+zip' } };
-      hookPostRangesetRequest(version, collection, variableName, form);
+      const shapeForm = { ...form, shapefile: { path: './test/resources/corrupt_file.zip', mimetype: 'application/shapefile+zip' } };
+      hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('returns a shapefile conversion error', function () {
         expect(this.res.status).to.equal(400);
@@ -196,10 +197,10 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     });
 
     describe('and a valid KML shapefile', function () {
-      form = { ...form, shapefile: { path: './test/resources/complex_multipoly.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
+      const shapeForm = { ...form, shapefile: { path: './test/resources/complex_multipoly.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('fetchPost', cmrResp);
-      hookPostRangesetRequest(version, collection, variableName, form);
+      hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('correctly identifies the granules based on the shapefile', function () {
         const source = this.service.operation.sources[0];
@@ -219,8 +220,8 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     });
 
     describe('and a KML shapefile that cannot be parsed', function () {
-      form = { ...form, shapefile: { path: './test/resources/corrupt_file.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
-      hookPostRangesetRequest(version, collection, variableName, form);
+      const shapeForm = { ...form, shapefile: { path: './test/resources/corrupt_file.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
+      hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('returns a shapefile conversion error', function () {
         expect(this.res.status).to.equal(400);
@@ -232,8 +233,8 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     });
 
     describe('and an unrecognized shapefile type', function () {
-      form = { ...form, shapefile: { path: './test/resources/corrupt_file.kml', mimetype: 'text/plain' } };
-      hookPostRangesetRequest(version, collection, variableName, form);
+      const shapeForm = { ...form, shapefile: { path: './test/resources/corrupt_file.kml', mimetype: 'text/plain' } };
+      hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('returns a shapefile conversion error', function () {
         expect(this.res.status).to.equal(400);

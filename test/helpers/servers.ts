@@ -10,13 +10,13 @@ process.env.EXAMPLE_SERVICES = 'true';
  * @param {object} opts Options to pass to the server start method
  * @returns {void}
  */
-export default function hookServersStartStop(opts: any = {}): void {
+export default function hookServersStartStop(opts = { skipEarthdataLogin: true }): void {
   let servers = null;
   before(function () {
     // Skip Earthdata Login unless the test says to do otherwise
-    const skipEdl = opts.skipEarthdataLogin === undefined ? true : opts.skipEarthdataLogin;
+    const skipEdl = opts.skipEarthdataLogin ? 'true' : 'false';
     // Start Harmony on a random open port
-    servers = harmony.start({ PORT: 0, BACKEND_PORT: 0, EXAMPLE_SERVICES: 'true', skipEarthdataLogin: skipEdl });
+    servers = harmony.start({ EXAMPLE_SERVICES: 'true', skipEarthdataLogin: skipEdl });
     this.frontend = servers.frontend;
     this.backend = servers.backend;
   });

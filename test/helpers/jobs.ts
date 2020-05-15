@@ -63,7 +63,7 @@ export function adminJobListing(app: Application, query: object = {}): Test {
  * @param {Object} [options.jobID] The job ID
  * @returns {void}
  */
-export function jobStatus(app: Express.Application, { jobID }): any {
+export function jobStatus(app: Express.Application, { jobID }): Test {
   return request(app).get(`/jobs/${jobID}`);
 }
 

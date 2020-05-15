@@ -47,7 +47,7 @@ export function hookEossGetGranule(
  * @param {String} version The specification version
  * @returns {Promise<Response>} The response
  */
-export function eossSpecRequest(app: Application, version: string): Promise<any> {
+export function eossSpecRequest(app: Application, version: string): request.Test {
   return request(app).get(`/docs/eoss/${version}/spec`);
 }
 
@@ -57,6 +57,6 @@ export function eossSpecRequest(app: Application, version: string): Promise<any>
  * @param {any} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-export function eossLandingPageRequest(app: Application): Promise<any> {
+export function eossLandingPageRequest(app: Application): request.Test {
   return request(app).get('/docs/eoss');
 }

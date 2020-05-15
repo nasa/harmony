@@ -4,6 +4,17 @@ import boxStringsToBox from 'util/bounding-box';
 
 import env = require('util/env');
 
+interface HarmonyGranule {
+  id: string;
+  name: string;
+  url: string;
+  temporal: {
+    start: string;
+    end: string;
+  };
+  bbox?: number[];
+}
+
 /**
  * Express.js middleware which extracts parameters from the Harmony operation
  * and performs a granule query on them, determining which files are applicable
@@ -22,7 +33,7 @@ export default async function cmrGranuleLocator(req, res, next: Function): Promi
 
   let cmrResponse;
 
-  const cmrQuery: any = {};
+  const cmrQuery: cmr.CmrQuery = {};
 
   if (operation.temporal) {
     const { start, end } = operation.temporal;
@@ -74,7 +85,7 @@ export default async function cmrGranuleLocator(req, res, next: Function): Promi
           } catch (e) {
             logger.error(e);
           }
-          const gran: any = {
+          const gran: HarmonyGranule = {
             id: granule.id,
             name: granule.title,
             url: link.href,

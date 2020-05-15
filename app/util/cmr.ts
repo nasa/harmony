@@ -18,7 +18,7 @@ const clientIdHeader = {
 
 // Exported to allow tests to override cmrApiConfig
 export const cmrApiConfig = {
-  baseURL: env.CMR_URL || 'https://cmr.uat.earthdata.nasa.gov',
+  baseURL: env.cmrUrl || 'https://cmr.uat.earthdata.nasa.gov',
   useToken: true,
 };
 
@@ -50,6 +50,7 @@ export interface CmrGranuleHits {
   granules: CmrGranule[];
 }
 
+
 export interface CmrUmmVariable {
   meta: object; // Contains 'concept-id' which can't be declared
   umm: {
@@ -66,10 +67,10 @@ export interface CmrVariable {
   long_name: string;
 }
 
-interface CmrQuery
+export interface CmrQuery
   extends NodeJS.Dict<string | string[] | number | number[] | boolean | boolean[] | null> {
-  concept_id: string | string[];
-  page_size: number;
+  concept_id?: string | string[];
+  page_size?: number;
 }
 
 export interface CmrResponse extends Response {
@@ -278,7 +279,7 @@ export async function cmrPostSearchBase(
  * @throws {CmrError} If the CMR returns an error status
  * @private
  */
-async function _cmrPostSearch(path: string, form: FormData, token: string): Promise<CmrResponse> {
+async function _cmrPostSearch(path: string, form: CmrQuery, token: string): Promise<CmrResponse> {
   const response = await module.exports.cmrPostSearchBase(path, form, token);
   _handleCmrErrors(response);
 
@@ -345,7 +346,7 @@ async function queryGranules(
  * @private
  */
 async function queryGranuleUsingMultipartForm(
-  form: any, // could not figure out how to use FormData here because
+  form: CmrQuery, // could not figure out how to use FormData here because
   token: string,
 ): Promise<CmrGranuleHits> {
   // TODO: Paging / hits
@@ -434,14 +435,13 @@ export function queryGranulesForCollection(
  * @returns  {Promise<Array<CmrGranule>>} The granules associated with the input collection
  */
 export function queryGranulesForCollectionWithMultipartForm(
-  collectionId: string, form: FormData, token: string, limit = 10,
+  collectionId: string, form: CmrQuery, token: string, limit = 10,
 ): Promise<CmrGranuleHits> {
   const baseQuery = {
     collection_concept_id: collectionId,
     page_size: limit,
   };
 
-  // TODO figure out how to make the first argument have a type of FormData
   return queryGranuleUsingMultipartForm({
     ...baseQuery,
     ...form,

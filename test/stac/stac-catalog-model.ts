@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { Job, JobStatus } from 'models/job';
-import create from 'frontends/stac-catalog';
+import create, { SerializableCatalog } from 'frontends/stac-catalog';
 
 // Prop for testing
 const jobProps = {
@@ -54,7 +54,7 @@ describe('stac-catalog', function () {
 
   describe('catalog creation with a Harmony Job object', function () {
     const job = new Job(jobProps);
-    let jsonObj: any = {};
+    let jsonObj: SerializableCatalog;
     it('created Harmony STAC Catalog', function () {
       expect(function () { jsonObj = create(job.serialize()); }).to.not.throw();
     });

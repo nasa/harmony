@@ -2,6 +2,8 @@ import simpleOAuth2, { OAuthClient } from 'simple-oauth2';
 import { listToText } from 'util/string';
 import { ForbiddenError } from 'util/errors';
 import { setCookiesForEdl } from 'util/cookies';
+import { RequestHandler } from 'express';
+import HarmonyRequest from 'harmony/models/harmony-request';
 // import { RequestHandler } from 'express';
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
@@ -152,8 +154,8 @@ async function handleAuthorized(oauth2: OAuthClient, req, res, next: Function): 
  * @param {Array<string>} paths Paths that require auth
  * @returns {Function} Express.js middleware for doing EDL
  */
-export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): Function {
-  return async function earthdataLoginAuthorizer(req, res, next): Promise<any> {
+export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): RequestHandler {
+  return async function earthdataLoginAuthorizer(req: HarmonyRequest, res, next): Promise<void> {
     const oauth2 = simpleOAuth2.create(oauthOptions);
     const { token } = req.signedCookies;
     const requiresAuth = paths.some((p) => req.path.match(p));

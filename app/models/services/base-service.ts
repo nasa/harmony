@@ -22,7 +22,7 @@ export interface ServiceCapabilities {
 }
 
 export interface ServiceConfig<ServiceParamType> {
-  name: string;
+  name?: string;
   data_operation_version?: string;
   type?: {
     name: string;

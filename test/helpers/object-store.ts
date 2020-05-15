@@ -1,5 +1,5 @@
 import { before, after } from 'mocha';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 import fs from 'fs';
 import mockAws from 'mock-aws-s3';
 import * as tmp from 'tmp';
@@ -8,9 +8,9 @@ import { S3ObjectStore } from 'util/object-store';
 // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
 const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
 const originalUpload = S3MockPrototype.upload;
-S3MockPrototype.upload = function (...args): any {
+S3MockPrototype.upload = function (...args): mockAws.S3.ManagedUpload {
   const result = originalUpload.call(this, ...args);
-  return { on: (): any => {}, ...result };
+  return { on: (): void => {}, ...result };
 };
 
 /**
@@ -49,7 +49,7 @@ export function hookSignS3Object(): string {
       .callsFake(async (url, params) => `${prefix}${params['A-userid']}`);
   });
   after(function () {
-    (S3ObjectStore.prototype.signGetObject as any).restore();
+    (S3ObjectStore.prototype.signGetObject as SinonStub).restore();
   });
   return prefix;
 }
@@ -59,7 +59,8 @@ export function hookSignS3Object(): string {
  * @param {string} url the Object store URL to get
  * @returns {*} the JSON contents of the file at the given URL
  */
-export async function getJson(url: string): Promise<any> {
+export async function getJson(url: string):
+Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   const objectStore = new S3ObjectStore();
   const filename = await objectStore.downloadFile(url);
   try {

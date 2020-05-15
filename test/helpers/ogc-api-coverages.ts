@@ -109,7 +109,7 @@ export function rangesetRequest(
  */
 export function postRangesetRequest(
   app: Express.Application, version: string, collection: string, coverageId: string, form: object,
-): any {
+): request.Test {
   const req = request(app)
     .post(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`);
 
@@ -309,7 +309,7 @@ export function describeRelation(rel: string, description: string, fn: Function)
  */
 export function coveragesSpecRequest(
   app: Express.Application, collection: string, version: string,
-): Promise<any> {
+): request.Test {
   return request(app).get(`/${collection}/ogc-api-coverages/${version}/api`);
 }
 
@@ -323,7 +323,7 @@ export function coveragesSpecRequest(
  */
 export function coveragesLandingPageRequest(
   app: Express.Application, collection: string, version: string,
-): Promise<any> {
+): request.Test {
   return request(app).get(`/${collection}/ogc-api-coverages/${version}/`);
 }
 
@@ -338,7 +338,7 @@ export function coveragesLandingPageRequest(
  */
 export function describeCollectionsRequest(
   app: Express.Application, collection: string, version: string, query: object,
-): Promise<any> {
+): request.Test {
   return request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections`)
     .query(query);
@@ -380,7 +380,7 @@ export function describeCollectionRequest(
   version: string,
   variableName: string,
   query: object,
-): Promise<any> {
+): request.Test {
   return request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${variableName}`)
     .query(query);

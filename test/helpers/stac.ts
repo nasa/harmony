@@ -9,7 +9,7 @@ import { auth } from './auth';
  * @param {String} jobId The job ID
  * @returns {Response} An awaitable object that resolves to the request response
  */
-export function stacCatalog(app: Express.Application, jobId: string): any {
+export function stacCatalog(app: Express.Application, jobId: string): request.Test {
   return request(app).get(`/stac/${jobId}`);
 }
 
@@ -21,7 +21,7 @@ export function stacCatalog(app: Express.Application, jobId: string): any {
  * @param {number} index The index of the stac item in the stac catalog
  * @returns {Response} An awaitable object that resolves to the request response
  */
-export function stacItem(app: Express.Application, jobId: string, index: number): any {
+export function stacItem(app: Express.Application, jobId: string, index: number): request.Test {
   return request(app).get(`/stac/${jobId}/${index}`);
 }
 

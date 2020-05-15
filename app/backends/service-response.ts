@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid';
-
-import log = require('util/log');
+import { Response } from 'express';
+import HarmonyRequest from 'harmony/models/harmony-request';
+import log from 'util/log';
 
 interface ServiceResponseConfig {
   baseUrl: string;
@@ -72,7 +73,7 @@ export function isUrlBound(callbackUrl: string): boolean {
  * @returns {void}
  * @throws {Error} if no callback can be found for the given ID
  */
-export function responseHandler(req: any, res: any): void {
+export function responseHandler(req: HarmonyRequest, res: Response): void {
   const id = req.params.uuid;
   if (!idsToCallbacks.get(id)) {
     throw new Error(`Could not find response callback for UUID ${id}`);

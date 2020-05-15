@@ -1,4 +1,10 @@
+import { Response } from 'express';
 import * as urlUtil from './url';
+import HarmonyRequest from '../models/harmony-request';
+
+interface FileParams {
+  shapefile?: Express.MulterS3.File;
+}
 
 /**
  * This module provides functions to support setting cookies associated with the
@@ -18,12 +24,12 @@ export const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === '
  * @return {Array} a tuple containing the name and value for the cookie
  * @private
  */
-function _shapefile(req: any): Array<any> {
+function _shapefile(req: HarmonyRequest): string[] {
   // if a shapefile was uploaded set a cookie with a url for the shapefile and
   // the other POST form parameters
   if (!req.files) return [];
 
-  const { mimetype, key, bucket } = req.files.shapefile[0];
+  const { mimetype, key, bucket } = (req.files as FileParams).shapefile[0];
   const shapefileParams = { mimetype, key, bucket };
   return ['shapefile', `j:${JSON.stringify(shapefileParams)}`];
 }
@@ -35,7 +41,7 @@ function _shapefile(req: any): Array<any> {
  * @returns {Array} a tuple containing the name and value for the cookie
  * @private
  */
-function _redirect(req: any): Array<any> {
+function _redirect(req: HarmonyRequest): string[] {
   if (req.files) {
     // copy other form parameter to the query field on req so they get used
     // when building the redirect
@@ -62,7 +68,7 @@ const authorizedRecipes = [
  * @param {object} options The options to use when setting the cookie
  * @returns {void}
  */
-export function setCookiesForEdl(req: any, res: any, options: object): void {
+export function setCookiesForEdl(req: HarmonyRequest, res: Response, options: object): void {
   edlRecipes.forEach((recipe) => {
     const [name, value] = recipe(req);
     if (name) {
@@ -79,7 +85,7 @@ export function setCookiesForEdl(req: any, res: any, options: object): void {
  * @param {object} options The options to use when setting the cookie
  * @returns {void}
  */
-export function setCookiesForAuthorized(req: any, res: any, options: object): void {
+export function setCookiesForAuthorized(req: HarmonyRequest, res: Response, options: object): void {
   authorizedRecipes.forEach((recipe) => {
     const [name, value] = recipe(req);
     if (name) {

@@ -2,6 +2,8 @@ import request from 'supertest';
 import { before, after } from 'mocha';
 import { stub as sinonStub } from 'sinon';
 import { readFileSync } from 'fs';
+import aws from 'aws-sdk';
+import { PromiseResult } from 'aws-sdk/lib/request';
 import SecureTokenService from 'harmony/util/sts';
 import { hookRequest } from './hooks';
 
@@ -10,7 +12,7 @@ import { hookRequest } from './hooks';
  * @param {Express.Application} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-export function cloudAccessJson(app: Express.Application): Promise<any> {
+export function cloudAccessJson(app: Express.Application): request.Test {
   return request(app).get('/cloud-access');
 }
 
@@ -19,7 +21,7 @@ export function cloudAccessJson(app: Express.Application): Promise<any> {
  * @param {Express.Application} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-export function cloudAccessSh(app: Express.Application): Promise<any> {
+export function cloudAccessSh(app: Express.Application): request.Test {
   return request(app).get('/cloud-access.sh');
 }
 
@@ -45,6 +47,7 @@ export const sampleCloudAccessJsonResponse = {
   },
 };
 
+type StsResponse = Promise<PromiseResult<aws.STS.AssumeRoleResponse, aws.AWSError>>;
 /**
  * Adds before and after hooks to stub out calls to AWS STS.
  * @returns {void}
@@ -55,17 +58,8 @@ export function hookAwsSts(): void {
     stub = sinonStub(SecureTokenService.prototype, '_getAssumeRole')
       .returns(() => (
         {
-          promise: async (): Promise<any> => sampleCloudAccessJsonResponse,
-          abort: (): any => null,
-          createReadStream: (): any => null,
-          eachPage: (): any => null,
-          isPageable: (): any => false,
-          send: (): any => null,
-          on: (): any => null,
-          onAsync: (): any => null,
-          startTime: new Date(),
-          httpRequest: null,
-        }));
+          promise: async (): StsResponse => sampleCloudAccessJsonResponse,
+        } as aws.Request<aws.STS.AssumeRoleResponse, aws.AWSError>));
   });
   after(function () {
     stub.restore();

@@ -133,7 +133,8 @@ async function getCapabilities(req, res, _next: Function): Promise<void> {
     const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
     const collectionLongLabel = `${collectionShortLabel} (${collection.archive_center || collection.data_center})`;
 
-    const collectionData: any = {
+    const collectionData = {
+      name: undefined,
       bbox,
       label: collectionLongLabel,
       variables: [],
