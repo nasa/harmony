@@ -1,6 +1,5 @@
 import { SpatialReference } from 'gdal-next';
 import DataOperation from 'models/data-operation';
-import { CmrVariable } from 'harmony/util/cmr';
 import { Response } from 'express';
 import keysToLowerCase from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
@@ -81,12 +80,7 @@ export default function getCoverageRangeset(
 
   const varInfos = parseVariables(req.collections, req.params.collectionId);
   for (const varInfo of varInfos) {
-    if (varInfo.variables) {
-      const vars = varInfo.variables.map((v: CmrVariable) => ({ id: v.concept_id, name: v.name }));
-      operation.addSource(varInfo.collectionId, vars);
-    } else {
-      operation.addSource(varInfo.collectionId);
-    }
+    operation.addSource(varInfo.collectionId, varInfo.variables);
   }
 
   req.operation = operation;

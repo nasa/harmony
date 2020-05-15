@@ -4,10 +4,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import keysToLowerCase from 'util/object';
 import { RequestValidationError, NotFoundError } from 'util/errors';
-import DataOperation, { HarmonyVariable } from 'models/data-operation';
+import DataOperation from 'models/data-operation';
 import * as services from 'models/services';
 import { Router, Application } from 'express';
 import _ from 'lodash';
+import { CmrUmmVariable } from 'harmony/util/cmr';
 
 const version = '0.1.0';
 const openApiPath = path.join(__dirname, '..', 'schemas', 'eoss', version, `eoss-v${version}.yml`);
@@ -65,15 +66,16 @@ export function addOpenApiRoutes(app: Router): void {
 
         // Assuming one collection for now
         const collectionId = req.collections[0].id;
-        const variables: HarmonyVariable[] = [];
+        const variables: CmrUmmVariable[] = [];
         if (query.rangesubset) {
           const variablesRequested = query.rangesubset;
           for (const variableRequested of variablesRequested) {
-            const variable = req.collections[0].variables.find((v) => v.name === variableRequested);
+            const collectionVars = req.collections[0].variables;
+            const variable = collectionVars.find((v) => v.umm.Name === variableRequested);
             if (!variable) {
               throw new RequestValidationError(`Invalid rangeSubset parameter: ${variableRequested}`);
             }
-            variables.push({ id: variable.concept_id, name: variable.name });
+            variables.push(variable);
           }
         }
         operation.addSource(collectionId, variables);

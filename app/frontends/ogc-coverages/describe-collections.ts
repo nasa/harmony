@@ -1,4 +1,4 @@
-import { CmrCollection, CmrVariable } from 'harmony/util/cmr';
+import { CmrCollection, CmrUmmVariable } from 'harmony/util/cmr';
 import { Response } from 'express';
 import { getSanitizedRequestUrl } from '../../util/url';
 import keysToLowerCase from '../../util/object';
@@ -49,16 +49,16 @@ export function generateExtent(collection: CmrCollection): Extent {
  * @private
  */
 function buildCollectionInfo(
-  collection: CmrCollection, variable: CmrVariable, requestUrl: string, extent: Extent,
+  collection: CmrCollection, variable: CmrUmmVariable, requestUrl: string, extent: Extent,
 ): object {
   const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
   const collectionLongLabel = `${collectionShortLabel} (${collection.archive_center || collection.data_center})`;
   return {
-    id: `${collection.id}/${variable.concept_id}`,
-    title: `${variable.name} ${collectionShortLabel}`,
-    description: `${variable.long_name} ${collectionLongLabel}`,
+    id: `${collection.id}/${variable.meta['concept-id']}`,
+    title: `${variable.umm.Name} ${collectionShortLabel}`,
+    description: `${variable.umm.LongName} ${collectionLongLabel}`,
     links: [{
-      title: `Perform rangeset request for ${variable.name}`,
+      title: `Perform rangeset request for ${variable.umm.Name}`,
       href: `${requestUrl}/coverage/rangeset`,
     }],
     extent,
@@ -104,11 +104,11 @@ export function describeCollections(req: HarmonyRequest, res: Response): void {
     links.push(rootLink, selfLink);
     const extent = generateExtent(collection);
     // Include a link to perform a request asking for all variables in the EOSDIS collection
-    const allVariables = { name: 'all', concept_id: 'all', long_name: 'All variables' };
+    const allVariables = { umm: { Name: 'all', LongName: 'All variables' }, meta: { 'concept-id': 'all' } };
     ogcCollections.push(buildCollectionInfo(collection, allVariables, `${requestUrl}/all`, extent));
     for (const variable of collection.variables) {
       const collectionInfo = buildCollectionInfo(
-        collection, variable, `${requestUrl}/${encodeURIComponent(variable.name)}`, extent,
+        collection, variable, `${requestUrl}/${encodeURIComponent(variable.umm.Name)}`, extent,
       );
       ogcCollections.push(collectionInfo);
     }

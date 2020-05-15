@@ -38,7 +38,7 @@ export interface CmrCollection {
   associations?: {
     variables?: string[];
   };
-  variables?: CmrVariable[];
+  variables?: CmrUmmVariable[];
 }
 
 export interface CmrGranule {
@@ -52,9 +52,12 @@ export interface CmrGranuleHits {
 
 
 export interface CmrUmmVariable {
-  meta: object; // Contains 'concept-id' which can't be declared
+  meta: {
+    'concept-id': string;
+  };
   umm: {
     Name: string;
+    LongName?: string;
     Characteristics?: {
       GroupPath?: string;
     };
@@ -79,7 +82,7 @@ export interface CmrResponse extends Response {
 
 export interface CmrVariablesResponse extends CmrResponse {
   data: {
-    items: CmrVariable[];
+    items: CmrUmmVariable[];
   };
 }
 
@@ -296,8 +299,8 @@ async function _cmrPostSearch(path: string, form: CmrQuery, token: string): Prom
  */
 async function queryVariables(
   query: CmrQuery, token: string,
-): Promise<Array<CmrVariable>> {
-  const variablesResponse = await _cmrSearch('/search/variables.json', query, token) as CmrVariablesResponse;
+): Promise<Array<CmrUmmVariable>> {
+  const variablesResponse = await _cmrSearch('/search/variables.umm_json_v1_6', query, token) as CmrVariablesResponse;
   return variablesResponse.data.items;
 }
 
@@ -381,7 +384,10 @@ export function getCollectionsByIds(
  * @param {string} token Access token for user request
  * @returns {Promise<Array<CmrVariable>>} The variables with the given ids
  */
-export function getVariablesByIds(ids: Array<string>, token: string): Promise<Array<CmrVariable>> {
+export function getVariablesByIds(
+  ids: Array<string>,
+  token: string,
+): Promise<Array<CmrUmmVariable>> {
   return queryVariables({
     concept_id: ids,
     page_size: 2000,
@@ -397,7 +403,7 @@ export function getVariablesByIds(ids: Array<string>, token: string): Promise<Ar
  */
 export async function getVariablesForCollection(
   collection: CmrCollection, token: string,
-): Promise<Array<CmrVariable>> {
+): Promise<Array<CmrUmmVariable>> {
   const varIds = collection.associations && collection.associations.variables;
   if (varIds) {
     return getVariablesByIds(varIds, token);

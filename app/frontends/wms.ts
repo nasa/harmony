@@ -142,9 +142,9 @@ async function getCapabilities(req, res, _next: Function): Promise<void> {
 
     for (const variable of collection.variables) {
       collectionData.variables.push({
-        name: `${collection.id}/${variable.concept_id}`,
-        description: `${variable.long_name}\n${collectionLongLabel}\n\n${collection.summary}`,
-        label: `${variable.name} (${variable.long_name})`,
+        name: `${collection.id}/${variable.meta['concept-id']}`,
+        description: `${variable.umm.LongName}\n${collectionLongLabel}\n\n${collection.summary}`,
+        label: `${variable.umm.Name} (${variable.umm.LongName})`,
         bbox,
       });
     }
@@ -208,11 +208,11 @@ function getMap(req, res, next: Function): void {
       variablesByCollection[collectionId] = [];
     }
     if (variableId) {
-      const variable = collection.variables.find((v) => v.concept_id === variableId);
+      const variable = collection.variables.find((v) => v.meta['concept-id'] === variableId);
       if (!variable) {
         throw new RequestValidationError(`Invalid layer: ${collectionVariableStr}`);
       }
-      variablesByCollection[collectionId].push({ id: variable.concept_id, name: variable.name });
+      variablesByCollection[collectionId].push(variable);
     }
   }
   for (const collectionId of Object.keys(variablesByCollection)) {

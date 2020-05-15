@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
-import { CmrGranule } from 'harmony/util/cmr';
-import { cloneDeep } from 'lodash';
+import _ from 'lodash';
+import { CmrGranule, CmrUmmVariable } from 'harmony/util/cmr';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -27,10 +27,26 @@ function readSchema(version: string): object {
  */
 const schemaVersions = [
   {
+    version: '0.8.0',
+    schema: readSchema('0.8.0'),
+    down: (model): unknown => {
+      const revertedModel = _.cloneDeep(model);
+      revertedModel.sources.forEach((s) => {
+        if (s.variables) {
+          s.variables.forEach((v) => {
+            delete v.fullPath; // eslint-disable-line no-param-reassign
+          });
+        }
+      });
+
+      return revertedModel;
+    },
+  },
+  {
     version: '0.7.0',
     schema: readSchema('0.7.0'),
-    down: (model): DataOperation => {
-      const revertedModel = cloneDeep(model);
+    down: (model): unknown => {
+      const revertedModel = _.cloneDeep(model);
       // remove the `bbox` and `temporal` fields from all the granules in all the sources
       revertedModel.sources.forEach((s) => {
         s.granules.forEach((g) => {
@@ -47,8 +63,8 @@ const schemaVersions = [
   {
     version: '0.6.0',
     schema: readSchema('0.6.0'),
-    down: (model): DataOperation => {
-      const revertedModel = cloneDeep(model);
+    down: (model): unknown => {
+      const revertedModel = _.cloneDeep(model);
       delete revertedModel.subset.shape;
       delete revertedModel.stagingLocation;
       return revertedModel;
@@ -57,8 +73,8 @@ const schemaVersions = [
   {
     version: '0.5.0',
     schema: readSchema('0.5.0'),
-    down: (model): DataOperation => {
-      const revertedModel = cloneDeep(model);
+    down: (model): unknown => {
+      const revertedModel = _.cloneDeep(model);
       delete revertedModel.format.interpolation;
       delete revertedModel.format.scaleExtent;
       delete revertedModel.format.scaleSize;
@@ -156,16 +172,21 @@ export default class DataOperation {
    * Adds a new service data source to the list of those to operate on
    *
    * @param {string} collection The CMR ID of the collection being operated on
-   * @param {Array<object>?} variables An array of objects containing variable id and name
+   * @param {Array<object>?} vars An array of objects containing variable id and name
    * @param {Array<object>?} granules An array of objects containing granule id, name, and url
    * @returns {void}
    * @memberof DataOperation
    */
   addSource(
     collection: string,
-    variables?: HarmonyVariable[],
+    vars?: CmrUmmVariable[],
     granules?: CmrGranule[],
   ): void {
+    const variables = vars ? vars.map(({ umm, meta }) => ({
+      id: meta['concept-id'],
+      name: umm.Name,
+      fullPath: _.compact([_.get(umm, 'Characteristics.GroupPath'), umm.Name]).join('/'),
+    })) : undefined;
     this.model.sources.push({ collection, variables, granules });
   }
 
@@ -561,7 +582,7 @@ export default class DataOperation {
    * @memberof DataOperation
    */
   clone(): DataOperation {
-    return new DataOperation(cloneDeep(this.model));
+    return new DataOperation(_.cloneDeep(this.model));
   }
 
   /**

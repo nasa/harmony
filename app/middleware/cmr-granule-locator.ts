@@ -94,7 +94,7 @@ export default async function cmrGranuleLocator(req, res, next: Function): Promi
               end: granule.time_end,
             },
           };
-          if (box) gran.bbox = box;
+          if (box && box.length !== 0) gran.bbox = box;
           granules.push(gran);
         }
       }

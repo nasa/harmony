@@ -1,3 +1,7 @@
+## [0.8.0] -2020-05-11
+### Added
+- variable.fullPath - The variable's absolute path within the file, including hierarchy.  Derived from UMM-Var group path combined with name.
+
 ## [0.7.0] -2020-04-07
 ### Added
 - granule.bbox - Bounding box provided by the CMR

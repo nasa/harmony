@@ -1,9 +1,9 @@
-import { CmrCollection, CmrVariable } from 'harmony/util/cmr';
+import { CmrCollection, CmrUmmVariable } from 'harmony/util/cmr';
 import { RequestValidationError } from '../../../util/errors';
 
 interface VariableInfo {
   collectionId: string;
-  variables?: CmrVariable[];
+  variables?: CmrUmmVariable[];
 }
 
 /**
@@ -45,7 +45,7 @@ export default function parseVariables(
     for (const collection of eosdisCollections) {
       const variables = [];
       for (const variableId of variableIds) {
-        const variable = collection.variables.find((v) => v.name === variableId);
+        const variable = collection.variables.find((v) => v.umm.Name === variableId);
         if (variable) {
           missingVariables = missingVariables.filter((v) => v !== variableId);
           variables.push(variable);
