@@ -44,14 +44,6 @@ const jobProps = {
 };
 
 describe('stac-catalog', function () {
-  describe('catalog creation with invalid argument', function () {
-    // const job = { jobID: 1 };
-    xit('should fail', function () {
-      // TODO - this is now a compilation error - how should this be tested?
-      // expect(function () { create(job); }).to.throw();
-    });
-  });
-
   describe('catalog creation with a Harmony Job object', function () {
     const job = new Job(jobProps);
     let jsonObj: SerializableCatalog;
