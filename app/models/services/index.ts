@@ -17,7 +17,7 @@ import RequestContext from '../request-context';
 let serviceConfigs = null;
 
 /**
- * Loads the subsetter-config.yml configuration file.
+ * Loads the services configuration file.
  *
  * @returns {void}
  */
