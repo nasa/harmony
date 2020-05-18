@@ -23,19 +23,18 @@ PORT=3000
 BACKEND_PORT=3001
 
 # The host on which to run the Harmony backend that receives service
-# callbacks. This needs to be accessible from wherever the service is run
-BACKEND_HOST=localhost
+# callbacks. This needs to be accessible from wherever the service is run. It
+# is set to the EC2 instance IP address when running on AWS. When running
+# locally on a Mac, use 'host.docker.internal'. When running locally on
+# Linux, 'localhost' will work.
+# BACKEND_HOST=host.docker.internal  # Mac OS X
+BACKEND_HOST=localhost             # Linux
 
 # The CMR Endpoint to use (e.g. URL for local, SIT, UAT, or production)
 CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
 
 # For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
 USE_LOCALSTACK=true
-
-# The hostname to be used for callbacks when the callback URL is localhost
-# and the service is a local Docker instance.  Docker networking differs
-# between platforms, causing some variation as to what this is called.
-CALLBACK_HOST=host.docker.internal
 
 # Whether to use HTTPS when providing service URLs to localhost.  Non-
 # localhost URLs always use HTTPS regardless of this setting.
