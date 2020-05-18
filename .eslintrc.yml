@@ -44,7 +44,7 @@ rules:
       object: true
     - enforceForRenamedProperties: false
   node/no-unsupported-features/es-syntax: "off"
-  "@typescript-eslint/no-explicit-any": "warn"
+  "@typescript-eslint/no-explicit-any": "error"
   "@typescript-eslint/explicit-function-return-type": "error"
   "@typescript-eslint/no-unused-vars": ["error", { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }]
 overrides:
