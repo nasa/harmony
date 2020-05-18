@@ -5,13 +5,6 @@ import { setCookiesForEdl } from 'util/cookies';
 import { RequestHandler } from 'express';
 import HarmonyRequest from 'harmony/models/harmony-request';
 
-// Typing for simpleOAuth2.AccessToken is missing access_token
-declare module 'simple-oauth2' {
-  interface AccessToken {
-    access_token: Token;
-  }
-}
-
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
 const missingVars = vars.filter((v) => !process.env[v]);
@@ -134,7 +127,7 @@ async function handleAuthorized(oauth2: OAuthClient, req, res, next: Function): 
     if (oauthToken.expired()) {
       const refreshed = await oauthToken.refresh();
       res.cookie('token', refreshed.token, cookieOptions);
-      req.accessToken = refreshed.access_token;
+      req.accessToken = refreshed.token.access_token;
     }
     const user = oauthToken.token.endpoint.split('/').pop();
     req.context.logger = req.context.logger.child({ user });
