@@ -151,9 +151,6 @@ function _handleCmrErrors(response: Response): void {
 export async function cmrSearchBase(
   path: string, query: CmrQuery, token: string, extraHeaders = {},
 ): Promise<CmrResponse> {
-  // TODO fix any because of:
-  // Argument of type 'CmrQuery' is not assignable to parameter of type 'ParsedUrlQueryInput'.
-  // Index signature is missing in type 'CmrQuery'.
   const querystr = querystring.stringify(query);
   const headers = {
     ...clientIdHeader,

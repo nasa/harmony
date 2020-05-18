@@ -1,19 +1,9 @@
 import * as cmr from 'util/cmr';
 import { CmrError, RequestValidationError, ServerError } from 'util/errors';
 import boxStringsToBox from 'util/bounding-box';
+import { HarmonyGranule } from 'harmony/models/data-operation';
 
 import env = require('util/env');
-
-interface HarmonyGranule {
-  id: string;
-  name: string;
-  url: string;
-  temporal: {
-    start: string;
-    end: string;
-  };
-  bbox?: number[];
-}
 
 /**
  * Express.js middleware which extracts parameters from the Harmony operation

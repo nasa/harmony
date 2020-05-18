@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
 import _ from 'lodash';
-import { CmrGranule, CmrUmmVariable } from 'harmony/util/cmr';
+import { CmrUmmVariable } from 'harmony/util/cmr';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -104,7 +104,7 @@ export interface HarmonyGranule {
     start: Date;
     end: Date;
   };
-  bbox: number[];
+  bbox?: number[];
 }
 
 interface DataSource {
@@ -180,7 +180,7 @@ export default class DataOperation {
   addSource(
     collection: string,
     vars?: CmrUmmVariable[],
-    granules?: CmrGranule[],
+    granules?: HarmonyGranule[],
   ): void {
     const variables = vars ? vars.map(({ umm, meta }) => ({
       id: meta['concept-id'],
