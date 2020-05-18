@@ -4,7 +4,13 @@ import { ForbiddenError } from 'util/errors';
 import { setCookiesForEdl } from 'util/cookies';
 import { RequestHandler } from 'express';
 import HarmonyRequest from 'harmony/models/harmony-request';
-// import { RequestHandler } from 'express';
+
+// Typing for simpleOAuth2.AccessToken is missing access_token
+declare module 'simple-oauth2' {
+  interface AccessToken {
+    access_token: Token;
+  }
+}
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
@@ -126,8 +132,7 @@ async function handleAuthorized(oauth2: OAuthClient, req, res, next: Function): 
   req.accessToken = oauthToken.token.access_token;
   try {
     if (oauthToken.expired()) {
-      // TODO access_token does not exist on AccessToken ?
-      const refreshed: any = await oauthToken.refresh();
+      const refreshed = await oauthToken.refresh();
       res.cookie('token', refreshed.token, cookieOptions);
       req.accessToken = refreshed.access_token;
     }
