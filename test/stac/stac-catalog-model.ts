@@ -1,13 +1,16 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { Job } from 'models/job';
-import create from 'frontends/stac-catalog';
+import { Job, JobStatus } from 'models/job';
+import create, { SerializableCatalog } from 'frontends/stac-catalog';
 
 // Prop for testing
 const jobProps = {
   requestId: '1234',
   request: 'example.com',
   username: 'jdoe',
+  progress: 100,
+  message: 'Success',
+  status: JobStatus.SUCCESSFUL,
   links: [
     {
       href: 'file_1.nc',
@@ -41,22 +44,9 @@ const jobProps = {
 };
 
 describe('stac-catalog', function () {
-  describe('catalog creation with invalid argument', function () {
-    const job = { jobID: 1 };
-    it('should fail', function () {
-      expect(function () { create(job); }).to.throw();
-    });
-  });
-
-  describe('catalog creation with an object matching Harmony Job properties', function () {
-    it('should fail', function () {
-      expect(function () { create(jobProps); }).to.throw();
-    });
-  });
-
   describe('catalog creation with a Harmony Job object', function () {
     const job = new Job(jobProps);
-    let jsonObj: any = {};
+    let jsonObj: SerializableCatalog;
     it('created Harmony STAC Catalog', function () {
       expect(function () { jsonObj = create(job.serialize()); }).to.not.throw();
     });

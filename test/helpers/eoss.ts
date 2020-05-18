@@ -1,5 +1,6 @@
 import { before, after } from 'mocha';
-import request from 'supertest';
+import request, { Test } from 'supertest';
+import { Application } from 'express';
 
 /**
  * Performs an EOS service request on the given collection with the given params
@@ -11,7 +12,9 @@ import request from 'supertest';
  * @param {object} query The query parameters to pass to the EOSS request
  * @returns {Promise<Response>} The response
  */
-export function eossGetGranule(app, version, collection, granule, query = {}) {
+export function eossGetGranule(
+  app: Application, version: string, collection: string, granule: string, query: object = {},
+): Test {
   return request(app)
     .get(`/${collection}/eoss/${version}/items/${granule}`)
     .query(query);
@@ -26,7 +29,9 @@ export function eossGetGranule(app, version, collection, granule, query = {}) {
  * @param {object} query The query parameters to pass to the EOSS request
  * @returns {void}
  */
-export function hookEossGetGranule(version, collection, granule, query) {
+export function hookEossGetGranule(
+  version: string, collection: string, granule: string, query: object,
+): void {
   before(async function () {
     this.res = await eossGetGranule(this.frontend, version, collection, granule, query);
   });
@@ -42,16 +47,16 @@ export function hookEossGetGranule(version, collection, granule, query) {
  * @param {String} version The specification version
  * @returns {Promise<Response>} The response
  */
-export function eossSpecRequest(app, version) {
+export function eossSpecRequest(app: Application, version: string): request.Test {
   return request(app).get(`/docs/eoss/${version}/spec`);
 }
 
 /**
  * Makes a call to return the EOSS landing page.
  *
- * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {any} app The express application (typically this.frontend)
  * @returns {Promise<Response>} The response
  */
-export function eossLandingPageRequest(app) {
+export function eossLandingPageRequest(app: Application): request.Test {
   return request(app).get('/docs/eoss');
 }

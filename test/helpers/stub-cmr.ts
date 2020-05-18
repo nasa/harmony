@@ -2,6 +2,8 @@ import { before, after } from 'mocha';
 import * as sinon from 'sinon';
 import * as cmr from 'util/cmr';
 
+type CmrMethodName = 'cmrSearchBase' | 'fetchPost' | 'cmrPostSearchBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'queryGranulesForCollectionWithMultipartForm' | 'belongsToGroup' | 'cmrApiConfig';
+
 /**
  * Replace a function in the `cmr` module with a given function. This is needed because
  * `replay` does not handle POSTs to the CMR correctly.
@@ -11,12 +13,9 @@ import * as cmr from 'util/cmr';
  * @returns {void}
  * @private
  */
-function stubCmr(functionName, response) {
+function stubCmr(functionName: CmrMethodName, response: object): void {
   sinon.stub(cmr, functionName)
-    .callsFake(async () => {
-      const resp = response;
-      return resp;
-    });
+    .callsFake(async () => response);
 }
 
 /**
@@ -26,7 +25,7 @@ function stubCmr(functionName, response) {
  * @returns {void}
  * @private
  */
-function unStubCmr(functionName) {
+function unStubCmr(functionName: string): void {
   if (cmr[functionName].restore) cmr[functionName].restore();
 }
 
@@ -45,7 +44,7 @@ function unStubCmr(functionName) {
  * @param {object} response The desired response
  * @returns {void}
  */
-export default function hookCmr(functionName, response) {
+export default function hookCmr(functionName: CmrMethodName, response: object): void {
   before(async function () {
     stubCmr(functionName, response);
   });

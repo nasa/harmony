@@ -14,7 +14,7 @@ export interface Link {
  * @param {String} urlRoot The harmony root URL
  * @returns {Object} the link to the cloud-access JSON endpoint
  */
-export function getCloudAccessJsonLink(urlRoot) {
+export function getCloudAccessJsonLink(urlRoot: string): Link {
   return {
     title: `Access keys for s3:// URLs, usable from AWS ${awsDefaultRegion} (JSON format)`,
     href: `${urlRoot}/cloud-access`,
@@ -29,7 +29,7 @@ export function getCloudAccessJsonLink(urlRoot) {
  * @param {String} urlRoot The harmony root URL
  * @returns {Object} the link to the cloud-access shell script endpoint
  */
-export function getCloudAccessShLink(urlRoot) {
+export function getCloudAccessShLink(urlRoot: string): Link {
   return {
     title: `Access keys for s3:// URLs, usable from AWS ${awsDefaultRegion} (Shell format)`,
     href: `${urlRoot}/cloud-access.sh`,
@@ -45,7 +45,7 @@ export function getCloudAccessShLink(urlRoot) {
  * @param {string} jobID The UUID of the job
  * @returns {Object} the link to the STAC catalog
  */
-export function getStacCatalogLink(urlRoot, jobID) {
+export function getStacCatalogLink(urlRoot: string, jobID: string): Link {
   return {
     title: 'STAC catalog',
     href: `${urlRoot}/stac/${jobID}/`,

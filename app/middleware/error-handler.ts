@@ -1,7 +1,7 @@
 import mustache from 'mustache';
 import fs from 'fs';
 import path from 'path';
-import { RequestValidationError } from 'util/errors';
+import { RequestValidationError, HttpError } from 'util/errors';
 
 const errorTemplate = fs.readFileSync(path.join(__dirname, '../templates/server-error.mustache.html'), { encoding: 'utf8' });
 
@@ -12,10 +12,10 @@ const errorTemplate = fs.readFileSync(path.join(__dirname, '../templates/server-
  * @param {Error} err The error that occurred
  * @param {http.IncomingMessage} req The client request
  * @param {http.ServerResponse} res The client response
- * @param {function} next The next function in the middleware chain
+ * @param {Function} next The next function in the middleware chain
  * @returns {void}
  */
-export default function errorHandler(err, req, res, next) {
+export default function errorHandler(err: HttpError, req, res, next: Function): void {
   if (res.headersSent) {
     // If the server has started writing the response, delegate to the
     // default error handler, which closes the connection and fails the

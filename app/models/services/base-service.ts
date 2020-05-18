@@ -5,11 +5,48 @@ import { ServerError, RequestValidationError } from 'util/errors';
 import { Job, JobStatus } from 'models/job';
 import { v4 as uuid } from 'uuid';
 import DataOperation from 'models/data-operation';
+import { Logger } from 'winston';
 import InvocationResult from './invocation-result';
-
-import db = require('util/db');
+import db from '../../util/db';
 
 import env = require('util/env');
+
+export interface ServiceCapabilities {
+  subsetting?: {
+    bbox?: boolean;
+    variable?: boolean;
+    multiple_variable?: true;
+  };
+  output_formats?: [string];
+  projection_to_proj4?: boolean;
+}
+
+export interface ServiceConfig<ServiceParamType> {
+  name?: string;
+  data_operation_version?: string;
+  type?: {
+    name: string;
+    params?: ServiceParamType;
+    synchronous_only?: boolean;
+  };
+  collections?: string[];
+  capabilities?: ServiceCapabilities;
+  concurrency?: number;
+  message?: string;
+}
+
+export interface CallbackQueryItem {
+  type: string; // Mime type
+  temporal: string;
+  bbox: string;
+  href: string;
+}
+
+export interface CallbackQuery {
+  item?: CallbackQueryItem;
+  error?: string;
+  redirect?: string;
+}
 
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
@@ -18,16 +55,18 @@ import env = require('util/env');
  * @class BaseService
  * @abstract
  */
-export default class BaseService {
-  config: any;
+export default class BaseService<ServiceParamType> {
+  config: ServiceConfig<ServiceParamType>;
 
-  params: any;
+  params: ServiceParamType;
 
-  operation: any;
+  operation: DataOperation;
 
-  invocation: Promise<unknown>;
+  invocation: Promise<boolean>;
 
   resolveInvocation: (value?: unknown) => void;
+
+  message?: string;
 
   /**
    * Creates an instance of BaseService.
@@ -35,13 +74,13 @@ export default class BaseService {
    * @param {DataOperation} operation The data operation being requested of the service
    * @memberof BaseService
    */
-  constructor(config: any, operation: DataOperation) {
+  constructor(config: ServiceConfig<ServiceParamType>, operation: DataOperation) {
     if (new.target === BaseService) {
       throw new TypeError('BaseService is abstract and cannot be instantiated directly');
     }
     this.config = config;
     const { type } = this.config;
-    this.params = (type && type.params) ? type.params : {};
+    this.params = (type && type.params) ? type.params : ({} as ServiceParamType);
     this.operation = operation;
     this.operation.isSynchronous = this.isSynchronous;
 
@@ -58,7 +97,7 @@ export default class BaseService {
    * @memberof BaseService
    * @returns {object} The service capabilities
    */
-  get capabilities() {
+  get capabilities(): ServiceCapabilities {
     return this.config.capabilities;
   }
 
@@ -72,9 +111,11 @@ export default class BaseService {
    * @returns {Promise<InvocationResult>} A promise resolving to the result of the callback.
    * @memberof BaseService
    */
-  async invoke(logger?, harmonyRoot?, requestUrl?): Promise<InvocationResult> {
+  async invoke(
+    logger?: Logger, harmonyRoot?: string, requestUrl?: string,
+  ): Promise<InvocationResult> {
     const isAsync = !this.isSynchronous;
-    const job = await this._createJob(db, logger, requestUrl, this.operation.stagingLocation);
+    const job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
     if (isAsync) {
       // All jobs are tracked internally.  Only async jobs are saved to the db
       try {
@@ -133,11 +174,11 @@ export default class BaseService {
    * Subclasses must implement this method if using the default invoke() implementation.
    * The method will be invoked asynchronously, completing when the service's callback is
    * received.
-   * @param {Log} _logger the logger associated with the request
+   * @param {Logger} _logger the logger associated with the request
    * @memberof BaseService
    * @returns {Promise<InvocationResult>}
    */
-  protected async _run(_logger): Promise<InvocationResult> {
+  protected async _run(_logger: Logger): Promise<InvocationResult> {
     throw new TypeError('BaseService subclasses must implement #_run()');
   }
 
@@ -207,7 +248,7 @@ export default class BaseService {
    * @returns {void}
    * @memberof BaseService
    */
-  protected async _processAsyncCallback(req, res, logger) {
+  protected async _processAsyncCallback(req, res, logger: Logger): Promise<void> {
     const trx = await db.transaction();
 
     const { user, requestId } = this.operation;
@@ -255,7 +296,11 @@ export default class BaseService {
    * @throws {ServerError} If job update fails unexpectedly
    * @memberof BaseService
    */
-  protected async _updateJobFields(logger, job, query) { /* eslint-disable no-param-reassign */
+  protected async _updateJobFields(
+    logger,
+    job,
+    query,
+  ): Promise<void> { /* eslint-disable no-param-reassign */
     const { error, item, status, redirect, progress } = query;
     try {
       if (item) {
@@ -311,7 +356,11 @@ export default class BaseService {
    * @memberof BaseService
    * @throws {ServerError} if the job cannot be created
    */
-  protected async _createJob(transaction, logger, requestUrl, stagingLocation) {
+  protected async _createJob(
+    logger: Logger,
+    requestUrl: string,
+    stagingLocation: string,
+  ): Promise<Job> {
     const { requestId, user } = this.operation;
     logger.info(`Creating job for ${requestId}`);
     const job = new Job({
@@ -333,7 +382,7 @@ export default class BaseService {
    * @returns {boolean} true if the request is synchronous, false otherwise
    *
    */
-  get isSynchronous() {
+  get isSynchronous(): boolean {
     const { operation } = this;
 
     if (operation.requireSynchronous) {
@@ -354,7 +403,7 @@ export default class BaseService {
    * @readonly
    * @memberof BaseService
    */
-  get warningMessage() {
+  get warningMessage(): string {
     if (this.operation.cmrHits > env.maxAsynchronousGranules) {
       return `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
       + `to process only the first ${env.maxAsynchronousGranules} granules.`;

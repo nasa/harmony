@@ -1,4 +1,10 @@
+import { CmrCollection, CmrUmmVariable } from 'harmony/util/cmr';
 import { RequestValidationError } from '../../../util/errors';
+
+interface VariableInfo {
+  collectionId: string;
+  variables?: CmrUmmVariable[];
+}
 
 /**
  * Given a list of EOSDIS collections and variables parsed from the CMR and an OGC
@@ -11,7 +17,10 @@ import { RequestValidationError } from '../../../util/errors';
  * @throws {RequestValidationError} if the requested OGC collection ID parameter is not valid
  * based on the variables in the collections
  */
-export default function parseVariables(eosdisCollections, collectionIdParam) {
+export default function parseVariables(
+  eosdisCollections: CmrCollection[],
+  collectionIdParam: string,
+): VariableInfo[] {
   // Note that "collectionId" from the Open API spec is an OGC API Collection, which is
   // what we would call a variable (or sometimes a named group of variables).  In the
   // OpenAPI spec doc, a "collection" refers to a UMM-Var variable, and a "CMR collection" refers

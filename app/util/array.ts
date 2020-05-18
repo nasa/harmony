@@ -8,8 +8,8 @@
  * @param {any} value the object to wrap
  * @returns {object[]} an array-wrapped version of the input value
  */
-export default function wrap(value: unknown): object[] {
-  if (value === null || typeof value === 'undefined' || value === '') {
+export default function wrap<T>(value: T): T | T[] {
+  if (value === null || typeof value === 'undefined' || value.toString() === '') {
     return [];
   }
   return Array.isArray(value) ? value : [value];

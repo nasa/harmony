@@ -1,17 +1,27 @@
+import { CmrCollection, CmrUmmVariable } from 'harmony/util/cmr';
+import { Response } from 'express';
 import { getSanitizedRequestUrl } from '../../util/url';
 import keysToLowerCase from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import parseVariables from './util/variable-parsing';
+import HarmonyRequest from '../../models/harmony-request';
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
+
+interface Extent {
+  spatial: {
+    bbox: number[];
+    crs: string;
+  };
+}
 
 /**
  * Creates the extent object returned in the collection listing
  * @param {Object} collection the collection info as returned by the CMR
  * @returns {Object} the extent object
  */
-export function generateExtent(collection) {
+export function generateExtent(collection: CmrCollection): Extent {
   let spatial;
   if (collection.boxes && collection.boxes.length > 0) {
     const bbox = collection.boxes[0].split(' ').map((v) => parseFloat(v));
@@ -38,7 +48,9 @@ export function generateExtent(collection) {
  * @returns {Object} The collection info matching the collectionInfo OGC schema.
  * @private
  */
-function buildCollectionInfo(collection, variable, requestUrl, extent) {
+function buildCollectionInfo(
+  collection: CmrCollection, variable: CmrUmmVariable, requestUrl: string, extent: Extent,
+): object {
   const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
   const collectionLongLabel = `${collectionShortLabel} (${collection.archive_center || collection.data_center})`;
   return {
@@ -66,7 +78,7 @@ function buildCollectionInfo(collection, variable, requestUrl, extent) {
  * @throws {RequestValidationError} Thrown if the request has validation problems and
  *   cannot be performed
  */
-export function describeCollections(req, res) {
+export function describeCollections(req: HarmonyRequest, res: Response): void {
   const query = keysToLowerCase(req.query);
   if (query.f && query.f !== 'json') {
     throw new RequestValidationError(`Unsupported format "${query.f}". Currently only the json format is supported.`);
@@ -117,7 +129,7 @@ export function describeCollections(req, res) {
  * @throws {RequestValidationError} Thrown if the request has validation problems and
  *   cannot be performed
  */
-export function describeCollection(req, res) {
+export function describeCollection(req: HarmonyRequest, res: Response): void {
   const query = keysToLowerCase(req.query);
   if (query.f && query.f !== 'json') {
     throw new RequestValidationError(`Unsupported format "${query.f}". Currently only the json format is supported.`);

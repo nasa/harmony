@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 import { before, after, beforeEach, afterEach } from 'mocha';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 import request from 'superagent';
 import AsynchronizerService from 'models/services/asynchronizer-service';
 import BaseService from 'models/services/base-service';
 import * as services from 'models/services/index';
+import { Logger } from 'winston';
+import DataOperation from 'harmony/models/data-operation';
 import InvocationResult from 'models/services/invocation-result';
+import LocalDockerService from 'harmony/models/services/local-docker-service';
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -13,14 +16,14 @@ import InvocationResult from 'models/services/invocation-result';
  * @class StubService
  * @extends {BaseService}
  */
-export default class StubService extends BaseService {
-  callbackOptions: any;
+export default class StubService extends BaseService<void> {
+  callbackOptions: object | Function;
 
   isComplete: boolean;
 
   isRun: boolean;
 
-  name: any;
+  name: string;
 
   /**
    * Creates an instance of StubService.
@@ -33,7 +36,7 @@ export default class StubService extends BaseService {
    * @param {String} serviceName The service name
    * @memberof StubService
    */
-  constructor(callbackOptions, operation, serviceName) {
+  constructor(callbackOptions: object | Function, operation: DataOperation, serviceName: string) {
     super({ name: 'harmony/stub' }, operation);
     this.callbackOptions = callbackOptions;
     this.isComplete = false;
@@ -44,11 +47,11 @@ export default class StubService extends BaseService {
   /**
    * Runs the service.  For synchronous services, this will callback immediately.  For async,
    * `complete` must be run for a callback to occur.
-   * @param {Log} _logger the logger associated with the request
+   * @param {Logger} _logger the logger associated with the request
    * @memberof StubService
    * @returns {Promise<InvocationResult>}
    */
-  async _run(_logger): Promise<InvocationResult> {
+  async _run(_logger: Logger): Promise<InvocationResult> {
     this.isRun = true;
     if (!this.operation.isSynchronous) return null;
     await this.complete();
@@ -62,7 +65,7 @@ export default class StubService extends BaseService {
    * @returns {void}
    * @memberof StubService
    */
-  async complete() {
+  async complete(): Promise<void> {
     // Allow tests / helpers to not care if a request is sync or async and always call `complete`
     // by only executing this if something has tried to run the service and has not called back yet.
     if (!this.isRun || this.isComplete) return;
@@ -79,7 +82,7 @@ export default class StubService extends BaseService {
    * @returns {request} an awaitable response
    * @memberof StubService
    */
-  sendResponse(query?) {
+  sendResponse(query?: object): request.SuperAgentRequest {
     const options = typeof this.callbackOptions === 'function' ? this.callbackOptions() : this.callbackOptions;
     const params = query || options.params;
     const responseUrl = `${this.operation.callback}/response`;
@@ -107,8 +110,8 @@ export default class StubService extends BaseService {
    * @returns {Function} A function to supply to before / beforeEach
    * @memberof StubService
    */
-  static beforeHook(callbackOptions = { params: { redirect: 'http://example.com' } }) {
-    return function () {
+  static beforeHook(callbackOptions: object = { params: { redirect: 'http://example.com' } }): () => void {
+    return function (): void {
       const ctx = this;
       const origForOperation = services.forOperation;
       sinon.stub(services, 'forOperation')
@@ -133,9 +136,10 @@ export default class StubService extends BaseService {
    * @returns {Function} A function to supply to after / afterEach
    * @memberof StubService
    */
-  static afterHook() {
-    return async function () {
-      if ((services.forOperation as any).restore) (services.forOperation as any).restore();
+  static afterHook(): () => Promise<void> {
+    return async function (): Promise<void> {
+      const stubbed = services.forOperation as SinonStub;
+      if (stubbed.restore) stubbed.restore();
       if (this.service) await this.service.complete();
       if (this.service && this.service.invocation) await this.service.invocation;
       delete this.service;
@@ -153,7 +157,7 @@ export default class StubService extends BaseService {
    * @returns {void}
    * @memberof StubService
    */
-  static hook(callbackOptions: any = { params: { redirect: 'http://example.com' } }) {
+  static hook(callbackOptions: object | Function = { params: { redirect: 'http://example.com' } }): void {
     before(StubService.beforeHook(callbackOptions));
     after(StubService.afterHook());
   }
@@ -169,7 +173,7 @@ export default class StubService extends BaseService {
    * @returns {void}
    * @memberof StubService
    */
-  static hookEach(callbackOptions = { params: { redirect: 'http://example.com' } }) {
+  static hookEach(callbackOptions: object = { params: { redirect: 'http://example.com' } }): void {
     beforeEach(StubService.beforeHook(callbackOptions));
     afterEach(StubService.afterHook());
   }
@@ -183,7 +187,7 @@ export default class StubService extends BaseService {
    * @returns {void}
    * @memberof StubService
    */
-  static hookAsynchronized(callbackOptions: any = { params: { redirect: 'http://example.com' } }) {
+  static hookAsynchronized(callbackOptions: object = { params: { redirect: 'http://example.com' } }): void {
     before(async function () {
       const ctx = this;
       this.callbackOptions = callbackOptions;
@@ -195,7 +199,8 @@ export default class StubService extends BaseService {
     });
 
     after(async function () {
-      if ((services.forOperation as any).restore) (services.forOperation as any).restore();
+      const stubbed = services.forOperation as SinonStub;
+      if (stubbed.restore) stubbed.restore();
       try {
         await this.service.promiseCompletion();
       } catch { /* Normal for expected errors. Logs captured by the AsynchronizerService */
@@ -214,7 +219,7 @@ export default class StubService extends BaseService {
    * @returns {void}
    * @memberof StubService
    */
-  static hookAsynchronizedServiceCompletion(allowError = false) {
+  static hookAsynchronizedServiceCompletion(allowError = false): void {
     before(async function () {
       try {
         await this.service.promiseCompletion();
@@ -235,20 +240,21 @@ export default class StubService extends BaseService {
    * @returns {void}
    * @memberof StubService
    */
-  static hookDockerImage(dockerImage) {
+  static hookDockerImage(dockerImage: string): void {
     before(function () {
       // Tests using a docker image can take more than 2 seconds to start the docker container
       this.timeout(10000);
       const origForOperation = services.forOperation;
       sinon.stub(services, 'forOperation')
         .callsFake((operation) => {
-          const service = origForOperation(operation);
+          const service = origForOperation(operation) as LocalDockerService;
           service.params.image = dockerImage;
           return service;
         });
     });
     after(function () {
-      if ((services.forOperation as any).restore) (services.forOperation as any).restore();
+      const stubbed = services.forOperation as SinonStub;
+      if (stubbed.restore) stubbed.restore();
     });
   }
 }

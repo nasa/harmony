@@ -12,7 +12,7 @@ import { auth } from './auth';
  * @param {...any} params the parameters to the function call
  * @returns {void}
  */
-export function hookFunction(fn, returnValueName, ...params) {
+export function hookFunction<T>(fn: Function, returnValueName: string, ...params: T[]): void {
   before(async function () {
     this[returnValueName] = await fn.bind(this)(...params);
   });
@@ -28,7 +28,7 @@ export function hookFunction(fn, returnValueName, ...params) {
  * @param {string} username optional username to provide for auth
  * @returns {void}
  */
-export function hookUrl(urlOrFn, username = 'anonymous') {
+export function hookUrl(urlOrFn: Function | string, username = 'anonymous'): void {
   before(async function () {
     const url = typeof urlOrFn === 'string' ? urlOrFn : urlOrFn.call(this);
     this.urlRes = this.res;
@@ -50,7 +50,7 @@ export function hookUrl(urlOrFn, username = 'anonymous') {
  * @param {string} username optional username to provide for auth
  * @returns {void}
  */
-export function hookRedirect(username = undefined) {
+export function hookRedirect(username: string = undefined): void {
   hookUrl(function () {
     const { location } = this.res.headers;
     if (!location) throw new TypeError('Attempted to hook an HTTP redirect with no Location header');
@@ -65,7 +65,9 @@ export function hookRedirect(username = undefined) {
  * @param {function} requestFn The request function to execute
  * @returns {void}
  */
-export function hookRequest(requestFn, { username, ...options } = { username: undefined }) {
+export function hookRequest(
+  requestFn: Function, { username, ...options } = { username: undefined },
+): void {
   before(async function () {
     let req = requestFn(this.frontend, options);
     if (username) {

@@ -3,7 +3,7 @@
 import { before, after, beforeEach, afterEach } from 'mocha';
 import { stub } from 'sinon';
 
-import db = require('harmony/util/db');
+import db from 'harmony/util/db';
 
 const tables = ['jobs'];
 
@@ -12,7 +12,7 @@ const tables = ['jobs'];
  *
  * @returns {Promise<void>} A promise that resolves to nothing on completion
  */
-export async function truncateAll() {
+export async function truncateAll(): Promise<void> {
   await Promise.all(tables.map((t) => db(t).truncate()));
 }
 
@@ -29,7 +29,7 @@ before(async function () {
  *
  * @returns {void}
  */
-export function hookTransaction() {
+export function hookTransaction(): void {
   let transactionSet = false;
   before(async function () {
     transactionSet = !this.trx;
@@ -51,7 +51,7 @@ export function hookTransaction() {
  *
  * @returns {void}
  */
-export function hookTransactionEach() {
+export function hookTransactionEach(): void {
   let transactionSet = false;
   beforeEach(async function () {
     transactionSet = !this.trx;
@@ -72,7 +72,7 @@ export function hookTransactionEach() {
  *
  * @returns {void}
  */
-export function hookTransactionFailure() {
+export function hookTransactionFailure(): void {
   let txStub;
   before(function () {
     txStub = stub(db, 'transaction').throws();

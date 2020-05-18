@@ -11,7 +11,7 @@ describe('OGC API Coverages - Utilities', function () {
   describe('parseSubsetParams', function () {
     // Function that returns a function that calls parseSubsetParams with the given value,
     // necessary for setting mocha expectations about exceptions.
-    const parseSubsetParamsFn = (value) => () => parseSubsetParams(value);
+    const parseSubsetParamsFn = (value) => (): object => parseSubsetParams(value);
 
     describe('lat subsets', function () {
       it('returns a parsed object with "lat" info when passed a valid range', function () {
@@ -203,7 +203,6 @@ describe('OGC API Coverages - Utilities', function () {
         lat: { min: -10, max: 10.5 },
         lon: { min: -20, max: 20.5 },
         time: { min: undefined, max: new Date('2001-05-01T12:35:00Z') },
-        other: { min: -30, max: 30.5 },
       })).to.eql([-20, -10, 20.5, 10.5]);
     });
   });
@@ -237,7 +236,6 @@ describe('OGC API Coverages - Utilities', function () {
       expect(subsetParamsToTemporal({
         lat: { min: -10, max: 10.5 },
         lon: { min: -20, max: 20.5 },
-        other: { min: -30, max: 30.5 },
         time: { min: new Date('2001-05-01T12:35:00Z'), max: new Date('2002-07-01T13:18:55Z') },
       })).to.eql({ startTime: new Date('2001-05-01T12:35:00Z'), stopTime: new Date('2002-07-01T13:18:55Z') });
     });

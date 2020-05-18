@@ -5,10 +5,13 @@ import knex from 'knex';
 import { attachPaginate } from 'knex-paginate';
 import env from './env';
 
+export type Transaction = knex.Transaction | knex;
+
 const environment = env.nodeEnv;
 const config = knexfile[environment];
 const database = knex(config);
 
+
 attachPaginate();
 
-export = database;
+export default database;

@@ -1,4 +1,4 @@
-import * as cmrutil from 'util/cmr';
+import { getVariablesForCollection, CmrCollection, getCollectionsByIds } from 'util/cmr';
 import { listToText } from 'util/string';
 import { NotFoundError } from 'util/errors';
 
@@ -14,9 +14,9 @@ const COLLECTION_URL_PATH_REGEX = /^\/(?:C\d+-\w+[+\s])*(?:C\d+-\w+)+\//g;
  * @param {String} token Access token for user request
  * @returns {Promise<void>} Resolves when the loading completes
  */
-async function loadVariablesForCollection(collection, token) {
+async function loadVariablesForCollection(collection: CmrCollection, token: string): Promise<void> {
   const c = collection; // We are mutating collection
-  c.variables = await cmrutil.getVariablesForCollection(collection, token);
+  c.variables = await getVariablesForCollection(collection, token);
 }
 
 /**
@@ -43,10 +43,10 @@ async function loadVariablesForCollection(collection, token) {
  *
  * @param {http.IncomingMessage} req The client request
  * @param {http.ServerResponse} res The client response
- * @param {function} next The next function in the middleware chain
+ * @param {Function} next The next function in the middleware chain
  * @returns {void}
  */
-async function cmrCollectionReader(req, res, next) {
+async function cmrCollectionReader(req, res, next: Function): Promise<void> {
   try {
     const collectionMatch = req.url.match(COLLECTION_URL_PATH_REGEX);
     if (collectionMatch) {
@@ -55,7 +55,7 @@ async function cmrCollectionReader(req, res, next) {
       req.collectionIds = collectionIds;
       req.context.logger.info(`Matched collections: ${collectionIds}`);
 
-      req.collections = await cmrutil.getCollectionsByIds(collectionIds, req.accessToken);
+      req.collections = await getCollectionsByIds(collectionIds, req.accessToken);
       const { collections } = req;
 
       // Could not find a requested collection

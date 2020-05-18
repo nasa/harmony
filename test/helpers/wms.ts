@@ -1,5 +1,5 @@
 import { before, after } from 'mocha';
-import request from 'supertest';
+import request, { Test } from 'supertest';
 
 /**
  * Example of a collection that can be hooked up to WMS
@@ -9,7 +9,7 @@ export const validCollection = 'C1233800302-EEDTEST';
 /**
  * Example of a valid WMS query for use in tests.
  */
-export const validGetMapQuery: any = {
+export const validGetMapQuery = {
   service: 'WMS',
   request: 'GetMap',
   layers: validCollection,
@@ -33,7 +33,9 @@ export const validGetMapQuery: any = {
  * @param {object} query The query parameters to pass to the WMS request
  * @returns {Promise<Response>} The response
  */
-export function wmsRequest(app, collection = validCollection, query = validGetMapQuery) {
+export function wmsRequest(
+  app: Express.Application, collection: string = validCollection, query: object = validGetMapQuery,
+): Test {
   return request(app)
     .get(`/${collection}/wms`)
     .query(query);
@@ -45,7 +47,7 @@ export function wmsRequest(app, collection = validCollection, query = validGetMa
  * @param {string} collection The CMR Collection ID to query
  * @returns {void}
  */
-export function hookGetCapabilities(collection) {
+export function hookGetCapabilities(collection: string): void {
   before(async function () {
     this.res = await wmsRequest(this.frontend, collection, { service: 'WMS', request: 'GetCapabilities' });
   });
@@ -64,7 +66,9 @@ export function hookGetCapabilities(collection) {
  * @param {object} query Query parameters other than "service" and "request" to send
  * @returns {void}
  */
-export function hookGetMap(collection = validCollection, query = validGetMapQuery) {
+export function hookGetMap(
+  collection: string = validCollection, query: object = validGetMapQuery,
+): void {
   before(async function () {
     this.res = await wmsRequest(this.frontend, collection, { service: 'WMS', request: 'GetMap', ...query });
   });

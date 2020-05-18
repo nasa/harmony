@@ -6,7 +6,9 @@ import keysToLowerCase from 'util/object';
 import { RequestValidationError, NotFoundError } from 'util/errors';
 import DataOperation from 'models/data-operation';
 import * as services from 'models/services';
-
+import { Router, Application } from 'express';
+import _ from 'lodash';
+import { CmrUmmVariable } from 'harmony/util/cmr';
 
 const version = '0.1.0';
 const openApiPath = path.join(__dirname, '..', 'schemas', 'eoss', version, `eoss-v${version}.yml`);
@@ -18,27 +20,27 @@ const GRANULE_URL_PATH_REGEX = /\/(?:G\d+-\w+)/g;
 /**
  * Sets up the express application with the OpenAPI routes for EOSS
  *
- * @param {express.Application} app The express application
+ * @param {express.Application} router The express router
  * @returns {void}
  */
-export function addOpenApiRoutes(app) {
+export function addOpenApiRoutes(app: Router): void {
   initialize({
-    app,
+    app: app as Application,
     apiDoc: openApiPath,
     /* Note: the default way to expose an OpenAPI endpoint is to have express handle paths
      * based on a supplied directory structure. Instead we are using the operations property
      * because we want to include the paths within the OpenAPI specification itself. */
     operations: {
-      getLandingPage(req, res) {
+      getLandingPage(req, res): void {
         // HARMONY-72 will implement this functionality - stubbed out for now
         res.append('Content-type', 'text/html');
         res.send('<p>A fine landing page for now.<p>');
       },
-      getSpecification(req, res) {
+      getSpecification(req, res): void {
         res.append('Content-type', 'text/x-yaml');
         res.send(openApiContent);
       },
-      getGranule(req, res, next) {
+      getGranule(req, res, next): void {
         req.context.frontend = 'eoss';
         if (!req.collections.every(services.isCollectionSupported)) {
           throw new NotFoundError('There is no service configured to support transformations on the provided collection via EOSS.');
@@ -64,7 +66,7 @@ export function addOpenApiRoutes(app) {
 
         // Assuming one collection for now
         const collectionId = req.collections[0].id;
-        const variables = [];
+        const variables: CmrUmmVariable[] = [];
         if (query.rangesubset) {
           const variablesRequested = query.rangesubset;
           for (const variableRequested of variablesRequested) {

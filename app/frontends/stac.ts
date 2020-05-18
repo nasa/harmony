@@ -4,7 +4,7 @@ import isUUID from 'util/uuid';
 import stacItemCreate from './stac-item';
 import stacCatalogCreate from './stac-catalog';
 
-import db = require('util/db');
+import db from '../util/db';
 
 /**
  * Generic handler for STAC requests
@@ -14,7 +14,7 @@ import db = require('util/db');
  * @param {*} callback A function that excepts a single serialized Job as its parameter
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function handleStacRequest(req, res, callback) {
+async function handleStacRequest(req, res, callback: Function): Promise<void> {
   const { jobId } = req.params;
   if (!isUUID(jobId)) {
     res.status(400);
@@ -49,7 +49,7 @@ async function handleStacRequest(req, res, callback) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-export async function getStacCatalog(req, res) {
+export async function getStacCatalog(req, res): Promise<void> {
   const { jobId } = req.params;
 
   try {
@@ -70,7 +70,7 @@ export async function getStacCatalog(req, res) {
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {Promise<void>} Resolves when the request is complete
  */
-export async function getStacItem(req, res) {
+export async function getStacItem(req, res): Promise<void> {
   const { jobId, itemIndex } = req.params;
 
   try {

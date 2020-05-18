@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { Job } from 'models/job';
-import create from 'frontends/stac-item';
+import create, { HarmonyItem } from 'frontends/stac-item';
 
 // Prop for testing
 const jobProps = {
@@ -90,7 +90,7 @@ describe('stac-item', function () {
   });
 
   describe('STAC Item creation with a Harmony Job object: case without anti-meridian crossing', function () {
-    const jsonObj: any = create(job, 1);
+    const jsonObj: HarmonyItem = create(job, 1);
     it('has a bounding box that doesn\'t anti-meridian', function () {
       expect(jsonObj.geometry.type).to.equal('Polygon');
     });

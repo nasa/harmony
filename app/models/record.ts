@@ -1,4 +1,8 @@
-import db = require('../util/db');
+import db, { Transaction } from '../util/db';
+
+interface RecordConstructor extends Function {
+  table: string;
+}
 
 /**
  * Abstract class describing a database record.  Subclass database tables
@@ -16,7 +20,7 @@ export default abstract class Record {
 
   createdAt: Date;
 
-  id: any;
+  id: number;
 
   static table: string;
 
@@ -26,7 +30,7 @@ export default abstract class Record {
    * @param {object} fields Object containing to set on the record
    * @memberof Record
    */
-  constructor(fields) {
+  constructor(fields: object) {
     Object.assign(this, fields);
   }
 
@@ -37,7 +41,7 @@ export default abstract class Record {
    * @returns {string[]} a list of validation errors, or null if the record is valid
    * @memberof Record
    */
-  validate() {
+  validate(): string[] {
     return null;
   }
 
@@ -52,7 +56,7 @@ export default abstract class Record {
    * @throws {Error} if the record is invalid
    * @memberof Record
    */
-  async save(transaction) {
+  async save(transaction: Transaction): Promise<void> {
     const errors = this.validate();
     if (errors) {
       throw new TypeError(`Job record is invalid: ${JSON.stringify(errors)}`);
@@ -61,13 +65,16 @@ export default abstract class Record {
     const newRecord = !this.createdAt;
     if (newRecord) {
       this.createdAt = this.updatedAt;
-      let stmt = transaction((this.constructor as any).table).insert(this);
+      let stmt = transaction((this.constructor as RecordConstructor).table)
+        .insert(this);
       if (db.client.config.client === 'pg') {
         stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
       }
       [this.id] = await stmt;
     } else {
-      await transaction((this.constructor as any).table).where({ id: this.id }).update(this);
+      await transaction((this.constructor as RecordConstructor).table)
+        .where({ id: this.id })
+        .update(this);
     }
   }
 }

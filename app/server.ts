@@ -9,6 +9,7 @@ import * as serviceResponse from 'backends/service-response';
 import errorHandler from 'middleware/error-handler';
 import router from 'routers/router';
 import RequestContext from 'models/request-context';
+import { Server } from 'http';
 import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/service-response-router';
 
@@ -24,10 +25,10 @@ import exampleBackend = require('../example/http-backend');
  * @param {Function} setupFn A function that takes an express app and adds non-default behavior
  * @returns {express.Application} The running express application
  */
-function buildServer(name, port, setupFn) {
+function buildServer(name, port, setupFn): Server {
   const appLogger = logger.child({ application: name });
 
-  const addRequestId = (req, res, next) => {
+  const addRequestId = (req, res, next): void => {
     const id = uuid();
     const context = new RequestContext(id);
     context.logger = appLogger.child({ requestId: id });
@@ -72,7 +73,8 @@ function buildServer(name, port, setupFn) {
  *
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
-export function start(config: any = {}) {
+export function start(config: Record<string, string>):
+{ frontend: Server; backend: Server } {
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
   const backendHost = config.BACKEND_HOST || 'localhost';
@@ -116,7 +118,7 @@ export function start(config: any = {}) {
  *   objects, as returned by start()
  * @returns {Promise<void>} A promise that completes when the servers close
  */
-export async function stop({ frontend, backend }) {
+export async function stop({ frontend, backend }): Promise<void> {
   const closeFrontend = promisify(frontend.close.bind(frontend));
   const closeBackend = promisify(backend.close.bind(backend));
   await Promise.all([closeFrontend(), closeBackend()]);

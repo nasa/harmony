@@ -2,6 +2,7 @@ import multer from 'multer';
 import multerS3 from 'multer-s3';
 import * as crypto from 'crypto';
 import { objectStoreForProtocol } from 'util/object-store';
+import { RequestHandler } from 'express';
 
 import env = require('util/env');
 
@@ -10,7 +11,7 @@ import env = require('util/env');
  *
  * @returns {*} A middleware object that handles shapefile uploads
  */
-export default function buildShapefileUploadMiddleware() {
+export default function buildShapefileUploadMiddleware(): RequestHandler {
   const { uploadBucket } = env;
   const objectStore = objectStoreForProtocol(env.objectStoreType);
   const shapefilePrefix = 'temp-user-uploads';

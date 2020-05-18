@@ -5,13 +5,20 @@ import * as stream from 'stream';
 import * as tmp from 'tmp';
 import { URL } from 'url';
 import * as util from 'util';
+import { PromiseResult } from 'aws-sdk/lib/request';
 
 import env = require('./env');
+
 const { awsDefaultRegion } = env;
 
 const pipeline = util.promisify(stream.pipeline);
 const createTmpFileName = util.promisify(tmp.tmpName);
 const readFile = util.promisify(fs.readFile);
+
+interface BucketParams {
+  Bucket: string;
+  Key: string;
+}
 
 /**
  * Class to use when interacting with S3
@@ -28,12 +35,12 @@ export class S3ObjectStore {
    *
    * @param {object} overrides values to set when constructing the underlying S3 store
    */
-  constructor(overrides?) {
+  constructor(overrides?: object) {
     this.s3 = this._getS3(overrides);
   }
 
-  _getS3(overrides?): any {
-    const endpointSettings: any = {};
+  _getS3(overrides?): aws.S3 {
+    const endpointSettings: aws.S3.ClientConfiguration = {};
     if (process.env.USE_LOCALSTACK === 'true') {
       endpointSettings.endpoint = 'http://localhost:4572';
       endpointSettings.s3ForcePathStyle = true;
@@ -58,7 +65,7 @@ export class S3ObjectStore {
    * @throws {TypeError} if the URL is not a recognized protocol or cannot be parsed
    * @memberof S3ObjectStore
    */
-  async signGetObject(objectUrl, params) {
+  async signGetObject(objectUrl: string, params: { [key: string]: string }): Promise<string> {
     const url = new URL(objectUrl);
     if (url.protocol.toLowerCase() !== 's3:') {
       throw new TypeError(`Invalid S3 URL: ${objectUrl}`);
@@ -69,12 +76,14 @@ export class S3ObjectStore {
     };
     // Verifies that the object exists, or throws NotFound
     await this.s3.headObject(object).promise();
-    const req: any = this.s3.getObject(object);
+    const req = this.s3.getObject(object);
 
     if (params) {
       req.on('build', () => { req.httpRequest.path += `?${querystring.stringify(params)}`; });
     }
-    const result = await req.presign();
+    // TypeScript doesn't recognize that req has a presign method.  It does.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (req as any).presign();
     return result;
   }
 
@@ -89,7 +98,10 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  getObject(paramsOrUrl, callback?) {
+  getObject(
+    paramsOrUrl: string | BucketParams,
+    callback?: (err: aws.AWSError, data: aws.S3.GetObjectOutput) => void,
+  ): aws.Request<aws.S3.GetObjectOutput, aws.AWSError> {
     return this.s3.getObject(this._paramsOrUrlToParams(paramsOrUrl), callback);
   }
 
@@ -103,7 +115,9 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  headObject(paramsOrUrl) {
+  headObject(
+    paramsOrUrl: string | BucketParams,
+  ): Promise<PromiseResult<aws.S3.HeadObjectOutput, aws.AWSError>> {
     return this.s3.headObject(this._paramsOrUrlToParams(paramsOrUrl)).promise();
   }
 
@@ -117,14 +131,14 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  _paramsOrUrlToParams(paramsOrUrl) {
-    let params = paramsOrUrl;
+  _paramsOrUrlToParams(paramsOrUrl: string | BucketParams): BucketParams {
+    const params = paramsOrUrl;
     if (typeof params === 'string') {
       const match = params.match(new RegExp('s3://([^/]+)/(.*)'));
       if (!match) {
         throw new TypeError(`getObject string does not seem to be an S3 URL: ${params}`);
       }
-      params = { Bucket: match[1], Key: match[2] };
+      return { Bucket: match[1], Key: match[2] };
     }
     return params;
   }
@@ -139,7 +153,7 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  async downloadFile(paramsOrUrl) {
+  async downloadFile(paramsOrUrl: string | BucketParams): Promise<string> {
     const tempFile = await createTmpFileName();
     const getObjectResponse = this.getObject(paramsOrUrl);
     await pipeline(getObjectResponse.createReadStream(), fs.createWriteStream(tempFile));
@@ -156,9 +170,9 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
-  async uploadFile(fileName, paramsOrUrl) {
+  async uploadFile(fileName: string, paramsOrUrl: string | BucketParams): Promise<string> {
     const fileContent = await readFile(fileName);
-    const params = this._paramsOrUrlToParams(paramsOrUrl);
+    const params = this._paramsOrUrlToParams(paramsOrUrl) as aws.S3.PutObjectRequest;
     params.Body = fileContent;
     await this.s3.upload(params).promise();
     return this.getUrlString(params.Bucket, params.Key);
@@ -176,10 +190,15 @@ export class S3ObjectStore {
    * @throws {TypeError} if an invalid URL is supplied or contentLength is not supplied
    * @memberof S3ObjectStore
    */
-  async upload(stringOrStream, paramsOrUrl, contentLength = null, contentType = null) {
-    const params = this._paramsOrUrlToParams(paramsOrUrl);
+  async upload(
+    stringOrStream: string | NodeJS.ReadableStream,
+    paramsOrUrl: string | BucketParams,
+    contentLength: number = null,
+    contentType: string = null,
+  ): Promise<aws.S3.ManagedUpload.SendData> {
+    const params = this._paramsOrUrlToParams(paramsOrUrl) as aws.S3.PutObjectRequest;
 
-    let body = stringOrStream;
+    const body = stringOrStream;
     const isStream = typeof body !== 'string';
 
     let srcStream;
@@ -191,11 +210,12 @@ export class S3ObjectStore {
       // Getting non-zero-byte files streaming a req to S3 is wonky
       // https://stackoverflow.com/a/54153557
       srcStream = new stream.PassThrough();
-      body.pipe(srcStream);
-      body = new stream.PassThrough();
+      (body as NodeJS.ReadableStream).pipe(srcStream);
+      params.Body = new stream.PassThrough();
+    } else {
+      params.Body = body;
     }
 
-    params.Body = body;
     if (contentType) {
       params.Metadata = params.Metadata || {};
       params.Metadata['Content-Type'] = contentType; // Helps tests
@@ -203,8 +223,9 @@ export class S3ObjectStore {
     }
     const upload = this.s3.upload(params);
     if (isStream) {
-      srcStream.on('data', (chunk) => { body.write(chunk); });
-      srcStream.on('end', () => { body.end(); });
+      const passthrough = params.Body as stream.PassThrough;
+      srcStream.on('data', (chunk) => { passthrough.write(chunk); });
+      srcStream.on('end', () => { passthrough.end(); });
     }
     return upload.promise();
   }
@@ -217,7 +238,7 @@ export class S3ObjectStore {
    * @returns {string} the URL for the object
    * @memberof S3ObjectStore
    */
-  getUrlString(bucket, key) {
+  getUrlString(bucket: string, key: string): string {
     return `s3://${bucket}/${key}`;
   }
 }
@@ -230,7 +251,7 @@ export class S3ObjectStore {
  *   which case the protocol will be read from the front of the URL.
  * @returns {ObjectStore} an object store for interacting with the given protocol
  */
-export function objectStoreForProtocol(protocol?) {
+export function objectStoreForProtocol(protocol?: string): S3ObjectStore {
   if (!protocol) {
     return null;
   }
@@ -248,6 +269,6 @@ export function objectStoreForProtocol(protocol?) {
  *
  * @returns {ObjectStore} the default object store for Harmony.
  */
-export function defaultObjectStore() {
+export function defaultObjectStore(): S3ObjectStore {
   return new S3ObjectStore({});
 }
