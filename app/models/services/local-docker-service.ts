@@ -1,5 +1,3 @@
-import * as process from 'process';
-
 import { spawn } from 'child_process';
 
 import * as fs from 'fs';
@@ -123,8 +121,7 @@ export default class LocalDockerService extends BaseService<DockerServiceParams>
 
     logger.info(this.params);
     const originalCallback = this.operation.callback;
-    this.operation.callback = this.operation.callback.replace('localhost', process.env.CALLBACK_HOST || 'host.docker.internal');
-    let dockerParams = ['run', '--rm', '-t'];
+    let dockerParams = ['run', '--rm', '-t', '--network', 'host'];
 
     for (const variable of Object.keys(this.params.env)) {
       dockerParams = dockerParams.concat('-e', [variable, this.params.env[variable]].join('='));

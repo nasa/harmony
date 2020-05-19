@@ -38,7 +38,7 @@ export function unbindResponseUrl(url: string): void {
  */
 export function bindResponseUrl(responseCallback: Function): string {
   if (!config.baseUrl) {
-    throw new Error('Call configure({ baseUrl }) before calling createResponseUrl');
+    throw new Error('Call configure({ baseUrl }) before calling bindResponseUrl');
   }
   const callbackUUID = uuid();
   idsToCallbacks.set(callbackUUID, {
