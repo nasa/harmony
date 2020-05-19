@@ -16,6 +16,7 @@
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
         STAGING_PATH: public/harmony/gdal
         TEXT_LOGGER: !Env ${TEXT_LOGGER}
+        BACKEND_HOST: !Env ${BACKEND_HOST}
   collections:
     - C1233800302-EEDTEST
     - C1234088182-EEDTEST
@@ -49,6 +50,7 @@
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
         STAGING_PATH: public/sds/swot-reproject
         TEXT_LOGGER: !Env ${TEXT_LOGGER}
+        BACKEND_HOST: !Env ${BACKEND_HOST}
   collections:
     - C1221286860-NSIDC_TS1
     - C1226288788-EDF_DEV07
