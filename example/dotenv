@@ -23,12 +23,14 @@ PORT=3000
 BACKEND_PORT=3001
 
 # The host on which to run the Harmony backend that receives service
-# callbacks. This needs to be accessible from wherever the service is run. It
-# is set to the EC2 instance IP address when running on AWS. When running
-# locally on a Mac, use 'host.docker.internal'. When running locally on
-# Linux, 'localhost' will work.
-# BACKEND_HOST=host.docker.internal  # Mac OS X
-BACKEND_HOST=localhost             # Linux
+# callbacks. This needs to be accessible from wherever the service is run.
+# The Harmony CI/CD scripts sets this to the EC2 instance IP address when
+# running on AWS. When running locally on a Mac or Linux, use the
+# appropriate value below.
+# Mac OS X:
+BACKEND_HOST=host.docker.internal
+# Linux:
+# BACKEND_HOST=localhost
 
 # The CMR Endpoint to use (e.g. URL for local, SIT, UAT, or production)
 CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
