@@ -121,7 +121,7 @@ export default class LocalDockerService extends BaseService<DockerServiceParams>
 
     logger.info(this.params);
     const originalCallback = this.operation.callback;
-    let dockerParams = ['run', '--rm', '-t'];
+    let dockerParams = ['run', '--rm', '-t', '--network', 'host'];
 
     for (const variable of Object.keys(this.params.env)) {
       dockerParams = dockerParams.concat('-e', [variable, this.params.env[variable]].join('='));
