@@ -38,7 +38,8 @@ describe('WMS GetCapabilities', function () {
 
     hookGetCapabilities(collection);
 
-    it('completes successfully', function () {
+    // Re-enable with HARMONY-124
+    xit('completes successfully', function () {
       expect(this.res.status).to.equal(200);
     });
 
