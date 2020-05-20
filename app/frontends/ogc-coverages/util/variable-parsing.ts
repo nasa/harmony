@@ -8,8 +8,8 @@ interface VariableInfo {
 
 /**
  * Returns true if the path matches the variable name or full path (GroupPath/Name)
- * @param v
- * @param p
+ * @param v - The variable to check
+ * @param p - The path to check. Can be a full path or variable name
  * @returns true if path matches variable name or full path
  */
 function doesPathMatch(v: CmrUmmVariable, p: string): boolean {
