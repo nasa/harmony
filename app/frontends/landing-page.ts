@@ -10,7 +10,7 @@ import { getCloudAccessJsonLink, getCloudAccessShLink } from 'util/links';
  * @param {http.ServerResponse} res The response to send to the client
  * @returns {void}
  */
-export default function landingPage(req, res) {
+export default function landingPage(req, res): void {
   const root = getRequestRoot(req);
   const cloudAccessJsonLink = getCloudAccessJsonLink(root);
   const cloudAccessShLink = getCloudAccessShLink(root);

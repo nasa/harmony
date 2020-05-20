@@ -1,13 +1,12 @@
-import pick from 'lodash.pick';
-import { Transaction } from 'knex'; // For types only
+import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
 
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
+import { Transaction } from '../util/db';
 
 import env = require('../util/env');
-import Knex = require('knex');
 
 const { awsDefaultRegion } = env;
 
@@ -72,8 +71,6 @@ export interface JobQuery {
   updatedAt?: number;
 }
 
-type Trx = Transaction | Knex;
-
 /**
  *
  * Wrapper object for persisted jobs
@@ -110,7 +107,7 @@ export class Job extends Record {
 
   request: string;
 
-  _json_links: string | JobLink[];
+  _json_links?: string | JobLink[];
 
   status: string;
 
@@ -126,7 +123,7 @@ export class Job extends Record {
    * @returns a list of all of the user's jobs
    */
   static async queryAll(
-    transaction: Trx,
+    transaction: Transaction,
     constraints: JobQuery = {},
     currentPage = 0,
     perPage = 10,
@@ -151,7 +148,7 @@ export class Job extends Record {
    * @param perPage - the number of results per page
    * @returns a list of all of the user's jobs
    */
-  static forUser(transaction: Trx, username: string, currentPage = 0, perPage = 10):
+  static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
   Promise<IWithPagination<Job[]>> {
     return this.queryAll(transaction, { username }, currentPage, perPage);
   }
@@ -189,7 +186,7 @@ export class Job extends Record {
    * @param id - the primary key of the job record
    * @returns the matching job, or null if none exists
    */
-  static async byId(transaction: Trx, id: number): Promise<Job> {
+  static async byId(transaction: Transaction, id: number): Promise<Job> {
     const result = await transaction('jobs').select().where({ id }).forUpdate();
     return result.length === 0 ? null : new Job(result[0]);
   }
@@ -275,7 +272,7 @@ export class Job extends Record {
    *
    * @param message - (optional) a human-readable success message.  See method description.
    */
-  succeed(message: string): void {
+  succeed(message?: string): void {
     this.updateStatus(JobStatus.SUCCESSFUL, message);
   }
 
@@ -287,7 +284,7 @@ export class Job extends Record {
    * @param status - The new status, one of successful, failed, running, accepted
    * @param message - (optional) a human-readable status message
    */
-  updateStatus(status: JobStatus, message: string): void {
+  updateStatus(status: JobStatus, message?: string): void {
     this.status = status;
     if (message) {
       // Update the message if a new one was provided
@@ -322,7 +319,7 @@ export class Job extends Record {
    * @param transaction - The transaction to use for saving the job
    * @throws {@link Error} if the job is invalid
    */
-  async save(transaction: Trx): Promise<void> {
+  async save(transaction: Transaction): Promise<void> {
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     const { links } = this;
     delete this.links;
@@ -338,7 +335,7 @@ export class Job extends Record {
    * @returns an object with the serialized job fields.
    */
   serialize(urlRoot?: string): Job {
-    const serializedJob: any = pick(this, serializedJobFields);
+    const serializedJob = pick(this, serializedJobFields) as Job;
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     serializedJob.jobID = this.requestId;
@@ -353,7 +350,7 @@ export class Job extends Record {
         return { href, title, type, rel, bbox, temporal };
       });
     }
-    return new Job(serializedJob);
+    return new Job(serializedJob as JobRecord);
   }
 
   /**

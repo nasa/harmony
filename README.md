@@ -161,7 +161,7 @@ $ npm run start-dev
 
 You should now be able to view the outputs of performing a simple transformation request.  Harmony has its own test collection
 set up for sanity checking harmony with the harmony-gdal backend.  This will fetch a granule from that collection converted to GeoTIFF:
-[http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/all/coverage/rangeset?granuleId=G1233800343-EEDTEST](http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/all/coverage/rangeset?granuleId=G1233800343-EEDTEST)
+[http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST](http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST)
 
 You can also set up a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the
 `http://localhost:3000/C1233800302-EEDTEST/wms` as the "URL" field input in the "Connection Details"
@@ -200,7 +200,7 @@ Skip this step if harmony-gdal is not in an ECR.
 4. Run `$ if pgrep node; then pkill node; fi` to stop any existing server that may be running
 5. Run the following, where `$instance_ip` is the private IP address of your local instance and all other variables are as in prior steps:
 ```
-  $ CALLBACK_HOST=$instance_ip \
+  $ BACKEND_HOST=$instance_ip \
     STAGING_PATH=s3://$STAGING_BUCKET \
     GDAL_IMAGE=$GDAL_IMAGE \
     PO_L2_IMAGE=$PO_L2_IMAGE \

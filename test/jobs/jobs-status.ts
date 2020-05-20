@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
-import { Job, JobStatus } from 'models/job';
+import { Job, JobStatus, JobRecord } from 'models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
 import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl } from '../helpers/jobs';
@@ -12,7 +12,7 @@ import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import { S3ObjectStore } from '../../app/util/object-store';
 
-const aJob = {
+const aJob: JobRecord = {
   username: 'joe',
   requestId: uuid().toString(),
   status: JobStatus.RUNNING,
@@ -62,7 +62,7 @@ describe('Individual job status route', function () {
 
     it('returns a single job record in JSON format', function () {
       const actualJob = JSON.parse(this.res.text);
-      expect(jobsEqual(actualJob, aJob)).to.be.true;
+      expect(jobsEqual(aJob, actualJob)).to.be.true;
     });
   });
 
@@ -366,7 +366,7 @@ describe('Individual job status route', function () {
             .callsFake(async (url, params) => `https://example.com/signed/${params['A-userid']}`);
         });
         after(function () {
-          (S3ObjectStore.prototype.signGetObject as any).restore();
+          (S3ObjectStore.prototype.signGetObject as sinon.SinonStub).restore();
         });
 
         hookUrl(function () {

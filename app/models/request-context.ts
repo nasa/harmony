@@ -4,21 +4,21 @@ import { Logger } from 'winston';
  * Contains additional information about a request
  */
 export default class RequestContext {
-  id: string;
+  id?: string;
 
-  logger: Logger;
+  logger?: Logger;
 
-  requestedMimeTypes: Array<string>;
+  requestedMimeTypes?: Array<string>;
 
-  shapefile: object;
+  shapefile?: object;
 
-  frontend: string;
+  frontend?: string;
 
   /**
    * True if the request is from a verified admin making a request against an admin interface
    * (/admin/*)
    */
-  isAdminAccess: boolean;
+  isAdminAccess?: boolean;
 
   /**
    * Creates an instance of RequestContext.

@@ -1,4 +1,4 @@
-import get from 'lodash.get';
+import { get } from 'lodash';
 import * as fs from 'fs';
 import rewind from '@mapbox/geojson-rewind';
 import * as togeojson from '@mapbox/togeojson';
@@ -12,6 +12,7 @@ import { cookieOptions } from 'util/cookies';
 import { RequestValidationError, HttpError, ServerError } from 'util/errors';
 import { defaultObjectStore } from 'util/object-store';
 import { listToText } from 'util/string';
+import { Logger } from 'winston';
 
 const unlink = util.promisify(fs.unlink);
 const readFile = util.promisify(fs.readFile);
@@ -25,7 +26,7 @@ const writeFile = util.promisify(fs.writeFile);
  * @returns {string} path to a temporary file containing the GeoJSON
  * @throws {RequestValidationError} if something goes wrong
  */
-async function _esriToGeoJson(filename) {
+async function _esriToGeoJson(filename: string): Promise<string> {
   let geoJsonFile;
 
   try {
@@ -49,7 +50,7 @@ async function _esriToGeoJson(filename) {
  * @param {Logger} logger the logger to use for errors
  * @returns {string} path to a temporary file containing the GeoJSON
  */
-async function _kmlToGeoJson(filename, logger) {
+async function _kmlToGeoJson(filename: string, logger: Logger): Promise<string> {
   let geoJsonFile;
   try {
     geoJsonFile = await tmp.file();
@@ -59,7 +60,7 @@ async function _kmlToGeoJson(filename, logger) {
        * locator is always need for error position info
        */
       locator: {},
-      errorHandler: (_level, msg) => {
+      errorHandler: (_level, msg): void => {
         logger.error(msg);
         throw new RequestValidationError('The provided KML file could not be parsed. Please check its validity before retrying.');
       },
@@ -90,10 +91,10 @@ const contentTypesToConverters = {
  *
  * @param {http.IncomingMessage} req The client request, containing an operation
  * @param {http.ServerResponse} res The client response
- * @param {function} next The next function in the middleware chain
+ * @param {Function} next The next function in the middleware chain
  * @returns {void}
  */
-export default async function shapefileConverter(req, res, next) {
+export default async function shapefileConverter(req, res, next: Function): Promise<void> {
   const { operation } = req;
 
   try {

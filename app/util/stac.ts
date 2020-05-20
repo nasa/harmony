@@ -1,10 +1,12 @@
+import { JobLink } from 'harmony/models/job';
+
 /**
  * Determine whether or not any of the given links contain the items necessary to generate STAC
  *
  * @param {Array<Object>} links The 'data' links from a serialized Job
  * @returns {boolean} True if a STAC catalog should be generated
  */
-export function needsStacLink(links) {
+export function needsStacLink(links: Array<JobLink>): boolean {
   if (!links) return false;
   return links.some((link) => link.rel === 'data' && link.bbox && link.temporal);
 }
@@ -15,6 +17,6 @@ export function needsStacLink(links) {
  * @param {Array<Object>} links An array of link objects
  * @returns {Array<Object>} the subset of links that have STAC metadata
  */
-export function linksWithStacData(links) {
+export function linksWithStacData(links: Array<JobLink>): Array<JobLink> {
   return links.filter((link) => link.rel === 'data' && link.bbox && link.temporal);
 }

@@ -1,6 +1,7 @@
 import * as cmr from 'util/cmr';
 import { CmrError, RequestValidationError, ServerError } from 'util/errors';
 import boxStringsToBox from 'util/bounding-box';
+import { HarmonyGranule } from 'harmony/models/data-operation';
 
 import env = require('util/env');
 
@@ -11,10 +12,10 @@ import env = require('util/env');
  *
  * @param {http.IncomingMessage} req The client request, containing an operation
  * @param {http.ServerResponse} res The client response
- * @param {function} next The next function in the middleware chain
+ * @param {Function} next The next function in the middleware chain
  * @returns {void}
  */
-export default async function cmrGranuleLocator(req, res, next) {
+export default async function cmrGranuleLocator(req, res, next: Function): Promise<void> {
   const { operation } = req;
   const { logger } = req.context;
 
@@ -22,7 +23,7 @@ export default async function cmrGranuleLocator(req, res, next) {
 
   let cmrResponse;
 
-  const cmrQuery: any = {};
+  const cmrQuery: cmr.CmrQuery = {};
 
   if (operation.temporal) {
     const { start, end } = operation.temporal;
@@ -74,7 +75,7 @@ export default async function cmrGranuleLocator(req, res, next) {
           } catch (e) {
             logger.error(e);
           }
-          const gran: any = {
+          const gran: HarmonyGranule = {
             id: granule.id,
             name: granule.title,
             url: link.href,
@@ -83,7 +84,7 @@ export default async function cmrGranuleLocator(req, res, next) {
               end: granule.time_end,
             },
           };
-          if (box) gran.bbox = box;
+          if (box && box.length !== 0) gran.bbox = box;
           granules.push(gran);
         }
       }

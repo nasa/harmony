@@ -1,11 +1,13 @@
 import { SpatialReference } from 'gdal-next';
 import DataOperation from 'models/data-operation';
+import { Response } from 'express';
 import keysToLowerCase from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import wrap from '../../util/array';
 import parseVariables from './util/variable-parsing';
 import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
 import { parseAcceptHeader } from '../../util/content-negotiation';
+import HarmonyRequest from '../../models/harmony-request';
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -13,12 +15,16 @@ import { parseAcceptHeader } from '../../util/content-negotiation';
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
- * @param {function} next The next express handler
+ * @param {Function} next The next express handler
  * @returns {void}
  * @throws {RequestValidationError} Thrown if the request has validation problems and
  *   cannot be performed
  */
-export default function getCoverageRangeset(req, res, next) {
+export default function getCoverageRangeset(
+  req: HarmonyRequest,
+  res: Response,
+  next: Function,
+): void {
   req.context.frontend = 'ogcCoverages';
   const query = keysToLowerCase(req.query);
 
@@ -29,7 +35,7 @@ export default function getCoverageRangeset(req, res, next) {
   } else if (req.headers.accept) {
     const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
     req.context.requestedMimeTypes = acceptedMimeTypes
-      .map((v) => v.mimeType)
+      .map((v: { mimeType: string }) => v.mimeType)
       .filter((v) => v);
   }
 
@@ -74,12 +80,7 @@ export default function getCoverageRangeset(req, res, next) {
 
   const varInfos = parseVariables(req.collections, req.params.collectionId);
   for (const varInfo of varInfos) {
-    if (varInfo.variables) {
-      const sourceVars = varInfo.variables.map((v) => ({ id: v.concept_id, name: v.name }));
-      operation.addSource(varInfo.collectionId, sourceVars);
-    } else {
-      operation.addSource(varInfo.collectionId);
-    }
+    operation.addSource(varInfo.collectionId, varInfo.variables);
   }
 
   req.operation = operation;

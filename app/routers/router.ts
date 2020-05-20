@@ -1,5 +1,5 @@
 import process from 'process';
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import cookieParser from 'cookie-parser';
 import log from 'util/log';
 
@@ -20,12 +20,10 @@ import * as ogcCoverageApi from 'frontends/ogc-coverages/index';
 import { cloudAccessJson, cloudAccessSh } from 'frontends/cloud-access';
 import landingPage from 'frontends/landing-page';
 import serviceInvoker from 'backends/service-invoker';
+import HarmonyRequest from 'harmony/models/harmony-request';
 
 import cmrCollectionReader = require('middleware/cmr-collection-reader');
 import envVars = require('harmony/util/env');
-
-const wcsFrontend = {};
-
 
 /**
  * Given an Express.js middleware handler function, returns another
@@ -36,9 +34,9 @@ const wcsFrontend = {};
  * @param {Function} fn The middleware handler to wrap with logging
  * @returns {Function} The handler wrapped with logging information
  */
-function logged(fn) {
+function logged(fn: RequestHandler): RequestHandler {
   const scope = `middleware.${fn.name}`;
-  return async (req, res, next) => {
+  return async (req: HarmonyRequest, res, next): Promise<void> => {
     const { logger } = req.context;
     const child = logger.child({ component: scope });
     req.context.logger = child;
@@ -69,8 +67,8 @@ function logged(fn) {
  * @returns {Function} The handler wrapped in validation
  * @throws {NotFoundError} If there are no collections in the request
  */
-function service(fn) {
-  return async (req, res, next) => {
+function service(fn: RequestHandler): RequestHandler {
+  return async (req: HarmonyRequest, res, next): Promise<void> => {
     const { logger } = req.context;
     const child = logger.child({ component: `service.${fn.name}` });
     req.context.logger = child;
@@ -98,23 +96,23 @@ function service(fn) {
  * @param {string} path The URL path
  * @returns {string} The path prefixed by one or more collection IDs
  */
-function collectionPrefix(path) {
+function collectionPrefix(path: string): RegExp {
   const result = new RegExp(cmrCollectionReader.collectionRegex.source + path);
   return result;
 }
 
 // Regex for any routes that we expect to begin with a CMR collection identifier
-const collectionRoute = /^(\/(?!docs).*\/)(wms|wcs|eoss|ogc-api-coverages)/;
+const collectionRoute = /^(\/(?!docs).*\/)(wms|eoss|ogc-api-coverages)/;
 
 /**
  * Validates that routes which require a collection identifier are using the correct
  * format for a collection identifier.
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
- * @param {function} next The next function in the call chain
+ * @param {Function} next The next function in the call chain
  * @returns {void}
  */
-function validateCollectionRoute(req, res, next) {
+function validateCollectionRoute(req, res, next: Function): void {
   const { path } = req;
   const collectionRouteMatch = path.match(collectionRoute);
   if (collectionRouteMatch) {
@@ -133,7 +131,7 @@ function validateCollectionRoute(req, res, next) {
  * @param skipEarthdataLogin - Opt to skip Earthdata Login
  * @returns A router which can respond to frontend service requests
  */
-export default function router({ skipEarthdataLogin }): express.Router {
+export default function router({ skipEarthdataLogin = 'false' }): express.Router {
   const result = express.Router();
 
   const secret = process.env.COOKIE_SECRET;
@@ -173,11 +171,10 @@ export default function router({ skipEarthdataLogin }): express.Router {
   result.use(logged(cmrCollectionReader));
 
   ogcCoverageApi.addOpenApiRoutes(result);
-  result.use(collectionPrefix('wcs'), service(logged(wcsFrontend)));
   result.use(collectionPrefix('wms'), service(logged(wmsFrontend)));
   eoss.addOpenApiRoutes(result);
 
-  result.use(/^\/(wms|wcs|eoss|ogc-api-coverages)/, (req, res, next) => {
+  result.use(/^\/(wms|eoss|ogc-api-coverages)/, (req, res, next) => {
     next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
 
@@ -186,7 +183,7 @@ export default function router({ skipEarthdataLogin }): express.Router {
   result.use(logged(setRequestId));
 
   result.get('/', landingPage);
-  result.get(collectionPrefix('(wms|wcs|eoss|ogc-api-coverages)'), service(serviceInvoker));
+  result.get(collectionPrefix('(wms|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
   result.get('/admin/jobs', getJobsListing);

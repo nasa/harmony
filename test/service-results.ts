@@ -16,7 +16,7 @@ describe('service-results', function () {
     });
 
     it('throws an error when given an S3 link not prefixed with /public/', function () {
-      const result = () => createPublicPermalink('s3://some-bucket/private/some/key.txt', 'https://example.com');
+      const result = (): string => createPublicPermalink('s3://some-bucket/private/some/key.txt', 'https://example.com');
       expect(result).to.throw(TypeError);
     });
 
@@ -32,7 +32,7 @@ describe('service-results', function () {
      * @param {string} protocol the protocol to assert
      * @returns {void}
      */
-    function itDoesNotAlter(protocol) {
+    function itDoesNotAlter(protocol: string): void {
       it(`returns ${protocol} links unaltered`, function () {
         const result = createPublicPermalink(`${protocol}://some/resource.txt`, 'https://example.com');
         expect(result).to.equal(`${protocol}://some/resource.txt`);
@@ -44,7 +44,7 @@ describe('service-results', function () {
     itDoesNotAlter('https');
 
     it('throws an error when presented with an unrecognized link', function () {
-      const result = () => createPublicPermalink('gopher://some/resource.txt', 'https://example.com');
+      const result = (): string => createPublicPermalink('gopher://some/resource.txt', 'https://example.com');
       expect(result).to.throw(TypeError);
     });
   });

@@ -18,7 +18,34 @@ const singleStringRegex = new RegExp('^(\\w+)\\("(.+)"\\)$');
 // Date ranges can have several different representations
 const dateTimeRegex = new RegExp(`${twoStringsRegex.source}|${unboundedMinStringRegex.source}|${unboundedMaxStringRegex.source}|${unboundedStringRegex.source}|${singleStringRegex.source}|${singleUnboundedStringRegex.source}`);
 
-const dimensionConfig = {
+interface Dimension {
+  name?: string;
+  min?: number;
+  max?: number;
+  lowToHigh?: boolean;
+  type?: (NumberConstructor | DateConstructor | StringConstructor);
+  regex?: RegExp;
+}
+
+interface DimensionConfig {
+  [key: string]: Dimension;
+}
+
+interface Range<T> {
+  min?: T;
+  max?: T;
+}
+
+interface TemporalRange {
+  startTime?: Date;
+  stopTime?: Date;
+}
+
+interface DimensionRanges {
+  [key: string]: Range<unknown>;
+}
+
+const dimensionConfig: DimensionConfig = {
   lat: {
     name: 'lat',
     min: -90,
@@ -61,7 +88,7 @@ export class ParameterParseError extends Error {}
  * @returns {Number} the parsed result
  * @throws {ParameterParseError} if there are errors while parsing
  */
-function parseNumeric(dim, valueStr, defaultValue) {
+function parseNumeric(dim: Dimension, valueStr: string, defaultValue: number): number {
   const { name, min, max } = dim;
 
   if (valueStr === unbounded) {
@@ -90,7 +117,7 @@ function parseNumeric(dim, valueStr, defaultValue) {
  * @returns {Date} the parsed date or undefined if the open range indicator is specified
  * @throws {ParameterParseError} if there are errors while parsing
  */
-function parseDate(dim, valueStr) {
+function parseDate(dim: Dimension, valueStr: string): Date {
   const { name } = dim;
 
   if (valueStr === unbounded) {
@@ -113,7 +140,7 @@ const dimensionNameRegex = /^(\w+)\(.+\)$/;
  * @param {String} value The value of the subset parameter
  * @returns {String} the dimension name
  */
-function _getDimensionName(value) {
+function _getDimensionName(value: string): string {
   const match = value.match(dimensionNameRegex);
   const [, dimName] = match;
   return dimName;
@@ -127,12 +154,15 @@ function _getDimensionName(value) {
  * @param {object} dimConfig A mapping of dimension names to min, max, and data type values,
  *   see `dimensionInfo` (the default value) in this file.  Usually should not be specified,
  *   except for testing.
- * @returns {object} An object mapping dimension names to objects with min and max ranges
+ * @returns {DimensionRanges} An object mapping dimension names to objects with min and max ranges
  * @throws {ParameterParseError} if a subset parameter cannot be parsed, has unrecognized
  *   axis names, or is otherwise invalid
  */
-export function parseSubsetParams(values, dimConfig = dimensionConfig) {
-  const result: any = {};
+export function parseSubsetParams(
+  values: string[],
+  dimConfig: DimensionConfig = dimensionConfig,
+): DimensionRanges {
+  const result: DimensionRanges = {};
   for (const value of values) {
     const dimName = _getDimensionName(value);
     const dim = dimConfig[dimName];
@@ -147,7 +177,7 @@ export function parseSubsetParams(values, dimConfig = dimensionConfig) {
     const minStr = matches[2];
     // When just a single value is provided treat it as a range with the same min and max
     const maxStr = matches[3] || minStr;
-    const parsed: any = {};
+    const parsed: Range<unknown> = {};
 
     if (result[dim.name]) {
       throw new ParameterParseError(`subset dimension "${dim.name}" was specified multiple times`);
@@ -184,7 +214,9 @@ export function parseSubsetParams(values, dimConfig = dimensionConfig) {
  * @returns {number[]} An array of 4 numbers corresponding to the [West, South, East, North]
  *   bounding box, or null if there is no lat or lon subsetting in values
  */
-export function subsetParamsToBbox(values) {
+export function subsetParamsToBbox(
+  values: { lat?: Range<number>; lon?: Range<number>; time?: Range<Date> },
+): number[] {
   let { lat, lon } = values;
   if (!lat && !lon) {
     return null;
@@ -205,9 +237,11 @@ export function subsetParamsToBbox(values) {
  * @param {Object} values parsed, valid subset params, as returned by `parseSubsetParams`
  * @returns {Object} An object with startTime and stopTime fields if applicable
  */
-export function subsetParamsToTemporal(values) {
+export function subsetParamsToTemporal(
+  values: { lat?: Range<number>; lon?: Range<number>; time?: Range<Date> },
+): TemporalRange {
   const { time } = values;
-  const temporal: any = {};
+  const temporal: TemporalRange = {};
   if (time) {
     if (time.min) {
       temporal.startTime = time.min;

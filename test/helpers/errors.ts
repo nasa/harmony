@@ -11,7 +11,7 @@ import { expect } from 'chai';
  * @param {number} html assert the page is EUI-themed HTML (default: true)
  * @returns {void}
  */
-export function itRespondsWithError(code, message, html = true) {
+export function itRespondsWithError(code: number, message: string, html = true): void {
   it(`returns an error page with status code ${code}`, function () {
     expect(this.res.status).to.equal(code);
   });
@@ -42,7 +42,13 @@ export function itRespondsWithError(code, message, html = true) {
  * @param {number} [config.html] assert the page is EUI-themed HTML (default: true)
  * @returns {void}
  */
-export function describeErrorCondition({ condition, path, message, code = 404, html = true }) {
+export function describeErrorCondition(
+  { condition,
+    path,
+    message,
+    code = 404,
+    html = true },
+): void {
   describe(`when ${condition}`, function () {
     before(async function () {
       this.res = await request(this.frontend).get(path);

@@ -1,8 +1,9 @@
 import { parse } from 'cookie';
 import * as url from 'url';
-import request from 'supertest';
+import request, { Test } from 'supertest';
 import { before, after, it, describe } from 'mocha';
 import { expect } from 'chai';
+import { Application } from 'express';
 import { auth } from './auth';
 
 const defaultCollection = 'C1233800302-EEDTEST';
@@ -17,7 +18,7 @@ const defaultVersion = '1.0.0';
  * @returns {string} the unsigned cookie value
  * @private
  */
-export function stripSignature(value) {
+export function stripSignature(value: string): string {
   let m = value.match(/^s:j:(.*)\..*$/);
   if (m) {
     return JSON.parse(m[1]);
@@ -38,7 +39,7 @@ export function stripSignature(value) {
  * @returns {string} The unencoded cookie string
  * @private
  */
-function cookieValue(encodedValue, key) {
+function cookieValue(encodedValue: string, key: string): string {
   const decoded = decodeURIComponent(encodedValue);
   const parsed = parse(decoded);
   return stripSignature(parsed[key]);
@@ -51,7 +52,7 @@ function cookieValue(encodedValue, key) {
  * @param {string} version The OGC API - Coverages version to use
  * @returns {void}
  */
-export function hookLandingPage(collection, version) {
+export function hookLandingPage(collection: string, version: string): void {
   before(async function () {
     this.res = await request(this.frontend).get(`/${collection}/ogc-api-coverages/${version}/`);
   });
@@ -75,12 +76,14 @@ export function hookLandingPage(collection, version) {
  * @returns {Promise<Response>} The response
  */
 export function rangesetRequest(
-  app,
-  version = defaultVersion,
-  collection = defaultCollection,
-  coverageId = defaultCoverageId,
-  { query = {}, headers = {}, cookies = null } = {},
-) {
+  app: Application,
+  version: string = defaultVersion,
+  collection: string = defaultCollection,
+  coverageId: string = defaultCoverageId,
+  { query = {},
+    headers = {},
+    cookies = null } = {},
+): Test {
   const req = request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`)
     .query(query)
@@ -104,7 +107,9 @@ export function rangesetRequest(
  * @param {object} form The form parameters to pass to the request
  * @returns {supertest.Test} An 'awaitable' object that resolves to a Response
  */
-export function postRangesetRequest(app, version, collection, coverageId, form) {
+export function postRangesetRequest(
+  app: Express.Application, version: string, collection: string, coverageId: string, form: object,
+): request.Test {
   const req = request(app)
     .post(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`);
 
@@ -132,8 +137,11 @@ export function postRangesetRequest(app, version, collection, coverageId, form) 
  * @returns {void}
  */
 export function hookRangesetRequest(
-  version?, collection?, coverageId?, { query = {}, headers = {}, username = 'anonymous' } = {},
-) {
+  version?: string, collection?: string, coverageId?: string, {
+    query = {},
+    headers = {},
+    username = 'anonymous' } = {},
+): void {
   before(async function () {
     if (!username) {
       this.res = await rangesetRequest(
@@ -173,8 +181,15 @@ export function hookRangesetRequest(
  * @returns {void}
  */
 export function hookSyncRangesetRequest(
-  version?, collection?, coverageId?, { query = {}, headers = {}, username = 'anonymous' } = {},
-) {
+  version?: string,
+  collection?: string,
+  coverageId?: string,
+  {
+    query = {},
+    headers = {},
+    username = 'anonymous',
+  } = {},
+): void {
   hookRangesetRequest(
     version,
     collection,
@@ -192,7 +207,9 @@ export function hookSyncRangesetRequest(
  * @param {object} form The form data to be POST'd
  * @returns {void}
  */
-export function hookPostRangesetRequest(version, collection, coverageId, form) {
+export function hookPostRangesetRequest(
+  version: string, collection: string, coverageId: string, form: object,
+): void {
   before(async function () {
     this.res = await postRangesetRequest(
       this.frontend,
@@ -248,7 +265,7 @@ export function hookPostRangesetRequest(version, collection, coverageId, form) {
  * @param {function} fn The body of the describe statement
  * @returns {void}
  */
-export function describeRelation(rel, description, fn) {
+export function describeRelation(rel: string, description: string, fn: Function): void {
   it(`provides a link relation, \`${rel}\`, to ${description}`, function () {
     const parsedBody = JSON.parse(this.res.text);
     expect(parsedBody).to.have.key('links');
@@ -290,7 +307,9 @@ export function describeRelation(rel, description, fn) {
  * @param {String} version The specification version
  * @returns {Promise<Response>} The response
  */
-export function coveragesSpecRequest(app, collection, version) {
+export function coveragesSpecRequest(
+  app: Express.Application, collection: string, version: string,
+): request.Test {
   return request(app).get(`/${collection}/ogc-api-coverages/${version}/api`);
 }
 
@@ -302,7 +321,9 @@ export function coveragesSpecRequest(app, collection, version) {
  * @param {String} version The specification version
  * @returns {Promise<Response>} The response
  */
-export function coveragesLandingPageRequest(app, collection, version) {
+export function coveragesLandingPageRequest(
+  app: Express.Application, collection: string, version: string,
+): request.Test {
   return request(app).get(`/${collection}/ogc-api-coverages/${version}/`);
 }
 
@@ -315,7 +336,9 @@ export function coveragesLandingPageRequest(app, collection, version) {
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {Promise<Response>} The response
  */
-export function describeCollectionsRequest(app, collection, version, query) {
+export function describeCollectionsRequest(
+  app: Express.Application, collection: string, version: string, query: object,
+): request.Test {
   return request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections`)
     .query(query);
@@ -329,7 +352,9 @@ export function describeCollectionsRequest(app, collection, version, query) {
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {void}
  */
-export function hookDescribeCollectionsRequest(collection, version, query = {}) {
+export function hookDescribeCollectionsRequest(
+  collection: string, version: string, query: object = {},
+): void {
   before(async function () {
     this.res = await describeCollectionsRequest(this.frontend, collection, version, query);
   });
@@ -349,7 +374,13 @@ export function hookDescribeCollectionsRequest(collection, version, query = {}) 
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {Promise<Response>} The response
  */
-export function describeCollectionRequest(app, collection, version, variableName, query) {
+export function describeCollectionRequest(
+  app: Express.Application,
+  collection: string,
+  version: string,
+  variableName: string,
+  query: object,
+): request.Test {
   return request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${variableName}`)
     .query(query);
@@ -364,7 +395,9 @@ export function describeCollectionRequest(app, collection, version, variableName
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {void}
  */
-export function hookDescribeCollectionRequest(collection, version, variableName, query = {}) {
+export function hookDescribeCollectionRequest(
+  collection: string, version: string, variableName: string, query: object = {},
+): void {
   before(async function () {
     this.res = await describeCollectionRequest(
       this.frontend,

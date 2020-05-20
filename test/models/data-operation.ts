@@ -6,9 +6,10 @@ import DataOperation from 'models/data-operation';
 
 const samplesDir = './test/resources/data-operation-samples';
 
-const CURRENT_SCHEMA_VERSION = '0.7.0';
+const CURRENT_SCHEMA_VERSION = '0.8.0';
 
 const versions = [
+  '0.8.0',
   '0.7.0',
   '0.6.0',
   '0.5.0',
@@ -28,7 +29,7 @@ describe('DataOperation', () => {
   describe('#serialize', () => {
     describe('when its serialized JSON fails schema validation', () => {
       describe('and its "validate" parameter is not passed', () => {
-        const call = () => invalidOperation.serialize(CURRENT_SCHEMA_VERSION);
+        const call = (): string => invalidOperation.serialize(CURRENT_SCHEMA_VERSION);
 
         it('throws an error', () => {
           expect(call).to.throw(TypeError);
@@ -36,7 +37,7 @@ describe('DataOperation', () => {
       });
 
       describe('and its "validate" parameter is set to true', () => {
-        const call = () => invalidOperation.serialize(CURRENT_SCHEMA_VERSION, true);
+        const call = (): string => invalidOperation.serialize(CURRENT_SCHEMA_VERSION, true);
 
         it('throws an error', () => {
           expect(call).to.throw(TypeError);
@@ -44,7 +45,7 @@ describe('DataOperation', () => {
       });
 
       describe('and its "validate" parameter is set to false', () => {
-        const call = () => invalidOperation.serialize(CURRENT_SCHEMA_VERSION, false);
+        const call = (): string => invalidOperation.serialize(CURRENT_SCHEMA_VERSION, false);
 
         it('does not throw an error', () => {
           expect(call).to.not.throw();
@@ -57,7 +58,7 @@ describe('DataOperation', () => {
     });
 
     describe('when its serialized JSON passes schema validation', () => {
-      const call = () => validOperation.serialize(CURRENT_SCHEMA_VERSION);
+      const call = (): string => validOperation.serialize(CURRENT_SCHEMA_VERSION);
 
       it('does not throw an error', () => {
         expect(call).to.not.throw();
@@ -69,7 +70,7 @@ describe('DataOperation', () => {
     });
 
     describe('when not specifying a schema version', () => {
-      const call = () => validOperation.serialize();
+      const call = (): string => validOperation.serialize();
 
       it('throws an error', () => {
         expect(call).to.throw(TypeError);
@@ -77,7 +78,7 @@ describe('DataOperation', () => {
     });
 
     describe('when specifying a schema version that cannot be serialized', () => {
-      const call = () => validOperation.serialize('0.1.0');
+      const call = (): string => validOperation.serialize('0.1.0');
 
       it('throws an error', () => {
         expect(call).to.throw(RangeError);
@@ -85,11 +86,11 @@ describe('DataOperation', () => {
     });
 
     describe('serializing to older schema versions', () => {
-      const describeOldSchemaOutput = function (version, outputFile) {
+      const describeOldSchemaOutput = function (version, outputFile): void {
         const outputJson = fs.readFileSync(path.join(samplesDir, outputFile)).toString();
         const output = JSON.stringify(JSON.parse(outputJson));
         describe(`when using the ${version} schema version`, () => {
-          const call = () => validOperation.serialize(version);
+          const call = (): string => validOperation.serialize(version);
 
           it('does not throw an error', () => {
             expect(call).to.not.throw();

@@ -9,7 +9,7 @@ const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmony
  *
  * @returns {Logger} The JSON Winston logger
  */
-function createJsonLogger() {
+function createJsonLogger(): winston.Logger {
   const jsonLogger = winston.createLogger({
     format: winston.format.combine(
       winston.format.timestamp(),
@@ -30,7 +30,7 @@ function createJsonLogger() {
  * @param {string} tag The tag string to add
  * @returns {string} The input string in tag format, or the empty string if tag does not exist
  */
-function optionalTag(tag) {
+function optionalTag(tag: string): string {
   return tag ? ` [${tag}]` : '';
 }
 
@@ -50,7 +50,7 @@ const textformat = winston.format.printf(
  *
  * @returns {Logger} The text string Winston logger
  */
-function createTextLogger() {
+function createTextLogger(): winston.Logger {
   const textLogger = winston.createLogger({
     defaultMeta: {},
     format: winston.format.combine(

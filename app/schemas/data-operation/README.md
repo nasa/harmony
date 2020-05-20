@@ -4,11 +4,10 @@
 
 - [ ] Add `<version>/data-operation-v<version>.json` to this directory, making necessary changes
 - [ ] Update [CHANGELOG.md](CHANGELOG.md)
-- [ ] Add a migration to [data-operation.js](../../models/data-operation.js)
-- [ ] Add getters, setters, and any other necessary logic to to [DataOperation](../../models/data-operation.js)
-- [ ] Update [test/models/data-operation.js](../../../test/models/data-operation.js) to point to the latest schema
-- [ ] Update [test/models/data-operation.js](../../../test/models/data-operation.js) to ensure correct validation and serialization of the current version
-- [ ] Add a new test to [test/models/data-operation.js](../../../test/models/data-operation.js) to test the migration
+- [ ] Add a migration to [data-operation.ts](../../models/data-operation.ts)
+- [ ] Add getters, setters, and any other necessary logic to to [DataOperation](../../models/data-operation.ts)
+- [ ] Update [test/models/data-operation.ts](../../../test/models/data-operation.ts) to point to the latest schema and list the new schema
+- [ ] Add a new example for the new schema to [test/resources/data-operation-samples](../../../test/resources/data-operation-samples)
 - [ ] Update [example/service-operation.json](../../../example/service-operation.json) to reference the updated schema and have any required fields
 - [ ] Update [harmony-service-lib-py](../../../../harmony-service-lib-py/harmony/message.py) to parse the new schema
 - [ ] Update [harmony-service-lib-py/tests/example_messages.py](../../../../harmony-service-lib-py/tests/example_messages.py) to use the new schema

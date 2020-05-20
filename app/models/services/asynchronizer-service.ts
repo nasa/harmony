@@ -1,12 +1,14 @@
 import PromiseQueue from 'p-queue';
-import BaseService from 'models/services/base-service';
-import { Job } from 'models/job';
+import BaseService, { ServiceConfig, CallbackQueryItem } from 'models/services/base-service';
+import { Logger } from 'winston';
 
+import { Job } from 'models/job';
 import { ServiceError } from '../../util/errors';
 import { objectStoreForProtocol } from '../../util/object-store';
+import DataOperation from '../data-operation';
+import InvocationResult from './invocation-result';
 
-import db = require('util/db');
-
+import db from '../../util/db';
 
 /**
  * A wrapper for a service that takes a service class for a service that is only able
@@ -16,26 +18,30 @@ import db = require('util/db');
  * @class AsynchronizerService
  * @extends {BaseService}
  */
-export default class AsynchronizerService extends BaseService {
-  SyncServiceClass: typeof BaseService;
+export default class AsynchronizerService<ServiceParamType> extends BaseService<ServiceParamType> {
+  SyncServiceClass: { new(...args: unknown[]): BaseService<ServiceParamType> };
 
-  queue: any;
+  queue: PromiseQueue;
 
-  completionPromise: Promise<unknown>;
+  completionPromise: Promise<boolean>;
 
   completedCount: number;
 
   totalCount: number;
 
   private _completionCallbacks: {
-    resolve: (value?: unknown) => void; reject: (reason?: any) => void;
+    resolve: (value?: unknown) => void; reject: (reason?: string) => void;
   };
 
-  _invokeArgs: any[];
+  _invokeArgs: [Logger, string, string];
 
   isComplete: boolean;
 
-  constructor(SyncServiceClass: { new(...args): BaseService }, config: any, operation: any) {
+  constructor(
+    SyncServiceClass: { new(...args: unknown[]): BaseService<ServiceParamType> },
+    config: ServiceConfig<ServiceParamType>,
+    operation: DataOperation,
+  ) {
     super(config, operation);
     this.SyncServiceClass = SyncServiceClass;
     this.queue = new PromiseQueue({ concurrency: this.config.concurrency || 1 });
@@ -49,12 +55,12 @@ export default class AsynchronizerService extends BaseService {
    * async
    *
    * @param {Logger} logger The logger to use for details about this request
-   * @param {String} harmonyRoot The harmony root URL
+   * @param {string} harmonyRoot The harmony root URL
    * @param {string} requestUrl The request's URL to record in Job records
    * @returns {Promise<object>} A promise for the invocation result. @see BaseService#invoke
    * @memberof AsynchronizerService
    */
-  async invoke(logger, harmonyRoot, requestUrl) {
+  async invoke(logger: Logger, harmonyRoot: string, requestUrl: string): Promise<InvocationResult> {
     this._invokeArgs = [logger, harmonyRoot, requestUrl];
     if (this.isSynchronous) {
       try {
@@ -79,10 +85,10 @@ export default class AsynchronizerService extends BaseService {
    * Runs the service, asynchronous at this point
    *
    * @param {Logger} logger The logger to use for details about this request
-   * @returns {void}
+   * @returns {Promise<InvocationResult>}
    * @memberof AsynchronizerService
    */
-  async _run(logger) {
+  async _run(logger: Logger): Promise<InvocationResult> {
     const { user, requestId } = this.operation;
     const job = await Job.byUsernameAndRequestId(db, user, requestId);
     try {
@@ -101,6 +107,7 @@ export default class AsynchronizerService extends BaseService {
       const message = (e instanceof ServiceError) ? e.message : 'An unexpected error occurred';
       this._fail(logger, job, message);
     }
+    return null;
   }
 
   /**
@@ -110,15 +117,18 @@ export default class AsynchronizerService extends BaseService {
    * @returns {DataOperation[]} synchronous, single-granule operations
    * @memberof AsynchronizerService
    */
-  _getSyncOperations() {
-    const result = [];
+  _getSyncOperations(): Array<{name: string; syncOperation: DataOperation}> {
+    const result: Array<{name: string; syncOperation: DataOperation}> = [];
     for (const source of this.operation.sources) {
       for (const granule of source.granules) {
         const op = this.operation.clone();
         op.isSynchronous = true;
         op.requireSynchronous = true;
-        op.sources = [];
-        op.addSource(source.collection, source.variables, [granule]);
+        op.sources = [{
+          collection: source.collection,
+          variables: source.variables,
+          granules: [granule],
+        }];
         result.push({ name: granule.name, syncOperation: op });
       }
     }
@@ -137,7 +147,8 @@ export default class AsynchronizerService extends BaseService {
    * @throws {ServiceError} If the service calls back with an error or incorrectly
    * @memberof AsynchronizerService
    */
-  async _invokeServiceSync(logger, job, name, syncOperation) {
+  async _invokeServiceSync(logger: Logger, job: Job, name: string, syncOperation: DataOperation):
+  Promise<void> {
     logger.info(`Invoking service on ${name}`);
     const service = new this.SyncServiceClass(this.config, syncOperation);
     const result = await service.invoke(...this._invokeArgs);
@@ -148,10 +159,11 @@ export default class AsynchronizerService extends BaseService {
       }
 
       const granule = syncOperation.sources[0].granules[0];
-      const item: any = {
+      const item: CallbackQueryItem = {
         type: 'application/octet-stream', // Generic default in case we can't find anything else
         temporal: granule.temporal && [granule.temporal.start, granule.temporal.end].join(','),
         bbox: granule.bbox && granule.bbox.join(','),
+        href: null,
       };
 
       this.completedCount += 1;
@@ -188,7 +200,8 @@ export default class AsynchronizerService extends BaseService {
         throw new ServiceError(500, 'The backend service did not respond correctly');
       }
 
-      await this._performAsyncJobUpdate(logger, db, job, { item, progress });
+      await this._updateJobFields(logger, job, { item, progress });
+      await job.save(db);
       logger.info(`Completed service on ${name}`);
     } finally {
       if (result.onComplete) {
@@ -202,17 +215,18 @@ export default class AsynchronizerService extends BaseService {
    *
    * @param {Logger} logger The logger to use for details about this request
    * @param {Job} job The job containing all service invocations
-   * @returns {void}
+   * @returns {Promise<void>}
    * @memberof AsynchronizerService
    */
-  async _succeed(logger, job) {
+  async _succeed(logger: Logger, job: Job): Promise<void> {
     if (this.isComplete) {
       logger.warn('Received a success call for a completed job');
       return;
     }
     this.isComplete = true;
     try {
-      await this._performAsyncJobUpdate(logger, db, job, { status: 'successful' });
+      await this._updateJobFields(logger, job, { status: 'successful' });
+      await job.save(db);
       logger.info('Completed service request successfully');
     } catch (e) {
       logger.error('Error marking request complete');
@@ -230,17 +244,18 @@ export default class AsynchronizerService extends BaseService {
    * @param {Logger} logger The logger to use for details about this request
    * @param {Job} job The job containing all service invocations
    * @param {string} message The user-facing error message
-   * @returns {void}
+   * @returns {Promise<void>}
    * @memberof AsynchronizerService
    */
-  async _fail(logger, job, message) {
+  async _fail(logger: Logger, job: Job, message: string): Promise<void> {
     if (this.isComplete) {
       logger.warn('Received a failure call for a completed job');
       return;
     }
     this.isComplete = true;
     try {
-      await this._performAsyncJobUpdate(logger, db, job, { error: message });
+      await this._updateJobFields(logger, job, { error: message });
+      await job.save(db);
       logger.info('Completed service request with error');
     } catch (e) {
       logger.error('Error marking request failed');
@@ -257,7 +272,7 @@ export default class AsynchronizerService extends BaseService {
    * @returns {Promise<boolean>} Promise for the result of the service invocation
    * @memberof AsynchronizerService
    */
-  async promiseCompletion() {
+  async promiseCompletion(): Promise<boolean> {
     return this.completionPromise;
   }
 }

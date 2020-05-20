@@ -6,7 +6,31 @@ if (dotenv.config().error) {
   winston.warn('Did not read a .env file');
 }
 
-const envVars: any = {};
+interface HarmonyEnv {
+  logLevel: string;
+  stagingBucket: string;
+  maxSynchronousGranules: number;
+  maxAsynchronousGranules: number;
+  objectStoreType: string;
+  awsDefaultRegion: string;
+  sameRegionAccessRole: string;
+  maxPostFields: number;
+  maxPostFileSize: number;
+  maxPostFileParts: number;
+  nodeEnv: string;
+  adminGroupId: string;
+  harmonyClientId: string;
+  isDevelopment: boolean;
+  uploadBucket: string;
+  cmrUrl: string;
+}
+
+const envVars: HarmonyEnv = {} as HarmonyEnv;
+
+envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
+envVars.isDevelopment = process.env.NODE_ENV === 'development';
+envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
+
 
 /**
  * Add a symbol to module.exports with an appropriate value. The exported symbol will be in
@@ -51,8 +75,8 @@ function makeConfigVar(envName: string, defaultValue?: string|number): void {
   ['MAX_POST_FILE_PARTS', 100],
   ['NODE_ENV', 'development'],
   ['ADMIN_GROUP_ID', null],
+  ['CMR_URL', null],
 ].forEach((value) => makeConfigVar.apply(this, value));
-
 
 // special cases
 

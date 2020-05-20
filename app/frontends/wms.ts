@@ -20,9 +20,8 @@ const readFile = promisify(fs.readFile);
  * @returns {boolean} true
  * @throws {RequestValidationError} If any parameter is missing
  */
-function validateParamExists(lowercasedParamMap, ...paramNames) {
+function validateParamExists(lowercasedParamMap: object, ...paramNames: string[]): boolean {
   const failures = [];
-
 
   for (const name of paramNames) {
     if (!Object.prototype.hasOwnProperty.call(lowercasedParamMap, name)) {
@@ -49,7 +48,9 @@ function validateParamExists(lowercasedParamMap, ...paramNames) {
  * @returns {boolean} true
  * @throws {RequestValidationError} If any parameter has an invalid value
  */
-function validateParamIn(lowercasedParamMap, paramName, values, allowNull = false) {
+function validateParamIn(
+  lowercasedParamMap: object, paramName: string, values: Array<string>, allowNull = false,
+): boolean {
   const value = lowercasedParamMap[paramName];
   if (allowNull && !Object.prototype.hasOwnProperty.call(lowercasedParamMap, paramName)) {
     return true;
@@ -71,7 +72,7 @@ function validateParamIn(lowercasedParamMap, paramName, values, allowNull = fals
  * @param {string} requestParam The WMS REQUEST parameter
  * @returns {string} the mustache template for the given request type for WMS 1.3.0
  */
-async function getWmsResponseTemplate(requestParam) {
+async function getWmsResponseTemplate(requestParam: string): Promise<string> {
   // TODO This could / should be cached
   const templatePath = path.join(__dirname, `templates/wms-1.3.0/${requestParam}.mustache.xml`);
   return readFile(templatePath, { encoding: 'utf8' });
@@ -85,7 +86,7 @@ async function getWmsResponseTemplate(requestParam) {
  * @param {object} context A context object that fills in the mustache template values
  * @returns{string} The response document
  */
-async function renderToTemplate(requestParam, context) {
+async function renderToTemplate(requestParam: string, context: object): Promise<string> {
   const template = await getWmsResponseTemplate(requestParam);
   return mustache.render(template, context);
 }
@@ -97,7 +98,7 @@ async function renderToTemplate(requestParam, context) {
  * @param {string} message The error message to send
  * @returns {void}
  */
-function requestError(res, message) {
+function requestError(res, message: string): void {
   res.status(400).json(message);
 }
 
@@ -113,7 +114,7 @@ function requestError(res, message) {
  *  signature for an Express.js handler
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function getCapabilities(req, res, _next) {
+async function getCapabilities(req, res, _next: Function): Promise<void> {
   const collections = [];
 
   for (const collection of req.collections) {
@@ -132,7 +133,8 @@ async function getCapabilities(req, res, _next) {
     const collectionShortLabel = `${collection.short_name} v${collection.version_id}`;
     const collectionLongLabel = `${collectionShortLabel} (${collection.archive_center || collection.data_center})`;
 
-    const collectionData: any = {
+    const collectionData = {
+      name: undefined,
       bbox,
       label: collectionLongLabel,
       variables: [],
@@ -140,9 +142,9 @@ async function getCapabilities(req, res, _next) {
 
     for (const variable of collection.variables) {
       collectionData.variables.push({
-        name: `${collection.id}/${variable.concept_id}`,
-        description: `${variable.long_name}\n${collectionLongLabel}\n\n${collection.summary}`,
-        label: `${variable.name} (${variable.long_name})`,
+        name: `${collection.id}/${variable.meta['concept-id']}`,
+        description: `${variable.umm.LongName}\n${collectionLongLabel}\n\n${collection.summary}`,
+        label: `${variable.umm.Name} (${variable.umm.LongName})`,
         bbox,
       });
     }
@@ -167,10 +169,10 @@ async function getCapabilities(req, res, _next) {
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
- * @param {function} next The next function in the chain
+ * @param {Function} next The next function in the chain
  * @returns {void}
  */
-function getMap(req, res, next) {
+function getMap(req, res, next: Function): void {
   // http://portal.opengeospatial.org/files/?artifact_id=14416
   // Section 7.3
 
@@ -206,11 +208,11 @@ function getMap(req, res, next) {
       variablesByCollection[collectionId] = [];
     }
     if (variableId) {
-      const variable = collection.variables.find((v) => v.concept_id === variableId);
+      const variable = collection.variables.find((v) => v.meta['concept-id'] === variableId);
       if (!variable) {
         throw new RequestValidationError(`Invalid layer: ${collectionVariableStr}`);
       }
-      variablesByCollection[collectionId].push({ id: variable.concept_id, name: variable.name });
+      variablesByCollection[collectionId].push(variable);
     }
   }
   for (const collectionId of Object.keys(variablesByCollection)) {
@@ -249,10 +251,10 @@ function getMap(req, res, next) {
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
- * @param {function} next The next function in the chain
+ * @param {Function} next The next function in the chain
  * @returns {void}
  */
-export default async function wmsFrontend(req, res, next) {
+export default async function wmsFrontend(req, res, next: Function): Promise<void> {
   req.context.frontend = 'wms';
   const query = keysToLowerCase(req.query);
   req.wmsQuery = query;

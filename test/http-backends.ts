@@ -12,7 +12,7 @@ import { hookFunction } from './helpers/hooks';
  *   request with it, returning a promise for the superagent response
  * @returns {void}
  */
-function describeHttpBackendBehavior(performRequestFn) {
+function describeHttpBackendBehavior(performRequestFn: Function): void {
   describe('a service success response', function () {
     hookFunction(performRequestFn, 'res', 'SUCCESS');
 

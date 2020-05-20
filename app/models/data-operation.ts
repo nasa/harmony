@@ -1,17 +1,17 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
-
-import cloneDeep = require('lodash.clonedeep');
+import _ from 'lodash';
+import { CmrUmmVariable } from 'harmony/util/cmr';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
  *
- * @param {number} version The version number of the schema to read
+ * @param {string} version The version number of the schema to read
  * @returns {object} The parsed JSON Schema object
  * @private
  */
-function readSchema(version) {
+function readSchema(version: string): object {
   const schemaPath = path.join(__dirname, '..', 'schemas', 'data-operation', version, `data-operation-v${version}.json`);
   return JSON.parse(fs.readFileSync(schemaPath).toString());
 }
@@ -27,10 +27,26 @@ function readSchema(version) {
  */
 const schemaVersions = [
   {
+    version: '0.8.0',
+    schema: readSchema('0.8.0'),
+    down: (model): unknown => {
+      const revertedModel = _.cloneDeep(model);
+      revertedModel.sources.forEach((s) => {
+        if (s.variables) {
+          s.variables.forEach((v) => {
+            delete v.fullPath; // eslint-disable-line no-param-reassign
+          });
+        }
+      });
+
+      return revertedModel;
+    },
+  },
+  {
     version: '0.7.0',
     schema: readSchema('0.7.0'),
-    down: (model) => {
-      const revertedModel = cloneDeep(model);
+    down: (model): unknown => {
+      const revertedModel = _.cloneDeep(model);
       // remove the `bbox` and `temporal` fields from all the granules in all the sources
       revertedModel.sources.forEach((s) => {
         s.granules.forEach((g) => {
@@ -47,8 +63,8 @@ const schemaVersions = [
   {
     version: '0.6.0',
     schema: readSchema('0.6.0'),
-    down: (model) => {
-      const revertedModel = cloneDeep(model);
+    down: (model): unknown => {
+      const revertedModel = _.cloneDeep(model);
       delete revertedModel.subset.shape;
       delete revertedModel.stagingLocation;
       return revertedModel;
@@ -57,8 +73,8 @@ const schemaVersions = [
   {
     version: '0.5.0',
     schema: readSchema('0.5.0'),
-    down: (model) => {
-      const revertedModel = cloneDeep(model);
+    down: (model): unknown => {
+      const revertedModel = _.cloneDeep(model);
       delete revertedModel.format.interpolation;
       delete revertedModel.format.scaleExtent;
       delete revertedModel.format.scaleSize;
@@ -76,6 +92,27 @@ for (const { schema, version } of schemaVersions) {
   validator.addSchema(schema, version);
 }
 
+export interface HarmonyVariable {
+  id: string;
+  name: string;
+}
+export interface HarmonyGranule {
+  id: string;
+  name: string;
+  url: string;
+  temporal: {
+    start: Date;
+    end: Date;
+  };
+  bbox?: number[];
+}
+
+interface DataSource {
+  collection: string;
+  granules: HarmonyGranule[];
+  variables: HarmonyVariable[];
+}
+
 /**
  * Encapsulates an operation to be performed against a backend.  Currently the
  * class is largely getters and setters.  The eventual intent is to allow us
@@ -85,11 +122,14 @@ for (const { schema, version } of schemaVersions) {
  * @class DataOperation
  */
 export default class DataOperation {
-  model: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  model: any; // Type checking is redundant with JSON schema checks
 
-  granuleIds: any;
+  granuleIds: string[];
 
   requireSynchronous: boolean;
+
+  cmrHits?: number;
 
   /**
    * Creates an instance of DataOperation.
@@ -97,7 +137,7 @@ export default class DataOperation {
    * @param {object} [model=null] The initial model, useful when receiving serialized operations
    * @memberof DataOperation
    */
-  constructor(model = null) {
+  constructor(model: object = null) {
     this.model = model || {
       sources: [],
       format: {},
@@ -109,10 +149,10 @@ export default class DataOperation {
    * Returns the service data sources, a list of objects containing a collection ID with the
    * variables and granules to operate on.
    *
-   * @returns {Array<DataSource>} The service data sources
+   * @returns {DataSource[]} The service data sources
    * @memberof DataOperation
    */
-  get sources() {
+  get sources(): DataSource[] {
     return this.model.sources;
   }
 
@@ -120,11 +160,11 @@ export default class DataOperation {
    * Sets the service data sources, a list of objects containing a collection ID with the variables
    * and granules to operate on
    *
-   * @param {Array<DataSource>} sources The service data sources
+   * @param {DataSource[]} sources The service data sources
    * @returns {void}
    * @memberof DataOperation
    */
-  set sources(sources) {
+  set sources(sources: DataSource[]) {
     this.model.sources = sources;
   }
 
@@ -132,12 +172,21 @@ export default class DataOperation {
    * Adds a new service data source to the list of those to operate on
    *
    * @param {string} collection The CMR ID of the collection being operated on
-   * @param {Array<object>?} variables An array of objects containing variable id and name
+   * @param {Array<object>?} vars An array of objects containing variable id and name
    * @param {Array<object>?} granules An array of objects containing granule id, name, and url
    * @returns {void}
    * @memberof DataOperation
    */
-  addSource(collection, variables?, granules?): void {
+  addSource(
+    collection: string,
+    vars?: CmrUmmVariable[],
+    granules?: HarmonyGranule[],
+  ): void {
+    const variables = vars ? vars.map(({ umm, meta }) => ({
+      id: meta['concept-id'],
+      name: umm.Name,
+      fullPath: _.compact([_.get(umm, 'Characteristics.GroupPath'), umm.Name]).join('/'),
+    })) : undefined;
     this.model.sources.push({ collection, variables, granules });
   }
 
@@ -158,17 +207,17 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set crs(crs) {
+  set crs(crs: string) {
     this.model.format.crs = crs;
   }
 
   /**
    * Returns true if the service output should be transparent where there is no data (if possible)
    *
-   * @returns {bool} true if the service output should be transparent where there is no data
+   * @returns {boolean} true if the service output should be transparent where there is no data
    * @memberof DataOperation
    */
-  get isTransparent() {
+  get isTransparent(): boolean {
     return this.model.format.isTransparent;
   }
 
@@ -176,11 +225,11 @@ export default class DataOperation {
    * Sets the flag indicating whether the service output should be transparent where there is no
    * data, if possible.  True if so, false otherwise.
    *
-   * @param {bool} isTransparent true if the output should be transparent where there is no data
+   * @param {boolean} isTransparent true if the output should be transparent where there is no data
    * @returns {void}
    * @memberof DataOperation
    */
-  set isTransparent(isTransparent) {
+  set isTransparent(isTransparent: boolean) {
     this.model.format.isTransparent = isTransparent;
   }
 
@@ -190,7 +239,7 @@ export default class DataOperation {
    * @returns {string} the mime type which the service should provide as its output format
    * @memberof DataOperation
    */
-  get outputFormat() {
+  get outputFormat(): string {
     return this.model.format.mime;
   }
 
@@ -201,7 +250,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set outputFormat(mime) {
+  set outputFormat(mime: string) {
     this.model.format.mime = mime;
   }
 
@@ -212,7 +261,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set outputDpi(dpi) {
+  set outputDpi(dpi: number) {
     this.model.format.dpi = dpi;
   }
 
@@ -222,7 +271,7 @@ export default class DataOperation {
    * @returns {Object} the scale extent
    * @memberof DataOperation
    */
-  get scaleExtent() {
+  get scaleExtent(): object {
     return this.model.format.scaleExtent;
   }
 
@@ -235,7 +284,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set scaleExtent(scaleExtent) {
+  set scaleExtent(scaleExtent: object) {
     this.model.format.scaleExtent = scaleExtent;
   }
 
@@ -245,18 +294,18 @@ export default class DataOperation {
    * @returns {Object} the scale size, e.g. { x: 2, y: 1 }
    * @memberof DataOperation
    */
-  get scaleSize() {
+  get scaleSize(): { x: number; y: number } {
     return this.model.format.scaleSize;
   }
 
   /**
    * Sets the scale size which the service should use, e.g. { x: 2, y: 1 }
    *
-   * @param {string} scaleSize the scale size which the service should use.
+   * @param {*} scaleSize the scale size which the service should use.
    * @returns {void}
    * @memberof DataOperation
    */
-  set scaleSize(scaleSize) {
+  set scaleSize(scaleSize: { x: number; y: number }) {
     this.model.format.scaleSize = scaleSize;
   }
 
@@ -266,7 +315,7 @@ export default class DataOperation {
    * @returns {string} the interpolation method which the service should use
    * @memberof DataOperation
    */
-  get interpolationMethod() {
+  get interpolationMethod(): string {
     return this.model.format.interpolation;
   }
 
@@ -277,7 +326,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set interpolationMethod(interpolationMethod) {
+  set interpolationMethod(interpolationMethod: string) {
     this.model.format.interpolation = interpolationMethod;
   }
 
@@ -300,7 +349,7 @@ export default class DataOperation {
    * @returns {Array<number>} The subsetting bounding rectangle, [ East, South, West, North ]
    * @memberof DataOperation
    */
-  get boundingRectangle() {
+  get boundingRectangle(): Array<number> {
     return this.model.subset.bbox;
   }
 
@@ -311,7 +360,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set geojson(geojsonUri) {
+  set geojson(geojsonUri: string) {
     this.model.subset.shape = { type: 'application/geo+json', href: geojsonUri };
   }
 
@@ -321,7 +370,7 @@ export default class DataOperation {
    * @returns {string} A URI to the geojson shape
    * @memberof DataOperation
    */
-  get geojson() {
+  get geojson(): string {
     return this.model.subset.shape && this.model.subset.shape.href;
   }
 
@@ -332,7 +381,7 @@ export default class DataOperation {
    * @returns {Object} The temporal range with two keys start and end
    * @memberof DataOperation
    */
-  get temporal() {
+  get temporal(): Date[] {
     const { temporal } = this.model;
     if (!temporal) return null;
     return temporal;
@@ -346,7 +395,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set temporal([startTime, endTime]) {
+  set temporal([startTime, endTime]: Date[]) {
     this.model.temporal = {};
     if (startTime) {
       this.model.temporal.start = (typeof startTime === 'string') ? startTime : startTime.toISOString();
@@ -362,7 +411,7 @@ export default class DataOperation {
    * @returns {number} the requested width of the output file in pixels
    * @memberof DataOperation
    */
-  get outputWidth() {
+  get outputWidth(): number {
     return this.model.format.width;
   }
 
@@ -373,7 +422,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set outputWidth(width) {
+  set outputWidth(width: number) {
     this.model.format.width = width;
   }
 
@@ -383,7 +432,7 @@ export default class DataOperation {
    * @returns {number} the requested height of the output file in pixels
    * @memberof DataOperation
    */
-  get outputHeight() {
+  get outputHeight(): number {
     return this.model.format.height;
   }
 
@@ -394,7 +443,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set outputHeight(height) {
+  set outputHeight(height: number) {
     this.model.format.height = height;
   }
 
@@ -404,7 +453,7 @@ export default class DataOperation {
    * @returns {string} The EDL username of the service invoker
    * @memberof DataOperation
    */
-  get user() {
+  get user(): string {
     return this.model.user;
   }
 
@@ -415,7 +464,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set user(user) {
+  set user(user: string) {
     this.model.user = user;
   }
 
@@ -425,7 +474,7 @@ export default class DataOperation {
    * @returns {string} The callback URL data services should send results to
    * @memberof DataOperation
    */
-  get callback() {
+  get callback(): string {
     return this.model.callback;
   }
 
@@ -436,7 +485,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set callback(value) {
+  set callback(value: string) {
     this.model.callback = value;
   }
 
@@ -446,7 +495,7 @@ export default class DataOperation {
    * @returns {string} The Client ID that is submitting the request
    * @memberof DataOperation
    */
-  get client() {
+  get client(): string {
     return this.model.client;
   }
 
@@ -457,7 +506,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set client(value) {
+  set client(value: string) {
     this.model.client = value;
   }
 
@@ -468,7 +517,7 @@ export default class DataOperation {
    * @returns {Boolean} isSynchronous
    * @memberof DataOperation
    */
-  get isSynchronous() {
+  get isSynchronous(): boolean {
     return this.model.isSynchronous;
   }
 
@@ -480,7 +529,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set isSynchronous(value) {
+  set isSynchronous(value: boolean) {
     this.model.isSynchronous = value;
   }
 
@@ -490,7 +539,7 @@ export default class DataOperation {
    * @returns {String} UUID associated with this request.
    * @memberof DataOperation
    */
-  get requestId() {
+  get requestId(): string {
     return this.model.requestId;
   }
 
@@ -501,7 +550,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set requestId(value) {
+  set requestId(value: string) {
     this.model.requestId = value;
   }
 
@@ -511,7 +560,7 @@ export default class DataOperation {
    * @returns {String} the staging location URL
    * @memberof DataOperation
    */
-  get stagingLocation() {
+  get stagingLocation(): string {
     return this.model.stagingLocation;
   }
 
@@ -522,7 +571,7 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set stagingLocation(value) {
+  set stagingLocation(value: string) {
     this.model.stagingLocation = value;
   }
 
@@ -532,8 +581,8 @@ export default class DataOperation {
    * @returns {DataOperation} a deep copy of this operation
    * @memberof DataOperation
    */
-  clone() {
-    return new DataOperation(cloneDeep(this.model));
+  clone(): DataOperation {
+    return new DataOperation(_.cloneDeep(this.model));
   }
 
   /**
@@ -541,14 +590,14 @@ export default class DataOperation {
    * to the provided JSON schema version ID (default: highest available)
    *
    * @param {string} [version] The version to serialize
-   * @param {bool} [validate=true] true if the serialized output should be JSON Schema validated
+   * @param {boolean} [validate=true] true if the serialized output should be JSON Schema validated
    *   before returning
    * @returns {string} The serialized data operation in the requested version
    * @throws {TypeError} If validate is `true` and validation fails, or if version is not provided
    * @throws {RangeError} If the provided version cannot be serialized
    * @memberof DataOperation
    */
-  serialize(version, validate = true) {
+  serialize(version: string, validate = true): string {
     if (!version) {
       throw new TypeError('Schema version is required to serialize DataOperation objects');
     }

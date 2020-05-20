@@ -1,5 +1,3 @@
-import * as process from 'process';
-
 import { spawn } from 'child_process';
 
 import * as fs from 'fs';
@@ -11,12 +9,21 @@ import * as path from 'path';
 import * as querystring from 'querystring';
 
 import { isUrlBound } from 'backends/service-response';
+import { Stream } from 'stream';
+import { Logger } from 'winston';
 import BaseService from './base-service';
+import InvocationResult from './invocation-result';
 
 import env = require('util/env');
+
 const { isDevelopment } = env;
 
 const blankStrings = ['\n', '\r', ''];
+
+interface DockerServiceParams {
+  image: string;
+  env: { [key: string]: string };
+}
 
 /**
  * Returns true if the string has no useful content such as an empty
@@ -25,7 +32,7 @@ const blankStrings = ['\n', '\r', ''];
  * @param {String} line The string to return
  * @returns {boolean} true if the passed in string is empty
  */
-function blank(line) {
+function blank(line: string): boolean {
   return blankStrings.includes(line);
 }
 
@@ -39,7 +46,9 @@ function blank(line) {
  * @param {String} field The name of the field to use in the JSON log message.
  * @returns {void}
  */
-function processLogMessagesFromStream(stream, logger, streamType, field) {
+function processLogMessagesFromStream(
+  stream: Stream, logger: Logger, streamType: string, field: string,
+): void {
   const lines = stream.toString().split('\n');
   const message = `child ${streamType}`;
   lines.forEach((line) => {
@@ -61,7 +70,7 @@ function processLogMessagesFromStream(stream, logger, streamType, field) {
  * @param {Logger} logger The logger associated with this request
  * @returns {void}
  */
-function logProcessOutput(child, logger) {
+function logProcessOutput(child, logger: Logger): void {
   child.stdout.setEncoding('utf8');
   child.stdout.on('data', (data) => {
     processLogMessagesFromStream(data, logger, 'stdout', 'dockerOut');
@@ -80,7 +89,7 @@ function logProcessOutput(child, logger) {
  * @param {Logger} logger The logger associated with this request
  * @returns {void}
  */
-function childProcessAborted(callbackUrl, logger) {
+function childProcessAborted(callbackUrl: string, logger: Logger): void {
   logger.error('Child did not hit the callback URL. Returning service request failed with an unknown error to the user.');
   const querystr = querystring.stringify({ error: 'Service request failed with an unknown error.' });
   fetch(`${callbackUrl}/response?${querystr}`, {
@@ -94,16 +103,16 @@ function childProcessAborted(callbackUrl, logger) {
  * @class LocalDockerService
  * @extends {BaseService}
  */
-export default class LocalDockerService extends BaseService {
+export default class LocalDockerService extends BaseService<DockerServiceParams> {
   /**
    * Invoke the service at the local command line, passing --harmony-action and --harmony-input
    * parameters to the Docker container
    *
-   * @param {Log} logger the logger associated with the request
+   * @param {Logger} logger the logger associated with the request
    * @memberof LocalDockerService
-   * @returns {void}
+   * @returns {Promise<InvocationResult>}
    */
-  _run(logger) {
+  async _run(logger): Promise<InvocationResult> {
     // DELETE ME: Hacks for PO.DAAC having granule metadata with missing files.  They will fix.
     if (this.config.name === 'podaac-cloud/l2-subsetter-service') {
       this.operation.sources[0].granules = this.operation.sources[0].granules.slice(5);
@@ -112,8 +121,7 @@ export default class LocalDockerService extends BaseService {
 
     logger.info(this.params);
     const originalCallback = this.operation.callback;
-    this.operation.callback = this.operation.callback.replace('localhost', process.env.CALLBACK_HOST || 'host.docker.internal');
-    let dockerParams = ['run', '--rm', '-t'];
+    let dockerParams = ['run', '--rm', '-t', '--network', 'host'];
 
     for (const variable of Object.keys(this.params.env)) {
       dockerParams = dockerParams.concat('-e', [variable, this.params.env[variable]].join('='));
@@ -135,6 +143,7 @@ export default class LocalDockerService extends BaseService {
         childProcessAborted(originalCallback, logger);
       }
     }));
+    return null;
   }
 
   /**
@@ -151,7 +160,7 @@ export default class LocalDockerService extends BaseService {
    * @param {string} image the name of the docker image
    * @returns {string[]} an array of additional parameters to pass to docker
    */
-  dockerParamsForEnv() {
+  dockerParamsForEnv(): string[] {
     const result = [];
     if (isDevelopment) {
       // Note that checking the fs like this should not be done in production and should be cached,

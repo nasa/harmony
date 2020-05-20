@@ -2,7 +2,7 @@
 # smarter service matching is implemented.
 
 - name: harmony/gdal
-  data_operation_version: '0.6.0'
+  data_operation_version: '0.8.0'
   type:
     name: docker
     params:
@@ -16,6 +16,7 @@
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
         STAGING_PATH: public/harmony/gdal
         TEXT_LOGGER: !Env ${TEXT_LOGGER}
+        BACKEND_HOST: !Env ${BACKEND_HOST}
   collections:
     - C1233800302-EEDTEST
     - C1234088182-EEDTEST
@@ -32,7 +33,7 @@
     projection_to_proj4: true
 
 - name: sds/swot-reproject
-  data_operation_version: '0.6.0'
+  data_operation_version: '0.8.0'
   type:
     name: docker
     params:
@@ -46,6 +47,7 @@
         STAGING_BUCKET: !Env ${STAGING_BUCKET}
         STAGING_PATH: public/sds/swot-reproject
         TEXT_LOGGER: !Env ${TEXT_LOGGER}
+        BACKEND_HOST: !Env ${BACKEND_HOST}
   collections:
     - C1221286860-NSIDC_TS1
     - C1226288788-EDF_DEV07
@@ -72,7 +74,7 @@
 # the frontend callback server.
 # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
 - name: harmony/example
-  data_operation_version: '0.6.0'
+  data_operation_version: '0.8.0'
   enabled: !Env ${EXAMPLE_SERVICES}
   type:
     name: http
@@ -94,7 +96,7 @@
 
 # L2SS subsetter
 - name: podaac/http-service
-  data_operation_version: '0.7.0'
+  data_operation_version: '0.8.0'
   type:
     name: http
     synchronous_only: true
@@ -131,7 +133,7 @@
       - application/shapefile+zip
 
 - name: harmony/netcdf-to-zarr
-  data_operation_version: '0.7.0'
+  data_operation_version: '0.8.0'
   type:
     name: docker
     params:

@@ -4,7 +4,8 @@ import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
 import { Transaction } from 'knex';
 import { Application } from 'express';
-import { Job, JobStatus } from 'harmony/models/job';
+import { Job, JobStatus, JobRecord } from 'harmony/models/job';
+import { JobListing } from 'harmony/frontends/jobs';
 import { hookRequest } from './hooks';
 
 /**
@@ -13,7 +14,7 @@ import { hookRequest } from './hooks';
  * @param {Object} serializedJob a job record serialized
  * @returns {Boolean} true if the jobs are the same
  */
-export function jobsEqual(jobRecord, serializedJob) {
+export function jobsEqual(jobRecord: JobRecord, serializedJob: Job): boolean {
   return (jobRecord.requestId === serializedJob.jobID
     && jobRecord.username === serializedJob.username
     && jobRecord.message && serializedJob.message
@@ -30,8 +31,8 @@ export function jobsEqual(jobRecord, serializedJob) {
  * @param {Array} jobList An array of jobs
  * @returns {Boolean} true if the object is found
  */
-export function containsJob(job, jobList): boolean {
-  return !!jobList.jobs.find((j) => jobsEqual(j, job));
+export function containsJob(job: JobRecord, jobList: JobListing): boolean {
+  return !!jobList.jobs.find((j) => jobsEqual(job, j));
 }
 
 /**
@@ -62,7 +63,7 @@ export function adminJobListing(app: Application, query: object = {}): Test {
  * @param {Object} [options.jobID] The job ID
  * @returns {void}
  */
-export function jobStatus(app, { jobID }) {
+export function jobStatus(app: Express.Application, { jobID }): Test {
   return request(app).get(`/jobs/${jobID}`);
 }
 
@@ -77,7 +78,7 @@ export const hookJobStatus = hookRequest.bind(this, jobStatus);
  * @param {string} s the string to escape
  * @returns {string} the escaped string to use in a regular expression
  */
-function _escapeRegExp(s) {
+function _escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 /**
@@ -89,11 +90,11 @@ function _escapeRegExp(s) {
  * @param {string} expectedPath the expected relative path and query string
  * @returns {void}
  */
-export function itIncludesRequestUrl(expectedPath) {
+export function itIncludesRequestUrl(expectedPath: string): void {
   it('returns a request field with the URL used to generate the request', function () {
     const job = JSON.parse(this.res.text);
     // If the request is not a URL this will throw an exception
-    // eslint-disable-next-line no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const parsed = new URL(job.request);
     const regex = new RegExp(`^https?://.*${_escapeRegExp(expectedPath)}$`);
     expect(job.request).to.match(regex);

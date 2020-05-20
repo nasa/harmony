@@ -21,7 +21,9 @@ import { NotFoundError } from '../util/errors';
  * @returns {string} a URL which getServiceResult can route to when mounted to the site root
  * @throws {TypeError} If the provided URL cannot be handled
  */
-export function createPublicPermalink(url, frontendRoot, mimeType?) {
+export function createPublicPermalink(
+  url: string, frontendRoot: string, mimeType?: string,
+): string {
   const parsed = new URL(url);
   const protocol = parsed.protocol.toLowerCase().replace(/:$/, '');
   if (protocol === 's3') {
@@ -48,11 +50,11 @@ export function createPublicPermalink(url, frontendRoot, mimeType?) {
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
- * @param {function} next The next function in the call chain
+ * @param {Function} next The next function in the call chain
  * @returns {Promise<void>} Resolves when the request is complete
  * @throws {NotFoundError} if the given URL cannot be signed, typically due to permissions
  */
-export async function getServiceResult(req, res, next) {
+export async function getServiceResult(req, res, next: Function): Promise<void> {
   const { bucket, key } = req.params;
   const url = `s3://${bucket}/${key}`;
 
