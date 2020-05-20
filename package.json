@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "eslint --ext .ts . && nyc mocha && npm audit",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "coverage": "nyc mocha",
     "start": "ts-node -r tsconfig-paths/register app/server.ts",
     "start-dev": "ts-node-dev --no-notify -r tsconfig-paths/register --respawn app/server",
@@ -121,6 +122,7 @@
     "@types/supertest": "^2.0.8",
     "@typescript-eslint/eslint-plugin": "^2.30.0",
     "@typescript-eslint/parser": "^2.30.0",
+    "aws-sdk-mock": "^5.1.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "cookie": "^0.4.1",

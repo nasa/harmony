@@ -90,6 +90,10 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 # The CMR concept ID for the group whose users can access the admin interface
 ADMIN_GROUP_ID=AG1222736883-EEDTEST
 
+# The base URL to use for interacting with queues.  The default value is correct for
+# localstack.  For SQS, use `https://REGION.queue.amazonaws.com/YOUR_ACCOUNT_ID/`
+BASE_QUEUE_URL=http://localhost:4576/queue/
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #

@@ -6,10 +6,10 @@ import { expect } from 'chai';
 import { Application } from 'express';
 import { auth } from './auth';
 
-const defaultCollection = 'C1233800302-EEDTEST';
-const defaultGranuleId = 'G1233800352-EEDTEST';
-const defaultCoverageId = 'all';
-const defaultVersion = '1.0.0';
+export const defaultCollection = 'C1233800302-EEDTEST';
+export const defaultGranuleId = 'G1233800352-EEDTEST';
+export const defaultCoverageId = 'all';
+export const defaultVersion = '1.0.0';
 
 /**
  * Strip the signature from a signed cookie value
