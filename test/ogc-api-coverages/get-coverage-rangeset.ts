@@ -205,7 +205,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('Specifying the full path for a variable', function () {
     // GroupPath = '/', Name = 'alpha_var', so full path is '/' + '/' + 'alpha_var' = '//alpha_var'
-    const fullPath = '//alpha_var,red_var';
+    const fullPath = '//alpha_var';
     const query = {
       granuleId,
     };

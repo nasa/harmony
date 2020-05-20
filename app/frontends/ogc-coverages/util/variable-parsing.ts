@@ -7,17 +7,24 @@ interface VariableInfo {
 }
 
 /**
+ * Get the full path (GroupPath/Name) for the given variable
+ * @param v - The variable of interest
+ * @returns path - The full path to the variable
+ */
+export function fullPath(v: CmrUmmVariable): string {
+  const name = v.umm.Name;
+  const groupPath = v.umm.Characteristics?.GroupPath;
+  return groupPath ? `${groupPath}/${name}` : name;
+}
+
+/**
  * Returns true if the path matches the variable name or full path (GroupPath/Name)
  * @param v - The variable to check
  * @param p - The path to check. Can be a full path or variable name
  * @returns true if path matches variable name or full path
  */
 function doesPathMatch(v: CmrUmmVariable, p: string): boolean {
-  const name = v.umm.Name;
-  const groupPath = v.umm.Characteristics?.GroupPath;
-  const fullPath = groupPath ? `${groupPath}/${name}` : name;
-
-  return p === fullPath || p === name;
+  return p === fullPath(v);
 }
 
 /**

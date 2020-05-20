@@ -371,7 +371,7 @@ export function hookDescribeCollectionsRequest(
  * @param {Express.Application} app The express application (typically this.frontend)
  * @param {String} collection The CMR Collection ID to query
  * @param {String} version The specification version
- * @param {String} variableName The name of the variable
+ * @param {String} variablePath The full path of the variable
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {Promise<Response>} The response
  */
@@ -379,11 +379,12 @@ export function describeCollectionRequest(
   app: Express.Application,
   collection: string,
   version: string,
-  variableName: string,
+  variablePath: string,
   query: object,
 ): request.Test {
+  const encodedPath = encodeURIComponent(variablePath);
   return request(app)
-    .get(`/${collection}/ogc-api-coverages/${version}/collections/${variableName}`)
+    .get(`/${collection}/ogc-api-coverages/${version}/collections/${encodedPath}`)
     .query(query);
 }
 
@@ -392,19 +393,19 @@ export function describeCollectionRequest(
  *
  * @param {String} collection The CMR Collection ID to query
  * @param {String} version The specification version
- * @param {String} variableName The name of the variable
+ * @param {String} variablePath The full path of the variable
  * @param {Object} query The query parameters to pass to the describe collections request
  * @returns {void}
  */
 export function hookDescribeCollectionRequest(
-  collection: string, version: string, variableName: string, query: object = {},
+  collection: string, version: string, variablePath: string, query: object = {},
 ): void {
   before(async function () {
     this.res = await describeCollectionRequest(
       this.frontend,
       collection,
       version,
-      variableName,
+      variablePath,
       query,
     );
   });
