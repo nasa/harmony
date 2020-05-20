@@ -7,6 +7,20 @@ interface VariableInfo {
 }
 
 /**
+ * Returns true if the path matches the variable name or full path (GroupPath/Name)
+ * @param v
+ * @param p
+ * @returns true if path matches variable name or full path
+ */
+function doesPathMatch(v: CmrUmmVariable, p: string): boolean {
+  const name = v.umm.Name;
+  const groupPath = v.umm.Characteristics?.GroupPath;
+  const fullPath = groupPath ? `${groupPath}/${name}` : name;
+
+  return p === fullPath || p === name;
+}
+
+/**
  * Given a list of EOSDIS collections and variables parsed from the CMR and an OGC
  * collectionId parameter return the full variables which match.
  *
@@ -45,7 +59,7 @@ export default function parseVariables(
     for (const collection of eosdisCollections) {
       const variables = [];
       for (const variableId of variableIds) {
-        const variable = collection.variables.find((v) => v.umm.Name === variableId);
+        const variable = collection.variables.find((v) => doesPathMatch(v, variableId));
         if (variable) {
           missingVariables = missingVariables.filter((v) => v !== variableId);
           variables.push(variable);

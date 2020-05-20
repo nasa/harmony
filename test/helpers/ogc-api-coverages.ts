@@ -1,9 +1,9 @@
-import { parse } from 'cookie';
-import * as url from 'url';
-import request, { Test } from 'supertest';
-import { before, after, it, describe } from 'mocha';
 import { expect } from 'chai';
+import { parse } from 'cookie';
 import { Application } from 'express';
+import { after, before, describe, it } from 'mocha';
+import request, { Test } from 'supertest';
+import * as url from 'url';
 import { auth } from './auth';
 
 const defaultCollection = 'C1233800302-EEDTEST';
@@ -84,8 +84,9 @@ export function rangesetRequest(
     headers = {},
     cookies = null } = {},
 ): Test {
+  const encodedCoverageId = encodeURIComponent(coverageId);
   const req = request(app)
-    .get(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`)
+    .get(`/${collection}/ogc-api-coverages/${version}/collections/${encodedCoverageId}/coverage/rangeset`)
     .query(query)
     .set(headers);
 
