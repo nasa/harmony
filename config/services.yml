@@ -19,9 +19,6 @@
   collections:
     - C1233800302-EEDTEST
     - C1234088182-EEDTEST
-    - C1234410736-POCLOUD
-    - C1234082763-POCLOUD
-    - C1234071416-POCLOUD
     - C1225776654-ASF
   capabilities:
     subsetting:
@@ -55,13 +52,11 @@
     - C1233147317-EEDTEST
     - C1233147319-EEDTEST
     - C1233860183-EEDTEST
-    - C1234410736-POCLOUD
-    - C1234082763-POCLOUD
-    - C1234071416-POCLOUD
     - C1234208437-POCLOUD
     - C1234208436-POCLOUD
     - C1234208438-POCLOUD
-    - C1225996408-POCUMULUS
+    - C1234724470-POCLOUD
+    - C1234724471-POCLOUD
   capabilities:
     subsetting:
       bbox: false
@@ -97,6 +92,7 @@
     output_formats:
       - image/tiff
 
+# L2SS subsetter
 - name: podaac/http-service
   data_operation_version: '0.7.0'
   type:
@@ -105,20 +101,20 @@
     params:
       url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
   collections:
-    - C1225996408-POCUMULUS
-    - C1234530532-EEDTEST
-    - C1234530533-EEDTEST
     - C1234208437-POCLOUD
     - C1234208436-POCLOUD
     - C1234208438-POCLOUD
+    - C1234724470-POCLOUD
+    - C1234724471-POCLOUD
+    - C1234071416-POCLOUD
   capabilities:
     subsetting:
       variable: true
     output_formats:
       - application/netcdf
-      - application/shapefile+zip
 
-- name: podaacips3/http-service
+# PO.DAAC Shapefiles
+- name: podaac-ps3/http-service
   data_operation_version: '0.7.0'
   type:
     name: http
@@ -132,7 +128,6 @@
     subsetting:
       variable: true
     output_formats:
-      - application/netcdf
       - application/shapefile+zip
 
 - name: harmony/netcdf-to-zarr
@@ -159,6 +154,8 @@
     - C1234208437-POCLOUD
     - C1234208436-POCLOUD
     - C1234208438-POCLOUD
+    - C1234724470-POCLOUD
+    - C1234724471-POCLOUD
   maximum_sync_granules: 0
   capabilities:
     subsetting:
