@@ -6,7 +6,9 @@ import { Transaction } from 'knex';
 import { Application } from 'express';
 import { Job, JobStatus, JobRecord } from 'harmony/models/job';
 import { JobListing } from 'harmony/frontends/jobs';
+import db from '../../app/util/db';
 import { hookRequest } from './hooks';
+import { truncateAll } from './db';
 
 /**
  * Returns true if the passed in job record matches the serialized Job
@@ -179,4 +181,26 @@ export function itIncludesPagingRelations(
       });
     }
   }
+}
+
+/**
+ * Adds before / after hooks to create a job with the given properties, saving it
+ * to the DB, and storing it in `this.job`
+ * @param props - properties to set on the job
+ */
+export function hookJobCreation(props: Partial<JobRecord> = {}): void {
+  before(async function () {
+    this.job = new Job({
+      username: 'anonymous',
+      requestId: uuid().toString(),
+      request: 'http://example.com/',
+      ...props,
+    });
+    this.job.save(db);
+  });
+
+  after(async function () {
+    delete this.job;
+    await truncateAll();
+  });
 }

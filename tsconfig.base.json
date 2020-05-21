@@ -13,7 +13,7 @@
         "util/*": ["app/util/*"]
       },
       "moduleResolution": "node",
-      "target": "es6",
+      "target": "ES2018",
       "esModuleInterop": true,
       "allowJs": true,
       "noImplicitAny": false,

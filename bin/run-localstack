@@ -9,22 +9,30 @@ if [ -f .env ]; then
 fi
 stagingBucket="${STAGING_BUCKET:-local-staging-bucket}"
 uploadBucket="${UPLOAD_BUCKET:-local-upload-bucket}"
+deadLetterQueue="${SERVICE_DEAD_LETTER_QUEUE_NAME:-dead-letter-queue}"
 echo "Starting localstack and creating staging bucket s3://$stagingBucket and temp bucket s3://$uploadBucket"
 
 export AWS_DEFAULT_REGION=us-west-2
 export AWS_ACCESS_KEY_ID=fake
 export AWS_SECRET_ACCESS_KEY=fake
 
-if [[ "$(docker images -q localstack/localstack 2> /dev/null)" == "" ]]; then
-  docker pull localstack/localstack
+LOCALSTACK_VERSION=0.11.1
+
+deadLetterQueueArn="arn:aws:sqs:$AWS_DEFAULT_REGION:123456789012:$deadLetterQueue"
+redrivePolicy='"{\"deadLetterTargetArn\":\"arn:aws:sqs:'$AWS_DEFAULT_REGION':123456789012:'$deadLetterQueue'\",\"maxReceiveCount\":\"1\"}"'
+
+if [[ "$(docker images -q localstack/localstack:${LOCALSTACK_VERSION} 2> /dev/null)" == "" ]]; then
+  docker pull localstack/localstack:${LOCALSTACK_VERSION}
 fi
 make_bucket=0
 while read -r line ; do
   if [[ "$line" == *Ready.* ]] && [[ $make_bucket -eq 0 ]]; then
-    aws --endpoint-url=http://localhost:4572 s3 mb s3://$stagingBucket > /dev/null
-    aws --endpoint-url=http://localhost:4572 s3 mb s3://$uploadBucket > /dev/null
+    aws --endpoint-url=http://localhost:4566 s3 mb s3://$stagingBucket > /dev/null
+    aws --endpoint-url=http://localhost:4566 s3 mb s3://$uploadBucket > /dev/null
+    aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name $deadLetterQueue > /dev/null
     for queue in $(sed -n -e 's/^[[:space:]]*queue_url:.*}//p' config/services.yml); do
-      aws --endpoint-url=http://localhost:4576 sqs create-queue --queue-name $queue > /dev/null
+      aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name $queue \
+        --attributes "RedrivePolicy=$redrivePolicy" > /dev/null
     done
     make_bucket=1
   fi
