@@ -16,7 +16,11 @@ export default function hookServersStartStop(opts = { skipEarthdataLogin: true }
     // Skip Earthdata Login unless the test says to do otherwise
     const skipEdl = opts.skipEarthdataLogin ? 'true' : 'false';
     // Start Harmony on a random open port
-    servers = harmony.start({ EXAMPLE_SERVICES: 'true', skipEarthdataLogin: skipEdl });
+    servers = harmony.start({
+      EXAMPLE_SERVICES: 'true',
+      skipEarthdataLogin: skipEdl,
+      BACKEND_PROTOCOL: 'http',
+    });
     this.frontend = servers.frontend;
     this.backend = servers.backend;
   });

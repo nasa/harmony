@@ -66,8 +66,7 @@ function buildServer(name, port, setupFn): Server {
  *     PORT: {number} The port to run the frontend server on
  *     BACKEND_PORT: {number} The port to run the backend server on
  *     BACKEND_HOST: {string} The hostname of the backend server for callbacks to use
- *     USE_HTTPS: {bool} True if the backend should use https, false if http.  Defaults to false if
- *       backend host is localhost, otherwise true
+ *     BACKEND_PROTOCOL: {string} Whether to use http or https for callbacks. Defaults to https.
  *     EXAMPLE_SERVICES: {bool} True if we should run example services, false otherwise.  Should
  *       be false in production.  Defaults to true until we have real HTTP services.
  *
@@ -78,8 +77,7 @@ export function start(config: Record<string, string>):
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
   const backendHost = config.BACKEND_HOST || 'localhost';
-  const backendProtocol = (config.USE_HTTPS === 'true'
-    || (backendHost !== 'localhost' && backendHost !== 'host.docker.internal')) ? 'https' : 'http';
+  const backendProtocol = config.BACKEND_PROTOCOL || 'https';
 
   // Setup the frontend server to handle client requests
   const frontend = buildServer('frontend', appPort, (app) => {
