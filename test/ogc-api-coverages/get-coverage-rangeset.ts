@@ -1,11 +1,11 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import hookServersStartStop from '../helpers/servers';
-import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
+import { describe, it } from 'mocha';
+import isUUID from '../../app/util/uuid';
 import { itIncludesRequestUrl } from '../helpers/jobs';
 import { hookSignS3Object } from '../helpers/object-store';
+import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
+import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
-import isUUID from '../../app/util/uuid';
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -200,6 +200,45 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(source.variables.length === 2);
       expect(source.variables[0].id).to.equal(variableId1);
       expect(source.variables[1].id).to.equal(variableId2);
+    });
+  });
+
+  describe('Specifying the full path for a variable', function () {
+    // GroupPath = '/', Name = 'alpha_var', so full path is '/' + '/' + 'alpha_var' = '//alpha_var'
+    const fullPath = '//alpha_var';
+    const query = {
+      granuleId,
+    };
+    const variableId1 = 'V1233801717-EEDTEST';
+
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookRangesetRequest(version, collection, fullPath, { query });
+
+    it('passes a matching variable to the backend service', function () {
+      const source = this.service.operation.sources[0];
+      expect(source.variables.length === 1);
+      expect(source.variables[0].id).to.equal(variableId1);
+    });
+  });
+
+  describe('Specifying a full path with other variables', function () {
+    const mixedPaths = 'green_var,//alpha_var,red_var';
+    const query = {
+      granuleId,
+    };
+    const variableId1 = 'V1233801696-EEDTEST';
+    const variableId2 = 'V1233801717-EEDTEST';
+    const variableId3 = 'V1233801695-EEDTEST';
+
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookRangesetRequest(version, collection, mixedPaths, { query });
+
+    it('passes matching variables to the backend service', function () {
+      const source = this.service.operation.sources[0];
+      expect(source.variables.length === 3);
+      expect(source.variables[0].id).to.equal(variableId1);
+      expect(source.variables[1].id).to.equal(variableId2);
+      expect(source.variables[2].id).to.equal(variableId3);
     });
   });
 

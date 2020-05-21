@@ -1,8 +1,8 @@
-import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import hookServersStartStop from '../helpers/servers';
-import { hookDescribeCollectionRequest, hookDescribeCollectionsRequest } from '../helpers/ogc-api-coverages';
+import { describe, it } from 'mocha';
 import { generateExtent } from '../../app/frontends/ogc-coverages/describe-collections';
+import { hookDescribeCollectionRequest, hookDescribeCollectionsRequest } from '../helpers/ogc-api-coverages';
+import hookServersStartStop from '../helpers/servers';
 
 describe('OGC API Coverages - describeCollections', function () {
   const collection = 'C1215669046-GES_DISC';
@@ -65,7 +65,7 @@ describe('OGC API Coverages - describeCollections', function () {
         const firstLink = singleCollection.links[0];
         expect(singleCollection.links.length).to.equal(1);
         expect(firstLink.title).to.equal('Perform rangeset request for CloudFrc_A');
-        expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/CloudFrc_A/coverage/rangeset');
+        expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/%2FCloudFrc_A%2FCloudFrc_A/coverage/rangeset');
       });
 
       it('includes a spatial extent', function () {
@@ -159,12 +159,12 @@ describe('OGC API Coverages - describeCollections', function () {
 describe('OGC API Coverages - describeCollection', function () {
   const collection = 'C1215669046-GES_DISC';
   const version = '1.0.0';
-  const variableName = 'EmisIR_A';
+  const variablePath = '/EmisIR_A/EmisIR_A';
 
   hookServersStartStop();
 
   describe('when provided a valid EOSDIS collection and variable', function () {
-    hookDescribeCollectionRequest(collection, version, variableName);
+    hookDescribeCollectionRequest(collection, version, variablePath);
 
     it('returns a 200 successful response code', function () {
       expect(this.res.status).to.equal(200);
@@ -190,7 +190,7 @@ describe('OGC API Coverages - describeCollection', function () {
       const firstLink = collectionInfo.links[0];
       expect(collectionInfo.links.length).to.equal(1);
       expect(firstLink.title).to.equal('Perform rangeset request for EmisIR_A');
-      expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/EmisIR_A/coverage/rangeset');
+      expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/%2FEmisIR_A%2FEmisIR_A/coverage/rangeset');
     });
 
     it('includes a spatial extent', function () {
@@ -323,7 +323,8 @@ describe('OGC API Coverages - describeCollections - generateExtent', function ()
     const result = generateExtent({
       ...baseCollection,
       time_start: temporalStart,
-      time_end: temporalEnd });
+      time_end: temporalEnd,
+    });
     it('includes correct spatial and temporal bounds', function () {
       expect(result).to.eql({
         spatial: undefined,
