@@ -1,10 +1,10 @@
-import { CmrCollection, CmrUmmVariable } from 'harmony/util/cmr';
 import { Response } from 'express';
-import { getSanitizedRequestUrl } from '../../util/url';
-import keysToLowerCase from '../../util/object';
-import { RequestValidationError } from '../../util/errors';
-import parseVariables from './util/variable-parsing';
+import { CmrCollection, CmrUmmVariable } from 'harmony/util/cmr';
 import HarmonyRequest from '../../models/harmony-request';
+import { RequestValidationError } from '../../util/errors';
+import keysToLowerCase from '../../util/object';
+import { getSanitizedRequestUrl } from '../../util/url';
+import parseVariables, { fullPath } from './util/variable-parsing';
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
@@ -108,7 +108,7 @@ export function describeCollections(req: HarmonyRequest, res: Response): void {
     ogcCollections.push(buildCollectionInfo(collection, allVariables, `${requestUrl}/all`, extent));
     for (const variable of collection.variables) {
       const collectionInfo = buildCollectionInfo(
-        collection, variable, `${requestUrl}/${encodeURIComponent(variable.umm.Name)}`, extent,
+        collection, variable, `${requestUrl}/${encodeURIComponent(fullPath(variable))}`, extent,
       );
       ogcCollections.push(collectionInfo);
     }
