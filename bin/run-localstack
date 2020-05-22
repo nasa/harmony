@@ -36,7 +36,4 @@ done
 echo "Wrote localstack startup script to $start_script"
 
 # Localstack execution
-
-LOCALSTACK_VERSION=0.11.1
-
 docker-compose up
