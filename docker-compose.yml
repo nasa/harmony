@@ -16,8 +16,8 @@ services:
       STAGING_PATH: public/harmony/gdal
       TEXT_LOGGER: ${TEXT_LOGGER}
       BACKEND_HOST: ${BACKEND_HOST}
-      PYTHONPATH: /usr/lib/harmony-service-lib-py
       APP_NAME: harmony-gdal
+      PYTHONPATH: /usr/lib/harmony-service-lib-py
     volumes:
       - ../harmony-gdal:/home
       - ../harmony-service-lib-py/harmony:/usr/lib/harmony-service-lib-py/harmony

@@ -93,7 +93,7 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 ADMIN_GROUP_ID=AG1222736883-EEDTEST
 
 # The base URL to use for interacting with queues.  The default value is correct for
-# localstack.  For SQS, use `https://REGION.queue.amazonaws.com/YOUR_ACCOUNT_ID/`
+# localstack.  For SQS, use `https://REGION.queue.amazonaws.com/YOUR_ACCOUNT_ID/ENV_NAME-`
 BASE_QUEUE_URL=http://localhost:4566/queue/
 
 # The name of the dead letter queue for message-queue-based services
