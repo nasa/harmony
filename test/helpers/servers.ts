@@ -19,7 +19,8 @@ export default function hookServersStartStop(opts = { skipEarthdataLogin: true }
     servers = harmony.start({
       EXAMPLE_SERVICES: 'true',
       skipEarthdataLogin: skipEdl,
-      BACKEND_PROTOCOL: 'http',
+      PORT: '3000',
+      BACKEND_PORT: '3001',
     });
     this.frontend = servers.frontend;
     this.backend = servers.backend;
