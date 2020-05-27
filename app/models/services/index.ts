@@ -13,6 +13,7 @@ import NoOpService from './no-op-service';
 import DataOperation from '../data-operation';
 import BaseService, { ServiceConfig } from './base-service';
 import RequestContext from '../request-context';
+import env from '../../util/env';
 
 let serviceConfigs = null;
 
@@ -28,13 +29,14 @@ function loadServiceConfigs(): void {
   const EnvType = new yaml.Type('!Env', {
     kind: 'scalar',
     resolve: (data): boolean => data,
-    construct: (data): string => data.replace(regex, (env) => process.env[env.match(/\w+/)] || ''),
+    construct: (data): string => data.replace(regex, (v) => process.env[v.match(/\w+/)] || ''),
   });
 
   // Load the config
   const buffer = fs.readFileSync(path.join(__dirname, '../../../config/services.yml'));
   const schema = yaml.Schema.create([EnvType]);
-  serviceConfigs = yaml.load(buffer.toString(), { schema }).filter((config) => config.enabled !== false && config.enabled !== 'false');
+  const envConfigs = yaml.load(buffer.toString(), { schema });
+  serviceConfigs = envConfigs[env.cmrEndpoint].filter((config) => config.enabled !== false && config.enabled !== 'false');
 }
 
 // Load config at require-time to ensure presence / validity early
