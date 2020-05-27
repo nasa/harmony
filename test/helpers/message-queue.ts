@@ -32,7 +32,7 @@ function hookStubAws(service: string, method: string, varname: string, response)
 
 /**
  * Adds before/after hooks to stub sending to the message queue.  The stub is available as
- * this.sendStub for inspection.
+ * this.deleteStub for inspection.
  */
 export function hookStubDelete(): void {
   hookStubAws('SQS', 'deleteMessage', 'deleteStub', null);

@@ -94,6 +94,7 @@ export default class DeadLetterQueueMonitor {
         await this.runOnce(receiveMessageTimeoutSeconds);
       } catch (e) {
         this.logger.error(`Error handling dead job: ${e.message} ${e.stack}`);
+        await new Promise((r) => setTimeout(r, 1000));
       }
     }
     this.running = null;

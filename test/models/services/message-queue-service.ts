@@ -10,7 +10,7 @@ describe('Message Queue Service', function () {
   hookStubSend();
   hookRangesetRequest(defaultVersion, mqCollection);
 
-  it('passes the incoming messages to the a configured message queue', async function () {
+  it('passes the incoming messages to the configured message queue', async function () {
     // Assert it resulted in a single message to SQS that contains the collection we requested
     expect(this.sendStub.calledOnce).to.be.true;
 
