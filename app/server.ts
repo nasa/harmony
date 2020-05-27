@@ -3,7 +3,6 @@ import { v4 as uuid } from 'uuid';
 import expressWinston from 'express-winston';
 import * as path from 'path';
 import favicon from 'serve-favicon';
-import * as url from 'url';
 import { promisify } from 'util';
 import * as serviceResponse from 'backends/service-response';
 import errorHandler from 'middleware/error-handler';
@@ -65,8 +64,7 @@ function buildServer(name, port, setupFn): Server {
  *   Config values:
  *     PORT: {number} The port to run the frontend server on
  *     BACKEND_PORT: {number} The port to run the backend server on
- *     BACKEND_HOST: {string} The hostname of the backend server for callbacks to use
- *     BACKEND_PROTOCOL: {string} Whether to use http or https for callbacks. Defaults to https.
+ *     CALLBACK_URL_ROOT: {string} The base URL for callbacks to use
  *     EXAMPLE_SERVICES: {bool} True if we should run example services, false otherwise.  Should
  *       be false in production.  Defaults to true until we have real HTTP services.
  *
@@ -76,8 +74,7 @@ export function start(config: Record<string, string>):
 { frontend: Server; backend: Server; monitor: DeadLetterQueueMonitor } {
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
-  const backendHost = config.BACKEND_HOST || 'localhost';
-  const backendProtocol = config.BACKEND_PROTOCOL || 'https';
+  const callbackUrlRoot = config.CALLBACK_URL_ROOT || `http://localhost:${backendPort}`;
 
   // Setup the frontend server to handle client requests
   const frontend = buildServer('frontend', appPort, (app) => {
@@ -96,15 +93,9 @@ export function start(config: Record<string, string>):
   // Setup the backend server to accept callbacks from backend services
   const backend = buildServer('backend', backendPort, (app) => {
     app.use('/service', serviceResponseRouter());
+    app.get('/', ((req, res) => res.send('OK')));
 
-    serviceResponse.configure({
-      baseUrl: url.format({
-        protocol: backendProtocol,
-        hostname: backendHost,
-        port: backendPort,
-        pathname: '/service/',
-      }),
-    });
+    serviceResponse.configure({ baseUrl: `${callbackUrlRoot}/service/` });
   });
 
   let monitor;
