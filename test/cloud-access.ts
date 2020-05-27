@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import hookServersStartStop from './helpers/servers';
-import { hookCloudAccessJson, hookCloudAccessSh, hookAwsSts, sampleCloudAccessShResponse } from './helpers/cloud-access';
+import { hookCloudAccessJson, hookCloudAccessSh, hookStubAssumeRole, sampleCloudAccessShResponse } from './helpers/cloud-access';
 
 describe('Cloud access', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
-  hookAwsSts();
+  hookStubAssumeRole();
 
   describe('When not authenticated', function () {
     describe('Calls to the cloud access json endpoint', function () {

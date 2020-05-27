@@ -1,11 +1,9 @@
 import request from 'supertest';
-import { before, after } from 'mocha';
-import { stub as sinonStub } from 'sinon';
 import { readFileSync } from 'fs';
-import aws from 'aws-sdk';
-import { PromiseResult } from 'aws-sdk/lib/request';
-import SecureTokenService from 'harmony/util/sts';
+import { stub } from 'sinon';
+import { AssumeRoleResponse } from 'aws-sdk/clients/sts';
 import { hookRequest } from './hooks';
+import sts from '../../app/util/sts';
 
 /**
  * Makes a cloud-access JSON request
@@ -29,16 +27,6 @@ export const hookCloudAccessSh = hookRequest.bind(this, cloudAccessSh);
 export const hookCloudAccessJson = hookRequest.bind(this, cloudAccessJson);
 
 export const sampleCloudAccessJsonResponse = {
-  $response: {
-    hasNextPage: (): boolean => false,
-    nextPage: null,
-    data: null,
-    error: null,
-    requestId: null,
-    redirectCount: 0,
-    retryCount: 0,
-    httpResponse: null,
-  },
   Credentials: {
     AccessKeyId: 'XXXXXXXXXXXXXXXXXXXX',
     SecretAccessKey: 'XXXXXXXXXXXXXXXXXXXX1111111111+++++/////',
@@ -47,22 +35,22 @@ export const sampleCloudAccessJsonResponse = {
   },
 };
 
-type StsResponse = Promise<PromiseResult<aws.STS.AssumeRoleResponse, aws.AWSError>>;
 /**
- * Adds before and after hooks to stub out calls to AWS STS.
- * @returns {void}
+ * Adds before/after hooks to stub the assumeRole call.
+ *
+ * @param response - The response to return when assumeRole is called
  */
-export function hookAwsSts(): void {
-  let stub;
-  before(function () {
-    stub = sinonStub(SecureTokenService.prototype, '_getAssumeRole')
-      .returns(() => (
-        {
-          promise: async (): StsResponse => sampleCloudAccessJsonResponse,
-        } as aws.Request<aws.STS.AssumeRoleResponse, aws.AWSError>));
+export function hookStubAssumeRole(
+  response: AssumeRoleResponse = sampleCloudAccessJsonResponse,
+): void {
+  let assumeRoleStub;
+  before(async function () {
+    assumeRoleStub = stub(sts.prototype, 'assumeRole')
+      .callsFake(async () => response);
   });
-  after(function () {
-    stub.restore();
+
+  after(async function () {
+    assumeRoleStub.restore();
   });
 }
 
