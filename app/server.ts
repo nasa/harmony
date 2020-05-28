@@ -11,9 +11,9 @@ import RequestContext from 'models/request-context';
 import { Server } from 'http';
 import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/service-response-router';
-
-import logger = require('util/log');
-import exampleBackend = require('../example/http-backend');
+import logger from './util/log';
+import * as exampleBackend from '../example/http-backend';
+import DeadLetterQueueMonitor from './workers/dead-letter-queue-monitor';
 
 /**
  * Builds an express server with appropriate logging and default routing and starts the server
@@ -71,7 +71,7 @@ function buildServer(name, port, setupFn): Server {
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
 export function start(config: Record<string, string>):
-{ frontend: Server; backend: Server } {
+{ frontend: Server; backend: Server; monitor: DeadLetterQueueMonitor } {
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
   const callbackUrlRoot = config.CALLBACK_URL_ROOT || `http://localhost:${backendPort}`;
@@ -98,7 +98,16 @@ export function start(config: Record<string, string>):
     serviceResponse.configure({ baseUrl: `${callbackUrlRoot}/service/` });
   });
 
-  return { frontend, backend };
+  let monitor;
+  if (config.SERVICE_DEAD_LETTER_QUEUE_NAME) {
+    const queue = config.BASE_QUEUE_URL + config.SERVICE_DEAD_LETTER_QUEUE_NAME;
+    monitor = new DeadLetterQueueMonitor(queue);
+    monitor.start(+config.RECEIVE_MESSAGE_TIMEOUT || 10);
+  } else {
+    logger.warn('SERVICE_DEAD_LETTER_QUEUE is not set.  Will not monitor for failed jobs.');
+  }
+
+  return { frontend, backend, monitor };
 }
 
 /**
@@ -108,10 +117,12 @@ export function start(config: Record<string, string>):
  *   objects, as returned by start()
  * @returns {Promise<void>} A promise that completes when the servers close
  */
-export async function stop({ frontend, backend }): Promise<void> {
-  const closeFrontend = promisify(frontend.close.bind(frontend));
-  const closeBackend = promisify(backend.close.bind(backend));
-  await Promise.all([closeFrontend(), closeBackend()]);
+export async function stop({ frontend, backend, monitor }): Promise<void> {
+  await Promise.all([
+    promisify(frontend.close.bind(frontend))(),
+    promisify(backend.close.bind(backend))(),
+    monitor?.stop(),
+  ]);
 }
 
 if (require.main === module) {

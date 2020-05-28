@@ -86,5 +86,6 @@ function makeConfigVar(envName: string, defaultValue?: string|number): void {
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.isDevelopment = process.env.NODE_ENV === 'development';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
+envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
 
 export = envVars;

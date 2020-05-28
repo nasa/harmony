@@ -88,6 +88,13 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 # The CMR concept ID for the group whose users can access the admin interface
 ADMIN_GROUP_ID=AG1222736883-EEDTEST
 
+# The base URL to use for interacting with queues.  The default value is correct for
+# localstack.  For SQS, use `https://REGION.queue.amazonaws.com/YOUR_ACCOUNT_ID/ENV_NAME-`
+BASE_QUEUE_URL=http://localhost:4566/queue/
+
+# The name of the dead letter queue for message-queue-based services
+SERVICE_DEAD_LETTER_QUEUE_NAME=dead-letter-queue
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #
@@ -114,6 +121,14 @@ STAGING_BUCKET=local-staging-bucket
 # all environments being used to fetch data
 EDL_USERNAME=
 EDL_PASSWORD=
+
+# Development only: hostname to be used to connect to the host OS, used in
+# configuring localstack.  Once services fully use docker-compose, we can
+# remove this config and just use "localstack"
+# Mac OS X:
+BACKEND_HOST=host.docker.internal
+# Linux:
+# BACKEND_HOST=localhost
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #

@@ -7,18 +7,33 @@ if [ -f .env ]; then
   source .env
   set +o allexport
 fi
+
+# Localstack startup script setup
+
 stagingBucket="${STAGING_BUCKET:-local-staging-bucket}"
 uploadBucket="${UPLOAD_BUCKET:-local-upload-bucket}"
-echo "Starting localstack and creating staging bucket s3://$stagingBucket and temp bucket s3://$tempBucket"
+deadLetterQueue="${SERVICE_DEAD_LETTER_QUEUE_NAME:-dead-letter-queue}"
 
-if [[ "$(docker images -q localstack/localstack 2> /dev/null)" == "" ]]; then
-  docker pull localstack/localstack
-fi
-make_bucket=0
-while read -r line ; do
-  if [[ "$line" == *Ready.* ]] && [[ $make_bucket -eq 0 ]]; then
-    AWS_DEFAULT_REGION=us-west-2 AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake aws --endpoint-url=http://localhost:4572 s3 mb s3://$stagingBucket
-    AWS_DEFAULT_REGION=us-west-2 AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake aws --endpoint-url=http://localhost:4572 s3 mb s3://$uploadBucket
-  fi
-  echo "$line"
-done < <(docker run --rm -it -e SERVICES=s3,sts -e DEBUG=1 -p 4572:4572 -p 4592:4592 localstack/localstack)
+export AWS_DEFAULT_REGION=us-west-2
+export AWS_ACCESS_KEY_ID=fake
+export AWS_SECRET_ACCESS_KEY=fake
+
+tmpdir="$(pwd)/tmp/localstack"
+rm -rf $tmpdir
+mkdir -p $tmpdir
+
+start_script="$tmpdir/startup.sh"
+deadLetterQueueArn="arn:aws:sqs:$AWS_DEFAULT_REGION:123456789012:$deadLetterQueue"
+redrivePolicy='RedrivePolicy="{\"deadLetterTargetArn\":\"arn:aws:sqs:'$AWS_DEFAULT_REGION':123456789012:'$deadLetterQueue'\",\"maxReceiveCount\":\"1\"}"'
+
+echo "awslocal s3 mb s3://$stagingBucket" >> "$start_script"
+echo "awslocal s3 mb s3://$uploadBucket" >> "$start_script"
+echo "awslocal sqs create-queue --queue-name $deadLetterQueue" >> "$start_script"
+for queue in $(sed -n -e 's/^[[:space:]]*queue_url:.*}//p' config/services.yml); do
+  echo "awslocal sqs create-queue --queue-name $queue --attributes '$redrivePolicy'" >> $start_script
+done
+
+echo "Wrote localstack startup script to $start_script"
+
+# Localstack execution
+docker-compose up

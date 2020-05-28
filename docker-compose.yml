@@ -1,0 +1,38 @@
+version: '3.6'
+services:
+  harmony-gdal:
+    container_name: harmony-gdal
+    image: harmony/gdal
+    restart: unless-stopped
+    command: --harmony-action start --harmony-queue-url http://localstack:4566/queue/harmony-gdal-queue
+    depends_on:
+      - localstack
+    environment:
+      USE_LOCALSTACK: ${USE_LOCALSTACK}
+      AWS_DEFAULT_REGION: us-west-2
+      EDL_USERNAME: ${EDL_USERNAME}
+      EDL_PASSWORD: ${EDL_PASSWORD}
+      STAGING_BUCKET: ${STAGING_BUCKET}
+      STAGING_PATH: public/harmony/gdal
+      TEXT_LOGGER: ${TEXT_LOGGER}
+      BACKEND_HOST: ${BACKEND_HOST}
+      APP_NAME: harmony-gdal
+      PYTHONPATH: /usr/lib/harmony-service-lib-py
+    volumes:
+      - ../harmony-gdal:/home
+      - ../harmony-service-lib-py/harmony:/usr/lib/harmony-service-lib-py/harmony
+
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:0.11.1
+    ports:
+      - "4566:4566"
+      - "4572:4572"
+      - "4576:4576"
+      - "4592:4592"
+      - "8080:8080"
+    environment:
+      LOCALSTACK_SERVICES: s3,sts,sqs
+      LOCALSTACK_DEBUG: 1
+    volumes:
+      - ./tmp/localstack:/docker-entrypoint-initaws.d

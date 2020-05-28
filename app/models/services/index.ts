@@ -9,6 +9,7 @@ import { CmrCollection } from 'harmony/util/cmr';
 import AsynchronizerService from './asynchronizer-service';
 import HttpService from './http-service';
 import LocalDockerService from './local-docker-service';
+import MessageQueueService from './message-queue-service';
 import NoOpService from './no-op-service';
 import DataOperation from '../data-operation';
 import BaseService, { ServiceConfig } from './base-service';
@@ -45,6 +46,7 @@ loadServiceConfigs();
 const serviceTypesToServiceClasses = {
   docker: LocalDockerService,
   http: HttpService,
+  queue: MessageQueueService,
   noOp: NoOpService,
 };
 
