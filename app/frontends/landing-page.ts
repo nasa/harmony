@@ -1,5 +1,6 @@
 import { getRequestRoot } from 'util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink } from 'util/links';
+import env from '../util/env';
 
 /**
  * Express.js handler that returns the main Harmony landing page content.
@@ -17,10 +18,10 @@ export default function landingPage(req, res): void {
   const description = 'Harmony allows users to submit requests to perform transformations '
     + 'on EOSDIS data. Transformations can be performed using one of several Open Geospatial '
     + 'Consortium (OGC) inspired APIs. Each API requires a collection concept ID from '
-    + 'https://cmr.uat.earthdata.nasa.gov/search/collections, and then transformations can be '
+    + `${env.cmrEndpoint}, and then transformations can be `
     + `performed using ${root}/{collectionId}/ogc-api-coverages/1.0.0 or `
     + `${root}/{collectionId}/wms. 'All users will need an Earthdata login account from `
-    + 'https://urs.earthdata.nasa.gov in order to perform transformations. See the links '
+    + `${env.oauthHost} in order to perform transformations. See the links `
     + 'field for additional Harmony routes.';
 
   const links = [

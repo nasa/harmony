@@ -22,7 +22,8 @@ interface HarmonyEnv {
   harmonyClientId: string;
   isDevelopment: boolean;
   uploadBucket: string;
-  cmrUrl: string;
+  cmrEndpoint: string;
+  oauthHost: string;
   useLocalstack: boolean;
 }
 
@@ -76,7 +77,8 @@ function makeConfigVar(envName: string, defaultValue?: string|number): void {
   ['MAX_POST_FILE_PARTS', 100],
   ['NODE_ENV', 'development'],
   ['ADMIN_GROUP_ID', null],
-  ['CMR_URL', null],
+  ['CMR_ENDPOINT', 'https://cmr.uat.earthdata.nasa.gov'],
+  ['OAUTH_HOST', 'https://uat.urs.earthdata.nasa.gov'],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases

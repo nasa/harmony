@@ -13,7 +13,7 @@ coverage
 logs
 test-results.xml
 
-.env
+.env*
 .vscode
 .ipynb*
 __pycache__

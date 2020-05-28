@@ -18,7 +18,7 @@ const clientIdHeader = {
 
 // Exported to allow tests to override cmrApiConfig
 export const cmrApiConfig = {
-  baseURL: env.cmrUrl || 'https://cmr.uat.earthdata.nasa.gov',
+  baseURL: env.cmrEndpoint,
   useToken: true,
 };
 
