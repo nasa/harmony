@@ -1,4 +1,4 @@
-import * as aws from 'aws-sdk';
+import aws from 'aws-sdk';
 import * as fs from 'fs';
 import * as querystring from 'querystring';
 import * as stream from 'stream';
