@@ -122,6 +122,14 @@ STAGING_BUCKET=local-staging-bucket
 EDL_USERNAME=
 EDL_PASSWORD=
 
+# Development only: hostname to be used to connect to the host OS, used in
+# configuring localstack.  Once services fully use docker-compose, we can
+# remove this config and just use "localstack"
+# Mac OS X:
+BACKEND_HOST=host.docker.internal
+# Linux:
+# BACKEND_HOST=localhost
+
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
 #                                                                           #
