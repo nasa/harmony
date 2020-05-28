@@ -195,26 +195,11 @@ running the **harmony-ci-cd** `bin/deploy` script from your **harmony** codebase
 
 1. `scp` the Harmony codebase to the remote instance
 2. `ssh` into the remote instance
-3. Run `$ $(aws ecr get-login --region=$GDAL_REGION --no-include-email)` where `GDAL_REGION` is the region containing your harmony-gdal ECR instance.
+3. Run `$ $(aws ecr get-login --region=$AWS_DEFAULT_REGION --no-include-email)` where `AWS_DEFAULT_REGION` is the region containing your harmony-gdal ECR instance.
 Skip this step if harmony-gdal is not in an ECR.
 4. Run `$ if pgrep node; then pkill node; fi` to stop any existing server that may be running
-5. Run the following, where `$instance_ip` is the private IP address of your local instance and all other variables are as in prior steps:
-```
-  $ BACKEND_HOST=$instance_ip \
-    STAGING_PATH=s3://$STAGING_BUCKET \
-    GDAL_IMAGE=$GDAL_IMAGE \
-    PO_L2_IMAGE=$PO_L2_IMAGE \
-    STAGING_BUCKET=$STAGING_BUCKET \
-    OAUTH_HOST=$OAUTH_HOST \
-    OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID \
-    OAUTH_PASSWORD=$OAUTH_PASSWORD \
-    OAUTH_REDIRECT_URI=$OAUTH_REDIRECT_URI \
-    COOKIE_SECRET=$COOKIE_SECRET \
-    EDL_USERNAME=$EDL_USERNAME \
-    EDL_PASSWORD="$EDL_PASSWORD" \
-    nohup npm start >> ../server.log 2>&1 &
-```
-6. Run `$ docker pull $GDAL_IMAGE` to fetch harmony-gdal changes, where `GDAL_IMAGE` is the EC2-accessible location of your harmony-gdal Docker image.
+5. Run `$ nohup npm start >> ../server.log 2>&1 &` to start harmony
+6. Run `$ docker pull $GDAL_IMAGE` to fetch harmony-gdal changes, where `GDAL_IMAGE` is the EC2-accessible location of your harmony-gdal Docker image. Repeat for any other docker images you want to use.
 
 ### Connecting a client to an AWS instance
 

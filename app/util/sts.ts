@@ -1,13 +1,8 @@
-import * as aws from 'aws-sdk';
+import aws from 'aws-sdk';
 import { AssumeRoleResponse } from 'aws-sdk/clients/sts';
 
 import env = require('./env');
 const { awsDefaultRegion } = env;
-
-type AssumeRoleFn = (
-  params: aws.STS.AssumeRoleRequest,
-  callback?: (err: aws.AWSError, data: aws.STS.AssumeRoleResponse) => void
-) => aws.Request<aws.STS.AssumeRoleResponse, aws.AWSError>;
 
 /**
  * Class to use when interacting with AWS STS
@@ -15,7 +10,7 @@ type AssumeRoleFn = (
  * @class SecureTokenService
  */
 export default class SecureTokenService {
-  _assumeRole: AssumeRoleFn;
+  private sts: aws.STS;
 
   /**
    * Builds and returns an AWS STS client configured according to environment variables
@@ -25,21 +20,17 @@ export default class SecureTokenService {
    * @param {Object} overrides values to set when constructing the underlying S3 store
    */
   constructor(overrides?: aws.STS.ClientConfiguration) {
-    this._assumeRole = this._getAssumeRole(overrides);
-  }
-
-  _getAssumeRole(overrides?: aws.STS.ClientConfiguration): AssumeRoleFn {
     const endpointSettings: aws.STS.ClientConfiguration = {};
     if (process.env.USE_LOCALSTACK === 'true') {
       endpointSettings.endpoint = 'http://localhost:4592';
     }
 
-    return new aws.STS({
+    this.sts = new aws.STS({
       apiVersion: '2011-06-15',
       region: awsDefaultRegion,
       ...endpointSettings,
       ...overrides,
-    }).assumeRole;
+    });
   }
 
   /**
@@ -50,6 +41,6 @@ export default class SecureTokenService {
    * @memberof SecureTokenService
    */
   async assumeRole(params: aws.STS.AssumeRoleRequest): Promise<AssumeRoleResponse> {
-    return this._assumeRole(params).promise();
+    return this.sts.assumeRole(params).promise();
   }
 }
