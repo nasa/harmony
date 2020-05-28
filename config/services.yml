@@ -1,5 +1,34 @@
-# Order in this file will reflect precedence of the service when multiple services handle a collection until
-# smarter service matching is implemented.
+# Order for each CMR endpoint in this file will reflect precedence of the service when
+# multiple services handle a collection
+
+https://cmr.earthdata.nasa.gov:
+  - name: harmony/gdal
+    data_operation_version: '0.8.0'
+    type:
+      name: docker
+      params:
+        image: !Env ${GDAL_IMAGE}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/harmony/gdal
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      - C1756916832-XYZ_PROV
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+      projection_to_proj4: true
 
 https://cmr.uat.earthdata.nasa.gov:
   - name: harmony/gdal
@@ -161,32 +190,3 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: false
       output_formats:
         - application/x-zarr
-
-https://cmr.earthdata.nasa.gov:
-  - name: harmony/gdal
-    data_operation_version: '0.8.0'
-    type:
-      name: docker
-      params:
-        image: !Env ${GDAL_IMAGE}
-        env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-          AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
-          STAGING_BUCKET: !Env ${STAGING_BUCKET}
-          STAGING_PATH: public/harmony/gdal
-          TEXT_LOGGER: !Env ${TEXT_LOGGER}
-          BACKEND_HOST: !Env ${BACKEND_HOST}
-    collections:
-      - C1756916832-XYZ_PROV
-    capabilities:
-      subsetting:
-        bbox: true
-        variable: true
-        multiple_variable: true
-      output_formats:
-        - image/tiff
-        - image/png
-        - image/gif
-      projection_to_proj4: true

@@ -136,7 +136,7 @@ The service call was unsuccessful due to an error.  The error message is the tex
 
 ## 4. Registering services in services.yml
 
-Add an entry to [services.yml](../config/services.yml) and send a pull request to the Harmony team, or ask a Harmony team member for assistance.  The structure of an entry is as follows:
+Add an entry to [services.yml](../config/services.yml) under each CMR environment that has collections / granules appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance.  The structure of an entry is as follows:
 
 ```yaml
 - name: harmony/docker-example    # A unique identifier string for the service, conventionally <team>/<service>
