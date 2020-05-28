@@ -80,7 +80,8 @@ script installs it, runs a local S3 instance, and creates the staging bucket con
 $ bin/run-localstack
 ```
 
-Keep this running during development.  `Ctrl-C` will exit.
+This will produce errors for about a minute as localstack starts up and creates resources needed by service listeners.  Assuming everything is configured correctly,
+it the errors will stop.  Keep this running during development.  `Ctrl-C` will exit.
 
 ### Run Tests
 
