@@ -24,7 +24,8 @@ function getCollectionFromRequest(req: HarmonyRequest, collectionId: string): cm
  */
 function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Mbr {
   // use the given bounding box (if any), else try to use the given spatial geometry
-  // to find a box; if there is none, default to a bounding box for the whole world
+  // to find a box; if there is none, use the spatial geometry from the collection; if
+  // there is none default to a bounding box for the whole world
   return computeMbr(granule)
     || computeMbr(collection)
     || [-180, -90, 180, 90];
