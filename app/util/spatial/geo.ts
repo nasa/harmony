@@ -5,8 +5,8 @@ import { Coordinate, LatLng } from './coordinate';
 
 // A small number for dealing with near-0
 const EPSILON = 0.00000001;
-const NORTH_POLE = 1; // = 0001
-const SOUTH_POLE = 2; // = 0010
+export const NORTH_POLE = 1; // = 0001
+export const SOUTH_POLE = 2; // = 0010
 const DEG_TO_RAD = Math.PI / 180;
 const RAD_TO_DEG = 180 / Math.PI;
 
@@ -78,9 +78,6 @@ function course(latlng1: LatLng, latlng2: LatLng): number {
     atan2,
     PI,
   } = Math;
-
-  // const c1 = Coordinate.fromLatLng(latlng1)
-  // const c2 = Coordinate.fromLatLng(latlng1)
 
   const lat1 = latlng1.lat * DEG_TO_RAD;
   const lng1 = latlng1.lng * DEG_TO_RAD;
@@ -161,7 +158,7 @@ function rotationDirection(angles: number[]): number {
  * @param latlngs
  * @returns pole
  */
-function containsPole(latlngs: LatLng[]): number {
+export function containsPole(latlngs: LatLng[]): number {
   let newLatLngs = latlngs;
   if (newLatLngs.length < 3) { return 0; }
 
@@ -229,9 +226,7 @@ function containsPole(latlngs: LatLng[]): number {
     } if (dir < 0) {
       return SOUTH_POLE;
     }
-    // if (config.debug) {
-    //   console.warn('Rotation direction is NONE despite containing a pole')
-    // }
+
     return 0;
   }
   return 0;

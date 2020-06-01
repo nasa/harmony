@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import hookCmr, { stubCmr, unStubCmr } from 'harmony-test/stub-cmr';
+import hookCmr from 'harmony-test/stub-cmr';
 import _ from 'lodash';
-import cmrGranuleLocator from 'harmony/middleware/cmr-granule-locator';
 import isUUID from '../../app/util/uuid';
 import { itIncludesRequestUrl } from '../helpers/jobs';
 import { hookSignS3Object } from '../helpers/object-store';

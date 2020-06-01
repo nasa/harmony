@@ -1,7 +1,7 @@
 import boxStringsToBox from 'util/bounding-box';
 import Arc from './arc';
 import { Coordinate, LatLng } from './coordinate';
-import { getShape } from './geo';
+import { getShape, containsPole, NORTH_POLE, SOUTH_POLE } from './geo';
 
 /**
  * Circular max
@@ -247,20 +247,32 @@ export function computeMbr(spatial: Spatial): Mbr | undefined {
   if (boxes) {
     return boxStringsToBox(boxes);
   } if (points) {
-    mbrs = points.map((point: string): [number, number, number, number] => {
+    mbrs = points.map((point: string): Mbr => {
       const { lat, lng } = getShape(point)[0];
       return [lat - EPSILON, lng - EPSILON, lat + EPSILON, lng + EPSILON];
     });
   } else if (lines) {
-    mbrs = lines.map((line: string): [number, number, number, number] => {
+    mbrs = lines.map((line: string): Mbr => {
       const lineShape = getShape(line);
       return findSimpleMbr(lineShape);
     });
   } else if (polygons) {
-    mbrs = polygons.map((polygon: string[]): [number, number, number, number] => {
+    mbrs = polygons.map((polygon: string[]): Mbr => {
       const outerRing = polygon[0];
       const polyShape = getShape(removeDuplicateEndpoint(outerRing));
-      return findSimpleMbr(polyShape);
+      const mbr = findSimpleMbr(polyShape);
+      const pole = containsPole(polyShape);
+      if (pole === NORTH_POLE) {
+        mbr[1] = -180;
+        mbr[3] = 180;
+        mbr[2] = 90;
+      }
+      if (pole === SOUTH_POLE) {
+        mbr[1] = -180;
+        mbr[3] = 180;
+        mbr[0] = -90;
+      }
+      return mbr;
     });
   }
 

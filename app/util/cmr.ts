@@ -205,7 +205,7 @@ async function _cmrSearch(
  * @returns {Response} A SuperAgent Response object
  */
 export async function fetchPost(
-  path: string, formData: FormData, headers: { [key: string]: string; },
+  path: string, formData: FormData, headers: { [key: string]: string },
 ): Promise<CmrResponse> {
   const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}${path}`, {
     method: 'POST',
