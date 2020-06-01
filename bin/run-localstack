@@ -12,7 +12,7 @@ fi
 
 stagingBucket="${STAGING_BUCKET:-local-staging-bucket}"
 uploadBucket="${UPLOAD_BUCKET:-local-upload-bucket}"
-deadLetterQueue="${SERVICE_DEAD_LETTER_QUEUE_NAME:-dead-letter-queue}"
+deadLetterQueue="${SERVICE_DEAD_LETTER_QUEUE_NAME:-harmony-dead-letter-queue}"
 
 export AWS_DEFAULT_REGION=us-west-2
 export AWS_ACCESS_KEY_ID=fake
