@@ -1,9 +1,34 @@
 import * as cmr from 'util/cmr';
 import { CmrError, RequestValidationError, ServerError } from 'util/errors';
-import boxStringsToBox from 'util/bounding-box';
 import { HarmonyGranule } from 'harmony/models/data-operation';
+import HarmonyRequest from 'harmony/models/harmony-request';
+import { computeMbr, Mbr } from 'harmony/util/spatial/mbr';
 
 import env = require('util/env');
+
+/**
+ * Gets collection from request that matches the given id
+ * @param req - The client request
+ * @param collectionId - the CMR concept id of the collection to find
+ * @returns the collection from the request that hs the given id
+ */
+function getCollectionFromRequest(req: HarmonyRequest, collectionId: string): cmr.CmrCollection {
+  return req.collections.find((collection) => collection.id === collectionId);
+}
+
+/**
+ * Gets bbox
+ * @param collection - a CMR collection record
+ * @param granule  -  a CMR granule record associated with the `collection`
+ * @returns bbox  - a bounding box in [W S E N] format
+ */
+function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Mbr {
+  // use the given bounding box (if any), else try to use the given spatial geometry
+  // to find a box; if there is none, default to a bounding box for the whole world
+  return computeMbr(granule)
+    || computeMbr(collection)
+    || [-180, -90, 180, 90];
+}
 
 /**
  * Express.js middleware which extracts parameters from the Harmony operation
@@ -59,32 +84,28 @@ export default async function cmrGranuleLocator(req, res, next: Function): Promi
         );
       }
 
-      const { hits, granules: atomGranules } = cmrResponse;
+      const { hits, granules: jsonGranules } = cmrResponse;
 
       operation.cmrHits += hits;
       const msTaken = new Date().getTime() - startTime;
       logger.info('Completed granule query', { durationMs: msTaken });
       logger.info(`Found ${hits} granules`);
       const granules = [];
-      for (const granule of atomGranules) {
+      for (const granule of jsonGranules) {
         const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);
         if (link) {
-          let box;
-          try {
-            box = boxStringsToBox(granule.boxes);
-          } catch (e) {
-            logger.error(e);
-          }
+          const collection = getCollectionFromRequest(req, source.collection);
+          const box = getBbox(collection, granule);
           const gran: HarmonyGranule = {
             id: granule.id,
             name: granule.title,
             url: link.href,
+            bbox: box,
             temporal: {
               start: granule.time_start,
               end: granule.time_end,
             },
           };
-          if (box && box.length !== 0) gran.bbox = box;
           granules.push(gran);
         }
       }

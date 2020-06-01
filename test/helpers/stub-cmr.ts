@@ -13,7 +13,7 @@ type CmrMethodName = 'cmrSearchBase' | 'fetchPost' | 'cmrPostSearchBase' | 'getC
  * @returns {void}
  * @private
  */
-function stubCmr(functionName: CmrMethodName, response: object): void {
+export function stubCmr(functionName: CmrMethodName, response: object): void {
   sinon.stub(cmr, functionName)
     .callsFake(async () => response);
 }
@@ -25,7 +25,7 @@ function stubCmr(functionName: CmrMethodName, response: object): void {
  * @returns {void}
  * @private
  */
-function unStubCmr(functionName: string): void {
+export function unStubCmr(functionName: string): void {
   if (cmr[functionName].restore) cmr[functionName].restore();
 }
 
