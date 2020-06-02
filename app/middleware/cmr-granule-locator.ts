@@ -10,7 +10,7 @@ import env = require('util/env');
  * Gets collection from request that matches the given id
  * @param req - The client request
  * @param collectionId - the CMR concept id of the collection to find
- * @returns the collection from the request that hs the given id
+ * @returns the collection from the request that has the given id
  */
 function getCollectionFromRequest(req: HarmonyRequest, collectionId: string): cmr.CmrCollection {
   return req.collections.find((collection) => collection.id === collectionId);

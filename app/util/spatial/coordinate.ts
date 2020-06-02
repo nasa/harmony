@@ -11,15 +11,15 @@ export interface LatLng {
 // Consider properties on this class to be immutable.  Changing, say, 'x' will not
 // update `phi` or `theta` and will throw normalization out of whack.
 export class Coordinate {
-  phi: number;
+  readonly phi: number;
 
-  theta: number;
+  readonly theta: number;
 
-  x: number;
+  readonly x: number;
 
-  y: number;
+  readonly y: number;
 
-  z: number;
+  readonly z: number;
 
   static fromLatLng(...args: LatLng[] | number[]): Coordinate {
     let lat: number;

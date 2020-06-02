@@ -1,7 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { LatLng } from 'harmony/util/spatial/coordinate';
-// import { calculateArea, getShape, splitListOfPoints } from 'util/map/geo';
 import { calculateArea, getShape } from 'harmony/util/spatial/geo';
 
 /**
