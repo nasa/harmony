@@ -7,7 +7,7 @@ import log from 'util/log';
 import earthdataLoginAuthorizer from 'middleware/earthdata-login-authorizer';
 import admin from 'middleware/admin';
 import wmsFrontend from 'frontends/wms';
-import { getJobsListing, getJobStatus } from 'frontends/jobs';
+import { getJobsListing, getJobStatus, cancelJob } from 'frontends/jobs';
 import { getStacCatalog, getStacItem } from 'frontends/stac';
 import { getServiceResult } from 'frontends/service-results';
 import shapefileUpload from 'middleware/shapefile-upload';
@@ -188,6 +188,7 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   result.get('/jobs', getJobsListing);
   result.get('/admin/jobs', getJobsListing);
   result.get('/jobs/:jobID', getJobStatus);
+  result.post('/jobs/:jobID/cancel', cancelJob);
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
   result.get('/stac/:jobId', getStacCatalog);

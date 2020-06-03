@@ -190,7 +190,10 @@ describe('EOSS GetGranule', function () {
         { rangeSubset: 'red_var' },
       );
       expect(res.status).to.equal(400);
-      expect(res.body).to.eql({ errors: ['No matching granules found.'] });
+      expect(res.body).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: No matching granules found.',
+      });
     });
     it('returns an HTTP 404 "Not Found" error for a collection with no services defined', async function () {
       const unsupportedCollection = 'C446398-ORNL_DAAC';

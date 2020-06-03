@@ -106,8 +106,8 @@ describe('Jobs listing route', function () {
       it('includes an error message in JSON format indicating a server error', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:ServerError',
-          description: 'Error: Internal server error trying to retrieve jobs listing',
+          code: 'harmony.ServerError',
+          description: 'Error: Internal server error.',
         });
       });
     });
@@ -166,7 +166,7 @@ describe('Jobs listing route', function () {
           const error = JSON.parse(this.res.text);
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
-            code: 'harmony:RequestValidationError',
+            code: 'harmony.RequestValidationError',
             description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
           });
         });
@@ -178,7 +178,7 @@ describe('Jobs listing route', function () {
           const error = JSON.parse(this.res.text);
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
-            code: 'harmony:RequestValidationError',
+            code: 'harmony.RequestValidationError',
             description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
           });
         });
@@ -190,7 +190,7 @@ describe('Jobs listing route', function () {
           const error = JSON.parse(this.res.text);
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
-            code: 'harmony:RequestValidationError',
+            code: 'harmony.RequestValidationError',
             description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
           });
         });
@@ -241,7 +241,7 @@ describe('Jobs listing route', function () {
           const error = JSON.parse(this.res.text);
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
-            code: 'harmony:RequestValidationError',
+            code: 'harmony.RequestValidationError',
             description: 'Error: Parameter "page" is invalid. Must be an integer greater than or equal to 1.',
           });
         });
@@ -253,7 +253,7 @@ describe('Jobs listing route', function () {
           const error = JSON.parse(this.res.text);
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
-            code: 'harmony:RequestValidationError',
+            code: 'harmony.RequestValidationError',
             description: 'Error: Parameter "page" is invalid. Must be an integer greater than or equal to 1.',
           });
         });

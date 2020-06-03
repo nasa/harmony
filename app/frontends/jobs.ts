@@ -4,7 +4,7 @@ import isUUID from 'util/uuid';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink } from '../util/links';
-import { RequestValidationError } from '../util/errors';
+import { RequestValidationError, NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
@@ -17,7 +17,7 @@ import db from '../util/db';
  * @param {string} urlRoot the root URL to be used when constructing links
  * @returns {Object} the job with appropriate links based on the type of links
  */
-function _getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
+function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
   let { links } = job;
   const dataLinks = job.getRelatedLinks('data');
   const directS3AccessLink = dataLinks.find((l) => l.href.match(/^s3:\/\/.*$/));
@@ -44,8 +44,11 @@ export interface JobListing {
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
+ * @param {Function} next The next function in the call chain
  */
-export async function getJobsListing(req: HarmonyRequest, res: Response): Promise<void> {
+export async function getJobsListing(
+  req: HarmonyRequest, res: Response, next: Function,
+): Promise<void> {
   try {
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req);
@@ -59,7 +62,7 @@ export async function getJobsListing(req: HarmonyRequest, res: Response): Promis
     });
     const serializedJobs = listing.data.map((j) => {
       const serializedJob = j.serialize(root);
-      serializedJob.links = _getLinksForDisplay(serializedJob, root);
+      serializedJob.links = getLinksForDisplay(serializedJob, root);
       return serializedJob;
     });
     const response: JobListing = {
@@ -70,19 +73,18 @@ export async function getJobsListing(req: HarmonyRequest, res: Response): Promis
     setPagingHeaders(res, listing.pagination);
     res.json(response);
   } catch (e) {
-    if (e instanceof RequestValidationError) {
-      res.status(e.code);
-      res.json({
-        code: 'harmony:RequestValidationError',
-        description: `Error: ${e.message}`,
-      });
-    } else {
-      req.context.logger.error(e);
-      res.status(500);
-      res.json({
-        code: 'harmony:ServerError',
-        description: 'Error: Internal server error trying to retrieve jobs listing' });
-    }
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * Throws an exception if the JobID is not in the valid format for a jobID.
+ * @param jobID The jobID to validate
+ */
+function validateJobId(jobID: string): void {
+  if (!isUUID(jobID)) {
+    throw new RequestValidationError(`jobID ${jobID} is in invalid format.`);
   }
 }
 
@@ -91,36 +93,59 @@ export async function getJobsListing(req: HarmonyRequest, res: Response): Promis
  *
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
+ * @param {Function} next The next function in the call chain
  * @returns {Promise<void>} Resolves when the request is complete
  */
-export async function getJobStatus(req: HarmonyRequest, res: Response): Promise<void> {
+export async function getJobStatus(
+  req: HarmonyRequest, res: Response, next: Function,
+): Promise<void> {
   const { jobID } = req.params;
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
-  if (!isUUID(jobID)) {
-    res.status(400);
-    res.json({
-      code: 'harmony:BadRequestError',
-      description: `Error: jobID ${jobID} is in invalid format.` });
-  } else {
-    try {
-      await db.transaction(async (tx) => {
-        const job = await Job.byUsernameAndRequestId(tx, req.user, jobID);
-        if (job) {
-          const urlRoot = getRequestRoot(req);
-          const serializedJob = job.serialize(urlRoot);
-          serializedJob.links = _getLinksForDisplay(serializedJob, urlRoot);
-          res.send(serializedJob);
-        } else {
-          res.status(404);
-          res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobID}` });
-        }
-      });
-    } catch (e) {
-      req.context.logger.error(e);
-      res.status(500);
-      res.json({
-        code: 'harmony:ServerError',
-        description: `Error: Internal server error trying to retrieve job status for job ${jobID}` });
-    }
+  try {
+    validateJobId(jobID);
+    await db.transaction(async (tx) => {
+      const job = await Job.byUsernameAndRequestId(tx, req.user, jobID);
+      if (job) {
+        const urlRoot = getRequestRoot(req);
+        const serializedJob = job.serialize(urlRoot);
+        serializedJob.links = getLinksForDisplay(serializedJob, urlRoot);
+        res.send(serializedJob);
+      } else {
+        throw new NotFoundError(`Unable to find job ${jobID}`);
+      }
+    });
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * Express.js handler that returns job status for a single job (/jobs/{jobID})
+ *
+ * @param req The request sent by the client
+ * @param res The response to send to the client
+ * @param {Function} next The next function in the call chain
+ * @returns {Promise<void>} Resolves when the request is complete
+ */
+export async function cancelJob(req: HarmonyRequest, res: Response, next: Function): Promise<void> {
+  const { jobID } = req.params;
+  req.context.logger.info(`Cancel requested for job ${jobID} by user ${req.user}`);
+  try {
+    validateJobId(jobID);
+    await db.transaction(async (tx) => {
+      const job = await Job.byUsernameAndRequestId(tx, req.user, jobID);
+      if (job) {
+        const urlRoot = getRequestRoot(req);
+        const serializedJob = job.serialize(urlRoot);
+        serializedJob.links = getLinksForDisplay(serializedJob, urlRoot);
+        res.send(serializedJob);
+      } else {
+        throw new NotFoundError(`Unable to find job ${jobID}`);
+      }
+    });
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
   }
 }

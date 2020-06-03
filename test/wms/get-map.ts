@@ -179,7 +179,10 @@ describe('WMS GetMap', function () {
     it('returns an HTTP 400 "Bad Request" error with explanatory message when no request parameter is set', async function () {
       const res = await wmsRequest(this.frontend, collection, query);
       expect(res.status).to.equal(400);
-      expect(res.body).to.eql({ errors: ['No matching granules found.'] });
+      expect(res.body).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: No matching granules found.',
+      });
     });
   });
 
