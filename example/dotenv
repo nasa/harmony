@@ -93,7 +93,7 @@ ADMIN_GROUP_ID=AG1222736883-EEDTEST
 BASE_QUEUE_URL=http://localhost:4566/queue/
 
 # The name of the dead letter queue for message-queue-based services
-SERVICE_DEAD_LETTER_QUEUE_NAME=dead-letter-queue
+SERVICE_DEAD_LETTER_QUEUE_NAME=harmony-dead-letter-queue
 
 ###########################################################################
 #                             Service Config                              #
