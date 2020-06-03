@@ -33,6 +33,9 @@ export interface CmrCollection {
   archive_center?: string;
   data_center?: string;
   boxes?: string[];
+  points?: string[];
+  lines?: string[];
+  polygons?: string[][];
   time_start?: string;
   time_end?: string;
   associations?: {
@@ -43,6 +46,10 @@ export interface CmrCollection {
 
 export interface CmrGranule {
   id: string;
+  boxes?: string[];
+  points?: string[];
+  lines?: string[];
+  polygons?: string[][];
 }
 
 export interface CmrGranuleHits {
@@ -133,7 +140,7 @@ function _handleCmrErrors(response: Response): void {
   } else if (status >= 400) {
     // pass on errors from the CMR
     const message = get(response, ['data', 'errors', 0])
-    || `'${response.statusText}'`;
+      || `'${response.statusText}'`;
     logger.error(`CMR returned status '${status}' with message '${message}'`);
     throw new CmrError(status, message);
   }
@@ -198,7 +205,7 @@ async function _cmrSearch(
  * @returns {Response} A SuperAgent Response object
  */
 export async function fetchPost(
-  path: string, formData: FormData, headers: {[key: string]: string},
+  path: string, formData: FormData, headers: { [key: string]: string },
 ): Promise<CmrResponse> {
   const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}${path}`, {
     method: 'POST',

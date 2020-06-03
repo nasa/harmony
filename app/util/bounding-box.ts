@@ -1,13 +1,15 @@
+import { Mbr } from './spatial/mbr';
+
 const { max, min } = Math;
 
 /**
- * Convert a bounding box string in `'S W N E'` format to an array in `[W,S,E,N]` format.
+ * Convert a bounding box string in `'S W N E'` format to a tuple in `[W,S,E,N]` format.
  *
- * @param {string} str A bounding box string in `'S W N E'`` format.
- * @returns {Array<number>} A bounding box in `[W,S,E,N]` format
+ * @param str -  bounding box string in `'S W N E'`` format.
+ * @returns - a bounding box in `[W,S,E,N]` format
  * @private
  */
-function _boundingBoxStringToBoundingBox(str: string): Array<number> {
+function _boundingBoxStringToBoundingBox(str: string): Mbr {
   if (!str) return null;
 
   const ords = str.split(' ').map(parseFloat);
@@ -21,11 +23,11 @@ function _boundingBoxStringToBoundingBox(str: string): Array<number> {
 /**
  * Determine whether or not a box crosses the antimeridian
  *
- * @param {Array<number>} box A box in `[W,S,E,N]` format
- * @returns {boolean} true if the box crosses the antimeridian, false otherwise
+ * @param box - a box in `[W,S,E,N]` format
+ * @returns true if the box crosses the antimeridian, false otherwise
  * @private
  */
-function _crossesAntimeridian(box: Array<number>): boolean {
+function crossesAntimeridian(box: Mbr): boolean {
   // true if W > E
   return box[0] > box[2];
 }
@@ -35,16 +37,16 @@ function _crossesAntimeridian(box: Array<number>): boolean {
  * encompassing the two.
  * Note: this was translated from the CMR Clojure version
  *
- * @param {Array<number>} box1 A box in `[W,S,E,N]` format
- * @param {Array<number>} box2 A box in `[W,S,E,N]` format
- * @returns {Array<number>} A box in `[W,S,E,N]` format
+ * @param box1 - A box in `[W,S,E,N]` format
+ * @param box2 - A box in `[W,S,E,N]` format
+ * @returns A box in `[W,S,E,N]` format
  * @private
  */
-function _joinBoundingBoxes(box1: Array<number>, box2: Array<number>): Array<number> {
+function joinBoundingBoxes(box1: Mbr, box2: Mbr): Mbr {
   // longitude range union
   let w;
   let e;
-  if (_crossesAntimeridian(box1) && _crossesAntimeridian(box2)) {
+  if (crossesAntimeridian(box1) && crossesAntimeridian(box2)) {
     // both cross the antimeridian
     w = min(box1[0], box2[0]);
     e = max(box1[2], box2[2]);
@@ -53,11 +55,11 @@ function _joinBoundingBoxes(box1: Array<number>, box2: Array<number>): Array<num
       w = -180.0;
       e = 180.0;
     }
-  } else if (_crossesAntimeridian(box1) || _crossesAntimeridian(box2)) {
+  } else if (crossesAntimeridian(box1) || crossesAntimeridian(box2)) {
     // one crosses the antimeridian
     let b1;
     let b2;
-    if (_crossesAntimeridian(box2)) {
+    if (crossesAntimeridian(box2)) {
       b1 = box2;
       b2 = box1;
     } else {
@@ -129,15 +131,15 @@ function _joinBoundingBoxes(box1: Array<number>, box2: Array<number>): Array<num
  * Convert an array of strings representing bounding boxes to a single array of numbers
  * representing a minimal bounding box that contains all of the sub bounding boxes
  *
- * @param {Array<string>} boxStrings a list of strings in `'S W N E'` format
- * @returns {Array<number>} an array of floats in `[W,S,E,N]` format
+ * @param boxStrings - a list of strings in `'S W N E'` format
+ * @returns a tuple of floats in `[W,S,E,N]` format
  */
-export default function boxStringsToBox(boxStrings: Array<string>): Array<number> {
+export default function boxStringsToBox(boxStrings: string[]): Mbr {
   if (!boxStrings || boxStrings.length === 0) return null;
 
   const boxes = boxStrings.map(_boundingBoxStringToBoundingBox).filter((val) => val);
   if (boxes.length === 1) return boxes[0];
 
   // find a single minimal bounding box that contains all the boxes
-  return boxes.reduce((mbr, nextBox) => _joinBoundingBoxes(mbr, nextBox));
+  return boxes.reduce((mbr, nextBox) => joinBoundingBoxes(mbr, nextBox));
 }
