@@ -1,4 +1,4 @@
-import { JobLink } from 'harmony/models/job';
+import { JobLink } from '../models/job';
 
 /**
  * Determine whether or not any of the given links contain the items necessary to generate STAC

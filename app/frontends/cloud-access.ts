@@ -1,6 +1,6 @@
-import SecureTokenService from 'util/sts';
-import RequestContext from 'harmony/models/request-context';
 import { Credentials } from 'aws-sdk/clients/sts';
+import SecureTokenService from '../util/sts';
+import RequestContext from '../models/request-context';
 
 import env = require('util/env');
 const { sameRegionAccessRole, awsDefaultRegion } = env;

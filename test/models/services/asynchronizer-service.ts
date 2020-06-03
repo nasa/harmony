@@ -1,14 +1,14 @@
 import { describe, it, before } from 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { Job } from 'harmony/models/job';
-import { defaultObjectStore } from 'harmony/util/object-store';
-import hookServersStartStop from 'harmony-test/servers';
-import StubService from 'harmony-test/stub-service';
-import { hookRangesetRequest, hookSyncRangesetRequest } from 'harmony-test/ogc-api-coverages';
-import { hookRedirect } from 'harmony-test/hooks';
-import { hookMockS3 } from 'harmony-test/object-store';
 import { S3 } from 'aws-sdk';
+import { Job } from '../../../app/models/job';
+import { defaultObjectStore } from '../../../app/util/object-store';
+import hookServersStartStop from '../../helpers/servers';
+import StubService from '../../helpers/stub-service';
+import { hookRangesetRequest, hookSyncRangesetRequest } from '../../helpers/ogc-api-coverages';
+import { hookRedirect } from '../../helpers/hooks';
+import { hookMockS3 } from '../../helpers/object-store';
 
 /**
  * Returns a function whose return value alternates between the supplied values

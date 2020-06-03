@@ -1,101 +1,114 @@
-import { v4 as uuid } from 'uuid';
-import { Response } from 'express';
-import HarmonyRequest from 'harmony/models/harmony-request';
-import log from 'util/log';
+import { Response, Request } from 'express';
+import _ from 'lodash';
+import log from '../util/log';
+import { ServerError, RequestValidationError } from '../util/errors';
+import db from '../util/db';
+import { Job } from '../models/job';
 
-interface ServiceResponseConfig {
-  baseUrl: string;
-}
-
-const config: ServiceResponseConfig = {
-  baseUrl: null,
-};
-
-// TODO: As far as I can tell, there's no way to use a WeakMap here.
-// We will need to clean these up or risk leaks.
-const idsToCallbacks = new Map();
-
-// Regex to find the UUID in a service response callback URL
-const UUID_REGEX = /\/service\/(.*)/;
 
 /**
- * Removes a callback URL / function binding.  Does nothing if url is null
+ * Helper for updating a job, given a query string provided in a callback
  *
- * @param {string} url The URL of the response to forget
- * @returns {void}
+ * Note: parameter reassignment is allowed, since it's the purpose of this function.
+ *
+ * @param logger - The logger associated with this request
+ * @param job - The job record to update
+ * @param query - The parsed query coming from a service callback
+ * @throws {RequestValidationError} If the callback parameters fail validation
+ * @throws {ServerError} If job update fails unexpectedly
  */
-export function unbindResponseUrl(url: string): void {
-  if (url) {
-    idsToCallbacks.delete(url.split('/').pop());
-  }
-}
+export function updateJobFields(
+  logger,
+  job,
+  query,
+): void { /* eslint-disable no-param-reassign */
+  const { error, item, status, redirect, progress } = query;
+  try {
+    if (item) {
+      if (item.bbox) {
+        const bbox = item.bbox.split(',').map(parseFloat);
+        if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
+          throw new TypeError('Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North');
+        }
+        item.bbox = bbox;
+      }
+      if (item.temporal) {
+        const temporal = item.temporal.split(',').map((t) => Date.parse(t));
+        if (temporal.length !== 2 || temporal.some(Number.isNaN)) {
+          throw new TypeError('Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End');
+        }
+        const [start, end] = temporal.map((t) => new Date(t).toISOString());
+        item.temporal = { start, end };
+      }
+      item.rel = item.rel || 'data';
+      job.addLink(item);
+    }
+    if (progress) {
+      if (Number.isNaN(+progress)) {
+        throw new TypeError('Job record is invalid: ["Job progress must be between 0 and 100"]');
+      }
+      job.progress = parseInt(progress, 10);
+    }
 
-/**
- * Binds a function to be run when a unique URL is called from a backend service
- *
- * @param {function} responseCallback A callback run when the URL is loaded
- * @returns {string} The url the backend should call to invoke the function
- */
-export function bindResponseUrl(responseCallback: Function): string {
-  if (!config.baseUrl) {
-    throw new Error('Call configure({ baseUrl }) before calling bindResponseUrl');
+    if (error) {
+      job.fail(error);
+    } else if (status) {
+      job.updateStatus(status);
+    } else if (redirect) {
+      job.addLink({ href: redirect, rel: 'data' });
+      job.succeed();
+    }
+  } catch (e) {
+    const ErrorClass = (e instanceof TypeError) ? RequestValidationError : ServerError;
+    logger.error(e);
+    throw new ErrorClass(e.message);
   }
-  const callbackUUID = uuid();
-  idsToCallbacks.set(callbackUUID, {
-    response: responseCallback,
-  });
-  log.info(`Callbacks size ${idsToCallbacks.size}`);
-  return config.baseUrl + callbackUUID;
-}
-
-/**
- * Returns true if the callback URL is registered. Useful for checking
- * whether a request has responded yet.
- *
- * @param {string} callbackUrl The callback URL
- * @returns {boolean} true if the URL is registered and false otherwise
- */
-export function isUrlBound(callbackUrl: string): boolean {
-  const callbackUUIDMatch = callbackUrl.match(UUID_REGEX);
-  if (callbackUUIDMatch && idsToCallbacks.get(callbackUUIDMatch[1])) {
-    return true;
-  }
-  return false;
 }
 
 /**
  * Express.js handler on a service-facing endpoint that receives responses
- * from backends and calls the registered callback for those responses.
- * Does not clean up the callback
+ * from backends and updates corresponding job records.
  *
- * @param {http.IncomingMessage} req The request sent by the service
- * @param {http.ServerResponse} res The response to send to the service
- * @returns {void}
- * @throws {Error} if no callback can be found for the given ID
+ * Because this is on a different endpoint with different middleware, it receives
+ * an express Request rather than a HarmonyRequest, must construct its own, does
+ * not have access to EDL info, etc
+ *
+ * @param req - The request sent by the service
+ * @param res - The response to send to the service
  */
-export function responseHandler(req: HarmonyRequest, res: Response): void {
-  const id = req.params.uuid;
-  if (!idsToCallbacks.get(id)) {
-    throw new Error(`Could not find response callback for UUID ${id}`);
-  }
-  const callback = idsToCallbacks.get(id).response;
-  callback(req, res);
-}
+export async function responseHandler(req: Request, res: Response): Promise<void> {
+  const { requestId } = req.params;
+  const logger = log.child({
+    component: 'callback',
+    requestId,
+  });
+  const trx = await db.transaction();
 
-/**
- * Provides global configuration to service responses.  Only call this once.
- * Configuration:
- *   baseUrl: The base URL of the internal-facing endpoint that unique paths are appended to
- *
- * @param {{baseUrl: string}} config Configuration containing the base URL of the endpoint
- * @returns {void}
- */
-export function configure({ baseUrl }: { baseUrl: string }): void {
-  if (baseUrl) {
-    const newUrl = baseUrl + (baseUrl.endsWith('/') ? '' : '/');
-    if (config.baseUrl && config.baseUrl !== newUrl) {
-      throw new Error(`ServiceResponse baseUrl ${config.baseUrl} would be overwritten by ${baseUrl}`);
+  const job = await Job.byRequestId(trx, requestId);
+  if (!job) {
+    trx.rollback();
+    res.status(404);
+    logger.error(`Received a callback for a missing job: requestId=${requestId}`);
+    res.json({ code: 404, message: 'could not find a job with the given ID' });
+    return;
+  }
+
+  try {
+    updateJobFields(logger, job, req.query);
+    await job.save(trx);
+    await trx.commit();
+    res.status(200);
+    res.send('Ok');
+  } catch (e) {
+    await trx.rollback();
+    const status = e.code || (e instanceof TypeError ? 400 : 500);
+    res.status(status);
+    res.json({ code: status, message: e.message });
+  } finally {
+    if (job.isComplete()) {
+      const durationMs = +job.updatedAt - +job.createdAt;
+      const numOutputs = job.getRelatedLinks('data').length;
+      logger.info('Async job complete.', { durationMs, numOutputs, job: job.serialize() });
     }
-    config.baseUrl = baseUrl;
   }
 }

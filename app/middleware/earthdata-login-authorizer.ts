@@ -1,9 +1,9 @@
 import simpleOAuth2, { OAuthClient } from 'simple-oauth2';
-import { listToText } from 'util/string';
-import { ForbiddenError } from 'util/errors';
-import { setCookiesForEdl } from 'util/cookies';
 import { RequestHandler } from 'express';
-import HarmonyRequest from 'harmony/models/harmony-request';
+import { listToText } from '../util/string';
+import { ForbiddenError } from '../util/errors';
+import { setCookiesForEdl } from '../util/cookies';
+import HarmonyRequest from '../models/harmony-request';
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 

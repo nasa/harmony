@@ -4,7 +4,6 @@ import expressWinston from 'express-winston';
 import * as path from 'path';
 import favicon from 'serve-favicon';
 import { promisify } from 'util';
-import * as serviceResponse from 'backends/service-response';
 import errorHandler from 'middleware/error-handler';
 import router from 'routers/router';
 import RequestContext from 'models/request-context';
@@ -74,7 +73,6 @@ export function start(config: Record<string, string>):
 { frontend: Server; backend: Server; monitor: DeadLetterQueueMonitor } {
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
-  const callbackUrlRoot = config.CALLBACK_URL_ROOT || `http://localhost:${backendPort}`;
 
   // Setup the frontend server to handle client requests
   const frontend = buildServer('frontend', appPort, (app) => {
@@ -94,8 +92,6 @@ export function start(config: Record<string, string>):
   const backend = buildServer('backend', backendPort, (app) => {
     app.use('/service', serviceResponseRouter());
     app.get('/', ((req, res) => res.send('OK')));
-
-    serviceResponse.configure({ baseUrl: `${callbackUrlRoot}/service/` });
   });
 
   let monitor;

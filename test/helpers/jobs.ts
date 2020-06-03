@@ -4,8 +4,8 @@ import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
 import { Transaction } from 'knex';
 import { Application } from 'express';
-import { Job, JobStatus, JobRecord } from 'harmony/models/job';
-import { JobListing } from 'harmony/frontends/jobs';
+import { Job, JobStatus, JobRecord } from '../../app/models/job';
+import { JobListing } from '../../app/frontends/jobs';
 import db from '../../app/util/db';
 import { hookRequest } from './hooks';
 import { truncateAll } from './db';
@@ -129,6 +129,7 @@ export async function createIndexedJobs(
       progress,
       links: [],
       request: `http://example.com/${progress}`,
+      isAsync: true,
     });
     await job.save(trx);
     // Explicitly set created dates to ensure they are sequential (must be done in an update)

@@ -25,6 +25,7 @@ interface HarmonyEnv {
   cmrEndpoint: string;
   oauthHost: string;
   useLocalstack: boolean;
+  callbackUrlRoot: string;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -79,6 +80,7 @@ function makeConfigVar(envName: string, defaultValue?: string|number): void {
   ['ADMIN_GROUP_ID', null],
   ['CMR_ENDPOINT', 'https://cmr.uat.earthdata.nasa.gov'],
   ['OAUTH_HOST', 'https://uat.urs.earthdata.nasa.gov'],
+  ['CALLBACK_URL_ROOT', null],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases

@@ -1,7 +1,7 @@
-import * as cmr from 'util/cmr';
-import { CmrError, RequestValidationError, ServerError } from 'util/errors';
-import boxStringsToBox from 'util/bounding-box';
-import { HarmonyGranule } from 'harmony/models/data-operation';
+import * as cmr from '../util/cmr';
+import { CmrError, RequestValidationError, ServerError } from '../util/errors';
+import boxStringsToBox from '../util/bounding-box';
+import { HarmonyGranule } from '../models/data-operation';
 
 import env = require('util/env');
 

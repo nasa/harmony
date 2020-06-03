@@ -8,7 +8,7 @@ import DataOperation from 'models/data-operation';
 import * as services from 'models/services';
 import { Router, Application } from 'express';
 import _ from 'lodash';
-import { CmrUmmVariable } from 'harmony/util/cmr';
+import { CmrUmmVariable } from '../util/cmr';
 
 const version = '0.1.0';
 const openApiPath = path.join(__dirname, '..', 'schemas', 'eoss', version, `eoss-v${version}.yml`);

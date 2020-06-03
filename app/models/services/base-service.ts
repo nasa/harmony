@@ -1,15 +1,13 @@
 import _ from 'lodash';
-import * as serviceResponse from 'backends/service-response';
-import { defaultObjectStore } from 'util/object-store';
-import { ServerError, RequestValidationError } from 'util/errors';
-import { Job, JobStatus } from 'models/job';
-import { v4 as uuid } from 'uuid';
-import DataOperation from 'models/data-operation';
 import { Logger } from 'winston';
+import { v4 as uuid } from 'uuid';
 import InvocationResult from './invocation-result';
+import { Job, JobStatus } from '../job';
+import DataOperation from '../data-operation';
+import { defaultObjectStore } from '../../util/object-store';
+import { ServerError } from '../../util/errors';
 import db from '../../util/db';
-
-import env = require('util/env');
+import env from '../../util/env';
 
 export interface ServiceCapabilities {
   subsetting?: {
@@ -64,8 +62,6 @@ export default class BaseService<ServiceParamType> {
 
   invocation: Promise<boolean>;
 
-  resolveInvocation: (value?: unknown) => void;
-
   message?: string;
 
   /**
@@ -114,59 +110,71 @@ export default class BaseService<ServiceParamType> {
   async invoke(
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
   ): Promise<InvocationResult> {
-    const isAsync = !this.isSynchronous;
-    const job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
-    if (isAsync) {
-      // All jobs are tracked internally.  Only async jobs are saved to the db
-      try {
-        await job.save(db);
-      } catch (e) {
-        logger.error(e.stack);
-        throw new ServerError('Failed to save job to database.');
-      }
+    let job;
+    try {
+      job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
+      await job.save(db);
+    } catch (e) {
+      logger.error(e.stack);
+      throw new ServerError('Failed to save job to database.');
     }
-    // Promise that can be awaited to ensure the service has completed its work
-    this.invocation = new Promise((resolve) => {
-      this.resolveInvocation = resolve;
-    });
+
+    const { isAsync, requestId } = job;
+    this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
     return new Promise((resolve, reject) => {
-      const handleError = (e): void => {
-        serviceResponse.unbindResponseUrl(this.operation.callback);
-        reject(e);
-      };
-      try {
-        if (isAsync) {
-          this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
-            // Async requests will re-query job records and not close on them to help
-            // decouple response handling from the process that created the job.
-            // Eventually, we'll want it to be the case that any Harmony process can
-            // handle callbacks for any async job.
-            this._processAsyncCallback(req, res, logger);
-          });
-        } else {
-          this.operation.callback = serviceResponse.bindResponseUrl((req, res) => {
-            // Sync callbacks need to be handled by the Harmony process that invoked them
-            // because they are holding the original request open.
-            this._processSyncCallback(req, res, job, logger)
-              .then((result) => { if (result) resolve(result); });
-          });
-        }
-        this._run(logger)
-          .then((result) => {
-            if (result) {
-              // If running produces a result, use that rather than waiting for a callback
-              serviceResponse.unbindResponseUrl(this.operation.callback);
-              resolve(result);
-              this.resolveInvocation(true);
-            } else if (isAsync) {
-              resolve({ redirect: `/jobs/${job.requestId}`, headers: {} });
-            }
-          })
-          .catch(handleError);
-      } catch (e) {
-        handleError(e);
-      }
+      this._run(logger)
+        .then((result) => {
+          if (result) {
+            // If running produces a result, use that rather than waiting for a callback
+            resolve(result);
+          } else if (isAsync) {
+            resolve({ redirect: `/jobs/${requestId}`, headers: {} });
+          } else {
+            this._waitForSyncResponse(logger, requestId).then(resolve).catch(reject);
+          }
+        })
+        .catch(reject);
     });
+  }
+
+  /**
+   * Waits for a synchronous service invocation to complete by polling its job record,
+   * then returns its result
+   *
+   * @param logger - The logger used for the request
+   * @param requestId - The request ID
+   * @returns - An invocation result corresponding to a synchronous service response
+   */
+  protected async _waitForSyncResponse(
+    logger: Logger,
+    requestId: string,
+  ): Promise<InvocationResult> {
+    let result;
+    try {
+      let job;
+      do {
+        // Sleep 0.2s and poll for completion.  We could also use SNS for a more push-based approach
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        job = await Job.byRequestId(db, requestId);
+      } while (!job.isComplete());
+
+      if (job.status === JobStatus.FAILED) {
+        result = { error: job.message };
+      }
+
+      if (job.status === JobStatus.SUCCESSFUL) {
+        const links = job.getRelatedLinks('data');
+        if (links.length === 1) {
+          result = { redirect: links[0].href };
+        } else {
+          result = { error: `The backend service provided ${links.length} outputs when 1 was required`, statusCode: 500 };
+        }
+      }
+    } catch (e) {
+      logger.error(e);
+      result = { error: 'The service request failed due to an internal error', statusCode: 500 };
+    }
+    return result;
   }
 
   /**
@@ -180,168 +188,6 @@ export default class BaseService<ServiceParamType> {
    */
   protected async _run(_logger: Logger): Promise<InvocationResult> {
     throw new TypeError('BaseService subclasses must implement #_run()');
-  }
-
-  /**
-   * Processes a callback coming from a synchronous service request
-   *
-   * @param {http.IncomingMessage} req the incoming callback request
-   * @param {http.ServerResponse} res the outgoing callback response
-   * @param {Job} job the synchronous job being performed
-   * @param {Logger} logger The logger associated with this request
-   * @returns {Promise<InvocationResult>}
-   * @memberof BaseService
-   */
-  protected async _processSyncCallback(req, res, job: Job, logger): Promise<InvocationResult> {
-    let result = null;
-
-    const respondToService = (err): void => {
-      if (err) {
-        res.status(err.code || 500);
-        res.send({ code: err.code, message: err.message });
-      } else {
-        res.status(200);
-        res.send('Ok');
-      }
-    };
-
-    try {
-      if (_.isEmpty(req.query)) {
-        result = { stream: req, onComplete: respondToService, headers: req.headers };
-      } else {
-        this._updateJobFields(logger, job, req.query);
-
-        if (job.status === JobStatus.FAILED) {
-          result = { error: job.message };
-        }
-
-        if (job.status === JobStatus.SUCCESSFUL) {
-          const links = job.getRelatedLinks('data');
-          if (links.length === 1) {
-            result = { redirect: links[0].href };
-          } else {
-            result = { error: `The backend service provided ${links.length} outputs when 1 was required`, statusCode: 500 };
-          }
-        }
-        respondToService(null);
-      }
-    } catch (e) {
-      logger.error(e);
-      respondToService(e);
-      result = { error: 'The service request failed due to an internal error', statusCode: 500 };
-    } finally {
-      if (result) {
-        serviceResponse.unbindResponseUrl(this.operation.callback);
-        if (this.resolveInvocation) this.resolveInvocation(true);
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Processes a callback coming from an asynchronous service request (Job)
-   *
-   * @param {http.IncomingMessage} req the incoming callback request
-   * @param {http.ServerResponse} res the outgoing callback response
-   * @param {Logger} logger The logger associated with this request
-   * @returns {void}
-   * @memberof BaseService
-   */
-  protected async _processAsyncCallback(req, res, logger: Logger): Promise<void> {
-    const trx = await db.transaction();
-
-    const { user, requestId } = this.operation;
-    const job = await Job.byUsernameAndRequestId(trx, user, requestId);
-    if (!job) {
-      trx.rollback();
-      res.status(404);
-      logger.error(`Received a callback for a missing job: user=${user}, requestId=${requestId}`);
-      res.json({ code: 404, message: 'could not find a job with the given ID' });
-      return;
-    }
-
-    try {
-      await this._updateJobFields(logger, job, req.query);
-      await job.save(trx);
-      await trx.commit();
-      res.status(200);
-      res.send('Ok');
-    } catch (e) {
-      await trx.rollback();
-      const status = e.code || (e instanceof TypeError ? 400 : 500);
-      res.status(status);
-      res.json({ code: status, message: e.message });
-    } finally {
-      if (job.isComplete()) {
-        if (this.resolveInvocation) this.resolveInvocation(true);
-        serviceResponse.unbindResponseUrl(this.operation.callback);
-        const durationMs = +job.updatedAt - +job.createdAt;
-        const numOutputs = job.getRelatedLinks('data').length;
-        logger.info('Async job complete.', { durationMs, numOutputs, job: job.serialize() });
-      }
-    }
-  }
-
-  /**
-   * Helper for updating a job, given a query string provided in a callback
-   *
-   * Note: parameter reassignment is allowed, since it's the purpose of this function.
-   *
-   * @param {Logger} logger The logger associated with this request
-   * @param {Job} job The job record to update
-   * @param {object} query The parsed query coming from a service callback
-   * @returns {void}
-   * @throws {RequestValidationError} If the callback parameters fail validation
-   * @throws {ServerError} If job update fails unexpectedly
-   * @memberof BaseService
-   */
-  protected async _updateJobFields(
-    logger,
-    job,
-    query,
-  ): Promise<void> { /* eslint-disable no-param-reassign */
-    const { error, item, status, redirect, progress } = query;
-    try {
-      if (item) {
-        if (item.bbox) {
-          const bbox = item.bbox.split(',').map(parseFloat);
-          if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
-            throw new TypeError('Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North');
-          }
-          item.bbox = bbox;
-        }
-        if (item.temporal) {
-          const temporal = item.temporal.split(',').map((t) => Date.parse(t));
-          if (temporal.length !== 2 || temporal.some(Number.isNaN)) {
-            throw new TypeError('Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End');
-          }
-          const [start, end] = temporal.map((t) => new Date(t).toISOString());
-          item.temporal = { start, end };
-        }
-        item.rel = item.rel || 'data';
-        job.addLink(item);
-      }
-      if (progress) {
-        if (Number.isNaN(+progress)) {
-          throw new TypeError('Job record is invalid: ["Job progress must be between 0 and 100"]');
-        }
-        job.progress = parseInt(progress, 10);
-      }
-
-      if (error) {
-        job.fail(error);
-      } else if (status) {
-        job.updateStatus(status);
-      } else if (redirect) {
-        job.addLink({ href: redirect, rel: 'data' });
-        job.succeed();
-      }
-    } catch (e) {
-      const ErrorClass = (e instanceof TypeError) ? RequestValidationError : ServerError;
-      logger.error(e);
-      throw new ErrorClass(e.message);
-    }
   }
 
   /**
@@ -368,6 +214,7 @@ export default class BaseService<ServiceParamType> {
       requestId,
       status: JobStatus.RUNNING,
       request: requestUrl,
+      isAsync: !this.isSynchronous,
     });
     job.addStagingBucketLink(stagingLocation);
     if (this.warningMessage) {
