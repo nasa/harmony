@@ -173,11 +173,6 @@ describe('Job', function () {
       expect(new Job({ status: JobStatus.FAILED } as JobRecord).message).to.eql('The job failed with an unknown error');
     });
 
-    it('updates the message if a default was used and the status changed', function () {
-      expect(new Job({ status: JobStatus.SUCCESSFUL, message: 'The job is being processed' } as JobRecord).message)
-        .to.equal('The job has completed successfully');
-    });
-
     it('defaults links to an empty array', function () {
       expect(new Job({} as JobRecord).links).to.eql([]);
     });

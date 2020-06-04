@@ -1,6 +1,7 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
 
+import { RequestValidationError } from 'harmony/util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
@@ -31,7 +32,10 @@ export enum JobStatus {
   RUNNING = 'running',
   SUCCESSFUL = 'successful',
   FAILED = 'failed',
+  CANCELED = 'canceled',
 }
+
+const terminalStates = [JobStatus.SUCCESSFUL, JobStatus.FAILED, JobStatus.CANCELED];
 
 export interface JobLink {
   href: string;
@@ -109,7 +113,7 @@ export class Job extends Record {
 
   _json_links?: string | JobLink[];
 
-  status: string;
+  status: JobStatus;
 
   jobID: string;
 
@@ -200,7 +204,8 @@ export class Job extends Record {
     super(fields);
     // Allow up to 4096 chars for the request string
     this.request = fields.request && truncateString(fields.request, 4096);
-    this.updateStatus(fields.status || JobStatus.ACCEPTED, fields.message);
+    this.status = fields.status || JobStatus.ACCEPTED;
+    this.message = fields.message || statesToDefaultMessages[this.status];
     this.progress = fields.progress || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     this.links = fields.links
@@ -277,6 +282,15 @@ export class Job extends Record {
   }
 
   /**
+   * Returns true if the status of a job can be updated. We do not allow updating the
+   * status of a request that is already in a terminal state.
+   *
+   */
+  canUpdateStatus(): boolean {
+    return terminalStates.indexOf(this.status) === -1;
+  }
+
+  /**
    * Update the status and status message of a job.  If a null or default message is provided,
    * will use a default message corresponding to the status.
    * You must call `#save` to persist the change
@@ -285,18 +299,22 @@ export class Job extends Record {
    * @param message - (optional) a human-readable status message
    */
   updateStatus(status: JobStatus, message?: string): void {
-    this.status = status;
-    if (message) {
-      // Update the message if a new one was provided
-      this.message = message;
-    }
-    if (!this.message || defaultMessages.includes(this.message)) {
-      // Update the message to a default one if it's currently a default one for a
-      // different status
-      this.message = statesToDefaultMessages[status];
-    }
-    if (this.status === JobStatus.SUCCESSFUL) {
-      this.progress = 100;
+    if (this.canUpdateStatus()) {
+      this.status = status;
+      if (message) {
+        // Update the message if a new one was provided
+        this.message = message;
+      }
+      if (!this.message || defaultMessages.includes(this.message)) {
+        // Update the message to a default one if it's currently a default one for a
+        // different status
+        this.message = statesToDefaultMessages[status];
+      }
+      if (this.status === JobStatus.SUCCESSFUL) {
+        this.progress = 100;
+      }
+    } else {
+      throw new RequestValidationError(`Job status cannot be updated from ${this.status} to ${status}.`);
     }
   }
 

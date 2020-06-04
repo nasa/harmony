@@ -8,6 +8,8 @@ import { RequestValidationError, NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
+import { belongsToGroup } from '../util/cmr';
+import env from '../util/env';
 
 /**
  * Analyze the links in the job to determine what links should be returned to
@@ -45,6 +47,7 @@ export interface JobListing {
  * @param {http.IncomingMessage} req The request sent by the client
  * @param {http.ServerResponse} res The response to send to the client
  * @param {Function} next The next function in the call chain
+ * @returns {Promise<void>} Resolves when the request is complete
  */
 export async function getJobsListing(
   req: HarmonyRequest, res: Response, next: Function,
@@ -125,17 +128,32 @@ export async function getJobStatus(
  *
  * @param req The request sent by the client
  * @param res The response to send to the client
- * @param {Function} next The next function in the call chain
+ * @param next The next function in the call chain
  * @returns {Promise<void>} Resolves when the request is complete
  */
 export async function cancelJob(req: HarmonyRequest, res: Response, next: Function): Promise<void> {
   const { jobID } = req.params;
   req.context.logger.info(`Cancel requested for job ${jobID} by user ${req.user}`);
+  const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
   try {
     validateJobId(jobID);
+    let job: Job;
+    let message;
     await db.transaction(async (tx) => {
-      const job = await Job.byUsernameAndRequestId(tx, req.user, jobID);
+      if (isAdmin) {
+        job = await Job.byRequestId(tx, jobID);
+        // An admin canceling their own request should be marked as canceled by user.
+        if (job && job.username === req.user) {
+          message = 'Canceled by user.';
+        } else {
+          message = 'Canceled by admin.';
+        }
+      } else {
+        job = await Job.byUsernameAndRequestId(tx, req.user, jobID);
+        message = 'Canceled by user.';
+      }
       if (job) {
+        job.updateStatus(JobStatus.CANCELED, message);
         const urlRoot = getRequestRoot(req);
         const serializedJob = job.serialize(urlRoot);
         serializedJob.links = getLinksForDisplay(serializedJob, urlRoot);
