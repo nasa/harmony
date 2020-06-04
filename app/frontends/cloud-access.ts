@@ -1,8 +1,12 @@
 import SecureTokenService from 'util/sts';
 import RequestContext from 'harmony/models/request-context';
 import { Credentials } from 'aws-sdk/clients/sts';
+import { ServerError } from 'harmony/util/errors';
+import HarmonyRequest from 'harmony/models/harmony-request';
+import { Response } from 'express';
 
 import env = require('util/env');
+
 const { sameRegionAccessRole, awsDefaultRegion } = env;
 
 // Allow tokens to last up to 8 hours - no reason to make this a configuration yet
@@ -15,7 +19,7 @@ const expirationSeconds = 3600 * 8;
  * @param {string} username The user making the request
  * @returns {Promise<Credentials>} credentials to act as that role
  */
-async function _assumeS3OutputsRole(
+async function assumeS3OutputsRole(
   context: RequestContext, username: string,
 ): Promise<Credentials> {
   const { id } = context;
@@ -33,23 +37,22 @@ async function _assumeS3OutputsRole(
 /**
  * Express.js handler that handles the cloud access JSON endpoint (/cloud-access)
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
+ * @param req The request sent by the client
+ * @param res The response to send to the client
+ * @param next The next function in the call chain
  * @returns {Promise<void>} Resolves when the request is complete
  */
-export async function cloudAccessJson(req, res): Promise<void> {
+export async function cloudAccessJson(
+  req: HarmonyRequest, res: Response, next: Function,
+): Promise<void> {
   req.context.logger = req.context.logger.child({ component: 'cloudAccess.cloudAccessJson' });
   req.context.logger.info(`Generating same region access keys for ${req.user}`);
   try {
-    const credentials = await _assumeS3OutputsRole(req.context, req.user);
+    const credentials = await assumeS3OutputsRole(req.context, req.user);
     res.send(credentials);
   } catch (e) {
     req.context.logger.error(e);
-    res.status(500);
-    res.json({
-      code: 'harmony:ServerError',
-      description: 'Error: Failed to assume role to generate access keys',
-    });
+    next(new ServerError('Failed to assume role to generate access keys.'));
   }
 }
 
@@ -74,7 +77,7 @@ export async function cloudAccessSh(req, res): Promise<void> {
   req.context.logger.info(`Generating same region access keys for ${req.user}`);
   res.set('Content-Type', 'application/x-sh');
   try {
-    const credentials = await _assumeS3OutputsRole(req.context, req.user);
+    const credentials = await assumeS3OutputsRole(req.context, req.user);
     let response = preamble;
     response += `# Keys will expire on ${credentials.Expiration.toUTCString()}\n\n`;
     for (const key of Object.keys(awsFieldMappings)) {
@@ -84,6 +87,6 @@ export async function cloudAccessSh(req, res): Promise<void> {
   } catch (e) {
     req.context.logger.error(e);
     res.status(500);
-    res.send('>&2 echo "Error: Failed to assume role to generate access keys"');
+    res.send('>&2 echo "Error: Failed to assume role to generate access keys."');
   }
 }
