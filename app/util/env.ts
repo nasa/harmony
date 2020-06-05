@@ -26,6 +26,7 @@ interface HarmonyEnv {
   oauthHost: string;
   useLocalstack: boolean;
   callbackUrlRoot: string;
+  pollInterval: number;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -89,5 +90,8 @@ envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.isDevelopment = process.env.NODE_ENV === 'development';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
 envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
+
+// Interval for polling for job completion
+envVars.pollInterval = 100;
 
 export = envVars;

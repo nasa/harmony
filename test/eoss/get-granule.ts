@@ -1,4 +1,4 @@
-import { describe, it, xit } from 'mocha';
+import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import hookServersStartStop from '../helpers/servers';
 import { eossGetGranule, hookEossGetGranule } from '../helpers/eoss';

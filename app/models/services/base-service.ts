@@ -140,8 +140,8 @@ export default class BaseService<ServiceParamType> {
     try {
       let job;
       do {
-        // Sleep 0.2s and poll for completion.  We could also use SNS for a more push-based approach
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        // Sleep and poll for completion.  We could also use SNS or similar for a faster response
+        await new Promise((resolve) => setTimeout(resolve, env.pollInterval));
         job = await Job.byRequestId(db, requestId);
       } while (!job.isComplete());
 

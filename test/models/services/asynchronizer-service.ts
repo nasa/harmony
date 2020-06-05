@@ -103,9 +103,9 @@ describe('Asynchronizer Service', function () {
 
     describe('when a service invocation calls back with a streaming response', function () {
       StubService.hookAsynchronized(alternateCallbacks(
-        { body: '["response1"]' },
-        { body: '["response2"]', headers: { 'Content-Disposition': 'attachment; filename="myfile.json"' } },
-        { body: '["response3"]', headers: { 'Content-Type': 'application/json' } },
+        { body: '["response1"]', headers: { 'Content-Disposition': 'attachment; filename="file1.json"' } },
+        { body: '["response2"]', headers: { 'Content-Disposition': 'attachment; filename="file2.json"' } },
+        { body: '["response3"]', headers: { 'Content-Disposition': 'attachment; filename="file3.json"', 'Content-Type': 'application/json' } },
       ));
       hookRangesetRequest();
       StubService.hookAsynchronizedServiceCompletion();
@@ -130,13 +130,9 @@ describe('Asynchronizer Service', function () {
         expect(contents.Body.toString('utf-8')).to.equal('["response1"]');
       });
 
-      it('derives a default uploaded file name from the granule name', function () {
-        expect(jobOutputLinks[0].href).to.match(/\/001_00_7f00ff_global_processed$/);
-      });
-
       describe('and the response contains a "Content-Disposition" header', function () {
         it('sets the uploaded file name to the value in the header', function () {
-          expect(jobOutputLinks[1].href).to.match(/\/myfile.json$/);
+          expect(jobOutputLinks[1].href).to.match(/\/file2.json$/);
         });
       });
 

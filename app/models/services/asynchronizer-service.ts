@@ -125,6 +125,8 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
       for (const granule of source.granules) {
         const op = this.operation.clone();
         op.isSynchronous = true;
+        op.requestId += `-${granule.id}`;
+        op.callback += `-${granule.id}`;
         op.requireSynchronous = true;
         op.sources = [{
           collection: source.collection,
