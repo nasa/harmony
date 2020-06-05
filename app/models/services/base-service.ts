@@ -33,19 +33,6 @@ export interface ServiceConfig<ServiceParamType> {
   message?: string;
 }
 
-export interface CallbackQueryItem {
-  type: string; // Mime type
-  temporal: string;
-  bbox: string;
-  href: string;
-}
-
-export interface CallbackQuery {
-  item?: CallbackQueryItem;
-  error?: string;
-  redirect?: string;
-}
-
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
  * callback plumbing.

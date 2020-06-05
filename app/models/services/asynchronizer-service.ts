@@ -1,5 +1,5 @@
 import PromiseQueue from 'p-queue';
-import BaseService, { ServiceConfig, CallbackQueryItem } from 'models/services/base-service';
+import BaseService, { ServiceConfig } from 'models/services/base-service';
 import { Logger } from 'winston';
 
 import { Job } from 'models/job';
@@ -9,7 +9,7 @@ import DataOperation from '../data-operation';
 import InvocationResult from './invocation-result';
 
 import db from '../../util/db';
-import { updateJobFields } from '../../backends/service-response';
+import { updateJobFields, CallbackQueryItem } from '../../backends/service-response';
 
 /**
  * A wrapper for a service that takes a service class for a service that is only able
@@ -166,10 +166,11 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
         temporal: granule.temporal && [granule.temporal.start, granule.temporal.end].join(','),
         bbox: granule.bbox && granule.bbox.join(','),
         href: null,
+        rel: 'data',
       };
 
       this.completedCount += 1;
-      const progress = Math.round(this.completedCount / this.totalCount);
+      const progress = Math.round(this.completedCount / this.totalCount).toString();
 
       const { stagingLocation } = this.operation;
 

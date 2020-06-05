@@ -1,10 +1,28 @@
 import { Response, Request } from 'express';
 import _ from 'lodash';
+import { Logger } from 'winston';
 import log from '../util/log';
 import { ServerError, RequestValidationError } from '../util/errors';
 import db from '../util/db';
-import { Job } from '../models/job';
+import { Job, JobLink, JobStatus } from '../models/job';
+import { objectStoreForProtocol } from '../util/object-store';
 
+export interface CallbackQueryItem {
+  href?: string;
+  type?: string; // Mime type
+  rel: string;
+  title?: string;
+  temporal?: string;
+  bbox?: string;
+}
+
+export interface CallbackQuery {
+  item?: CallbackQueryItem;
+  error?: string;
+  redirect?: string;
+  status?: string;
+  progress?: string;
+}
 
 /**
  * Helper for updating a job, given a query string provided in a callback
@@ -18,19 +36,20 @@ import { Job } from '../models/job';
  * @throws {ServerError} If job update fails unexpectedly
  */
 export function updateJobFields(
-  logger,
-  job,
-  query,
+  logger: Logger,
+  job: Job,
+  query: CallbackQuery,
 ): void { /* eslint-disable no-param-reassign */
   const { error, item, status, redirect, progress } = query;
   try {
     if (item) {
+      const link = _.pick(item, ['href', 'type', 'rel', 'title']) as JobLink;
       if (item.bbox) {
         const bbox = item.bbox.split(',').map(parseFloat);
         if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
           throw new TypeError('Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North');
         }
-        item.bbox = bbox;
+        link.bbox = bbox;
       }
       if (item.temporal) {
         const temporal = item.temporal.split(',').map((t) => Date.parse(t));
@@ -38,10 +57,10 @@ export function updateJobFields(
           throw new TypeError('Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End');
         }
         const [start, end] = temporal.map((t) => new Date(t).toISOString());
-        item.temporal = { start, end };
+        link.temporal = { start, end };
       }
-      item.rel = item.rel || 'data';
-      job.addLink(item);
+      link.rel = link.rel || 'data';
+      job.addLink(link);
     }
     if (progress) {
       if (Number.isNaN(+progress)) {
@@ -53,7 +72,7 @@ export function updateJobFields(
     if (error) {
       job.fail(error);
     } else if (status) {
-      job.updateStatus(status);
+      job.updateStatus(status as JobStatus);
     } else if (redirect) {
       job.addLink({ href: redirect, rel: 'data' });
       job.succeed();
@@ -80,6 +99,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
   const { requestId } = req.params;
   const logger = log.child({
     component: 'callback',
+    application: 'backend',
     requestId,
   });
   const trx = await db.transaction();
@@ -93,8 +113,42 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     return;
   }
 
+  const query = req.query as CallbackQuery;
+
   try {
-    updateJobFields(logger, job, req.query);
+    const queryOverrides = {} as CallbackQuery;
+    if (!query.item?.href && !query.error && req.headers['content-length'] && req.headers['content-length'] !== '0') {
+      // If the callback doesn't contain a redirect or error and has some content in the body,
+      // assume the content is a file result
+      const stagingLocation = job.getRelatedLinks('s3-access')[0].href;
+
+      const item = {} as CallbackQueryItem;
+      const store = objectStoreForProtocol(stagingLocation);
+      if (req.headers['content-type'] && req.headers['content-type'] !== 'application/x-www-form-urlencoded') {
+        item.type = req.headers['content-type'];
+      }
+      let filename = query.item?.title;
+      if (req.headers['content-disposition']) {
+        const filenameMatch = req.headers['content-disposition'].match(/filename="([^"]+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      if (!filename) {
+        throw new TypeError('Services providing output via POST body must send a filename via a "Content-Disposition" header or "item[title]" query parameter');
+      }
+      item.href = stagingLocation + filename;
+      logger.info(`Staging to ${item.href}`);
+      await store.upload(req, item.href, +req.headers['content-length'], item.type);
+      queryOverrides.item = item;
+      if (!job.isAsync) {
+        queryOverrides.status = 'successful';
+      }
+    }
+    const fields = _.merge({}, query, queryOverrides);
+    logger.info(`Updating job ${job.id} with fields: ${JSON.stringify(fields)}`);
+
+    updateJobFields(logger, job, fields);
     await job.save(trx);
     await trx.commit();
     res.status(200);
@@ -104,6 +158,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     const status = e.code || (e instanceof TypeError ? 400 : 500);
     res.status(status);
     res.json({ code: status, message: e.message });
+    logger.error(e);
   } finally {
     if (job.isComplete()) {
       const durationMs = +job.updatedAt - +job.createdAt;
