@@ -237,7 +237,11 @@ export class Job extends Record {
    * @param link - Adds a link to the list of links for the object.
    */
   addLink(link: JobLink): void {
-    this.links.push(link);
+    if (!this.isComplete()) {
+      this.links.push(link);
+    } else {
+      throw new RequestValidationError(`Job links cannot be added for a job in the ${this.status} state.`);
+    }
   }
 
   /**
@@ -282,15 +286,6 @@ export class Job extends Record {
   }
 
   /**
-   * Returns true if the status of a job can be updated. We do not allow updating the
-   * status of a request that is already in a terminal state.
-   *
-   */
-  canUpdateStatus(): boolean {
-    return terminalStates.indexOf(this.status) === -1;
-  }
-
-  /**
    * Update the status and status message of a job.  If a null or default message is provided,
    * will use a default message corresponding to the status.
    * You must call `#save` to persist the change
@@ -299,7 +294,7 @@ export class Job extends Record {
    * @param message - (optional) a human-readable status message
    */
   updateStatus(status: JobStatus, message?: string): void {
-    if (this.canUpdateStatus()) {
+    if (!this.isComplete()) {
       this.status = status;
       if (message) {
         // Update the message if a new one was provided
@@ -325,7 +320,7 @@ export class Job extends Record {
    * @returns true if the job is complete
    */
   isComplete(): boolean {
-    return this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.FAILED;
+    return terminalStates.indexOf(this.status) !== -1;
   }
 
   /**
