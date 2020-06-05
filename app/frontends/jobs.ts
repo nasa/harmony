@@ -104,10 +104,16 @@ export async function getJobStatus(
 ): Promise<void> {
   const { jobID } = req.params;
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
+  const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
   try {
     validateJobId(jobID);
+    let job: Job;
     await db.transaction(async (tx) => {
-      const job = await Job.byUsernameAndRequestId(tx, req.user, jobID);
+      if (isAdmin) {
+        job = await Job.byRequestId(tx, jobID);
+      } else {
+        job = await Job.byUsernameAndRequestId(tx, req.user, jobID);
+      }
       if (job) {
         const urlRoot = getRequestRoot(req);
         const serializedJob = job.serialize(urlRoot);
