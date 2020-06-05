@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -e
+
+SELF=$(basename $0)
+
+function usage
+{
+  echo "Usage: $SELF { development | test } [overwrite]"
+}
+
+env=$1
+overwrite=$2
+
+if [ "$env" != "development" ] && [ "$env" != "test" ]; then
+  usage && exit 1
+fi
+
+database=db/$env.sqlite3
+
+if [ -f $database ]; then
+  if [ "$overwrite" == "overwrite" ]; then
+    rm $database;
+  else
+    echo "Error: $database already exists." && exit 1
+  fi
+fi
+
+cat db/db.sql | sqlite3 $database

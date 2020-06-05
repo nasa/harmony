@@ -5,6 +5,8 @@ import { stub } from 'sinon';
 
 import db from 'harmony/util/db';
 
+import { exec } from 'child_process';
+
 const tables = ['jobs'];
 
 /**
@@ -16,10 +18,18 @@ export async function truncateAll(): Promise<void> {
   await Promise.all(tables.map((t) => db(t).truncate()));
 }
 
+const createDatabaseCommand = 'bin/create-database test overwrite';
+
+/**
+ * Recreates the test database
+ * Note this is done because database migrations do not work for sqlite
+ */
+function recreateDatabase(): void {
+  exec(createDatabaseCommand);
+}
+
 before(async function () {
-  await db.migrate.latest();
-  // Truncate all tables
-  await truncateAll();
+  recreateDatabase();
 });
 
 /**
