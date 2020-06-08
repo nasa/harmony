@@ -161,8 +161,7 @@ export async function cancelJob(req: HarmonyRequest, res: Response, next: Functi
       if (job) {
         job.updateStatus(JobStatus.CANCELED, message);
         await job.save(tx);
-        const urlRoot = getRequestRoot(req);
-        res.redirect(`${urlRoot}/jobs/${jobID}`);
+        res.redirect(`/jobs/${jobID}`);
       } else {
         throw new NotFoundError(`Unable to find job ${jobID}`);
       }

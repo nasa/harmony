@@ -108,20 +108,23 @@ To re-record everything, remove the fixtures directory and run the test suite. T
 
 ### Setup the Database
 
-To set a sqlite3 database with the correct schema for local execution, run
+To setup a sqlite3 database with the correct schema for local execution, run
 
 ```
-$ npx knex --cwd db migrate:latest
+$ bin/create-database development
 ```
 
-This should be run any time the versioned contents of the `db/migrations` directory change.
+This should be run any time the versioned contents of the `db/db.sql` file change.
 
 This will create a file, `db/development.sqlite3`, which will contain your local data.  You can delete the above file to remove
 all existing development data.
 
-In production environments, we use PostgreSQL.  If you have a PostgreSQL database, you can run create and/or migrate your
-database by setting.
-`NODE_ENV=production` and `DATABASE_URL=postgresql://your-postgres-connection-url`.
+In production environments, we use PostgreSQL and use database migrations to modify the schema.  If you have a PostgreSQL
+database, you can create and/or migrate your database by setting `NODE_ENV=production` and
+`DATABASE_URL=postgresql://your-postgres-connection-url` and running:
+```
+$ npx knex --cwd db migrate:latest
+```
 
 ### Run Harmony
 

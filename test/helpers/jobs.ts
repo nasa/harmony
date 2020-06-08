@@ -69,9 +69,21 @@ export function jobStatus(app: Express.Application, { jobID }): Test {
   return request(app).get(`/jobs/${jobID}`);
 }
 
+/**
+ * Submits a cancel job request as the given user
+ *
+ * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {Object} [options.jobID] The job ID
+ * @returns {void}
+ */
+export function cancelJob(app: Express.Application, { jobID }): Test {
+  return request(app).post(`/jobs/${jobID}/cancel`);
+}
+
 export const hookJobListing = hookRequest.bind(this, jobListing);
 export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);
 export const hookJobStatus = hookRequest.bind(this, jobStatus);
+export const hookCancelJob = hookRequest.bind(this, cancelJob);
 
 /**
  * Given a string returns a new string with all characters escaped such that the string
