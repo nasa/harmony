@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Ensure we're immediately using the right DB
 
 import { before, after, beforeEach, afterEach } from 'mocha';
@@ -6,7 +7,6 @@ import { stub } from 'sinon';
 import db from 'harmony/util/db';
 
 import { exec } from 'child_process';
-// import logger from 'harmony/util/log';
 
 const tables = ['jobs'];
 
