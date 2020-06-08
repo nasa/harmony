@@ -6,6 +6,7 @@ import { stub } from 'sinon';
 import db from 'harmony/util/db';
 
 import { exec } from 'child_process';
+// import logger from 'harmony/util/log';
 
 const tables = ['jobs'];
 
@@ -25,7 +26,13 @@ const createDatabaseCommand = './bin/create-database -o test';
  * Note this is done because database migrations do not work for sqlite
  */
 function recreateDatabase(): void {
-  exec(createDatabaseCommand);
+  exec(createDatabaseCommand, (error, stdout, stderr) => {
+    if (error) {
+      console.log(`Failed to recreate database: [${error}]`);
+    }
+    console.log(`create database stdout: [${stdout}]`);
+    console.log(`create database stderr: [${stderr}]`);
+  });
 }
 
 before(async function () {
