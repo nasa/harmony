@@ -2,7 +2,7 @@ import { JobRecord, JobStatus, Job } from 'harmony/models/job';
 import { v4 as uuid } from 'uuid';
 import hookServersStartStop from 'harmony-test/servers';
 import { hookTransaction } from 'harmony-test/db';
-import { jobsEqual, cancelJob, hookCancelJob } from 'harmony-test/jobs';
+import { jobsEqual, cancelJob, hookCancelJob, adminUsername } from 'harmony-test/jobs';
 import { expect } from 'chai';
 import _ from 'lodash';
 import { hookRedirect } from 'harmony-test/hooks';
@@ -33,6 +33,7 @@ describe('Canceling a job', function () {
   before(async function () {
     await new Job(aJob).save(this.trx);
     this.trx.commit();
+    this.trx = null;
   });
   const jobID = aJob.requestId;
   describe('For a user who is not logged in', function () {
@@ -75,7 +76,7 @@ describe('Canceling a job', function () {
       });
       it('sets the message to canceled by user', function () {
         const actualJob = JSON.parse(this.res.text);
-        expect(actualJob.status).to.eql('canceled');
+        expect(actualJob.message).to.eql('Canceled by user.');
       });
       it('does not modify any of the other job fields', function () {
         const actualJob: Job = JSON.parse(this.res.text);
@@ -89,7 +90,152 @@ describe('Canceling a job', function () {
     });
   });
 
-  describe('For a logged-in user who does not own the job', function () {
+  describe('For a logged-in admin who does not own the job', function () {
+    const joeJob2 = _.cloneDeep(aJob);
+    joeJob2.requestId = uuid().toString();
+    hookTransaction();
+    before(async function () {
+      await new Job(joeJob2).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+    hookCancelJob({ jobID: joeJob2.requestId, username: adminUsername });
+    it('returns a redirect to the canceled job', function () {
+      expect(this.res.statusCode).to.equal(302);
+      expect(this.res.headers.location).to.include(`/jobs/${joeJob2.requestId}`);
+    });
+    describe('When following the redirect to the canceled job', function () {
+      hookRedirect(adminUsername);
+      it('returns an HTTP success response', function () {
+        expect(this.res.statusCode).to.equal(200);
+      });
+
+      it('returns a single job record in JSON format', function () {
+        const actualJob = JSON.parse(this.res.text);
+        const expectedJobKeys = [
+          'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'jobID',
+        ];
+        expect(Object.keys(actualJob)).to.eql(expectedJobKeys);
+      });
+
+      it('changes the status to canceled', function () {
+        const actualJob = JSON.parse(this.res.text);
+        expect(actualJob.status).to.eql('canceled');
+      });
+      it('sets the message to canceled by admin', function () {
+        const actualJob = JSON.parse(this.res.text);
+        expect(actualJob.message).to.eql('Canceled by admin.');
+      });
+      it('does not modify any of the other job fields', function () {
+        const actualJob: Job = JSON.parse(this.res.text);
+        const expectedJob: JobRecord = _.cloneDeep(joeJob2);
+        expectedJob.message = 'foo';
+        actualJob.message = 'foo';
+        actualJob.status = JobStatus.CANCELED;
+        expectedJob.status = JobStatus.CANCELED;
+        expect(jobsEqual(expectedJob, actualJob)).to.be.true;
+      });
+    });
+  });
+
+  describe('For a logged-in admin who does not own the job', function () {
+    const joeJob2 = _.cloneDeep(aJob);
+    joeJob2.requestId = uuid().toString();
+    hookTransaction();
+    before(async function () {
+      await new Job(joeJob2).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+    hookCancelJob({ jobID: joeJob2.requestId, username: adminUsername });
+    it('returns a redirect to the canceled job', function () {
+      expect(this.res.statusCode).to.equal(302);
+      expect(this.res.headers.location).to.include(`/jobs/${joeJob2.requestId}`);
+    });
+    describe('When following the redirect to the canceled job', function () {
+      hookRedirect(adminUsername);
+      it('returns an HTTP success response', function () {
+        expect(this.res.statusCode).to.equal(200);
+      });
+
+      it('returns a single job record in JSON format', function () {
+        const actualJob = JSON.parse(this.res.text);
+        const expectedJobKeys = [
+          'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'jobID',
+        ];
+        expect(Object.keys(actualJob)).to.eql(expectedJobKeys);
+      });
+
+      it('changes the status to canceled', function () {
+        const actualJob = JSON.parse(this.res.text);
+        expect(actualJob.status).to.eql('canceled');
+      });
+      it('sets the message to canceled by admin', function () {
+        const actualJob = JSON.parse(this.res.text);
+        expect(actualJob.message).to.eql('Canceled by admin.');
+      });
+      it('does not modify any of the other job fields', function () {
+        const actualJob: Job = JSON.parse(this.res.text);
+        const expectedJob: JobRecord = _.cloneDeep(joeJob2);
+        expectedJob.message = 'foo';
+        actualJob.message = 'foo';
+        actualJob.status = JobStatus.CANCELED;
+        expectedJob.status = JobStatus.CANCELED;
+        expect(jobsEqual(expectedJob, actualJob)).to.be.true;
+      });
+    });
+  });
+
+  describe('For a logged-in admin who owns the job', function () {
+    const adminJob = _.cloneDeep(aJob);
+    adminJob.username = adminUsername;
+    adminJob.requestId = uuid().toString();
+    hookTransaction();
+    before(async function () {
+      await new Job(adminJob).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+    hookCancelJob({ jobID: adminJob.requestId, username: adminUsername });
+    it('returns a redirect to the canceled job', function () {
+      expect(this.res.statusCode).to.equal(302);
+      expect(this.res.headers.location).to.include(`/jobs/${adminJob.requestId}`);
+    });
+    describe('When following the redirect to the canceled job', function () {
+      hookRedirect(adminUsername);
+      it('returns an HTTP success response', function () {
+        expect(this.res.statusCode).to.equal(200);
+      });
+
+      it('returns a single job record in JSON format', function () {
+        const actualJob = JSON.parse(this.res.text);
+        const expectedJobKeys = [
+          'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'jobID',
+        ];
+        expect(Object.keys(actualJob)).to.eql(expectedJobKeys);
+      });
+
+      it('changes the status to canceled', function () {
+        const actualJob = JSON.parse(this.res.text);
+        expect(actualJob.status).to.eql('canceled');
+      });
+      it('sets the message to canceled by user', function () {
+        const actualJob = JSON.parse(this.res.text);
+        expect(actualJob.message).to.eql('Canceled by user.');
+      });
+      it('does not modify any of the other job fields', function () {
+        const actualJob: Job = JSON.parse(this.res.text);
+        const expectedJob: JobRecord = _.cloneDeep(adminJob);
+        expectedJob.message = 'foo';
+        actualJob.message = 'foo';
+        actualJob.status = JobStatus.CANCELED;
+        expectedJob.status = JobStatus.CANCELED;
+        expect(jobsEqual(expectedJob, actualJob)).to.be.true;
+      });
+    });
+  });
+
+  describe('For a logged-in non-admin user who does not own the job', function () {
     hookCancelJob({ jobID, username: 'jill' });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(404);
@@ -100,6 +246,108 @@ describe('Canceling a job', function () {
       expect(response).to.eql({
         code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${jobID}` });
+    });
+  });
+
+  describe('when the job does not exist', function () {
+    const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
+    hookCancelJob({ jobID: idDoesNotExist, username: 'joe' });
+    it('returns a 404 HTTP Not found response', function () {
+      expect(this.res.statusCode).to.equal(404);
+    });
+
+    it('returns a JSON error response', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.NotFoundError',
+        description: `Error: Unable to find job ${idDoesNotExist}` });
+    });
+  });
+
+  describe('when the jobID is in an invalid format', function () {
+    const notAJobID = 'foo';
+    hookCancelJob({ jobID: notAJobID, username: 'joe' });
+    it('returns a 400 HTTP bad request', function () {
+      expect(this.res.statusCode).to.equal(400);
+    });
+
+    it('returns a JSON error response', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: jobID foo is in invalid format.' });
+    });
+  });
+
+  describe('when canceling a successful job', function () {
+    const successfulJob = _.cloneDeep(aJob);
+    successfulJob.requestId = uuid().toString();
+    successfulJob.status = JobStatus.SUCCESSFUL;
+    hookTransaction();
+    before(async function () {
+      await new Job(successfulJob).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+
+    hookCancelJob({ jobID: successfulJob.requestId, username: 'joe' });
+    it('returns a 400 HTTP bad request', function () {
+      expect(this.res.statusCode).to.equal(400);
+    });
+
+    it('returns a JSON error response indicating the job cannot be canceled', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: Job status cannot be updated from successful to canceled.' });
+    });
+  });
+
+  describe('when canceling a canceled job', function () {
+    const canceledJob = _.cloneDeep(aJob);
+    canceledJob.requestId = uuid().toString();
+    canceledJob.status = JobStatus.CANCELED;
+    hookTransaction();
+    before(async function () {
+      await new Job(canceledJob).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+
+    hookCancelJob({ jobID: canceledJob.requestId, username: 'joe' });
+    it('returns a 400 HTTP bad request', function () {
+      expect(this.res.statusCode).to.equal(400);
+    });
+
+    it('returns a JSON error response indicating the job cannot be canceled', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: Job status cannot be updated from canceled to canceled.' });
+    });
+  });
+
+  describe('when canceling a failed job', function () {
+    const failedJob = _.cloneDeep(aJob);
+    failedJob.requestId = uuid().toString();
+    failedJob.status = JobStatus.FAILED;
+    hookTransaction();
+    before(async function () {
+      await new Job(failedJob).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+
+    hookCancelJob({ jobID: failedJob.requestId, username: 'joe' });
+    it('returns a 400 HTTP bad request', function () {
+      expect(this.res.statusCode).to.equal(400);
+    });
+
+    it('returns a JSON error response indicating the job cannot be canceled', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: Job status cannot be updated from failed to canceled.' });
     });
   });
 });

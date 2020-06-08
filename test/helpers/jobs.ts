@@ -10,6 +10,8 @@ import db from '../../app/util/db';
 import { hookRequest } from './hooks';
 import { truncateAll } from './db';
 
+export const adminUsername = 'adam';
+
 /**
  * Returns true if the passed in job record matches the serialized Job
  * @param {Object} jobRecord a job record
