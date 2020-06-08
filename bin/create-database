@@ -10,11 +10,11 @@ function usage
 }
 
 while [ "$1" != "development" ] && [ "$1" != "test" ] && [ "$1" != "" ]; do
-    case $1 in
-        -o | --overwrite )  overwrite=true ;;
-        * )                 usage && exit 1 ;;
-    esac
-    shift
+  case $1 in
+      -o | --overwrite )  overwrite=true ;;
+      * )                 usage && exit 1 ;;
+  esac
+  shift
 done
 
 env=$1

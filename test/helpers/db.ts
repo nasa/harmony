@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 // Ensure we're immediately using the right DB
 
 import { before, after, beforeEach, afterEach } from 'mocha';
@@ -7,6 +6,7 @@ import { stub } from 'sinon';
 import db from 'harmony/util/db';
 
 import { exec } from 'child_process';
+import logger from 'harmony/util/log';
 
 const tables = ['jobs'];
 
@@ -28,10 +28,10 @@ const createDatabaseCommand = './bin/create-database -o test';
 function recreateDatabase(): void {
   exec(createDatabaseCommand, (error, stdout, stderr) => {
     if (error) {
-      console.log(`Failed to recreate database: [${error}]`);
+      logger.warn(`Failed to recreate database: [${error}]`);
+      logger.warn(`create database stdout: [${stdout}]`);
+      logger.warn(`create database stderr: [${stderr}]`);
     }
-    console.log(`create database stdout: [${stdout}]`);
-    console.log(`create database stderr: [${stderr}]`);
   });
 }
 
