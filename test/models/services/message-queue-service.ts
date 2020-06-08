@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import hookServersStartStop from 'harmony-test/servers';
-import { defaultVersion, hookRangesetRequest } from 'harmony-test/ogc-api-coverages';
+import hookServersStartStop from '../../helpers/servers';
+import { defaultVersion, hookRangesetRequest } from '../../helpers/ogc-api-coverages';
 import { hookStubSend } from '../../helpers/message-queue';
 
 describe('Message Queue Service', function () {

@@ -139,7 +139,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
       }
       item.href = stagingLocation + filename;
       logger.info(`Staging to ${item.href}`);
-      await store.upload(req, item.href, +req.headers['content-length'], item.type);
+      await store.upload(req, item.href, +req.headers['content-length'], item.type || query.item?.type);
       queryOverrides.item = item;
       if (!job.isAsync) {
         queryOverrides.status = 'successful';

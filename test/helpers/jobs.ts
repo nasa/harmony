@@ -188,9 +188,15 @@ export function itIncludesPagingRelations(
  * Adds before / after hooks to create a job with the given properties, saving it
  * to the DB, and storing it in `this.job`
  * @param props - properties to set on the job
+ * @param beforeFn - The mocha `before` function to use, i.e. `before` or `beforeEach`
+ * @param afterFn - The mocha `after` function to use, i.e. `after` or `afterEach`
  */
-export function hookJobCreation(props: Partial<JobRecord> = {}): void {
-  before(async function () {
+export function hookJobCreation(
+  props: Partial<JobRecord> = {},
+  beforeFn = before,
+  afterFn = after,
+): void {
+  beforeFn(async function () {
     this.job = new Job({
       username: 'anonymous',
       requestId: uuid().toString(),
@@ -200,8 +206,17 @@ export function hookJobCreation(props: Partial<JobRecord> = {}): void {
     this.job.save(db);
   });
 
-  after(async function () {
+  afterFn(async function () {
     delete this.job;
     await truncateAll();
   });
+}
+
+/**
+ * Adds beforeEach / afterEach hooks to create a job with the given properties, saving it
+ * to the DB, and storing it in `this.job`
+ * @param props - properties to set on the job
+ */
+export function hookJobCreationEach(props: Partial<JobRecord> = {}): void {
+  hookJobCreation(props, beforeEach, afterEach);
 }
