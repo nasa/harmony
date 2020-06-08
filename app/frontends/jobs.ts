@@ -15,9 +15,9 @@ import env from '../util/env';
  * Analyze the links in the job to determine what links should be returned to
  * the end user. If any of the output links point to an S3 location add
  * links documenting how to obtain in region S3 access.
- * @param {Job} job the serialized job
- * @param {string} urlRoot the root URL to be used when constructing links
- * @returns {Object} the job with appropriate links based on the type of links
+ * @param job the serialized job
+ * @param urlRoot the root URL to be used when constructing links
+ * @returns a list of job links
  */
 function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
   let { links } = job;
@@ -44,10 +44,10 @@ export interface JobListing {
 /**
  * Express.js handler that handles the jobs listing endpoint (/jobs)
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @param {Function} next The next function in the call chain
- * @returns {Promise<void>} Resolves when the request is complete
+ * @param req The request sent by the client
+ * @param res The response to send to the client
+ * @param next The next function in the call chain
+ * @returns Resolves when the request is complete
  */
 export async function getJobsListing(
   req: HarmonyRequest, res: Response, next: Function,
@@ -94,10 +94,10 @@ function validateJobId(jobID: string): void {
 /**
  * Express.js handler that returns job status for a single job (/jobs/{jobID})
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @param {Function} next The next function in the call chain
- * @returns {Promise<void>} Resolves when the request is complete
+ * @param req The request sent by the client
+ * @param res The response to send to the client
+ * @param next The next function in the call chain
+ * @returns Resolves when the request is complete
  */
 export async function getJobStatus(
   req: HarmonyRequest, res: Response, next: Function,
@@ -130,12 +130,13 @@ export async function getJobStatus(
 }
 
 /**
- * Express.js handler that returns job status for a single job (/jobs/{jobID})
+ * Express.js handler that cancels a single job (POST /jobs/{jobID}). A user can cancel their own
+ * request. An admin can cancel any user's request.
  *
  * @param req The request sent by the client
  * @param res The response to send to the client
  * @param next The next function in the call chain
- * @returns {Promise<void>} Resolves when the request is complete
+ * @returns Resolves when the request is complete
  */
 export async function cancelJob(req: HarmonyRequest, res: Response, next: Function): Promise<void> {
   const { jobID } = req.params;
