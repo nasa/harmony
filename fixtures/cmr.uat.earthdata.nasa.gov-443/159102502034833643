@@ -1,0 +1,25 @@
+GET /search/variables.umm_json_v1_6?concept_id=V1229850953-POCUMULUS&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.6; charset=utf-8
+content-length: 965
+connection: close
+date: Mon, 01 Jun 2020 15:23:37 GMT
+set-cookie: AWSALB=UpX/NzECjMsjr2JwCLv8f9AM56fGrsVPqNBR30GD5JPAzCGCbRs8zXeq2Uexw7N/3Gy/JfEJGEbgHcq/xMnPbLKqXnmjN/HNPTki+QOU02qIR6vn2NEsBehAnr9n; Expires=Mon, 08 Jun 2020 15:23:37 GMT; Path=/
+set-cookie: AWSALBCORS=UpX/NzECjMsjr2JwCLv8f9AM56fGrsVPqNBR30GD5JPAzCGCbRs8zXeq2Uexw7N/3Gy/JfEJGEbgHcq/xMnPbLKqXnmjN/HNPTki+QOU02qIR6vn2NEsBehAnr9n; Expires=Mon, 08 Jun 2020 15:23:37 GMT; Path=/; SameSite=None
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out
+access-control-allow-origin: *
+cmr-hits: 1
+cmr-took: 22
+cmr-request-id: 600a1748-2a37-4ed7-9df4-3115f1372f6e
+x-request-id: 600a1748-2a37-4ed7-9df4-3115f1372f6e
+server: Jetty(9.4.z-SNAPSHOT)
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+x-cache: Miss from cloudfront
+via: 1.1 cf54e229d150df008a9b71595fbee9d8.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR52-C3
+x-amz-cf-id: eoS-wTyIVrphfnSo5vhbBu1E15VCEWNDc72vn-znBX3fLR4Oh6KuVw==
+
+{"hits":1,"took":21,"items":[{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"POCUMULUS","user-id":"mgangl","native-id":"v1","concept-id":"V1229850953-POCUMULUS","revision-date":"2019-10-31T16:29:25Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"int16","Offset":273.149994,"Scale":0.00999999978,"Characteristics":{"GroupPath":"/sea_surface_temperature"},"FillValues":[{"Value":-32768,"Type":"ANCILLARY_FILLVALUE"}],"Sets":[{"Name":"AMSR2-REMSS-L2P-v8a","Type":"General","Size":16,"Index":3}],"Dimensions":[{"Name":"lon","Size":4193,"Type":"LONGITUDE_DIMENSION"},{"Name":"lat","Size":4193,"Type":"LATITUDE_DIMENSION"}],"Definition":"sea surface sub-skin temperature in units of K","Name":"sea_surface_temperature","AcquisitionSourceName":"AMSR2","Units":"K","LongName":"sea surface sub-skin temperature"},"associations":{"collections":[{"concept-id":"C1225996408-POCUMULUS"}]}}]}

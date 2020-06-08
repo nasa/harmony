@@ -1,11 +1,14 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
+import _ from 'lodash';
+import hookCmr from '../helpers/stub-cmr';
 import isUUID from '../../app/util/uuid';
 import { itIncludesRequestUrl } from '../helpers/jobs';
 import { hookSignS3Object, hookMockS3 } from '../helpers/object-store';
 import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
+
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -330,6 +333,169 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  const cmrCollResp = [
+    {
+      processing_level_id: '2P',
+      time_start: '2012-07-02T19:00:44.000Z',
+      version_id: '1',
+      updated: '2017-09-18T17:57:41.242Z',
+      dataset_id: 'PODAAC-GHAM2-2PR8A',
+      has_spatial_subsetting: true,
+      has_transforms: false,
+      associations: {
+        variables: [
+          'V1229850953-POCUMULUS',
+        ],
+        services: ['S1233603906-EEDTEST'],
+      },
+      has_variables: true,
+      data_center: 'POCUMULUS',
+      short_name: 'AMSR2-REMSS-L2P-v8a',
+      organizations: ['PO.DAAC', 'Remote Sensing Systems'],
+      title: 'PODAAC-GHAM2-2PR8A',
+      coordinate_system: 'CARTESIAN',
+      summary: 'A summary',
+      orbit_parameters: {},
+      id: 'C1225996408-POCUMULUS',
+      has_formats: true,
+      original_format: 'UMM_JSON',
+      archive_center: 'PO.DAAC',
+      has_temporal_subsetting: false,
+      browse_flag: false,
+      online_access_flag: true,
+      links: [
+        {
+          rel: 'http://esipfed.org/ns/fedsearch/1.1/data#',
+          hreflang: 'en-US',
+          href: 'http://data.nodc.noaa.gov/cgi-bin/nph-dods/ghrsst/GDS2/L2P/AMSR2/REMSS/v8a/',
+        },
+      ],
+    },
+  ];
+
+  const cmrGranuleResp = {
+    hits: 1,
+    granules: [
+      {
+        time_start: '2018-01-01T04:16:00.000Z',
+        dataset_id: 'PODAAC-GHAM2-2PR8A',
+        data_center: 'POCUMULUS',
+        title: '20180101041600-REMSS-L2P_GHRSST-SSTsubskin-AMSR2-L2B_rt_r29920-v02.0-fv01.0.nc',
+        coordinate_system: 'CARTESIAN',
+        day_night_flag: 'UNSPECIFIED',
+        time_end: '2018-01-01T05:54:08.000Z',
+        id: 'G1226018995-POCUMULUS',
+        original_format: 'UMM_JSON',
+        granule_size: '1.0242048E7',
+        browse_flag: false,
+        collection_concept_id: 'C1225996408-POCUMULUS',
+        online_access_flag: true,
+        links: [
+          {
+            rel: 'http://esipfed.org/ns/fedsearch/1.1/data#',
+            hreflang: 'en-US',
+            href: 'http://data.nodc.noaa.gov/cgi-bin/nph-dods/ghrsst/foo',
+          },
+        ],
+      },
+    ],
+  };
+
+  describe('when the granule spatial metadata is defined by polygons instead of a bbox', function () {
+    const query = {
+      granuleid: 'G1226018995-POCUMULUS',
+    };
+
+    const cmrResp = _.set(_.cloneDeep(cmrGranuleResp), ['granules', 0, 'polygons'], [['0 35 0 40 10 40 10 35 0 35']]);
+    hookCmr('queryGranulesForCollection', cmrResp);
+    describe('calling the backend service', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+
+      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+
+      it('adds a bbox field to the granule', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.granules[0].bbox).to.eql([35, 0, 40, 10.00933429]);
+      });
+    });
+  });
+
+  describe('when the granule spatial metadata is defined by lines instead of a bbox', function () {
+    const query = {
+      granuleid: 'G1226018995-POCUMULUS',
+    };
+
+    const cmrResp = _.set(_.cloneDeep(cmrGranuleResp), ['granules', 0, 'lines'], ['0 35 10 50']);
+    hookCmr('queryGranulesForCollection', cmrResp);
+    describe('calling the backend service', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+
+      it('adds a bbox field to the granule', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.granules[0].bbox).to.eql([35, 0, 50, 10]);
+      });
+    });
+  });
+
+  describe('when the granule spatial metadata is defined by points instead of a bbox', function () {
+    const query = {
+      granuleid: 'G1226018995-POCUMULUS',
+    };
+
+    const cmrResp = _.set(_.cloneDeep(cmrGranuleResp), ['granules', 0, 'points'], ['0, 35']);
+
+    describe('calling the backend service', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookCmr('queryGranulesForCollection', cmrResp);
+      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+
+      it('adds a bbox field to the granule', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.granules[0].bbox).to.eql([34.99999999, -1e-8, 35.00000001, 1e-8]);
+      });
+    });
+  });
+
+  describe('when the granule spatial metadata does not exist', function () {
+    const query = {
+      granuleid: 'G1226018995-POCUMULUS',
+    };
+
+    describe('calling the backend service', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      const cmrCollSpatialResp = _.set(_.cloneDeep(cmrCollResp), [0, 'boxes'], ['-70 -120 70 120']);
+
+      hookCmr('getCollectionsByIds', cmrCollSpatialResp);
+      hookCmr('queryGranulesForCollection', cmrGranuleResp);
+      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+      describe('and the collection has spatial metadata', function () {
+        it('uses the collection spatial', function () {
+          const source = this.service.operation.sources[0];
+          expect(source.granules[0].bbox).to.eql([-120, -70, 120, 70]);
+        });
+      });
+    });
+  });
+
+  describe('when the granule spatial metadata does not exist', function () {
+    const query = {
+      granuleid: 'G1226018995-POCUMULUS',
+    };
+
+    describe('calling the backend service', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookCmr('getCollectionsByIds', cmrCollResp);
+      hookCmr('queryGranulesForCollection', cmrGranuleResp);
+      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+      describe('and the collection has no spatial metadata', function () {
+        it('uses a whole world bounding box', function () {
+          const source = this.service.operation.sources[0];
+          expect(source.granules[0].bbox).to.eql([-180, -90, 180, 90]);
+        });
+      });
+    });
+  });
 
   describe('when requesting output formats', function () {
     const tiff = 'image/tiff';
