@@ -26,7 +26,7 @@ interface HarmonyEnv {
   oauthHost: string;
   useLocalstack: boolean;
   callbackUrlRoot: string;
-  pollInterval: number;
+  syncRequestPollIntervalMs: number;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -82,6 +82,7 @@ function makeConfigVar(envName: string, defaultValue?: string|number): void {
   ['CMR_ENDPOINT', 'https://cmr.uat.earthdata.nasa.gov'],
   ['OAUTH_HOST', 'https://uat.urs.earthdata.nasa.gov'],
   ['CALLBACK_URL_ROOT', null],
+  ['SYNC_REQUEST_POLL_INTERVAL_MS', 100],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases
@@ -90,8 +91,5 @@ envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.isDevelopment = process.env.NODE_ENV === 'development';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
 envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
-
-// Interval for polling for job completion
-envVars.pollInterval = 100;
 
 export = envVars;

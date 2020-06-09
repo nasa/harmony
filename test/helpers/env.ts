@@ -13,5 +13,5 @@ use(chaiAsPromised);
 before(() => {
   stub(env, 'harmonyClientId').get(() => 'harmony-test');
   stub(env, 'callbackUrlRoot').get(() => 'http://localhost:3001');
-  stub(env, 'pollInterval').get(() => 0);
+  stub(env, 'syncRequestPollIntervalMs').get(() => 0);
 });

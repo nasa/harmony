@@ -157,7 +157,8 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     await trx.rollback();
     const status = e.code || (e instanceof TypeError ? 400 : 500);
     res.status(status);
-    res.json({ code: status, message: e.message });
+    const errorCode = status === 400 ? 'harmony.RequestValidationError' : 'harmony.UnknownError';
+    res.json({ code: errorCode, message: e.message });
     logger.error(e);
   } finally {
     if (job.isComplete()) {

@@ -108,7 +108,7 @@ describe('Jobs listing route', function () {
         expect(containsJob(buzzJob1, listing)).to.be.false;
       });
 
-      it('does not synchronous jobs', function () {
+      it('does not return synchronous jobs', function () {
         const listing = JSON.parse(this.res.text);
         expect(containsJob(woodySyncJob, listing)).to.be.false;
       });

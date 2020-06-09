@@ -280,7 +280,7 @@ describe('Backend Callbacks', function () {
       it('returns an error to the service performing the callback', async function () {
         expect(this.callbackRes.statusCode).to.equal(400);
         expect(JSON.parse(this.callbackRes.text)).to.eql({
-          code: 400,
+          code: 'harmony.RequestValidationError',
           message: 'Services providing output via POST body must send a filename via a "Content-Disposition" header or "item[title]" query parameter',
         });
       });
@@ -409,7 +409,10 @@ describe('Backend Callbacks', function () {
         const response = await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z,broken' } });
         const error = JSON.parse((response.error as HTTPError).text);
         expect(response.status).to.equal(400);
-        expect(error).to.eql({ code: 400, message: 'Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End' });
+        expect(error).to.eql({
+          code: 'harmony.RequestValidationError',
+          message: 'Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End',
+        });
         const job = (await Job.forUser(db, 'anonymous')).data[0];
         expect(job.getRelatedLinks('data')).to.eql([]);
       });
@@ -418,7 +421,10 @@ describe('Backend Callbacks', function () {
         const response = await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z' } });
         const error = JSON.parse((response.error as HTTPError).text);
         expect(response.status).to.equal(400);
-        expect(error).to.eql({ code: 400, message: 'Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End' });
+        expect(error).to.eql({
+          code: 'harmony.RequestValidationError',
+          message: 'Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End',
+        });
         const job = (await Job.forUser(db, 'anonymous')).data[0];
         expect(job.getRelatedLinks('data')).to.eql([]);
       });
@@ -443,7 +449,10 @@ describe('Backend Callbacks', function () {
         const response = await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,broken,3.3' } });
         const error = JSON.parse((response.error as HTTPError).text);
         expect(response.status).to.equal(400);
-        expect(error).to.eql({ code: 400, message: 'Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North' });
+        expect(error).to.eql({
+          code: 'harmony.RequestValidationError',
+          message: 'Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North',
+        });
         const job = (await Job.forUser(db, 'anonymous')).data[0];
         expect(job.getRelatedLinks('data')).to.eql([]);
       });
@@ -452,7 +461,10 @@ describe('Backend Callbacks', function () {
         const response = await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,2.2' } });
         const error = JSON.parse((response.error as HTTPError).text);
         expect(response.status).to.equal(400);
-        expect(error).to.eql({ code: 400, message: 'Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North' });
+        expect(error).to.eql({
+          code: 'harmony.RequestValidationError',
+          message: 'Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North',
+        });
         const job = (await Job.forUser(db, 'anonymous')).data[0];
         expect(job.getRelatedLinks('data')).to.eql([]);
       });

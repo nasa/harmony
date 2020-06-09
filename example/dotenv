@@ -95,6 +95,9 @@ BASE_QUEUE_URL=http://localhost:4566/queue/
 # The name of the dead letter queue for message-queue-based services
 SERVICE_DEAD_LETTER_QUEUE_NAME=harmony-dead-letter-queue
 
+# The number of ms to wait between polling to check whether a synchronous request completed
+SYNC_REQUEST_POLL_INTERVAL_MS=100
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #
