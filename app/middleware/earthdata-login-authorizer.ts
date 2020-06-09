@@ -2,7 +2,7 @@ import simpleOAuth2, { OAuthClient } from 'simple-oauth2';
 import { listToText } from 'util/string';
 import { ForbiddenError } from 'util/errors';
 import { setCookiesForEdl } from 'util/cookies';
-import { RequestHandler } from 'express';
+import { RequestHandler, NextFunction } from 'express';
 import HarmonyRequest from 'harmony/models/harmony-request';
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
@@ -37,13 +37,13 @@ const oauthOptions = {
  * state if valid, and redirecting the client to either the redirect specified in cookies or
  * the server root
  *
- * @param {Object} oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
- * @param {http.IncomingMessage} req The client request
- * @param {http.ServerResponse} res The client response
- * @param {Function} _next The next function in the middleware chain
+ * @param  oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
+ * @param req The client request
+ * @param res The client response
+ * @param  _next The next function in the middleware chain
  * @returns {void}
  */
-async function handleCodeValidation(oauth2: OAuthClient, req, res, _next: Function): Promise<void> {
+async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promise<void> {
   const tokenConfig = {
     code: req.query.code,
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
@@ -66,7 +66,7 @@ async function handleCodeValidation(oauth2: OAuthClient, req, res, _next: Functi
  * @param {Function} _next The next function in the middleware chain
  * @returns {void}
  */
-function handleLogout(oauth2: OAuthClient, req, res, _next: Function): void {
+function handleLogout(oauth2: OAuthClient, req, res, _next): void {
   const { redirect } = req.query;
 
   const { token } = req.signedCookies;
@@ -97,7 +97,7 @@ function handleLogout(oauth2: OAuthClient, req, res, _next: Function): void {
  * @param {Function} _next The next function in the middleware chain
  * @returns {void}
  */
-function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next: Function): void {
+function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next): void {
   const url = oauth2.authorizationCode.authorizeURL({
     redirect_uri: process.env.OAUTH_REDIRECT_URI,
   });
@@ -119,7 +119,7 @@ function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next: Function): 
  *
  * @returns {*} The result of calling the adapter's redirect method
  */
-async function handleAuthorized(oauth2: OAuthClient, req, res, next: Function): Promise<void> {
+async function handleAuthorized(oauth2: OAuthClient, req, res, next: NextFunction): Promise<void> {
   const { token } = req.signedCookies;
   const oauthToken = oauth2.accessToken.create(token);
   req.accessToken = oauthToken.token.access_token;

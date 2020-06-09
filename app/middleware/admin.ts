@@ -1,5 +1,5 @@
 import HarmonyRequest from 'harmony/models/harmony-request';
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import { ForbiddenError } from '../util/errors';
 import { belongsToGroup } from '../util/cmr';
 import env from '../util/env';
@@ -15,7 +15,7 @@ import env from '../util/env';
  * @param next -  The next function in the middleware chain
  */
 export default async function admin(
-  req: HarmonyRequest, res: Response, next: Function,
+  req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
   if (isAdmin) {

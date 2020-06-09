@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import getCoverageRangeset from './get-coverage-rangeset';
 import HarmonyRequest from '../../models/harmony-request';
 
@@ -19,7 +19,7 @@ import HarmonyRequest from '../../models/harmony-request';
 export default function postCoverageRangeset(
   req: HarmonyRequest,
   res: Response,
-  next: Function,
+  next: NextFunction,
 ): void {
   // copy form parameters into the query
   req.query = req.body;

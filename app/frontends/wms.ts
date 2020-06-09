@@ -7,6 +7,7 @@ import * as urlUtil from 'util/url';
 import keysToLowerCase from 'util/object';
 import { RequestValidationError, NotFoundError } from 'util/errors';
 import * as services from 'models/services';
+import { NextFunction } from 'express';
 
 const readFile = promisify(fs.readFile);
 
@@ -114,7 +115,7 @@ function requestError(res, message: string): void {
  *  signature for an Express.js handler
  * @returns {Promise<void>} Resolves when the request is complete
  */
-async function getCapabilities(req, res, _next: Function): Promise<void> {
+async function getCapabilities(req, res, _next: NextFunction): Promise<void> {
   const collections = [];
 
   for (const collection of req.collections) {
@@ -172,7 +173,7 @@ async function getCapabilities(req, res, _next: Function): Promise<void> {
  * @param {Function} next The next function in the chain
  * @returns {void}
  */
-function getMap(req, res, next: Function): void {
+function getMap(req, res, next: NextFunction): void {
   // http://portal.opengeospatial.org/files/?artifact_id=14416
   // Section 7.3
 
@@ -254,7 +255,7 @@ function getMap(req, res, next: Function): void {
  * @param {Function} next The next function in the chain
  * @returns {void}
  */
-export default async function wmsFrontend(req, res, next: Function): Promise<void> {
+export default async function wmsFrontend(req, res, next: NextFunction): Promise<void> {
   req.context.frontend = 'wms';
   const query = keysToLowerCase(req.query);
   req.wmsQuery = query;

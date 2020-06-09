@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { HttpError, RequestValidationError } from 'util/errors';
 import HarmonyRequest from 'harmony/models/harmony-request';
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 
 const errorTemplate = fs.readFileSync(path.join(__dirname, '../templates/server-error.mustache.html'), { encoding: 'utf8' });
 const jsonErrorRoutesRegex = /jobs|ogc-api-coverages/;
@@ -47,7 +47,7 @@ function getHttpStatusCode(err: HttpError): number {
  * @returns {void}
  */
 export default function errorHandler(
-  err: HttpError, req: HarmonyRequest, res: Response, next: Function,
+  err: HttpError, req: HarmonyRequest, res: Response, next: NextFunction,
 ): void {
   if (res.headersSent) {
     // If the server has started writing the response, delegate to the

@@ -1,5 +1,5 @@
 import process from 'process';
-import express, { RequestHandler } from 'express';
+import express, { RequestHandler, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
 import log from 'util/log';
 
@@ -112,7 +112,7 @@ const collectionRoute = /^(\/(?!docs).*\/)(wms|eoss|ogc-api-coverages)/;
  * @param {Function} next The next function in the call chain
  * @returns {void}
  */
-function validateCollectionRoute(req, res, next: Function): void {
+function validateCollectionRoute(req, res, next: NextFunction): void {
   const { path } = req;
   const collectionRouteMatch = path.match(collectionRoute);
   if (collectionRouteMatch) {

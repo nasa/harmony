@@ -1,6 +1,6 @@
 import { SpatialReference } from 'gdal-next';
 import DataOperation from 'models/data-operation';
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import keysToLowerCase from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import wrap from '../../util/array';
@@ -23,7 +23,7 @@ import HarmonyRequest from '../../models/harmony-request';
 export default function getCoverageRangeset(
   req: HarmonyRequest,
   res: Response,
-  next: Function,
+  next: NextFunction,
 ): void {
   req.context.frontend = 'ogcCoverages';
   const query = keysToLowerCase(req.query);

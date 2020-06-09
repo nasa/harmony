@@ -1,11 +1,11 @@
-import SecureTokenService from 'util/sts';
-import RequestContext from 'harmony/models/request-context';
 import { Credentials } from 'aws-sdk/clients/sts';
-import { ServerError } from 'harmony/util/errors';
-import HarmonyRequest from 'harmony/models/harmony-request';
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
+import SecureTokenService from '../util/sts';
+import { ServerError } from '../util/errors';
+import HarmonyRequest from '../models/harmony-request';
+import RequestContext from '../models/request-context';
 
-import env = require('util/env');
+import env = require('../util/env');
 
 const { sameRegionAccessRole, awsDefaultRegion } = env;
 
@@ -43,7 +43,7 @@ async function assumeS3OutputsRole(
  * @returns {Promise<void>} Resolves when the request is complete
  */
 export async function cloudAccessJson(
-  req: HarmonyRequest, res: Response, next: Function,
+  req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   req.context.logger = req.context.logger.child({ component: 'cloudAccess.cloudAccessJson' });
   req.context.logger.info(`Generating same region access keys for ${req.user}`);

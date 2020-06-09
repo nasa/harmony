@@ -13,6 +13,7 @@ import { RequestValidationError, HttpError, ServerError } from 'util/errors';
 import { defaultObjectStore } from 'util/object-store';
 import { listToText } from 'util/string';
 import { Logger } from 'winston';
+import { NextFunction } from 'express';
 
 const unlink = util.promisify(fs.unlink);
 const readFile = util.promisify(fs.readFile);
@@ -94,7 +95,7 @@ const contentTypesToConverters = {
  * @param {Function} next The next function in the middleware chain
  * @returns {void}
  */
-export default async function shapefileConverter(req, res, next: Function): Promise<void> {
+export default async function shapefileConverter(req, res, next: NextFunction): Promise<void> {
   const { operation } = req;
 
   try {

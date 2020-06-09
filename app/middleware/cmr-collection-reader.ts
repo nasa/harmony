@@ -1,6 +1,7 @@
 import { getVariablesForCollection, CmrCollection, getCollectionsByIds } from 'util/cmr';
 import { listToText } from 'util/string';
 import { NotFoundError } from 'util/errors';
+import { NextFunction } from 'express';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
@@ -46,7 +47,7 @@ async function loadVariablesForCollection(collection: CmrCollection, token: stri
  * @param {Function} next The next function in the middleware chain
  * @returns {void}
  */
-async function cmrCollectionReader(req, res, next: Function): Promise<void> {
+async function cmrCollectionReader(req, res, next: NextFunction): Promise<void> {
   try {
     const collectionMatch = req.url.match(COLLECTION_URL_PATH_REGEX);
     if (collectionMatch) {

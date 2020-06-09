@@ -1,4 +1,5 @@
 import { URL } from 'url';
+import { NextFunction } from 'express';
 import { objectStoreForProtocol } from '../util/object-store';
 import { NotFoundError } from '../util/errors';
 
@@ -54,7 +55,7 @@ export function createPublicPermalink(
  * @returns {Promise<void>} Resolves when the request is complete
  * @throws {NotFoundError} if the given URL cannot be signed, typically due to permissions
  */
-export async function getServiceResult(req, res, next: Function): Promise<void> {
+export async function getServiceResult(req, res, next: NextFunction): Promise<void> {
   const { bucket, key } = req.params;
   const url = `s3://${bucket}/${key}`;
 

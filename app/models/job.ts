@@ -320,7 +320,7 @@ export class Job extends Record {
    * @returns true if the job is complete
    */
   isComplete(): boolean {
-    return terminalStates.indexOf(this.status) !== -1;
+    return terminalStates.includes(this.status);
   }
 
   /**

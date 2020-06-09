@@ -2,6 +2,7 @@ import * as cmr from 'util/cmr';
 import { CmrError, RequestValidationError, ServerError } from 'util/errors';
 import boxStringsToBox from 'util/bounding-box';
 import { HarmonyGranule } from 'harmony/models/data-operation';
+import { NextFunction } from 'express';
 
 import env = require('util/env');
 
@@ -15,7 +16,7 @@ import env = require('util/env');
  * @param {Function} next The next function in the middleware chain
  * @returns {void}
  */
-export default async function cmrGranuleLocator(req, res, next: Function): Promise<void> {
+export default async function cmrGranuleLocator(req, res, next: NextFunction): Promise<void> {
   const { operation } = req;
   const { logger } = req.context;
 

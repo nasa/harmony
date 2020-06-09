@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
 import isUUID from 'util/uuid';
 import { needsStacLink } from '../util/stac';
@@ -50,7 +50,7 @@ export interface JobListing {
  * @returns Resolves when the request is complete
  */
 export async function getJobsListing(
-  req: HarmonyRequest, res: Response, next: Function,
+  req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
     const root = getRequestRoot(req);
@@ -87,7 +87,7 @@ export async function getJobsListing(
  */
 function validateJobId(jobID: string): void {
   if (!isUUID(jobID)) {
-    throw new RequestValidationError(`jobID ${jobID} is in invalid format.`);
+    throw new RequestValidationError(`Invalid format for Job ID '${jobID}'. Job ID must be a UUID.`);
   }
 }
 
@@ -100,7 +100,7 @@ function validateJobId(jobID: string): void {
  * @returns Resolves when the request is complete
  */
 export async function getJobStatus(
-  req: HarmonyRequest, res: Response, next: Function,
+  req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { jobID } = req.params;
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
@@ -138,7 +138,9 @@ export async function getJobStatus(
  * @param next The next function in the call chain
  * @returns Resolves when the request is complete
  */
-export async function cancelJob(req: HarmonyRequest, res: Response, next: Function): Promise<void> {
+export async function cancelJob(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
   const { jobID } = req.params;
   req.context.logger.info(`Cancel requested for job ${jobID} by user ${req.user}`);
   const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);

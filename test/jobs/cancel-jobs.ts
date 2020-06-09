@@ -138,54 +138,6 @@ describe('Canceling a job', function () {
     });
   });
 
-  describe('For a logged-in admin who does not own the job', function () {
-    const joeJob2 = _.cloneDeep(aJob);
-    joeJob2.requestId = uuid().toString();
-    hookTransaction();
-    before(async function () {
-      await new Job(joeJob2).save(this.trx);
-      this.trx.commit();
-      this.trx = null;
-    });
-    hookCancelJob({ jobID: joeJob2.requestId, username: adminUsername });
-    it('returns a redirect to the canceled job', function () {
-      expect(this.res.statusCode).to.equal(302);
-      expect(this.res.headers.location).to.include(`/jobs/${joeJob2.requestId}`);
-    });
-    describe('When following the redirect to the canceled job', function () {
-      hookRedirect(adminUsername);
-      it('returns an HTTP success response', function () {
-        expect(this.res.statusCode).to.equal(200);
-      });
-
-      it('returns a single job record in JSON format', function () {
-        const actualJob = JSON.parse(this.res.text);
-        const expectedJobKeys = [
-          'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'jobID',
-        ];
-        expect(Object.keys(actualJob)).to.eql(expectedJobKeys);
-      });
-
-      it('changes the status to canceled', function () {
-        const actualJob = JSON.parse(this.res.text);
-        expect(actualJob.status).to.eql('canceled');
-      });
-      it('sets the message to canceled by admin', function () {
-        const actualJob = JSON.parse(this.res.text);
-        expect(actualJob.message).to.eql('Canceled by admin.');
-      });
-      it('does not modify any of the other job fields', function () {
-        const actualJob: Job = JSON.parse(this.res.text);
-        const expectedJob: JobRecord = _.cloneDeep(joeJob2);
-        expectedJob.message = 'foo';
-        actualJob.message = 'foo';
-        actualJob.status = JobStatus.CANCELED;
-        expectedJob.status = JobStatus.CANCELED;
-        expect(jobsEqual(expectedJob, actualJob)).to.be.true;
-      });
-    });
-  });
-
   describe('For a logged-in admin who owns the job', function () {
     const adminJob = _.cloneDeep(aJob);
     adminJob.username = adminUsername;
@@ -275,7 +227,7 @@ describe('Canceling a job', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.RequestValidationError',
-        description: 'Error: jobID foo is in invalid format.' });
+        description: `Error: Invalid format for Job ID '${notAJobID}'. Job ID must be a UUID.` });
     });
   });
 
