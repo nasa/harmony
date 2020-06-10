@@ -2,8 +2,8 @@ import mustache from 'mustache';
 import fs from 'fs';
 import path from 'path';
 import { HttpError, RequestValidationError } from 'util/errors';
-import HarmonyRequest from 'harmony/models/harmony-request';
 import { Response, NextFunction } from 'express';
+import HarmonyRequest from '../models/harmony-request';
 
 const errorTemplate = fs.readFileSync(path.join(__dirname, '../templates/server-error.mustache.html'), { encoding: 'utf8' });
 const jsonErrorRoutesRegex = /jobs|ogc-api-coverages/;
