@@ -1,9 +1,10 @@
-import { describe, it, xit } from 'mocha';
+import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import isUUID from 'util/uuid';
 import hookServersStartStop from '../helpers/servers';
 import { hookGetMap, wmsRequest, validGetMapQuery } from '../helpers/wms';
 import StubService from '../helpers/stub-service';
+import { hookSignS3Object, hookMockS3 } from '../helpers/object-store';
 
 describe('WMS GetMap', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -94,22 +95,20 @@ describe('WMS GetMap', function () {
     });
 
     describe('and the backend service provides POST data', function () {
+      const signedPrefix = hookSignS3Object();
+      hookMockS3();
       StubService.hook({
         body: 'realistic mock data',
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Content-Disposition': 'filename="out.txt"',
+        },
       });
       hookGetMap(collection, query);
 
-      xit('sends the data to the client', function () {
-        // TODO: node-replay does not support response streaming, which we want to have for
-        //   large data files, so this will not work.  There is no documented way to un-hook
-        //   node-replay after it is set up.  Luckily it does fix the issue on forwarding
-        //   content-type, so we've traded one problematic test for another
-        expect(this.res.text).to.equal('realistic mock data');
-      });
-
-      it('returns an HTTP 200 "OK" status code', function () {
-        expect(this.res.status).to.equal(200);
+      it('returns an HTTP 303 redirect status code to the provided data', function () {
+        expect(this.res.status).to.equal(303);
+        expect(this.res.headers.location).to.include(signedPrefix);
       });
 
       it('propagates the Content-Type header to the client', function () {

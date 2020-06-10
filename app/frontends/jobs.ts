@@ -58,6 +58,7 @@ export async function getJobsListing(
     const query: JobQuery = {};
     if (!req.context.isAdminAccess) {
       query.username = req.user;
+      query.isAsync = true;
     }
     let listing;
     await db.transaction(async (tx) => {
@@ -66,6 +67,7 @@ export async function getJobsListing(
     const serializedJobs = listing.data.map((j) => {
       const serializedJob = j.serialize(root);
       serializedJob.links = getLinksForDisplay(serializedJob, root);
+      delete serializedJob.isAsync;
       return serializedJob;
     });
     const response: JobListing = {

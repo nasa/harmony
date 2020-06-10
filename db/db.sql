@@ -9,4 +9,5 @@ CREATE TABLE `jobs` (
   `_json_links` json not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
-  `request` varchar(4096) not null default 'unknown');
+  `request` varchar(4096) not null default 'unknown',
+  `isAsync` boolean);

@@ -23,4 +23,4 @@ built
 db/*.sqlite3
 
 # Quokka repl/playground
-playground.js
+playground.ts

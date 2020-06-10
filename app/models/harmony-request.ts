@@ -1,6 +1,6 @@
 import { Request } from 'express';
-import { CmrCollection } from 'harmony/util/cmr';
-import RequestContext from 'harmony/models/request-context';
+import { CmrCollection } from '../util/cmr';
+import RequestContext from './request-context';
 import DataOperation from './data-operation';
 
 /**

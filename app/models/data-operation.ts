@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
 import _ from 'lodash';
-import { CmrUmmVariable } from 'harmony/util/cmr';
+import { CmrUmmVariable } from '../util/cmr';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path

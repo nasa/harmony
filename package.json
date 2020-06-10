@@ -115,6 +115,8 @@
     "@pollyjs/persister-fs": "^2.6.3",
     "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",
+    "@types/leaflet": "^1.5.12",
+    "@types/lodash": "^4.14.153",
     "@types/mocha": "^7.0.2",
     "@types/mock-aws-s3": "^2.6.1",
     "@types/sinon": "^9.0.0",

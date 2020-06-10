@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { responseHandler } from 'backends/service-response';
+import { responseHandler } from '../backends/service-response';
 
 /**
  * Creates and returns an Router instance that can receive callbacks from backend
@@ -9,6 +9,6 @@ import { responseHandler } from 'backends/service-response';
  */
 export default function router(): Router {
   const result = Router();
-  result.post('/:uuid/response', responseHandler);
+  result.post('/:requestId/response', responseHandler);
   return result;
 }

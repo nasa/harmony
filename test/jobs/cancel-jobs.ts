@@ -1,11 +1,11 @@
-import { JobRecord, JobStatus, Job } from 'harmony/models/job';
 import { v4 as uuid } from 'uuid';
-import hookServersStartStop from 'harmony-test/servers';
-import { hookTransaction } from 'harmony-test/db';
-import { jobsEqual, cancelJob, hookCancelJob, adminUsername } from 'harmony-test/jobs';
 import { expect } from 'chai';
 import _ from 'lodash';
-import { hookRedirect } from 'harmony-test/hooks';
+import hookServersStartStop from '../helpers/servers';
+import { hookTransaction } from '../helpers/db';
+import { jobsEqual, cancelJob, hookCancelJob, adminUsername } from '../helpers/jobs';
+import { hookRedirect } from '../helpers/hooks';
+import { JobRecord, JobStatus, Job } from '../../app/models/job';
 
 const aJob: JobRecord = {
   username: 'joe',

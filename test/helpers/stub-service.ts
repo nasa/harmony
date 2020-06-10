@@ -6,9 +6,9 @@ import AsynchronizerService from 'models/services/asynchronizer-service';
 import BaseService from 'models/services/base-service';
 import * as services from 'models/services/index';
 import { Logger } from 'winston';
-import DataOperation from 'harmony/models/data-operation';
-import InvocationResult from 'models/services/invocation-result';
-import LocalDockerService from 'harmony/models/services/local-docker-service';
+import DataOperation from '../../app/models/data-operation';
+import InvocationResult from '../../app/models/services/invocation-result';
+import LocalDockerService from '../../app/models/services/local-docker-service';
 
 /**
  * Service implementation used for stubbing invocations for tests

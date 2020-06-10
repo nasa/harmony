@@ -3,10 +3,10 @@
 import { before, after, beforeEach, afterEach } from 'mocha';
 import { stub } from 'sinon';
 
-import db from 'harmony/util/db';
-
 import { exec } from 'child_process';
-import logger from 'harmony/util/log';
+import db from '../../app/util/db';
+
+import logger from '../../app/util/log';
 
 const tables = ['jobs'];
 

@@ -2,8 +2,7 @@ import { before } from 'mocha';
 import { stub } from 'sinon';
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-
-import env = require('harmony/util/env');
+import env from '../../app/util/env';
 
 env.nodeEnv = 'test';
 
@@ -13,4 +12,6 @@ use(chaiAsPromised);
 
 before(() => {
   stub(env, 'harmonyClientId').get(() => 'harmony-test');
+  stub(env, 'callbackUrlRoot').get(() => 'http://localhost:3001');
+  stub(env, 'syncRequestPollIntervalMs').get(() => 0);
 });
