@@ -202,15 +202,15 @@ describe('Canceling a job - user endpoint', function () {
     });
 
     hookCancelJob({ jobID: canceledJob.requestId, username: 'joe' });
-    it('returns a redirect to the canceled job rather than an error', function () {
-      expect(this.res.statusCode).to.equal(302);
-      expect(this.res.headers.location).to.include(`/jobs/${canceledJob.requestId}`);
+    it('returns a 400 HTTP bad request', function () {
+      expect(this.res.statusCode).to.equal(400);
     });
-    describe('When following the redirect to the canceled job', function () {
-      hookRedirect('joe');
-      it('returns an HTTP success response', function () {
-        expect(this.res.statusCode).to.equal(200);
-      });
+
+    it('returns a JSON error response indicating the job cannot be canceled', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: Job status cannot be updated from canceled to canceled.' });
     });
   });
 });
@@ -382,15 +382,15 @@ describe('Canceling a job - admin endpoint', function () {
     });
 
     hookAdminCancelJob({ jobID: canceledJob.requestId, username: adminUsername });
-    it('returns a redirect to the canceled job rather than an error', function () {
-      expect(this.res.statusCode).to.equal(302);
-      expect(this.res.headers.location).to.include(`/admin/jobs/${canceledJob.requestId}`);
+    it('returns a 400 HTTP bad request', function () {
+      expect(this.res.statusCode).to.equal(400);
     });
-    describe('When following the redirect to the canceled job', function () {
-      hookRedirect(adminUsername);
-      it('returns an HTTP success response', function () {
-        expect(this.res.statusCode).to.equal(200);
-      });
+
+    it('returns a JSON error response indicating the job cannot be canceled', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: 'Error: Job status cannot be updated from canceled to canceled.' });
     });
   });
 });

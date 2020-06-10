@@ -214,7 +214,10 @@ export class Job extends Record {
     this.links = fields.links
       || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : fields._json_links)
       || [];
-    this.originalStatus = this.status;
+    // Job already exists in the database
+    if (fields.createdAt) {
+      this.originalStatus = this.status;
+    }
   }
 
   /**
@@ -239,7 +242,7 @@ export class Job extends Record {
    * terminal state.
    */
   validateStatus(): void {
-    if (terminalStates.includes(this.originalStatus) && this.originalStatus !== this.status) {
+    if (terminalStates.includes(this.originalStatus)) {
       throw new TypeError(`Job status cannot be updated from ${this.originalStatus} to ${this.status}.`);
     }
   }
