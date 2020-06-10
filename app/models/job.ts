@@ -204,8 +204,7 @@ export class Job extends Record {
     super(fields);
     // Allow up to 4096 chars for the request string
     this.request = fields.request && truncateString(fields.request, 4096);
-    this.status = fields.status || JobStatus.ACCEPTED;
-    this.message = fields.message || statesToDefaultMessages[this.status];
+    this.updateStatus(fields.status || JobStatus.ACCEPTED, fields.message);
     this.progress = fields.progress || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     this.links = fields.links
