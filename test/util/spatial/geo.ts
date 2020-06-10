@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { LatLng } from 'harmony/util/spatial/coordinate';
-import { calculateArea, getShape } from 'harmony/util/spatial/geo';
+import { LatLng } from '../../../app/util/spatial/coordinate';
+import { calculateArea, getShape } from '../../../app/util/spatial/geo';
 
 /**
  * Makes a LatLng object from a lat/lng tuple

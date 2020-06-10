@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { CmrCollection, CmrUmmVariable } from 'harmony/util/cmr';
+import { CmrCollection, CmrUmmVariable } from '../../util/cmr';
 import HarmonyRequest from '../../models/harmony-request';
 import { RequestValidationError } from '../../util/errors';
 import keysToLowerCase from '../../util/object';

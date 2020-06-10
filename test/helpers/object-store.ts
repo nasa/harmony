@@ -1,9 +1,9 @@
 import { before, after } from 'mocha';
 import sinon, { SinonStub } from 'sinon';
 import fs from 'fs';
-import mockAws from 'mock-aws-s3';
+import mockAws, { S3 } from 'mock-aws-s3';
 import * as tmp from 'tmp';
-import { S3ObjectStore } from 'util/object-store';
+import { S3ObjectStore, objectStoreForProtocol } from 'util/object-store';
 
 // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
 const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
@@ -55,7 +55,8 @@ export function hookSignS3Object(): string {
 }
 
 /**
- * Gets JSON from the given object store URL.  Uses synchronous functions only suitable for testing
+ * Gets JSON from the given object store URL.  Uses synchronous functions only suitable for testing.
+ * If using mock-aws-s3, use getObjectText below
  * @param {string} url the Object store URL to get
  * @returns {*} the JSON contents of the file at the given URL
  */
@@ -68,4 +69,19 @@ Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   } finally {
     fs.unlinkSync(filename);
   }
+}
+
+/**
+ * Returns the text contents of the object at the provided URL.  If the object is mocked using
+ * mock-aws-s3 this is likely to produce better results than `getJson` above.
+ * @param url the Object store URL to read
+ */
+export async function getObjectText(url: string): Promise<string> {
+  const contents: S3.GetObjectOutput = await new Promise((resolve, reject) => {
+    objectStoreForProtocol(url).getObject(url, (err, body) => {
+      if (err) reject(err);
+      else resolve(body);
+    });
+  });
+  return contents.Body.toString('utf-8');
 }

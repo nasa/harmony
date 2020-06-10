@@ -55,6 +55,7 @@ export interface JobRecord {
   _json_links?: string | JobLink[];
   links?: string | JobLink[];
   request: string;
+  isAsync?: boolean;
   createdAt?: Date | number;
   updatedAt?: Date | number;
 }
@@ -67,6 +68,7 @@ export interface JobQuery {
   message?: string;
   progress?: number;
   request?: string;
+  isAsync?: boolean;
   createdAt?: number;
   updatedAt?: number;
 }
@@ -106,6 +108,8 @@ export class Job extends Record {
   progress: number;
 
   request: string;
+
+  isAsync: boolean;
 
   _json_links?: string | JobLink[];
 

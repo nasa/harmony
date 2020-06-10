@@ -3,8 +3,6 @@
       "module": "commonjs",
       "baseUrl": ".",
       "paths": {
-        "harmony/*": ["app/*"],
-        "harmony-test/*": ["test/helpers/*"],
         "frontends/*": ["app/frontends/*"],
         "backends/*": ["app/backends/*"],
         "middleware/*": ["app/middleware/*"],

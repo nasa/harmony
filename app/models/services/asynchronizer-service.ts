@@ -1,5 +1,5 @@
 import PromiseQueue from 'p-queue';
-import BaseService, { ServiceConfig, CallbackQueryItem } from 'models/services/base-service';
+import BaseService, { ServiceConfig } from 'models/services/base-service';
 import { Logger } from 'winston';
 
 import { Job } from 'models/job';
@@ -9,12 +9,14 @@ import DataOperation from '../data-operation';
 import InvocationResult from './invocation-result';
 
 import db from '../../util/db';
+import { updateJobFields, CallbackQueryItem } from '../../backends/service-response';
 
 /**
  * A wrapper for a service that takes a service class for a service that is only able
  * to handle synchronous requests and feeds it granules one-at-a-time, aggregating the
  * results, effectively making it asynchronous
  *
+ * @deprecated Only usable for sync HTTP requests, currently.  To be removed after PO.DAAC migration
  * @class AsynchronizerService
  * @extends {BaseService}
  */
@@ -123,6 +125,8 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
       for (const granule of source.granules) {
         const op = this.operation.clone();
         op.isSynchronous = true;
+        op.requestId += `-${granule.id}`;
+        op.callback += `-${granule.id}`;
         op.requireSynchronous = true;
         op.sources = [{
           collection: source.collection,
@@ -164,10 +168,11 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
         temporal: granule.temporal && [granule.temporal.start, granule.temporal.end].join(','),
         bbox: granule.bbox && granule.bbox.join(','),
         href: null,
+        rel: 'data',
       };
 
       this.completedCount += 1;
-      const progress = Math.round(this.completedCount / this.totalCount);
+      const progress = Math.round(this.completedCount / this.totalCount).toString();
 
       const { stagingLocation } = this.operation;
 
@@ -200,7 +205,7 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
         throw new ServiceError(500, 'The backend service did not respond correctly');
       }
 
-      await this._updateJobFields(logger, job, { item, progress });
+      updateJobFields(logger, job, { item, progress });
       await job.save(db);
       logger.info(`Completed service on ${name}`);
     } finally {
@@ -225,7 +230,7 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
     }
     this.isComplete = true;
     try {
-      await this._updateJobFields(logger, job, { status: 'successful' });
+      updateJobFields(logger, job, { status: 'successful' });
       await job.save(db);
       logger.info('Completed service request successfully');
     } catch (e) {
@@ -254,7 +259,7 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
     }
     this.isComplete = true;
     try {
-      await this._updateJobFields(logger, job, { error: message });
+      updateJobFields(logger, job, { error: message });
       await job.save(db);
       logger.info('Completed service request with error');
     } catch (e) {

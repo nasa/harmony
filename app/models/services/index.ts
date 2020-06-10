@@ -3,9 +3,9 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { get as getIn } from 'lodash';
 
-import { NotFoundError } from 'util/errors';
-import { isMimeTypeAccepted } from 'util/content-negotiation';
-import { CmrCollection } from 'harmony/util/cmr';
+import { NotFoundError } from '../../util/errors';
+import { isMimeTypeAccepted } from '../../util/content-negotiation';
+import { CmrCollection } from '../../util/cmr';
 import AsynchronizerService from './asynchronizer-service';
 import HttpService from './http-service';
 import LocalDockerService from './local-docker-service';

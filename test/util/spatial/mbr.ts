@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { Spatial, computeMbr } from 'harmony/util/spatial/mbr';
+import { Spatial, computeMbr } from '../../../app/util/spatial/mbr';
 
 /**
  * Makes a Spatial object from a lat/lng string

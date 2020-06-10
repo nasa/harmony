@@ -1,8 +1,8 @@
 import * as cmr from 'util/cmr';
-import { CmrError, RequestValidationError, ServerError } from 'util/errors';
-import { HarmonyGranule } from 'harmony/models/data-operation';
-import HarmonyRequest from 'harmony/models/harmony-request';
-import { computeMbr, Mbr } from 'harmony/util/spatial/mbr';
+import { CmrError, RequestValidationError, ServerError } from '../util/errors';
+import { HarmonyGranule } from '../models/data-operation';
+import HarmonyRequest from '../models/harmony-request';
+import { computeMbr, Mbr } from '../util/spatial/mbr';
 
 import env = require('util/env');
 

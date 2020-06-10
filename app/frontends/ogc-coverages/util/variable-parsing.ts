@@ -1,4 +1,4 @@
-import { CmrCollection, CmrUmmVariable } from 'harmony/util/cmr';
+import { CmrCollection, CmrUmmVariable } from '../../../util/cmr';
 import { RequestValidationError } from '../../../util/errors';
 
 interface VariableInfo {

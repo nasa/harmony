@@ -8,13 +8,13 @@ import * as path from 'path';
 
 import * as querystring from 'querystring';
 
-import { isUrlBound } from 'backends/service-response';
 import { Stream } from 'stream';
 import { Logger } from 'winston';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
-
-import env = require('util/env');
+import { Job } from '../job';
+import db from '../../util/db';
+import env from '../../util/env';
 
 const { isDevelopment } = env;
 
@@ -137,9 +137,10 @@ export default class LocalDockerService extends BaseService<DockerServiceParams>
     const child = spawn('docker', dockerParams);
     logProcessOutput(child, logger);
 
-    child.on('exit', ((code, signal) => {
+    child.on('exit', (async (code, signal) => {
       logger.info(`child process exited with code ${code} and signal ${signal}`);
-      if (isUrlBound(originalCallback)) {
+      const job = await Job.byRequestId(db, this.operation.requestId);
+      if (job && !job.isComplete()) {
         childProcessAborted(originalCallback, logger);
       }
     }));

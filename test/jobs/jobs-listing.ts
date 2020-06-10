@@ -16,6 +16,7 @@ const woodyJob1: JobRecord = {
   progress: 100,
   links: [{ href: 'http://example.com/woody1', rel: 'link', type: 'text/plain' }],
   request: 'http://example.com/harmony?request=woody1',
+  isAsync: true,
 };
 
 const woodyJob2: JobRecord = {
@@ -26,6 +27,18 @@ const woodyJob2: JobRecord = {
   progress: 60,
   links: [],
   request: 'http://example.com/harmony?request=woody2',
+  isAsync: true,
+};
+
+const woodySyncJob: JobRecord = {
+  username: 'woody',
+  requestId: uuid().toString(),
+  status: JobStatus.RUNNING,
+  message: 'In progress',
+  progress: 60,
+  links: [],
+  request: 'http://example.com/harmony?request=woody2',
+  isAsync: false,
 };
 
 const buzzJob1: JobRecord = {
@@ -36,6 +49,7 @@ const buzzJob1: JobRecord = {
   progress: 30,
   links: [],
   request: 'http://example.com/harmony?request=buzz1',
+  isAsync: true,
 };
 
 describe('Jobs listing route', function () {
@@ -61,6 +75,7 @@ describe('Jobs listing route', function () {
       // Add all jobs to the database
       await new Job(woodyJob1).save(this.trx);
       await new Job(woodyJob2).save(this.trx);
+      await new Job(woodySyncJob).save(this.trx);
       await new Job(buzzJob1).save(this.trx);
       this.trx.commit();
     });
@@ -91,6 +106,11 @@ describe('Jobs listing route', function () {
       it('does not return jobs for other users', function () {
         const listing = JSON.parse(this.res.text);
         expect(containsJob(buzzJob1, listing)).to.be.false;
+      });
+
+      it('does not return synchronous jobs', function () {
+        const listing = JSON.parse(this.res.text);
+        expect(containsJob(woodySyncJob, listing)).to.be.false;
       });
     });
   });

@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import hookCmr from 'harmony-test/stub-cmr';
 import _ from 'lodash';
+import hookCmr from '../helpers/stub-cmr';
 import isUUID from '../../app/util/uuid';
 import { itIncludesRequestUrl } from '../helpers/jobs';
-import { hookSignS3Object } from '../helpers/object-store';
+import { hookSignS3Object, hookMockS3 } from '../helpers/object-store';
 import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
@@ -162,14 +162,20 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
 
     describe('and the backend service provides POST data', function () {
+      const signedPrefix = hookSignS3Object();
+      hookMockS3();
       StubService.hook({
         body: 'realistic mock data',
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Content-Disposition': 'filename="out.txt"',
+        },
       });
       hookRangesetRequest(version, collection, variableName, { query });
 
-      it('returns an HTTP 200 "OK" status code', function () {
-        expect(this.res.status).to.equal(200);
+      it('returns an HTTP 303 redirect status code to the provided data', function () {
+        expect(this.res.status).to.equal(303);
+        expect(this.res.headers.location).to.include(signedPrefix);
       });
 
       it('propagates the Content-Type header to the client', function () {

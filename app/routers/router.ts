@@ -1,29 +1,29 @@
 import process from 'process';
 import express, { RequestHandler } from 'express';
 import cookieParser from 'cookie-parser';
-import log from 'util/log';
+import log from '../util/log';
 
 // Middleware requires in outside-in order
-import earthdataLoginAuthorizer from 'middleware/earthdata-login-authorizer';
-import admin from 'middleware/admin';
-import wmsFrontend from 'frontends/wms';
-import { getJobsListing, getJobStatus } from 'frontends/jobs';
-import { getStacCatalog, getStacItem } from 'frontends/stac';
-import { getServiceResult } from 'frontends/service-results';
-import shapefileUpload from 'middleware/shapefile-upload';
-import cmrGranuleLocator from 'middleware/cmr-granule-locator';
-import setRequestId from 'middleware/request-id';
-import shapefileConverter from 'middleware/shapefile-converter';
-import { NotFoundError } from 'util/errors';
-import * as eoss from 'frontends/eoss';
-import * as ogcCoverageApi from 'frontends/ogc-coverages/index';
-import { cloudAccessJson, cloudAccessSh } from 'frontends/cloud-access';
-import landingPage from 'frontends/landing-page';
-import serviceInvoker from 'backends/service-invoker';
-import HarmonyRequest from 'harmony/models/harmony-request';
+import earthdataLoginAuthorizer from '../middleware/earthdata-login-authorizer';
+import admin from '../middleware/admin';
+import wmsFrontend from '../frontends/wms';
+import { getJobsListing, getJobStatus } from '../frontends/jobs';
+import { getStacCatalog, getStacItem } from '../frontends/stac';
+import { getServiceResult } from '../frontends/service-results';
+import shapefileUpload from '../middleware/shapefile-upload';
+import cmrGranuleLocator from '../middleware/cmr-granule-locator';
+import setRequestId from '../middleware/request-id';
+import shapefileConverter from '../middleware/shapefile-converter';
+import { NotFoundError } from '../util/errors';
+import * as eoss from '../frontends/eoss';
+import * as ogcCoverageApi from '../frontends/ogc-coverages/index';
+import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
+import landingPage from '../frontends/landing-page';
+import serviceInvoker from '../backends/service-invoker';
+import HarmonyRequest from '../models/harmony-request';
 
-import cmrCollectionReader = require('middleware/cmr-collection-reader');
-import envVars = require('harmony/util/env');
+import cmrCollectionReader = require('../middleware/cmr-collection-reader');
+import envVars = require('../util/env');
 
 /**
  * Given an Express.js middleware handler function, returns another
