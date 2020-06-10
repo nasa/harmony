@@ -106,25 +106,25 @@ export async function getJobStatus(
 ): Promise<void> {
   const { jobID } = req.params;
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
-  const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
   try {
     validateJobId(jobID);
+    const query: JobQuery = { requestId: jobID };
+    if (!req.context.isAdminAccess) {
+      query.username = req.user;
+    }
     let job: Job;
     await db.transaction(async (tx) => {
-      if (isAdmin) {
-        job = await Job.byRequestId(tx, jobID);
-      } else {
-        job = await Job.byUsernameAndRequestId(tx, req.user, jobID);
-      }
-      if (job) {
-        const urlRoot = getRequestRoot(req);
-        const serializedJob = job.serialize(urlRoot);
-        serializedJob.links = getLinksForDisplay(serializedJob, urlRoot);
-        res.send(serializedJob);
-      } else {
-        throw new NotFoundError(`Unable to find job ${jobID}`);
-      }
+      const jobs = await Job.queryAll(tx, query);
+      job = jobs.data[0];
     });
+    if (job) {
+      const urlRoot = getRequestRoot(req);
+      const serializedJob = job.serialize(urlRoot);
+      serializedJob.links = getLinksForDisplay(serializedJob, urlRoot);
+      res.send(serializedJob);
+    } else {
+      throw new NotFoundError(`Unable to find job ${jobID}`);
+    }
   } catch (e) {
     req.context.logger.error(e);
     next(e);
@@ -145,28 +145,28 @@ export async function cancelJob(
 ): Promise<void> {
   const { jobID } = req.params;
   req.context.logger.info(`Cancel requested for job ${jobID} by user ${req.user}`);
-  const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
   try {
     validateJobId(jobID);
-    let job: Job;
     let message;
+    let job: Job;
     await db.transaction(async (tx) => {
-      if (isAdmin) {
-        job = await Job.byRequestId(tx, jobID);
-        // An admin canceling their own request should be marked as canceled by user.
-        if (job && job.username === req.user) {
-          message = 'Canceled by user.';
-        } else {
-          message = 'Canceled by admin.';
-        }
+      const query: JobQuery = { requestId: jobID };
+      if (req.context.isAdminAccess) {
+        message = 'Canceled by admin.';
       } else {
-        job = await Job.byUsernameAndRequestId(tx, req.user, jobID);
+        query.username = req.user;
         message = 'Canceled by user.';
       }
+      const jobs = await Job.queryAll(tx, query);
+      job = jobs.data[0];
       if (job) {
         job.updateStatus(JobStatus.CANCELED, message);
         await job.save(tx);
-        res.redirect(`/jobs/${jobID}`);
+        if (req.context.isAdminAccess) {
+          res.redirect(`/admin/jobs/${jobID}`);
+        } else {
+          res.redirect(`/jobs/${jobID}`);
+        }
       } else {
         throw new NotFoundError(`Unable to find job ${jobID}`);
       }

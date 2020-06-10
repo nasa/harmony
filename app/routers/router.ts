@@ -187,6 +187,8 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
   result.get('/admin/jobs', getJobsListing);
+  result.get('/admin/jobs/:jobID', getJobStatus);
+  result.post('/admin/jobs/:jobID/cancel', cancelJob);
   result.get('/jobs/:jobID', getJobStatus);
   result.post('/jobs/:jobID/cancel', cancelJob);
   result.get('/cloud-access', cloudAccessJson);
