@@ -1,5 +1,6 @@
 import * as cmr from 'util/cmr';
-import { CmrError, RequestValidationError, ServerError } from '../util/errors';
+import { CmrError, RequestValidationError, ServerError } from 'util/errors';
+import { NextFunction } from 'express';
 import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { computeMbr, Mbr } from '../util/spatial/mbr';
@@ -41,7 +42,7 @@ function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Mbr {
  * @param {Function} next The next function in the middleware chain
  * @returns {void}
  */
-export default async function cmrGranuleLocator(req, res, next: Function): Promise<void> {
+export default async function cmrGranuleLocator(req, res, next: NextFunction): Promise<void> {
   const { operation } = req;
   const { logger } = req.context;
 

@@ -3,7 +3,10 @@
 import { before, after, beforeEach, afterEach } from 'mocha';
 import { stub } from 'sinon';
 
+import { exec } from 'child_process';
 import db from '../../app/util/db';
+
+import logger from '../../app/util/log';
 
 const tables = ['jobs'];
 
@@ -16,10 +19,24 @@ export async function truncateAll(): Promise<void> {
   await Promise.all(tables.map((t) => db(t).truncate()));
 }
 
+const createDatabaseCommand = './bin/create-database -o test';
+
+/**
+ * Recreates the test database
+ * Note this is done because database migrations do not work for sqlite
+ */
+function recreateDatabase(): void {
+  exec(createDatabaseCommand, (error, stdout, stderr) => {
+    if (error) {
+      logger.warn(`Failed to recreate database: [${error}]`);
+      logger.warn(`create database stdout: [${stdout}]`);
+      logger.warn(`create database stderr: [${stderr}]`);
+    }
+  });
+}
+
 before(async function () {
-  await db.migrate.latest();
-  // Truncate all tables
-  await truncateAll();
+  recreateDatabase();
 });
 
 /**

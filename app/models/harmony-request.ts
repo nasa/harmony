@@ -12,4 +12,5 @@ export default interface HarmonyRequest extends Request {
   collectionIds: string[];
   operation: DataOperation;
   user: string;
+  accessToken: string;
 }

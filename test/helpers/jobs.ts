@@ -10,6 +10,8 @@ import db from '../../app/util/db';
 import { hookRequest } from './hooks';
 import { truncateAll } from './db';
 
+export const adminUsername = 'adam';
+
 /**
  * Returns true if the passed in job record matches the serialized Job
  * @param {Object} jobRecord a job record
@@ -69,9 +71,46 @@ export function jobStatus(app: Express.Application, { jobID }): Test {
   return request(app).get(`/jobs/${jobID}`);
 }
 
+/**
+ * Navigates to the job status route as the given user
+ *
+ * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {Object} [options.jobID] The job ID
+ * @returns {void}
+ */
+export function adminJobStatus(app: Express.Application, { jobID }): Test {
+  return request(app).get(`/admin/jobs/${jobID}`);
+}
+
+/**
+ * Submits a cancel job request as the given user
+ *
+ * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {Object} [options.jobID] The job ID
+ * @returns {void}
+ */
+export function cancelJob(app: Express.Application, { jobID }): Test {
+  return request(app).post(`/jobs/${jobID}/cancel`);
+}
+
+
+/**
+ * Submits a cancel job request as the given user
+ *
+ * @param {Express.Application} app The express application (typically this.frontend)
+ * @param {Object} [options.jobID] The job ID
+ * @returns {void}
+ */
+export function adminCancelJob(app: Express.Application, { jobID }): Test {
+  return request(app).post(`/admin/jobs/${jobID}/cancel`);
+}
+
 export const hookJobListing = hookRequest.bind(this, jobListing);
 export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);
 export const hookJobStatus = hookRequest.bind(this, jobStatus);
+export const hookAdminJobStatus = hookRequest.bind(this, adminJobStatus);
+export const hookCancelJob = hookRequest.bind(this, cancelJob);
+export const hookAdminCancelJob = hookRequest.bind(this, adminCancelJob);
 
 /**
  * Given a string returns a new string with all characters escaped such that the string

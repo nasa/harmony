@@ -1,5 +1,5 @@
 import process from 'process';
-import express, { RequestHandler } from 'express';
+import express, { RequestHandler, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
 import log from '../util/log';
 
@@ -7,7 +7,7 @@ import log from '../util/log';
 import earthdataLoginAuthorizer from '../middleware/earthdata-login-authorizer';
 import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
-import { getJobsListing, getJobStatus } from '../frontends/jobs';
+import { getJobsListing, getJobStatus, cancelJob } from '../frontends/jobs';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import shapefileUpload from '../middleware/shapefile-upload';
@@ -112,7 +112,7 @@ const collectionRoute = /^(\/(?!docs).*\/)(wms|eoss|ogc-api-coverages)/;
  * @param {Function} next The next function in the call chain
  * @returns {void}
  */
-function validateCollectionRoute(req, res, next: Function): void {
+function validateCollectionRoute(req, res, next: NextFunction): void {
   const { path } = req;
   const collectionRouteMatch = path.match(collectionRoute);
   if (collectionRouteMatch) {
@@ -187,7 +187,10 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
   result.get('/admin/jobs', getJobsListing);
+  result.get('/admin/jobs/:jobID', getJobStatus);
+  result.post('/admin/jobs/:jobID/cancel', cancelJob);
   result.get('/jobs/:jobID', getJobStatus);
+  result.post('/jobs/:jobID/cancel', cancelJob);
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
   result.get('/stac/:jobId', getStacCatalog);

@@ -75,7 +75,7 @@ describe('Individual job status route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${jobID}` });
     });
   });
@@ -90,7 +90,7 @@ describe('Individual job status route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${unknownRequest}` });
     });
   });
@@ -104,8 +104,8 @@ describe('Individual job status route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:BadRequestError',
-        description: 'Error: jobID not-a-uuid is in invalid format.',
+        code: 'harmony.RequestValidationError',
+        description: 'Error: Invalid format for Job ID \'not-a-uuid\'. Job ID must be a UUID.',
       });
     });
   });
@@ -120,8 +120,8 @@ describe('Individual job status route', function () {
       it('includes an error message in JSON format indicating a server error', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:ServerError',
-          description: `Error: Internal server error trying to retrieve job status for job ${jobID}`,
+          code: 'harmony.ServerError',
+          description: 'Error: Internal server error.',
         });
       });
     });

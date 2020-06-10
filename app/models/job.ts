@@ -1,6 +1,5 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
-
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
@@ -31,7 +30,10 @@ export enum JobStatus {
   RUNNING = 'running',
   SUCCESSFUL = 'successful',
   FAILED = 'failed',
+  CANCELED = 'canceled',
 }
+
+const terminalStates = [JobStatus.SUCCESSFUL, JobStatus.FAILED, JobStatus.CANCELED];
 
 export interface JobLink {
   href: string;
@@ -113,9 +115,11 @@ export class Job extends Record {
 
   _json_links?: string | JobLink[];
 
-  status: string;
+  status: JobStatus;
 
   jobID: string;
+
+  originalStatus: JobStatus;
 
   /**
    * Returns an array of all jobs that match the given constraints
@@ -210,6 +214,10 @@ export class Job extends Record {
     this.links = fields.links
       || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : fields._json_links)
       || [];
+    // Job already exists in the database
+    if (fields.createdAt) {
+      this.originalStatus = this.status;
+    }
   }
 
   /**
@@ -227,6 +235,16 @@ export class Job extends Record {
       errors.push(`Invalid request ${this.request}. Job request must be a URL.`);
     }
     return errors.length === 0 ? null : errors;
+  }
+
+  /**
+   * Throws an exception if attempting to change the status on a request that's already in a
+   * terminal state.
+   */
+  validateStatus(): void {
+    if (terminalStates.includes(this.originalStatus)) {
+      throw new TypeError(`Job status cannot be updated from ${this.originalStatus} to ${this.status}.`);
+    }
   }
 
   /**
@@ -311,7 +329,7 @@ export class Job extends Record {
    * @returns true if the job is complete
    */
   isComplete(): boolean {
-    return this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.FAILED;
+    return terminalStates.includes(this.status);
   }
 
   /**
@@ -324,13 +342,18 @@ export class Job extends Record {
    * @throws {@link Error} if the job is invalid
    */
   async save(transaction: Transaction): Promise<void> {
+    // Need to validate the original status before removing it as part of saving to the database
+    // May want to change in the future to have a way to have non-database fields on a record.
+    this.validateStatus();
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
-    const { links } = this;
+    const { links, originalStatus } = this;
     delete this.links;
+    delete this.originalStatus;
     this._json_links = JSON.stringify(links);
     await super.save(transaction);
     this.links = links;
     delete this._json_links;
+    this.originalStatus = originalStatus;
   }
 
   /**
@@ -354,7 +377,9 @@ export class Job extends Record {
         return { href, title, type, rel, bbox, temporal };
       });
     }
-    return new Job(serializedJob as JobRecord);
+    const job = new Job(serializedJob as JobRecord); // We need to clean this up
+    delete job.originalStatus;
+    return job;
   }
 
   /**
