@@ -115,6 +115,8 @@ export class Job extends Record {
 
   jobID: string;
 
+  originalStatus: JobStatus;
+
   /**
    * Returns an array of all jobs that match the given constraints
    *
@@ -209,6 +211,7 @@ export class Job extends Record {
     this.links = fields.links
       || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : fields._json_links)
       || [];
+    this.originalStatus = this.status;
   }
 
   /**
@@ -229,17 +232,23 @@ export class Job extends Record {
   }
 
   /**
+   * Throws an exception if attempting to change the status on a request that's already in a
+   * terminal state.
+   */
+  validateStatus(): void {
+    if (terminalStates.includes(this.originalStatus) && this.originalStatus !== this.status) {
+      throw new TypeError(`Job status cannot be updated from ${this.originalStatus} to ${this.status}.`);
+    }
+  }
+
+  /**
    * Adds a link to the list of result links for the job.
    * You must call `#save` to persist the change
    *
    * @param link - Adds a link to the list of links for the object.
    */
   addLink(link: JobLink): void {
-    if (!this.isComplete()) {
-      this.links.push(link);
-    } else {
-      throw new TypeError(`Job links cannot be added for a job in the ${this.status} state.`);
-    }
+    this.links.push(link);
   }
 
   /**
@@ -292,22 +301,18 @@ export class Job extends Record {
    * @param message - (optional) a human-readable status message
    */
   updateStatus(status: JobStatus, message?: string): void {
-    if (!this.isComplete()) {
-      this.status = status;
-      if (message) {
-        // Update the message if a new one was provided
-        this.message = message;
-      }
-      if (!this.message || defaultMessages.includes(this.message)) {
-        // Update the message to a default one if it's currently a default one for a
-        // different status
-        this.message = statesToDefaultMessages[status];
-      }
-      if (this.status === JobStatus.SUCCESSFUL) {
-        this.progress = 100;
-      }
-    } else {
-      throw new TypeError(`Job status cannot be updated from ${this.status} to ${status}.`);
+    this.status = status;
+    if (message) {
+      // Update the message if a new one was provided
+      this.message = message;
+    }
+    if (!this.message || defaultMessages.includes(this.message)) {
+      // Update the message to a default one if it's currently a default one for a
+      // different status
+      this.message = statesToDefaultMessages[status];
+    }
+    if (this.status === JobStatus.SUCCESSFUL) {
+      this.progress = 100;
     }
   }
 
@@ -331,13 +336,18 @@ export class Job extends Record {
    * @throws {@link Error} if the job is invalid
    */
   async save(transaction: Transaction): Promise<void> {
+    // Need to validate the original status before removing it as part of saving to the database
+    // May want to change in the future to have a way to have non-database fields on a record.
+    this.validateStatus();
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
-    const { links } = this;
+    const { links, originalStatus } = this;
     delete this.links;
+    delete this.originalStatus;
     this._json_links = JSON.stringify(links);
     await super.save(transaction);
     this.links = links;
     delete this._json_links;
+    this.originalStatus = originalStatus;
   }
 
   /**
@@ -361,7 +371,9 @@ export class Job extends Record {
         return { href, title, type, rel, bbox, temporal };
       });
     }
-    return new Job(serializedJob as JobRecord);
+    const job = new Job(serializedJob as JobRecord); // We need to clean this up
+    delete job.originalStatus;
+    return job;
   }
 
   /**

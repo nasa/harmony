@@ -255,29 +255,6 @@ describe('Canceling a job', function () {
     });
   });
 
-  describe('when canceling a canceled job', function () {
-    const canceledJob = _.cloneDeep(aJob);
-    canceledJob.requestId = uuid().toString();
-    canceledJob.status = JobStatus.CANCELED;
-    hookTransaction();
-    before(async function () {
-      await new Job(canceledJob).save(this.trx);
-      this.trx.commit();
-      this.trx = null;
-    });
-
-    hookCancelJob({ jobID: canceledJob.requestId, username: 'joe' });
-    it('returns a 400 HTTP bad request', function () {
-      expect(this.res.statusCode).to.equal(400);
-    });
-
-    it('returns a JSON error response indicating the job cannot be canceled', function () {
-      const response = JSON.parse(this.res.text);
-      expect(response).to.eql({
-        code: 'harmony.RequestValidationError',
-        description: 'Error: Job status cannot be updated from canceled to canceled.' });
-    });
-  });
 
   describe('when canceling a failed job', function () {
     const failedJob = _.cloneDeep(aJob);
@@ -300,6 +277,30 @@ describe('Canceling a job', function () {
       expect(response).to.eql({
         code: 'harmony.RequestValidationError',
         description: 'Error: Job status cannot be updated from failed to canceled.' });
+    });
+  });
+
+  describe('when canceling an already canceled job', function () {
+    const canceledJob = _.cloneDeep(aJob);
+    canceledJob.requestId = uuid().toString();
+    canceledJob.status = JobStatus.CANCELED;
+    hookTransaction();
+    before(async function () {
+      await new Job(canceledJob).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+
+    hookCancelJob({ jobID: canceledJob.requestId, username: 'joe' });
+    it('returns a redirect to the canceled job rather than an error', function () {
+      expect(this.res.statusCode).to.equal(302);
+      expect(this.res.headers.location).to.include(`/jobs/${canceledJob.requestId}`);
+    });
+    describe('When following the redirect to the canceled job', function () {
+      hookRedirect('joe');
+      it('returns an HTTP success response', function () {
+        expect(this.res.statusCode).to.equal(200);
+      });
     });
   });
 });
