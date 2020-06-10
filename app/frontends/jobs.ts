@@ -8,8 +8,6 @@ import { RequestValidationError, NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
-import { belongsToGroup } from '../util/cmr';
-import env from '../util/env';
 
 /**
  * Analyze the links in the job to determine what links should be returned to
