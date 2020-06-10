@@ -171,6 +171,10 @@ export async function cancelJob(
     });
   } catch (e) {
     req.context.logger.error(e);
-    next(e);
+    if (e instanceof TypeError) {
+      next(new RequestValidationError(e.message));
+    } else {
+      next(e);
+    }
   }
 }

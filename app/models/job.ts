@@ -1,7 +1,5 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
-
-import { RequestValidationError } from 'harmony/util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
@@ -240,7 +238,7 @@ export class Job extends Record {
     if (!this.isComplete()) {
       this.links.push(link);
     } else {
-      throw new RequestValidationError(`Job links cannot be added for a job in the ${this.status} state.`);
+      throw new TypeError(`Job links cannot be added for a job in the ${this.status} state.`);
     }
   }
 
@@ -309,7 +307,7 @@ export class Job extends Record {
         this.progress = 100;
       }
     } else {
-      throw new RequestValidationError(`Job status cannot be updated from ${this.status} to ${status}.`);
+      throw new TypeError(`Job status cannot be updated from ${this.status} to ${status}.`);
     }
   }
 

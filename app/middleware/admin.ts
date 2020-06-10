@@ -1,5 +1,5 @@
-import HarmonyRequest from 'harmony/models/harmony-request';
 import { Response, NextFunction } from 'express';
+import HarmonyRequest from '../models/harmony-request';
 import { ForbiddenError } from '../util/errors';
 import { belongsToGroup } from '../util/cmr';
 import env from '../util/env';

@@ -1,7 +1,7 @@
 import { URL } from 'url';
 import { NextFunction } from 'express';
 import { objectStoreForProtocol } from '../util/object-store';
-import { NotFoundError } from '../util/errors';
+import { NotFoundError, TypeError } from '../util/errors';
 
 /**
  * Given a URL that is not necessarily public-facing, produces a URL to that data
