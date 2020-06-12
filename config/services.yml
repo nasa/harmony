@@ -19,6 +19,7 @@ https://cmr.earthdata.nasa.gov:
           BACKEND_HOST: !Env ${BACKEND_HOST}
     collections:
       - C1756916832-XYZ_PROV
+      - C1595422627-ASF
     capabilities:
       subsetting:
         bbox: true
