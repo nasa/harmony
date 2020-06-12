@@ -154,7 +154,7 @@ https://cmr.uat.earthdata.nasa.gov:
     capabilities:
       subsetting:
         bbox: true
-        variable: false
+        variable: true 
       output_formats:
         - application/netcdf
 
