@@ -154,14 +154,14 @@ describe('Canceling a job - user endpoint', function () {
     });
 
     hookCancelJob({ jobID: successfulJob.requestId, username: 'joe' });
-    it('returns a 400 HTTP bad request', function () {
-      expect(this.res.statusCode).to.equal(400);
+    it('returns a 409 HTTP conflict', function () {
+      expect(this.res.statusCode).to.equal(409);
     });
 
     it('returns a JSON error response indicating the job cannot be canceled', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony.RequestValidationError',
+        code: 'harmony.ConflictError',
         description: 'Error: Job status cannot be updated from successful to canceled.' });
     });
   });
@@ -178,14 +178,14 @@ describe('Canceling a job - user endpoint', function () {
     });
 
     hookCancelJob({ jobID: failedJob.requestId, username: 'joe' });
-    it('returns a 400 HTTP bad request', function () {
-      expect(this.res.statusCode).to.equal(400);
+    it('returns a 409 HTTP conflict', function () {
+      expect(this.res.statusCode).to.equal(409);
     });
 
     it('returns a JSON error response indicating the job cannot be canceled', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony.RequestValidationError',
+        code: 'harmony.ConflictError',
         description: 'Error: Job status cannot be updated from failed to canceled.' });
     });
   });
@@ -202,14 +202,14 @@ describe('Canceling a job - user endpoint', function () {
     });
 
     hookCancelJob({ jobID: canceledJob.requestId, username: 'joe' });
-    it('returns a 400 HTTP bad request', function () {
-      expect(this.res.statusCode).to.equal(400);
+    it('returns a 409 HTTP conflict', function () {
+      expect(this.res.statusCode).to.equal(409);
     });
 
     it('returns a JSON error response indicating the job cannot be canceled', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony.RequestValidationError',
+        code: 'harmony.ConflictError',
         description: 'Error: Job status cannot be updated from canceled to canceled.' });
     });
   });
@@ -310,7 +310,7 @@ describe('Canceling a job - admin endpoint', function () {
   describe('when the jobID is in an invalid format', function () {
     const notAJobID = 'foo';
     hookAdminCancelJob({ jobID: notAJobID, username: adminUsername });
-    it('returns a 400 HTTP bad request', function () {
+    it('returns a 409 HTTP conflict', function () {
       expect(this.res.statusCode).to.equal(400);
     });
 
@@ -334,14 +334,14 @@ describe('Canceling a job - admin endpoint', function () {
     });
 
     hookAdminCancelJob({ jobID: successfulJob.requestId, username: adminUsername });
-    it('returns a 400 HTTP bad request', function () {
-      expect(this.res.statusCode).to.equal(400);
+    it('returns a 409 HTTP conflict', function () {
+      expect(this.res.statusCode).to.equal(409);
     });
 
     it('returns a JSON error response indicating the job cannot be canceled', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony.RequestValidationError',
+        code: 'harmony.ConflictError',
         description: 'Error: Job status cannot be updated from successful to canceled.' });
     });
   });
@@ -358,14 +358,14 @@ describe('Canceling a job - admin endpoint', function () {
     });
 
     hookAdminCancelJob({ jobID: failedJob.requestId, username: adminUsername });
-    it('returns a 400 HTTP bad request', function () {
-      expect(this.res.statusCode).to.equal(400);
+    it('returns a 409 HTTP conflict', function () {
+      expect(this.res.statusCode).to.equal(409);
     });
 
     it('returns a JSON error response indicating the job cannot be canceled', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony.RequestValidationError',
+        code: 'harmony.ConflictError',
         description: 'Error: Job status cannot be updated from failed to canceled.' });
     });
   });
@@ -382,14 +382,14 @@ describe('Canceling a job - admin endpoint', function () {
     });
 
     hookAdminCancelJob({ jobID: canceledJob.requestId, username: adminUsername });
-    it('returns a 400 HTTP bad request', function () {
-      expect(this.res.statusCode).to.equal(400);
+    it('returns a 409 HTTP conflict', function () {
+      expect(this.res.statusCode).to.equal(409);
     });
 
     it('returns a JSON error response indicating the job cannot be canceled', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony.RequestValidationError',
+        code: 'harmony.ConflictError',
         description: 'Error: Job status cannot be updated from canceled to canceled.' });
     });
   });

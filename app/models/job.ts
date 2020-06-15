@@ -1,5 +1,6 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
+import { ConflictError } from 'util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
@@ -243,7 +244,7 @@ export class Job extends Record {
    */
   validateStatus(): void {
     if (terminalStates.includes(this.originalStatus)) {
-      throw new TypeError(`Job status cannot be updated from ${this.originalStatus} to ${this.status}.`);
+      throw new ConflictError(`Job status cannot be updated from ${this.originalStatus} to ${this.status}.`);
     }
   }
 

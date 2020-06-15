@@ -134,7 +134,11 @@ The service call was successful and the resulting file can be found at the _full
 
 The service call was unsuccessful due to an error.  The error message is the text of the response body.  Harmony will convey the message verbatim to the user when permitted by the user's request protocol.  Error status codes should follow [RFC-7231](https://tools.ietf.org/html/rfc7231#section-6), with 4xx errors indicating client errors such as validation or access problems and 5xx errors indicating server errors like unexpected exceptions.
 
-## 4. Registering services in services.yml
+## 4. Canceled requests
+
+A harmony admin or a user may cancel a request in flight. When a request has been canceled, Harmony will return a 409 HTTP status code to any callback indicating that the request is canceled, and will not allow adding any new job outputs. No more work should be performed on the request by the backend service at that point.
+
+## 5. Registering services in services.yml
 
 Add an entry to [services.yml](../config/services.yml) under each CMR environment that has collections / granules appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance.  The structure of an entry is as follows:
 
@@ -172,7 +176,7 @@ Add an entry to [services.yml](../config/services.yml) under each CMR environmen
 
 This format is under active development.  In the long-term a large portion of it is likely to be editable and discoverable through the CMR via UMM-S.
 
-## 5. Recommendations for service implementations
+## 6. Recommendations for service implementations
 
 Note that several of the following are under active discussion and we encourage participation in that discussion
 
