@@ -38,3 +38,9 @@ export class RequestValidationError extends HttpError {
     super(400, message);
   }
 }
+
+export class ConflictError extends HttpError {
+  constructor(message = 'Conflict error') {
+    super(409, message);
+  }
+}
