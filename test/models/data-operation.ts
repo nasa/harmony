@@ -88,7 +88,6 @@ describe('DataOperation', () => {
           expect(call).to.throw(TypeError);
         });
       });
-
     });
 
     describe('specifying no URL pattern', () => {
