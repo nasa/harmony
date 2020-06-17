@@ -26,7 +26,7 @@ export default class HttpService extends BaseService<HttpServiceParams> {
   _run(logger): Promise<InvocationResult> {
     return new Promise((resolve, reject) => {
       try {
-        const body = this.operation.serialize(this.config.data_operation_version);
+        const body = this.serializeOperation();
         const { url } = this.params;
         logger.info('Submitting HTTP backend service request', { url });
         const uri = new URL.URL(url);

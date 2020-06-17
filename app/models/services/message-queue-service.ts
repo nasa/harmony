@@ -19,8 +19,7 @@ export default class MessageQueueService extends BaseService<MessageQueueService
    */
   async _run(_logger: Logger): Promise<InvocationResult> {
     const queue = defaultMessageQueue();
-    const message = this.operation.serialize(this.config.data_operation_version);
-    await queue.sendMessage(this.params.queue_url, message);
+    await queue.sendMessage(this.params.queue_url, this.serializeOperation());
     return null;
   }
 }

@@ -27,6 +27,7 @@ export interface ServiceConfig<ServiceParamType> {
     params?: ServiceParamType;
     synchronous_only?: boolean;
   };
+  data_url_pattern?: string;
   collections?: string[];
   capabilities?: ServiceCapabilities;
   concurrency?: number;
@@ -243,5 +244,15 @@ export default class BaseService<ServiceParamType> {
       + `to process only the first ${env.maxAsynchronousGranules} granules.`;
     }
     return undefined;
+  }
+
+  /**
+   * Return the message to be sent to the service, describing the operation to be performed
+   *
+   * @returns the serialized message to be sent
+   */
+  serializeOperation(): string {
+    const { operation, config } = this;
+    return operation.serialize(config.data_operation_version, config.data_url_pattern);
   }
 }

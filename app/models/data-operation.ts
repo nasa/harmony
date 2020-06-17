@@ -99,7 +99,7 @@ export interface HarmonyVariable {
 export interface HarmonyGranule {
   id: string;
   name: string;
-  url: string;
+  urls: string[];
   temporal: {
     start: Date;
     end: Date;
@@ -589,22 +589,34 @@ export default class DataOperation {
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
-   * @param {string} [version] The version to serialize
-   * @param {boolean} [validate=true] true if the serialized output should be JSON Schema validated
-   *   before returning
-   * @returns {string} The serialized data operation in the requested version
+   * @param version The version to serialize
+   * @param urlPattern A pattern to look for when matching data URLs.
+   * @returns The serialized data operation in the requested version
    * @throws {TypeError} If validate is `true` and validation fails, or if version is not provided
    * @throws {RangeError} If the provided version cannot be serialized
-   * @memberof DataOperation
    */
-  serialize(version: string, validate = true): string {
+  serialize(version: string, urlPattern: string = null): string {
     if (!version) {
       throw new TypeError('Schema version is required to serialize DataOperation objects');
     }
 
+    let toWrite = _.cloneDeep(this.model);
+
+    const urlRegex = urlPattern ? new RegExp(urlPattern) : /.*/;
+    // Fetch the first data link matching the pattern required by the backend
+    for (const source of toWrite.sources) {
+      for (const granule of source.granules) {
+        const link = granule.urls.find((u) => u.match(urlRegex));
+        if (!link) {
+          throw new TypeError(`No URL available matching ${urlRegex} as required by the backend service`);
+        }
+        granule.url = link;
+        delete granule.urls;
+      }
+    }
+
     // To be fixed by HARMONY-203 to not default to TIFF
-    this.model.format.mime = this.model.format.mime || 'image/tiff';
-    let toWrite = this.model;
+    toWrite.format.mime = toWrite.format.mime || 'image/tiff';
     let matchingSchema = null;
     for (const schemaVersion of schemaVersions) {
       if (schemaVersion.version === version) {
@@ -622,11 +634,9 @@ export default class DataOperation {
     }
 
     toWrite.version = version;
-    if (validate) {
-      const valid = validator.validate(version, toWrite);
-      if (!valid) {
-        throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validator.errors)}`);
-      }
+    const valid = validator.validate(version, toWrite);
+    if (!valid) {
+      throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validator.errors)}`);
     }
 
     return JSON.stringify(toWrite);

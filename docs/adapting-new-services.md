@@ -149,6 +149,7 @@ Add an entry to [services.yml](../config/services.yml) under each CMR environmen
       env:                        # Environment variables to pass to the image
         EDL_USERNAME: !Env ${EDL_USERNAME}  # Note the syntax for reading environment variables from Harmony itself
         EDL_PASSWORD: !Env ${EDL_PASSWORD}  # to avoid placing secrets in git.  Ask the team for assistance if you need this
+  data_url_pattern: '.*'          # An optional (default = .*) regular expression for a substring that desired data URLs should contain
   collections:                    # A list of CMR collection IDs that the service works on
     - C1234-EXAMPLE
   capabilities:                   # Service capabilities

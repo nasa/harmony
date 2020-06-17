@@ -112,6 +112,31 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf
       projection_to_proj4: true
 
+  - name: sds/variable-subsetter
+    data_operation_version: '0.8.0'
+    type:
+      name: docker
+      params:
+        image: !Env ${VAR_SUBSETTER_IMAGE}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/sds/variable-subsetter
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    data_url_pattern: 'opendap' # look for the string literal "opendap" in the data URL
+    collections:
+      - C1234714691-EEDTEST  # ATL03
+      - C1234714698-EEDTEST  # ATL08
+    capabilities:
+      subsetting:
+        variable: true
+      output_formats:
+        - application/netcdf
+
   # This is an example service and backend from example/http-backend.js mounted by
   # the frontend callback server.
   # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
