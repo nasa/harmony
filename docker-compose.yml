@@ -9,13 +9,13 @@ services:
       - localstack
     environment:
       USE_LOCALSTACK: ${USE_LOCALSTACK}
+      LOCALSTACK_HOST: localstack
       AWS_DEFAULT_REGION: us-west-2
       EDL_USERNAME: ${EDL_USERNAME}
       EDL_PASSWORD: ${EDL_PASSWORD}
       STAGING_BUCKET: ${STAGING_BUCKET}
       STAGING_PATH: public/harmony/gdal
       TEXT_LOGGER: ${TEXT_LOGGER}
-      BACKEND_HOST: ${BACKEND_HOST}
       APP_NAME: harmony-gdal
       PYTHONPATH: /usr/lib/harmony-service-lib-py
     volumes:
