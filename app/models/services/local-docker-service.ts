@@ -131,7 +131,7 @@ export default class LocalDockerService extends BaseService<DockerServiceParams>
     dockerParams = dockerParams.concat(
       this.params.image,
       '--harmony-action', 'invoke',
-      '--harmony-input', this.operation.serialize(this.config.data_operation_version),
+      '--harmony-input', this.serializeOperation(),
     );
     logger.info(dockerParams.join(' '));
     const child = spawn('docker', dockerParams);

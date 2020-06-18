@@ -94,14 +94,14 @@ export default async function cmrGranuleLocator(req, res, next: NextFunction): P
       logger.info(`Found ${hits} granules`);
       const granules = [];
       for (const granule of jsonGranules) {
-        const link = granule.links.find((g) => g.rel.endsWith('/data#') && !g.inherited);
-        if (link) {
+        const links = granule.links.filter((g) => g.rel.endsWith('/data#') && !g.inherited);
+        if (links.length > 0) {
           const collection = getCollectionFromRequest(req, source.collection);
           const box = getBbox(collection, granule);
           const gran: HarmonyGranule = {
             id: granule.id,
             name: granule.title,
-            url: link.href,
+            urls: links.map((l) => l.href),
             bbox: box,
             temporal: {
               start: granule.time_start,

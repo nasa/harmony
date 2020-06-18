@@ -15,45 +15,30 @@ const versions = [
   '0.5.0',
   '0.4.0',
 ];
-let validOperation = JSON.parse(fs.readFileSync(path.join(samplesDir, `valid-operation-v${versions[0]}.json`)).toString());
-const expectedOutput = JSON.stringify(validOperation);
-validOperation = new DataOperation(validOperation);
-delete validOperation.version;
 
-validOperation.temporal = [new Date('1999-01-01T10:00:00.000Z'), new Date('2020-02-20T15:00:00.000Z')];
+/**
+ * Reads and parses a file in the schemas directory as JSON
+ *
+ * @param filename The filename in the schemas directory to read
+ * @returns the parsed JSON
+ */
+function parseSchemaFile(
+  filename: string = null,
+): any { // eslint-disable-line @typescript-eslint/no-explicit-any
+  return JSON.parse(fs.readFileSync(path.join(samplesDir, filename)).toString());
+}
 
+const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 // bbox has one too many numbers
-const invalidOperation = new DataOperation(JSON.parse(fs.readFileSync(path.join(samplesDir, 'invalid-operation.json')).toString()));
+const invalidOperation = new DataOperation(parseSchemaFile('invalid-operation-input.json'));
 
 describe('DataOperation', () => {
   describe('#serialize', () => {
     describe('when its serialized JSON fails schema validation', () => {
-      describe('and its "validate" parameter is not passed', () => {
-        const call = (): string => invalidOperation.serialize(CURRENT_SCHEMA_VERSION);
+      const call = (): string => invalidOperation.serialize(CURRENT_SCHEMA_VERSION);
 
-        it('throws an error', () => {
-          expect(call).to.throw(TypeError);
-        });
-      });
-
-      describe('and its "validate" parameter is set to true', () => {
-        const call = (): string => invalidOperation.serialize(CURRENT_SCHEMA_VERSION, true);
-
-        it('throws an error', () => {
-          expect(call).to.throw(TypeError);
-        });
-      });
-
-      describe('and its "validate" parameter is set to false', () => {
-        const call = (): string => invalidOperation.serialize(CURRENT_SCHEMA_VERSION, false);
-
-        it('does not throw an error', () => {
-          expect(call).to.not.throw();
-        });
-
-        it('returns its JSON-serialized model', () => {
-          expect(call()).to.equal(`{"client":"harmony-test","callback":"http://example.com/callback","stagingLocation":"s3://some-bucket/public/some/prefix/","sources":[],"format":{"mime":"image/png"},"user":"test-user","subset":{"bbox":[-130,-45,130,45,100]},"isSynchronous":true,"requestId":"c045c793-19f1-43b5-9547-c87a5c7dfadb","temporal":{"start":"1999-01-01T10:00:00Z","end":"2020-02-20T15:00:00Z"},"version":"${CURRENT_SCHEMA_VERSION}"}`);
-        });
+      it('throws an error', () => {
+        expect(call).to.throw(TypeError);
       });
     });
 
@@ -65,12 +50,13 @@ describe('DataOperation', () => {
       });
 
       it('returns its JSON-serialized model', () => {
-        expect(call()).to.equal(expectedOutput);
+        const expectedOutput = parseSchemaFile(`valid-operation-v${versions[0]}.json`);
+        expect(JSON.parse(call())).to.eql(expectedOutput);
       });
     });
 
     describe('when not specifying a schema version', () => {
-      const call = (): string => validOperation.serialize();
+      const call = (): string => validOperation.serialize(null);
 
       it('throws an error', () => {
         expect(call).to.throw(TypeError);
@@ -85,10 +71,37 @@ describe('DataOperation', () => {
       });
     });
 
+    describe('specifying a URL pattern', () => {
+      describe('when URLs match the provided pattern', () => {
+        const call = (): string => validOperation.serialize(CURRENT_SCHEMA_VERSION, 'opendap\\..*\\.example');
+
+        it('returns the first data URL matching the provided regex pattern', function () {
+          const result = JSON.parse(call());
+          expect(result.sources[0].granules[0].url).to.equal('http://opendap.one.example.com');
+        });
+      });
+
+      describe('when no URLs match the provided pattern', () => {
+        const call = (): string => validOperation.serialize(CURRENT_SCHEMA_VERSION, 'closedap');
+
+        it('throws an error', () => {
+          expect(call).to.throw(TypeError);
+        });
+      });
+    });
+
+    describe('specifying no URL pattern', () => {
+      const call = (): string => validOperation.serialize(CURRENT_SCHEMA_VERSION, null);
+
+      it('returns the first data URL', function () {
+        const result = JSON.parse(call());
+        expect(result.sources[0].granules[0].url).to.equal('http://example.com');
+      });
+    });
+
     describe('serializing to older schema versions', () => {
       const describeOldSchemaOutput = function (version, outputFile): void {
-        const outputJson = fs.readFileSync(path.join(samplesDir, outputFile)).toString();
-        const output = JSON.stringify(JSON.parse(outputJson));
+        const output = parseSchemaFile(outputFile);
         describe(`when using the ${version} schema version`, () => {
           const call = (): string => validOperation.serialize(version);
 
@@ -97,7 +110,7 @@ describe('DataOperation', () => {
           });
 
           it('returns its JSON-serialized model', () => {
-            expect(call()).equal(output);
+            expect(JSON.parse(call())).eql(output);
           });
         });
       };
