@@ -22,6 +22,50 @@ services:
       - ../harmony-gdal:/home
       - ../harmony-service-lib-py/harmony:/usr/lib/harmony-service-lib-py/harmony
 
+  sds-swot-reproject:
+    container_name: sds-swot-reproject
+    image: sds/swot-reproject
+    restart: unless-stopped
+    command: --harmony-action start --harmony-queue-url http://localstack:4566/queue/sds-swot-reproject-queue
+    depends_on:
+      - localstack
+    environment:
+      USE_LOCALSTACK: ${USE_LOCALSTACK}
+      LOCALSTACK_HOST: localstack
+      AWS_DEFAULT_REGION: us-west-2
+      EDL_USERNAME: ${EDL_USERNAME}
+      EDL_PASSWORD: ${EDL_PASSWORD}
+      STAGING_BUCKET: ${STAGING_BUCKET}
+      STAGING_PATH: public/sds/swot-reproject
+      TEXT_LOGGER: ${TEXT_LOGGER}
+      APP_NAME: sds-swot-reproject
+      PYTHONPATH: /usr/lib/harmony-service-lib-py
+    volumes:
+      - ../sds-swot-reproject:/home
+      - ../harmony-service-lib-py/harmony:/usr/lib/harmony-service-lib-py/harmony
+
+  harmony-netcdf-to-zarr:
+    container_name: harmony-netcdf-to-zarr
+    image: harmony/netcdf-to-zarr
+    restart: unless-stopped
+    command: --harmony-action start --harmony-queue-url http://localstack:4566/queue/harmony-netcdf-to-zarr-queue
+    depends_on:
+      - localstack
+    environment:
+      USE_LOCALSTACK: ${USE_LOCALSTACK}
+      LOCALSTACK_HOST: localstack
+      AWS_DEFAULT_REGION: us-west-2
+      EDL_USERNAME: ${EDL_USERNAME}
+      EDL_PASSWORD: ${EDL_PASSWORD}
+      STAGING_BUCKET: ${STAGING_BUCKET}
+      STAGING_PATH: public/harmony/netcdf-to-zarr
+      TEXT_LOGGER: ${TEXT_LOGGER}
+      APP_NAME: harmony-netcdf-to-zarr
+      PYTHONPATH: /usr/lib/harmony-service-lib-py
+    volumes:
+      - ../harmony-netcdf-to-zarr:/home
+      - ../harmony-service-lib-py/harmony:/usr/lib/harmony-service-lib-py/harmony
+
   localstack:
     container_name: localstack
     image: localstack/localstack:0.11.1

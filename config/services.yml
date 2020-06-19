@@ -113,6 +113,30 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf
       projection_to_proj4: true
 
+  - name: sds/swot-reproject-queue
+    data_operation_version: '0.8.0'
+    type:
+      name: queue
+      params:
+        queue_url: !Env ${BASE_QUEUE_URL}sds-swot-reproject-queue
+    collections:
+      - C1221286860-NSIDC_TS1
+      - C1226288788-EDF_DEV07
+      - C1233147317-EEDTEST
+      - C1233147319-EEDTEST
+      - C1233860183-EEDTEST
+      - C1234724470-POCLOUD
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: false
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+        - application/netcdf
+      projection_to_proj4: true
+
   - name: sds/variable-subsetter
     data_operation_version: '0.8.0'
     type:
@@ -233,4 +257,26 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         variable: false
       output_formats:
-        - application/x-zarr
+
+  - name: harmony/netcdf-to-zarr-queue
+    data_operation_version: '0.8.0'
+    type:
+      name: queue
+      params:
+        queue_url: !Env ${BASE_QUEUE_URL}harmony-netcdf-to-zarr-queue
+    collections:
+      - C1233800302-EEDTEST
+      - C1233860183-EEDTEST
+      - C1234088182-EEDTEST
+      - C1234410736-POCLOUD
+      - C1234082763-POCLOUD
+      - C1234071416-POCLOUD
+      - C1234208437-POCLOUD
+      - C1234208436-POCLOUD
+      - C1234208438-POCLOUD
+      - C1234724470-POCLOUD
+      - C1234724471-POCLOUD
+    capabilities:
+      subsetting:
+        variable: false
+      output_formats:
