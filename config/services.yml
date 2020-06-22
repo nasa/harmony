@@ -167,7 +167,7 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.8.0'
     type:
       name: http
-      synchronous_only: true
+      #synchronous_only: true
       params:
         url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
     collections:
@@ -189,7 +189,7 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.8.0'
     type:
       name: http
-      synchronous_only: true
+      #synchronous_only: true
       params:
         url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
     collections:
