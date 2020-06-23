@@ -5,18 +5,9 @@ https://cmr.earthdata.nasa.gov:
   - name: harmony/gdal
     data_operation_version: '0.8.0'
     type:
-      name: docker
+      name: queue
       params:
-        image: !Env ${GDAL_IMAGE}
-        env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-          AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
-          STAGING_BUCKET: !Env ${STAGING_BUCKET}
-          STAGING_PATH: public/harmony/gdal
-          TEXT_LOGGER: !Env ${TEXT_LOGGER}
-          BACKEND_HOST: !Env ${BACKEND_HOST}
+        queue_url: !Env ${BASE_QUEUE_URL}harmony-gdal-queue
     collections:
       - C1756916832-XYZ_PROV
       - C1595422627-ASF
@@ -32,22 +23,15 @@ https://cmr.earthdata.nasa.gov:
       projection_to_proj4: true
 
 https://cmr.uat.earthdata.nasa.gov:
-  - name: harmony/gdal
+
+  - name: harmony/gdal-queue
     data_operation_version: '0.8.0'
     type:
-      name: docker
+      name: queue
       params:
-        image: !Env ${GDAL_IMAGE}
-        env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-          AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
-          STAGING_BUCKET: !Env ${STAGING_BUCKET}
-          STAGING_PATH: public/harmony/gdal
-          TEXT_LOGGER: !Env ${TEXT_LOGGER}
-          BACKEND_HOST: !Env ${BACKEND_HOST}
+        queue_url: !Env ${BASE_QUEUE_URL}harmony-gdal-queue
     collections:
+      - C1234088182-EEDTEST
       - C1233800302-EEDTEST
       - C1225776654-ASF
     capabilities:
@@ -61,59 +45,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/gif
       projection_to_proj4: true
 
-  - name: harmony/gdal-queue
-    data_operation_version: '0.8.0'
-    type:
-      name: queue
-      params:
-        queue_url: !Env ${BASE_QUEUE_URL}harmony-gdal-queue
-    collections:
-      - C1234088182-EEDTEST
-    capabilities:
-      subsetting:
-        bbox: true
-        variable: true
-        multiple_variable: true
-      output_formats:
-        - image/tiff
-        - image/png
-        - image/gif
-      projection_to_proj4: true
-
   - name: sds/swot-reproject
-    data_operation_version: '0.8.0'
-    type:
-      name: docker
-      params:
-        image: !Env ${SWOT_REPR_IMAGE}
-        env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-          AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
-          STAGING_BUCKET: !Env ${STAGING_BUCKET}
-          STAGING_PATH: public/sds/swot-reproject
-          TEXT_LOGGER: !Env ${TEXT_LOGGER}
-          BACKEND_HOST: !Env ${BACKEND_HOST}
-    collections:
-      - C1221286860-NSIDC_TS1
-      - C1226288788-EDF_DEV07
-      - C1233147317-EEDTEST
-      - C1233147319-EEDTEST
-      - C1233860183-EEDTEST
-      - C1234724470-POCLOUD
-    capabilities:
-      subsetting:
-        bbox: false
-        variable: false
-      output_formats:
-        - image/tiff
-        - image/png
-        - image/gif
-        - application/netcdf
-      projection_to_proj4: true
-
-  - name: sds/swot-reproject-queue
     data_operation_version: '0.8.0'
     type:
       name: queue
@@ -140,18 +72,9 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: sds/variable-subsetter
     data_operation_version: '0.8.0'
     type:
-      name: docker
+      name: queue
       params:
-        image: !Env ${VAR_SUBSETTER_IMAGE}
-        env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-          AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
-          STAGING_BUCKET: !Env ${STAGING_BUCKET}
-          STAGING_PATH: public/sds/variable-subsetter
-          TEXT_LOGGER: !Env ${TEXT_LOGGER}
-          BACKEND_HOST: !Env ${BACKEND_HOST}
+        queue_url: !Env ${BASE_QUEUE_URL}sds-variable-subsetter-queue
     data_url_pattern: 'opendap' # look for the string literal "opendap" in the data URL
     collections:
       - C1234714691-EEDTEST  # ATL03
@@ -204,7 +127,7 @@ https://cmr.uat.earthdata.nasa.gov:
     capabilities:
       subsetting:
         bbox: true
-        variable: true 
+        variable: true
       output_formats:
         - application/netcdf
 
@@ -229,17 +152,9 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.8.0'
     type:
-      name: docker
+      name: queue
       params:
-        image: !Env ${NETCDF_TO_ZARR_IMAGE}
-        env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-          AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
-          STAGING_BUCKET: !Env ${STAGING_BUCKET}
-          STAGING_PATH: public/harmony/netcdf-to-zarr
-          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+        queue_url: !Env ${BASE_QUEUE_URL}harmony-netcdf-to-zarr-queue
     collections:
       - C1233800302-EEDTEST
       - C1233860183-EEDTEST
@@ -257,26 +172,4 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         variable: false
       output_formats:
-
-  - name: harmony/netcdf-to-zarr-queue
-    data_operation_version: '0.8.0'
-    type:
-      name: queue
-      params:
-        queue_url: !Env ${BASE_QUEUE_URL}harmony-netcdf-to-zarr-queue
-    collections:
-      - C1233800302-EEDTEST
-      - C1233860183-EEDTEST
-      - C1234088182-EEDTEST
-      - C1234410736-POCLOUD
-      - C1234082763-POCLOUD
-      - C1234071416-POCLOUD
-      - C1234208437-POCLOUD
-      - C1234208436-POCLOUD
-      - C1234208438-POCLOUD
-      - C1234724470-POCLOUD
-      - C1234724471-POCLOUD
-    capabilities:
-      subsetting:
-        variable: false
-      output_formats:
+        - application/x-zarr
