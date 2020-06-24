@@ -39,10 +39,24 @@ services:
       STAGING_PATH: public/sds/swot-reproject
       TEXT_LOGGER: ${TEXT_LOGGER}
       APP_NAME: sds-swot-reproject
-      PYTHONPATH: /usr/lib/harmony-service-lib-py
-    volumes:
-      - ../sds-swot-reproject:/home
-      - ../harmony-service-lib-py/harmony:/usr/lib/harmony-service-lib-py/harmony
+
+  sds-variable-subsetter:
+    container_name: sds-variable-subsetter
+    image: sds/var_subsetter
+    restart: unless-stopped
+    command: --harmony-action start --harmony-queue-url http://localstack:4566/queue/sds-variable-subsetter-queue
+    depends_on:
+      - localstack
+    environment:
+      USE_LOCALSTACK: ${USE_LOCALSTACK}
+      LOCALSTACK_HOST: localstack
+      AWS_DEFAULT_REGION: us-west-2
+      EDL_USERNAME: ${EDL_USERNAME}
+      EDL_PASSWORD: ${EDL_PASSWORD}
+      STAGING_BUCKET: ${STAGING_BUCKET}
+      STAGING_PATH: public/sds/variable-subsetter
+      TEXT_LOGGER: ${TEXT_LOGGER}
+      APP_NAME: sds-variable-subsetter
 
   harmony-netcdf-to-zarr:
     container_name: harmony-netcdf-to-zarr
