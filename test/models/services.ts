@@ -14,7 +14,7 @@ describe('services.forOperation', function () {
       this.config = [
         {
           name: 'first-service',
-          type: { name: 'docker' },
+          type: { name: 'queue' },
           collections: [collectionId],
           capabilities: { output_formats: ['image/tiff'] },
         },
@@ -35,7 +35,7 @@ describe('services.forOperation', function () {
       it('returns the first service for the collection from the service configuration', function () {
         const service = forOperation(this.operation, {}, this.config);
         expect(service.config.name).to.equal('first-service');
-        expect(service.constructor.name).to.equal('LocalDockerService');
+        expect(service.constructor.name).to.equal('MessageQueueService');
       });
     });
 
@@ -74,12 +74,12 @@ describe('services.forOperation', function () {
       this.config = [
         {
           name: 'non-matching-service',
-          type: { name: 'docker' },
+          type: { name: 'queue' },
           collections: ['C456-NOMATCH'],
         },
         {
           name: 'matching-service',
-          type: { name: 'docker' },
+          type: { name: 'queue' },
           collections: [collectionId],
         },
       ];
@@ -88,7 +88,7 @@ describe('services.forOperation', function () {
     it('returns the service configured for the collection', function () {
       const service = forOperation(this.operation, {}, this.config);
       expect(service.config.name).to.equal('matching-service');
-      expect(service.constructor.name).to.equal('LocalDockerService');
+      expect(service.constructor.name).to.equal('MessageQueueService');
     });
   });
 
@@ -98,7 +98,7 @@ describe('services.forOperation', function () {
       this.config = [
         {
           name: 'variable-subsetter',
-          type: { name: 'docker' },
+          type: { name: 'queue' },
           capabilities: {
             subsetting: { variable: true },
             output_formats: ['image/tiff'],
@@ -107,7 +107,7 @@ describe('services.forOperation', function () {
         },
         {
           name: 'non-variable-subsetter',
-          type: { name: 'docker' },
+          type: { name: 'queue' },
           capabilities: {
             subsetting: { variable: false },
             output_formats: ['application/x-zarr'],
@@ -124,7 +124,7 @@ describe('services.forOperation', function () {
       it('returns the service configured for variable subsetting', function () {
         const service = forOperation(operation, {}, this.config);
         expect(service.config.name).to.equal('variable-subsetter');
-        expect(service.constructor.name).to.equal('LocalDockerService');
+        expect(service.constructor.name).to.equal('MessageQueueService');
       });
     });
 
@@ -176,7 +176,7 @@ describe('services.forOperation', function () {
       this.config = [
         {
           name: 'non-matching-service',
-          type: { name: 'docker' },
+          type: { name: 'queue' },
           collections: ['C456-NOMATCH'],
         },
       ];
@@ -203,7 +203,7 @@ describe('services.forOperation', function () {
       this.config = [
         {
           name: 'matching-service',
-          type: { name: 'docker', synchronous_only: true },
+          type: { name: 'queue', synchronous_only: true },
           collections: [collectionId],
         },
       ];
@@ -212,7 +212,7 @@ describe('services.forOperation', function () {
       const op = this.operation;
       const service = forOperation(op, {}, this.config) as AsynchronizerService<unknown>;
       expect(service.constructor.name).to.equal('AsynchronizerService');
-      expect(service.SyncServiceClass.name).to.equal('LocalDockerService');
+      expect(service.SyncServiceClass.name).to.equal('MessageQueueService');
     });
   });
 });

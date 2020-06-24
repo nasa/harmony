@@ -571,7 +571,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookRangesetRequest(version, collection, variableName, { headers, query });
         it('uses the backend service that supports variable subsetting', function () {
-          expect(this.service.name).to.equal('harmony/gdal');
+          expect(this.service.name).to.equal('harmony/gdal-queue');
         });
         it('chooses the tiff format since zarr is not supported by the variable subsetting service', function () {
           expect(this.service.operation.outputFormat).to.equal(tiff);
@@ -598,7 +598,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
       it('uses the correct backend service', function () {
-        expect(this.service.name).to.equal('harmony/gdal');
+        expect(this.service.name).to.equal('harmony/gdal-queue');
       });
     });
 
@@ -653,17 +653,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
   */
-
-  describe('when the backend service does not respond', function () {
-    // Starting up docker image can take more than 2 seconds
-    this.timeout(10000);
-    StubService.hookDockerImage('alpine:3.10.3');
-    hookRangesetRequest(version, collection, variableName, { query: { granuleId } });
-
-    it('returns an error to the client', async function () {
-      expect(this.res.text).to.include('Service request failed with an unknown error.');
-    });
-  });
 
   describe('Validation', function () {
     /**
