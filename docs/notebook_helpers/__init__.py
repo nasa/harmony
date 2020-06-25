@@ -62,7 +62,7 @@ def request(*args, **kwargs):
 
   print('%s %s' % (prepped.method, prepped.path_url))
   response = session.send(prepped)
-  print('Received %s' % (response.headers.get('Content-Type', 'unknown content',)))
+  #print('Received %s' % (response.headers.get('Content-Type', 'unknown content',)))
   return response
 
 def get(*args, **kwargs):
@@ -194,7 +194,7 @@ def show_async(response):
   body = response.json()
   displayed_link_count = show_response(response, displayed_link_count)
   waiting_message_printed = False
-  while body['status'] not in ['successful', 'failed']:
+  while body['status'] not in ['successful', 'failed', 'cancelled']:
     if not waiting_message_printed:
       print('Waiting for updates...')
       waiting_message_printed = True
@@ -208,3 +208,54 @@ def show_async(response):
       waiting_message_printed = False
   print('Async request is complete')
   return response
+
+def print_async_status(body):
+  """Prints the status, progress and any messages for the async job
+  
+  Arguments:
+      body {json} -- the response body to display
+
+  """
+  print('JobID:',body['jobID'],'Status:',body['status'],'(',body['progress'],'%) Messages:', body['message'])
+
+def show_async_condensed(response, show_results=True):
+  """Shows a condensed version of the asynchronous Harmony response.  Useful for getting status if you don't care about the results.
+
+  Polls the output, displaying status as it changes, and ultimately ending once the request
+  is successful or failed
+
+  Arguments:
+      response {response.Response} -- the response to display
+      show_results {bool} -- True will display the results as they arrive.  (default: {True})
+  """
+  def show_response_condensed(response, link_count):
+    #print('Async response at', datetime.now().strftime("%H:%M:%S"))
+    #print(json.dumps(response.json(), indent=2))
+    links = get_data_urls(response)
+    new_links = links[slice(link_count, None)]
+    for link in new_links:
+      if link.startswith('http'):
+        show(get(link))
+    return len(links)
+
+ 
+  displayed_link_count = 0
+  body = response.json()
+  print ('Getting results for request')
+  print_async_status(body)
+  
+  if show_results:
+    displayed_link_count = show_response_condensed(response, displayed_link_count)
+
+  while body['status'] not in ['successful', 'failed', 'cancelled']:
+    sleep(1)
+    progress = body['progress']
+    status = body['status']
+    response = session.get(response.url)
+    body = response.json()
+    if progress != body['progress'] or status != body['status']:
+      if show_results:
+        displayed_link_count = show_response_condensed(response, displayed_link_count)
+      print_async_status(body)
+  print('Async request is complete')
+  
