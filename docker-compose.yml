@@ -1,25 +1,65 @@
 version: '3.6'
+
+x-service: &default-service
+  restart: unless-stopped
+  depends_on:
+    - localstack
+  environment: &default-environment
+    USE_LOCALSTACK: ${USE_LOCALSTACK}
+    LOCALSTACK_HOST: localstack
+    AWS_DEFAULT_REGION: us-west-2
+    EDL_USERNAME: ${EDL_USERNAME}
+    EDL_PASSWORD: ${EDL_PASSWORD}
+    STAGING_BUCKET: ${STAGING_BUCKET}
+    TEXT_LOGGER: ${TEXT_LOGGER}
+
 services:
   harmony-gdal:
+    <<: *default-service
     container_name: harmony-gdal
     image: harmony/gdal
-    restart: unless-stopped
     command: --harmony-action start --harmony-queue-url http://localstack:4566/queue/harmony-gdal-queue
-    depends_on:
-      - localstack
     environment:
-      USE_LOCALSTACK: ${USE_LOCALSTACK}
-      LOCALSTACK_HOST: localstack
-      AWS_DEFAULT_REGION: us-west-2
-      EDL_USERNAME: ${EDL_USERNAME}
-      EDL_PASSWORD: ${EDL_PASSWORD}
-      STAGING_BUCKET: ${STAGING_BUCKET}
+      <<: *default-environment
       STAGING_PATH: public/harmony/gdal
-      TEXT_LOGGER: ${TEXT_LOGGER}
       APP_NAME: harmony-gdal
       PYTHONPATH: /usr/lib/harmony-service-lib-py
     volumes:
       - ../harmony-gdal:/home
+      - ../harmony-service-lib-py/harmony:/usr/lib/harmony-service-lib-py/harmony
+
+  sds-swot-reproject:
+    <<: *default-service
+    container_name: sds-swot-reproject
+    image: sds/swot-reproject
+    command: --harmony-action start --harmony-queue-url http://localstack:4566/queue/sds-swot-reproject-queue
+    environment:
+      <<: *default-environment
+      STAGING_PATH: public/sds/swot-reproject
+      APP_NAME: sds-swot-reproject
+
+  sds-variable-subsetter:
+    <<: *default-service
+    container_name: sds-variable-subsetter
+    image: sds/variable-subsetter
+    command: --harmony-action start --harmony-queue-url http://localstack:4566/queue/sds-variable-subsetter-queue
+    environment:
+      <<: *default-environment
+      STAGING_PATH: public/sds/variable-subsetter
+      APP_NAME: sds-variable-subsetter
+
+  harmony-netcdf-to-zarr:
+    <<: *default-service
+    container_name: harmony-netcdf-to-zarr
+    image: harmony/netcdf-to-zarr
+    command: --harmony-action start --harmony-queue-url http://localstack:4566/queue/harmony-netcdf-to-zarr-queue
+    environment:
+      <<: *default-environment
+      STAGING_PATH: public/harmony/netcdf-to-zarr
+      APP_NAME: harmony-netcdf-to-zarr
+      PYTHONPATH: /usr/lib/harmony-service-lib-py
+    volumes:
+      - ../harmony-netcdf-to-zarr:/home
       - ../harmony-service-lib-py/harmony:/usr/lib/harmony-service-lib-py/harmony
 
   localstack:

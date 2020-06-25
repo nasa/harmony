@@ -22,15 +22,15 @@ and Harmony callbacks.  Full details as well as an example can be found in the p
 
 The service and all necessary code and dependencies to allow it to run can be packaged in a Docker container image.  Docker images can be staged anywhere Harmony can reach them, e.g. Dockerhub or AWS ECR.  Harmony will run the Docker image, passing the following command-line parameters:
 
-`--harmony-action <action> --harmony-input <input>`
+`--harmony-action <action> --harmony-queue-url <url>`
 
-`<action>` is the action Harmony wants the service to perform, currently only `invoke`, which requests that the service be run.  This may be expanded in the future for additional actions such as capability discovery.
+`<action>` is the action Harmony wants the service to perform, currently only `start`, which requests that the service be started as a long running service that reads requests from an SQS queue.  This may be expanded in the future for additional actions such as capability discovery.
 
-`<input>` is a JSON string containing the details of the service operation to be run.  See the latest [Harmony data-operation schema](../app/schemas/) for format details.
+The messages that are placed on the SQS queue are a JSON string containing the details of the service operation to be run.  See the latest [Harmony data-operation schema](../app/schemas/) for format details.
 
 The `Dockerfile` in the harmony-gdal project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.
 
-In addition to the defined command-line parameters, Harmony can provide the Docker container with environment variables as set in [services.yml](../config/services.yml) by setting `service.type.params.env` key/value pairs.  See the existing services.yml for examples.
+The [docker-compose.yml](../docker-compose.yml) should be updated to add an entry for running the container locally including an environment variables that need to be set. See the harmony-gdal service as an example.
 
 ### Synchronous HTTP
 
@@ -57,6 +57,8 @@ Synchronous requests are ones where a user has made a call to Harmony and the co
 #### For Docker services
 
 Once complete, a service must send an HTTP POST request to the URL provided in the `callback` field of the Harmony input.  Failing to do so will cause user requests to hang until a timeout that is likely long in order to accommodate large, synchronous operations.  Please be mindful of this and provide ample error handling.
+
+After calling back to Harmony the service should then delete the message from its SQS queue.
 
 The following are the options for how to call back to the Harmony URL:
 
@@ -146,13 +148,10 @@ Add an entry to [services.yml](../config/services.yml) under each CMR environmen
 - name: harmony/docker-example    # A unique identifier string for the service, conventionally <team>/<service>
   data_operation_version: '0.8.0' # The version of the data-operation messaging schema to use
   type:                           # Configuration for service invocation
-    name: docker                  # The type of service invocation, currently only "docker"
+    name: queue                   # The type of service invocation, either "queue" or "http"
     synchronous_only: true        # Indicates the service can only handle synchronous, one-granule requests (default: false)
     params:                       # Parameters specific to the service invocation type
-      image: harmony/example      # The Docker container image to run
-      env:                        # Environment variables to pass to the image
-        EDL_USERNAME: !Env ${EDL_USERNAME}  # Note the syntax for reading environment variables from Harmony itself
-        EDL_PASSWORD: !Env ${EDL_PASSWORD}  # to avoid placing secrets in git.  Ask the team for assistance if you need this
+      queue_url: !Env ${BASE_QUEUE_URL}harmony-gdal-queue  # The SQS queue to listen to for requests
   data_url_pattern: '.*'          # An optional (default = .*) regular expression for a substring that desired data URLs should contain
   collections:                    # A list of CMR collection IDs that the service works on
     - C1234-EXAMPLE

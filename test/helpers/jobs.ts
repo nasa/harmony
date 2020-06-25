@@ -123,10 +123,7 @@ function _escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 /**
- * Adds before / after hooks in mocha to inject an instance of StubService
- * into service invocations within the current context. Makes the real service call
- * after replacing the docker image that would have been used with the passed in
- * docker image name.
+ * Asserts that the request URL contains the expected path.
  *
  * @param {string} expectedPath the expected relative path and query string
  * @returns {void}

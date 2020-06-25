@@ -8,7 +8,6 @@ import * as services from 'models/services/index';
 import { Logger } from 'winston';
 import DataOperation from '../../app/models/data-operation';
 import InvocationResult from '../../app/models/services/invocation-result';
-import LocalDockerService from '../../app/models/services/local-docker-service';
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -226,35 +225,6 @@ export default class StubService extends BaseService<void> {
       } catch (e) {
         if (!allowError) throw e;
       }
-    });
-  }
-
-  /**
-   * Adds before / after hooks in mocha to inject an instance of StubService
-   * into service invocations within the current context. Makes the real service call
-   * after replacing the docker image that would have been used with the passed in
-   * docker image name.
-   *
-   * @static
-   * @param {string} dockerImage The docker image name to use when calling the service.
-   * @returns {void}
-   * @memberof StubService
-   */
-  static hookDockerImage(dockerImage: string): void {
-    before(function () {
-      // Tests using a docker image can take more than 2 seconds to start the docker container
-      this.timeout(10000);
-      const origForOperation = services.forOperation;
-      sinon.stub(services, 'forOperation')
-        .callsFake((operation) => {
-          const service = origForOperation(operation) as LocalDockerService;
-          service.params.image = dockerImage;
-          return service;
-        });
-    });
-    after(function () {
-      const stubbed = services.forOperation as SinonStub;
-      if (stubbed.restore) stubbed.restore();
     });
   }
 }

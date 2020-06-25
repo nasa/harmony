@@ -8,7 +8,6 @@ import { isMimeTypeAccepted } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
 import AsynchronizerService from './asynchronizer-service';
 import HttpService from './http-service';
-import LocalDockerService from './local-docker-service';
 import MessageQueueService from './message-queue-service';
 import NoOpService from './no-op-service';
 import DataOperation from '../data-operation';
@@ -44,7 +43,6 @@ function loadServiceConfigs(): void {
 loadServiceConfigs();
 
 const serviceTypesToServiceClasses = {
-  docker: LocalDockerService,
   http: HttpService,
   queue: MessageQueueService,
   noOp: NoOpService,
