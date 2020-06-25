@@ -24,7 +24,7 @@ https://cmr.earthdata.nasa.gov:
 
 https://cmr.uat.earthdata.nasa.gov:
 
-  - name: harmony/gdal-queue
+  - name: harmony/gdal
     data_operation_version: '0.8.0'
     type:
       name: queue
