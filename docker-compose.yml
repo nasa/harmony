@@ -42,7 +42,7 @@ services:
 
   sds-variable-subsetter:
     container_name: sds-variable-subsetter
-    image: sds/var_subsetter
+    image: sds/variable-subsetter
     restart: unless-stopped
     command: --harmony-action start --harmony-queue-url http://localstack:4566/queue/sds-variable-subsetter-queue
     depends_on:
