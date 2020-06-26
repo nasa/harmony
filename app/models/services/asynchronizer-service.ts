@@ -46,7 +46,11 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
   ) {
     super(config, operation);
     this.SyncServiceClass = SyncServiceClass;
-    this.queue = new PromiseQueue({ concurrency: this.config.concurrency || 1 });
+    const concurrency = this.config.concurrency || 1;
+    if (concurrency !== 1 && this.config.type?.single_granule_requests) {
+      throw new TypeError(`Single granule request services must have concurrency set to 1, but was set to ${concurrency}`);
+    }
+    this.queue = new PromiseQueue({ concurrency });
     this.completionPromise = new Promise((resolve, reject) => {
       this._completionCallbacks = { resolve, reject };
     });
@@ -100,10 +104,24 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
       this.completedCount = 0;
       this.totalCount = operations.length;
       for (const { name, syncOperation } of operations) {
-        await this.queue.add(() => this._invokeServiceSync(logger, job, name, syncOperation));
+        const invokeServiceOnQueue = this.queue.add(
+          () => this._invokeServiceSync(logger, job, name, syncOperation),
+        );
+        if (this.config.type?.synchronous_only) {
+          await invokeServiceOnQueue;
+        }
       }
-      await this.queue.onIdle();
-      await this._succeed(logger, job);
+      // for (const { name, syncOperation } of operations) {
+      //   if (this.config.type.synchronous_only) {
+      //     await this.queue.add(() => this._invokeServiceSync(logger, job, name, syncOperation));
+      //   } else {
+      //     this.queue.add(() => this._invokeServiceSync(logger, job, name, syncOperation));
+      //   }
+      // }
+      if (this.config.type?.synchronous_only) {
+        await this.queue.onIdle();
+        await this._succeed(logger, job);
+      }
     } catch (e) {
       logger.error(e);
       const message = (e instanceof ServiceError) ? e.message : 'An unexpected error occurred';
@@ -171,9 +189,6 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
         rel: 'data',
       };
 
-      this.completedCount += 1;
-      const progress = Math.round(this.completedCount / this.totalCount).toString();
-
       const { stagingLocation } = this.operation;
 
       if (result.stream) {
@@ -205,9 +220,18 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
         throw new ServiceError(500, 'The backend service did not respond correctly');
       }
 
-      updateJobFields(logger, job, { item, progress });
-      await job.save(db);
-      logger.info(`Completed service on ${name}`);
+      this.completedCount += 1;
+      const progress = Math.round(100 * (this.completedCount / this.totalCount)).toString();
+
+      // Not threadsafe. There's a race condition in this check if we ever allow more than
+      // one granule to process in parallel for a split up request
+      if (this.completedCount === this.totalCount && this.config.type?.single_granule_requests) {
+        this._succeed(logger, job);
+      } else {
+        updateJobFields(logger, job, { item, progress });
+        await job.save(db);
+      }
+      logger.info(`Completed service on ${name}. Request is ${progress}% complete.`);
     } finally {
       if (result.onComplete) {
         result.onComplete();

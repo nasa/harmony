@@ -65,7 +65,7 @@ function buildService(
     throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
   }
 
-  if (serviceConfig.type.synchronous_only) {
+  if (serviceConfig.type.synchronous_only || serviceConfig.type.single_granule_requests) {
     return new AsynchronizerService(ServiceClass, serviceConfig, operation);
   }
   return new ServiceClass(serviceConfig, operation);

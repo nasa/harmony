@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
 import _ from 'lodash';
+import logger from 'util/log';
 import { CmrUmmVariable } from '../util/cmr';
 
 /**
@@ -636,7 +637,8 @@ export default class DataOperation {
     toWrite.version = version;
     const valid = validator.validate(version, toWrite);
     if (!valid) {
-      throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validator.errors)}`);
+      logger.warn(`Invalid JSON: ${JSON.stringify(toWrite)}`);
+      // throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validator.errors)}`);
     }
 
     return JSON.stringify(toWrite);
