@@ -194,7 +194,7 @@ def show_async(response):
   body = response.json()
   displayed_link_count = show_response(response, displayed_link_count)
   waiting_message_printed = False
-  while body['status'] not in ['successful', 'failed', 'cancelled']:
+  while body['status'] not in ['successful', 'failed', 'canceled']:
     if not waiting_message_printed:
       print('Waiting for updates...')
       waiting_message_printed = True
@@ -243,12 +243,9 @@ def show_async_condensed(response, show_results=True):
   body = response.json()
   print ('Getting results for request')
   print_async_status(body)
-  
   if show_results:
     displayed_link_count = show_response_condensed(response, displayed_link_count)
-
-  while body['status'] not in ['successful', 'failed', 'cancelled']:
-    sleep(1)
+  while body['status'] not in ['successful', 'failed', 'canceled']:
     progress = body['progress']
     status = body['status']
     response = session.get(response.url)
