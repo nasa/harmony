@@ -164,6 +164,9 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
    */
   async _invokeServiceSync(logger: Logger, job: Job, name: string, syncOperation: DataOperation):
   Promise<void> {
+    if (this.isComplete) {
+      return;
+    }
     logger.info(`Invoking service on ${name}`);
     const service = new this.SyncServiceClass(this.config, syncOperation);
     const result = await service.invoke(...this._invokeArgs);
@@ -225,6 +228,14 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
         await job.save(db);
       }
       logger.info(`Completed service on ${name}. Request is ${progress}% complete.`);
+    } catch (e) {
+      if (this.config.type.single_granule_requests) {
+        // We are not awaiting in this case, so fail the job here instead of bubbling the
+        // exception up.
+        this._fail(logger, job, e.message);
+      } else {
+        throw e;
+      }
     } finally {
       if (result.onComplete) {
         result.onComplete();

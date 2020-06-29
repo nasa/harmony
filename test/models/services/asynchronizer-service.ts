@@ -6,7 +6,6 @@ import AsynchronizerService from 'models/services/asynchronizer-service';
 import DataOperation from 'models/data-operation';
 import * as fs from 'fs';
 import * as path from 'path';
-import BaseService from 'models/services/base-service';
 import { Job } from '../../../app/models/job';
 import { defaultObjectStore } from '../../../app/util/object-store';
 import hookServersStartStop from '../../helpers/servers';
