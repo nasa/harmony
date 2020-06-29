@@ -47,7 +47,7 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
     super(config, operation);
     this.SyncServiceClass = SyncServiceClass;
     const concurrency = this.config.concurrency || 1;
-    if (concurrency !== 1 && this.config.type?.single_granule_requests) {
+    if (concurrency !== 1 && this.config.type.single_granule_requests) {
       throw new TypeError(`Single granule request services must have concurrency set to 1, but was set to ${concurrency}`);
     }
     this.queue = new PromiseQueue({ concurrency });
@@ -107,18 +107,11 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
         const invokeServiceOnQueue = this.queue.add(
           () => this._invokeServiceSync(logger, job, name, syncOperation),
         );
-        if (this.config.type?.synchronous_only) {
+        if (this.config.type.synchronous_only) {
           await invokeServiceOnQueue;
         }
       }
-      // for (const { name, syncOperation } of operations) {
-      //   if (this.config.type.synchronous_only) {
-      //     await this.queue.add(() => this._invokeServiceSync(logger, job, name, syncOperation));
-      //   } else {
-      //     this.queue.add(() => this._invokeServiceSync(logger, job, name, syncOperation));
-      //   }
-      // }
-      if (this.config.type?.synchronous_only) {
+      if (this.config.type.synchronous_only) {
         await this.queue.onIdle();
         await this._succeed(logger, job);
       }
@@ -225,7 +218,7 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
 
       // Not threadsafe. There's a race condition in this check if we ever allow more than
       // one granule to process in parallel for a split up request
-      if (this.completedCount === this.totalCount && this.config.type?.single_granule_requests) {
+      if (this.completedCount === this.totalCount && this.config.type.single_granule_requests) {
         this._succeed(logger, job);
       } else {
         updateJobFields(logger, job, { item, progress });
