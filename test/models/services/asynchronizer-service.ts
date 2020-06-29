@@ -75,7 +75,7 @@ describe('Asynchronizer Service', function () {
         expect(this.callbackOptions.callCount).to.equal(20);
       });
 
-      it('provides an asynchronous response to the caller', function () {
+      it('redirects to the job status', function () {
         expect(this.res.headers.location).to.include('/jobs/');
       });
 
@@ -85,6 +85,17 @@ describe('Asynchronizer Service', function () {
         it('marks the job successful', function () {
           const job = JSON.parse(this.res.text);
           expect(job.status).to.eql('successful');
+        });
+
+        it('sets the progress to 100', function () {
+          const job = new Job(JSON.parse(this.res.text));
+          expect(job.progress).to.equal(100);
+        });
+
+        it('includes links for all 20 granules', function () {
+          const job = new Job(JSON.parse(this.res.text));
+          const dataLinks = job.getRelatedLinks('data');
+          expect(dataLinks.length).to.equal(20);
         });
       });
     });
