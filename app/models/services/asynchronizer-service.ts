@@ -302,7 +302,6 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
    * @param logger The logger to use for details about this request
    * @param job The job containing all service invocations
    * @param message The user-facing error message
-   * @param trx The database transaction
    * @returns {Promise<void>}
    * @memberof AsynchronizerService
    */
