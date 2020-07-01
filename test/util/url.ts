@@ -25,16 +25,16 @@ function createRequest(
 describe('util/url', function () {
   describe('#getRequestUrl', function () {
     describe('using localhost', function () {
-      const request = createRequest('localhost:3000');
+      const request = createRequest('localhost:5555');
       it('returns the correct URL starting with http', function () {
-        expect(getRequestUrl(request, true)).to.equal('http://localhost:3000/example/path?param1=foo&param2=2');
+        expect(getRequestUrl(request, true)).to.equal('http://localhost:5555/example/path?param1=foo&param2=2');
       });
     });
 
     describe('using 127.0.0.1', function () {
-      const request = createRequest('127.0.0.1:3000');
+      const request = createRequest('127.0.0.1:5555');
       it('returns the correct URL starting with http', function () {
-        expect(getRequestUrl(request)).to.equal('http://127.0.0.1:3000/example/path?param1=foo&param2=2');
+        expect(getRequestUrl(request)).to.equal('http://127.0.0.1:5555/example/path?param1=foo&param2=2');
       });
     });
 
@@ -62,60 +62,60 @@ describe('util/url', function () {
 
   describe('#getSanitizedRequestUrl', function () {
     describe('with query parameters and no trailing slash', function () {
-      const request = createRequest('localhost:3000', '/example/path');
+      const request = createRequest('localhost:5555', '/example/path');
       it('returns the correct URL starting with http', function () {
-        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path?param1=foo&param2=2');
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:5555/example/path?param1=foo&param2=2');
       });
     });
 
     describe('with query parameters and one trailing slash', function () {
-      const request = createRequest('localhost:3000', '/example/path/');
+      const request = createRequest('localhost:5555', '/example/path/');
       it('returns the correct URL starting with http', function () {
-        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path?param1=foo&param2=2');
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:5555/example/path?param1=foo&param2=2');
       });
     });
 
     describe('with query parameters and many slashes', function () {
-      const request = createRequest('localhost:3000', '/example/path//////');
+      const request = createRequest('localhost:5555', '/example/path//////');
       it('returns the correct URL starting with http', function () {
-        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path?param1=foo&param2=2');
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:5555/example/path?param1=foo&param2=2');
       });
     });
 
     describe('without query parameters and no trailing slash', function () {
-      const request = createRequest('localhost:3000', '/example/path', {});
+      const request = createRequest('localhost:5555', '/example/path', {});
       it('returns the correct URL starting with http', function () {
-        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path');
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:5555/example/path');
       });
     });
 
     describe('without query parameters and one trailing slash', function () {
-      const request = createRequest('localhost:3000', '/example/path/', {});
+      const request = createRequest('localhost:5555', '/example/path/', {});
       it('returns the correct URL starting with http', function () {
-        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path');
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:5555/example/path');
       });
     });
 
     describe('without query parameters and many slashes', function () {
-      const request = createRequest('localhost:3000', '/example/path///////', {});
+      const request = createRequest('localhost:5555', '/example/path///////', {});
       it('returns the correct URL starting with http', function () {
-        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:3000/example/path');
+        expect(getSanitizedRequestUrl(request, true)).to.equal('http://localhost:5555/example/path');
       });
     });
   });
 
   describe('#getRequestRoot', function () {
     describe('using localhost', function () {
-      const request = createRequest('localhost:3000');
+      const request = createRequest('localhost:5555');
       it('returns the correct root starting with http', function () {
-        expect(getRequestRoot(request)).to.equal('http://localhost:3000');
+        expect(getRequestRoot(request)).to.equal('http://localhost:5555');
       });
     });
 
     describe('using 127.0.0.1', function () {
-      const request = createRequest('127.0.0.1:3000');
+      const request = createRequest('127.0.0.1:5555');
       it('returns the correct root starting with http', function () {
-        expect(getRequestRoot(request)).to.equal('http://127.0.0.1:3000');
+        expect(getRequestRoot(request)).to.equal('http://127.0.0.1:5555');
       });
     });
   });

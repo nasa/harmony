@@ -1,5 +1,7 @@
 import { before, after } from 'mocha';
+import { stub } from 'sinon';
 import * as harmony from '../../app/server';
+import env from '../../app/util/env';
 
 process.env.EXAMPLE_SERVICES = 'true';
 
@@ -12,18 +14,21 @@ process.env.EXAMPLE_SERVICES = 'true';
  */
 export default function hookServersStartStop(opts = { skipEarthdataLogin: true }): void {
   let servers = null;
-  before(function () {
+  before(async function () {
     // Skip Earthdata Login unless the test says to do otherwise
     const skipEdl = opts.skipEarthdataLogin ? 'true' : 'false';
     // Start Harmony on a random open port
-    servers = harmony.start({
+    servers = await harmony.start({
       EXAMPLE_SERVICES: 'true',
       skipEarthdataLogin: skipEdl,
-      PORT: '3000',
-      BACKEND_PORT: '3001',
+      // Hardcoded to 4000 to match the port in the url for the example HTTP service in services.yml
+      PORT: '4000',
+      BACKEND_PORT: '0',
     });
     this.frontend = servers.frontend;
     this.backend = servers.backend;
+    stub(env, 'callbackUrlRoot').get(() => `http://localhost:${servers.backend.address().port}`);
+    process.env.OAUTH_REDIRECT_URI = `http://localhost:${servers.frontend.address().port}/oauth2/redirect`;
   });
   after(async function () {
     await harmony.stop(servers);
