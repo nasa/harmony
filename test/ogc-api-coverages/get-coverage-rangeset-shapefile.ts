@@ -12,7 +12,7 @@ import StubService from '../helpers/stub-service';
 import { auth } from '../helpers/auth';
 import { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } from '../helpers/ogc-api-coverages';
 import hookCmr from '../helpers/stub-cmr';
-import { getJson } from '../helpers/object-store';
+import { getJson, hookMockS3 } from '../helpers/object-store';
 
 /**
  * Common steps in the validation tests
@@ -48,6 +48,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const variableName = 'red_var';
   const version = '1.0.0';
 
+  hookMockS3();
   hookServersStartStop({ skipEarthdataLogin: false });
 
   const cmrRespStr = fs.readFileSync('./test/resources/africa_shapefile_post_response.json');
