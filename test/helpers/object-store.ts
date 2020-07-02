@@ -24,7 +24,7 @@ S3MockPrototype.upload = function (...args): mockAws.S3.ManagedUpload {
 export function hookMockS3(_buckets?: string[]): void {
   let dir;
   let stub;
-  before(async function () {
+  before(function () {
     dir = tmp.dirSync();
     mockAws.config.basePath = dir.name;
     stub = sinon.stub(S3ObjectStore.prototype, '_getS3')

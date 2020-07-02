@@ -158,7 +158,7 @@ export function router(): express.Router {
  * @returns {http.Server} The started server
  */
 export function start(config: Record<string, string> = {}): http.Server {
-  const port = parseInt(config.PORT || '3002', 10);
+  const port = parseInt(config.PORT || '0', 10);
   const app = express();
 
   app.use('/example', router());

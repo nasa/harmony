@@ -141,7 +141,7 @@ describe('Earthdata Login', function () {
       beforeEach(function () {
         stubEdlRequest(
           '/oauth/token',
-          { grant_type: 'authorization_code', code: 'abc123', redirect_uri: 'http://localhost:3000/oauth2/redirect' },
+          { grant_type: 'authorization_code', code: 'abc123', redirect_uri: `http://localhost:${this.frontend.address().port}/oauth2/redirect` },
           token({ accessToken: 'validated' }),
         );
       });

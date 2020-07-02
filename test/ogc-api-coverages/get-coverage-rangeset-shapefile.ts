@@ -12,7 +12,7 @@ import StubService from '../helpers/stub-service';
 import { auth } from '../helpers/auth';
 import { rangesetRequest, postRangesetRequest, hookPostRangesetRequest, stripSignature } from '../helpers/ogc-api-coverages';
 import hookCmr from '../helpers/stub-cmr';
-import { hookMockS3, getJson } from '../helpers/object-store';
+import { getJson, hookMockS3 } from '../helpers/object-store';
 
 /**
  * Common steps in the validation tests

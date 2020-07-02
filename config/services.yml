@@ -98,7 +98,7 @@ https://cmr.uat.earthdata.nasa.gov:
       # results in order to test our sync -> async conversion.
       #synchronous_only: true
       params:
-        url: http://localhost:3000/example/harmony
+        url: http://localhost:4000/example/harmony
     collections:
       # AMSR-E/Aqua L2B Global Swath Ocean Products derived from Wentz Algorithm V086
       # Good example, being in UAT, global, many public non-global granules,
