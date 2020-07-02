@@ -182,17 +182,21 @@ export default class StubService extends BaseService<void> {
    * to ensure the Asynchronizer completes its work before ending the test
    *
    * @static
-   * @param {object} callbackOptions The options to be used for _each_ callback
-   * @returns {void}
+   * @param callbackOptions The options to be used for _each_ callback
+   * @param type The service config type parameters e.g. { synchronous_only: true }
    * @memberof StubService
    */
-  static hookAsynchronized(callbackOptions: object = { params: { redirect: 'http://example.com' } }): void {
+  static hookAsynchronized(
+    callbackOptions: object = { params: { redirect: 'http://example.com' } },
+    type: object = { synchronous_only: true },
+  ): void {
     before(async function () {
       const ctx = this;
       this.callbackOptions = callbackOptions;
       sinon.stub(services, 'forOperation')
         .callsFake((operation) => {
           ctx.service = new AsynchronizerService(StubService, callbackOptions, operation);
+          ctx.service.config.type = type;
           return ctx.service;
         });
     });

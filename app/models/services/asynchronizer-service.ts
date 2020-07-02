@@ -2,13 +2,13 @@ import PromiseQueue from 'p-queue';
 import BaseService, { ServiceConfig } from 'models/services/base-service';
 import { Logger } from 'winston';
 
-import { Job } from 'models/job';
+import { Job, JobStatus } from 'models/job';
 import { ServiceError } from '../../util/errors';
 import { objectStoreForProtocol } from '../../util/object-store';
 import DataOperation from '../data-operation';
 import InvocationResult from './invocation-result';
 
-import db from '../../util/db';
+import db, { Transaction } from '../../util/db';
 import { updateJobFields, CallbackQueryItem } from '../../backends/service-response';
 
 /**
@@ -46,7 +46,11 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
   ) {
     super(config, operation);
     this.SyncServiceClass = SyncServiceClass;
-    this.queue = new PromiseQueue({ concurrency: this.config.concurrency || 1 });
+    const concurrency = this.config.concurrency || 1;
+    if (concurrency !== 1 && this.config.type.single_granule_requests) {
+      throw new TypeError(`Single granule request services must have concurrency set to 1, but was set to ${concurrency}`);
+    }
+    this.queue = new PromiseQueue({ concurrency });
     this.completionPromise = new Promise((resolve, reject) => {
       this._completionCallbacks = { resolve, reject };
     });
@@ -100,10 +104,26 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
       this.completedCount = 0;
       this.totalCount = operations.length;
       for (const { name, syncOperation } of operations) {
-        await this.queue.add(() => this._invokeServiceSync(logger, job, name, syncOperation));
+        const invokeServiceOnQueue = this.queue.add(
+          () => this._invokeServiceSync(logger, job, name, syncOperation),
+        );
+        if (this.config.type.synchronous_only) {
+          await invokeServiceOnQueue;
+        }
       }
-      await this.queue.onIdle();
-      await this._succeed(logger, job);
+      if (this.config.type.synchronous_only) {
+        await this.queue.onIdle();
+        const trx = await db.transaction();
+        try {
+          const updatedJob = await Job.byRequestId(trx, job.requestId);
+          await this._succeed(logger, updatedJob, trx);
+          trx.commit();
+        } catch (trxError) {
+          trx.rollback();
+          logger.error('Error updating job status.');
+          logger.error(trxError);
+        }
+      }
     } catch (e) {
       logger.error(e);
       const message = (e instanceof ServiceError) ? e.message : 'An unexpected error occurred';
@@ -153,6 +173,9 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
    */
   async _invokeServiceSync(logger: Logger, job: Job, name: string, syncOperation: DataOperation):
   Promise<void> {
+    if (this.isComplete) {
+      return;
+    }
     logger.info(`Invoking service on ${name}`);
     const service = new this.SyncServiceClass(this.config, syncOperation);
     const result = await service.invoke(...this._invokeArgs);
@@ -170,9 +193,6 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
         href: null,
         rel: 'data',
       };
-
-      this.completedCount += 1;
-      const progress = Math.round(this.completedCount / this.totalCount).toString();
 
       const { stagingLocation } = this.operation;
 
@@ -205,9 +225,40 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
         throw new ServiceError(500, 'The backend service did not respond correctly');
       }
 
-      updateJobFields(logger, job, { item, progress });
-      await job.save(db);
-      logger.info(`Completed service on ${name}`);
+      this.completedCount += 1;
+      const progress = Math.round(100 * (this.completedCount / this.totalCount)).toString();
+
+      const trx = await db.transaction();
+      try {
+        const updatedJob = await Job.byRequestId(trx, job.requestId);
+        // if request has been canceled then quit processing
+        if (updatedJob.status === JobStatus.CANCELED) {
+          this.isComplete = true;
+          trx.rollback();
+          return;
+        }
+        updateJobFields(logger, updatedJob, { item, progress });
+
+        // Not threadsafe. There's a race condition in this check if we ever allow more than
+        // one granule to process in parallel for a split up request
+        if (this.completedCount === this.totalCount && this.config.type.single_granule_requests) {
+          await this._succeed(logger, updatedJob, trx);
+        } else {
+          await updatedJob.save(trx);
+        }
+        await trx.commit();
+        logger.info(`Completed service on ${name}. Request is ${progress}% complete.`);
+      } catch (trxError) {
+        await trx.rollback();
+      }
+    } catch (e) {
+      if (this.config.type.single_granule_requests) {
+        // We are not awaiting in this case, so fail the job here instead of bubbling the
+        // exception up.
+        this._fail(logger, job, e.message);
+      } else {
+        throw e;
+      }
     } finally {
       if (result.onComplete) {
         result.onComplete();
@@ -218,20 +269,22 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
   /**
    * Marks the service call as complete and successful
    *
-   * @param {Logger} logger The logger to use for details about this request
-   * @param {Job} job The job containing all service invocations
+   * @param logger The logger to use for details about this request
+   * @param job The job containing all service invocations
+   * @param trx The database transaction
+   *
    * @returns {Promise<void>}
    * @memberof AsynchronizerService
    */
-  async _succeed(logger: Logger, job: Job): Promise<void> {
+  async _succeed(logger: Logger, job: Job, trx: Transaction): Promise<void> {
     if (this.isComplete) {
-      logger.warn('Received a success call for a completed job');
+      logger.warn('Received a success call for a completed jobs');
       return;
     }
     this.isComplete = true;
     try {
       updateJobFields(logger, job, { status: 'successful' });
-      await job.save(db);
+      await job.save(trx);
       logger.info('Completed service request successfully');
     } catch (e) {
       logger.error('Error marking request complete');
@@ -246,9 +299,9 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
   /**
    * Marks the service call as having failed with the given message
    *
-   * @param {Logger} logger The logger to use for details about this request
-   * @param {Job} job The job containing all service invocations
-   * @param {string} message The user-facing error message
+   * @param logger The logger to use for details about this request
+   * @param job The job containing all service invocations
+   * @param message The user-facing error message
    * @returns {Promise<void>}
    * @memberof AsynchronizerService
    */

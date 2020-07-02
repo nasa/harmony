@@ -2,6 +2,10 @@ import { describe, it, before } from 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { S3 } from 'aws-sdk';
+import AsynchronizerService from 'models/services/asynchronizer-service';
+import DataOperation from 'models/data-operation';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Job } from '../../../app/models/job';
 import { defaultObjectStore } from '../../../app/util/object-store';
 import hookServersStartStop from '../../helpers/servers';
@@ -22,11 +26,100 @@ function alternateCallbacks<T>(...values: T[]): Function {
 }
 
 describe('Asynchronizer Service', function () {
+  describe('#constructor', function () {
+    const validOperation = new DataOperation(
+      JSON.parse(fs.readFileSync(path.join(
+        './test/resources/data-operation-samples',
+        'valid-operation-input.json',
+      )).toString()),
+    );
+
+    describe('when setting the concurrency > 1', function () {
+      describe('when setting single_granule_requests to true', function () {
+        const call = (): AsynchronizerService<unknown> => new AsynchronizerService(
+          StubService,
+          { name: 'test', type: { name: 'test-single', single_granule_requests: true }, concurrency: 2 },
+          validOperation,
+        );
+        it('throws an error', function () {
+          expect(call).to.throw(TypeError);
+        });
+      });
+
+      describe('when not setting single_granule_requests to true', function () {
+        const call = (): AsynchronizerService<unknown> => new AsynchronizerService(
+          StubService,
+          { name: 'test', type: { name: 'test-sync', synchronous_only: true }, concurrency: 2 },
+          validOperation,
+        );
+        it('does not throw an error', function () {
+          expect(call).to.not.throw;
+        });
+      });
+    });
+  });
+
   hookServersStartStop({ skipEarthdataLogin: false });
   hookMockS3();
 
   describe('when a service is configured to receive one granule at a time', function () {
     describe('when an asynchronous request arrives', function () {
+      StubService.hookAsynchronized(
+        sinon.spy(() => ({ params: { redirect: 'https://example.com/test' } })),
+        { single_granule_requests: true },
+      );
+      hookRangesetRequest();
+      StubService.hookAsynchronizedServiceCompletion();
+
+      it('sends single granules from the request to the backend, one per input granule', function () {
+        expect(this.callbackOptions.callCount).to.equal(20);
+      });
+
+      it('redirects to the job status', function () {
+        expect(this.res.headers.location).to.include('/jobs/');
+      });
+
+      describe('when all service invocations are handled successfully', function () {
+        hookRedirect();
+
+        it('marks the job successful', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.status).to.eql('successful');
+        });
+
+        it('sets the progress to 100', function () {
+          const job = new Job(JSON.parse(this.res.text));
+          expect(job.progress).to.equal(100);
+        });
+
+        it('includes links for all 20 granules', function () {
+          const job = new Job(JSON.parse(this.res.text));
+          const dataLinks = job.getRelatedLinks('data');
+          expect(dataLinks.length).to.equal(20);
+        });
+      });
+    });
+
+    describe('when a synchronous request arrives', function () {
+      StubService.hookAsynchronized(
+        sinon.spy(() => ({ params: { redirect: 'https://example.com/test' } })),
+        { single_granule_requests: true },
+      );
+      hookSyncRangesetRequest();
+      StubService.hookAsynchronizedServiceCompletion();
+
+      it('sends the request directly to the service', function () {
+        expect(this.callbackOptions.callCount).to.equal(1);
+      });
+
+      it('responds synchronously to the caller', function () {
+        expect(this.res.headers.location).to.equal('https://example.com/test');
+      });
+    });
+  });
+
+  describe('when a service is configured to only respond synchronously', function () {
+    describe('when a request that would normally be handled asynchronously arrives', function () {
       StubService.hookAsynchronized(sinon.spy(() => ({ params: { redirect: 'https://example.com/test' } })));
       hookRangesetRequest();
       StubService.hookAsynchronizedServiceCompletion();

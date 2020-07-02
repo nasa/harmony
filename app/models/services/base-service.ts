@@ -26,6 +26,7 @@ export interface ServiceConfig<ServiceParamType> {
     name: string;
     params?: ServiceParamType;
     synchronous_only?: boolean;
+    single_granule_requests?: boolean;
   };
   data_url_pattern?: string;
   collections?: string[];
@@ -99,6 +100,7 @@ export default class BaseService<ServiceParamType> {
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
   ): Promise<InvocationResult> {
     let job;
+    logger.info(`Invoking service for operation ${JSON.stringify(this.operation)}`);
     try {
       job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
       await job.save(db);

@@ -49,6 +49,7 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.8.0'
     type:
       name: queue
+      single_granule_requests: true
       params:
         queue_url: !Env ${BASE_QUEUE_URL}sds-swot-reproject-queue
     collections:
