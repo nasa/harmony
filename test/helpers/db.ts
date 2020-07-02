@@ -3,12 +3,14 @@
 import { before, after, beforeEach, afterEach } from 'mocha';
 import { stub } from 'sinon';
 
-import { exec } from 'child_process';
+import util from 'util';
 import db from '../../app/util/db';
 
 import logger from '../../app/util/log';
 
 const tables = ['jobs'];
+
+const exec = util.promisify(require('child_process').exec);
 
 /**
  * Truncates all database tables
@@ -25,18 +27,12 @@ const createDatabaseCommand = './bin/create-database -o test';
  * Recreates the test database
  * Note this is done because database migrations do not work for sqlite
  */
-function recreateDatabase(): void {
-  exec(createDatabaseCommand, (error, stdout, stderr) => {
-    if (error) {
-      logger.warn(`Failed to recreate database: [${error}]`);
-      logger.warn(`create database stdout: [${stdout}]`);
-      logger.warn(`create database stderr: [${stderr}]`);
-    }
-  });
+async function recreateDatabase(): Promise<void> {
+  return exec(createDatabaseCommand);
 }
 
 before(async function () {
-  recreateDatabase();
+  await recreateDatabase();
 });
 
 /**
