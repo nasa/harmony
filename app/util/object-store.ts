@@ -6,6 +6,8 @@ import * as tmp from 'tmp';
 import { URL } from 'url';
 import * as util from 'util';
 import { PromiseResult } from 'aws-sdk/lib/request';
+import { CopyObjectRequest } from 'aws-sdk/clients/s3';
+import _ from 'lodash';
 
 import env = require('./env');
 
@@ -74,8 +76,9 @@ export class S3ObjectStore {
       Bucket: url.hostname,
       Key: url.pathname.substr(1), // Nuke leading "/"
     };
-    // Verifies that the object exists, or throws NotFound
-    await this.s3.headObject(object).promise();
+    // Signed URLs only work when the Harmony account owns both the bucket and the key. If the
+    // object does not exist a NotFound will be thrown
+    await this._changeOwnership(_.cloneDeep(object));
     const req = this.s3.getObject(object);
 
     if (params && req.on) {
@@ -241,7 +244,25 @@ export class S3ObjectStore {
   getUrlString(bucket: string, key: string): string {
     return `s3://${bucket}/${key}`;
   }
+
+  /**
+   * Changes ownership of the provided object to the harmony account
+   * @param paramsOrUrl a map of parameters (Bucket, Key) indicating the object to be retrieved or
+   *   the object URL
+   */
+  async _changeOwnership(paramsOrUrl: string | BucketParams): Promise<void> {
+    const params = this._paramsOrUrlToParams(paramsOrUrl) as CopyObjectRequest;
+    const existingObject = await this.headObject(params);
+    // When replacing the metadata both the Metadata and ContentType fields are overwritten
+    // with the new object creation. So we preserve those two fields here.
+    params.Metadata = await existingObject.Metadata;
+    params.ContentType = await existingObject.ContentType;
+    params.MetadataDirective = 'REPLACE';
+    params.CopySource = `${params.Bucket}/${params.Key}`;
+    await this.s3.copyObject(params).send();
+  }
 }
+
 
 /**
  * Returns a class to interact with the object store appropriate for
