@@ -6,8 +6,6 @@ import { stub } from 'sinon';
 import util from 'util';
 import db from '../../app/util/db';
 
-import logger from '../../app/util/log';
-
 const tables = ['jobs'];
 
 const exec = util.promisify(require('child_process').exec);
