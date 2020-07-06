@@ -3,6 +3,7 @@ import BaseService, { ServiceConfig } from 'models/services/base-service';
 import { Logger } from 'winston';
 
 import { Job, JobStatus } from 'models/job';
+import { v4 as uuid } from 'uuid';
 import { ServiceError } from '../../util/errors';
 import { objectStoreForProtocol } from '../../util/object-store';
 import DataOperation from '../data-operation';
@@ -144,9 +145,10 @@ export default class AsynchronizerService<ServiceParamType> extends BaseService<
     for (const source of this.operation.sources) {
       for (const granule of source.granules) {
         const op = this.operation.clone();
+        const subRequestId = uuid();
         op.isSynchronous = true;
-        op.requestId += `-${granule.id}`;
-        op.callback += `-${granule.id}`;
+        op.requestId = subRequestId;
+        op.callback += op.callback.replace(op.requestId, subRequestId);
         op.requireSynchronous = true;
         op.sources = [{
           collection: source.collection,

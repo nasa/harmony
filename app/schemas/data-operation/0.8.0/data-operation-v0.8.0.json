@@ -70,7 +70,8 @@
         "requestId": {
           "name": "Request identifier",
           "description": "UUID to uniquely identify a request.",
-          "type": "string"
+          "type": "string",
+          "format": "uuid"
         }
       },
       "required": [
