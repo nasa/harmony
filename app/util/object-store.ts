@@ -264,7 +264,6 @@ export class S3ObjectStore {
   }
 }
 
-
 /**
  * Returns a class to interact with the object store appropriate for
  * the provided protocol, or null if no such store exists.

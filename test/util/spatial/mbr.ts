@@ -11,7 +11,6 @@ function makePointsSpatial(points: string[]): Spatial {
   return { points };
 }
 
-
 /**
  * Makes lines
  * @param points - line string in the form 'lat lng lat lng ...'

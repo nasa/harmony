@@ -1,4 +1,3 @@
-
 /**
  * Ensures the given parameter is an array.  If it is undefined, null, or
  * an empty string, returns an empty array.  If it's a single non-array

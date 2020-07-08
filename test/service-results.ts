@@ -98,7 +98,6 @@ describe('service-results', function () {
         stub.restore();
       });
 
-
       it('returns a 404 response', function () {
         expect(this.res.statusCode).to.equal(404);
       });

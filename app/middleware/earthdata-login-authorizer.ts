@@ -31,7 +31,6 @@ const oauthOptions = {
 //    "expires_at": <string (ISO Date + Milliseconds)>
 // }
 
-
 /**
  * Handles an Earthdata Login callback by verifying its "code" URL parameter, setting auth
  * state if valid, and redirecting the client to either the redirect specified in cookies or

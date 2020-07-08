@@ -2,6 +2,7 @@ import aws from 'aws-sdk';
 import { AssumeRoleResponse } from 'aws-sdk/clients/sts';
 
 import env = require('./env');
+
 const { awsDefaultRegion } = env;
 
 /**
