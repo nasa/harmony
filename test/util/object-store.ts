@@ -69,9 +69,10 @@ describe('util/object-store', function () {
         const headObjectResponse = { Metadata: { foo: 'bar' }, ContentType: 'image/png' };
         sinon.stub(store.s3, 'headObject').returns({ promise: () => headObjectResponse } as unknown as Request<HeadObjectOutput, AWSError>);
         sinon.stub(store.s3, 'getObject').returns({ presign: () => 'http://example.com/signed' } as unknown as Request<GetObjectOutput, AWSError>);
-        this.copyStub = sinon.stub(store.s3, 'copyObject').returns({ send: () => null } as unknown as Request<CopyObjectOutput, AWSError>);
+        this.copyStub = sinon.stub(store.s3, 'copyObject').returns({ promise: () => null } as unknown as Request<CopyObjectOutput, AWSError>);
         await store.signGetObject('s3://example-bucket/example/path.txt', { 'A-userid': 'joe' });
       });
+
       it('calls s3.copyObject with the appropriate parameters for changing ownership of the object', async function () {
         expect(this.copyStub.args[0][0]).to.eql({
           Bucket: 'example-bucket',
