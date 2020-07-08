@@ -57,7 +57,6 @@ export interface CmrGranuleHits {
   granules: CmrGranule[];
 }
 
-
 export interface CmrUmmVariable {
   meta: {
     'concept-id': string;
@@ -108,7 +107,6 @@ export interface CmrGranulesResponse extends CmrResponse {
     };
   };
 }
-
 
 /**
  * Create a token header for the given access token string

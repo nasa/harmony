@@ -35,7 +35,6 @@ envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.isDevelopment = process.env.NODE_ENV === 'development';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
 
-
 /**
  * Add a symbol to module.exports with an appropriate value. The exported symbol will be in
  * camel case, e.g., `maxPostFileSize`. This approach has the drawback that these

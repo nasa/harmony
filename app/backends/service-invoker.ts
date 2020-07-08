@@ -1,12 +1,12 @@
-import * as services from 'models/services/index';
-import { objectStoreForProtocol } from 'util/object-store';
-import { getRequestRoot, getRequestUrl } from 'util/url';
 import { RequestHandler, Response } from 'express';
+import { getRequestRoot, getRequestUrl } from '../util/url';
+import * as services from '../models/services/index';
+import { objectStoreForProtocol } from '../util/object-store';
 import { ServiceError } from '../util/errors';
 import InvocationResult from '../models/services/invocation-result';
 import HarmonyRequest from '../models/harmony-request';
 
-import env = require('util/env');
+import env = require('../util/env');
 
 /**
  * Copies the header with the given name from the given request to the given response

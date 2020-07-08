@@ -25,7 +25,6 @@ const serializedJobFields = [
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
 
-
 export enum JobStatus {
   ACCEPTED = 'accepted',
   RUNNING = 'running',

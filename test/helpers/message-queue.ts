@@ -4,7 +4,6 @@ import aws from 'aws-sdk';
 import AWSMock from 'aws-sdk-mock';
 import DeadLetterQueueMonitor from '../../app/workers/dead-letter-queue-monitor';
 
-
 /**
  * Stub the given AWS method in before hooks, setting this[varname]
  * to the sinon mock

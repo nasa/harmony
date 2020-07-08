@@ -6,7 +6,6 @@ import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure, truncateAll } from '../helpers/db';
 import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations, hookAdminJobListing } from '../helpers/jobs';
 
-
 // Example jobs to use in tests
 const woodyJob1: JobRecord = {
   username: 'woody',

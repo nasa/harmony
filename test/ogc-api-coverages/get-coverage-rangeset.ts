@@ -9,7 +9,6 @@ import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverag
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
 
-
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
   const granuleId = 'G1233800352-EEDTEST';
@@ -96,7 +95,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       it('transforms subset lat and lon parameters into a backend bounding box subset request', function () {
         expect(this.service.operation.boundingRectangle).to.eql([-20.1, 0, 20, 10]);
       });
-
 
       it('passes the interpolation parameter to the backend', function () {
         expect(this.service.operation.interpolationMethod).to.equal('near');

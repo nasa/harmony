@@ -254,7 +254,6 @@ export function hookPostRangesetRequest(
   });
 }
 
-
 /**
  * Asserts that a link relation exists, then loads it, allowing the passed function to provide
  * further specs about its contents.  Expects the current page response to exist in the `this.res`

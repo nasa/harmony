@@ -49,7 +49,6 @@ export function jobListing(app: Application, query: object = {}): Test {
   return request(app).get('/jobs').query(query);
 }
 
-
 /**
  * Makes a job listing request
  * @param app - The express application (typically this.frontend)
@@ -92,7 +91,6 @@ export function adminJobStatus(app: Express.Application, { jobID }): Test {
 export function cancelJob(app: Express.Application, { jobID }): Test {
   return request(app).post(`/jobs/${jobID}/cancel`);
 }
-
 
 /**
  * Submits a cancel job request as the given user
@@ -138,7 +136,6 @@ export function itIncludesRequestUrl(expectedPath: string): void {
     expect(job.request).to.match(regex);
   });
 }
-
 
 /**
  * Creates a batch of jobs owned by the given username, using the given transaction, where the

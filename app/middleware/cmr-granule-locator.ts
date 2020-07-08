@@ -1,11 +1,11 @@
-import * as cmr from 'util/cmr';
-import { CmrError, RequestValidationError, ServerError } from 'util/errors';
 import { NextFunction } from 'express';
+import * as cmr from '../util/cmr';
+import { CmrError, RequestValidationError, ServerError } from '../util/errors';
 import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { computeMbr, Mbr } from '../util/spatial/mbr';
 
-import env = require('util/env');
+import env = require('../util/env');
 
 /**
  * Gets collection from request that matches the given id

@@ -11,7 +11,6 @@ import { NextFunction } from 'express';
 
 const readFile = promisify(fs.readFile);
 
-
 /**
  * Validates that the given parameters are present in the map, throwing
  * a RequestValidationError if any are missing
