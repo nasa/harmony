@@ -105,14 +105,6 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 # services on invocation                                                  #
 ###########################################################################
 
-# Docker images for services referenced in config/services.yml.  Set to a
-# local image, ECR image, Docker Hub image, etc
-GDAL_IMAGE=harmony/gdal:latest
-NETCDF_TO_ZARR_IMAGE=harmony/netcdf-to-zarr:latest
-PO_L2_IMAGE=podaac-cloud/l2-subsetter-service:latest
-SWOT_REPR_IMAGE=sds/swot-reproject:latest
-VARIABLE_SUBSETTER_IMAGE=sds/variable-subsetter:latest
-
 # The bucket where service output data will be staged, corresponds to the S3 bucket
 # created in localstack when running locally
 STAGING_BUCKET=local-staging-bucket
