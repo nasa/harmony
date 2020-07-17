@@ -21,28 +21,19 @@ export interface ServiceCapabilities {
 
 export interface ServiceConfig<ServiceParamType> {
   name?: string;
-
   data_operation_version?: string;
-
   type?: {
     name: string;
     params?: ServiceParamType;
     synchronous_only?: boolean;
     single_granule_requests?: boolean;
   };
-
   data_url_pattern?: string;
-
   collections?: string[];
-
   capabilities?: ServiceCapabilities;
-
   concurrency?: number;
-
   message?: string;
-
   maximum_sync_granules?: number;
-
   maximum_async_granules?: number;
 }
 

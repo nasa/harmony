@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { describe, it, beforeEach } from 'mocha';
-import { stub, restore } from 'sinon';
+import { stub } from 'sinon';
 import { getMaxSynchronousGranules, getMaxAsynchronousGranules } from 'models/services/base-service';
 import DataOperation from '../../app/models/data-operation';
 import { chooseServiceConfig, buildService } from '../../app/models/services';
