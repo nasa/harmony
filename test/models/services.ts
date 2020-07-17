@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { describe, it, beforeEach } from 'mocha';
 import DataOperation from '../../app/models/data-operation';
-import { forOperation } from '../../app/models/services';
+import { chooseServiceConfig, buildService } from '../../app/models/services';
 import AsynchronizerService from '../../app/models/services/asynchronizer-service';
 
-describe('services.forOperation', function () {
+describe('services.chooseServiceConfig and services.buildService', function () {
   describe("when the operation's collection is configured for two services", function () {
     beforeEach(function () {
       const collectionId = 'C123-TEST';
@@ -33,8 +33,13 @@ describe('services.forOperation', function () {
       });
 
       it('returns the first service for the collection from the service configuration', function () {
-        const service = forOperation(this.operation, {}, this.config);
-        expect(service.config.name).to.equal('first-service');
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('first-service');
+      });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const service = buildService(serviceConfig, this.operation);
         expect(service.constructor.name).to.equal('MessageQueueService');
       });
     });
@@ -43,9 +48,15 @@ describe('services.forOperation', function () {
       beforeEach(function () {
         this.operation.outputFormat = 'image/png';
       });
+
       it('returns the second service for the collection from the service configuration', function () {
-        const service = forOperation(this.operation, {}, this.config);
-        expect(service.config.name).to.equal('second-service');
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('second-service');
+      });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const service = buildService(serviceConfig, this.operation);
         expect(service.constructor.name).to.equal('HttpService');
       });
     });
@@ -54,12 +65,20 @@ describe('services.forOperation', function () {
       beforeEach(function () {
         this.operation.outputFormat = 'image/gif';
       });
+
       it('returns the no-op service', function () {
-        const service = forOperation(this.operation, {}, this.config);
-        expect(service.constructor.name).to.equal('NoOpService');
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
       });
+
       it('returns a message indicating that there were no services that could support the provided format', function () {
-        const service = forOperation(this.operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('none of the services configured for the collection support reformatting to any of the requested formats [image/gif]');
+      });
+
+      it('provides a human readable message when building the service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const service = buildService(serviceConfig, this.operation);
         expect(service.message).to.equal('Returning direct download links because none of the services configured for the collection support reformatting to any of the requested formats [image/gif].');
       });
     });
@@ -86,8 +105,13 @@ describe('services.forOperation', function () {
     });
 
     it('returns the service configured for the collection', function () {
-      const service = forOperation(this.operation, {}, this.config);
-      expect(service.config.name).to.equal('matching-service');
+      const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+      expect(serviceConfig.name).to.equal('matching-service');
+    });
+
+    it('uses the correct service class when building the service', function () {
+      const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+      const service = buildService(serviceConfig, this.operation);
       expect(service.constructor.name).to.equal('MessageQueueService');
     });
   });
@@ -121,9 +145,15 @@ describe('services.forOperation', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'image/tiff';
+
       it('returns the service configured for variable subsetting', function () {
-        const service = forOperation(operation, {}, this.config);
-        expect(service.config.name).to.equal('variable-subsetter');
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('variable-subsetter');
+      });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('MessageQueueService');
       });
     });
@@ -132,13 +162,21 @@ describe('services.forOperation', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'application/x-zarr';
+
       it('returns the no op service', function () {
-        const service = forOperation(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('NoOpService');
       });
+
       it('indicates the reason for choosing the no op service is the combination of variable subsetting and the output format', function () {
-        const service = forOperation(operation, {}, this.config);
-        expect(service.config.message).to.equal('none of the services support the combination of both variable subsetting and any of the requested formats [application/x-zarr]');
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('none of the services support the combination of both variable subsetting and any of the requested formats [application/x-zarr]');
       });
     });
 
@@ -147,8 +185,8 @@ describe('services.forOperation', function () {
       operation.addSource(collectionId);
       operation.outputFormat = 'application/x-zarr';
       it('returns the non-variable subsetter service that does support the format', function () {
-        const service = forOperation(operation, {}, this.config);
-        expect(service.config.name).to.equal('non-variable-subsetter');
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('non-variable-subsetter');
       });
     });
 
@@ -156,13 +194,21 @@ describe('services.forOperation', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'image/foo';
+
       it('returns the no op service', function () {
-        const service = forOperation(operation, {}, this.config);
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('NoOpService');
       });
+
       it('indicates the reason for choosing the no op service is the format', function () {
-        const service = forOperation(operation, {}, this.config);
-        expect(service.config.message).to.equal('none of the services configured for the collection support reformatting to any of the requested formats [image/foo]');
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('none of the services configured for the collection support reformatting to any of the requested formats [image/foo]');
       });
     });
   });
@@ -183,14 +229,20 @@ describe('services.forOperation', function () {
     });
 
     it('returns the no op service', function () {
-      const service = forOperation(this.operation, {}, this.config);
+      const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+      expect(serviceConfig.name).to.equal('noOpService');
+    });
+
+    it('uses the correct service class when building the service', function () {
+      const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+      const service = buildService(serviceConfig, this.operation);
       expect(service.constructor.name).to.equal('NoOpService');
       expect(service.operation).to.equal(this.operation);
     });
 
     it('indicates the reason for choosing the no op service is the collection not being configured for services', function () {
-      const service = forOperation(this.operation, {}, this.config);
-      expect(service.config.message).to.equal('no services are configured for the collection');
+      const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+      expect(serviceConfig.message).to.equal('no services are configured for the collection');
     });
   });
 
@@ -208,9 +260,11 @@ describe('services.forOperation', function () {
         },
       ];
     });
+
     it('returns a service configured to allow asynchronous calls through a wrapper', function () {
       const op = this.operation;
-      const service = forOperation(op, {}, this.config) as AsynchronizerService<unknown>;
+      const serviceConfig = chooseServiceConfig(op, {}, this.config);
+      const service = buildService(serviceConfig, this.operation) as AsynchronizerService<unknown>;
       expect(service.constructor.name).to.equal('AsynchronizerService');
       expect(service.SyncServiceClass.name).to.equal('MessageQueueService');
     });

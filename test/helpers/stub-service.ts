@@ -112,17 +112,9 @@ export default class StubService extends BaseService<void> {
   static beforeHook(callbackOptions: object = { params: { redirect: 'http://example.com' } }): () => void {
     return function (): void {
       const ctx = this;
-      const origForOperation = services.forOperation;
-      sinon.stub(services, 'forOperation')
-        .callsFake((operation, context, configs) => {
-          const chosenService = origForOperation(operation, context, configs);
-          // Notes from testing HARMONY-273: This stub has been partly relying on mutations
-          // happening in origForOperation and after to set up content type, isSynchronous,
-          // stagingLocation, and probably others.  Setting stagingLocation is undesirable as
-          // behavior has changed to not overwrite stagingLocation if it's already set in the
-          // operation, so we reset it after the above call.
-          operation.stagingLocation = null; // eslint-disable-line no-param-reassign
-          ctx.service = new StubService(callbackOptions, operation, chosenService.config.name);
+      sinon.stub(services, 'buildService')
+        .callsFake((config, operation) => {
+          ctx.service = new StubService(callbackOptions, operation, config.name);
           return ctx.service;
         });
     };
@@ -137,7 +129,7 @@ export default class StubService extends BaseService<void> {
    */
   static afterHook(): () => Promise<void> {
     return async function (): Promise<void> {
-      const stubbed = services.forOperation as SinonStub;
+      const stubbed = services.buildService as SinonStub;
       if (stubbed.restore) stubbed.restore();
       if (this.service) await this.service.complete();
       if (this.service && this.service.invocation) await this.service.invocation;
@@ -193,8 +185,8 @@ export default class StubService extends BaseService<void> {
     before(async function () {
       const ctx = this;
       this.callbackOptions = callbackOptions;
-      sinon.stub(services, 'forOperation')
-        .callsFake((operation) => {
+      sinon.stub(services, 'buildService')
+        .callsFake((config, operation) => {
           ctx.service = new AsynchronizerService(StubService, callbackOptions, operation);
           ctx.service.config.type = type;
           return ctx.service;
@@ -202,7 +194,7 @@ export default class StubService extends BaseService<void> {
     });
 
     after(async function () {
-      const stubbed = services.forOperation as SinonStub;
+      const stubbed = services.buildService as SinonStub;
       if (stubbed.restore) stubbed.restore();
       try {
         await this.service.promiseCompletion();

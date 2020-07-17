@@ -34,6 +34,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234088182-EEDTEST
       - C1233800302-EEDTEST
       - C1225776654-ASF
+    maximum_async_granules: 15
     capabilities:
       subsetting:
         bbox: true

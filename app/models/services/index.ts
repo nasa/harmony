@@ -3,6 +3,9 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { get as getIn } from 'lodash';
 
+import HarmonyRequest from 'models/harmony-request';
+import { ServerResponse } from 'http';
+import { NextFunction } from 'express';
 import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
@@ -56,7 +59,7 @@ const serviceTypesToServiceClasses = {
  * @returns {Service} An appropriate service for the given config
  * @throws {NotFoundError} If no appropriate service can be found
  */
-function buildService(
+export function buildService(
   serviceConfig: ServiceConfig<unknown>,
   operation: DataOperation,
 ): BaseService<unknown> {
@@ -292,43 +295,6 @@ const operationFilterFns = [
 ];
 
 /**
- * Given a data operation, returns a service instance appropriate for performing that operation.
- * The operation may also be mutated to set additional properties as part of this function.
- *
- * @param {DataOperation} operation The operation to perform. Note that this function may mutate
- *    the operation.
- * @param {RequestContext} context Additional context that's not part of the operation, but
- *     influences the choice regarding the service to use
- * @param {Array<ServiceConfig} configs The configuration to use for finding the operation, with
- *     all variables resolved (default: the contents of config/services.yml)
- * @returns {BaseService} A service instance appropriate for performing the operation
- * @throws {NotFoundError} If no service can perform the given operation
- */
-export function forOperation(
-  operation: DataOperation,
-  context?: RequestContext,
-  configs: ServiceConfig<unknown>[] = serviceConfigs,
-): BaseService<unknown> {
-  let service;
-  let matches = configs;
-  try {
-    for (const filterFn of operationFilterFns) {
-      matches = filterFn(operation, context, matches);
-    }
-    service = matches[0];
-  } catch (e) {
-    if (e instanceof UnsupportedOperation) {
-      const message = unsupportedCombinationMessage(operation, context, configs, e.message);
-      noOpService.message = message;
-      service = noOpService;
-    } else {
-      throw e;
-    }
-  }
-  return buildService(service, operation);
-}
-
-/**
  * Returns true if the collectionId has available backends
  *
  * @param {CmrCollection} collection The CMR collection to check
@@ -336,4 +302,63 @@ export function forOperation(
  */
 export function isCollectionSupported(collection: CmrCollection): boolean {
   return serviceConfigs.find((sc) => sc.collections.includes(collection.id)) !== undefined;
+}
+
+/**
+ * Returns the service configuration to use for the given data operation and request context
+ * @param operation The operation to perform. Note that this function may mutate the operation.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs The configuration to use for finding the operation, with all variables
+ *     resolved (default: the contents of config/services.yml)
+ * @returns the service configuration to use
+ */
+export function chooseServiceConfig(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[] = serviceConfigs,
+): ServiceConfig<unknown> {
+  let serviceConfig;
+  let matches = configs;
+  try {
+    for (const filterFn of operationFilterFns) {
+      matches = filterFn(operation, context, matches);
+    }
+    serviceConfig = matches[0];
+  } catch (e) {
+    if (e instanceof UnsupportedOperation) {
+      const message = unsupportedCombinationMessage(operation, context, configs, e.message);
+      noOpService.message = message;
+      serviceConfig = noOpService;
+    } else {
+      throw e;
+    }
+  }
+  return serviceConfig;
+}
+
+/**
+ * Middleware to set the service that should be used for the given request
+ * @param req The client request, containing an operation
+ * @param res The client response
+ * @param next The next function in the middleware chain
+ */
+export function chooseServiceConfigMiddleware(
+  req: HarmonyRequest,
+  _res: ServerResponse,
+  next: NextFunction,
+): void {
+  const { operation, context } = req;
+  if (!operation || !operation.sources) {
+    return next();
+  }
+
+  let serviceConfig;
+  try {
+    serviceConfig = chooseServiceConfig(operation, context);
+  } catch (e) {
+    return next(e);
+  }
+  context.serviceConfig = serviceConfig;
+  return next();
 }
