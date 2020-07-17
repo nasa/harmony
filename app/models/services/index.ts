@@ -363,7 +363,7 @@ export function chooseServiceConfigMiddleware(
   next: NextFunction,
 ): void {
   const { operation, context } = req;
-  if (!operation || !operation.sources) {
+  if (!operation?.sources) {
     return next();
   }
 

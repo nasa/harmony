@@ -42,10 +42,10 @@ export interface ServiceConfig<ServiceParamType> {
  * @param config the service configuration
  */
 export function getMaxAsynchronousGranules(config: ServiceConfig<unknown>): number {
-  return _.min([
+  return Math.min(
     env.maxGranuleLimit,
     (config.maximum_async_granules || env.maxAsynchronousGranules),
-  ]);
+  );
 }
 
 /**
@@ -53,10 +53,10 @@ export function getMaxAsynchronousGranules(config: ServiceConfig<unknown>): numb
  * @param config the service configuration
  */
 export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): number {
-  return _.min([
+  return Math.min(
     env.maxGranuleLimit,
     (config.maximum_sync_granules || env.maxSynchronousGranules),
-  ]);
+  );
 }
 
 /**
