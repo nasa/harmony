@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import { v4 as uuid } from 'uuid';
+import logger from 'util/log';
 import InvocationResult from './invocation-result';
 import { Job, JobStatus } from '../job';
 import DataOperation from '../data-operation';
@@ -44,6 +45,28 @@ export interface ServiceConfig<ServiceParamType> {
   maximum_sync_granules?: number;
 
   maximum_async_granules?: number;
+}
+
+/**
+ * Returns the maximum number of asynchronous granules a service allows
+ * @param config the service configuration
+ */
+export function getMaxAsynchronousGranules(config: ServiceConfig<unknown>): number {
+  return _.min([
+    env.maxGranuleLimit,
+    (config.maximum_async_granules || env.maxAsynchronousGranules),
+  ]);
+}
+
+/**
+ * Returns the maximum number of synchronous granules a service allows
+ * @param config the service configuration
+ */
+export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): number {
+  return _.min([
+    env.maxGranuleLimit,
+    (config.maximum_sync_granules || env.maxSynchronousGranules),
+  ]);
 }
 
 /**
@@ -249,7 +272,7 @@ export default class BaseService<ServiceParamType> {
    * @memberof BaseService
    */
   get maxAsynchronousGranules(): number {
-    return (this.config.maximum_async_granules || env.maxAsynchronousGranules);
+    return getMaxAsynchronousGranules(this.config);
   }
 
   /**
@@ -257,7 +280,7 @@ export default class BaseService<ServiceParamType> {
    * @memberof BaseService
    */
   get maxSynchronousGranules(): number {
-    return (this.config.maximum_sync_granules || env.maxSynchronousGranules);
+    return getMaxSynchronousGranules(this.config);
   }
 
   /**

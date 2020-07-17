@@ -34,7 +34,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234088182-EEDTEST
       - C1233800302-EEDTEST
       - C1225776654-ASF
-    maximum_async_granules: 15
     capabilities:
       subsetting:
         bbox: true
@@ -126,6 +125,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234724470-POCLOUD
       - C1234724471-POCLOUD
       - C1234071416-POCLOUD
+    maximum_async_granules: 2000
     capabilities:
       subsetting:
         bbox: true
@@ -144,6 +144,7 @@ https://cmr.uat.earthdata.nasa.gov:
     collections:
       - C1234530532-EEDTEST
       - C1234530533-EEDTEST
+    maximum_async_granules: 2000
     capabilities:
       subsetting:
         shape: true

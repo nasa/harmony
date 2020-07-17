@@ -11,6 +11,7 @@ interface HarmonyEnv {
   stagingBucket: string;
   maxSynchronousGranules: number;
   maxAsynchronousGranules: number;
+  maxGranuleLimit: number;
   objectStoreType: string;
   awsDefaultRegion: string;
   sameRegionAccessRole: string;
@@ -69,6 +70,7 @@ function makeConfigVar(envName: string, defaultValue?: string|number): void {
   ['STAGING_BUCKET', 'localStagingBucket'],
   ['MAX_SYNCHRONOUS_GRANULES', 1],
   ['MAX_ASYNCHRONOUS_GRANULES', 20],
+  ['MAX_GRANULE_LIMIT', 2000],
   ['.OBJECT_STORE_TYPE', 's3'],
   ['AWS_DEFAULT_REGION', 'us-west-2'],
   ['SAME_REGION_ACCESS_ROLE'],

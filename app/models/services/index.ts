@@ -6,6 +6,7 @@ import { get as getIn } from 'lodash';
 import HarmonyRequest from 'models/harmony-request';
 import { ServerResponse } from 'http';
 import { NextFunction } from 'express';
+import logger from 'util/log';
 import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
@@ -42,8 +43,21 @@ function loadServiceConfigs(): void {
   serviceConfigs = envConfigs[env.cmrEndpoint].filter((config) => config.enabled !== false && config.enabled !== 'false');
 }
 
+/**
+ * Logs a warning if the configuration is considered invalid.
+ * @param config The service configuration to validate
+ */
+function validateServiceConfig(config: ServiceConfig<unknown>): void {
+  const value = config.maximum_async_granules || 0;
+  if (value > env.maxGranuleLimit) {
+    logger.warn(`Service ${config.name} attempting to allow more than the max allowed granules in a request. `
+      + `Configured to use ${config.maximum_async_granules}, but will be limited to ${env.maxGranuleLimit}`);
+  }
+}
+
 // Load config at require-time to ensure presence / validity early
 loadServiceConfigs();
+serviceConfigs.map(validateServiceConfig);
 
 const serviceTypesToServiceClasses = {
   http: HttpService,
