@@ -1,11 +1,10 @@
 import { NextFunction } from 'express';
+import { getMaxAsynchronousGranules } from 'models/services/base-service';
 import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
 import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { computeMbr, Mbr } from '../util/spatial/mbr';
-
-import env = require('../util/env');
 
 /**
  * Gets collection from request that matches the given id
@@ -44,7 +43,7 @@ function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Mbr {
  */
 export default async function cmrGranuleLocator(req, res, next: NextFunction): Promise<void> {
   const { operation } = req;
-  const { logger } = req.context;
+  const { logger, serviceConfig } = req.context;
 
   if (!operation) return next();
 
@@ -68,6 +67,7 @@ export default async function cmrGranuleLocator(req, res, next: NextFunction): P
     const queries = sources.map(async (source) => {
       logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
+      const maxAsyncGranules = getMaxAsynchronousGranules(serviceConfig);
 
       if (operation.geojson) {
         cmrQuery.geojson = operation.geojson;
@@ -75,14 +75,14 @@ export default async function cmrGranuleLocator(req, res, next: NextFunction): P
           source.collection,
           cmrQuery,
           req.accessToken,
-          env.maxAsynchronousGranules,
+          maxAsyncGranules,
         );
       } else {
         cmrResponse = await cmr.queryGranulesForCollection(
           source.collection,
           cmrQuery,
           req.accessToken,
-          env.maxAsynchronousGranules,
+          maxAsyncGranules,
         );
       }
 

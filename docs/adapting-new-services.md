@@ -155,6 +155,8 @@ Add an entry to [services.yml](../config/services.yml) under each CMR environmen
   data_url_pattern: '.*'          # An optional (default = .*) regular expression for a substring that desired data URLs should contain
   collections:                    # A list of CMR collection IDs that the service works on
     - C1234-EXAMPLE
+  maximum_sync_granules: 1        # Optional limit for the maximum number of granules for a request to be handled synchronously. Defaults to 1. Set to 0 to only allow async requests.
+  maximum_async_granules: 500     # Optional limit for the maximum number of granules allowed for a single async request. Harmony has a MAX_GRANULE_LIMIT enforced for all services.
   capabilities:                   # Service capabilities
     subsetting:
       bbox: true                  # Can subset by spatial bounding box

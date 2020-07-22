@@ -1,6 +1,7 @@
 import process from 'process';
 import express, { RequestHandler, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
+import { chooseServiceConfigMiddleware } from 'models/services';
 import log from '../util/log';
 
 // Middleware requires in outside-in order
@@ -179,6 +180,7 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   });
 
   result.use(logged(shapefileConverter));
+  result.use(logged(chooseServiceConfigMiddleware));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(setRequestId));
 

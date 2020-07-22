@@ -1,4 +1,5 @@
 import { Logger } from 'winston';
+import { ServiceConfig } from './services/base-service';
 
 /**
  * Contains additional information about a request
@@ -19,6 +20,8 @@ export default class RequestContext {
    * (/admin/*)
    */
   isAdminAccess?: boolean;
+
+  serviceConfig?: ServiceConfig<unknown>;
 
   /**
    * Creates an instance of RequestContext.

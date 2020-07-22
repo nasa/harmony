@@ -33,6 +33,30 @@ export interface ServiceConfig<ServiceParamType> {
   capabilities?: ServiceCapabilities;
   concurrency?: number;
   message?: string;
+  maximum_sync_granules?: number;
+  maximum_async_granules?: number;
+}
+
+/**
+ * Returns the maximum number of asynchronous granules a service allows
+ * @param config the service configuration
+ */
+export function getMaxAsynchronousGranules(config: ServiceConfig<unknown>): number {
+  return Math.min(
+    env.maxGranuleLimit,
+    (config.maximum_async_granules || env.maxAsynchronousGranules),
+  );
+}
+
+/**
+ * Returns the maximum number of synchronous granules a service allows
+ * @param config the service configuration
+ */
+export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): number {
+  return Math.min(
+    env.maxGranuleLimit,
+    (config.maximum_sync_granules || env.maxSynchronousGranules),
+  );
 }
 
 /**
@@ -234,6 +258,22 @@ export default class BaseService<ServiceParamType> {
   }
 
   /**
+   * Returns the maximum number of asynchronous granules for this service
+   * @memberof BaseService
+   */
+  get maxAsynchronousGranules(): number {
+    return getMaxAsynchronousGranules(this.config);
+  }
+
+  /**
+   * Returns the maximum number of synchronous granules for this service
+   * @memberof BaseService
+   */
+  get maxSynchronousGranules(): number {
+    return getMaxSynchronousGranules(this.config);
+  }
+
+  /**
    * Returns a warning message if some part of the request can't be fulfilled
    *
    * @returns {string} a warning message to display, or undefined if not applicable
@@ -241,9 +281,9 @@ export default class BaseService<ServiceParamType> {
    * @memberof BaseService
    */
   get warningMessage(): string {
-    if (this.operation.cmrHits > env.maxAsynchronousGranules) {
+    if (this.operation.cmrHits > this.maxAsynchronousGranules) {
       return `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
-      + `to process only the first ${env.maxAsynchronousGranules} granules.`;
+      + `to process only the first ${this.maxAsynchronousGranules} granules.`;
     }
     return undefined;
   }
