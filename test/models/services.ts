@@ -300,38 +300,62 @@ describe('granule limits', function () {
   });
 
   describe('when the service allows less than the granule limit for sync requests', function () {
-    it('returns the system granule limit', function () {
+    it('returns the service specific sync granules limit', function () {
       expect(getMaxSynchronousGranules({ maximum_sync_granules: 25 })).to.equal(25);
     });
   });
 
   describe('when the service allows less than the granule limit for async requests', function () {
-    it('returns the system granule limit', function () {
+    it('returns the service specific async granules limit', function () {
       expect(getMaxAsynchronousGranules({ maximum_async_granules: 25 })).to.equal(25);
     });
   });
 
   describe('when the service allows exactly the granule limit for sync requests', function () {
-    it('returns the system granule limit', function () {
+    it('returns the correct limit', function () {
       expect(getMaxSynchronousGranules({ maximum_sync_granules: 30 })).to.equal(30);
     });
   });
 
   describe('when the service allows exactly the granule limit for async requests', function () {
-    it('returns the system granule limit', function () {
+    it('returns the correct limit', function () {
       expect(getMaxAsynchronousGranules({ maximum_async_granules: 30 })).to.equal(30);
     });
   });
 
   describe('when the service does not configure a granule limit for sync requests', function () {
-    it('returns the system granule limit', function () {
+    it('returns the default sync granules limit', function () {
       expect(getMaxSynchronousGranules({})).to.equal(2);
     });
   });
 
   describe('when the service does not configure a granule limit for async requests', function () {
-    it('returns the system granule limit', function () {
+    it('returns the default async granules limit', function () {
       expect(getMaxAsynchronousGranules({})).to.equal(10);
+    });
+  });
+
+  describe('when the service configures a granule limit for sync requests that is less than the default', function () {
+    it('returns the service specific limit', function () {
+      expect(getMaxSynchronousGranules({ maximum_sync_granules: 1 })).to.equal(1);
+    });
+  });
+
+  describe('when the service does not configure a granule limit for async requests that is less than the default', function () {
+    it('returns the service specific limit', function () {
+      expect(getMaxAsynchronousGranules({ maximum_async_granules: 1 })).to.equal(1);
+    });
+  });
+
+  describe('when the service configures a granule limit for sync requests to be zero', function () {
+    it('returns zero for the limit', function () {
+      expect(getMaxSynchronousGranules({ maximum_sync_granules: 0 })).to.equal(0);
+    });
+  });
+
+  describe('when the service configures a granule limit for async requests to be zero', function () {
+    it('returns zero for the limit', function () {
+      expect(getMaxAsynchronousGranules({ maximum_async_granules: 0 })).to.equal(0);
     });
   });
 });
