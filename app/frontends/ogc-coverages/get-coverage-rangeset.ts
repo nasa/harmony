@@ -60,6 +60,9 @@ export default function getCoverageRangeset(
     const [x, y] = query.scalesize;
     operation.scaleSize = { x, y };
   }
+  if (query.forceasync) {
+    operation.isSynchronous = false;
+  }
   try {
     const subset = parseSubsetParams(wrap(query.subset));
     const bbox = subsetParamsToBbox(subset);

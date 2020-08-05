@@ -79,7 +79,7 @@ describe('Canceling a job - user endpoint', function () {
         expect(actualJob.message).to.eql('Canceled by user.');
       });
       it('does not modify any of the other job fields', function () {
-        const actualJob: Job = JSON.parse(this.res.text);
+        const actualJob = new Job(JSON.parse(this.res.text));
         const expectedJob: JobRecord = _.cloneDeep(aJob);
         expectedJob.message = 'foo';
         actualJob.message = 'foo';
@@ -281,7 +281,7 @@ describe('Canceling a job - admin endpoint', function () {
         expect(actualJob.message).to.eql('Canceled by admin.');
       });
       it('does not modify any of the other job fields', function () {
-        const actualJob: Job = JSON.parse(this.res.text);
+        const actualJob = new Job(JSON.parse(this.res.text));
         const expectedJob: JobRecord = _.cloneDeep(aJob);
         expectedJob.message = 'foo';
         actualJob.message = 'foo';

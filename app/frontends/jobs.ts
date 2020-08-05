@@ -3,7 +3,7 @@ import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
 import isUUID from 'util/uuid';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
-import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink } from '../util/links';
+import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink } from '../util/links';
 import { RequestValidationError, NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
@@ -31,6 +31,7 @@ function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
   if (job.status === JobStatus.SUCCESSFUL && needsStacLink(dataLinks)) {
     links.unshift(getStacCatalogLink(urlRoot, job.jobID));
   }
+  links.unshift(getStatusLink(urlRoot, job.jobID));
   return links;
 }
 

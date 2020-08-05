@@ -324,6 +324,7 @@ paths:
       - $ref: '#/components/parameters/width'
       - $ref: '#/components/parameters/height'
       - $ref: '#/components/parameters/format'
+      - $ref: '#/components/parameters/forceAsync'
       responses:
         "200":
           description: A coverage's range set.
@@ -354,6 +355,7 @@ paths:
       - $ref: '#/components/parameters/width'
       - $ref: '#/components/parameters/height'
       - $ref: '#/components/parameters/format'
+      - $ref: '#/components/parameters/forceAsync'
       requestBody:
         content:
           multipart/form-data:
@@ -830,3 +832,10 @@ components:
           - 'application/x-zarr'
           - 'image/tiff'
           - 'image/png'
+    forceAsync:
+      name: forceAsync
+      in: query
+      description: if "true", override the default API behavior and always treat the request as asynchronous
+      required: false
+      schema:
+        type: boolean

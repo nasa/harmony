@@ -13,19 +13,24 @@ import { truncateAll } from './db';
 export const adminUsername = 'adam';
 
 /**
- * Returns true if the passed in job record matches the serialized Job
+ * Returns true if the passed in job record matches the serialized Job for all fields
+ * and all links with rel === data
+ *
  * @param {Object} jobRecord a job record
  * @param {Object} serializedJob a job record serialized
  * @returns {Boolean} true if the jobs are the same
  */
 export function jobsEqual(jobRecord: JobRecord, serializedJob: Job): boolean {
+  const recordLinks = new Job(jobRecord).getRelatedLinks('data');
+  const serializedLinks = serializedJob.getRelatedLinks('data');
+
   return (jobRecord.requestId === serializedJob.jobID
     && jobRecord.username === serializedJob.username
     && jobRecord.message && serializedJob.message
     && jobRecord.progress && serializedJob.progress
     && jobRecord.status === serializedJob.status
     && jobRecord.request === serializedJob.request
-    && jobRecord.links.length === serializedJob.links.length);
+    && JSON.stringify(recordLinks) === JSON.stringify(serializedLinks));
 }
 
 /**
@@ -36,7 +41,7 @@ export function jobsEqual(jobRecord: JobRecord, serializedJob: Job): boolean {
  * @returns {Boolean} true if the object is found
  */
 export function containsJob(job: JobRecord, jobList: JobListing): boolean {
-  return !!jobList.jobs.find((j) => jobsEqual(job, j));
+  return !!jobList.jobs.find((j) => jobsEqual(job, new Job(j)));
 }
 
 /**
