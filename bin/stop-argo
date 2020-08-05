@@ -1,0 +1,37 @@
+#!/bin/bash
+
+SELF=$(basename $0)
+
+function usage
+{
+  echo "Usage: $SELF [-d|--destroy]"
+}
+
+DELETE=false
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+  -d|--destroy)
+  DELETE=true
+  shift
+  ;;
+  *)
+  usage
+  exit 1
+  ;;
+esac
+done
+
+minikube stop
+
+if [ "$DELETE" = true ]
+  then
+    kubectl delete ns argo
+    minikube delete
+fi 
+
+
+
