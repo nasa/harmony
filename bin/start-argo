@@ -34,7 +34,8 @@ done
 
 DRIVER_DEFAULT=docker
 
-if [ $(uname) = "Darwin" ] 
+# use virtualbox driver as the default if virtualbox is installed
+if [[ ( ( $(uname) = "Darwin" )  && ( -x /usr/local/bin/VirtualBox ) ) || ( ( $(uname) = "Linux" ) && ( -e /dev/vboxdrv ) ) ]] 
   then
     DRIVER_DEFAULT=virtualbox
 fi
@@ -45,11 +46,13 @@ PORT=${PORT:-2746}
 
 [[ $PORT =~ ^[0-9]+$ ]] || (usage && exit 1)
 
+echo "$DRIVER"
+
 minikube start --driver="$DRIVER"
 
 sleep 5
 
-if [ "$CREATE" = true ]
+if [[ "$CREATE" = true ]]
   then
     kubectl create ns argo
     kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/quick-start-postgres.yaml
