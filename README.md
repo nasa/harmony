@@ -181,7 +181,7 @@ PNG from the test server.
 
 **NOTE** 
 
-At this time connecting to the Argo Server UI on localhost does not work while on the VPN.
+At this time connecting to the Argo Server UI on localhost does not work while on the NASA VPN.
 
 #### Installing Argo Workflows
 
