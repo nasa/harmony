@@ -212,7 +212,7 @@ You can change the startup port by adding the `-p` option like so for port 8080:
 $ ./bin/start-argo -c -p 8080
 ```
 
-`minikube` will default to using [virtualbox](https://www.virtualbox.org/) on a mac and `docker` on Linux. You can change the driver used by minikube by using the `-d` option with `start-argo` like so
+`minikube` will default to using [virtualbox](https://www.virtualbox.org/) on a mac or Linux if it is installed. Otherwise it uses the `docker` driver. You can change the driver used by minikube by using the `-d` option with `start-argo` like so
 
 ```
 $ ./bin/start-argo -c -d DRIVER
