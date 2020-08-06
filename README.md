@@ -175,6 +175,181 @@ dialog when adding a new WMS connection.  Thereafter, expanding the connection s
 GetCapabilities call to the test server, and double-clicking a layer should add it to a map, making a WMS call to retrieve an appropriate
 PNG from the test server.
 
+### Running Argo Workflows
+
+[Argo Workflows](https://github.com/argoproj/argo) are used by Harmony to manage job executions. Argo can be run locally to support development by following these instructions. 
+
+**NOTE** 
+
+At this time connecting to the Argo Server UI on localhost does not work while on the NASA VPN.
+
+#### Installing Argo Workflows
+
+##### Prerequisites
+* minikube / kubectl
+
+`minikube` is a single-node [kubernetes](https://kubernetes.io/) cluster useful for local development.
+`kubectl` is a command line interface to kubernetes.
+
+Follow [these instructions]((https://kubernetes.io/docs/tasks/tools/install-kubectl/) to install `kubectl`.
+Then follow [these instructions](https://kubernetes.io/docs/tasks/tools/install-minikube/) for installing `minikube`.
+
+After installing `minikube` and `kubectl`, you can start up `minikube` and install Argo by running the following from the Harmony top level directory:
+
+```
+$ ./bin/start-argo -c
+```
+
+This will install Argo and forward port 2746 to localhost. It will take a few minutes the first time you run it. You will know when it has completed when it prints
+
+```
+Handling connection for 2746
+```
+
+You can then connect to the Argo Server UI at `http://localhost:2746'.
+
+You can change the startup port by adding the `-p` option like so for port 8080:
+
+```
+$ ./bin/start-argo -c -p 8080
+```
+
+`minikube` will default to using [virtualbox](https://www.virtualbox.org/) on a mac or Linux if it is installed. Otherwise it uses the `docker` driver. You can change the driver used by minikube by using the `-d` option with `start-argo` like so
+
+```
+$ ./bin/start-argo -c -d DRIVER
+```
+
+where `DRIVER` is one of the supported VM drivers found [here](https://kubernetes.io/docs/setup/learning-environment/minikube/#specifying-the-vm-driver).
+
+You can stop minikube (and Argo) using the following command:
+
+```
+$ ./bin/stop-argo
+```
+
+If you wish to completely remove the minikube cluster as well you can include the `-d` (destroy) option like so:
+
+```
+$ ./bin/stop-argo -d
+```
+
+If you have stopped (but not destroyed) Argo/minikube you can restart it using the `start-argo` command without the `-c` (create) option:
+
+```
+$ ./bin/start-argo
+```
+
+You can also specify the `-p` option to bind to a desired port.
+
+##### Optionally install the Argo CLI
+
+You can follow the [instructions](https://github.com/argoproj/argo/releases) for installing the Argo command line interface (CLI). This is not necessary, but provides a convenient way to interact with Argo outside the UI and REST API.
+
+#### Local development of workflows using Visual Studio Code
+
+This section describes a VS Code based approach to local development. The general ideas are, however, applicable to other editors.
+
+There are two components to local development. The first is mounting your local project directory to a pod in a workflow so that changes to your code are automatically picked up whenever you run the workflow. The second is attaching a debugger to code running in a pod container (unless you prefer the print-debug method, in which case you can use the logs).
+
+##### Prerequisites
+* [Visual Studio Code](https://code.visualstudio.com/) and the [Kubernetes plugin](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools)
+
+##### Mounting a local directory to a pod running in a workflow
+
+This is accomplished in two steps. The first step is to mount a local directory to a node in your `kubernetes/minikube` cluster. On a mac using the `virtualbox` driver the `/Users` directory is automatically mounted as `/Uses` on the single node in `minikube`. On Linux using the `virtualbox`driver the `/home` directory is automatically mounted at `/hosthome`. Other options for mounting a local directory can be found [here](https://minikube.sigs.k8s.io/docs/handbook/mount/).
+
+The second step is to mount the directory on the node to a directory on the pod in your workflow. This can be done using a [hostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath) volume defined in your workflow template. The following snippet creates a volume using the `/Users/username/project_folder` directory from the `node` on which the pod runs, _not directory from the local filesystem_. Again, on a mac using `virtualbox` the local `/Users` folder is conveniently mounted to the `/Users` folder on the node.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow                 
+metadata:
+  generateName: hello-world-    
+spec:
+  volumes:
+  - name: test-volume
+    hostPath:
+      path: /Users/username/project_folder
+  ...
+```
+
+You can then mount the volume in your pod using a `volumeMounts` entry in you container configuration:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow                 
+metadata:
+  generateName: hello-world-    
+spec:
+  volumes:
+  - name: test-volume
+    hostPath:
+      path: /Users/username/project_folder
+  entrypoint: hello 
+  arguments:
+    parameters:
+    - name: message
+      value: James
+  templates:
+  - name: hello
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: node
+      volumeMounts:
+      - mountPath: /test-mount
+        name: test-volume
+```
+
+Now the pod will be able to access local code directly in the `/test-mount` directory. Updates to code in the developers local project will immediately show up in workflows.
+
+##### Attaching a debugger to a running workflow
+
+Argo Workflow steps run as kubernetes [jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/), which means that the containers that run them are short-lived. This complicates the process of attaching a debugger to them somewhat. In order to attach the debugger to code running in a container in a workflow you have to start the code in a manner that will pause the code on the first line when it runs and wait for a debugger to attach.
+
+For NodeJS code this is easily done by passing the `--inspect-brk` option to the `node` command. workflow template building on our previous example is given here
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow                 
+metadata:
+  generateName: hello-world-    
+spec:
+  volumes:
+  - name: test-volume
+    hostPath:
+      path: /Users/username/project_folder
+  entrypoint: hello 
+  arguments:
+    parameters:
+    - name: message
+      value: James
+  templates:
+  - name: hello
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: node
+      volumeMounts:
+      - mountPath: /test-mount
+        name: test-volume
+      command: [node]
+      args: ["--inspect-brk", "/test-mount/index.js", "{{inputs.parameters.message}}"]
+```
+
+In this example the starting point for the step is in the `index.js` file.
+
+Similar approaches are available for Python and Java, although they might require changes to the code.
+
+Once you launch your workflow it will pause at the step (wait for the icon in the UI to change from yellow to blue and spinning), and you can attach the debugger. For VS Code this is easily done using the `kubernetes` plugin. 
+
+Open the plugin by clicking on the `kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python). 
+
+At this point the editor should open the file that is the starting point for your applications and it should be stopped on the first line of code to be run. You can then perform all the usual debugging operations such as stepping trough code and examining variables.
+
 ### Setting up to run in AWS
 
 Note: It is currently easiest to allow the CI/CD service to deploy the service remotely; it is deployed to the sandbox after each merge to `master`.

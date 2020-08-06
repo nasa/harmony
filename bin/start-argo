@@ -1,0 +1,63 @@
+#!/bin/bash
+
+SELF=$(basename $0)
+
+function usage
+{
+  echo "Usage: $SELF [-c|--create] [-d|--driver <driver>] [port]"
+
+  echo "port must be a number"
+}
+
+CREATE=false
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+  -c|--create)
+  CREATE=true
+  shift
+  ;;
+  -d|--driver)
+  DRIVER=$2
+  shift
+  shift
+  ;;
+  *)
+  PORT="$1"
+  shift
+  ;;
+esac
+done
+
+DRIVER_DEFAULT=docker
+
+# use virtualbox driver as the default if virtualbox is installed
+if [[ ( ( $(uname) = "Darwin" )  && ( -x /usr/local/bin/VirtualBox ) ) || ( ( $(uname) = "Linux" ) && ( -e /dev/vboxdrv ) ) ]] 
+  then
+    DRIVER_DEFAULT=virtualbox
+fi
+
+DRIVER=${DRIVER:-$DRIVER_DEFAULT}
+
+PORT=${PORT:-2746}
+
+[[ $PORT =~ ^[0-9]+$ ]] || (usage && exit 1)
+
+echo "$DRIVER"
+
+minikube start --driver="$DRIVER"
+
+sleep 5
+
+if [[ "$CREATE" = true ]]
+  then
+    kubectl create ns argo
+    kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/quick-start-postgres.yaml
+fi 
+
+while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argo" && sleep 5; done
+
+kubectl -n argo port-forward deployment/argo-server "$PORT:2746"
