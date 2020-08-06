@@ -311,6 +311,52 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when passing a forceAsync parameter', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+
+    describe('set to "true"', function () {
+      const forceAsync = true;
+
+      describe('and making a request would otherwise be synchronous', function () {
+        hookRangesetRequest(version, collection, variableName,
+          { query: { granuleId, forceAsync } });
+
+        it('performs the request asynchronously', function () {
+          expect(this.service.operation.isSynchronous).to.equal(false);
+        });
+      });
+
+      describe('and making a request would otherwise be asynchronous', function () {
+        hookRangesetRequest(version, collection, variableName, { query: { forceAsync } });
+
+        it('performs the request asynchronously', function () {
+          expect(this.service.operation.isSynchronous).to.equal(false);
+        });
+      });
+    });
+
+    describe('set to "false"', function () {
+      const forceAsync = false;
+
+      describe('and making a request would otherwise be synchronous', function () {
+        hookRangesetRequest(version, collection, variableName,
+          { query: { granuleId, forceAsync } });
+
+        it('performs the request synchronously', function () {
+          expect(this.service.operation.isSynchronous).to.equal(true);
+        });
+      });
+
+      describe('and making a request would otherwise be asynchronous', function () {
+        hookRangesetRequest(version, collection, variableName, { query: { forceAsync } });
+
+        it('performs the request asynchronously', function () {
+          expect(this.service.operation.isSynchronous).to.equal(false);
+        });
+      });
+    });
+  });
+
   describe('when the granule spatial metadata is defined by polygons instead of a bbox', function () {
     const query = {
       granuleid: 'G1226018995-POCUMULUS',

@@ -61,8 +61,15 @@ describe('Individual job status route', function () {
     });
 
     it('returns a single job record in JSON format', function () {
-      const actualJob = JSON.parse(this.res.text);
+      const actualJob = new Job(JSON.parse(this.res.text));
       expect(jobsEqual(aJob, actualJob)).to.be.true;
+    });
+
+    it('includes a "self" relation on the returned job', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const selves = job.getRelatedLinks('self');
+      expect(selves.length).to.equal(1);
+      expect(selves[0].href).to.match(new RegExp(`${this.res.req.path}$`));
     });
   });
 
@@ -370,7 +377,8 @@ describe('Individual job status route', function () {
         });
 
         hookUrl(function () {
-          return JSON.parse(this.res.text).links[0].href.split(/:\d+/)[1];
+          const job = new Job(JSON.parse(this.res.text));
+          return job.getRelatedLinks('data')[0].href.split(/:\d+/)[1];
         }, 'jdoe1');
 
         it('temporarily redirects to a presigned URL for the data', function () {
@@ -436,13 +444,15 @@ describe('Individual job status route', function () {
       hookRedirect('jdoe1');
 
       it('includes the temporal range in the link', function () {
-        const response = JSON.parse(this.res.text);
-        expect(response.links[0].temporal).to.eql({ start: '2020-01-01T00:00:00.000Z', end: '2020-01-02T00:00:00.000Z' });
+        const job = new Job(JSON.parse(this.res.text));
+        const link = job.getRelatedLinks('data')[0];
+        expect(link.temporal).to.eql({ start: '2020-01-01T00:00:00.000Z', end: '2020-01-02T00:00:00.000Z' });
       });
 
       it('includes the bbox in the link', function () {
-        const response = JSON.parse(this.res.text);
-        expect(response.links[0].bbox).to.eql([-10, -10, 10, 10]);
+        const job = new Job(JSON.parse(this.res.text));
+        const link = job.getRelatedLinks('data')[0];
+        expect(link.bbox).to.eql([-10, -10, 10, 10]);
       });
     });
 

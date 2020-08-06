@@ -111,6 +111,13 @@ describe('Jobs listing route', function () {
         const listing = JSON.parse(this.res.text);
         expect(containsJob(woodySyncJob, listing)).to.be.false;
       });
+
+      it("includes a link to the job's status in each job's list of links", function () {
+        const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
+        const selfLinks = jobs.map((j) => j.getRelatedLinks('self')[0] || null);
+        expect(selfLinks).to.not.include(null);
+        expect(selfLinks[0].href).to.match(new RegExp(`/jobs/${jobs[0].jobID}$`));
+      });
     });
   });
 
