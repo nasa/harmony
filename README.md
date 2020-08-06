@@ -190,7 +190,9 @@ At this time connecting to the Argo Server UI on localhost does not work while o
 
 `minikube` is a single-node [kubernetes](https://kubernetes.io/) cluster useful for local development.
 `kubectl` is a command line interface to kubernetes.
-Follow [these instructions](https://kubernetes.io/docs/tasks/tools/install-minikube/) for installing minikube (including `kubectl`).
+
+Follow [these instructions]((https://kubernetes.io/docs/tasks/tools/install-kubectl/) to install `kubectl`.
+Then follow [these instructions](https://kubernetes.io/docs/tasks/tools/install-minikube/) for installing `minikube`.
 
 After installing `minikube` and `kubectl`, you can start up `minikube` and install Argo by running the following from the Harmony top level directory:
 
