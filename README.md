@@ -242,6 +242,10 @@ $ ./bin/start-argo
 
 You can also specify the `-p` option to bind to a desired port.
 
+##### Optionally install the Argo CLI
+
+You can follow the [instructions](https://github.com/argoproj/argo/releases) for installing the Argo command line interface (CLI). This is not necessary, but provides a convenient way to interact with Argo outside the UI and REST API.
+
 #### Local development of workflows using Visual Studio Code
 
 This section describes a VS Code based approach to local development. The general ideas are, however, applicable to other editors.
