@@ -1,7 +1,6 @@
 import process from 'process';
 import express, { RequestHandler, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
-import { chooseServiceConfigMiddleware } from 'models/services';
 import log from '../util/log';
 
 // Middleware requires in outside-in order
@@ -13,6 +12,7 @@ import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import shapefileUpload from '../middleware/shapefile-upload';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
+import chooseService from '../middleware/service-selection';
 import setRequestId from '../middleware/request-id';
 import shapefileConverter from '../middleware/shapefile-converter';
 import { NotFoundError } from '../util/errors';
@@ -180,7 +180,7 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   });
 
   result.use(logged(shapefileConverter));
-  result.use(logged(chooseServiceConfigMiddleware));
+  result.use(logged(chooseService));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(setRequestId));
 

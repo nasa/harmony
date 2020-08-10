@@ -3,10 +3,7 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { get as getIn } from 'lodash';
 
-import HarmonyRequest from 'models/harmony-request';
-import { ServerResponse } from 'http';
-import { NextFunction } from 'express';
-import logger from 'util/log';
+import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
@@ -349,30 +346,4 @@ export function chooseServiceConfig(
     }
   }
   return serviceConfig;
-}
-
-/**
- * Middleware to set the service that should be used for the given request
- * @param req The client request, containing an operation
- * @param res The client response
- * @param next The next function in the middleware chain
- */
-export function chooseServiceConfigMiddleware(
-  req: HarmonyRequest,
-  _res: ServerResponse,
-  next: NextFunction,
-): void {
-  const { operation, context } = req;
-  if (!operation?.sources) {
-    return next();
-  }
-
-  let serviceConfig;
-  try {
-    serviceConfig = chooseServiceConfig(operation, context);
-  } catch (e) {
-    return next(e);
-  }
-  context.serviceConfig = serviceConfig;
-  return next();
 }
