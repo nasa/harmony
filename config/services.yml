@@ -24,6 +24,27 @@ https://cmr.earthdata.nasa.gov:
 
 https://cmr.uat.earthdata.nasa.gov:
 
+  - name: harmony/gdal-argo
+    data_operation_version: '0.8.0'
+    type:
+      name: argo
+      params:
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: harmony_gdal
+    collections:
+      - C1233800302-EEDTEST
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+      projection_to_proj4: true
+
   - name: harmony/gdal
     data_operation_version: '0.8.0'
     type:
@@ -32,7 +53,6 @@ https://cmr.uat.earthdata.nasa.gov:
         queue_url: !Env ${BASE_QUEUE_URL}harmony-gdal-queue
     collections:
       - C1234088182-EEDTEST
-      - C1233800302-EEDTEST
       - C1225776654-ASF
     capabilities:
       subsetting:

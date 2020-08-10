@@ -99,6 +99,9 @@ ADMIN_GROUP_ID=AG1222736883-EEDTEST
 # localstack.  For SQS, use `https://sqs.REGION.amazonaws.com/YOUR_ACCOUNT_ID/ENV_NAME-`
 BASE_QUEUE_URL=http://localhost:4566/queue/
 
+# The URL to use for interacting with Argo
+ARGO_URL=http://localhost:2746
+
 # The name of the dead letter queue for message-queue-based services
 SERVICE_DEAD_LETTER_QUEUE_NAME=harmony-dead-letter-queue
 

@@ -99,12 +99,14 @@ export default async function serviceInvoker(
   const varSources = model.sources.filter((s) => s.variables && s.variables.length > 0);
   const variableSubset = varSources.length > 0;
   logger.info('Backend service request complete',
-    { durationMs: msTaken,
+    {
+      durationMs: msTaken,
       frontend,
       ...model,
       service: service.config.name,
       spatialSubset,
       temporalSubset,
-      variableSubset });
+      variableSubset,
+    });
   return serviceResult;
 }

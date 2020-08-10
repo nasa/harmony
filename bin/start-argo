@@ -55,7 +55,8 @@ sleep 5
 if [[ "$CREATE" = true ]]
   then
     kubectl create ns argo
-    kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/quick-start-postgres.yaml
+    # kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/quick-start-postgres.yaml
+    kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/v2.10.0-rc6/manifests/quick-start-postgres.yaml
 fi 
 
 while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argo" && sleep 5; done

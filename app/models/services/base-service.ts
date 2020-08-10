@@ -66,7 +66,7 @@ export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): numbe
  * @class BaseService
  * @abstract
  */
-export default class BaseService<ServiceParamType> {
+export default abstract class BaseService<ServiceParamType> {
   config: ServiceConfig<ServiceParamType>;
 
   params: ServiceParamType;
@@ -84,12 +84,9 @@ export default class BaseService<ServiceParamType> {
    * @memberof BaseService
    */
   constructor(config: ServiceConfig<ServiceParamType>, operation: DataOperation) {
-    if (new.target === BaseService) {
-      throw new TypeError('BaseService is abstract and cannot be instantiated directly');
-    }
     this.config = config;
     const { type } = this.config;
-    this.params = (type && type.params) ? type.params : ({} as ServiceParamType);
+    this.params = type?.params || ({} as ServiceParamType);
     this.operation = operation;
     this.operation.isSynchronous = this.isSynchronous;
 
@@ -200,9 +197,7 @@ export default class BaseService<ServiceParamType> {
    * @memberof BaseService
    * @returns {Promise<InvocationResult>}
    */
-  protected async _run(_logger: Logger): Promise<InvocationResult> {
-    throw new TypeError('BaseService subclasses must implement #_run()');
-  }
+  protected abstract async _run(_logger: Logger): Promise<InvocationResult>;
 
   /**
    * Creates a new job for this service's operation, with appropriate logging, errors,
@@ -283,7 +278,7 @@ export default class BaseService<ServiceParamType> {
   get warningMessage(): string {
     if (this.operation.cmrHits > this.maxAsynchronousGranules) {
       return `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
-      + `to process only the first ${this.maxAsynchronousGranules} granules.`;
+        + `to process only the first ${this.maxAsynchronousGranules} granules.`;
     }
     return undefined;
   }
