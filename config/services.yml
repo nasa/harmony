@@ -31,7 +31,17 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         argo_url: !Env ${ARGO_URL}
         namespace: argo
-        template: harmony_gdal
+        template: harmony-gdal
+        image: !Env ${GDAL_IMAGE}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/harmony/gdal
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
     collections:
       - C1233800302-EEDTEST
     capabilities:

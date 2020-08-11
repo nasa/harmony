@@ -32,13 +32,8 @@ case $key in
 esac
 done
 
+# use docker driver as the default
 DRIVER_DEFAULT=docker
-
-# use virtualbox driver as the default if virtualbox is installed
-if [[ ( ( $(uname) = "Darwin" )  && ( -x /usr/local/bin/VirtualBox ) ) || ( ( $(uname) = "Linux" ) && ( -e /dev/vboxdrv ) ) ]] 
-  then
-    DRIVER_DEFAULT=virtualbox
-fi
 
 DRIVER=${DRIVER:-$DRIVER_DEFAULT}
 

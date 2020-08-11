@@ -1,12 +1,17 @@
 import { Logger } from 'winston';
 import * as axios from 'axios';
+import * as fs from 'fs';
+import * as path from 'path';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
+import env from '../../util/env';
 
 export interface ArgoServiceParams {
   argo_url: string;
   namespace: string;
   template: string;
+  image: string;
+  env: { [key: string]: string };
 }
 
 /**
@@ -27,40 +32,19 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     const { user, requestId } = this.operation;
     const input = this.serializeOperation();
 
-    // const body1 = {
-    //   namespace: this.params.namespace,
-    //   resourceKind: 'string',
-    //   resourceName: 'string',
-    //   submitOptions: {
-    //     dryRun: false,
-    //     entryPoint: 'string',
-    //     generateName: 'string',
-    //     labels: 'string',
-    //     name: 'string',
-    //     ownerReference: {
-    //       apiVersion: 'string',
-    //       blockOwnerDeletion: true,
-    //       controller: true,
-    //       kind: 'string',
-    //       name: 'string',
-    //       uid: 'string',
-    //     },
-    //     parameterFile: 'string',
-    //     parameters: [
-    //       input,
-    //     ],
-    //     serverDryRun: false,
-    //     serviceAccount: 'string',
-    //   },
-    // };
+    const dockerParams = ['-m', 'harmony_gdal', '--harmony-action', 'invoke', '--harmony-input', this.serializeOperation()];
+    const dockerEnv = [];
+    for (const variable of Object.keys(this.params.env)) {
+      dockerEnv.push({ name: variable, value: this.params.env[variable] });
+    }
 
     const body = {
       namespace: this.params.namespace,
       serverDryRun: false,
       workflow: {
         metadata: {
-          generateName: 'hello-world-input',
-          namespace: 'argo',
+          generateName: `${this.params.template}-`,
+          namespace: this.params.namespace,
           labels: {
             user,
             request_id: requestId,
@@ -69,7 +53,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
         spec: {
           templates: [
             {
-              name: 'whalesay',
+              name: 'harmony-step',
               arguments: {},
               inputs: {
                 parameters: [
@@ -82,18 +66,18 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
               metadata: {},
               container: {
                 name: '',
-                image: 'docker/whalesay:latest',
+                image: this.params.image,
+                imagePullPolicy: env.imagePullPolicy,
                 command: [
-                  'cowsay',
+                  'python3',
                 ],
-                args: [
-                  '{{inputs.parameters.message}}',
-                ],
+                args: dockerParams,
+                env: dockerEnv,
                 resources: {},
               },
             },
           ],
-          entrypoint: 'whalesay',
+          entrypoint: 'harmony-step',
           arguments: {
             parameters: [
               {

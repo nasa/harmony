@@ -179,10 +179,6 @@ PNG from the test server.
 
 [Argo Workflows](https://github.com/argoproj/argo) are used by Harmony to manage job executions. Argo can be run locally to support development by following these instructions. 
 
-**NOTE** 
-
-At this time connecting to the Argo Server UI on localhost does not work while on the NASA VPN.
-
 #### Installing Argo Workflows
 
 ##### Prerequisites
@@ -214,7 +210,7 @@ You can change the startup port by adding the `-p` option like so for port 8080:
 $ ./bin/start-argo -c -p 8080
 ```
 
-`minikube` will default to using [virtualbox](https://www.virtualbox.org/) on a mac or Linux if it is installed. Otherwise it uses the `docker` driver. You can change the driver used by minikube by using the `-d` option with `start-argo` like so
+`minikube` will default to using the `docker` driver. You can change the driver used by minikube by using the `-d` option with `start-argo` like so
 
 ```
 $ ./bin/start-argo -c -d DRIVER
@@ -241,6 +237,16 @@ $ ./bin/start-argo
 ```
 
 You can also specify the `-p` option to bind to a desired port.
+
+##### Configuring the callback URL for backend services
+
+Because the services are running in minikube the pods they run in must be configured correctly to be able to connect to Harmony running locally. To do this, execute the following command to get the IP address minikube has bridged to localhost:
+
+```bash
+minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
+```
+
+This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
 
 ##### Optionally install the Argo CLI
 
