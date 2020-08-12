@@ -182,15 +182,17 @@ PNG from the test server.
 #### Installing Argo Workflows
 
 ##### Prerequisites
-* minikube / kubectl
+* minikube / kubectl / the Argo CLI
 
 `minikube` is a single-node [kubernetes](https://kubernetes.io/) cluster useful for local development.
 `kubectl` is a command line interface to kubernetes.
+`Argo CLI` is the command line interface to Argo
 
 Follow [these instructions]((https://kubernetes.io/docs/tasks/tools/install-kubectl/) to install `kubectl`.
 Then follow [these instructions](https://kubernetes.io/docs/tasks/tools/install-minikube/) for installing `minikube`.
+Finally, follow [these instructions](https://github.com/argoproj/argo/releases/tag/v2.9.5) to install the `Argo CLI`.
 
-After installing `minikube` and `kubectl`, you can start up `minikube` and install Argo by running the following from the Harmony top level directory:
+After installing `minikube`, `kubectl`, and the `Argo CLI`, you can start up `minikube` and install Argo by running the following from the Harmony top level directory:
 
 ```
 $ ./bin/start-argo -c
@@ -248,9 +250,21 @@ minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
 
 This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
 
-##### Optionally install the Argo CLI
+#### Rebuilding the harmony-gdal image to work in minikube
 
-You can follow the [instructions](https://github.com/argoproj/argo/releases) for installing the Argo command line interface (CLI). This is not necessary, but provides a convenient way to interact with Argo outside the UI and REST API.
+Clone the harmony-gdal repo `https://git.earthdata.nasa.gov/scm/harmony/harmony-gdal.git` and run the following command inside the created directory:
+
+```bash
+eval $(minikube docker-env)
+```
+
+This will set up the proper environment for building the image. Next run the following command to build and locally install the image:
+
+```bash
+./bin/build-image
+```
+
+After restarting the Harmony front end you should be able to see Argo workflows running for queries against Argo configured collections in services.yml.
 
 #### Local development of workflows using Visual Studio Code
 

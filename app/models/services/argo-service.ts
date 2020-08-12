@@ -1,7 +1,5 @@
 import { Logger } from 'winston';
 import * as axios from 'axios';
-import * as fs from 'fs';
-import * as path from 'path';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
 import env from '../../util/env';
@@ -32,11 +30,27 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     const { user, requestId } = this.operation;
     const input = this.serializeOperation();
 
-    const dockerParams = ['-m', 'harmony_gdal', '--harmony-action', 'invoke', '--harmony-input', this.serializeOperation()];
     const dockerEnv = [];
     for (const variable of Object.keys(this.params.env)) {
       dockerEnv.push({ name: variable, value: this.params.env[variable] });
     }
+
+    let params = [
+      {
+        name: 'operation',
+        value: input,
+      },
+      {
+        name: 'image',
+        value: this.params.image,
+      },
+      {
+        name: 'image-pull-policy',
+        value: env.imagePullPolicy,
+      },
+    ];
+
+    params = params.concat(dockerEnv);
 
     const body = {
       namespace: this.params.namespace,
@@ -51,51 +65,18 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
           },
         },
         spec: {
-          templates: [
-            {
-              name: 'harmony-step',
-              arguments: {},
-              inputs: {
-                parameters: [
-                  {
-                    name: 'message',
-                  },
-                ],
-              },
-              outputs: {},
-              metadata: {},
-              container: {
-                name: '',
-                image: this.params.image,
-                imagePullPolicy: env.imagePullPolicy,
-                command: [
-                  'python3',
-                ],
-                args: dockerParams,
-                env: dockerEnv,
-                resources: {},
-              },
-            },
-          ],
-          entrypoint: 'harmony-step',
+          workflowTemplateRef: {
+            name: this.params.template,
+          },
+          env: dockerEnv,
           arguments: {
-            parameters: [
-              {
-                name: 'message',
-                value: input,
-              },
-            ],
+            parameters: params,
           },
         },
       },
     };
 
-    try {
-      const resp = await axios.default.post(url, body);
-      console.log(resp);
-    } catch (error) {
-      console.log(error);
-    }
+    await axios.default.post(url, body);
 
     return null;
   }
