@@ -37,7 +37,6 @@ export default class NoOpService extends BaseService<void> {
     };
   }
 
-
   /**
    * Generates a response with a list of download links as provided by the CMR.
    *
