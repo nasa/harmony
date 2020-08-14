@@ -32,6 +32,9 @@ case $key in
 esac
 done
 
+# make sure we are talking to minikube and not some other environment
+kubectl config use-context minikube
+
 # use docker driver as the default
 DRIVER_DEFAULT=docker
 

@@ -75,6 +75,37 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/gif
       projection_to_proj4: true
 
+  - name: ds/swot-reproject-argo
+    data_operation_version: '0.8.0'
+    type:
+      name: argo
+      params:
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: harmony-gdal
+        image: !Env ${SWOT_REPR_IMAGE}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/harmony/gdal
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      - C1233800302-EEDTEST
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+      projection_to_proj4: true  
+  
   - name: sds/swot-reproject
     data_operation_version: '0.8.0'
     type:
@@ -182,6 +213,33 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/shapefile+zip
 
+  - name: harmony/netcdf-to-zarr-argo
+    data_operation_version: '0.8.0'
+    type:
+      name: argo
+      params:
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: harmony-netcdf-to-zarr
+        image: !Env ${NETCDF_TO_ZARR_IMAGE}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/harmony/gdal
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      - C1234088182-EEDTEST
+    maximum_sync_granules: 0
+    capabilities:
+      subsetting:
+        variable: false
+      output_formats:
+        - application/x-zarr
+
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.8.0'
     type:
@@ -191,7 +249,6 @@ https://cmr.uat.earthdata.nasa.gov:
     collections:
       - C1233800302-EEDTEST
       - C1233860183-EEDTEST
-      - C1234088182-EEDTEST
       - C1234410736-POCLOUD
       - C1234082763-POCLOUD
       - C1234071416-POCLOUD

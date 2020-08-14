@@ -7,6 +7,9 @@ function usage
   echo "Usage: $SELF [-d|--destroy]"
 }
 
+# make sure we are talking to minikube and not some other environment
+kubectl config use-context minikube
+
 DELETE=false
 
 while [[ $# -gt 0 ]]

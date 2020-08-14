@@ -23,7 +23,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    * Invokes an Argo workflow to execute a service request
    *
    *  @param _logger the logger associated with the request
-   * @returns A promise resolving to null
+   *  @returns A promise resolving to null
    */
   async _run(_logger: Logger): Promise<InvocationResult> {
     const url = `${this.params.argo_url}/api/v1/workflows/${this.params.namespace}`;
