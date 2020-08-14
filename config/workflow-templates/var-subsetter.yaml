@@ -1,16 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: harmony-gdal
+  name: var-subsetter
   namespace: argo
 spec:
-  entrypoint: harmony-gdal
+  entrypoint: var-subsetter
   arguments:
     parameters: # these will get filled in when the template is invoked
     - name: operation
       value: serialized operation
     - name: image
-      value: harmony/gdal:latest
+      value: sds/variable-subsetter:latest
     - name: image-pull-policy
       value: Always
     - name: AWS_DEFAULT_REGION
@@ -25,7 +25,7 @@ spec:
       value: "127.0.0.1"
 
   templates:
-  - name: harmony-gdal
+  - name: var-subsetter
     inputs:
       parameters:
       - name: operation
@@ -41,7 +41,7 @@ spec:
       image: "{{inputs.parameters.image}}"
       imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
       command: ["python3"]
-      args: ["-m", "harmony_gdal", "--harmony-action", "invoke", "--harmony-input", "{{inputs.parameters.operation}}"]
+      args: ["subsetter.py", "--harmony-action", "invoke", "--harmony-input", "{{inputs.parameters.operation}}"]
       env:
         - name: AWS_DEFAULT_REGION
           value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"

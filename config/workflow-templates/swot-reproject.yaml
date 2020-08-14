@@ -17,10 +17,6 @@ spec:
       value: us-west-2
     - name: USE_LOCALSTACK
       value: "false"
-    - name: EDL_USERNAME
-      value: username
-    - name: EDL_PASSWORD
-      value: password
     - name: STAGING_BUCKET
       value: bucket
     - name: TEXT_LOGGER
@@ -37,8 +33,6 @@ spec:
       - name: image-pull-policy
       - name: AWS_DEFAULT_REGION
       - name: USE_LOCALSTACK
-      - name: EDL_USERNAME
-      - name: EDL_PASSWORD
       - name: STAGING_BUCKET
       - name: TEXT_LOGGER
       - name: BACKEND_HOST
@@ -54,9 +48,15 @@ spec:
         - name: USE_LOCALSTACK
           value:  "{{inputs.parameters.USE_LOCALSTACK}}"
         - name: EDL_USERNAME
-          value:  "{{inputs.parameters.EDL_USERNAME}}"
+          valueFrom:
+            secretKeyRef:
+              name: argo-edl-credentials
+              key: username
         - name: EDL_PASSWORD
-          value:  "{{inputs.parameters.EDL_PASSWORD}}"
+          valueFrom:
+            secretKeyRef:
+              name: argo-edl-credentials
+              key: password
         - name: STAGING_BUCKET
           value:  "{{inputs.parameters.STAGING_BUCKET}}"
         - name: TEXT_LOGGER
