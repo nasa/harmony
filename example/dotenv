@@ -99,6 +99,9 @@ ADMIN_GROUP_ID=AG1222736883-EEDTEST
 # localstack.  For SQS, use `https://sqs.REGION.amazonaws.com/YOUR_ACCOUNT_ID/ENV_NAME-`
 BASE_QUEUE_URL=http://localhost:4566/queue/
 
+# The URL to use for interacting with Argo
+ARGO_URL=http://localhost:2746
+
 # The name of the dead letter queue for message-queue-based services
 SERVICE_DEAD_LETTER_QUEUE_NAME=harmony-dead-letter-queue
 
@@ -111,6 +114,13 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 # Variables defined in config/services.yml that get passed to backend     #
 # services on invocation                                                  #
 ###########################################################################
+
+# Docker images for services referenced in config/services.yml.  Set to a
+# local image, ECR image, Docker Hub image, etc
+GDAL_IMAGE=harmony/gdal:latest
+NETCDF_TO_ZARR_IMAGE=harmony/netcdf-to-zarr:latest
+SWOT_REPR_IMAGE=sds/swot-reproject:latest
+VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
 
 # The bucket where service output data will be staged, corresponds to the S3 bucket
 # created in localstack when running locally
@@ -132,6 +142,10 @@ EDL_PASSWORD=
 BACKEND_HOST=host.docker.internal
 # Linux:
 # BACKEND_HOST=localhost
+
+# imagePullPolicy to use for container definitions in workflow templates.set to `Never` for
+# localhost
+IMAGE_PULL_POLICY='Always'
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #

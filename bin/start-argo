@@ -26,23 +26,21 @@ case $key in
   shift
   ;;
   *)
-  PORT="$1"
+  PPORT="$1"
   shift
   ;;
 esac
 done
 
-DRIVER_DEFAULT=docker
 
-# use virtualbox driver as the default if virtualbox is installed
-if [[ ( ( $(uname) = "Darwin" )  && ( -x /usr/local/bin/VirtualBox ) ) || ( ( $(uname) = "Linux" ) && ( -e /dev/vboxdrv ) ) ]] 
-  then
-    DRIVER_DEFAULT=virtualbox
-fi
+# use docker driver as the default
+DRIVER_DEFAULT=docker
 
 DRIVER=${DRIVER:-$DRIVER_DEFAULT}
 
-PORT=${PORT:-2746}
+source ".env"
+
+PORT=${PPORT:-2746}
 
 [[ $PORT =~ ^[0-9]+$ ]] || (usage && exit 1)
 
@@ -52,12 +50,36 @@ minikube start --driver="$DRIVER"
 
 sleep 5
 
+# make sure we are talking to minikube and not some other environment
+kubectl config use-context minikube
+
+if [[ "$CREATE" = true ]]
+then
+kubectl create ns argo
+
+cat <<EOF | kubectl -n argo apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argo-edl-credentials
+type: Opaque
+data:
+  username: $(echo -n "${EDL_USERNAME}" | base64)
+  password: $(echo -n "${EDL_PASSWORD}" | base64)
+EOF
+
+kubectl apply -n argo -f ./config/local-argo-deployment.yml
+fi
+
+# wait for argo to start up
+while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argo" && sleep 5; done
+
 if [[ "$CREATE" = true ]]
   then
-    kubectl create ns argo
-    kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/quick-start-postgres.yaml
-fi 
-
-while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argo" && sleep 5; done
+  # create the workflow templates
+  for f in ./config/workflow-templates/*; do
+    argo -n argo template create "$f"
+  done
+fi
 
 kubectl -n argo port-forward deployment/argo-server "$PORT:2746"

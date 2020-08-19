@@ -177,24 +177,22 @@ PNG from the test server.
 
 ### Running Argo Workflows
 
-[Argo Workflows](https://github.com/argoproj/argo) are used by Harmony to manage job executions. Argo can be run locally to support development by following these instructions. 
-
-**NOTE** 
-
-At this time connecting to the Argo Server UI on localhost does not work while on the NASA VPN.
+[Argo Workflows](https://github.com/argoproj/argo) are used by Harmony to manage job executions. Argo can be run locally to support development by following these instructions.
 
 #### Installing Argo Workflows
 
 ##### Prerequisites
-* minikube / kubectl
+* minikube / kubectl / the Argo CLI
 
 `minikube` is a single-node [kubernetes](https://kubernetes.io/) cluster useful for local development.
 `kubectl` is a command line interface to kubernetes.
+`Argo CLI` is the command line interface to Argo
 
 Follow [these instructions]((https://kubernetes.io/docs/tasks/tools/install-kubectl/) to install `kubectl`.
 Then follow [these instructions](https://kubernetes.io/docs/tasks/tools/install-minikube/) for installing `minikube`.
+Finally, follow [these instructions](https://github.com/argoproj/argo/releases/tag/v2.9.5) to install the `Argo CLI`.
 
-After installing `minikube` and `kubectl`, you can start up `minikube` and install Argo by running the following from the Harmony top level directory:
+After installing `minikube`, `kubectl`, and the `Argo CLI`, you can start up `minikube` and install Argo by running the following from the Harmony top level directory:
 
 ```
 $ ./bin/start-argo -c
@@ -214,7 +212,7 @@ You can change the startup port by adding the `-p` option like so for port 8080:
 $ ./bin/start-argo -c -p 8080
 ```
 
-`minikube` will default to using [virtualbox](https://www.virtualbox.org/) on a mac or Linux if it is installed. Otherwise it uses the `docker` driver. You can change the driver used by minikube by using the `-d` option with `start-argo` like so
+`minikube` will default to using the `docker` driver. You can change the driver used by minikube by using the `-d` option with `start-argo` like so
 
 ```
 $ ./bin/start-argo -c -d DRIVER
@@ -242,9 +240,31 @@ $ ./bin/start-argo
 
 You can also specify the `-p` option to bind to a desired port.
 
-##### Optionally install the Argo CLI
+##### Configuring the callback URL for backend services
 
-You can follow the [instructions](https://github.com/argoproj/argo/releases) for installing the Argo command line interface (CLI). This is not necessary, but provides a convenient way to interact with Argo outside the UI and REST API.
+You can skip this step if you are using the default docker driver for minikube and set CALLBACK_URL_ROOT as described in the example dotenv file. If you are using a different driver such as virtualbox you may need to execute the following command to get the IP address minikube has bridged to localhost:
+
+```bash
+minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
+```
+
+This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
+
+#### Rebuilding the harmony-gdal image to work in minikube
+
+Clone the harmony-gdal repo `https://git.earthdata.nasa.gov/scm/harmony/harmony-gdal.git` and run the following command inside the created directory:
+
+```bash
+eval $(minikube docker-env)
+```
+
+This will set up the proper environment for building the image. Next run the following command to build and locally install the image:
+
+```bash
+./bin/build-image
+```
+
+After restarting the Harmony front end you should be able to see Argo workflows running for queries against Argo configured collections in services.yml.
 
 #### Local development of workflows using Visual Studio Code
 
@@ -263,9 +283,9 @@ The second step is to mount the directory on the node to a directory on the pod 
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow                 
+kind: Workflow
 metadata:
-  generateName: hello-world-    
+  generateName: hello-world-
 spec:
   volumes:
   - name: test-volume
@@ -278,15 +298,15 @@ You can then mount the volume in your pod using a `volumeMounts` entry in you co
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow                 
+kind: Workflow
 metadata:
-  generateName: hello-world-    
+  generateName: hello-world-
 spec:
   volumes:
   - name: test-volume
     hostPath:
       path: /Users/username/project_folder
-  entrypoint: hello 
+  entrypoint: hello
   arguments:
     parameters:
     - name: message
@@ -313,15 +333,15 @@ For NodeJS code this is easily done by passing the `--inspect-brk` option to the
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow                 
+kind: Workflow
 metadata:
-  generateName: hello-world-    
+  generateName: hello-world-
 spec:
   volumes:
   - name: test-volume
     hostPath:
       path: /Users/username/project_folder
-  entrypoint: hello 
+  entrypoint: hello
   arguments:
     parameters:
     - name: message
@@ -344,9 +364,9 @@ In this example the starting point for the step is in the `index.js` file.
 
 Similar approaches are available for Python and Java, although they might require changes to the code.
 
-Once you launch your workflow it will pause at the step (wait for the icon in the UI to change from yellow to blue and spinning), and you can attach the debugger. For VS Code this is easily done using the `kubernetes` plugin. 
+Once you launch your workflow it will pause at the step (wait for the icon in the UI to change from yellow to blue and spinning), and you can attach the debugger. For VS Code this is easily done using the `kubernetes` plugin.
 
-Open the plugin by clicking on the `kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python). 
+Open the plugin by clicking on the `kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python).
 
 At this point the editor should open the file that is the starting point for your applications and it should be stopped on the first line of code to be run. You can then perform all the usual debugging operations such as stepping trough code and examining variables.
 

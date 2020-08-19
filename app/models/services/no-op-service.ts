@@ -1,4 +1,5 @@
 import { Job, JobStatus } from 'models/job';
+import { Logger } from 'winston';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
 
@@ -24,6 +25,16 @@ export default class NoOpService extends BaseService<void> {
   constructor(config, operation) {
     super(config, operation);
     this.message = `Returning direct download links because ${config.message}.`;
+  }
+
+  /**
+   * Does nothing useful, but needed to fulfill the BaseService contract.
+   * @returns {Promise<InvocationResult>} A promise resolving to a useless result.
+   */
+  async _run(_logger: Logger): Promise<InvocationResult> {
+    return {
+      onComplete: (_err: Error): void => { },
+    };
   }
 
   /**
