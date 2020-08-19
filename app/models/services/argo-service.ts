@@ -25,7 +25,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    *  @param _logger the logger associated with the request
    *  @returns A promise resolving to null
    */
-  async _run(_logger: Logger): Promise<InvocationResult> {
+  async _run(logger: Logger): Promise<InvocationResult> {
     const url = `${this.params.argo_url}/api/v1/workflows/${this.params.namespace}`;
     const { user, requestId } = this.operation;
     const input = this.serializeOperation();
@@ -79,7 +79,14 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       },
     };
 
-    await axios.default.post(url, body);
+    try {
+      await axios.default.post(url, body);
+    } catch (e) {
+      logger.error(`Argo workflow creation failed: ${JSON.stringify(e.response?.data)}`);
+      logger.error(`Argo url: ${url}`);
+      logger.error(`Workflow body: ${JSON.stringify(body)}`);
+      throw e;
+    }
 
     return null;
   }

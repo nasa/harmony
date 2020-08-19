@@ -82,7 +82,7 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         argo_url: !Env ${ARGO_URL}
         namespace: argo
-        template: harmony-gdal
+        template: swot-reproject
         image: !Env ${SWOT_REPR_IMAGE}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
@@ -90,7 +90,7 @@ https://cmr.uat.earthdata.nasa.gov:
           EDL_USERNAME: !Env ${EDL_USERNAME}
           EDL_PASSWORD: !Env ${EDL_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
-          STAGING_PATH: public/harmony/gdal
+          STAGING_PATH: public/sds/swot-reproject
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
     collections:
@@ -104,8 +104,8 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
         - image/png
         - image/gif
-      projection_to_proj4: true  
-  
+      projection_to_proj4: true
+
   - name: sds/swot-reproject
     data_operation_version: '0.8.0'
     type:
@@ -146,7 +146,7 @@ https://cmr.uat.earthdata.nasa.gov:
           EDL_USERNAME: !Env ${EDL_USERNAME}
           EDL_PASSWORD: !Env ${EDL_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
-          STAGING_PATH: public/harmony/gdal
+          STAGING_PATH: public/sds/variable-subsetter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
     data_url_pattern: 'opendap' # look for the string literal "opendap" in the data URL
