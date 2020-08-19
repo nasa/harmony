@@ -177,7 +177,7 @@ PNG from the test server.
 
 ### Running Argo Workflows
 
-[Argo Workflows](https://github.com/argoproj/argo) are used by Harmony to manage job executions. Argo can be run locally to support development by following these instructions. 
+[Argo Workflows](https://github.com/argoproj/argo) are used by Harmony to manage job executions. Argo can be run locally to support development by following these instructions.
 
 #### Installing Argo Workflows
 
@@ -242,7 +242,7 @@ You can also specify the `-p` option to bind to a desired port.
 
 ##### Configuring the callback URL for backend services
 
-Because the services are running in minikube the pods they run in must be configured correctly to be able to connect to Harmony running locally. To do this, execute the following command to get the IP address minikube has bridged to localhost:
+You can skip this step if you are using the default docker driver for minikube and set CALLBACK_URL_ROOT as described in the example dotenv file. If you are using a different driver such as virtualbox you may need to execute the following command to get the IP address minikube has bridged to localhost:
 
 ```bash
 minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
@@ -283,9 +283,9 @@ The second step is to mount the directory on the node to a directory on the pod 
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow                 
+kind: Workflow
 metadata:
-  generateName: hello-world-    
+  generateName: hello-world-
 spec:
   volumes:
   - name: test-volume
@@ -298,15 +298,15 @@ You can then mount the volume in your pod using a `volumeMounts` entry in you co
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow                 
+kind: Workflow
 metadata:
-  generateName: hello-world-    
+  generateName: hello-world-
 spec:
   volumes:
   - name: test-volume
     hostPath:
       path: /Users/username/project_folder
-  entrypoint: hello 
+  entrypoint: hello
   arguments:
     parameters:
     - name: message
@@ -333,15 +333,15 @@ For NodeJS code this is easily done by passing the `--inspect-brk` option to the
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow                 
+kind: Workflow
 metadata:
-  generateName: hello-world-    
+  generateName: hello-world-
 spec:
   volumes:
   - name: test-volume
     hostPath:
       path: /Users/username/project_folder
-  entrypoint: hello 
+  entrypoint: hello
   arguments:
     parameters:
     - name: message
@@ -364,9 +364,9 @@ In this example the starting point for the step is in the `index.js` file.
 
 Similar approaches are available for Python and Java, although they might require changes to the code.
 
-Once you launch your workflow it will pause at the step (wait for the icon in the UI to change from yellow to blue and spinning), and you can attach the debugger. For VS Code this is easily done using the `kubernetes` plugin. 
+Once you launch your workflow it will pause at the step (wait for the icon in the UI to change from yellow to blue and spinning), and you can attach the debugger. For VS Code this is easily done using the `kubernetes` plugin.
 
-Open the plugin by clicking on the `kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python). 
+Open the plugin by clicking on the `kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python).
 
 At this point the editor should open the file that is the starting point for your applications and it should be stopped on the first line of code to be run. You can then perform all the usual debugging operations such as stepping trough code and examining variables.
 
