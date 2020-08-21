@@ -24,6 +24,38 @@ https://cmr.earthdata.nasa.gov:
 
 https://cmr.uat.earthdata.nasa.gov:
 
+  - name: asfdataservices/gdal-subsetter
+    data_operation_version: '0.8.0'
+    type:
+      name: argo
+      params:
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: asfdataservices-gdal-subsetter
+        image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
+        imagePullPolicy: !Env ${ARGO_IMAGE_PULL_POLICY}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/asfdataservices/gdal-subsetter
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      - C1233800302-EEDTEST
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+      projection_to_proj4: true
+
   - name: harmony/gdal-argo
     data_operation_version: '0.8.0'
     type:
