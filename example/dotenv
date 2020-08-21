@@ -122,6 +122,21 @@ NETCDF_TO_ZARR_IMAGE=harmony/netcdf-to-zarr:latest
 SWOT_REPR_IMAGE=sds/swot-reproject:latest
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
 
+# For Argo services, this controls the Kubernetes imagePullPolicy used for
+# every service in a given environment. See the Kubernetes Container Images
+# documentation at:
+#   https://kubernetes.io/docs/concepts/configuration/overview/#container-images
+# for the possible imagePullPolicy values and their behavior, but they are summarized as:
+#
+# Always:       Pulls new image (if available) on each container startup
+# IfNotPresent: Pulls new image if it is not available locally
+# Never:        Image is assumed to exist locally, it is never pulled
+#
+# A value of `Always` is appropriate for pre-production environments, but
+# for production we will prefer `IfNotPresent` so we can explicitly control
+# both which Docker image tag is deployed, but also when it is deployed.
+ARGO_IMAGE_PULL_POLICY=Always
+
 # The bucket where service output data will be staged, corresponds to the S3 bucket
 # created in localstack when running locally
 STAGING_BUCKET=local-staging-bucket
