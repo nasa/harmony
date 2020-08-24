@@ -72,7 +72,7 @@ kubectl apply -n argo -f ./config/local-argo-deployment.yml
 while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argo" && sleep 5; done
 
 for f in ./config/workflow-templates/*; do
-  workflow=$(echo $f | sed -e 's/.yaml//' | sed -e 's/.*\///')
+  workflow=$(basename $f .yaml)
   existing_workflow=$(argo -n argo template get $workflow | grep $workflow | cut -d ' ' -f1)
   if [ -n "$existing_workflow" ]; then
     argo -n argo template delete $workflow
