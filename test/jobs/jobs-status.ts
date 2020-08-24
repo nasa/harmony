@@ -11,6 +11,7 @@ import StubService from '../helpers/stub-service';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import { S3ObjectStore } from '../../app/util/object-store';
+import { stagingBucket } from '../../app/util/env';
 
 const aJob: JobRecord = {
   username: 'joe',
@@ -407,7 +408,8 @@ describe('Individual job status route', function () {
         const job = new Job(JSON.parse(this.res.text));
         const bucketLinks = job.getRelatedLinks('s3-access');
         expect(bucketLinks.length).to.equal(1);
-        expect(bucketLinks[0].href).to.match(/^s3:\/\/localStagingBucket\/public\/harmony\/stub\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/$/);
+        const urlRegex = new RegExp(`^s3:\/\/${stagingBucket}\/public\/harmony\/stub\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/$`);
+        expect(bucketLinks[0].href).to.match(urlRegex);
         expect(bucketLinks[0].title).to.equal('Results in AWS S3. Access from AWS us-west-2 with keys from /cloud-access.sh');
       });
 
