@@ -13,4 +13,5 @@ export default interface HarmonyRequest extends Request {
   operation: DataOperation;
   user: string;
   accessToken: string;
+  authorized: boolean;
 }

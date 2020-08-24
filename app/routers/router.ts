@@ -4,13 +4,14 @@ import cookieParser from 'cookie-parser';
 import log from '../util/log';
 
 // Middleware requires in outside-in order
-import earthdataLoginAuthorizer from '../middleware/earthdata-login-authorizer';
+import shapefileUpload from '../middleware/shapefile-upload';
+import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-authorizer';
+import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
 import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
 import { getJobsListing, getJobStatus, cancelJob } from '../frontends/jobs';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
-import shapefileUpload from '../middleware/shapefile-upload';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
 import chooseService from '../middleware/service-selection';
 import setRequestId from '../middleware/request-id';
@@ -125,6 +126,14 @@ function validateCollectionRoute(req, res, next: NextFunction): void {
   next();
 }
 
+const authorizedRoutes = [
+  cmrCollectionReader.collectionRegex,
+  '/jobs*',
+  '/service-results/*',
+  '/cloud-access*',
+  '/stac*',
+];
+
 /**
  * Creates and returns an express.Router instance that has the middleware
  * and handlers necessary to respond to frontend service requests
@@ -146,14 +155,10 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), shapefileUpload());
 
+  result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
+
   if (`${skipEarthdataLogin}` !== 'true') {
-    result.use(logged(earthdataLoginAuthorizer([
-      cmrCollectionReader.collectionRegex,
-      '/jobs*',
-      '/service-results/*',
-      '/cloud-access*',
-      '/stac*',
-    ])));
+    result.use(logged(earthdataLoginOauthAuthorizer(authorizedRoutes)));
   }
 
   if (envVars.adminGroupId) {
