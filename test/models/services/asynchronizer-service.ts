@@ -10,7 +10,7 @@ import { Job } from '../../../app/models/job';
 import { defaultObjectStore } from '../../../app/util/object-store';
 import hookServersStartStop from '../../helpers/servers';
 import StubService from '../../helpers/stub-service';
-import { hookRangesetRequest, hookSyncRangesetRequest } from '../../helpers/ogc-api-coverages';
+import { hookDefaultRangesetRequest, hookSyncRangesetRequest } from '../../helpers/ogc-api-coverages';
 import { hookRedirect } from '../../helpers/hooks';
 import { hookMockS3 } from '../../helpers/object-store';
 
@@ -68,7 +68,7 @@ describe('Asynchronizer Service', function () {
         sinon.spy(() => ({ params: { redirect: 'https://example.com/test' } })),
         { single_granule_requests: true },
       );
-      hookRangesetRequest();
+      hookDefaultRangesetRequest();
       StubService.hookAsynchronizedServiceCompletion();
 
       it('sends single granules from the request to the backend, one per input granule', function () {
@@ -121,7 +121,7 @@ describe('Asynchronizer Service', function () {
   describe('when a service is configured to only respond synchronously', function () {
     describe('when a request that would normally be handled asynchronously arrives', function () {
       StubService.hookAsynchronized(sinon.spy(() => ({ params: { redirect: 'https://example.com/test' } })));
-      hookRangesetRequest();
+      hookDefaultRangesetRequest();
       StubService.hookAsynchronizedServiceCompletion();
 
       it('sends single granules from the request synchronously to the backend, one per input granule', function () {
@@ -165,7 +165,7 @@ describe('Asynchronizer Service', function () {
         { params: { redirect: 'https://example.com/test' } },
         { params: { redirect: s3Path } },
       ));
-      hookRangesetRequest();
+      hookDefaultRangesetRequest();
       StubService.hookAsynchronizedServiceCompletion();
       hookRedirect();
       let job;
@@ -200,7 +200,7 @@ describe('Asynchronizer Service', function () {
         { body: '["response2"]', headers: { 'Content-Disposition': 'attachment; filename="file2.json"' } },
         { body: '["response3"]', headers: { 'Content-Disposition': 'attachment; filename="file3.json"', 'Content-Type': 'application/json' } },
       ));
-      hookRangesetRequest();
+      hookDefaultRangesetRequest();
       StubService.hookAsynchronizedServiceCompletion();
       hookRedirect();
       let job;
@@ -242,7 +242,7 @@ describe('Asynchronizer Service', function () {
         { params: { redirect: 'https://example.com/test2' } },
         { params: { error: 'Failure from test' } },
       ));
-      hookRangesetRequest();
+      hookDefaultRangesetRequest();
       StubService.hookAsynchronizedServiceCompletion(true);
       hookRedirect();
 

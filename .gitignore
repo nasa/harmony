@@ -21,6 +21,7 @@ built
 
 # Dev and test databases
 db/*.sqlite3
+db/*-journal
 
 # Quokka repl/playground
 playground.ts
