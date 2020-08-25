@@ -67,6 +67,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: harmony-gdal
         image: !Env ${GDAL_IMAGE}
+        imagePullPolicy: !Env ${GDAL_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -118,6 +119,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: swot-reproject
         image: !Env ${SWOT_REPR_IMAGE}
+        imagePullPolicy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -174,6 +176,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: var-subsetter
         image: !Env ${VAR_SUBSETTER_IMAGE}
+        imagePullPolicy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -282,6 +285,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: harmony-netcdf-to-zarr
         image: !Env ${NETCDF_TO_ZARR_IMAGE}
+        imagePullPolicy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2

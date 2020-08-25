@@ -162,9 +162,16 @@ ASF_GDAL_IMAGE=asfdataservices/gdal-subsetter:latest
 ASF_GDAL_IMAGE_PULL_POLICY='Always'
 
 GDAL_IMAGE=harmony/gdal:latest
+GDAL_IMAGE_PULL_POLICY='Always'
+
 NETCDF_TO_ZARR_IMAGE=harmony/netcdf-to-zarr:latest
+NETCDF_TO_ZARR_IMAGE_PULL_POLICY='Always'
+
 SWOT_REPR_IMAGE=sds/swot-reproject:latest
+SWOT_REPR_IMAGE_PULL_POLICY='Always'
+
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
+VAR_SUBSETTER_IMAGE_PULL_POLICY='Always'
 
 # The bucket where service output data will be staged, corresponds to the S3 bucket
 # created in localstack when running locally
