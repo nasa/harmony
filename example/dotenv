@@ -120,7 +120,7 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 #
 # For Argo services, the image's pull policy variable controls the
 # Kubernetes imagePullPolicy used for that service in a given
-# environment. See the Kubernetes Container Images documentation at for
+# environment. See the Kubernetes Container Images documentation for
 # the possible imagePullPolicy values and their behavior:
 #
 #   https://kubernetes.io/docs/concepts/configuration/overview/#container-images
@@ -143,16 +143,15 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 #                               manually, it will always use that image.
 #                               If it is built locally, it will use that
 #                               image.
-# Sandbox        Always         The image:tag will be pulled each time a workflow
-#                               runs that needs the image. Note that K8S
-#                               will check the image hash to determine if an
-#                               if an image:tag has been changed, and will only
-#                               pull it when the image:tag has been changed to
-#                               a different (presumably newer) image.
+# Sandbox        Always         The image:tag will be pulled each time a
+#                               workflow runs which needs the image. Note
+#                               that K8S will check the image hash to determine
+#                               if an image:tag has been changed, and only
+#                               pull it if so.
 # SIT            Always         The image:tag is pulled on each workflow run.
 # UAT            Always         The image:tag is pulled on each workflow run.
-# PROD           IfNotPresent   The image:tag is only pulled if it does not exist
-#                               locally
+# PROD           IfNotPresent   The image:tag is only pulled if it does not
+#                               exist locally.
 #
 # For Local development, 'IfNotPresent' is recommended since this will use
 # the new version of a local image that you are working on locally, while
