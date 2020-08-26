@@ -38,10 +38,16 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       }
     }
 
+    const operation = JSON.parse(input);
+
     let params = [
       {
         name: 'operation',
         value: input,
+      },
+      {
+        name: 'callback',
+        value: operation.callback,
       },
       {
         name: 'image',
@@ -66,11 +72,13 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
             user,
             request_id: requestId,
           },
+          onExit: 'exit-handler',
         },
         spec: {
           workflowTemplateRef: {
             name: this.params.template,
           },
+          onExit: 'exit-handler',
           env: dockerEnv,
           arguments: {
             parameters: params,

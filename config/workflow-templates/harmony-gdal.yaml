@@ -5,12 +5,15 @@ metadata:
   namespace: argo
 spec:
   entrypoint: harmony-gdal
+  onExit: exit-handler
   arguments:
     parameters: # these will get filled in when the template is invoked
     - name: operation
       value: serialized operation
     - name: image
       value: harmony/gdal:latest
+    - name: callback
+      value: url
     - name: image-pull-policy
       value: Always
     - name: AWS_DEFAULT_REGION
@@ -63,3 +66,19 @@ spec:
           value:  "{{inputs.parameters.TEXT_LOGGER}}"
         - name: BACKEND_HOST
           value:  "{{inputs.parameters.BACKEND_HOST}}"
+  - name: exit-handler
+    inputs:
+      parameters:
+      - name: operation
+      - name: callback
+      - name: image-pull-policy
+    script:
+      image: "curlimages/curl"
+      command: [sh]
+      source: |
+        if [ "{{workflow.status}}" == "Succeeded" ]
+        then
+        curl -XPOST "{{inputs.parameters.callback}}/response"
+        else
+        curl -XPOST "{{inputs.parameters.callback}}/response?error={{workflow.status}}"
+        fi
