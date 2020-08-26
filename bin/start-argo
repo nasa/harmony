@@ -4,7 +4,7 @@ SELF=$(basename $0)
 
 function usage
 {
-  echo "Usage: $SELF [-c|--create] [-d|--driver <driver>] [port]"
+  echo "Usage: $SELF [-d|--driver <driver>] [port]"
 
   echo "port must be a number"
 }
@@ -16,10 +16,6 @@ do
 key="$1"
 
 case $key in
-  -c|--create)
-  CREATE=true
-  shift
-  ;;
   -d|--driver)
   DRIVER=$2
   shift
@@ -53,9 +49,11 @@ sleep 5
 # make sure we are talking to minikube and not some other environment
 kubectl config use-context minikube
 
-if [[ "$CREATE" = true ]]
-then
-kubectl create ns argo
+argo_namespace=$(kubectl get namespace | grep argo | cut -d ' ' -f1)
+
+if [ -z "$argo_namespace" ]; then
+  kubectl create namespace argo
+fi
 
 cat <<EOF | kubectl -n argo apply -f -
 apiVersion: v1
@@ -69,17 +67,17 @@ data:
 EOF
 
 kubectl apply -n argo -f ./config/local-argo-deployment.yml
-fi
 
 # wait for argo to start up
 while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argo" && sleep 5; done
 
-if [[ "$CREATE" = true ]]
-  then
-  # create the workflow templates
-  for f in ./config/workflow-templates/*; do
-    argo -n argo template create "$f"
-  done
-fi
+for f in ./config/workflow-templates/*; do
+  workflow=$(basename $f .yaml)
+  existing_workflow=$(argo -n argo template get $workflow | grep $workflow | cut -d ' ' -f1)
+  if [ -n "$existing_workflow" ]; then
+    argo -n argo template delete $workflow
+  fi
+  argo -n argo template create $f
+done
 
 kubectl -n argo port-forward deployment/argo-server "$PORT:2746"

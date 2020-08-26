@@ -32,9 +32,9 @@ minikube stop
 
 if [ "$DELETE" = true ]
   then
-    kubectl delete namepsaces argo
+    kubectl delete namespaces argo
     minikube delete
-fi 
+fi
 
 
 
