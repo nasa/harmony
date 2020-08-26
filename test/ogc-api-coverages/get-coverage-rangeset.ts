@@ -615,7 +615,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         StubService.hook({ params: { redirect: 'http://example.com' } });
         hookRangesetRequest(version, collection, variableName, { headers, query });
         it('uses the backend service that supports variable subsetting', function () {
-          expect(this.service.name).to.equal('harmony/gdal-argo');
+          expect(this.service.name).to.equal('harmony/gdal');
         });
         it('chooses the tiff format since zarr is not supported by the variable subsetting service', function () {
           expect(this.service.operation.outputFormat).to.equal(tiff);
@@ -642,7 +642,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
       it('uses the correct backend service', function () {
-        expect(this.service.name).to.equal('harmony/gdal-argo');
+        expect(this.service.name).to.equal('harmony/gdal');
       });
     });
 
