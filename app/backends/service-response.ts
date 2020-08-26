@@ -19,6 +19,7 @@ export interface CallbackQueryItem {
 export interface CallbackQuery {
   item?: CallbackQueryItem;
   error?: string;
+  argo?: string; // This is temporary until we decide what to do with callbacks
   redirect?: string;
   status?: string;
   progress?: string;
