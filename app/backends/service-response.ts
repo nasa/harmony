@@ -76,7 +76,6 @@ export function updateJobFields(
       job.updateStatus(status as JobStatus);
     } else if (redirect) {
       job.addLink({ href: redirect, rel: 'data' });
-      job.succeed();
     }
   } catch (e) {
     const ErrorClass = (e instanceof TypeError) ? RequestValidationError : ServerError;
@@ -148,6 +147,11 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     }
     const fields = _.merge({}, query, queryOverrides);
     logger.info(`Updating job ${job.id} with fields: ${JSON.stringify(fields)}`);
+
+    if (!query.error && query.argo?.toLowerCase() === 'true') {
+      // this is temporary until we decide how we want to use callbacks
+      job.succeed();
+    }
 
     updateJobFields(logger, job, fields);
     await job.save(trx);
