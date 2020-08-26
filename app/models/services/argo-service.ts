@@ -3,12 +3,14 @@ import * as axios from 'axios';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
 
+const DEFAULT_IMAGE_PULL_POLICY = 'Always';
+
 export interface ArgoServiceParams {
   argo_url: string;
   namespace: string;
   template: string;
   image: string;
-  imagePullPolicy: string;
+  imagePullPolicy?: string;
   env: { [key: string]: string };
 }
 
@@ -49,7 +51,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       },
       {
         name: 'image-pull-policy',
-        value: this.params.imagePullPolicy,
+        value: this.params.imagePullPolicy || DEFAULT_IMAGE_PULL_POLICY,
       },
     ];
 
