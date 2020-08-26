@@ -606,7 +606,7 @@ spec:
         - --configmap
         - workflow-controller-configmap
         - --executor-image
-        - argoproj/argoexec:latest
+        - argoproj/argoexec:latest-linux
         - --namespaced
         command:
         - workflow-controller
