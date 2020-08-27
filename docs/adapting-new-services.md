@@ -7,8 +7,9 @@ In order to connect a new service to Harmony:
 1. The service must be exposed in a way that Harmony can invoke it
 2. The service must be able to accept requests produced by Harmony
 3. The service must send results back to Harmony
-4. A new entry in [services.yml](../config/services.yml) must supply information about the service
-5. The service should follow Harmony's recommendations for service implementations
+4. The service must be able to handle request cancellations received by Harmony
+5. A new entry in [services.yml](../config/services.yml) must supply information about the service
+6. The service should follow Harmony's recommendations for service implementations
 
 A simple reference service, [harmony-gdal](https://git.earthdata.nasa.gov/projects/HARMONY/repos/harmony-gdal/browse), provides examples of each. The remainder of this document describes how to fulfill these requirements in more depth.
 
@@ -48,7 +49,7 @@ Ideally, this adaptation would consist only of necessary complexity peculiar to 
 
 ## 3. Sending results to Harmony
 
-In addition to the examples below, we provide an [Open API schema](../app/schemas/service-callbacks/0.1.0/service-callbacks-v0.1.0.yml) detailing all of the parameters available and their constraints
+In addition to the examples below, we provide an [Open API schema](../app/schemas/service-callbacks/0.1.0/service-callbacks-v0.1.0.yml) detailing all of the parameters available and their constraints.
 
 ### Synchronous responses
 
@@ -94,9 +95,11 @@ Similar to synchronous requests to Docker services, Harmony provides a callback 
 
 ##### Callback with partial result
 
-`${operation.callback}/response?item[href]=<url>&item[type]=<media-type>&item[title]=<title>`
+`${operation.callback}/response?item[href]=<url>&item[type]=<media-type>&item[temporal]=<date>&item[bbox]=<spatial-extent>&item[title]=<title>`
 
 When the service completes a file, it can indicate the file is complete by calling back to this endpoint.  `item[href]` and `item[type]` query parameters are required.  `item[href]` must contain the location (typically an S3 object URI) of the resulting item and `item[type]` must contain the media type of the file, e.g. `application/geo+tiff`.  `item[title]` is an optional human-readable name for the result.
+
+In order for Harmony to create STAC metadata for asynchronous requests based on the transformed output file extents, the service needs to send updated bounding box and temporal range values as `item[bbox]` and `item[temporal]`, respectively. If no spatial or temporal modifications were performed by the service, then the original spatial and temporal values from the CMR metadata should be returned in the response.
 
 ##### Callback with progress update
 
@@ -184,7 +187,18 @@ Note that several of the following are under active discussion and we encourage 
 
 In order to improve user experience, metrics gathering, and to allow compatibility with future development, Harmony strongly encourages service implementations to do the following:
 
-1. Provide provenance information in output files in a manner appropriate to the file format and following EOSDIS guidelines.  Typically this would consist of a list of commands that were run by the service as well as key software versions.
+1. Provide provenance information in output files in a manner appropriate to the file format and following EOSDIS guidelines, such that a user can recreate the output file that was generated through Harmony. The following fields are recommended to include in each output file. Note that the current software citation fields are limited and additional fields including service Locator/Identifier are forthcoming. For NetCDF outputs, this information can be included as a `history` global attribute. For GeoTIFF outputs, these fields can be included under `metadata` as `TIFFTAG_SOFTWARE`. See the [NASA ESDS Data Product Development Guide for Data Producers](https://earthdata.nasa.gov/files/ESDS-RFC-041.pdf) for more guidance on provenance information. 
+
+| Field Name               | Field Example                                                                                                                                            | Field Source                  |
+|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
+| Service Title            | Harmony                                                                                                                                                  | This document                 |
+| Service Publisher        | NASA EOSDIS                                                                                                                                              | This document                 |
+| Access Date              | 2020-08-26 00:00:00                                                                                                                                      | Time stamp of file generation |
+| Input granule identifier | SMAP_L3_SM_P_E_20200824_R16515_001                                                                                                                       | Filename of input granule     |
+| File request source      | https://harmony.uat.earthdata.nasa.gov/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(-5:5)&subset=lon(-10:10) | Harmony request               |
+
+
+
 2. Preserve existing file metadata where appropriate.  This includes file-level metadata that has not changed, layer metadata, and particularly provenance metadata that may have been generated by prior transformations.
 3. Log request callback URLs, which serve as unique identifiers, as well as Earthdata Login usernames when available to aid in tracing requests and debugging.
 4. Proactively protect (non-Docker) service endpoints from high request volume or computational requirements by using autoscaling with maximum thresholds, queueing, and other methods to avoid outages or non-responsiveness.
