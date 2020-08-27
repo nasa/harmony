@@ -26,7 +26,6 @@ interface HarmonyEnv {
   cmrEndpoint: string;
   oauthHost: string;
   useLocalstack: boolean;
-  imagePullPolicy: string;
   callbackUrlRoot: string;
   syncRequestPollIntervalMs: number;
 }
@@ -75,7 +74,6 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['.OBJECT_STORE_TYPE', 's3'],
   ['AWS_DEFAULT_REGION', 'us-west-2'],
   ['SAME_REGION_ACCESS_ROLE'],
-  ['IMAGE_PULL_POLICY', 'Always'],
   // shapefile upload related configs
   ['MAX_POST_FIELDS', 100],
   ['MAX_POST_FILE_SIZE', 2000000000],
