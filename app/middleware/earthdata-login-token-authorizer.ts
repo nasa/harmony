@@ -65,8 +65,8 @@ export async function getClientCredentialsToken(logger): Promise<string> {
  * Only used for routes that require authentication. If no token is passed in then the
  * middleware does nothing and forces the user through the oauth workflow.
  *
- * @param {Array<string>} paths Paths that require authentication
- * @returns {Function} Express.js middleware for doing EDL token authentication
+ * @param paths Paths that require authentication
+ * @returns Express.js middleware for doing EDL token authentication
  */
 export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): RequestHandler {
   return async function edlTokenAuthorizer(req: HarmonyRequest, res, next): Promise<void> {
