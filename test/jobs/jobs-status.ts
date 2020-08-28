@@ -84,7 +84,8 @@ describe('Individual job status route', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.NotFoundError',
-        description: `Error: Unable to find job ${jobID}` });
+        description: `Error: Unable to find job ${jobID}`,
+      });
     });
   });
 
@@ -99,7 +100,8 @@ describe('Individual job status route', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.NotFoundError',
-        description: `Error: Unable to find job ${unknownRequest}` });
+        description: `Error: Unable to find job ${unknownRequest}`,
+      });
     });
   });
 
@@ -191,7 +193,7 @@ describe('Individual job status route', function () {
     });
 
     describe('when the job has completed successfully', function () {
-      StubService.hook({ params: { status: 'successful' } });
+      StubService.hook({ params: { status: 'successful', argo: 'true' } });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe3' });
       before(async function () {
         await this.service.complete();
@@ -436,12 +438,14 @@ describe('Individual job status route', function () {
       StubService.hook({ params: { status: 'successful' } });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
-        await this.service.sendResponse({ item: {
-          href: 'https://example.com',
-          type: 'image/gif',
-          bbox: '-10,-10,10,10',
-          temporal: '2020-01-01T00:00:00.000Z,2020-01-02T00:00:00.000Z',
-        } });
+        await this.service.sendResponse({
+          item: {
+            href: 'https://example.com',
+            type: 'image/gif',
+            bbox: '-10,-10,10,10',
+            temporal: '2020-01-01T00:00:00.000Z,2020-01-02T00:00:00.000Z',
+          },
+        });
       });
       hookRedirect('jdoe1');
 
@@ -464,7 +468,7 @@ describe('Individual job status route', function () {
       before(async function () {
         const id = this.res.headers.location.split('/').pop();
         await request(this.frontend)
-          .get('/example/status').query({ id, status: 'successful' });
+          .get('/example/status').query({ id, status: 'successful', argo: 'true' });
       });
 
       describe('retrieving its job status', function () {

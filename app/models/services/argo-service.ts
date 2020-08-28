@@ -40,10 +40,25 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       }
     }
 
+    const operation = JSON.parse(input);
+
+    const exitHandlerScript = `
+    if [ "{{workflow.status}}" == "Succeeded" ]
+    then
+    curl -XPOST "{{inputs.parameters.callback}}/response?status=successful&argo=true"
+    else
+    curl -XPOST "{{inputs.parameters.callback}}/response?status=failed&argo=true&error={{workflow.status}}"
+    fi
+    `.trim();
+
     let params = [
       {
         name: 'operation',
         value: input,
+      },
+      {
+        name: 'callback',
+        value: operation.callback,
       },
       {
         name: 'image',
@@ -70,13 +85,38 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
           },
         },
         spec: {
-          workflowTemplateRef: {
-            name: this.params.template,
-          },
-          env: dockerEnv,
-          arguments: {
-            parameters: params,
-          },
+          entryPoint: 'service',
+          onExit: 'exit-handler',
+          templates: [
+            {
+              name: 'service',
+              steps: [
+                [
+                  {
+                    name: 'service',
+                    templateRef: {
+                      name: this.params.template,
+                      template: this.params.template,
+                    },
+                    arguments: {
+                      parameters: params,
+                    },
+                  },
+                ],
+              ],
+            },
+            {
+              name: 'exit-handler',
+              inputs: {
+                parameters: params,
+              },
+              script: {
+                image: 'curlimages/curl',
+                command: ['sh'],
+                source: exitHandlerScript,
+              },
+            },
+          ],
         },
       },
     };

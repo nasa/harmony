@@ -6,6 +6,7 @@ import AsynchronizerService from 'models/services/asynchronizer-service';
 import BaseService from 'models/services/base-service';
 import * as services from 'models/services/index';
 import { Logger } from 'winston';
+import { CallbackQuery } from 'backends/service-response';
 import DataOperation from '../../app/models/data-operation';
 import InvocationResult from '../../app/models/services/invocation-result';
 
@@ -69,21 +70,26 @@ export default class StubService extends BaseService<void> {
     // by only executing this if something has tried to run the service and has not called back yet.
     if (!this.isRun || this.isComplete) return;
     this.isComplete = true;
-    await this.sendResponse();
+    await this.sendResponse({ argo: 'true' });
   }
 
   /**
    * Asynchronously POSTs a response to the backend using the supplied
    * query parameters but not marking the service complete.
    *
-   * @param {object} query an object to be serialized as query params to the callback, defaults to
+   * @param query an object to be serialized as query params to the callback, defaults to
    *   the callback options parameters
    * @returns {request} an awaitable response
    * @memberof StubService
    */
-  sendResponse(query?: object): request.SuperAgentRequest {
+  sendResponse(query?: CallbackQuery): request.SuperAgentRequest {
     const options = typeof this.callbackOptions === 'function' ? this.callbackOptions() : this.callbackOptions;
-    const params = query || options.params;
+    const argo = query?.argo;
+    let params = query;
+    if (argo || !query) {
+      // eslint-disable-next-line prefer-destructuring
+      params = options.params;
+    }
     const responseUrl = `${this.operation.callback}/response`;
     const { body, headers } = options;
     let req = request.post(responseUrl);
@@ -91,6 +97,9 @@ export default class StubService extends BaseService<void> {
       req = req.set(headers);
     }
     if (params) {
+      if (argo) {
+        params.argo = 'true';
+      }
       req = req.query(params);
     }
     if (body) {
