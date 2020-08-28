@@ -7,14 +7,12 @@ interface VariableInfo {
 }
 
 /**
- * Get the full path (GroupPath/Name) for the given variable
+ * Get the full path for the given variable.
  * @param v - The variable of interest
  * @returns path - The full path to the variable
  */
 export function fullPath(v: CmrUmmVariable): string {
-  const name = v.umm.Name;
-  const groupPath = v.umm.Characteristics?.GroupPath;
-  return groupPath ? `${groupPath}/${name}` : name;
+  return v.umm.Name;
 }
 
 /**
@@ -24,7 +22,7 @@ export function fullPath(v: CmrUmmVariable): string {
  * @returns true if path matches variable name or full path
  */
 function doesPathMatch(v: CmrUmmVariable, p: string): boolean {
-  return p === fullPath(v);
+  return p === v.umm.Name;
 }
 
 /**

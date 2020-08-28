@@ -5,7 +5,7 @@ import { hookDescribeCollectionRequest, hookDescribeCollectionsRequest } from '.
 import hookServersStartStop from '../helpers/servers';
 
 describe('OGC API Coverages - describeCollections', function () {
-  const collection = 'C1215669046-GES_DISC';
+  const collection = 'C1225776654-ASF';
   const version = '1.0.0';
 
   hookServersStartStop();
@@ -19,14 +19,14 @@ describe('OGC API Coverages - describeCollections', function () {
 
     it('includes an OGC collection for every variable in the EOSDIS collection', function () {
       const listing = JSON.parse(this.res.text);
-      expect(listing.collections.length).to.equal(103);
+      expect(listing.collections.length).to.equal(5);
     });
 
     it('includes a link to the OGC coverages landing page', function () {
       const listing = JSON.parse(this.res.text);
       const rootLink = listing.links[0];
-      expect(rootLink.title).to.equal('OGC coverages API root for AIRX3STD v006');
-      expect(rootLink.href).to.contain('C1215669046-GES_DISC/ogc-api-coverages/1.0.0');
+      expect(rootLink.title).to.equal('OGC coverages API root for SENTINEL-1_INTERFEROGRAMS v1');
+      expect(rootLink.href).to.contain('C1225776654-ASF/ogc-api-coverages/1.0.0');
       expect(rootLink.type).to.equal('application/json');
       expect(rootLink.rel).to.equal('root');
     });
@@ -34,8 +34,8 @@ describe('OGC API Coverages - describeCollections', function () {
     it('includes a link to the collections listing page', function () {
       const listing = JSON.parse(this.res.text);
       const selfLink = listing.links[1];
-      expect(selfLink.title).to.equal('Collections listing for AIRX3STD v006');
-      expect(selfLink.href).to.contain('C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections');
+      expect(selfLink.title).to.equal('Collections listing for SENTINEL-1_INTERFEROGRAMS v1');
+      expect(selfLink.href).to.contain('C1225776654-ASF/ogc-api-coverages/1.0.0/collections');
       expect(selfLink.type).to.equal('application/json');
       expect(selfLink.rel).to.equal('self');
     });
@@ -44,19 +44,19 @@ describe('OGC API Coverages - describeCollections', function () {
       it('includes an id', function () {
         const listing = JSON.parse(this.res.text);
         const singleCollection = listing.collections[1];
-        expect(singleCollection.id).to.equal('C1215669046-GES_DISC/V1224729877-GES_DISC');
+        expect(singleCollection.id).to.equal('C1225776654-ASF/V1234599990-ASF');
       });
 
       it('includes a title', function () {
         const listing = JSON.parse(this.res.text);
         const singleCollection = listing.collections[1];
-        expect(singleCollection.title).to.equal('CloudFrc_A AIRX3STD v006');
+        expect(singleCollection.title).to.equal('/science/grids/data/amplitude SENTINEL-1_INTERFEROGRAMS v1');
       });
 
       it('includes a description', function () {
         const listing = JSON.parse(this.res.text);
         const singleCollection = listing.collections[1];
-        expect(singleCollection.description).to.equal('Cloud Fraction Ascending AIRX3STD v006 (NASA/GSFC/SED/ESD/GCDC/GESDISC)');
+        expect(singleCollection.description).to.equal('Amplitude SENTINEL-1_INTERFEROGRAMS v1 (Alaska Satellite Facility)');
       });
 
       it('includes links to make a rangeset request for the variable', function () {
@@ -64,15 +64,15 @@ describe('OGC API Coverages - describeCollections', function () {
         const singleCollection = listing.collections[1];
         const firstLink = singleCollection.links[0];
         expect(singleCollection.links.length).to.equal(1);
-        expect(firstLink.title).to.equal('Perform rangeset request for CloudFrc_A');
-        expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/%2FCloudFrc_A%2FCloudFrc_A/coverage/rangeset');
+        expect(firstLink.title).to.equal('Perform rangeset request for /science/grids/data/amplitude');
+        expect(firstLink.href).to.contain('/C1225776654-ASF/ogc-api-coverages/1.0.0/collections/%2Fscience%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
       });
 
       it('includes a spatial extent', function () {
         const listing = JSON.parse(this.res.text);
         const singleCollection = listing.collections[1];
         expect(singleCollection.extent.spatial).to.eql({
-          bbox: [-90, -180, 90, 180],
+          bbox: [18.84486, -156.4174, 20.31149, -154.672],
           crs: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84',
         });
       });
@@ -81,7 +81,7 @@ describe('OGC API Coverages - describeCollections', function () {
         const listing = JSON.parse(this.res.text);
         const singleCollection = listing.collections[1];
         expect(singleCollection.extent.temporal).to.eql({
-          interval: ['2002-08-31T00:00:00.000Z', '2016-09-25T23:59:59.000Z'],
+          interval: ['2014-06-15T03:44:43.000Z', null],
           trs: 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian',
         });
       });
@@ -100,7 +100,7 @@ describe('OGC API Coverages - describeCollections', function () {
         const firstLink = firstCollection.links[0];
         expect(firstCollection.links.length).to.equal(1);
         expect(firstLink.title).to.equal('Perform rangeset request for all');
-        expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
+        expect(firstLink.href).to.contain('/C1225776654-ASF/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
       });
     });
   });
@@ -157,9 +157,9 @@ describe('OGC API Coverages - describeCollections', function () {
 });
 
 describe('OGC API Coverages - describeCollection', function () {
-  const collection = 'C1215669046-GES_DISC';
+  const collection = 'C1225776654-ASF';
   const version = '1.0.0';
-  const variablePath = '/EmisIR_A/EmisIR_A';
+  const variablePath = '/science/grids/data/amplitude';
 
   hookServersStartStop();
 
@@ -172,31 +172,31 @@ describe('OGC API Coverages - describeCollection', function () {
 
     it('includes an id', function () {
       const collectionInfo = JSON.parse(this.res.text);
-      expect(collectionInfo.id).to.equal('C1215669046-GES_DISC/V1224352381-GES_DISC');
+      expect(collectionInfo.id).to.equal('C1225776654-ASF/V1234599990-ASF');
     });
 
     it('includes a title', function () {
       const collectionInfo = JSON.parse(this.res.text);
-      expect(collectionInfo.title).to.equal('EmisIR_A AIRX3STD v006');
+      expect(collectionInfo.title).to.equal('/science/grids/data/amplitude SENTINEL-1_INTERFEROGRAMS v1');
     });
 
     it('includes a description', function () {
       const collectionInfo = JSON.parse(this.res.text);
-      expect(collectionInfo.description).to.equal('Emissivity IR Ascending AIRX3STD v006 (NASA/GSFC/SED/ESD/GCDC/GESDISC)');
+      expect(collectionInfo.description).to.equal('Amplitude SENTINEL-1_INTERFEROGRAMS v1 (Alaska Satellite Facility)');
     });
 
     it('includes links to make a rangeset request for the variable', function () {
       const collectionInfo = JSON.parse(this.res.text);
       const firstLink = collectionInfo.links[0];
       expect(collectionInfo.links.length).to.equal(1);
-      expect(firstLink.title).to.equal('Perform rangeset request for EmisIR_A');
-      expect(firstLink.href).to.contain('/C1215669046-GES_DISC/ogc-api-coverages/1.0.0/collections/%2FEmisIR_A%2FEmisIR_A/coverage/rangeset');
+      expect(firstLink.title).to.equal('Perform rangeset request for /science/grids/data/amplitude');
+      expect(firstLink.href).to.contain('/C1225776654-ASF/ogc-api-coverages/1.0.0/collections/%2Fscience%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
     });
 
     it('includes a spatial extent', function () {
       const collectionInfo = JSON.parse(this.res.text);
       expect(collectionInfo.extent.spatial).to.eql({
-        bbox: [-90, -180, 90, 180],
+        bbox: [18.84486, -156.4174, 20.31149, -154.672],
         crs: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84',
       });
     });
@@ -204,7 +204,7 @@ describe('OGC API Coverages - describeCollection', function () {
     it('includes a temporal extent', function () {
       const collectionInfo = JSON.parse(this.res.text);
       expect(collectionInfo.extent.temporal).to.eql({
-        interval: ['2002-08-31T00:00:00.000Z', '2016-09-25T23:59:59.000Z'],
+        interval: ['2014-06-15T03:44:43.000Z', null],
         trs: 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian',
       });
     });
