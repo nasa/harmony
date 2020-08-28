@@ -172,6 +172,9 @@ SWOT_REPR_IMAGE_PULL_POLICY='Always'
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
 VAR_SUBSETTER_IMAGE_PULL_POLICY='Always'
 
+PODAAC_L2_SUBSETTER_IMAGE=podaac/l2-subsetter:latest
+PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY='Always'
+
 # The bucket where service output data will be staged, corresponds to the S3 bucket
 # created in localstack when running locally
 STAGING_BUCKET=local-staging-bucket
