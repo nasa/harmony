@@ -115,12 +115,62 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 # services on invocation                                                  #
 ###########################################################################
 
-# Docker images for services referenced in config/services.yml.  Set to a
-# local image, ECR image, Docker Hub image, etc
+# Docker image:tag names for services referenced in config/services.yml.
+# Set to an image:tag available locally, on ECR, on DockerHub, etc.
+#
+# For Argo services, the image's pull policy variable controls the
+# Kubernetes imagePullPolicy used for that service in a given
+# environment. See the Kubernetes Container Images documentation for
+# the possible imagePullPolicy values and their behavior:
+#
+#   https://kubernetes.io/docs/concepts/configuration/overview/#container-images
+#
+# Summary:
+#
+# Always:       Pulls new image (if available) on each container startup
+# IfNotPresent: Pulls new image if it is not available locally
+# Never:        Image is assumed to exist locally, it is never pulled
+#
+# Recommended pull policies by environment:
+#
+# Environment    Pull Policy    Behavior
+# -----------------------------------------------------------------------
+# Local          Never          The image:tag will not be pulled and must
+#                               exist locally; this can be done by building
+#                               the image or pulling it manually.
+# Local          IfNotPresent   The image:tag will be pulled if it doesn't
+#                               exist locally. If it has been pulled
+#                               manually, it will always use that image.
+#                               If it is built locally, it will use that
+#                               image.
+# Sandbox        Always         The image:tag will be pulled each time a
+#                               workflow runs which needs the image. Note
+#                               that K8S will check the image hash to determine
+#                               if an image:tag has been changed, and only
+#                               pull it if so.
+# SIT            Always         The image:tag is pulled on each workflow run.
+# UAT            Always         The image:tag is pulled on each workflow run.
+# PROD           IfNotPresent   The image:tag is only pulled if it does not
+#                               exist locally.
+#
+# For Local development, 'IfNotPresent' is recommended since this will use
+# the new version of a local image that you are working on locally, while
+# pulling any other images not currently under development.
+
+ASF_GDAL_IMAGE=asfdataservices/gdal-subsetter:latest
+ASF_GDAL_IMAGE_PULL_POLICY='Always'
+
 GDAL_IMAGE=harmony/gdal:latest
+GDAL_IMAGE_PULL_POLICY='Always'
+
 NETCDF_TO_ZARR_IMAGE=harmony/netcdf-to-zarr:latest
+NETCDF_TO_ZARR_IMAGE_PULL_POLICY='Always'
+
 SWOT_REPR_IMAGE=sds/swot-reproject:latest
+SWOT_REPR_IMAGE_PULL_POLICY='Always'
+
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
+VAR_SUBSETTER_IMAGE_PULL_POLICY='Always'
 
 # The bucket where service output data will be staged, corresponds to the S3 bucket
 # created in localstack when running locally
@@ -142,10 +192,6 @@ EDL_PASSWORD=
 BACKEND_HOST=host.docker.internal
 # Linux:
 # BACKEND_HOST=localhost
-
-# imagePullPolicy to use for container definitions in workflow templates.set to `Never` for
-# localhost
-IMAGE_PULL_POLICY='Always'
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #

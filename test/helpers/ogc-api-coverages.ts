@@ -141,7 +141,7 @@ export function hookRangesetRequest(
   version?: string, collection?: string, coverageId?: string, {
     query = {},
     headers = {},
-    username = 'anonymous' } = {},
+    username = undefined } = {},
 ): void {
   before(async function () {
     if (!username) {
@@ -252,6 +252,17 @@ export function hookPostRangesetRequest(
   after(function () {
     delete this.res;
   });
+}
+
+/**
+ * Adds before/after hooks to run an OGC API coverages rangeset default request
+ * where the caller just needs to run a request without caring about any of the
+ * parameters to send to the request.
+ *
+ * @returns {void}
+ */
+export function hookDefaultRangesetRequest(): void {
+  hookRangesetRequest(defaultVersion, defaultCollection, defaultCoverageId, { username: 'anonymous' });
 }
 
 /**

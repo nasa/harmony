@@ -36,6 +36,40 @@ https://cmr.earthdata.nasa.gov:
 
 https://cmr.uat.earthdata.nasa.gov:
 
+  - name: asfdataservices/gdal-subsetter
+    data_operation_version: '0.8.0'
+    type:
+      name: argo
+      params:
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: asf-gdal-subsetter
+        image: !Env ${ASF_GDAL_IMAGE}
+        imagePullPolicy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/asfdataservices/gdal-subsetter
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      - C1225776654-ASF
+      - C1207038647-ASF
+      - C1233629671-ASF
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+      projection_to_proj4: true
+
   - name: harmony/gdal
     data_operation_version: '0.8.0'
     type:
@@ -45,6 +79,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: harmony-gdal
         image: !Env ${GDAL_IMAGE}
+        imagePullPolicy: !Env ${GDAL_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -111,6 +146,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: swot-reproject
         image: !Env ${SWOT_REPR_IMAGE}
+        imagePullPolicy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -148,6 +184,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: var-subsetter
         image: !Env ${VAR_SUBSETTER_IMAGE}
+        imagePullPolicy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -242,6 +279,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: harmony-netcdf-to-zarr
         image: !Env ${NETCDF_TO_ZARR_IMAGE}
+        imagePullPolicy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
