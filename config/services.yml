@@ -77,7 +77,7 @@ https://cmr.uat.earthdata.nasa.gov:
         argo_url: !Env ${ARGO_URL}
         namespace: argo
         template: podaac-l2-subsetter
-        image: !Env ${GDAL_IMAGE}
+        image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
