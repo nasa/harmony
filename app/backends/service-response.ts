@@ -115,6 +115,13 @@ export async function responseHandler(req: Request, res: Response): Promise<void
 
   const query = req.query as CallbackQuery;
 
+  if (query.status === 'SUCCESSFUL' && !query.argo) {
+    // This is temporary until we decide how we want to use callbacks
+    res.status(200);
+    res.send('Ok');
+    return;
+  }
+
   try {
     const queryOverrides = {} as CallbackQuery;
     if (!query.item?.href && !query.error && req.headers['content-length'] && req.headers['content-length'] !== '0') {
@@ -145,7 +152,9 @@ export async function responseHandler(req: Request, res: Response): Promise<void
         queryOverrides.status = 'successful';
       }
     }
+
     const fields = _.merge({}, query, queryOverrides);
+    delete fields.argo;
     logger.info(`Updating job ${job.id} with fields: ${JSON.stringify(fields)}`);
 
     if (!query.error && query.argo?.toLowerCase() === 'true') {
