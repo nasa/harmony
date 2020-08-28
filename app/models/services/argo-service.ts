@@ -2,8 +2,7 @@ import { Logger } from 'winston';
 import * as axios from 'axios';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
-
-const DEFAULT_IMAGE_PULL_POLICY = 'Always';
+import env = require('../../util/env');
 
 export interface ArgoServiceParams {
   argo_url: string;
@@ -51,7 +50,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       },
       {
         name: 'image-pull-policy',
-        value: this.params.imagePullPolicy || DEFAULT_IMAGE_PULL_POLICY,
+        value: this.params.imagePullPolicy || env.defaultImagePullPolicy,
       },
     ];
 
