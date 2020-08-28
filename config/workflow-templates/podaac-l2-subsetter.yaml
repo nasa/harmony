@@ -40,7 +40,7 @@ spec:
       image: "{{inputs.parameters.image}}"
       imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
       command: ["python3"]
-      args: ["-m", "l2_service.service", "--harmony-action", "invoke", "--harmony-input", "{{inputs.parameters.operation}}"]
+      args: ["-m", "l2_subsetter.service", "--harmony-action", "invoke", "--harmony-input", "{{inputs.parameters.operation}}"]
       env:
         - name: AWS_DEFAULT_REGION
           value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
