@@ -102,6 +102,18 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     application: 'backend',
     requestId,
   });
+
+  const query = req.query as CallbackQuery;
+
+  if (query.status === JobStatus.SUCCESSFUL && !query.argo) {
+    // This is temporary until we decide how we want to use callbacks. This code is to ignore the
+    // callback and not update the job status. The argo exit handler will handle updating the job
+    // to successful.
+    res.status(200);
+    res.send('Ok');
+    return;
+  }
+
   const trx = await db.transaction();
 
   const job = await Job.byRequestId(trx, requestId);
@@ -113,20 +125,11 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     return;
   }
 
-  const query = req.query as CallbackQuery;
-
-  if (query.status === 'SUCCESSFUL' && !query.argo) {
-    // This is temporary until we decide how we want to use callbacks
-    res.status(200);
-    res.send('Ok');
-    return;
-  }
-
   try {
     const queryOverrides = {} as CallbackQuery;
     if (!query.item?.href && !query.error && req.headers['content-length'] && req.headers['content-length'] !== '0') {
       // If the callback doesn't contain a redirect or error and has some content in the body,
-      // assume the content is a file result
+      // assume the content is a file result.
       const stagingLocation = job.getRelatedLinks('s3-access')[0].href;
 
       const item = {} as CallbackQueryItem;

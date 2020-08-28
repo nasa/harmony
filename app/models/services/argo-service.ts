@@ -43,9 +43,9 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     const exitHandlerScript = `
     if [ "{{workflow.status}}" == "Succeeded" ]
     then
-    curl -XPOST "{{inputs.parameters.callback}}/response?argo=true"
+    curl -XPOST "{{inputs.parameters.callback}}/response?status=successful&argo=true"
     else
-    curl -XPOST "{{inputs.parameters.callback}}/response?argo=true&error={{workflow.status}}"
+    curl -XPOST "{{inputs.parameters.callback}}/response?status=failed&argo=true&error={{workflow.status}}"
     fi
     `.trim();
 
@@ -81,7 +81,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
             user,
             request_id: requestId,
           },
-          // onExit: 'exit-handler',
         },
         spec: {
           entryPoint: 'service',
