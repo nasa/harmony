@@ -228,6 +228,29 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - image/tiff
 
+  # L2SS subsetter
+  - name: podaac/http-service
+    data_operation_version: '0.8.0'
+    type:
+      name: http
+      #synchronous_only: true
+      params:
+        url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
+    collections:
+      - C1234208437-POCLOUD
+      - C1234208436-POCLOUD
+      - C1234208438-POCLOUD
+      - C1234724470-POCLOUD
+      - C1234724471-POCLOUD
+      - C1234071416-POCLOUD
+    maximum_async_granules: 2000
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+      output_formats:
+        - application/netcdf
+
   # PO.DAAC Shapefiles
   - name: podaac-ps3/http-service
     data_operation_version: '0.7.0'
