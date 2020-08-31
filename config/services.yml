@@ -3,7 +3,7 @@
 
 https://cmr.earthdata.nasa.gov:
   - name: harmony/gdal
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.7.0'
     type:
       name: argo
       params:
@@ -37,7 +37,7 @@ https://cmr.earthdata.nasa.gov:
 https://cmr.uat.earthdata.nasa.gov:
 
   - name: asfdataservices/gdal-subsetter
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.7.0'
     type:
       name: argo
       params:
@@ -71,7 +71,7 @@ https://cmr.uat.earthdata.nasa.gov:
       projection_to_proj4: true
 
   - name: harmony/gdal
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.7.0'
     type:
       name: argo
       params:
@@ -105,7 +105,7 @@ https://cmr.uat.earthdata.nasa.gov:
       projection_to_proj4: true
 
   - name: ds/swot-reproject
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.7.0'
     type:
       name: argo
       params:
@@ -175,7 +175,7 @@ https://cmr.uat.earthdata.nasa.gov:
   # the frontend callback server.
   # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
   - name: harmony/example
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.7.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     type:
       name: http
@@ -197,7 +197,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   # L2SS subsetter
   - name: podaac/http-service
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.7.0'
     type:
       name: http
       #synchronous_only: true
@@ -220,7 +220,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   # PO.DAAC Shapefiles
   - name: podaac-ps3/http-service
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.7.0'
     type:
       name: http
       #synchronous_only: true
@@ -238,7 +238,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/shapefile+zip
 
   - name: harmony/netcdf-to-zarr
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.7.0'
     type:
       name: argo
       params:
