@@ -11,6 +11,8 @@ spec:
       value: serialized operation
     - name: image
       value: harmony/gdal:latest
+    - name: callback
+      value: url
     - name: image-pull-policy
       value: Always
     - name: AWS_DEFAULT_REGION
@@ -63,3 +65,4 @@ spec:
           value:  "{{inputs.parameters.TEXT_LOGGER}}"
         - name: BACKEND_HOST
           value:  "{{inputs.parameters.BACKEND_HOST}}"
+  

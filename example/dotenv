@@ -157,6 +157,11 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 # the new version of a local image that you are working on locally, while
 # pulling any other images not currently under development.
 
+# The image pull policy to use for any images which do not have an explicit
+# pull policy configured. See the above table for the recommend value to use
+# for the given environment.
+DEFAULT_IMAGE_PULL_POLICY='Always'
+
 ASF_GDAL_IMAGE=asfdataservices/gdal-subsetter:latest
 ASF_GDAL_IMAGE_PULL_POLICY='Always'
 

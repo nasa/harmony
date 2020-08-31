@@ -37,7 +37,7 @@ function hookHttpBackendEach(fn): void {
     // Both of these should succeed, but their sequence depends on async vs sync, so use Promise.all
     await Promise.all([
       this.userPromise,
-      request(this.backend).post(this.callback).query({ status: 'successful' }),
+      request(this.backend).post(this.callback).query({ status: 'successful', argo: 'true' }),
     ]);
   });
 }
@@ -92,7 +92,7 @@ describe('Backend Callbacks', function () {
     });
 
     describe('when the service does not provide any results', function () {
-      hookCallbackEach((r) => r.query({ status: 'successful' }), true);
+      hookCallbackEach((r) => r.query({ status: 'successful', argo: 'true' }), true);
 
       it('sends a synchronous failure explaining that there were no results', async function () {
         expect(this.userResp.statusCode).to.equal(500);
@@ -102,7 +102,7 @@ describe('Backend Callbacks', function () {
 
     describe('when the service provides exactly one result', function () {
       hookCallbackEach((r) => r.query({ item: { href: 'https://example.com/1' } }));
-      hookCallbackEach((r) => r.query({ status: 'successful' }), true);
+      hookCallbackEach((r) => r.query({ status: 'successful', argo: 'true' }), true);
 
       it('redirects to the result', function () {
         expect(this.userResp.statusCode).to.eql(303);
@@ -113,7 +113,7 @@ describe('Backend Callbacks', function () {
     describe('when the service provides multiple results', function () {
       hookCallbackEach((r) => r.query({ item: { href: 'https://example.com/1' } }));
       hookCallbackEach((r) => r.query({ item: { href: 'https://example.com/2' } }));
-      hookCallbackEach((r) => r.query({ status: 'successful' }), true);
+      hookCallbackEach((r) => r.query({ status: 'successful', argo: 'true' }), true);
 
       it('sends a synchronous failure explaining that there were too many results', function () {
         expect(this.userResp.statusCode).to.equal(500);
@@ -135,7 +135,7 @@ describe('Backend Callbacks', function () {
     hookJobCreationEach();
 
     beforeEach(async function () {
-      this.res = await request(this.backend).post(`/service/${this.job.requestId}/response`).query({ status: 'successful' });
+      this.res = await request(this.backend).post(`/service/${this.job.requestId}/response`).query({ status: 'successful', argo: 'true' });
     });
 
     it('accepts the callback', function () {

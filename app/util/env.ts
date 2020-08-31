@@ -28,6 +28,7 @@ interface HarmonyEnv {
   useLocalstack: boolean;
   callbackUrlRoot: string;
   syncRequestPollIntervalMs: number;
+  defaultImagePullPolicy: string;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -84,6 +85,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['OAUTH_HOST', 'https://uat.urs.earthdata.nasa.gov'],
   ['CALLBACK_URL_ROOT', null],
   ['SYNC_REQUEST_POLL_INTERVAL_MS', 100],
+  ['DEFAULT_IMAGE_PULL_POLICY', 'Always'],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases
