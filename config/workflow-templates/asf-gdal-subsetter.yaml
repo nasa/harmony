@@ -40,7 +40,7 @@ spec:
       image: "{{inputs.parameters.image}}"
       imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
       command: ["python3"]
-      args: ["-m", "harmony_gdal", "--harmony-action", "invoke", "--harmony-input", "{{inputs.parameters.operation}}"]
+      args: ["-m", "gdal_subsetter", "--harmony-action", "invoke", "--harmony-input", "{{inputs.parameters.operation}}"]
       env:
         - name: AWS_DEFAULT_REGION
           value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
