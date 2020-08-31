@@ -123,12 +123,7 @@ https://cmr.uat.earthdata.nasa.gov:
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
     collections:
-      - C1234208437-POCLOUD
       - C1234208436-POCLOUD
-      - C1234208438-POCLOUD
-      - C1234724470-POCLOUD
-      - C1234724471-POCLOUD
-      - C1234071416-POCLOUD
     maximum_async_granules: 2000
     capabilities:
       subsetting:
@@ -238,7 +233,6 @@ https://cmr.uat.earthdata.nasa.gov:
         url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
     collections:
       - C1234208437-POCLOUD
-      - C1234208436-POCLOUD
       - C1234208438-POCLOUD
       - C1234724470-POCLOUD
       - C1234724471-POCLOUD
