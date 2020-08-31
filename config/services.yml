@@ -108,6 +108,7 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.7.0'
     type:
       name: argo
+      single_granule_requests: true
       params:
         argo_url: !Env ${ARGO_URL}
         namespace: argo
