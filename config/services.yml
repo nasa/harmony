@@ -104,6 +104,34 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/gif
       projection_to_proj4: true
 
+  - name: podaac/l2-subsetter
+    data_operation_version: '0.8.0'
+    type:
+      name: argo
+      params:
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: podaac-l2-subsetter
+        image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/podaac/l2-subsetter
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      - C1234208436-POCLOUD
+    maximum_async_granules: 2000
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+      output_formats:
+        - application/netcdf
+
   - name: ds/swot-reproject
     data_operation_version: '0.7.0'
     type:
@@ -198,7 +226,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   # L2SS subsetter
   - name: podaac/http-service
-    data_operation_version: '0.7.0'
+    data_operation_version: '0.8.0'
     type:
       name: http
       #synchronous_only: true
@@ -206,7 +234,6 @@ https://cmr.uat.earthdata.nasa.gov:
         url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
     collections:
       - C1234208437-POCLOUD
-      - C1234208436-POCLOUD
       - C1234208438-POCLOUD
       - C1234724470-POCLOUD
       - C1234724471-POCLOUD
