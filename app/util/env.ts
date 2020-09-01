@@ -23,6 +23,7 @@ interface HarmonyEnv {
   harmonyClientId: string;
   isDevelopment: boolean;
   uploadBucket: string;
+  argoUrl: string;
   cmrEndpoint: string;
   oauthHost: string;
   useLocalstack: boolean;
@@ -67,6 +68,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
 // create exported config variables
 [
   // ENV_VAR, DEFAULT_VALUE
+  ['ARGO_URL', 'http://localhost:4276'],
   ['LOG_LEVEL', 'debug'],
   ['STAGING_BUCKET', 'localStagingBucket'],
   ['MAX_SYNCHRONOUS_GRANULES', 1],

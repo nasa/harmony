@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
 import isUUID from 'util/uuid';
+import terminateWorkflows from '../util/argo';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink } from '../util/links';
@@ -166,6 +167,7 @@ export async function cancelJob(
         } else {
           res.redirect(`/jobs/${jobID}`);
         }
+        await terminateWorkflows(job, req.context.logger);
       } else {
         throw new NotFoundError(`Unable to find job ${jobID}`);
       }
