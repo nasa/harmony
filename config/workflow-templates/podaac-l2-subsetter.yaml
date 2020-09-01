@@ -25,7 +25,7 @@ spec:
       value: "127.0.0.1"
 
   templates:
-  - name: podaac/l2-subsetter
+  - name: podaac-l2-subsetter
     inputs:
       parameters:
       - name: operation
