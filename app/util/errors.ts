@@ -45,7 +45,7 @@ export class ConflictError extends HttpError {
   }
 }
 
-export interface HttpErrorResponse {
+interface HttpErrorResponse {
   code: string;
   description?: string;
 }
