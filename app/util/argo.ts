@@ -26,8 +26,7 @@ export default async function terminateWorkflows(job: Job, logger: Logger): Prom
           name: workflow.metadata.name,
           namespace: 'argo',
         };
-        const resp = await axios.default.put(terminateUrl, body);
-        console.log(resp);
+        await axios.default.put(terminateUrl, body);
       } catch (te) {
         logger.error(`Workflow ${workflow.metadata.name} has failed to terminate`);
         throw te;
