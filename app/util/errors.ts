@@ -44,3 +44,43 @@ export class ConflictError extends HttpError {
     super(409, message);
   }
 }
+
+export interface HttpErrorResponse {
+  code: string;
+  description?: string;
+}
+
+/**
+ * Builds an error response to return based on the provided error
+ * @param error The HTTP error that occurred
+ * @param errorCode An optional string indicated the class of error that occurred
+ * @param errorMessage An optional string containing the message to return
+ */
+export function buildErrorResponse(
+  error: HttpError,
+  errorCode?: string,
+  errorMessage?: string,
+): HttpErrorResponse {
+  if (!error.code && !errorCode && !errorMessage) {
+    return { code: 'harmony.ServerError', description: 'Error: Internal server error.' };
+  }
+
+  const code = errorCode || `harmony.${error.constructor ? error.constructor.name : 'UnknownError'}`;
+  const message = errorMessage || error.message || error.toString();
+
+  let jsonMessage;
+  try {
+    jsonMessage = JSON.parse(message);
+  } catch (e) {
+    // Just checking if the message is JSON, if the message is non JSON we treat
+    // it as a string.
+  }
+
+  let response;
+  if (jsonMessage) {
+    response = { code, ...jsonMessage };
+  } else {
+    response = { code, description: `Error: ${message}` };
+  }
+  return response;
+}
