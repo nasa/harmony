@@ -193,6 +193,26 @@ function supportsSpatialSubsetting(configs: ServiceConfig<unknown>[]): ServiceCo
   return configs.filter((config) => getIn(config, 'capabilities.subsetting.bbox', false));
 }
 
+/**
+ * Returns true if the operation requires shapefile subsetting
+ * @param {DataOperation} operation The operation to perform.
+ * @returns {Boolean} true if the provided operation requires shapefile subsetting
+ * @private
+ */
+function requiresShapefileSubsetting(operation: DataOperation): boolean {
+  return !!operation.geojson;
+}
+
+/**
+ * Returns any services that support shapefile subsetting from the list of configs
+ * @param {Array<Object>} configs The potential matching service configurations
+ * @returns {Array<Object>} Any configurations that support shapefile subsetting
+ * @private
+ */
+function supportsShapefileSubsetting(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.subsetting.shape', false));
+}
+
 const noOpService: ServiceConfig<void> = {
   name: 'noOpService',
   type: { name: 'noOp' },
@@ -303,6 +323,31 @@ function filterSpatialSubsettingMatches(
   return services;
 }
 
+/**
+ * Returns any services that support shapefile subsetting from the list of configs if the operation
+ * requires shapefile subsetting.
+ * @param {DataOperation} operation The operation to perform. Note that this function may mutate
+ *    the operation.
+ * @param {RequestContext} context Additional context that's not part of the operation, but
+ *     influences the choice regarding the service to use
+ * @param {Array<Object>} configs All service configurations that have matched up to this call
+ * @returns {Array<Object>} Any service configurations that support the requested output format
+ * @private
+ */
+function filterShapefileSubsettingMatches(
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig<unknown>[],
+): ServiceConfig<unknown>[] {
+  let services = configs;
+  if (requiresShapefileSubsetting(operation)) {
+    services = supportsShapefileSubsetting(configs);
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation('none of the services configured for the collection support shapefile subsetting');
+  }
+  return services;
+}
+
 const unsupportedOperationMessage = 'no services support the requested operation';
 
 /**
@@ -331,6 +376,9 @@ function unsupportedCombinationMessage(
   if (requiresSpatialSubsetting(operation)) {
     requestedOptions.push('spatial subsetting');
   }
+  if (requiresShapefileSubsetting(operation)) {
+    requestedOptions.push('shapefile subsetting');
+  }
   if (formats?.length > 0) {
     requestedOptions.push(`reformatting to ${listToText(formats)}`);
   }
@@ -352,6 +400,7 @@ const operationFilterFns = [
   filterVariableSubsettingMatches,
   filterOutputFormatMatches,
   filterSpatialSubsettingMatches,
+  filterShapefileSubsettingMatches,
 ];
 
 /**
