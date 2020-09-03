@@ -7,6 +7,7 @@ import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
+import { listToText } from '../../util/string';
 import ArgoService from './argo-service';
 import AsynchronizerService from './asynchronizer-service';
 import HttpService from './http-service';
@@ -258,6 +259,8 @@ function filterOutputFormatMatches(
   return services;
 }
 
+const unsupportedOperationMessage = 'no services support the requested operation';
+
 /**
  * For certain UnsupportedOperation errors the root cause will be a combination of multiple
  * request parameters such as requesting variable subsetting and a specific output format.
@@ -266,32 +269,29 @@ function filterOutputFormatMatches(
  *    the operation.
  * @param {RequestContext} context Additional context that's not part of the operation, but
  *     influences the choice regarding the service to use
- * @param {Array<Object>} configs All service configurations that have matched up to this call
- * @param {String} originalReason The original reason the operation was considered invalid
  * @returns {String} the reason the operation was not supported
  */
 function unsupportedCombinationMessage(
   operation: DataOperation,
   context: RequestContext,
-  configs: ServiceConfig<unknown>[],
-  originalReason: string,
 ): string {
-  let reason = originalReason;
-  if (originalReason.includes('reformatting to any of the requested formats')) {
-    if (requiresVariableSubsetting(operation)) {
-      const matches = filterCollectionMatches(operation, context, configs);
-      const outputFormat = selectFormat(operation, context, matches);
-      if (outputFormat) {
-        const servicesWithoutVarSubsetting = selectServicesForFormat(outputFormat, matches);
-        if (servicesWithoutVarSubsetting.length > 0) {
-          reason = 'none of the services support the combination of both variable subsetting '
-            + 'and any of the requested formats '
-            + `[${operation.outputFormat || context.requestedMimeTypes}]`;
-        }
-      }
-    }
+  const collections = operation.sources.map((s) => s.collection);
+  let formats = operation.outputFormat ? [operation.outputFormat] : context.requestedMimeTypes;
+  // Requests for mime-type * or */* are not requesting reformatting
+  formats = formats?.filter((f) => f !== '*' && f !== '*/*');
+  const variableSubset = requiresVariableSubsetting(operation);
+  let message = `${unsupportedOperationMessage} for collection ${listToText(collections)}`;
+  const requestedOptions = [];
+  if (variableSubset) {
+    requestedOptions.push('variable subsetting');
   }
-  return reason;
+  if (formats?.length > 0) {
+    requestedOptions.push(`reformatting to ${listToText(formats)}`);
+  }
+  if (requestedOptions.length > 0) {
+    message += `. Requested the following capabiliities: ${listToText(requestedOptions)}`;
+  }
+  return message;
 }
 
 // List of filter functions to call to identify the services that can support an operation.
@@ -340,8 +340,8 @@ export function chooseServiceConfig(
     serviceConfig = matches[0];
   } catch (e) {
     if (e instanceof UnsupportedOperation) {
-      const message = unsupportedCombinationMessage(operation, context, configs, e.message);
-      noOpService.message = message;
+      logger.info(`Returning download links because ${e.message}.`);
+      noOpService.message = unsupportedCombinationMessage(operation, context);
       serviceConfig = noOpService;
     } else {
       throw e;
