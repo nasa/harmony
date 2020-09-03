@@ -68,19 +68,14 @@ export function buildErrorResponse(
   const code = errorCode || `harmony.${error.constructor ? error.constructor.name : 'UnknownError'}`;
   const message = errorMessage || error.message || error.toString();
 
-  let jsonMessage;
-  try {
-    jsonMessage = JSON.parse(message);
-  } catch (e) {
-    // Just checking if the message is JSON, if the message is non JSON we treat
-    // it as a string.
-  }
-
   let response;
-  if (jsonMessage) {
+  try {
+    // If the error message is JSON, return it as JSON in the response
+    const jsonMessage = JSON.parse(message);
     response = { code, ...jsonMessage };
-  } else {
+  } catch (e) {
     response = { code, description: `Error: ${message}` };
   }
+
   return response;
 }

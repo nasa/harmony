@@ -98,8 +98,7 @@ export function handleOpenApiErrors(app: Application): void {
       const messages = err.errors.map((error) => `${error.location} parameter "${error.path}" ${error.message}`);
       message = messages.join('\n\t');
     }
-    const response = buildErrorResponse(err, code, message);
-    res.status(status).json(response);
+    res.status(status).json(buildErrorResponse(err, code, message));
 
     if (status < 500) {
       req.context.logger.error(`[${code}] ${message}`);
