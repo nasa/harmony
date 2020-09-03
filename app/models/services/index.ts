@@ -184,9 +184,9 @@ function requiresSpatialSubsetting(operation: DataOperation): boolean {
 }
 
 /**
- * Returns any services that support variable subsetting from the list of configs
+ * Returns any services that support spatial subsetting from the list of configs
  * @param {Array<Object>} configs The potential matching service configurations
- * @returns {Array<Object>} Any configurations that support variable subsetting
+ * @returns {Array<Object>} Any configurations that support spatial subsetting
  * @private
  */
 function supportsSpatialSubsetting(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
