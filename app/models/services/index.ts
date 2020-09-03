@@ -279,10 +279,9 @@ function unsupportedCombinationMessage(
   let formats = operation.outputFormat ? [operation.outputFormat] : context.requestedMimeTypes;
   // Requests for mime-type * or */* are not requesting reformatting
   formats = formats?.filter((f) => f !== '*' && f !== '*/*');
-  const variableSubset = requiresVariableSubsetting(operation);
   let message = `${unsupportedOperationMessage} for collection ${listToText(collections)}`;
   const requestedOptions = [];
-  if (variableSubset) {
+  if (requiresVariableSubsetting(operation)) {
     requestedOptions.push('variable subsetting');
   }
   if (formats?.length > 0) {
