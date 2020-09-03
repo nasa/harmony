@@ -19,13 +19,18 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           name: 'first-service',
           type: { name: 'queue' },
           collections: [collectionId],
-          capabilities: { output_formats: ['image/tiff'] },
+          capabilities: { output_formats: ['image/tiff', 'application/netcdf'] },
         },
         {
           name: 'second-service',
           type: { name: 'http' },
           collections: [collectionId],
-          capabilities: { output_formats: ['image/tiff', 'image/png'] },
+          capabilities: {
+            output_formats: ['image/tiff', 'image/png'],
+            subsetting: {
+              bbox: true,
+            },
+          },
         },
       ];
     });
@@ -83,6 +88,34 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         const service = buildService(serviceConfig, this.operation);
         expect(service.message).to.equal('Returning direct download links because no services support the requested operation for collection C123-TEST. Requested the following capabiliities: reformatting to image/gif.');
+      });
+    });
+
+    describe('and the request needs spatial subsetting', function () {
+      beforeEach(function () {
+        this.operation.boundingRectangle = [0, 0, 10, 10];
+      });
+
+      it('chooses the service that supports spatial subsetting', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('second-service');
+      });
+    });
+
+    describe('and the request needs both spatial subsetting and netcdf output, but no service supports that combination', function () {
+      beforeEach(function () {
+        this.operation.boundingRectangle = [0, 0, 10, 10];
+        this.operation.outputFormat = 'application/netcdf';
+      });
+
+      it('returns the no-op service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('indicates the reason for choosing the no op service is the combination of spatial subsetting and format', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('no services support the requested operation for collection C123-TEST. Requested the following capabiliities: spatial subsetting and reformatting to application/netcdf');
       });
     });
   });

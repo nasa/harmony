@@ -221,6 +221,7 @@ https://cmr.uat.earthdata.nasa.gov:
     capabilities:
       subsetting:
         variable: true
+        bbox: true
       output_formats:
         - image/tiff
 
