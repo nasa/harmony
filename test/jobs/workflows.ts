@@ -5,7 +5,7 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { hookTransaction } from '../helpers/db';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
-import terminateWorkflows from '../../app/util/argo';
+import { Workflow, getWorkflowsForJob, terminateWorkflows } from '../../app/util/workflows';
 import log from '../../app/util/log';
 
 const singleWorkflowJobRecord: JobRecord = {
@@ -103,7 +103,7 @@ describe('Terminating job workflow(s)', async function () {
     });
   });
 
-  describe('multiple workflow', async function () {
+  describe('multiple workflows', async function () {
     it('makes one get and multiple put calls to argo', async function () {
       const mock = new MockAdapter(axios);
       mock.onGet().reply(function (_config) {
@@ -114,6 +114,62 @@ describe('Terminating job workflow(s)', async function () {
       expect(mock.history.get.length).to.equal(1);
       expect(mock.history.put.length).to.equal(2);
       mock.restore();
+    });
+  });
+});
+
+describe('Getting job workflows', async function () {
+  hookTransaction();
+
+  let singleWorkflowJob: Job;
+  let multipleWorkflowJob: Job;
+
+  before(async function () {
+    singleWorkflowJob = new Job(singleWorkflowJobRecord);
+    await singleWorkflowJob.save(this.trx);
+    multipleWorkflowJob = new Job(multipleWorkflowJobRecord);
+    await multipleWorkflowJob.save(this.trx);
+    this.trx.commit();
+    this.trx = null;
+  });
+
+  describe('single workflow', async function () {
+    let mock: MockAdapter;
+    let workflows: Workflow[];
+    before(async function () {
+      mock = new MockAdapter(axios);
+      mock.onGet().reply(function (_config) {
+        return [200, singleWorkflowListResponse];
+      });
+      workflows = await getWorkflowsForJob(singleWorkflowJob, log);
+    });
+    it('makes one get call to argo', async function () {
+      expect(mock.history.get.length).to.equal(1);
+      mock.restore();
+    });
+
+    it('returns one workflow', async function () {
+      expect(workflows.length).to.equal(1);
+    });
+  });
+
+  describe('multiple workflows', async function () {
+    let mock: MockAdapter;
+    let workflows: Workflow[];
+    before(async function () {
+      mock = new MockAdapter(axios);
+      mock.onGet().reply(function (_config) {
+        return [200, multipleWorkflowListResponse];
+      });
+      workflows = await getWorkflowsForJob(singleWorkflowJob, log);
+    });
+    it('makes one get call to argo', async function () {
+      expect(mock.history.get.length).to.equal(1);
+      mock.restore();
+    });
+
+    it('returns two workflows', async function () {
+      expect(workflows.length).to.equal(2);
     });
   });
 });

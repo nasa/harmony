@@ -6,7 +6,7 @@ import { hookTransaction } from '../helpers/db';
 import { jobsEqual, cancelJob, hookCancelJob, adminUsername, adminCancelJob, hookAdminCancelJob } from '../helpers/jobs';
 import { hookRedirect } from '../helpers/hooks';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
-import stubTerminateWorkflows from '../helpers/argo';
+import stubTerminateWorkflows from '../helpers/workflows';
 
 const aJob: JobRecord = {
   username: 'joe',

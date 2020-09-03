@@ -1,7 +1,7 @@
 import { stub, SinonStub } from 'sinon';
 import { Job } from 'models/job';
 import { Logger } from 'winston';
-import * as argo from '../../app/util/argo';
+import * as workflow from '../../app/util/workflows';
 
 /**
  *  Stub calls to `terminateWorkflows`
@@ -12,5 +12,5 @@ import * as argo from '../../app/util/argo';
  * @returns The sinon stub that was created
  */
 export default function stubTerminateWorkflows(): SinonStub<[Job, Logger], Promise<void>> {
-  return stub(argo, 'default');
+  return stub(workflow, 'terminateWorkflows');
 }

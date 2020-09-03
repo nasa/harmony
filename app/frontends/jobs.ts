@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
 import isUUID from 'util/uuid';
-import terminateWorkflows from '../util/argo';
+import { terminateWorkflows } from '../util/workflows';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink } from '../util/links';
