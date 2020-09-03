@@ -16,8 +16,9 @@ export default async function terminateWorkflows(job: Job, logger: Logger): Prom
   const url = `${env.argoUrl}/api/v1/workflows/argo?listOptions.labelSelector=request_id%3D${requestId}`;
 
   try {
-    // const response = await axios.default.get(url, config);
     const response = await axios.default.get(url);
+    // we loop over all the workflows for the given job. currently there is only one, but we
+    // may allow more than one in the future
     for (const workflow of response.data?.items) {
       logger.info(`Canceling workflow ${workflow.metadata.name}`);
       try {

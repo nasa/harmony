@@ -92,7 +92,6 @@ describe('Terminating job workflow(s)', async function () {
   describe('single workflow', async function () {
     it('makes one get and one put call to argo', async function () {
       const mock = new MockAdapter(axios);
-      // mock.resetHistory();
       mock.onGet().reply(function (_config) {
         return [200, singleWorkflowListResponse];
       });
@@ -107,7 +106,6 @@ describe('Terminating job workflow(s)', async function () {
   describe('multiple workflow', async function () {
     it('makes one get and multiple put calls to argo', async function () {
       const mock = new MockAdapter(axios);
-      // mock.resetHistory();
       mock.onGet().reply(function (_config) {
         return [200, multipleWorkflowListResponse];
       });

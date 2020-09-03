@@ -44,6 +44,7 @@ describe('Canceling a job - user endpoint', function () {
   const jobID = aJob.requestId;
   describe('For a user who is not logged in', function () {
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       this.res = await cancelJob(this.frontend, { jobID }).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
@@ -61,6 +62,9 @@ describe('Canceling a job - user endpoint', function () {
   });
 
   describe('For a logged-in user who owns the job', function () {
+    before(async function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookCancelJob({ jobID, username: 'joe' });
     it('returns a redirect to the canceled job', function () {
       expect(this.res.statusCode).to.equal(302);
@@ -108,6 +112,7 @@ describe('Canceling a job - user endpoint', function () {
     joeJob2.requestId = uuid().toString();
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(joeJob2).save(this.trx);
       this.trx.commit();
       this.trx = null;
@@ -126,12 +131,15 @@ describe('Canceling a job - user endpoint', function () {
     });
 
     it('does not terminate the workflow', function () {
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
   describe('when the job does not exist', function () {
     const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
+    before(async function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookCancelJob({ jobID: idDoesNotExist, username: 'joe' });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(404);
@@ -146,12 +154,15 @@ describe('Canceling a job - user endpoint', function () {
     });
 
     it('does not try to terminate the workflow', function () {
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
   describe('when the jobID is in an invalid format', function () {
     const notAJobID = 'foo';
+    before(async function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookCancelJob({ jobID: notAJobID, username: 'joe' });
     it('returns a 400 HTTP bad request', function () {
       expect(this.res.statusCode).to.equal(400);
@@ -166,7 +177,7 @@ describe('Canceling a job - user endpoint', function () {
     });
 
     it('does not try to terminate the workflow', function () {
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
@@ -176,6 +187,7 @@ describe('Canceling a job - user endpoint', function () {
     successfulJob.status = JobStatus.SUCCESSFUL;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(successfulJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
@@ -194,7 +206,7 @@ describe('Canceling a job - user endpoint', function () {
       });
 
       it('does not try to terminate the workflow', function () {
-        expect(terminateWorkflowsStub.callCount).to.equal(1);
+        expect(terminateWorkflowsStub.callCount).to.equal(0);
       });
     });
   });
@@ -205,11 +217,11 @@ describe('Canceling a job - user endpoint', function () {
     failedJob.status = JobStatus.FAILED;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(failedJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
     });
-
     hookCancelJob({ jobID: failedJob.requestId, username: 'joe' });
     it('returns a 409 HTTP conflict', function () {
       expect(this.res.statusCode).to.equal(409);
@@ -224,7 +236,7 @@ describe('Canceling a job - user endpoint', function () {
     });
 
     it('does not try to terminate the workflow', function () {
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
@@ -234,6 +246,7 @@ describe('Canceling a job - user endpoint', function () {
     canceledJob.status = JobStatus.CANCELED;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(canceledJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
@@ -253,7 +266,7 @@ describe('Canceling a job - user endpoint', function () {
     });
 
     it('does not try to terminate the workflow', function () {
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 });
@@ -274,6 +287,7 @@ describe('Canceling a job - admin endpoint', function () {
   const jobID = aJob.requestId;
   describe('For a user who is not logged in', function () {
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       this.res = await adminCancelJob(this.frontend, { jobID }).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
@@ -291,6 +305,9 @@ describe('Canceling a job - admin endpoint', function () {
   });
 
   describe('For a logged-in user (but not admin) who owns the job', function () {
+    before(async function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookAdminCancelJob({ jobID, username: 'joe' });
     it('returns a 403 forbidden because they are not an admin', function () {
       expect(this.res.statusCode).to.equal(403);
@@ -310,6 +327,9 @@ describe('Canceling a job - admin endpoint', function () {
   });
 
   describe('For a logged-in admin', function () {
+    before(async function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookAdminCancelJob({ jobID, username: adminUsername });
     it('returns a redirect to the canceled job', function () {
       expect(this.res.statusCode).to.equal(302);
@@ -355,6 +375,9 @@ describe('Canceling a job - admin endpoint', function () {
 
   describe('when the job does not exist', function () {
     const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
+    before(async function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookAdminCancelJob({ jobID: idDoesNotExist, username: adminUsername });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(404);
@@ -369,12 +392,15 @@ describe('Canceling a job - admin endpoint', function () {
     });
 
     it('does not try to terminate the workflow', function () {
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
   describe('when the jobID is in an invalid format', function () {
     const notAJobID = 'foo';
+    before(async function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookAdminCancelJob({ jobID: notAJobID, username: adminUsername });
     it('returns a 409 HTTP conflict', function () {
       expect(this.res.statusCode).to.equal(400);
@@ -389,7 +415,7 @@ describe('Canceling a job - admin endpoint', function () {
     });
 
     it('does not try to terminate the workflow', function () {
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
@@ -399,11 +425,11 @@ describe('Canceling a job - admin endpoint', function () {
     successfulJob.status = JobStatus.SUCCESSFUL;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(successfulJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
     });
-
     hookAdminCancelJob({ jobID: successfulJob.requestId, username: adminUsername });
     it('returns a 409 HTTP conflict', function () {
       expect(this.res.statusCode).to.equal(409);
@@ -418,7 +444,7 @@ describe('Canceling a job - admin endpoint', function () {
     });
 
     it('does not try to terminate the workflow', function () {
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
@@ -428,6 +454,7 @@ describe('Canceling a job - admin endpoint', function () {
     failedJob.status = JobStatus.FAILED;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(failedJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
@@ -447,7 +474,7 @@ describe('Canceling a job - admin endpoint', function () {
     });
 
     it('does not try to terminate the workflow', function () {
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
@@ -457,6 +484,7 @@ describe('Canceling a job - admin endpoint', function () {
     canceledJob.status = JobStatus.CANCELED;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(canceledJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
@@ -476,7 +504,7 @@ describe('Canceling a job - admin endpoint', function () {
     });
 
     it('does not try to terminate the workflow', function () {
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 });
