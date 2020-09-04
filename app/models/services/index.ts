@@ -390,9 +390,9 @@ function unsupportedCombinationMessage(
 const operationFilterFns = [
   filterCollectionMatches,
   filterVariableSubsettingMatches,
-  filterOutputFormatMatches,
   filterSpatialSubsettingMatches,
   filterShapefileSubsettingMatches,
+  filterOutputFormatMatches,
 ];
 
 /**
