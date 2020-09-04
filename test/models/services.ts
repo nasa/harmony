@@ -17,7 +17,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'first-service',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           collections: [collectionId],
           capabilities: { output_formats: ['image/tiff'] },
         },
@@ -43,7 +43,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('uses the correct service class when building the service', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         const service = buildService(serviceConfig, this.operation);
-        expect(service.constructor.name).to.equal('MessageQueueService');
+        expect(service.constructor.name).to.equal('ArgoService');
       });
     });
 
@@ -96,12 +96,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'non-matching-service',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           collections: ['C456-NOMATCH'],
         },
         {
           name: 'matching-service',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           collections: [collectionId],
         },
       ];
@@ -115,7 +115,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     it('uses the correct service class when building the service', function () {
       const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
       const service = buildService(serviceConfig, this.operation);
-      expect(service.constructor.name).to.equal('MessageQueueService');
+      expect(service.constructor.name).to.equal('ArgoService');
     });
   });
 
@@ -125,7 +125,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'variable-subsetter',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           capabilities: {
             subsetting: { variable: true },
             output_formats: ['image/tiff'],
@@ -134,7 +134,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         },
         {
           name: 'non-variable-subsetter',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           capabilities: {
             subsetting: { variable: false },
             output_formats: ['application/x-zarr'],
@@ -157,7 +157,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('uses the correct service class when building the service', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         const service = buildService(serviceConfig, operation);
-        expect(service.constructor.name).to.equal('MessageQueueService');
+        expect(service.constructor.name).to.equal('ArgoService');
       });
     });
 
@@ -225,7 +225,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'non-matching-service',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           collections: ['C456-NOMATCH'],
         },
       ];
@@ -258,7 +258,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'matching-service',
-          type: { name: 'queue', synchronous_only: true },
+          type: { name: 'argo', synchronous_only: true },
           collections: [collectionId],
         },
       ];
@@ -269,7 +269,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       const serviceConfig = chooseServiceConfig(op, {}, this.config);
       const service = buildService(serviceConfig, this.operation) as AsynchronizerService<unknown>;
       expect(service.constructor.name).to.equal('AsynchronizerService');
-      expect(service.SyncServiceClass.name).to.equal('MessageQueueService');
+      expect(service.SyncServiceClass.name).to.equal('ArgoService');
     });
   });
 });
