@@ -128,20 +128,6 @@ database, you can create and/or migrate your database by setting `NODE_ENV=produ
 $ npx knex --cwd db migrate:latest
 ```
 
-### Run Harmony
-
-To run Harmony locally such that it reloads when files change (recommended during development), run
-
-```
-$ npm run start-dev
-```
-
-In production, we use `$ npm run start` which does the same but does not add the file watching and reloading behavior.
-
-You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend application receives requests from users, while the backend application receives callbacks from services.
-
-The application is not very useful at this point, since no backends have been configured, which requires setting up Argo workflows and then setting up a backend service in the following steps.
-
 ### Running Argo Workflows
 
 [Argo Workflows](https://github.com/argoproj/argo) are used by Harmony to manage job executions. Argo can be run locally to support development by following these instructions.
@@ -238,7 +224,17 @@ This will set up the proper environment for building the image so that it may be
 
 This may take some time, but ultimately it will produce a local docker image tagged `harmony/gdal:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
 
-After restarting the Harmony front end you should be able to see Argo workflows running for queries against Argo configured collections in services.yml.
+### Run Harmony
+
+To run Harmony locally such that it reloads when files change (recommended during development), run
+
+```
+$ npm run start-dev
+```
+
+In production, we use `$ npm run start` which does the same but does not add the file watching and reloading behavior.
+
+You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend application receives requests from users, while the backend application receives callbacks from services.
 
 ### Connect a client
 
@@ -251,6 +247,8 @@ You can also set up a WMS connection in [QGIS](https://qgis.org/en/site/about/in
 dialog when adding a new WMS connection.  Thereafter, expanding the connection should provide a list of layers obtained through a
 GetCapabilities call to the test server, and double-clicking a layer should add it to a map, making a WMS call to retrieve an appropriate
 PNG from the test server.
+
+You can also use the Argo dashboard at http://localhost:2746 to visualize the workflows that were kicked off from your Harmony transformation requests.
 
 #### Local development of workflows using Visual Studio Code
 
