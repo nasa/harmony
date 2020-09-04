@@ -259,8 +259,6 @@ function filterOutputFormatMatches(
   return services;
 }
 
-const unsupportedOperationMessage = 'no services support the requested operation';
-
 /**
  * For certain UnsupportedOperation errors the root cause will be a combination of multiple
  * request parameters such as requesting variable subsetting and a specific output format.
@@ -279,7 +277,6 @@ function unsupportedCombinationMessage(
   let formats = operation.outputFormat ? [operation.outputFormat] : context.requestedMimeTypes;
   // Requests for mime-type * or */* are not requesting reformatting
   formats = formats?.filter((f) => f !== '*' && f !== '*/*');
-  let message = `${unsupportedOperationMessage} for collection ${listToText(collections)}`;
   const requestedOptions = [];
   if (requiresVariableSubsetting(operation)) {
     requestedOptions.push('variable subsetting');
@@ -287,8 +284,10 @@ function unsupportedCombinationMessage(
   if (formats?.length > 0) {
     requestedOptions.push(`reformatting to ${listToText(formats)}`);
   }
+
+  let message = `no operations can be performed on ${listToText(collections)}`;
   if (requestedOptions.length > 0) {
-    message += `. Requested the following capabiliities: ${listToText(requestedOptions)}`;
+    message = `the requested combination of operations: ${listToText(requestedOptions)} on ${listToText(collections)} is unsupported`;
   }
   return message;
 }
