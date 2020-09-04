@@ -19,7 +19,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           name: 'first-service',
           type: { name: 'queue' },
           collections: [collectionId],
-          capabilities: { output_formats: ['image/tiff', 'application/netcdf'] },
+          capabilities: {
+            output_formats: ['image/tiff', 'application/netcdf'],
+            subsetting: {
+              shape: true,
+            },
+          },
         },
         {
           name: 'second-service',
@@ -116,6 +121,34 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('indicates the reason for choosing the no op service is the combination of spatial subsetting and format', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         expect(serviceConfig.message).to.equal('the requested combination of operations: spatial subsetting and reformatting to application/netcdf on C123-TEST is unsupported');
+      });
+    });
+
+    describe('and the request needs shapefile subsetting', function () {
+      beforeEach(function () {
+        this.operation.geojson = { pretend: 'geojson' };
+      });
+
+      it('chooses the service that supports shapefile subsetting', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('first-service');
+      });
+    });
+
+    describe('and the request needs both shapefile subsetting and png output, but no service supports that combination', function () {
+      beforeEach(function () {
+        this.operation.geojson = { pretend: 'geojson' };
+        this.operation.outputFormat = 'image/png';
+      });
+
+      it('returns the no-op service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('indicates the reason for choosing the no op service is the combination of shapefile subsetting and format', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('the requested combination of operations: shapefile subsetting and reformatting to image/png on C123-TEST is unsupported');
       });
     });
   });

@@ -192,6 +192,26 @@ function supportsSpatialSubsetting(configs: ServiceConfig<unknown>[]): ServiceCo
   return configs.filter((config) => getIn(config, 'capabilities.subsetting.bbox', false));
 }
 
+/**
+ * Returns true if the operation requires shapefile subsetting
+ * @param operation The operation to perform.
+ * @returns true if the provided operation requires shapefile subsetting and false otherwise
+ * @private
+ */
+function requiresShapefileSubsetting(operation: DataOperation): boolean {
+  return !!operation.geojson;
+}
+
+/**
+ * Returns any services that support shapefile subsetting from the list of configs
+ * @param configs The potential matching service configurations
+ * @returns Any configurations that support shapefile subsetting
+ * @private
+ */
+function supportsShapefileSubsetting(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.subsetting.shape', false));
+}
+
 const noOpService: ServiceConfig<void> = {
   name: 'noOpService',
   type: { name: 'noOp' },
@@ -205,8 +225,8 @@ class UnsupportedOperation extends Error { }
  * @param operation The operation to perform.
  * @param context Additional context that's not part of the operation, but influences the
  *     choice regarding the service to use
- * @param {Array<Object>} configs All service configurations that have matched up to this call
- * @returns {Array<Object>} Any service configurations that support the provided collection
+ * @param configs All service configurations that have matched up to this call
+ * @returns Any service configurations that support the provided collection
  * @private
  */
 function filterCollectionMatches(
@@ -299,6 +319,30 @@ function filterSpatialSubsettingMatches(
 }
 
 /**
+ * Returns any services that support shapefile subsetting from the list of configs if the operation
+ * requires shapefile subsetting.
+ * @param operation The operation to perform.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs All service configurations that have matched up to this call
+ * @returns Any service configurations that support the requested output format
+ * @private
+ */
+function filterShapefileSubsettingMatches(
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig<unknown>[],
+): ServiceConfig<unknown>[] {
+  let services = configs;
+  if (requiresShapefileSubsetting(operation)) {
+    services = supportsShapefileSubsetting(configs);
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation('none of the services configured for the collection support shapefile subsetting');
+  }
+  return services;
+}
+
+/**
  * For certain UnsupportedOperation errors the root cause will be a combination of multiple
  * request parameters such as requesting variable subsetting and a specific output format.
  * This function will return a detailed message on what combination was unsupported.
@@ -322,6 +366,9 @@ function unsupportedCombinationMessage(
   if (requiresSpatialSubsetting(operation)) {
     requestedOptions.push('spatial subsetting');
   }
+  if (requiresShapefileSubsetting(operation)) {
+    requestedOptions.push('shapefile subsetting');
+  }
   if (formats?.length > 0) {
     requestedOptions.push(`reformatting to ${listToText(formats)}`);
   }
@@ -343,8 +390,9 @@ function unsupportedCombinationMessage(
 const operationFilterFns = [
   filterCollectionMatches,
   filterVariableSubsettingMatches,
-  filterOutputFormatMatches,
   filterSpatialSubsettingMatches,
+  filterShapefileSubsettingMatches,
+  filterOutputFormatMatches,
 ];
 
 /**
