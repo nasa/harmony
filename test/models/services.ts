@@ -86,13 +86,13 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('returns a message indicating that there were no services that could support the provided format', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('no services support the requested operation for collection C123-TEST. Requested the following capabiliities: reformatting to image/gif');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: reformatting to image/gif on C123-TEST is unsupported');
       });
 
       it('provides a human readable message when building the service', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         const service = buildService(serviceConfig, this.operation);
-        expect(service.message).to.equal('Returning direct download links because no services support the requested operation for collection C123-TEST. Requested the following capabiliities: reformatting to image/gif.');
+        expect(service.message).to.equal('Returning direct download links because the requested combination of operations: reformatting to image/gif on C123-TEST is unsupported.');
       });
     });
 
@@ -120,7 +120,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the combination of spatial subsetting and format', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('no services support the requested operation for collection C123-TEST. Requested the following capabiliities: spatial subsetting and reformatting to application/netcdf');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: spatial subsetting and reformatting to application/netcdf on C123-TEST is unsupported');
       });
     });
 
@@ -148,7 +148,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the combination of shapefile subsetting and format', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('no services support the requested operation for collection C123-TEST. Requested the following capabiliities: shapefile subsetting and reformatting to image/png');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: shapefile subsetting and reformatting to image/png on C123-TEST is unsupported');
       });
     });
   });
@@ -245,7 +245,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the combination of variable subsetting and the output format', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('no services support the requested operation for collection C123-TEST. Requested the following capabiliities: variable subsetting and reformatting to application/x-zarr');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: variable subsetting and reformatting to application/x-zarr on C123-TEST is unsupported');
       });
     });
 
@@ -277,7 +277,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the format', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('no services support the requested operation for collection C123-TEST. Requested the following capabiliities: variable subsetting and reformatting to image/foo');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: variable subsetting and reformatting to image/foo on C123-TEST is unsupported');
       });
     });
   });
@@ -311,7 +311,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     it('indicates the reason for choosing the no op service is the collection not being configured for services', function () {
       const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-      expect(serviceConfig.message).to.equal('no services support the requested operation for collection C123-TEST');
+      expect(serviceConfig.message).to.equal('no operations can be performed on C123-TEST');
     });
   });
 

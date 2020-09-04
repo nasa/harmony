@@ -520,7 +520,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
       it('indicates the format as the reason the no op service was used', function () {
         const noOpResponse = JSON.parse(this.res.text);
-        expect(noOpResponse.message).to.equal('Returning direct download links because no services support the requested operation for collection C1233800302-EEDTEST. Requested the following capabiliities: variable subsetting and reformatting to text/plain.');
+        expect(noOpResponse.message).to.equal('Returning direct download links because the requested combination of operations: variable subsetting and reformatting to text/plain on C1233800302-EEDTEST is unsupported.');
       });
     });
 
@@ -806,7 +806,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no services support the requested operation for collection C446398-ORNL_DAAC. CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446398-ORNL_DAAC. CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
@@ -860,7 +860,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message indicating no transformations were performed', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no services support the requested operation for collection C1000000099-ORNL_DAAC.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1000000099-ORNL_DAAC.');
     });
   });
 
