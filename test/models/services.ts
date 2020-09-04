@@ -76,13 +76,13 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('returns a message indicating that there were no services that could support the provided format', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('none of the services configured for the collection support reformatting to any of the requested formats [image/gif]');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: reformatting to image/gif on C123-TEST is unsupported');
       });
 
       it('provides a human readable message when building the service', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         const service = buildService(serviceConfig, this.operation);
-        expect(service.message).to.equal('Returning direct download links because none of the services configured for the collection support reformatting to any of the requested formats [image/gif].');
+        expect(service.message).to.equal('Returning direct download links because the requested combination of operations: reformatting to image/gif on C123-TEST is unsupported.');
       });
     });
   });
@@ -179,7 +179,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the combination of variable subsetting and the output format', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('none of the services support the combination of both variable subsetting and any of the requested formats [application/x-zarr]');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: variable subsetting and reformatting to application/x-zarr on C123-TEST is unsupported');
       });
     });
 
@@ -211,7 +211,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the format', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('none of the services configured for the collection support reformatting to any of the requested formats [image/foo]');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: variable subsetting and reformatting to image/foo on C123-TEST is unsupported');
       });
     });
   });
@@ -245,7 +245,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     it('indicates the reason for choosing the no op service is the collection not being configured for services', function () {
       const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-      expect(serviceConfig.message).to.equal('no services are configured for the collection');
+      expect(serviceConfig.message).to.equal('no operations can be performed on C123-TEST');
     });
   });
 
