@@ -224,6 +224,7 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
       output_formats:
         - image/tiff
+      projection_to_proj4: true
 
   # L2SS subsetter
   - name: podaac/http-service

@@ -24,7 +24,7 @@ describe('util/string', function () {
       expect(listToText(['a', 'b'], conjuction.AND)).to.equal('a and b');
     });
 
-    it('returns the items separated by " or " when provided "or" as the conjuction to use ', function () {
+    it('returns the items separated by " or " when provided "or" as the conjuction to use', function () {
       expect(listToText(['a', 'b'], conjuction.OR)).to.equal('a or b');
     });
 

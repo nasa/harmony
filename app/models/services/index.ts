@@ -191,6 +191,26 @@ function supportsSpatialSubsetting(configs: ServiceConfig<unknown>[]): ServiceCo
 }
 
 /**
+ * Returns true if the operation requires reprojection
+ * @param operation The operation to perform.
+ * @returns true if the provided operation requires shapefile subsetting and false otherwise
+ * @private
+ */
+function requiresReprojection(operation: DataOperation): boolean {
+  return !!operation.crs;
+}
+
+/**
+ * Returns any services that support reprojection from the list of configs
+ * @param configs The potential matching service configurations
+ * @returns Any configurations that support reprojection
+ * @private
+ */
+function supportsReprojection(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.projection_to_proj4', false));
+}
+
+/**
  * Returns true if the operation requires shapefile subsetting
  * @param operation The operation to perform.
  * @returns true if the provided operation requires shapefile subsetting and false otherwise
@@ -363,6 +383,36 @@ function filterSpatialSubsettingMatches(
 }
 
 /**
+ * Returns any services that support reprojection from the list of configs if the operation
+ * requires reprojection.
+ * @param operation The operation to perform.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs All service configurations that have matched up to this call
+ * @param requestedOperations Operations that have been considered in filtering out services up to
+ *     this call
+ * @returns Any service configurations that support the requested output format
+ * @private
+ */
+function filterReprojectionMatches(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[],
+  requestedOperations: string[],
+): ServiceConfig<unknown>[] {
+  let services = configs;
+  if (requiresReprojection(operation)) {
+    requestedOperations.push(`reprojection to ${operation.crs}`);
+    services = supportsReprojection(configs);
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation(operation, requestedOperations);
+  }
+  return services;
+}
+
+/**
  * Returns any services that support shapefile subsetting from the list of configs if the operation
  * requires shapefile subsetting.
  * @param operation The operation to perform.
@@ -425,6 +475,7 @@ const operationFilterFns = [
   filterVariableSubsettingMatches,
   filterSpatialSubsettingMatches,
   filterShapefileSubsettingMatches,
+  filterReprojectionMatches,
   // This filter must be last because it mutates the operation, choosing a format based on
   // the accepted MimeTypes and the remaining services that could support the operation. If
   // it ran earlier we could potentially eliminate services that a different accepted MimeType
