@@ -185,7 +185,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the combination of reprojection and spatial subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: spatial subsetting and reprojection to EPSG:4326 on C123-TEST is unsupported');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: spatial subsetting and reprojection on C123-TEST is unsupported');
       });
     });
   });

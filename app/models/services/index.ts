@@ -402,7 +402,7 @@ function filterReprojectionMatches(
 ): ServiceConfig<unknown>[] {
   let services = configs;
   if (requiresReprojection(operation)) {
-    requestedOperations.push(`reprojection to ${operation.crs}`);
+    requestedOperations.push('reprojection');
     services = supportsReprojection(configs);
   }
 
