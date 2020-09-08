@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { listToText, truncateString } from '../../app/util/string';
+import { listToText, truncateString, conjuction } from '../../app/util/string';
 
 describe('util/string', function () {
   describe('#listToText', function () {
@@ -16,13 +16,21 @@ describe('util/string', function () {
       expect(listToText(['a'])).to.equal('a');
     });
 
-    it('returns the items separated by " and " when receiving two items', function () {
+    it('returns the items separated by " and " when receiving two items and no conjuction specified', function () {
       expect(listToText(['a', 'b'])).to.equal('a and b');
+    });
+
+    it('returns the items separated by " and " when receiving two items and provided "and" as the conjuction to use', function () {
+      expect(listToText(['a', 'b'], conjuction.AND)).to.equal('a and b');
+    });
+
+    it('returns the items separated by " or " when provided "or" as the conjuction to use ', function () {
+      expect(listToText(['a', 'b'], conjuction.OR)).to.equal('a or b');
     });
 
     it('returns the items as a textual list when receiving more than two items', function () {
       expect(listToText(['a', 'b', 'c'])).to.equal('a, b, and c');
-      expect(listToText(['a', 'b', 'c', 'd'])).to.equal('a, b, c, and d');
+      expect(listToText(['a', 'b', 'c', 'd'], conjuction.OR)).to.equal('a, b, c, or d');
     });
   });
 
