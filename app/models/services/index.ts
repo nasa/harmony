@@ -7,10 +7,10 @@ import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
+import { listToText } from '../../util/string';
 import ArgoService from './argo-service';
 import AsynchronizerService from './asynchronizer-service';
 import HttpService from './http-service';
-import MessageQueueService from './message-queue-service';
 import NoOpService from './no-op-service';
 import DataOperation from '../data-operation';
 import BaseService, { ServiceConfig } from './base-service';
@@ -21,8 +21,6 @@ let serviceConfigs = null;
 
 /**
  * Loads the services configuration file.
- *
- * @returns {void}
  */
 function loadServiceConfigs(): void {
   // Setup a type, !Env, that when placed in front of a string resolves substrings like
@@ -59,7 +57,6 @@ serviceConfigs.map(validateServiceConfig);
 
 const serviceTypesToServiceClasses = {
   http: HttpService,
-  queue: MessageQueueService,
   argo: ArgoService,
   noOp: NoOpService,
 };
@@ -67,9 +64,9 @@ const serviceTypesToServiceClasses = {
 /**
  * Given a service configuration from services.yml and an operation, returns a
  * Service object for invoking that operation using the given service
- * @param {ServiceConfig} serviceConfig The configuration from services.yml
- * @param {DataOperation} operation The operation to perform
- * @returns {Service} An appropriate service for the given config
+ * @param serviceConfig The configuration from services.yml
+ * @param operation The operation to perform
+ * @returns An appropriate service for the given config
  * @throws {NotFoundError} If no appropriate service can be found
  */
 export function buildService(
@@ -91,9 +88,10 @@ export function buildService(
  * Returns true if all of the collections in the given operation can be operated on by
  * the given service.
  *
- * @param {DataOperation} operation The operation to match
- * @param {ServiceConfig} serviceConfig A configuration for a single service from services.yml
- * @returns {boolean} true if all collections in the operation are compatible with the service
+ * @param operation The operation to match
+ * @param serviceConfig A configuration for a single service from services.yml
+ * @returns true if all collections in the operation are compatible with the service and
+ *     false otherwise
  */
 function isCollectionMatch(
   operation: DataOperation,
@@ -104,11 +102,11 @@ function isCollectionMatch(
 
 /**
  * Returns the services that can be used based on the requested format
- * @param {String} format Additional context that's not part of the operation, but influences the
+ * @param format Additional context that's not part of the operation, but influences the
  *    choice regarding the service to use
- * @param {Array<Object>} configs The configuration to use for finding the operation, with all
+ * @param configs The configuration to use for finding the operation, with all
  *    variables resolved (default: the contents of config/services.yml)
- * @returns {Object} An object with two properties - service and format for the service and format
+ * @returns An object with two properties - service and format for the service and format
  * that should be used to fulfill the given request context
  * @private
  */
@@ -123,11 +121,11 @@ function selectServicesForFormat(
 
 /**
  * Returns the format to use based on the operation, request context, and service configs
- * @param {DataOperation} operation The operation to perform.
- * @param {RequestContext} context Additional context that's not part of the operation, but
- *     influences the choice regarding the service to use
- * @param {Array<Object>} configs All service configurations that have matched up to this call
- * @returns {String} The output format to use
+ * @param operation The operation to perform.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs All service configurations that have matched up to this call
+ * @returns The output format to use
  * @private
  */
 function selectFormat(
@@ -153,9 +151,8 @@ function selectFormat(
 
 /**
  * Returns true if the operation requires variable subsetting
- * @param {DataOperation} operation The operation to perform. Note that this function may mutate
- *    the operation.
- * @returns {Boolean} true if the provided operation requires variable subsetting
+ * @param operation The operation to perform.
+ * @returns true if the provided operation requires variable subsetting and false otherwise
  * @private
  */
 function requiresVariableSubsetting(operation: DataOperation): boolean {
@@ -165,12 +162,52 @@ function requiresVariableSubsetting(operation: DataOperation): boolean {
 
 /**
  * Returns any services that support variable subsetting from the list of configs
- * @param {Array<Object>} configs The potential matching service configurations
- * @returns {Array<Object>} Any configurations that support variable subsetting
+ * @param configs The potential matching service configurations
+ * @returns Any configurations that support variable subsetting
  * @private
  */
 function supportsVariableSubsetting(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
   return configs.filter((config) => getIn(config, 'capabilities.subsetting.variable', false));
+}
+
+/**
+ * Returns true if the operation requires spatial subsetting
+ * @param operation The operation to perform.
+ * @returns true if the provided operation requires spatial subsetting
+ * @private
+ */
+function requiresSpatialSubsetting(operation: DataOperation): boolean {
+  return !!operation.boundingRectangle;
+}
+
+/**
+ * Returns any services that support spatial subsetting from the list of configs
+ * @param configs The potential matching service configurations
+ * @returns Any configurations that support spatial subsetting
+ * @private
+ */
+function supportsSpatialSubsetting(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.subsetting.bbox', false));
+}
+
+/**
+ * Returns true if the operation requires shapefile subsetting
+ * @param operation The operation to perform.
+ * @returns true if the provided operation requires shapefile subsetting and false otherwise
+ * @private
+ */
+function requiresShapefileSubsetting(operation: DataOperation): boolean {
+  return !!operation.geojson;
+}
+
+/**
+ * Returns any services that support shapefile subsetting from the list of configs
+ * @param configs The potential matching service configurations
+ * @returns Any configurations that support shapefile subsetting
+ * @private
+ */
+function supportsShapefileSubsetting(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.subsetting.shape', false));
 }
 
 const noOpService: ServiceConfig<void> = {
@@ -183,12 +220,11 @@ class UnsupportedOperation extends Error { }
 
 /**
  * Returns any services that support variable subsetting from the list of configs
- * @param {DataOperation} operation The operation to perform. Note that this function may mutate
- *    the operation.
- * @param {RequestContext} context Additional context that's not part of the operation, but
- *     influences the choice regarding the service to use
- * @param {Array<Object>} configs All service configurations that have matched up to this call
- * @returns {Array<Object>} Any service configurations that support the provided collection
+ * @param operation The operation to perform.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs All service configurations that have matched up to this call
+ * @returns Any service configurations that support the provided collection
  * @private
  */
 function filterCollectionMatches(
@@ -203,12 +239,11 @@ function filterCollectionMatches(
 
 /**
  * Returns any services that support variable subsetting from the list of configs
- * @param {DataOperation} operation The operation to perform. Note that this function may mutate
- *    the operation.
- * @param {RequestContext} context Additional context that's not part of the operation, but
- *     influences the choice regarding the service to use
- * @param {Array<Object>} configs All service configurations that have matched up to this call
- * @returns {Array<Object>} Any service configurations that support this operation based on variable
+ * @param operation The operation to perform.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs All service configurations that have matched up to this call
+ * @returns Any service configurations that support this operation based on variable
  * subsetting constraints
  * @private
  */
@@ -225,12 +260,11 @@ function filterVariableSubsettingMatches(
 
 /**
  * Returns any services that support variable subsetting from the list of configs
- * @param {DataOperation} operation The operation to perform. Note that this function may mutate
- *    the operation.
- * @param {RequestContext} context Additional context that's not part of the operation, but
- *     influences the choice regarding the service to use
- * @param {Array<Object>} configs All service configurations that have matched up to this call
- * @returns {Array<Object>} Any service configurations that support the requested output format
+ * @param operation The operation to perform. Note that this function may mutate the operation.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs All service configurations that have matched up to this call
+ * @returns Any service configurations that support the requested output format
  * @private
  */
 function filterOutputFormatMatches(
@@ -259,39 +293,89 @@ function filterOutputFormatMatches(
 }
 
 /**
+ * Returns any services that support spatial subsetting from the list of configs if the operation
+ * requires spatial subsetting.
+ * @param operation The operation to perform.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs All service configurations that have matched up to this call
+ * @returns Any service configurations that support the requested output format
+ * @private
+ */
+function filterSpatialSubsettingMatches(
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig<unknown>[],
+): ServiceConfig<unknown>[] {
+  let services = configs;
+  if (requiresSpatialSubsetting(operation)) {
+    services = supportsSpatialSubsetting(configs);
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation('none of the services configured for the collection support spatial subsetting');
+  }
+  return services;
+}
+
+/**
+ * Returns any services that support shapefile subsetting from the list of configs if the operation
+ * requires shapefile subsetting.
+ * @param operation The operation to perform.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs All service configurations that have matched up to this call
+ * @returns Any service configurations that support the requested output format
+ * @private
+ */
+function filterShapefileSubsettingMatches(
+  operation: DataOperation, context: RequestContext, configs: ServiceConfig<unknown>[],
+): ServiceConfig<unknown>[] {
+  let services = configs;
+  if (requiresShapefileSubsetting(operation)) {
+    services = supportsShapefileSubsetting(configs);
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation('none of the services configured for the collection support shapefile subsetting');
+  }
+  return services;
+}
+
+/**
  * For certain UnsupportedOperation errors the root cause will be a combination of multiple
  * request parameters such as requesting variable subsetting and a specific output format.
  * This function will return a detailed message on what combination was unsupported.
- * @param {DataOperation} operation The operation to perform. Note that this function may mutate
- *    the operation.
- * @param {RequestContext} context Additional context that's not part of the operation, but
- *     influences the choice regarding the service to use
- * @param {Array<Object>} configs All service configurations that have matched up to this call
- * @param {String} originalReason The original reason the operation was considered invalid
- * @returns {String} the reason the operation was not supported
+ * @param operation The operation to perform.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @returns the reason the operation was not supported
  */
 function unsupportedCombinationMessage(
   operation: DataOperation,
   context: RequestContext,
-  configs: ServiceConfig<unknown>[],
-  originalReason: string,
 ): string {
-  let reason = originalReason;
-  if (originalReason.includes('reformatting to any of the requested formats')) {
-    if (requiresVariableSubsetting(operation)) {
-      const matches = filterCollectionMatches(operation, context, configs);
-      const outputFormat = selectFormat(operation, context, matches);
-      if (outputFormat) {
-        const servicesWithoutVarSubsetting = selectServicesForFormat(outputFormat, matches);
-        if (servicesWithoutVarSubsetting.length > 0) {
-          reason = 'none of the services support the combination of both variable subsetting '
-            + 'and any of the requested formats '
-            + `[${operation.outputFormat || context.requestedMimeTypes}]`;
-        }
-      }
-    }
+  const collections = operation.sources.map((s) => s.collection);
+  let formats = operation.outputFormat ? [operation.outputFormat] : context.requestedMimeTypes;
+  // Requests for mime-type * or */* are not requesting reformatting
+  formats = formats?.filter((f) => f !== '*' && f !== '*/*');
+  const requestedOptions = [];
+  if (requiresVariableSubsetting(operation)) {
+    requestedOptions.push('variable subsetting');
   }
-  return reason;
+  if (requiresSpatialSubsetting(operation)) {
+    requestedOptions.push('spatial subsetting');
+  }
+  if (requiresShapefileSubsetting(operation)) {
+    requestedOptions.push('shapefile subsetting');
+  }
+  if (formats?.length > 0) {
+    requestedOptions.push(`reformatting to ${listToText(formats)}`);
+  }
+
+  let message = `no operations can be performed on ${listToText(collections)}`;
+  if (requestedOptions.length > 0) {
+    message = `the requested combination of operations: ${listToText(requestedOptions)} on ${listToText(collections)} is unsupported`;
+  }
+  return message;
 }
 
 // List of filter functions to call to identify the services that can support an operation.
@@ -304,6 +388,8 @@ function unsupportedCombinationMessage(
 const operationFilterFns = [
   filterCollectionMatches,
   filterVariableSubsettingMatches,
+  filterSpatialSubsettingMatches,
+  filterShapefileSubsettingMatches,
   filterOutputFormatMatches,
 ];
 
@@ -340,8 +426,8 @@ export function chooseServiceConfig(
     serviceConfig = matches[0];
   } catch (e) {
     if (e instanceof UnsupportedOperation) {
-      const message = unsupportedCombinationMessage(operation, context, configs, e.message);
-      noOpService.message = message;
+      logger.info(`Returning download links because ${e.message}.`);
+      noOpService.message = unsupportedCombinationMessage(operation, context);
       serviceConfig = noOpService;
     } else {
       throw e;

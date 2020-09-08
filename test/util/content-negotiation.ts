@@ -111,6 +111,7 @@ describe('util/content-negotiation', function () {
     it('returns true for any value when the header is */*', function () {
       expect(isMimeTypeAccepted('any garbage', '*/*')).to.be.true;
     });
+
     describe('when the header is image/*', function () {
       const header = 'image/*';
       it('returns true for image/tiff', function () {
@@ -126,6 +127,7 @@ describe('util/content-negotiation', function () {
         expect(isMimeTypeAccepted('application/image+tiff', header)).to.be.false;
       });
     });
+
     describe('when the header is */tiff', function () {
       const header = '*/tiff';
       it('returns true for image/tiff', function () {
@@ -140,6 +142,12 @@ describe('util/content-negotiation', function () {
     });
     it('returns true when there is an exact match', function () {
       expect(isMimeTypeAccepted('application/zarr', 'application/zarr')).to.be.true;
+    });
+
+    describe('when the header is application/shapefile+zip', function () {
+      it('returns true when there is an exact match', function () {
+        expect(isMimeTypeAccepted('application/shapefile+zip', 'application/shapefile+zip')).to.be.true;
+      });
     });
   });
 });

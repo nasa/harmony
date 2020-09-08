@@ -17,15 +17,25 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'first-service',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           collections: [collectionId],
-          capabilities: { output_formats: ['image/tiff'] },
+          capabilities: {
+            output_formats: ['image/tiff', 'application/netcdf'],
+            subsetting: {
+              shape: true,
+            },
+          },
         },
         {
           name: 'second-service',
           type: { name: 'http' },
           collections: [collectionId],
-          capabilities: { output_formats: ['image/tiff', 'image/png'] },
+          capabilities: {
+            output_formats: ['image/tiff', 'image/png'],
+            subsetting: {
+              bbox: true,
+            },
+          },
         },
       ];
     });
@@ -43,7 +53,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('uses the correct service class when building the service', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         const service = buildService(serviceConfig, this.operation);
-        expect(service.constructor.name).to.equal('MessageQueueService');
+        expect(service.constructor.name).to.equal('ArgoService');
       });
     });
 
@@ -76,13 +86,69 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('returns a message indicating that there were no services that could support the provided format', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('none of the services configured for the collection support reformatting to any of the requested formats [image/gif]');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: reformatting to image/gif on C123-TEST is unsupported');
       });
 
       it('provides a human readable message when building the service', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         const service = buildService(serviceConfig, this.operation);
-        expect(service.message).to.equal('Returning direct download links because none of the services configured for the collection support reformatting to any of the requested formats [image/gif].');
+        expect(service.message).to.equal('Returning direct download links because the requested combination of operations: reformatting to image/gif on C123-TEST is unsupported.');
+      });
+    });
+
+    describe('and the request needs spatial subsetting', function () {
+      beforeEach(function () {
+        this.operation.boundingRectangle = [0, 0, 10, 10];
+      });
+
+      it('chooses the service that supports spatial subsetting', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('second-service');
+      });
+    });
+
+    describe('and the request needs both spatial subsetting and netcdf output, but no service supports that combination', function () {
+      beforeEach(function () {
+        this.operation.boundingRectangle = [0, 0, 10, 10];
+        this.operation.outputFormat = 'application/netcdf';
+      });
+
+      it('returns the no-op service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('indicates the reason for choosing the no op service is the combination of spatial subsetting and format', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('the requested combination of operations: spatial subsetting and reformatting to application/netcdf on C123-TEST is unsupported');
+      });
+    });
+
+    describe('and the request needs shapefile subsetting', function () {
+      beforeEach(function () {
+        this.operation.geojson = { pretend: 'geojson' };
+      });
+
+      it('chooses the service that supports shapefile subsetting', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('first-service');
+      });
+    });
+
+    describe('and the request needs both shapefile subsetting and png output, but no service supports that combination', function () {
+      beforeEach(function () {
+        this.operation.geojson = { pretend: 'geojson' };
+        this.operation.outputFormat = 'image/png';
+      });
+
+      it('returns the no-op service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('indicates the reason for choosing the no op service is the combination of shapefile subsetting and format', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('the requested combination of operations: shapefile subsetting and reformatting to image/png on C123-TEST is unsupported');
       });
     });
   });
@@ -96,12 +162,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'non-matching-service',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           collections: ['C456-NOMATCH'],
         },
         {
           name: 'matching-service',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           collections: [collectionId],
         },
       ];
@@ -115,7 +181,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     it('uses the correct service class when building the service', function () {
       const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
       const service = buildService(serviceConfig, this.operation);
-      expect(service.constructor.name).to.equal('MessageQueueService');
+      expect(service.constructor.name).to.equal('ArgoService');
     });
   });
 
@@ -125,7 +191,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'variable-subsetter',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           capabilities: {
             subsetting: { variable: true },
             output_formats: ['image/tiff'],
@@ -134,7 +200,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         },
         {
           name: 'non-variable-subsetter',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           capabilities: {
             subsetting: { variable: false },
             output_formats: ['application/x-zarr'],
@@ -157,7 +223,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('uses the correct service class when building the service', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         const service = buildService(serviceConfig, operation);
-        expect(service.constructor.name).to.equal('MessageQueueService');
+        expect(service.constructor.name).to.equal('ArgoService');
       });
     });
 
@@ -179,7 +245,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the combination of variable subsetting and the output format', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('none of the services support the combination of both variable subsetting and any of the requested formats [application/x-zarr]');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: variable subsetting and reformatting to application/x-zarr on C123-TEST is unsupported');
       });
     });
 
@@ -211,7 +277,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the format', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('none of the services configured for the collection support reformatting to any of the requested formats [image/foo]');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: variable subsetting and reformatting to image/foo on C123-TEST is unsupported');
       });
     });
   });
@@ -225,7 +291,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'non-matching-service',
-          type: { name: 'queue' },
+          type: { name: 'argo' },
           collections: ['C456-NOMATCH'],
         },
       ];
@@ -245,7 +311,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     it('indicates the reason for choosing the no op service is the collection not being configured for services', function () {
       const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-      expect(serviceConfig.message).to.equal('no services are configured for the collection');
+      expect(serviceConfig.message).to.equal('no operations can be performed on C123-TEST');
     });
   });
 
@@ -258,7 +324,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'matching-service',
-          type: { name: 'queue', synchronous_only: true },
+          type: { name: 'argo', synchronous_only: true },
           collections: [collectionId],
         },
       ];
@@ -269,7 +335,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       const serviceConfig = chooseServiceConfig(op, {}, this.config);
       const service = buildService(serviceConfig, this.operation) as AsynchronizerService<unknown>;
       expect(service.constructor.name).to.equal('AsynchronizerService');
-      expect(service.SyncServiceClass.name).to.equal('MessageQueueService');
+      expect(service.SyncServiceClass.name).to.equal('ArgoService');
     });
   });
 });
