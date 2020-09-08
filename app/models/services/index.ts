@@ -11,7 +11,6 @@ import { listToText } from '../../util/string';
 import ArgoService from './argo-service';
 import AsynchronizerService from './asynchronizer-service';
 import HttpService from './http-service';
-import MessageQueueService from './message-queue-service';
 import NoOpService from './no-op-service';
 import DataOperation from '../data-operation';
 import BaseService, { ServiceConfig } from './base-service';
@@ -58,7 +57,6 @@ serviceConfigs.map(validateServiceConfig);
 
 const serviceTypesToServiceClasses = {
   http: HttpService,
-  queue: MessageQueueService,
   argo: ArgoService,
   noOp: NoOpService,
 };
