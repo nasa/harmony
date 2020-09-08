@@ -60,22 +60,6 @@ describe('util/errors', function () {
         });
       });
 
-      describe('when the error message is JSON formatted', function () {
-        const jsonMessage = '{"foo": "bar", "a": true, "b": 1}';
-        const jsonError = new HttpError(403, jsonMessage);
-
-        describe('when passing in just the error', function () {
-          it('removes the description field and includes the JSON fields from the message', function () {
-            expect(buildErrorResponse(jsonError)).to.eql({
-              code: 'harmony.HttpError',
-              foo: 'bar',
-              a: true,
-              b: 1,
-            });
-          });
-        });
-      });
-
       describe('when the message is empty', function () {
         const message = '';
         const error = new HttpError(403, message);
