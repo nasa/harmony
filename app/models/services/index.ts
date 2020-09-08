@@ -7,7 +7,7 @@ import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
-import { listToText, conjuction } from '../../util/string';
+import { listToText, Conjuction } from '../../util/string';
 import ArgoService from './argo-service';
 import AsynchronizerService from './asynchronizer-service';
 import HttpService from './http-service';
@@ -193,7 +193,7 @@ function supportsSpatialSubsetting(configs: ServiceConfig<unknown>[]): ServiceCo
 /**
  * Returns true if the operation requires reprojection
  * @param operation The operation to perform.
- * @returns true if the provided operation requires shapefile subsetting and false otherwise
+ * @returns true if the provided operation requires reprojection and false otherwise
  * @private
  */
 function requiresReprojection(operation: DataOperation): boolean {
@@ -335,7 +335,7 @@ function filterOutputFormatMatches(
     // Requests for mime-type * or */* are not requesting reformatting
     formats = formats?.filter((f) => f !== '*' && f !== '*/*');
     if (formats?.length > 0) {
-      requestedOperations.push(`reformatting to ${listToText(formats, conjuction.OR)}`);
+      requestedOperations.push(`reformatting to ${listToText(formats, Conjuction.OR)}`);
     }
     if (outputFormat) {
       // eslint-disable-next-line no-param-reassign

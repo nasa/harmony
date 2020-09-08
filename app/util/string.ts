@@ -1,4 +1,4 @@
-export enum conjuction {
+export enum Conjuction {
   AND = 'and',
   OR = 'or',
 }
@@ -15,7 +15,7 @@ export enum conjuction {
  * @param items The items to be converted to text
  * @returns The resulting textual string
  */
-export function listToText(items: string[], joinWord = conjuction.AND): string {
+export function listToText(items: string[], joinWord = Conjuction.AND): string {
   let result;
   if (!items) return '';
   switch (items.length) {
