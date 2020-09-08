@@ -36,6 +36,10 @@ export async function getWorkflowsForJob(job: Job, logger: Logger): Promise<Work
   }
 }
 
+export async function getWorkflowByName(name: string logger: Logger): Promise<Workflow> {
+  // TODO implement this
+}
+
 /**
  *
  * Run the given process on the workflows associated with the given job
