@@ -37,6 +37,15 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             },
           },
         },
+        {
+          name: 'third-service',
+          type: { name: 'argo' },
+          collections: [collectionId],
+          capabilities: {
+            output_formats: ['image/tiff', 'image/png'],
+            reprojection: true,
+          },
+        },
       ];
     });
 
@@ -149,6 +158,34 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('indicates the reason for choosing the no op service is the combination of shapefile subsetting and format', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         expect(serviceConfig.message).to.equal('the requested combination of operations: shapefile subsetting and reformatting to image/png on C123-TEST is unsupported');
+      });
+    });
+
+    describe('and the request needs reprojection', function () {
+      beforeEach(function () {
+        this.operation.crs = 'EPSG:4326';
+      });
+
+      it('chooses the service that supports reprojection', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('third-service');
+      });
+    });
+
+    describe('and the request needs both reprojection and spatial subsetting, but no service supports that combination', function () {
+      beforeEach(function () {
+        this.operation.crs = 'EPSG:4326';
+        this.operation.boundingRectangle = [0, 0, 10, 10];
+      });
+
+      it('returns the no-op service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('indicates the reason for choosing the no op service is the combination of reprojection and spatial subsetting', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('the requested combination of operations: spatial subsetting and reprojection on C123-TEST is unsupported');
       });
     });
   });

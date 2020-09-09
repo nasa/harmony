@@ -166,7 +166,7 @@ Add an entry to [services.yml](../config/services.yml) under each CMR environmen
       - image/tiff
       - image/png
       - image/gif
-    projection_to_proj4: true     # The service can project to Proj4 and EPSG codes
+    reprojection: true            # The service supports reprojection
 
 - name: harmony/http-example      # An example of configuring the HTTP backend
   type:

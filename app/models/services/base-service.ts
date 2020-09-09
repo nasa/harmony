@@ -16,7 +16,7 @@ export interface ServiceCapabilities {
     multiple_variable?: true;
   };
   output_formats?: [string];
-  projection_to_proj4?: boolean;
+  reprojection?: boolean;
 }
 
 export interface ServiceConfig<ServiceParamType> {
