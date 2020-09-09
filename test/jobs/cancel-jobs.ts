@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
-import { jobsEqual, cancelJob, hookCancelJob, adminUsername, adminCancelJob, hookAdminCancelJob } from '../helpers/jobs';
+import { jobsEqual, cancelJob, hookCancelJob, adminUsername, adminCancelJob, hookAdminCancelJob, hookJobStatus } from '../helpers/jobs';
 import { hookRedirect } from '../helpers/hooks';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
 import { stubTerminateWorkflows, hookTerminateWorkflowError } from '../helpers/workflows';
@@ -528,6 +528,14 @@ describe('When canceling a job fails to terminate the argo workflow', function (
       expect(error).to.eql({
         code: 'harmony.ServerError',
         description: 'Error: Internal server error.',
+      });
+    });
+
+    describe('When requesting the job status', function () {
+      hookJobStatus({ jobID, username: 'joe' });
+      it('does not mark the job as canceled in the database', function () {
+        const job = new Job(JSON.parse(this.res.text));
+        expect(job.status).to.equal(JobStatus.RUNNING);
       });
     });
   });
