@@ -171,7 +171,6 @@ export async function cancelJob(
         throw new NotFoundError(`Unable to find job ${jobID}`);
       }
     });
-
     await terminateWorkflows(job, req.context.logger);
   } catch (e) {
     req.context.logger.error(e);
