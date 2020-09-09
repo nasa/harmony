@@ -10,6 +10,10 @@ import env = require('./env');
 export interface Workflow {
   metadata: {
     name: string;
+    labels: {
+      request_id: string;
+      user: string;
+    };
   };
 }
 
@@ -36,8 +40,20 @@ export async function getWorkflowsForJob(job: Job, logger: Logger): Promise<Work
   }
 }
 
-export async function getWorkflowByName(name: string logger: Logger): Promise<Workflow> {
-  // TODO implement this
+/**
+ * Retrieve the workflow with the i
+ * @param name
+ * @param logger
+ */
+export async function getWorkflowByName(name: string, logger: Logger): Promise<Workflow> {
+  const url = `${env.argoUrl}/api/v1/workflows/argo/${name}`;
+  try {
+    const response = await axios.default.get(url);
+    return response.data?.items?.[0];
+  } catch (e) {
+    logger.error(`Failed to retrieve workflow: ${JSON.stringify(e.response?.data)}`);
+    throw e;
+  }
 }
 
 /**
@@ -46,7 +62,7 @@ export async function getWorkflowByName(name: string logger: Logger): Promise<Wo
  *
  * @param job The job associated with the workflows to process
  * @param logger The logger to use for logging errors/info
- * @param process The provess to run on each workflow associated with the job
+ * @param process The process to run on each workflow associated with the job
  */
 async function processWorkflows(job: Job, logger: Logger, proc: WorkflowFunction): Promise<void> {
   const workflows = await getWorkflowsForJob(job, logger);
