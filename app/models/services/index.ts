@@ -207,7 +207,7 @@ function requiresReprojection(operation: DataOperation): boolean {
  * @private
  */
 function supportsReprojection(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
-  return configs.filter((config) => getIn(config, 'capabilities.projection_to_proj4', false));
+  return configs.filter((config) => getIn(config, 'capabilities.reprojection', false));
 }
 
 /**

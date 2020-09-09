@@ -32,7 +32,7 @@ https://cmr.earthdata.nasa.gov:
         - image/tiff
         - image/png
         - image/gif
-      projection_to_proj4: true
+      reprojection: true
 
 https://cmr.uat.earthdata.nasa.gov:
 
@@ -68,7 +68,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
         - image/png
         - image/gif
-      projection_to_proj4: true
+      reprojection: true
 
   - name: harmony/gdal
     data_operation_version: '0.7.0'
@@ -102,7 +102,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
         - image/png
         - image/gif
-      projection_to_proj4: true
+      reprojection: true
 
   - name: podaac/l2-subsetter
     data_operation_version: '0.8.0'
@@ -169,7 +169,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/png
         - image/gif
         - application/netcdf
-      projection_to_proj4: true
+      reprojection: true
 
   - name: sds/variable-subsetter
     data_operation_version: '0.8.0'
@@ -224,7 +224,7 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
       output_formats:
         - image/tiff
-      projection_to_proj4: true
+      reprojection: true
 
   # L2SS subsetter
   - name: podaac/http-service

@@ -43,7 +43,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           collections: [collectionId],
           capabilities: {
             output_formats: ['image/tiff', 'image/png'],
-            projection_to_proj4: true,
+            reprojection: true,
           },
         },
       ];
