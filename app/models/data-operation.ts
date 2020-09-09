@@ -4,6 +4,7 @@ import Ajv from 'ajv';
 import _ from 'lodash';
 import logger from 'util/log';
 import { CmrUmmVariable } from '../util/cmr';
+import { Encrypter, nopEncrypter } from '../util/encrypter';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -27,6 +28,22 @@ function readSchema(version: string): object {
  *      be unable to downgrade from the version
  */
 const schemaVersions = [
+  {
+    version: '0.9.0',
+    schema: readSchema('0.9.0'),
+    down: (model): unknown => {
+      const revertedModel = _.cloneDeep(model);
+      revertedModel.sources.forEach((s) => {
+        if (s.variables) {
+          s.variables.forEach((v) => {
+            delete v.fullPath; // eslint-disable-line no-param-reassign
+          });
+        }
+      });
+
+      return revertedModel;
+    },
+  },
   {
     version: '0.8.0',
     schema: readSchema('0.8.0'),
@@ -132,13 +149,16 @@ export default class DataOperation {
 
   cmrHits?: number;
 
+  encrypter?: Encrypter;
+
   /**
    * Creates an instance of DataOperation.
    *
    * @param {object} [model=null] The initial model, useful when receiving serialized operations
    * @memberof DataOperation
    */
-  constructor(model: object = null) {
+  constructor(encrypter: Encrypter = nopEncrypter, model: object = null) {
+    this.encrypter = encrypter;
     this.model = model || {
       sources: [],
       format: {},
@@ -467,6 +487,36 @@ export default class DataOperation {
    */
   set user(user: string) {
     this.model.user = user;
+  }
+
+  /**
+   * Gets the EDL token of the user requesting the service
+   *
+   * @returns The EDL token of the service invoker
+   * @memberof DataOperation
+   */
+  get accessToken(): string {
+    return this.model.accessToken;
+  }
+
+  /**
+   * Sets the EDL token of the user requesting the service
+   *
+   * @param user The EDL token of the service invoker
+   * @memberof DataOperation
+   */
+  set accessToken(accessToken: string) {
+    this.model.accessToken = accessToken;
+  }
+
+  /**
+   * Gets the encrypted EDL token of the user requesting the service
+   *
+   * @returns The encrypted EDL token of the service invoker
+   * @memberof DataOperation
+   */
+  get encryptedAccessToken(): string {
+    return this.encrypter(this.model.accessToken);
   }
 
   /**

@@ -9,6 +9,7 @@ import * as services from 'models/services';
 import { Router, Application } from 'express';
 import _ from 'lodash';
 import { CmrUmmVariable } from '../util/cmr';
+import { createEncrypter } from '../util/encrypter';
 
 const version = '0.1.0';
 const openApiPath = path.join(__dirname, '..', 'schemas', 'eoss', version, `eoss-v${version}.yml`);
@@ -47,7 +48,8 @@ export function addOpenApiRoutes(app: Router): void {
         }
         req.context.logger = req.context.logger.child({ component: 'eoss.getGranule' });
         const query = keysToLowerCase(req.query);
-        const operation = new DataOperation();
+        // TODO
+        const operation = new DataOperation(createEncrypter('THIS IS NOT A GOOD KEY'));
         operation.crs = query.crs;
         if (query.format) {
           operation.outputFormat = query.format;
