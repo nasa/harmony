@@ -167,11 +167,12 @@ export async function cancelJob(
         } else {
           res.redirect(`/jobs/${jobID}`);
         }
-        await terminateWorkflows(job, req.context.logger);
       } else {
         throw new NotFoundError(`Unable to find job ${jobID}`);
       }
     });
+
+    await terminateWorkflows(job, req.context.logger);
   } catch (e) {
     req.context.logger.error(e);
     if (e instanceof TypeError) {
