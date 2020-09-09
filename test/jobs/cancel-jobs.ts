@@ -38,7 +38,7 @@ describe('Canceling a job - user endpoint', function () {
     this.trx.commit();
     this.trx = null;
   });
-  after(async function () {
+  after(function () {
     terminateWorkflowsStub.restore();
   });
   const jobID = aJob.requestId;
@@ -62,7 +62,7 @@ describe('Canceling a job - user endpoint', function () {
   });
 
   describe('For a logged-in user who owns the job', function () {
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookCancelJob({ jobID, username: 'joe' });
@@ -137,7 +137,7 @@ describe('Canceling a job - user endpoint', function () {
 
   describe('when the job does not exist', function () {
     const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookCancelJob({ jobID: idDoesNotExist, username: 'joe' });
@@ -160,7 +160,7 @@ describe('Canceling a job - user endpoint', function () {
 
   describe('when the jobID is in an invalid format', function () {
     const notAJobID = 'foo';
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookCancelJob({ jobID: notAJobID, username: 'joe' });
@@ -305,7 +305,7 @@ describe('Canceling a job - admin endpoint', function () {
   });
 
   describe('For a logged-in user (but not admin) who owns the job', function () {
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookAdminCancelJob({ jobID, username: 'joe' });
@@ -327,7 +327,7 @@ describe('Canceling a job - admin endpoint', function () {
   });
 
   describe('For a logged-in admin', function () {
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookAdminCancelJob({ jobID, username: adminUsername });
@@ -375,7 +375,7 @@ describe('Canceling a job - admin endpoint', function () {
 
   describe('when the job does not exist', function () {
     const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookAdminCancelJob({ jobID: idDoesNotExist, username: adminUsername });
@@ -398,7 +398,7 @@ describe('Canceling a job - admin endpoint', function () {
 
   describe('when the jobID is in an invalid format', function () {
     const notAJobID = 'foo';
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookAdminCancelJob({ jobID: notAJobID, username: adminUsername });
