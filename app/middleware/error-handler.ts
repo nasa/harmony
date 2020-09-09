@@ -1,8 +1,8 @@
 import mustache from 'mustache';
 import fs from 'fs';
 import path from 'path';
-import { HttpError, RequestValidationError } from 'util/errors';
 import { Response, NextFunction } from 'express';
+import { HttpError, RequestValidationError, buildErrorResponse } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 
 const errorTemplate = fs.readFileSync(path.join(__dirname, '../templates/server-error.mustache.html'), { encoding: 'utf8' });
@@ -60,17 +60,7 @@ export default function errorHandler(
 
   if (shouldReturnJson(err, req)) {
     req.context.logger.error(err.message);
-    let code = `harmony.${err.constructor ? err.constructor.name : 'UnknownError'}`;
-    let message = err.message || err.toString();
-    if (!err.code) {
-      // if the status code has not been set then assume an internal server error
-      code = 'harmony.ServerError';
-      message = 'Internal server error.';
-    }
-    res.status(statusCode).json({
-      code,
-      description: `Error: ${message}`,
-    });
+    res.status(statusCode).json(buildErrorResponse(err));
   } else {
     const message = err.message || err.toString();
     const response = mustache.render(errorTemplate, { message });

@@ -2,6 +2,7 @@ import { initialize } from 'express-openapi';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Application, Response, Router } from 'express';
+import { buildErrorResponse } from '../../util/errors';
 import getLandingPage from './get-landing-page';
 import getRequirementsClasses from './get-requirements-classes';
 
@@ -96,14 +97,9 @@ export function handleOpenApiErrors(app: Application): void {
       code = 'openapi.ValidationError';
       const messages = err.errors.map((error) => `${error.location} parameter "${error.path}" ${error.message}`);
       message = messages.join('\n\t');
-    } else {
-      // Harmony errors / exceptions, using their constructor name if possible
-      code = `harmony.${err.constructor ? err.constructor.name : 'UnknownError'}`;
     }
-    res.status(status).json({
-      code,
-      description: `Error: ${message}`,
-    });
+    res.status(status).json(buildErrorResponse(err, code, message));
+
     if (status < 500) {
       req.context.logger.error(`[${code}] ${message}`);
     } else {

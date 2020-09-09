@@ -11,6 +11,19 @@ import * as workflow from '../../app/util/workflows';
  *
  * @returns The sinon stub that was created
  */
-export default function stubTerminateWorkflows(): SinonStub<[Job, Logger], Promise<void>> {
+export function stubTerminateWorkflows(): SinonStub<[Job, Logger], Promise<void>> {
   return stub(workflow, 'terminateWorkflows');
+}
+
+/**
+ * Hook to simulate an error terminating a workflow
+ */
+export function hookTerminateWorkflowError(): void {
+  let terminateStub;
+  before(async function () {
+    terminateStub = stub(workflow, 'terminateWorkflows').throws();
+  });
+  after(async function () {
+    if (terminateStub.restore) terminateStub.restore();
+  });
 }
