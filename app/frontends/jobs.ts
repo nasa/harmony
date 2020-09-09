@@ -162,16 +162,16 @@ export async function cancelJob(
       if (job) {
         job.updateStatus(JobStatus.CANCELED, message);
         await job.save(tx);
-        if (req.context.isAdminAccess) {
-          res.redirect(`/admin/jobs/${jobID}`);
-        } else {
-          res.redirect(`/jobs/${jobID}`);
-        }
       } else {
         throw new NotFoundError(`Unable to find job ${jobID}`);
       }
     });
     await terminateWorkflows(job, req.context.logger);
+    if (req.context.isAdminAccess) {
+      res.redirect(`/admin/jobs/${jobID}`);
+    } else {
+      res.redirect(`/jobs/${jobID}`);
+    }
   } catch (e) {
     req.context.logger.error(e);
     if (e instanceof TypeError) {
