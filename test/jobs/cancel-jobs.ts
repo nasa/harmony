@@ -6,7 +6,7 @@ import { hookTransaction } from '../helpers/db';
 import { jobsEqual, cancelJob, hookCancelJob, adminUsername, adminCancelJob, hookAdminCancelJob } from '../helpers/jobs';
 import { hookRedirect } from '../helpers/hooks';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
-import stubTerminateWorkflows from '../helpers/workflows';
+import { stubTerminateWorkflows, hookTerminateWorkflowError } from '../helpers/workflows';
 
 const aJob: JobRecord = {
   username: 'joe',
@@ -505,6 +505,30 @@ describe('Canceling a job - admin endpoint', function () {
 
     it('does not try to terminate the workflow', function () {
       expect(terminateWorkflowsStub.callCount).to.equal(0);
+    });
+  });
+});
+
+describe('When canceling a job fails to terminate the argo workflow', function () {
+  hookServersStartStop({ skipEarthdataLogin: false });
+  hookTransaction();
+  hookTerminateWorkflowError();
+  before(async function () {
+    await new Job(aJob).save(this.trx);
+    this.trx.commit();
+    this.trx = null;
+  });
+
+  const jobID = aJob.requestId;
+  describe('For a logged-in user who owns the job', function () {
+    hookCancelJob({ jobID, username: 'joe' });
+    it('returns an internal server error', function () {
+      expect(this.res.statusCode).to.equal(500);
+      const error = JSON.parse(this.res.text);
+      expect(error).to.eql({
+        code: 'harmony.ServerError',
+        description: 'Error: Internal server error.',
+      });
     });
   });
 });
