@@ -19,17 +19,17 @@ interface WorkflowFunction {
 
 /**
  *
- * Retrieve the list of workfows for the given Job
+ * Retrieve the list of workflows for the given Job
  *
  * @param job The job associated with the workflows
- * @param logger he Logger to use for error messages
+ * @param logger The Logger to use for error messages
  */
 export async function getWorkflowsForJob(job: Job, logger: Logger): Promise<Workflow[]> {
   const { requestId } = job;
   const url = `${env.argoUrl}/api/v1/workflows/argo?listOptions.labelSelector=request_id%3D${requestId}`;
   try {
     const response = await axios.default.get(url);
-    return response.data?.items;
+    return response.data?.items || [];
   } catch (e) {
     logger.error(`Failed to retrieve workflows: ${JSON.stringify(e.response?.data)}`);
     throw e;
@@ -42,7 +42,7 @@ export async function getWorkflowsForJob(job: Job, logger: Logger): Promise<Work
  *
  * @param job The job associated with the workflows to process
  * @param logger The logger to use for logging errors/info
- * @param process The provess to run on each workflow associated with the job
+ * @param process The process to run on each workflow associated with the job
  */
 async function processWorkflows(job: Job, logger: Logger, proc: WorkflowFunction): Promise<void> {
   const workflows = await getWorkflowsForJob(job, logger);

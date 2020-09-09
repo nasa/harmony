@@ -3,10 +3,10 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
-import { jobsEqual, cancelJob, hookCancelJob, adminUsername, adminCancelJob, hookAdminCancelJob } from '../helpers/jobs';
+import { jobsEqual, cancelJob, hookCancelJob, adminUsername, adminCancelJob, hookAdminCancelJob, hookJobStatus } from '../helpers/jobs';
 import { hookRedirect } from '../helpers/hooks';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
-import stubTerminateWorkflows from '../helpers/workflows';
+import { stubTerminateWorkflows, hookTerminateWorkflowError } from '../helpers/workflows';
 
 const aJob: JobRecord = {
   username: 'joe',
@@ -38,7 +38,7 @@ describe('Canceling a job - user endpoint', function () {
     this.trx.commit();
     this.trx = null;
   });
-  after(async function () {
+  after(function () {
     terminateWorkflowsStub.restore();
   });
   const jobID = aJob.requestId;
@@ -62,7 +62,7 @@ describe('Canceling a job - user endpoint', function () {
   });
 
   describe('For a logged-in user who owns the job', function () {
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookCancelJob({ jobID, username: 'joe' });
@@ -137,7 +137,7 @@ describe('Canceling a job - user endpoint', function () {
 
   describe('when the job does not exist', function () {
     const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookCancelJob({ jobID: idDoesNotExist, username: 'joe' });
@@ -160,7 +160,7 @@ describe('Canceling a job - user endpoint', function () {
 
   describe('when the jobID is in an invalid format', function () {
     const notAJobID = 'foo';
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookCancelJob({ jobID: notAJobID, username: 'joe' });
@@ -305,7 +305,7 @@ describe('Canceling a job - admin endpoint', function () {
   });
 
   describe('For a logged-in user (but not admin) who owns the job', function () {
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookAdminCancelJob({ jobID, username: 'joe' });
@@ -327,7 +327,7 @@ describe('Canceling a job - admin endpoint', function () {
   });
 
   describe('For a logged-in admin', function () {
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookAdminCancelJob({ jobID, username: adminUsername });
@@ -375,7 +375,7 @@ describe('Canceling a job - admin endpoint', function () {
 
   describe('when the job does not exist', function () {
     const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookAdminCancelJob({ jobID: idDoesNotExist, username: adminUsername });
@@ -398,7 +398,7 @@ describe('Canceling a job - admin endpoint', function () {
 
   describe('when the jobID is in an invalid format', function () {
     const notAJobID = 'foo';
-    before(async function () {
+    before(function () {
       terminateWorkflowsStub.resetHistory();
     });
     hookAdminCancelJob({ jobID: notAJobID, username: adminUsername });
@@ -505,6 +505,38 @@ describe('Canceling a job - admin endpoint', function () {
 
     it('does not try to terminate the workflow', function () {
       expect(terminateWorkflowsStub.callCount).to.equal(0);
+    });
+  });
+});
+
+describe('When canceling a job fails to terminate the argo workflow', function () {
+  hookServersStartStop({ skipEarthdataLogin: false });
+  hookTransaction();
+  hookTerminateWorkflowError();
+  before(async function () {
+    await new Job(aJob).save(this.trx);
+    this.trx.commit();
+    this.trx = null;
+  });
+
+  const jobID = aJob.requestId;
+  describe('For a logged-in user who owns the job', function () {
+    hookCancelJob({ jobID, username: 'joe' });
+    it('returns an internal server error', function () {
+      expect(this.res.statusCode).to.equal(500);
+      const error = JSON.parse(this.res.text);
+      expect(error).to.eql({
+        code: 'harmony.ServerError',
+        description: 'Error: Internal server error.',
+      });
+    });
+
+    describe('When requesting the job status', function () {
+      hookJobStatus({ jobID, username: 'joe' });
+      it('does not mark the job as canceled in the database', function () {
+        const job = new Job(JSON.parse(this.res.text));
+        expect(job.status).to.equal(JobStatus.RUNNING);
+      });
     });
   });
 });
