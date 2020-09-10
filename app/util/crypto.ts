@@ -7,7 +7,7 @@ export type EncrypterConstructor = (key: string) => Encrypter;
 export type Decrypter = (plaintext: string) => string;
 export type DecrypterConstructor = (key: string) => Decrypter;
 
-if (env.sharedSecretKey !== null) {
+if (env.sharedSecretKey === null) {
   throw new Error('Missing shared secret key for token encryption / decryption: Set SHARED_SECRET_KEY environment variable.');
 }
 
