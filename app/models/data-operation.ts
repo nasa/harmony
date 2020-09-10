@@ -4,7 +4,7 @@ import Ajv from 'ajv';
 import _ from 'lodash';
 import logger from 'util/log';
 import { CmrUmmVariable } from '../util/cmr';
-import { Encrypter, nopEncrypter } from '../util/encrypter';
+import { Encrypter, Decrypter } from '../util/encrypter';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -151,19 +151,24 @@ export default class DataOperation {
 
   encrypter?: Encrypter;
 
+  decrypter?: Decrypter;
+
   /**
    * Creates an instance of DataOperation.
    *
    * @param {object} [model=null] The initial model, useful when receiving serialized operations
    * @memberof DataOperation
    */
-  constructor(encrypter: Encrypter = nopEncrypter, model: object = null) {
-    this.encrypter = encrypter;
+  constructor(model: object = null, encrypter: Encrypter = _.identity,
+    decrypter: Decrypter = _.identity) {
     this.model = model || {
       sources: [],
       format: {},
       subset: {},
     };
+
+    this.encrypter = encrypter;
+    this.decrypter = decrypter;
   }
 
   /**
@@ -500,23 +505,27 @@ export default class DataOperation {
   }
 
   /**
-   * Sets the EDL token of the user requesting the service
+   * Sets the EDL token of the user requesting the service. Calling the
+   * getter will return the encrypted token as the default behavior. This
+   * is to ensure that the token is encrypted when serialized and that the
+   * unencrypted token is not accidentally serialized, written to logs, etc.
+   * To get the original token, use the the `unencryptedAccessToken` method.
    *
    * @param user The EDL token of the service invoker
    * @memberof DataOperation
    */
   set accessToken(accessToken: string) {
-    this.model.accessToken = accessToken;
+    this.model.accessToken = this.encrypter(accessToken);
   }
 
   /**
-   * Gets the encrypted EDL token of the user requesting the service
+   * Gets the decrypted EDL token of the user requesting the service
    *
-   * @returns The encrypted EDL token of the service invoker
+   * @returns The unencrypted EDL token of the service invoker
    * @memberof DataOperation
    */
-  get encryptedAccessToken(): string {
-    return this.encrypter(this.model.accessToken);
+  get unencryptedAccessToken(): string {
+    return this.decrypter(this.accessToken);
   }
 
   /**
