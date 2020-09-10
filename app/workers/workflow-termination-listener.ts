@@ -18,9 +18,7 @@ export default class WorkflowTerminationListener extends WorkflowListener {
 
   async eventCallback(event: WorkflowEvent): Promise<void> {
     // retrieve the workflow using the name in the event
-    console.log(event);
     const workflow = await getWorkflowByName(event.involvedObject.name, this.logger);
-    console.log(workflow);
     // cancel the job (without triggering an argo workflow termination)
     const requestId = workflow.metadata.labels.request_id;
     await cancelAndSaveJob(requestId, 'Canceled by admin', this.logger, true);

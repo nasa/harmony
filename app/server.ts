@@ -98,10 +98,10 @@ export function start(config: Record<string, string>):
     namespace: 'argo',
     logger: logger.child({ application: 'workflow-events' }),
   };
-  const workflowTerminationListener = new WorkflowTerminationListener(workflowTerminationListenerConfig);
-  workflowTerminationListener.start();
+  const listener = new WorkflowTerminationListener(workflowTerminationListenerConfig);
+  listener.start();
 
-  return { frontend, backend, workflowTerminationListener };
+  return { frontend, backend, workflowTerminationListener: listener };
 }
 
 /**
