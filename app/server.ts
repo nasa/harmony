@@ -12,7 +12,6 @@ import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/service-response-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
-import DeadLetterQueueMonitor from './workers/dead-letter-queue-monitor';
 
 /**
  * Builds an express server with appropriate logging and default routing and starts the server
@@ -70,7 +69,7 @@ function buildServer(name, port, setupFn): Server {
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
 export function start(config: Record<string, string>):
-{ frontend: Server; backend: Server; monitor: DeadLetterQueueMonitor } {
+{ frontend: Server; backend: Server } {
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
 
@@ -94,16 +93,7 @@ export function start(config: Record<string, string>):
     app.get('/', ((req, res) => res.send('OK')));
   });
 
-  let monitor;
-  if (config.SERVICE_DEAD_LETTER_QUEUE_NAME) {
-    const queue = config.BASE_QUEUE_URL + config.SERVICE_DEAD_LETTER_QUEUE_NAME;
-    monitor = new DeadLetterQueueMonitor(queue);
-    monitor.start(+config.RECEIVE_MESSAGE_TIMEOUT || 10);
-  } else {
-    logger.warn('SERVICE_DEAD_LETTER_QUEUE is not set.  Will not monitor for failed jobs.');
-  }
-
-  return { frontend, backend, monitor };
+  return { frontend, backend };
 }
 
 /**
@@ -113,11 +103,10 @@ export function start(config: Record<string, string>):
  *   objects, as returned by start()
  * @returns {Promise<void>} A promise that completes when the servers close
  */
-export async function stop({ frontend, backend, monitor }): Promise<void> {
+export async function stop({ frontend, backend }): Promise<void> {
   await Promise.all([
     promisify(frontend.close.bind(frontend))(),
     promisify(backend.close.bind(backend))(),
-    monitor?.stop(),
   ]);
 }
 

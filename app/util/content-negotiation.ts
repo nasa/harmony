@@ -38,6 +38,7 @@ export function isMimeTypeAccepted(mimeType: string, acceptHeader: string): bool
   const headerValue = acceptHeader
     .split(';')[0]
     .replace('*', '.*')
+    .replace('+', '\\+')
     .replace('/', '\\/');
   const re = new RegExp(`^${headerValue}$`);
   return !!mimeType.match(re);

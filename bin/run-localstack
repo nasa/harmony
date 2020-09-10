@@ -23,15 +23,9 @@ rm -rf $tmpdir
 mkdir -p $tmpdir
 
 start_script="$tmpdir/startup.sh"
-deadLetterQueueArn="arn:aws:sqs:$AWS_DEFAULT_REGION:123456789012:$deadLetterQueue"
-redrivePolicy='RedrivePolicy="{\"deadLetterTargetArn\":\"arn:aws:sqs:'$AWS_DEFAULT_REGION':123456789012:'$deadLetterQueue'\",\"maxReceiveCount\":\"1\"}"'
 
 echo "awslocal s3 mb s3://$stagingBucket" >> "$start_script"
 echo "awslocal s3 mb s3://$uploadBucket" >> "$start_script"
-# echo "awslocal sqs create-queue --queue-name $deadLetterQueue" >> "$start_script"
-# for queue in $(sed -n -e 's/^[[:space:]]*queue_url:.*}//p' config/services.yml); do
-#   echo "awslocal sqs create-queue --queue-name $queue --attributes '$redrivePolicy'" >> $start_script
-# done
 
 echo "Wrote localstack startup script to $start_script"
 

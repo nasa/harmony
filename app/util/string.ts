@@ -1,3 +1,8 @@
+export enum Conjuction {
+  AND = 'and',
+  OR = 'or',
+}
+
 /**
  * Converts the array of string items to a single textual string where elements are
  * comma-separated, and an "and" is inserted as necessary., e.g.
@@ -7,19 +12,19 @@
  *
  * Oxford commas are used.
  *
- * @param {Array<string>} items The items to be converted to text
- * @returns {string} The resulting textual string
+ * @param items The items to be converted to text
+ * @returns The resulting textual string
  */
-export function listToText(items: Array<string>): string {
+export function listToText(items: string[], joinWord = Conjuction.AND): string {
   let result;
   if (!items) return '';
   switch (items.length) {
     case 0: return '';
     case 1: return items[0];
-    case 2: return items.join(' and ');
+    case 2: return items.join(` ${joinWord} `);
     default:
       result = items.concat(); // Copies the array
-      result[result.length - 1] = `and ${result[result.length - 1]}`;
+      result[result.length - 1] = `${joinWord} ${result[result.length - 1]}`;
   }
   return result.join(', ');
 }

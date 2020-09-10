@@ -3,9 +3,10 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
-import { jobsEqual, cancelJob, hookCancelJob, adminUsername, adminCancelJob, hookAdminCancelJob } from '../helpers/jobs';
+import { jobsEqual, cancelJob, hookCancelJob, adminUsername, adminCancelJob, hookAdminCancelJob, hookJobStatus } from '../helpers/jobs';
 import { hookRedirect } from '../helpers/hooks';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
+import { stubTerminateWorkflows, hookTerminateWorkflowError } from '../helpers/workflows';
 
 const aJob: JobRecord = {
   username: 'joe',
@@ -30,14 +31,20 @@ const aJob: JobRecord = {
 describe('Canceling a job - user endpoint', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
+  let terminateWorkflowsStub;
   before(async function () {
+    terminateWorkflowsStub = stubTerminateWorkflows();
     await new Job(aJob).save(this.trx);
     this.trx.commit();
     this.trx = null;
   });
+  after(function () {
+    terminateWorkflowsStub.restore();
+  });
   const jobID = aJob.requestId;
   describe('For a user who is not logged in', function () {
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       this.res = await cancelJob(this.frontend, { jobID }).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
@@ -48,13 +55,23 @@ describe('Canceling a job - user endpoint', function () {
     it('sets the "redirect" cookie to the originally-requested resource', function () {
       expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/jobs/${jobID}/cancel`));
     });
+
+    it('does not terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
+    });
   });
 
   describe('For a logged-in user who owns the job', function () {
+    before(function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookCancelJob({ jobID, username: 'joe' });
     it('returns a redirect to the canceled job', function () {
       expect(this.res.statusCode).to.equal(302);
       expect(this.res.headers.location).to.include(`/jobs/${jobID}`);
+    });
+    it('terminates the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(1);
     });
     describe('When following the redirect to the canceled job', function () {
       hookRedirect('joe');
@@ -95,6 +112,7 @@ describe('Canceling a job - user endpoint', function () {
     joeJob2.requestId = uuid().toString();
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(joeJob2).save(this.trx);
       this.trx.commit();
       this.trx = null;
@@ -108,12 +126,20 @@ describe('Canceling a job - user endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.NotFoundError',
-        description: `Error: Unable to find job ${joeJob2.requestId}` });
+        description: `Error: Unable to find job ${joeJob2.requestId}`,
+      });
+    });
+
+    it('does not terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
   describe('when the job does not exist', function () {
     const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
+    before(function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookCancelJob({ jobID: idDoesNotExist, username: 'joe' });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(404);
@@ -123,12 +149,20 @@ describe('Canceling a job - user endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.NotFoundError',
-        description: `Error: Unable to find job ${idDoesNotExist}` });
+        description: `Error: Unable to find job ${idDoesNotExist}`,
+      });
+    });
+
+    it('does not try to terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
   describe('when the jobID is in an invalid format', function () {
     const notAJobID = 'foo';
+    before(function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookCancelJob({ jobID: notAJobID, username: 'joe' });
     it('returns a 400 HTTP bad request', function () {
       expect(this.res.statusCode).to.equal(400);
@@ -138,7 +172,12 @@ describe('Canceling a job - user endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.RequestValidationError',
-        description: `Error: Invalid format for Job ID '${notAJobID}'. Job ID must be a UUID.` });
+        description: `Error: Invalid format for Job ID '${notAJobID}'. Job ID must be a UUID.`,
+      });
+    });
+
+    it('does not try to terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
@@ -148,6 +187,7 @@ describe('Canceling a job - user endpoint', function () {
     successfulJob.status = JobStatus.SUCCESSFUL;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(successfulJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
@@ -162,7 +202,12 @@ describe('Canceling a job - user endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.ConflictError',
-        description: 'Error: Job status cannot be updated from successful to canceled.' });
+        description: 'Error: Job status cannot be updated from successful to canceled.',
+      });
+
+      it('does not try to terminate the workflow', function () {
+        expect(terminateWorkflowsStub.callCount).to.equal(0);
+      });
     });
   });
 
@@ -172,11 +217,11 @@ describe('Canceling a job - user endpoint', function () {
     failedJob.status = JobStatus.FAILED;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(failedJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
     });
-
     hookCancelJob({ jobID: failedJob.requestId, username: 'joe' });
     it('returns a 409 HTTP conflict', function () {
       expect(this.res.statusCode).to.equal(409);
@@ -186,7 +231,12 @@ describe('Canceling a job - user endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.ConflictError',
-        description: 'Error: Job status cannot be updated from failed to canceled.' });
+        description: 'Error: Job status cannot be updated from failed to canceled.',
+      });
+    });
+
+    it('does not try to terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
@@ -196,6 +246,7 @@ describe('Canceling a job - user endpoint', function () {
     canceledJob.status = JobStatus.CANCELED;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(canceledJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
@@ -210,7 +261,12 @@ describe('Canceling a job - user endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.ConflictError',
-        description: 'Error: Job status cannot be updated from canceled to canceled.' });
+        description: 'Error: Job status cannot be updated from canceled to canceled.',
+      });
+    });
+
+    it('does not try to terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 });
@@ -218,14 +274,20 @@ describe('Canceling a job - user endpoint', function () {
 describe('Canceling a job - admin endpoint', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
+  let terminateWorkflowsStub;
   before(async function () {
+    terminateWorkflowsStub = stubTerminateWorkflows();
     await new Job(aJob).save(this.trx);
     this.trx.commit();
     this.trx = null;
   });
+  after(function () {
+    terminateWorkflowsStub.restore();
+  });
   const jobID = aJob.requestId;
   describe('For a user who is not logged in', function () {
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       this.res = await adminCancelJob(this.frontend, { jobID }).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
@@ -236,9 +298,16 @@ describe('Canceling a job - admin endpoint', function () {
     it('sets the "redirect" cookie to the originally-requested resource', function () {
       expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/jobs/${jobID}/cancel`));
     });
+
+    it('does not terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
+    });
   });
 
   describe('For a logged-in user (but not admin) who owns the job', function () {
+    before(function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookAdminCancelJob({ jobID, username: 'joe' });
     it('returns a 403 forbidden because they are not an admin', function () {
       expect(this.res.statusCode).to.equal(403);
@@ -248,15 +317,27 @@ describe('Canceling a job - admin endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.ForbiddenError',
-        description: 'Error: You are not permitted to access this resource' });
+        description: 'Error: You are not permitted to access this resource',
+      });
+
+      it('does not terminate the workflow', function () {
+        expect(terminateWorkflowsStub.callCount).to.equal(0);
+      });
     });
   });
 
   describe('For a logged-in admin', function () {
+    before(function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookAdminCancelJob({ jobID, username: adminUsername });
     it('returns a redirect to the canceled job', function () {
       expect(this.res.statusCode).to.equal(302);
       expect(this.res.headers.location).to.include(`/admin/jobs/${jobID}`);
+    });
+
+    it('terminates the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(1);
     });
     describe('When following the redirect to the canceled job', function () {
       hookRedirect(adminUsername);
@@ -294,6 +375,9 @@ describe('Canceling a job - admin endpoint', function () {
 
   describe('when the job does not exist', function () {
     const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
+    before(function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookAdminCancelJob({ jobID: idDoesNotExist, username: adminUsername });
     it('returns a 404 HTTP Not found response', function () {
       expect(this.res.statusCode).to.equal(404);
@@ -303,12 +387,20 @@ describe('Canceling a job - admin endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.NotFoundError',
-        description: `Error: Unable to find job ${idDoesNotExist}` });
+        description: `Error: Unable to find job ${idDoesNotExist}`,
+      });
+    });
+
+    it('does not try to terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
   describe('when the jobID is in an invalid format', function () {
     const notAJobID = 'foo';
+    before(function () {
+      terminateWorkflowsStub.resetHistory();
+    });
     hookAdminCancelJob({ jobID: notAJobID, username: adminUsername });
     it('returns a 409 HTTP conflict', function () {
       expect(this.res.statusCode).to.equal(400);
@@ -318,7 +410,12 @@ describe('Canceling a job - admin endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.RequestValidationError',
-        description: `Error: Invalid format for Job ID '${notAJobID}'. Job ID must be a UUID.` });
+        description: `Error: Invalid format for Job ID '${notAJobID}'. Job ID must be a UUID.`,
+      });
+    });
+
+    it('does not try to terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
@@ -328,11 +425,11 @@ describe('Canceling a job - admin endpoint', function () {
     successfulJob.status = JobStatus.SUCCESSFUL;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(successfulJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
     });
-
     hookAdminCancelJob({ jobID: successfulJob.requestId, username: adminUsername });
     it('returns a 409 HTTP conflict', function () {
       expect(this.res.statusCode).to.equal(409);
@@ -342,7 +439,12 @@ describe('Canceling a job - admin endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.ConflictError',
-        description: 'Error: Job status cannot be updated from successful to canceled.' });
+        description: 'Error: Job status cannot be updated from successful to canceled.',
+      });
+    });
+
+    it('does not try to terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
@@ -352,6 +454,7 @@ describe('Canceling a job - admin endpoint', function () {
     failedJob.status = JobStatus.FAILED;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(failedJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
@@ -366,7 +469,12 @@ describe('Canceling a job - admin endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.ConflictError',
-        description: 'Error: Job status cannot be updated from failed to canceled.' });
+        description: 'Error: Job status cannot be updated from failed to canceled.',
+      });
+    });
+
+    it('does not try to terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 
@@ -376,6 +484,7 @@ describe('Canceling a job - admin endpoint', function () {
     canceledJob.status = JobStatus.CANCELED;
     hookTransaction();
     before(async function () {
+      terminateWorkflowsStub.resetHistory();
       await new Job(canceledJob).save(this.trx);
       this.trx.commit();
       this.trx = null;
@@ -390,7 +499,44 @@ describe('Canceling a job - admin endpoint', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
         code: 'harmony.ConflictError',
-        description: 'Error: Job status cannot be updated from canceled to canceled.' });
+        description: 'Error: Job status cannot be updated from canceled to canceled.',
+      });
+    });
+
+    it('does not try to terminate the workflow', function () {
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
+    });
+  });
+});
+
+describe('When canceling a job fails to terminate the argo workflow', function () {
+  hookServersStartStop({ skipEarthdataLogin: false });
+  hookTransaction();
+  hookTerminateWorkflowError();
+  before(async function () {
+    await new Job(aJob).save(this.trx);
+    this.trx.commit();
+    this.trx = null;
+  });
+
+  const jobID = aJob.requestId;
+  describe('For a logged-in user who owns the job', function () {
+    hookCancelJob({ jobID, username: 'joe' });
+    it('returns an internal server error', function () {
+      expect(this.res.statusCode).to.equal(500);
+      const error = JSON.parse(this.res.text);
+      expect(error).to.eql({
+        code: 'harmony.ServerError',
+        description: 'Error: Internal server error.',
+      });
+    });
+
+    describe('When requesting the job status', function () {
+      hookJobStatus({ jobID, username: 'joe' });
+      it('does not mark the job as canceled in the database', function () {
+        const job = new Job(JSON.parse(this.res.text));
+        expect(job.status).to.equal(JobStatus.RUNNING);
+      });
     });
   });
 });

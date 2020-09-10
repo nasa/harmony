@@ -20,7 +20,8 @@ Required:
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
 * [SQLite3 commandline](https://sqlite.org/index.html) - Used to create the local development and test databases. Install using your OS package manager, or [download precompiled binaries from SQLite](https://www.sqlite.org/download.html)
 * PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
-* Earthdata Login application
+* Earthdata Login application in UAT (Details below in the 'Set up Earthdata Login application for your local Harmony instance' section)
+
 
 Highly Recommended:
 * An Amazon Web Services account - Used for testing Harmony against object stores and running Harmony in AWS
@@ -72,7 +73,7 @@ $ git diff --no-index .env example/dotenv
 We recommend doing this any time you receive an example/dotenv update to ensure there are no new variables needed.
 
 ### Set up Earthdata Login application for your local Harmony instance
-To use Earthdata Login with a locally running Harmomy, you must first set up a new application using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS.  You will also need to add the "echo" group to the list of required application groups in order for CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update your .env file with the information from your Earthdata Login application. Additional information including OAUTH values to use when creating the application can be found in the example/dotenv file in this repository.
+To use Earthdata Login with a locally running Harmomy, you must first set up a new application in the Earthdata Login UAT environment using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS.  You will also need to add the "echo" group to the list of required application groups in order for CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update your .env file with the information from your Earthdata Login application. Additional information including OAUTH values to use when creating the application can be found in the example/dotenv file in this repository.
 
 ### Start localstack
 To avoid using real S3 buckets when testing locally, you can run [Localstack](https://github.com/localstack/localstack).  Our helper
@@ -127,53 +128,6 @@ database, you can create and/or migrate your database by setting `NODE_ENV=produ
 ```
 $ npx knex --cwd db migrate:latest
 ```
-
-### Run Harmony
-
-To run Harmony locally such that it reloads when files change (recommended during development), run
-
-```
-$ npm run start-dev
-```
-
-In production, we use `$ npm run start` which does the same but does not add the file watching and reloading behavior.
-
-You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend application receives requests from users, while the backend application receives callbacks from services.
-
-The application is not very useful at this point, since no backends have been configured, which is the next step. For now,`Ctrl-C` to exit Harmony.
-
-### Add a backend
-
-Clone the Harmony GDAL service repository into a peer directory of the main Harmony repo
-```
-$ cd ..
-$ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony-gdal.git
-```
-
-From the harmony-gdal project root, run
-```
-$ bin/build-image
-```
-
-This may take some time, but ultimately it will produce a local docker image tagged `harmony/gdal:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
-
-### Connect a client
-
-From the main Harmony repository directory, once again run
-
-```
-$ npm run start-dev
-```
-
-You should now be able to view the outputs of performing a simple transformation request.  Harmony has its own test collection
-set up for sanity checking harmony with the harmony-gdal backend.  This will fetch a granule from that collection converted to GeoTIFF:
-[http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST](http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST)
-
-You can also set up a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the
-`http://localhost:3000/C1233800302-EEDTEST/wms` as the "URL" field input in the "Connection Details"
-dialog when adding a new WMS connection.  Thereafter, expanding the connection should provide a list of layers obtained through a
-GetCapabilities call to the test server, and double-clicking a layer should add it to a map, making a WMS call to retrieve an appropriate
-PNG from the test server.
 
 ### Running Argo Workflows
 
@@ -250,21 +204,52 @@ minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
 
 This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
 
-#### Rebuilding the harmony-gdal image to work in minikube
+### Add a backend
 
-Clone the harmony-gdal repo `https://git.earthdata.nasa.gov/scm/harmony/harmony-gdal.git` and run the following command inside the created directory:
+Clone the Harmony GDAL service repository into a peer directory of the main Harmony repo
+```
+$ cd ..
+$ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony-gdal.git
+```
 
+From the harmony-gdal project root, run
 ```bash
 eval $(minikube docker-env)
 ```
 
-This will set up the proper environment for building the image. Next run the following command to build and locally install the image:
+This will set up the proper environment for building the image so that it may be used in minikube and Argo. Next run the following command to build and locally install the image:
 
 ```bash
 ./bin/build-image
 ```
 
-After restarting the Harmony front end you should be able to see Argo workflows running for queries against Argo configured collections in services.yml.
+This may take some time, but ultimately it will produce a local docker image tagged `harmony/gdal:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
+
+### Run Harmony
+
+To run Harmony locally such that it reloads when files change (recommended during development), run
+
+```
+$ npm run start-dev
+```
+
+In production, we use `$ npm run start` which does the same but does not add the file watching and reloading behavior.
+
+You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend application receives requests from users, while the backend application receives callbacks from services.
+
+### Connect a client
+
+You should now be able to view the outputs of performing a simple transformation request.  Harmony has its own test collection
+set up for sanity checking harmony with the harmony-gdal backend.  This will fetch a granule from that collection converted to GeoTIFF:
+[http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST](http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST)
+
+You can also set up a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the
+`http://localhost:3000/C1233800302-EEDTEST/wms` as the "URL" field input in the "Connection Details"
+dialog when adding a new WMS connection.  Thereafter, expanding the connection should provide a list of layers obtained through a
+GetCapabilities call to the test server, and double-clicking a layer should add it to a map, making a WMS call to retrieve an appropriate
+PNG from the test server.
+
+You can also use the Argo dashboard at http://localhost:2746 to visualize the workflows that were kicked off from your Harmony transformation requests.
 
 #### Local development of workflows using Visual Studio Code
 
