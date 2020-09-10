@@ -15,6 +15,7 @@ const statesToDefaultMessages = {
   running: 'The job is being processed',
   successful: 'The job has completed successfully',
   failed: 'The job failed with an unknown error',
+  canceled: 'The job was canceled',
 };
 
 const defaultMessages = Object.values(statesToDefaultMessages);
@@ -157,7 +158,7 @@ export class Job extends Record {
    * @returns a list of all of the user's jobs
    */
   static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
-  Promise<IWithPagination<Job[]>> {
+    Promise<IWithPagination<Job[]>> {
     return this.queryAll(transaction, { username }, currentPage, perPage);
   }
 
@@ -284,6 +285,16 @@ export class Job extends Record {
    */
   fail(message = statesToDefaultMessages.failed): void {
     this.updateStatus(JobStatus.FAILED, message);
+  }
+
+  /**
+   * Updates the status to canceled, providing the optional message.
+   * You must call `#save` to persist the change
+   *
+   * @param message - an error message
+   */
+  cancel(message = statesToDefaultMessages.canceled): void {
+    this.updateStatus(JobStatus.CANCELED, message);
   }
 
   /**

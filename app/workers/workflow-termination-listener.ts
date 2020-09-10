@@ -1,3 +1,4 @@
+import cancelAndSaveJob from 'util/job';
 import { WorkflowListener, WorkflowEvent, WorkflowListenerConfig, EventType } from './workflow-listener';
 import { getWorkflowByName } from '../util/workflows';
 
@@ -19,5 +20,7 @@ export default class WorkflowTerminationListener extends WorkflowListener {
     const workflow = await getWorkflowByName(event.involvedObject.name, this.logger);
     // call cancel on the Harmony services API
     const requestId = workflow.metadata.labels.request_id;
+
+    await cancelAndSaveJob(requestId, 'Canceled by admin', this.logger, true);
   }
 }

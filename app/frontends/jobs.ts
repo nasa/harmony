@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
 import isUUID from 'util/uuid';
-import { terminateWorkflows } from '../util/workflows';
+import cancelAndSaveJob from 'util/job';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink } from '../util/links';
@@ -147,26 +147,18 @@ export async function cancelJob(
   req.context.logger.info(`Cancel requested for job ${jobID} by user ${req.user}`);
   try {
     validateJobId(jobID);
-    let message;
-    let job: Job;
-    await db.transaction(async (tx) => {
-      const query: JobQuery = { requestId: jobID };
-      if (req.context.isAdminAccess) {
-        message = 'Canceled by admin.';
-      } else {
-        query.username = req.user;
-        message = 'Canceled by user.';
-      }
-      const jobs = await Job.queryAll(tx, query);
-      job = jobs.data[0];
-      if (job) {
-        job.updateStatus(JobStatus.CANCELED, message);
-        await job.save(tx);
-        await terminateWorkflows(job, req.context.logger);
-      } else {
-        throw new NotFoundError(`Unable to find job ${jobID}`);
-      }
-    });
+    let message: string;
+    let username: string;
+    const isAdmin = req.context.isAdminAccess;
+    if (isAdmin) {
+      message = 'Canceled by admin.';
+    } else {
+      message = 'Canceled by user.';
+      username = req.user;
+    }
+
+    await cancelAndSaveJob(jobID, message, req.context.logger, true, username);
+
     if (req.context.isAdminAccess) {
       res.redirect(`/admin/jobs/${jobID}`);
     } else {
