@@ -50,6 +50,7 @@
     "height": 225
   },
   "user": "test-user",
+  "accessToken": "ABCD1234567890",
   "subset": {
     "bbox": [
       -130,
@@ -68,5 +69,5 @@
     "start": "1999-01-01T10:00:00.000Z",
     "end": "2020-02-20T15:00:00.000Z"
   },
-  "version": "0.8.0"
+  "version": "0.9.0"
 }

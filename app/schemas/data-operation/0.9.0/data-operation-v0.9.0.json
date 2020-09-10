@@ -54,7 +54,7 @@
         },
         "accessToken": {
           "name": "Earthdata Login Token",
-          "description": "The EDL token of the user on behalf of whom Harmony is acting",
+          "description": "The encrypted EDL token of the user on behalf of whom Harmony is acting",
           "type": "string"
         },
         "client": {

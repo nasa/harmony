@@ -12,6 +12,7 @@ x-service: &default-service
     EDL_PASSWORD: ${EDL_PASSWORD}
     STAGING_BUCKET: ${STAGING_BUCKET}
     TEXT_LOGGER: ${TEXT_LOGGER}
+    LOCALSTACK_HOSTNAME: localhost
 
 services:
   localstack:

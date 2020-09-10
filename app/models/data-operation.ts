@@ -4,7 +4,7 @@ import Ajv from 'ajv';
 import _ from 'lodash';
 import logger from 'util/log';
 import { CmrUmmVariable } from '../util/cmr';
-import { Encrypter, Decrypter } from '../util/encrypter';
+import { Encrypter, Decrypter } from '../util/crypto';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -33,13 +33,9 @@ const schemaVersions = [
     schema: readSchema('0.9.0'),
     down: (model): unknown => {
       const revertedModel = _.cloneDeep(model);
-      revertedModel.sources.forEach((s) => {
-        if (s.variables) {
-          s.variables.forEach((v) => {
-            delete v.fullPath; // eslint-disable-line no-param-reassign
-          });
-        }
-      });
+      if (revertedModel.accessToken) {
+        delete revertedModel.accessToken; // eslint-disable-line no-param-reassign
+      }
 
       return revertedModel;
     },

@@ -8,7 +8,7 @@ import keysToLowerCase from 'util/object';
 import { RequestValidationError, NotFoundError } from 'util/errors';
 import * as services from 'models/services';
 import { NextFunction } from 'express';
-import { createEncrypter } from '../util/encrypter';
+import { createDecrypter, createEncrypter } from '../util/crypto';
 
 const readFile = promisify(fs.readFile);
 
@@ -193,7 +193,9 @@ function getMap(req, res, next: NextFunction): void {
 
   const dpi = query.dpi || query.map_resolution;
 
-  const operation = new DataOperation(createEncrypter('THIS IS NOT A GOOD KEY'));
+  // TODO: Inject secret key from the env
+  const operation = new DataOperation(null, createEncrypter('THIS IS NOT A GOOD KEY'),
+    createDecrypter('THIS IS NOT A GOOD KEY'));
 
   const variablesByCollection = {};
   const collectionVariables = query.layers.split(',');
