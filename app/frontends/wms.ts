@@ -9,6 +9,7 @@ import { RequestValidationError, NotFoundError } from 'util/errors';
 import * as services from 'models/services';
 import { NextFunction } from 'express';
 import { createDecrypter, createEncrypter } from '../util/crypto';
+import env from '../util/env';
 
 const readFile = promisify(fs.readFile);
 
@@ -194,8 +195,8 @@ function getMap(req, res, next: NextFunction): void {
   const dpi = query.dpi || query.map_resolution;
 
   // TODO: Inject secret key from the env
-  const operation = new DataOperation(null, createEncrypter('THIS IS NOT A GOOD KEY'),
-    createDecrypter('THIS IS NOT A GOOD KEY'));
+  const operation = new DataOperation(null, createEncrypter(env.sharedSecretKey),
+    createDecrypter(env.sharedSecretKey));
 
   const variablesByCollection = {};
   const collectionVariables = query.layers.split(',');

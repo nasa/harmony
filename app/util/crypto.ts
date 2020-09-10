@@ -1,10 +1,15 @@
 import nacl from 'tweetnacl';
 import utils from 'tweetnacl-util';
+import env from './env';
 
 export type Encrypter = (plaintext: string) => string;
 export type EncrypterConstructor = (key: string) => Encrypter;
 export type Decrypter = (plaintext: string) => string;
 export type DecrypterConstructor = (key: string) => Decrypter;
+
+if (env.sharedSecretKey !== null) {
+  throw new Error('Missing shared secret key for token encryption / decryption: Set SHARED_SECRET_KEY environment variable.');
+}
 
 export const createEncrypter: EncrypterConstructor = (key: string) => {
   const nonce = nacl.randomBytes(24);

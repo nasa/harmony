@@ -9,7 +9,7 @@ import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, Paramete
 import { parseAcceptHeader } from '../../util/content-negotiation';
 import HarmonyRequest from '../../models/harmony-request';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
-
+import env from '../../util/env';
 /**
  * Express middleware that responds to OGC API - Coverages coverage
  * rangeset requests.  Responds with the actual coverage data.
@@ -29,9 +29,8 @@ export default function getCoverageRangeset(
   req.context.frontend = 'ogcCoverages';
   const query = keysToLowerCase(req.query);
 
-  // TODO: Inject secret key from the env
-  const operation = new DataOperation(null, createEncrypter('THIS IS NOT A GOOD KEY'),
-    createDecrypter('THIS IS NOT A GOOD KEY'));
+  const operation = new DataOperation(null, createEncrypter(env.sharedSecretKey),
+    createDecrypter(env.sharedSecretKey));
 
   if (query.format) {
     operation.outputFormat = query.format;
