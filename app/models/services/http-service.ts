@@ -27,7 +27,7 @@ export default class HttpService extends BaseService<HttpServiceParams> {
     return new Promise((resolve, reject) => {
       try {
         const body = this.serializeOperation();
-        const Authorization = `Bearer ${this.operation.accessToken}`;
+        const Authorization = `Bearer ${this.operation.unencryptedAccessToken}`;
         const { url } = this.params;
         logger.info('Submitting HTTP backend service request', { url });
         const uri = new URL.URL(url);
