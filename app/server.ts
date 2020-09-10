@@ -12,6 +12,7 @@ import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/service-response-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
+import WorkflowTerminationListener from './workers/workflow-termination-listener';
 
 /**
  * Builds an express server with appropriate logging and default routing and starts the server
@@ -69,7 +70,7 @@ function buildServer(name, port, setupFn): Server {
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
 export function start(config: Record<string, string>):
-{ frontend: Server; backend: Server } {
+{ frontend: Server; backend: Server; workflowTerminationListener: WorkflowTerminationListener } {
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
 
@@ -93,7 +94,14 @@ export function start(config: Record<string, string>):
     app.get('/', ((req, res) => res.send('OK')));
   });
 
-  return { frontend, backend };
+  const workflowTerminationListenerConfig = {
+    namespace: 'argo',
+    logger: logger.child({ application: 'workflow-events' }),
+  };
+  const workflowTerminationListener = new WorkflowTerminationListener(workflowTerminationListenerConfig);
+  workflowTerminationListener.start();
+
+  return { frontend, backend, workflowTerminationListener };
 }
 
 /**
@@ -103,10 +111,11 @@ export function start(config: Record<string, string>):
  *   objects, as returned by start()
  * @returns {Promise<void>} A promise that completes when the servers close
  */
-export async function stop({ frontend, backend }): Promise<void> {
+export async function stop({ frontend, backend, workflowTerminationListener }): Promise<void> {
   await Promise.all([
     promisify(frontend.close.bind(frontend))(),
     promisify(backend.close.bind(backend))(),
+    workflowTerminationListener?.stop(),
   ]);
 }
 

@@ -5,12 +5,12 @@ import { NotFoundError } from './errors';
 import { terminateWorkflows } from './workflows';
 
 /**
- *
- * @param jobID
- * @param message
- * @param logger
- * @param shouldTerminateWorkflows
- * @param username
+ * Cancel the job and save it to the database
+ * @param jobID the id of job (requestId in the db)
+ * @param message the message to use for the canceled job
+ * @param logger the logger to use for logging errors/info
+ * @param shouldTerminateWorkflows true if the workflow(s) attached ot the job should be terminated
+ * @param username the name of the user requesting the cancel - null if the admin
  */
 export default async function cancelAndSaveJob(jobID: string, message: string, logger: Logger,
   shouldTerminateWorkflows: boolean, username?: string): Promise<void> {

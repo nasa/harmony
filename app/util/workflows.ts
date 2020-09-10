@@ -41,7 +41,7 @@ export async function getWorkflowsForJob(job: Job, logger: Logger): Promise<Work
 }
 
 /**
- * Retrieve the workflow with the i
+ * Retrieve the workflow with the given name
  * @param name
  * @param logger
  */
@@ -49,7 +49,8 @@ export async function getWorkflowByName(name: string, logger: Logger): Promise<W
   const url = `${env.argoUrl}/api/v1/workflows/argo/${name}`;
   try {
     const response = await axios.default.get(url);
-    return response.data?.items?.[0];
+    console.log(response);
+    return response.data;
   } catch (e) {
     logger.error(`Failed to retrieve workflow: ${JSON.stringify(e.response?.data)}`);
     throw e;

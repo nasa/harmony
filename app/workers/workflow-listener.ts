@@ -22,11 +22,13 @@ export enum EventType {
 
 export interface WorkflowListenerConfig {
   // The type of event to listen for
-  eventType: EventType;
+  eventType?: EventType;
   // Regex matching the `reason` field of the event
-  reasonRegex: string;
+  reasonRegex?: string;
   // Regex matching the `message` field of the event
-  messageRegex: string;
+  messageRegex?: string;
+
+  namespace: string;
 
   cluster?: Cluster;
 
@@ -45,20 +47,19 @@ export interface WorkflowEvent {
   metadata:
   {
     name: string;
-    namespace: 'argo';
+    namespace: string;
     uid: string;
     creationTimestamp: string;
   };
   involvedObject:
   {
     kind: 'Workflow';
-    namespace: 'argo';
+    namespace: string;
     name: string;
     uid: string;
   };
   reason: string;
   message: string;
-  source: { component: 'workflow-controller' };
   firstTimestamp: string;
   lastTimestamp: string;
   count: number;
@@ -82,6 +83,8 @@ export abstract class WorkflowListener implements Worker {
 
   eventType: EventType;
 
+  namespace: string;
+
   logger: Logger;
 
   constructor(config: WorkflowListenerConfig) {
@@ -90,6 +93,7 @@ export abstract class WorkflowListener implements Worker {
     this.eventType = config.eventType;
     this.cluster = config.cluster;
     this.context = config.context;
+    this.namespace = config.namespace;
     this.logger = config.logger;
   }
 
@@ -112,7 +116,7 @@ export abstract class WorkflowListener implements Worker {
       // optional query parameters can go here
       {
         allowWatchBookmarks: true,
-        namespaced: 'argo',
+        namespaced: this.namespace,
       },
       // this callback is called for each received object
       (type, event) => {
