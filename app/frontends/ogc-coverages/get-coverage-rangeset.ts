@@ -29,8 +29,9 @@ export default function getCoverageRangeset(
   req.context.frontend = 'ogcCoverages';
   const query = keysToLowerCase(req.query);
 
-  const operation = new DataOperation(null, createEncrypter(env.sharedSecretKey),
-    createDecrypter(env.sharedSecretKey));
+  const encrypter = createEncrypter(env.sharedSecretKey);
+  const decrypter = createDecrypter(env.sharedSecretKey);
+  const operation = new DataOperation(null, encrypter, decrypter);
 
   if (query.format) {
     operation.outputFormat = query.format;

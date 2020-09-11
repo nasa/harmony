@@ -194,9 +194,9 @@ function getMap(req, res, next: NextFunction): void {
 
   const dpi = query.dpi || query.map_resolution;
 
-  // TODO: Inject secret key from the env
-  const operation = new DataOperation(null, createEncrypter(env.sharedSecretKey),
-    createDecrypter(env.sharedSecretKey));
+  const encrypter = createEncrypter(env.sharedSecretKey);
+  const decrypter = createDecrypter(env.sharedSecretKey);
+  const operation = new DataOperation(null, encrypter, decrypter);
 
   const variablesByCollection = {};
   const collectionVariables = query.layers.split(',');

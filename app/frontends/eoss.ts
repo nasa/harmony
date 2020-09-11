@@ -49,8 +49,11 @@ export function addOpenApiRoutes(app: Router): void {
         }
         req.context.logger = req.context.logger.child({ component: 'eoss.getGranule' });
         const query = keysToLowerCase(req.query);
-        // TODO: inject secret key from env
-        const operation = new DataOperation(null, createEncrypter(env.sharedSecretKey), createDecrypter(env.sharedSecretKey));
+
+        const encrypter = createEncrypter(env.sharedSecretKey);
+        const decrypter = createDecrypter(env.sharedSecretKey);
+        const operation = new DataOperation(null, encrypter, decrypter);
+
         operation.crs = query.crs;
         if (query.format) {
           operation.outputFormat = query.format;

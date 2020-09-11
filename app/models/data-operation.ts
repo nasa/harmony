@@ -153,10 +153,18 @@ export default class DataOperation {
    * Creates an instance of DataOperation.
    *
    * @param {object} [model=null] The initial model, useful when receiving serialized operations
+   * @param [encrypter=identity] A function used to encrypt the accessToken
+   * @param [decrypter=identity] A function used to decrypt the accessToken
+   *
+   * Note that `decrypter(encrypter(message))` should equal `message`.
+   *
    * @memberof DataOperation
    */
-  constructor(model: object = null, encrypter: Encrypter = _.identity,
-    decrypter: Decrypter = _.identity) {
+  constructor(
+    model: object = null,
+    encrypter: Encrypter = _.identity,
+    decrypter: Decrypter = _.identity,
+  ) {
     this.model = model || {
       sources: [],
       format: {},
@@ -511,7 +519,7 @@ export default class DataOperation {
    * @memberof DataOperation
    */
   set accessToken(accessToken: string) {
-    this.model.accessToken = this.encrypter(accessToken);
+    this.model.accessToken = accessToken ? this.encrypter(accessToken) : accessToken;
   }
 
   /**
@@ -521,7 +529,7 @@ export default class DataOperation {
    * @memberof DataOperation
    */
   get unencryptedAccessToken(): string {
-    return this.decrypter(this.accessToken);
+    return this.model.accessToken ? this.decrypter(this.accessToken) : this.model.accessToken;
   }
 
   /**
