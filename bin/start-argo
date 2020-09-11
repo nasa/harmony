@@ -66,6 +66,16 @@ data:
   password: $(echo -n "${EDL_PASSWORD}" | base64)
 EOF
 
+cat <<EOF | kubectl -n argo apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: shared-secret
+type: Opaque
+data:
+  secret-key: $(echo -n "${SHARED_SECRET_KEY}" | base64)
+EOF
+
 kubectl apply -n argo -f ./config/local-argo-deployment.yml
 
 # wait for argo to start up
