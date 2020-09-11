@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
+import { EventType } from 'app/workers/workflow-listener';
 import WorkflowTerminationListener from 'app/workers/workflow-termination-listener';
 import * as job from 'util/job';
 import * as sinon from 'sinon';
@@ -286,7 +287,7 @@ describe('workflow termination listener gets a', async function () {
   let getWorkflowByNameStub: sinon.SinonStub;
   let cancelAndSaveJobStub: sinon.SinonStub;
 
-  before(function () {
+  beforeEach(function () {
     listener = new WorkflowTerminationListener({ namespace: 'argo', logger: log });
     const workflow = { metadata: { labels: { request_id: 'foo' } } } as Workflow;
     getWorkflowByNameStub = sinon.stub(uworkflows, 'getWorkflowByName')
@@ -295,32 +296,50 @@ describe('workflow termination listener gets a', async function () {
       .callsFake(async () => { });
   });
 
-  after(function () {
+  afterEach(function () {
     if (getWorkflowByNameStub.restore) getWorkflowByNameStub.restore();
     if (cancelAndSaveJobStub.restore) cancelAndSaveJobStub.restore();
   });
 
+  describe('termination event', async function () {
+    it('processes the event', async function () {
+      expect(listener.shouldHandleEvent(EventType.ADDED, workflowTerminationEvent)).to.be.true;
+    });
+
+    it('and terminates the workflow', async function () {
+      await listener.handleEvent(workflowRunningEvent);
+      expect(getWorkflowByNameStub.callCount).to.equal(1);
+      expect(cancelAndSaveJobStub.callCount).to.equal(1);
+    });
+  });
+
   describe('non-termination event', async function () {
-    await listener.handleEvent(workflowRunningEvent);
     it('ignores the event', async function () {
-      expect(getWorkflowByNameStub.callCount).to.equal(0);
-      expect(cancelAndSaveJobStub.callCount).to.equal(0);
+      expect(listener.shouldHandleEvent(EventType.ADDED, workflowRunningEvent)).to.be.false;
     });
   });
 
   describe('pod event', async function () {
-    await listener.handleEvent(podEvent);
     it('ignores the event', async function () {
-      expect(getWorkflowByNameStub.callCount).to.equal(0);
-      expect(cancelAndSaveJobStub.callCount).to.equal(0);
+      expect(listener.shouldHandleEvent(EventType.ADDED, podEvent)).to.be.false;
     });
   });
 
-  describe('workflow termination event', async function () {
-    await listener.handleEvent(workflowTerminationEvent);
-    it('handles the event', async function () {
-      expect(getWorkflowByNameStub.callCount).to.equal(1);
-      expect(cancelAndSaveJobStub.callCount).to.equal(1);
+  describe('MODIFIED type event', async function () {
+    it('ignores the event', async function () {
+      expect(listener.shouldHandleEvent(EventType.MODIFIED, workflowTerminationEvent)).to.be.false;
+    });
+  });
+
+  describe('DELETED type event', async function () {
+    it('ignores the event', async function () {
+      expect(listener.shouldHandleEvent(EventType.DELETED, workflowTerminationEvent)).to.be.false;
+    });
+  });
+
+  describe('BOOKMARK type event', async function () {
+    it('ignores the event', async function () {
+      expect(listener.shouldHandleEvent(EventType.BOOKMARK, workflowTerminationEvent)).to.be.false;
     });
   });
 });

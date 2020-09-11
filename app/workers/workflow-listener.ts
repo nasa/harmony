@@ -103,6 +103,17 @@ export abstract class WorkflowListener implements Worker {
    */
   async abstract handleEvent(event: WorkflowEvent): Promise<void>;
 
+  /**
+   * Filter to determine if this listener should handle the given event
+   * @param type Event type
+   * @param event  the workflow event
+   */
+  shouldHandleEvent(type: string, event: WorkflowEvent): boolean {
+    return type === this.eventType
+      && this.reasonRegex.test(event.reason)
+      && this.messageRegex.test(event.message);
+  }
+
   async start(): Promise<void> {
     const kc = new k8s.KubeConfig();
     if (this.cluster) {
@@ -124,9 +135,7 @@ export abstract class WorkflowListener implements Worker {
       },
       // this callback is called for each received object
       (type, event) => {
-        if (type === this.eventType
-          && this.reasonRegex.test(event.reason)
-          && this.messageRegex.test(event.message)) {
+        if (this.shouldHandleEvent(type, event)) {
           this.handleEvent(event);
         }
       },
