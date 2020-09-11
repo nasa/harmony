@@ -78,7 +78,7 @@ export default async function serviceInvoker(
 
   req.operation.user = req.user || 'anonymous';
   req.operation.client = env.harmonyClientId;
-  req.operation.accessToken = req.accessToken;
+  req.operation.accessToken = req.accessToken || '';
   const service = services.buildService(req.context.serviceConfig, req.operation);
 
   let serviceResult = null;
