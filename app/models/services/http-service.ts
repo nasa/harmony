@@ -96,6 +96,7 @@ export default class HttpService extends BaseService<HttpServiceParams> {
         request.write(body);
         request.end();
       } catch (e) {
+        logger.error(e);
         reject(e);
       }
     });

@@ -33,7 +33,7 @@ const schemaVersions = [
     schema: readSchema('0.9.0'),
     down: (model): unknown => {
       const revertedModel = _.cloneDeep(model);
-      if (revertedModel.accessToken) {
+      if ('accessToken' in revertedModel) {
         delete revertedModel.accessToken; // eslint-disable-line no-param-reassign
       }
 
