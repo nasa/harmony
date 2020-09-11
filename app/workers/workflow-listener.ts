@@ -43,7 +43,7 @@ interface Abortable {
 }
 
 export interface WorkflowEvent {
-  kind: 'Event';
+  kind: string;
   metadata:
   {
     name: string;
@@ -53,7 +53,7 @@ export interface WorkflowEvent {
   };
   involvedObject:
   {
-    kind: 'Workflow';
+    kind: string;
     namespace: string;
     name: string;
     uid: string;
@@ -97,7 +97,11 @@ export abstract class WorkflowListener implements Worker {
     this.logger = config.logger;
   }
 
-  async abstract eventCallback(event: WorkflowEvent): Promise<void>;
+  /**
+   * Handle an argo workflow event
+   * @param event The workflow event to handle
+   */
+  async abstract handleEvent(event: WorkflowEvent): Promise<void>;
 
   async start(): Promise<void> {
     const kc = new k8s.KubeConfig();
@@ -123,7 +127,7 @@ export abstract class WorkflowListener implements Worker {
         if (type === this.eventType
           && this.reasonRegex.test(event.reason)
           && this.messageRegex.test(event.message)) {
-          this.eventCallback(event);
+          this.handleEvent(event);
         }
       },
       // this callback is called if the listener terminates

@@ -3,9 +3,13 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
+import WorkflowTerminationListener from 'app/workers/workflow-termination-listener';
+import * as job from 'util/job';
+import * as sinon from 'sinon';
 import { hookTransaction } from '../helpers/db';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
 import { Workflow, getWorkflowsForJob, terminateWorkflows } from '../../app/util/workflows';
+import * as uworkflows from '../../app/util/workflows';
 import log from '../../app/util/log';
 
 const singleWorkflowJobRecord: JobRecord = {
@@ -170,6 +174,153 @@ describe('Getting job workflows', async function () {
 
     it('returns two workflows', async function () {
       expect(workflows.length).to.equal(2);
+    });
+  });
+});
+
+const workflowTerminationEvent = {
+  kind: 'Event',
+  apiVersion: 'v1',
+  metadata:
+  {
+    name: 'harmony-gdal-pgh5d.1633be7dd112af77',
+    namespace: 'argo',
+    selfLink: '/api/v1/namespaces/argo/events/harmony-gdal-pgh5d.1633be7dd112af77',
+    uid: '704ddcdd-c437-4d28-bfcd-36981531d5e9',
+    resourceVersion: '157675',
+    creationTimestamp: '2020-09-11T13:42:20Z',
+    managedFields: [[Object]],
+  },
+  involvedObject:
+  {
+    kind: 'Workflow',
+    namespace: 'argo',
+    name: 'harmony-gdal-pgh5d',
+    uid: '3dec5f9e-fc96-48a1-be49-47ac11e81638',
+    apiVersion: 'argoproj.io/v1alpha1',
+    resourceVersion: '157661',
+  },
+  reason: 'WorkflowFailed',
+  message: 'Stopped with strategy \'Terminate\'',
+  source: { component: 'workflow-controller' },
+  firstTimestamp: '2020-09-11T13:42:20Z',
+  lastTimestamp: '2020-09-11T13:42:20Z',
+  count: 1,
+  type: 'Warning',
+  eventTime: null,
+  reportingComponent: '',
+  reportingInstance: '',
+};
+
+const workflowRunningEvent = {
+  kind: 'Event',
+  apiVersion: 'v1',
+  metadata:
+  {
+    name: 'harmony-gdal-pgh5d.1633be741105be56',
+    namespace: 'argo',
+    selfLink: '/api/v1/namespaces/argo/events/harmony-gdal-pgh5d.1633be741105be56',
+    uid: 'd87fb386-96cb-433e-8d0f-4524483c1752',
+    resourceVersion: '157644',
+    creationTimestamp: '2020-09-11T13:41:38Z',
+    managedFields: [[Object]],
+  },
+  involvedObject:
+  {
+    kind: 'Workflow',
+    namespace: 'argo',
+    name: 'harmony-gdal-pgh5d',
+    uid: '3dec5f9e-fc96-48a1-be49-47ac11e81638',
+    apiVersion: 'argoproj.io/v1alpha1',
+    resourceVersion: '157643',
+  },
+  reason: 'WorkflowRunning',
+  message: 'Workflow Running',
+  source: { component: 'workflow-controller' },
+  firstTimestamp: '2020-09-11T13:41:38Z',
+  lastTimestamp: '2020-09-11T13:41:38Z',
+  count: 1,
+  type: 'Normal',
+  eventTime: null,
+  reportingComponent: '',
+  reportingInstance: '',
+};
+
+const podEvent = {
+  kind: 'Event',
+  apiVersion: 'v1',
+  metadata:
+  {
+    name: 'harmony-gdal-pgh5d-1059139216.1633be746f80882c',
+    namespace: 'argo',
+    selfLink: '/api/v1/namespaces/argo/events/harmony-gdal-pgh5d-1059139216.1633be746f80882c',
+    uid: '1b6ae38a-ad6e-44a5-8479-6a46cc153722',
+    resourceVersion: '157656',
+    creationTimestamp: '2020-09-11T13:41:39Z',
+    managedFields: [[Object]],
+  },
+  involvedObject:
+  {
+    kind: 'Pod',
+    namespace: 'argo',
+    name: 'harmony-gdal-pgh5d-1059139216',
+    uid: '6f699c17-c8be-4fca-8864-07943917fb31',
+    apiVersion: 'v1',
+    resourceVersion: '157646',
+    fieldPath: 'spec.containers{main}',
+  },
+  reason: 'Started',
+  message: 'Started container main',
+  source: { component: 'kubelet', host: 'minikube' },
+  firstTimestamp: '2020-09-11T13:41:39Z',
+  lastTimestamp: '2020-09-11T13:41:39Z',
+  count: 1,
+  type: 'Normal',
+  eventTime: null,
+  reportingComponent: '',
+  reportingInstance: '',
+};
+
+describe('workflow termination listener gets a', async function () {
+  let listener: WorkflowTerminationListener;
+  let getWorkflowByNameStub: sinon.SinonStub;
+  let cancelAndSaveJobStub: sinon.SinonStub;
+
+  before(function () {
+    listener = new WorkflowTerminationListener({ namespace: 'argo', logger: log });
+    const workflow = { metadata: { labels: { request_id: 'foo' } } } as Workflow;
+    getWorkflowByNameStub = sinon.stub(uworkflows, 'getWorkflowByName')
+      .callsFake(async () => workflow);
+    cancelAndSaveJobStub = sinon.stub(job, 'default')
+      .callsFake(async () => { });
+  });
+
+  after(function () {
+    if (getWorkflowByNameStub.restore) getWorkflowByNameStub.restore();
+    if (cancelAndSaveJobStub.restore) cancelAndSaveJobStub.restore();
+  });
+
+  describe('non-termination event', async function () {
+    await listener.handleEvent(workflowRunningEvent);
+    it('ignores the event', async function () {
+      expect(getWorkflowByNameStub.callCount).to.equal(0);
+      expect(cancelAndSaveJobStub.callCount).to.equal(0);
+    });
+  });
+
+  describe('pod event', async function () {
+    await listener.handleEvent(podEvent);
+    it('ignores the event', async function () {
+      expect(getWorkflowByNameStub.callCount).to.equal(0);
+      expect(cancelAndSaveJobStub.callCount).to.equal(0);
+    });
+  });
+
+  describe('workflow termination event', async function () {
+    await listener.handleEvent(workflowTerminationEvent);
+    it('handles the event', async function () {
+      expect(getWorkflowByNameStub.callCount).to.equal(1);
+      expect(cancelAndSaveJobStub.callCount).to.equal(1);
     });
   });
 });

@@ -158,7 +158,7 @@ export class Job extends Record {
    * @returns a list of all of the user's jobs
    */
   static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
-    Promise<IWithPagination<Job[]>> {
+  Promise<IWithPagination<Job[]>> {
     return this.queryAll(transaction, { username }, currentPage, perPage);
   }
 

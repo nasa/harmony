@@ -16,7 +16,7 @@ export default class WorkflowTerminationListener extends WorkflowListener {
     super(fullConfig);
   }
 
-  async eventCallback(event: WorkflowEvent): Promise<void> {
+  async handleEvent(event: WorkflowEvent): Promise<void> {
     // retrieve the workflow using the name in the event
     const workflow = await getWorkflowByName(event.involvedObject.name, this.logger);
     // cancel the job (without triggering an argo workflow termination)
