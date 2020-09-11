@@ -31,6 +31,6 @@ export const createDecrypter: DecrypterConstructor = (key: string) => {
 
     const plaintext = nacl.secretbox.open(ciphertext, nonce, secretKey);
 
-    return utils.encodeUTF8(plaintext);
+    return plaintext ? utils.encodeUTF8(plaintext) : null;
   };
 };
