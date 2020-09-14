@@ -118,7 +118,7 @@ export default abstract class BaseService<ServiceParamType> {
   async invoke(
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
   ): Promise<InvocationResult> {
-    let job;
+    let job: Job;
     logger.info(`Invoking service for operation ${JSON.stringify(this.operation)}`);
     try {
       job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
@@ -158,9 +158,9 @@ export default abstract class BaseService<ServiceParamType> {
     logger: Logger,
     requestId: string,
   ): Promise<InvocationResult> {
-    let result;
+    let result: InvocationResult;
     try {
-      let job;
+      let job: Job;
       do {
         // Sleep and poll for completion.  We could also use SNS or similar for a faster response
         await new Promise((resolve) => setTimeout(resolve, env.syncRequestPollIntervalMs));

@@ -59,10 +59,14 @@ spec:
             secretKeyRef:
               name: argo-edl-credentials
               key: password
+        - name: SHARED_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: shared-secret
+              key: secret-key
         - name: STAGING_BUCKET
           value:  "{{inputs.parameters.STAGING_BUCKET}}"
         - name: TEXT_LOGGER
           value:  "{{inputs.parameters.TEXT_LOGGER}}"
         - name: BACKEND_HOST
           value:  "{{inputs.parameters.BACKEND_HOST}}"
-  

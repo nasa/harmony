@@ -111,17 +111,14 @@ export interface CmrGranulesResponse extends CmrResponse {
 /**
  * Create a token header for the given access token string
  *
- * @param {string} token The access token for the user
- * @returns {object} An object with an 'Echo-token' key and the token as the value,
+ * @param token The access token for the user
+ * @returns An object with an 'Authorization' key and 'Bearer token' as the value,
  * or an empty object if the token is not set
  * @private
  */
 function _makeTokenHeader(token: string): object {
-  return cmrApiConfig.useToken && token ? {
-    'Echo-token': `${token}:${process.env.OAUTH_CLIENT_ID}`,
-  } : {};
+  return cmrApiConfig.useToken && token ? { Authorization: `Bearer ${token}` } : {};
 }
-
 /**
  * Handle any errors in the CMR response
  *
