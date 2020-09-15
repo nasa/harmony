@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import { get as getIn } from 'lodash';
+import _, { get as getIn } from 'lodash';
 
 import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
@@ -608,6 +608,7 @@ export function chooseServiceConfig(
     // can do part of what the operation requested
     serviceConfig = filterServiceConfigs(operation, context, configs, requiredFilterFns);
     if (serviceConfig.name !== 'noOpService') {
+      serviceConfig = _.cloneDeep(serviceConfig);
       serviceConfig.message = bestEffortMessage;
     }
   }

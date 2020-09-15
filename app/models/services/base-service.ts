@@ -225,8 +225,10 @@ export default abstract class BaseService<ServiceParamType> {
       isAsync: !this.isSynchronous,
     });
     job.addStagingBucketLink(stagingLocation);
-    if (this.message || this.warningMessage) {
+    if (this.message) {
       job.message = this.warningMessage ? `${this.message} ${this.warningMessage}` : this.message;
+    } else if (this.warningMessage) {
+      job.message = this.warningMessage;
     }
     return job;
   }
