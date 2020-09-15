@@ -122,14 +122,14 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         this.operation.outputFormat = 'application/netcdf';
       });
 
-      it('returns the no-op service', function () {
+      it('chooses the service that supports netcdf output, but not spatial subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
+        expect(serviceConfig.name).to.equal('first-service');
       });
 
-      it('indicates the reason for choosing the no op service is the combination of spatial subsetting and format', function () {
+      it('indicates that it could not clip based on the spatial extent', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: spatial subsetting and reformatting to application/netcdf on C123-TEST is unsupported');
+        expect(serviceConfig.message).to.equal('spatial extents were used to constrain results, but unable to crop files to match the extent');
       });
     });
 
@@ -144,20 +144,20 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
     });
 
-    describe('and the request needs both shapefile subsetting and png output, but no service supports that combination', function () {
+    describe('and the request needs both shapefile subsetting and reprojection, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.geojson = { pretend: 'geojson' };
-        this.operation.outputFormat = 'image/png';
+        this.operation.crs = 'EPSG:4326';
       });
 
-      it('returns the no-op service', function () {
+      it('returns the service that supports reprojection, but not shapefile subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('noOpService');
+        expect(serviceConfig.name).to.equal('third-service');
       });
 
-      it('indicates the reason for choosing the no op service is the combination of shapefile subsetting and format', function () {
+      it('indicates that it could not clip based on the spatial extent', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: shapefile subsetting and reformatting to image/png on C123-TEST is unsupported');
+        expect(serviceConfig.message).to.equal('spatial extents were used to constrain results, but unable to crop files to match the extent');
       });
     });
 
@@ -172,9 +172,27 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
     });
 
-    describe('and the request needs both reprojection and spatial subsetting, but no service supports that combination', function () {
+    describe('and the request needs both reprojection and png output, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.crs = 'EPSG:4326';
+        this.operation.outputFormat = 'image/png';
+      });
+
+      it('returns the no-op service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('indicates the reason for choosing the no op service is the combination of reprojection and reformatting', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to image/png on C123-TEST is unsupported');
+      });
+    });
+
+    describe('and the request needs spatial subsetting, reprojection, and png output, but no service supports that combination', function () {
+      beforeEach(function () {
+        this.operation.crs = 'EPSG:4326';
+        this.operation.outputFormat = 'image/png';
         this.operation.boundingRectangle = [0, 0, 10, 10];
       });
 
@@ -183,9 +201,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         expect(serviceConfig.name).to.equal('noOpService');
       });
 
-      it('indicates the reason for choosing the no op service is the combination of reprojection and spatial subsetting', function () {
+      it('indicates the reason for choosing the no op service is the combination of reprojection and reformatting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: spatial subsetting and reprojection on C123-TEST is unsupported');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to image/png on C123-TEST is unsupported');
       });
     });
   });
@@ -373,6 +391,66 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       const service = buildService(serviceConfig, this.operation) as AsynchronizerService<unknown>;
       expect(service.constructor.name).to.equal('AsynchronizerService');
       expect(service.SyncServiceClass.name).to.equal('ArgoService');
+    });
+  });
+
+  describe('when no services can support spatial or shapefile subsetting for the collection', function () {
+    beforeEach(function () {
+      const collectionId = 'C123-TEST';
+      const operation = new DataOperation();
+      operation.addSource(collectionId);
+      this.operation = operation;
+      this.config = [
+        {
+          name: 'a-service',
+          type: { name: 'argo' },
+          collections: [collectionId],
+        },
+      ];
+    });
+
+    describe('and the request needs spatial subsetting only', function () {
+      beforeEach(function () {
+        this.operation.boundingRectangle = [0, 0, 10, 10];
+      });
+      it('returns the no op service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const service = buildService(serviceConfig, this.operation);
+        expect(service.constructor.name).to.equal('NoOpService');
+        expect(service.operation).to.equal(this.operation);
+      });
+
+      it('indicates the reason for choosing the no op service is that spatial subsetting can not be performed', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('the requested combination of operations: spatial subsetting on C123-TEST is unsupported');
+      });
+    });
+
+    describe('and the request needs shapefile subsetting only', function () {
+      beforeEach(function () {
+        this.operation.geojson = { pretend: 'geojson' };
+      });
+      it('returns the no op service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        const service = buildService(serviceConfig, this.operation);
+        expect(service.constructor.name).to.equal('NoOpService');
+        expect(service.operation).to.equal(this.operation);
+      });
+
+      it('indicates the reason for choosing the no op service is that shapefile subsetting can not be performed', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.message).to.equal('the requested combination of operations: shapefile subsetting on C123-TEST is unsupported');
+      });
     });
   });
 });
