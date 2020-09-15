@@ -334,7 +334,7 @@ function filterVariableSubsettingMatches(
 
 /**
  * Returns any services that support variable subsetting from the list of configs
- * @param operation The operation to perform. Note that this function may mutate the operation.
+ * @param operation The operation to perform.
  * @param context Additional context that's not part of the operation, but influences the
  *     choice regarding the service to use
  * @param configs All service configurations that have matched up to this call
@@ -349,20 +349,12 @@ function filterOutputFormatMatches(
   configs: ServiceConfig<unknown>[],
   requestedOperations: string[],
 ): ServiceConfig<unknown>[] {
-  // If the user requested a certain output format
   let services = [];
-  if (operation.outputFormat
-    || (context && context.requestedMimeTypes && context.requestedMimeTypes.length > 0)) {
+  if (requiresReformatting(operation, context)) {
+    const fmts = operation.outputFormat ? [operation.outputFormat] : context.requestedMimeTypes;
+    requestedOperations.push(`reformatting to ${listToText(fmts, Conjuction.OR)}`);
     const outputFormat = selectFormat(operation, context, configs);
-    let formats = operation.outputFormat ? [operation.outputFormat] : context.requestedMimeTypes;
-    // Requests for mime-type * or */* are not requesting reformatting
-    formats = formats?.filter((f) => f !== '*' && f !== '*/*');
-    if (formats?.length > 0) {
-      requestedOperations.push(`reformatting to ${listToText(formats, Conjuction.OR)}`);
-    }
     if (outputFormat) {
-      // eslint-disable-next-line no-param-reassign
-      operation.outputFormat = outputFormat;
       services = selectServicesForFormat(outputFormat, configs);
     }
   } else {
@@ -499,11 +491,10 @@ const allFilterFns = [
   filterSpatialSubsettingMatches,
   filterShapefileSubsettingMatches,
   filterReprojectionMatches,
-  // This filter must be last because it mutates the operation, choosing a format based on
-  // the accepted MimeTypes and the remaining services that could support the operation. If
-  // it ran earlier we could potentially eliminate services that a different accepted MimeType
-  // would have allowed. We should re-evaluate when we implement chaining to see if this
-  // approach continues to make sense.
+  // This filter must be last because it chooses a format based on the accepted MimeTypes and
+  // the remaining services that could support the operation. If it ran earlier we could
+  // potentially eliminate services that a different accepted MimeType would have allowed. We
+  // should re-evaluate when we implement chaining to see if this approach continues to make sense.
   filterOutputFormatMatches,
 ];
 
@@ -514,6 +505,7 @@ const requiredFilterFns = [
   filterCollectionMatches,
   filterVariableSubsettingMatches,
   filterReprojectionMatches,
+  // See caveat above in allFilterFns about why this filter must be applied last
   filterOutputFormatMatches,
 ];
 
@@ -552,6 +544,11 @@ function filterServiceConfigs(
   try {
     for (const filterFn of filterFns) {
       matches = filterFn(operation, context, matches, requestedOperations);
+    }
+    const outputFormat = selectFormat(operation, context, matches);
+    if (outputFormat) {
+      operation.outputFormat = outputFormat; // eslint-disable-line no-param-reassign
+      matches = selectServicesForFormat(outputFormat, matches);
     }
     serviceConfig = matches[0];
   } catch (e) {
