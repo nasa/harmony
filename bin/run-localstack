@@ -26,6 +26,7 @@ start_script="$tmpdir/startup.sh"
 
 echo "awslocal s3 mb s3://$stagingBucket" >> "$start_script"
 echo "awslocal s3 mb s3://$uploadBucket" >> "$start_script"
+
 echo "Wrote localstack startup script to $start_script"
 
 # Localstack execution

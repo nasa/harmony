@@ -4,6 +4,7 @@ import Ajv from 'ajv';
 import _ from 'lodash';
 import logger from 'util/log';
 import { CmrUmmVariable } from '../util/cmr';
+import { Encrypter, Decrypter } from '../util/crypto';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -27,6 +28,18 @@ function readSchema(version: string): object {
  *      be unable to downgrade from the version
  */
 const schemaVersions = [
+  {
+    version: '0.9.0',
+    schema: readSchema('0.9.0'),
+    down: (model): unknown => {
+      const revertedModel = _.cloneDeep(model);
+      if ('accessToken' in revertedModel) {
+        delete revertedModel.accessToken; // eslint-disable-line no-param-reassign
+      }
+
+      return revertedModel;
+    },
+  },
   {
     version: '0.8.0',
     schema: readSchema('0.8.0'),
@@ -132,18 +145,34 @@ export default class DataOperation {
 
   cmrHits?: number;
 
+  encrypter?: Encrypter;
+
+  decrypter?: Decrypter;
+
   /**
    * Creates an instance of DataOperation.
    *
    * @param {object} [model=null] The initial model, useful when receiving serialized operations
+   * @param [encrypter=identity] A function used to encrypt the accessToken
+   * @param [decrypter=identity] A function used to decrypt the accessToken
+   *
+   * Note that `decrypter(encrypter(message))` should equal `message`.
+   *
    * @memberof DataOperation
    */
-  constructor(model: object = null) {
+  constructor(
+    model: object = null,
+    encrypter: Encrypter = _.identity,
+    decrypter: Decrypter = _.identity,
+  ) {
     this.model = model || {
       sources: [],
       format: {},
       subset: {},
     };
+
+    this.encrypter = encrypter;
+    this.decrypter = decrypter;
   }
 
   /**
@@ -467,6 +496,40 @@ export default class DataOperation {
    */
   set user(user: string) {
     this.model.user = user;
+  }
+
+  /**
+   * Gets the EDL token of the user requesting the service
+   *
+   * @returns The EDL token of the service invoker
+   * @memberof DataOperation
+   */
+  get accessToken(): string {
+    return this.model.accessToken;
+  }
+
+  /**
+   * Sets the EDL token of the user requesting the service. Calling the
+   * getter will return the encrypted token as the default behavior. This
+   * is to ensure that the token is encrypted when serialized and that the
+   * unencrypted token is not accidentally serialized, written to logs, etc.
+   * To get the original token, use the the `unencryptedAccessToken` method.
+   *
+   * @param user The EDL token of the service invoker
+   * @memberof DataOperation
+   */
+  set accessToken(accessToken: string) {
+    this.model.accessToken = accessToken ? this.encrypter(accessToken) : accessToken;
+  }
+
+  /**
+   * Gets the decrypted EDL token of the user requesting the service
+   *
+   * @returns The unencrypted EDL token of the service invoker
+   * @memberof DataOperation
+   */
+  get unencryptedAccessToken(): string {
+    return this.model.accessToken ? this.decrypter(this.accessToken) : this.model.accessToken;
   }
 
   /**

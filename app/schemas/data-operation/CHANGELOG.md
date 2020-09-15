@@ -1,3 +1,7 @@
+## [0.9.0] - UNMERGED
+### Added
+- DataOperation.accessToken - The EarthData Login token of the user who is making the request.
+
 ## [0.8.0] -2020-05-11
 ### Added
 - variable.fullPath - The variable's absolute path within the file, including hierarchy.  Derived from UMM-Var group path combined with name.

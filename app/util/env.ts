@@ -30,6 +30,7 @@ interface HarmonyEnv {
   callbackUrlRoot: string;
   syncRequestPollIntervalMs: number;
   defaultImagePullPolicy: string;
+  sharedSecretKey: string;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -88,6 +89,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['CALLBACK_URL_ROOT', null],
   ['SYNC_REQUEST_POLL_INTERVAL_MS', 100],
   ['DEFAULT_IMAGE_PULL_POLICY', 'Always'],
+  ['SHARED_SECRET_KEY', null],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases

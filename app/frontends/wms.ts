@@ -8,6 +8,8 @@ import keysToLowerCase from 'util/object';
 import { RequestValidationError, NotFoundError } from 'util/errors';
 import * as services from 'models/services';
 import { NextFunction } from 'express';
+import { createDecrypter, createEncrypter } from '../util/crypto';
+import env from '../util/env';
 
 const readFile = promisify(fs.readFile);
 
@@ -192,7 +194,9 @@ function getMap(req, res, next: NextFunction): void {
 
   const dpi = query.dpi || query.map_resolution;
 
-  const operation = new DataOperation();
+  const encrypter = createEncrypter(env.sharedSecretKey);
+  const decrypter = createDecrypter(env.sharedSecretKey);
+  const operation = new DataOperation(null, encrypter, decrypter);
 
   const variablesByCollection = {};
   const collectionVariables = query.layers.split(',');

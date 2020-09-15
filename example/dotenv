@@ -27,9 +27,9 @@ BACKEND_PORT=3001
 # backend load balancer when running on AWS. When running locally on a Mac
 # or Linux, use the appropriate value below.
 # Mac OS X:
-CALLBACK_URL_ROOT=http://host.docker.internal:3001
+# CALLBACK_URL_ROOT=http://host.docker.internal:3001
 # Linux:
-# CALLBACK_URL_ROOT=http://localhost:3001
+CALLBACK_URL_ROOT=http://localhost:3001
 
 # The CMR Endpoint to use (e.g. URL for local, SIT, UAT, or production)
 CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
@@ -192,6 +192,12 @@ STAGING_BUCKET=local-staging-bucket
 # all environments being used to fetch data
 EDL_USERNAME=
 EDL_PASSWORD=
+
+# Random string used for encrypting and decrypting Earthdata login tokens
+# sent to backend services
+# `cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
+# to generate a 32 character random string
+SHARED_SECRET_KEY=
 
 # Development only: hostname to be used to connect to the host OS, used in
 # configuring localstack.  Once services fully use docker-compose, we can
