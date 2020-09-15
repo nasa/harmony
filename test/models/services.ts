@@ -172,10 +172,10 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
     });
 
-    describe('and the request needs both reprojection and png output, but no service supports that combination', function () {
+    describe('and the request needs both reprojection and netcdf output, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.crs = 'EPSG:4326';
-        this.operation.outputFormat = 'image/png';
+        this.operation.outputFormat = 'application/netcdf';
       });
 
       it('returns the no-op service', function () {
@@ -185,14 +185,14 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the combination of reprojection and reformatting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to image/png on C123-TEST is unsupported');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to application/netcdf on C123-TEST is unsupported');
       });
     });
 
-    describe('and the request needs spatial subsetting, reprojection, and png output, but no service supports that combination', function () {
+    describe('and the request needs spatial subsetting, reprojection, and netcdf output, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.crs = 'EPSG:4326';
-        this.operation.outputFormat = 'image/png';
+        this.operation.outputFormat = 'application/netcdf';
         this.operation.boundingRectangle = [0, 0, 10, 10];
       });
 
@@ -203,7 +203,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the combination of reprojection and reformatting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to image/png on C123-TEST is unsupported');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to application/netcdf on C123-TEST is unsupported');
       });
     });
   });

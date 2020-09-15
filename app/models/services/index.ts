@@ -5,7 +5,7 @@ import { get as getIn } from 'lodash';
 
 import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
-import { isMimeTypeAccepted } from '../../util/content-negotiation';
+import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
 import { listToText, Conjuction } from '../../util/string';
 import ArgoService from './argo-service';
@@ -147,6 +147,29 @@ function selectFormat(
     }
   }
   return outputFormat;
+}
+
+/**
+ * Returns true if the operation requires reformatting
+ * @param operation The operation to perform.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @returns true if the provided operation requires reformatting and false otherwise
+ * @private
+ */
+function requiresReformatting(operation: DataOperation, context: RequestContext): boolean {
+  if (operation.outputFormat) {
+    return true;
+  }
+
+  if (context.requestedMimeTypes && context.requestedMimeTypes.length > 0) {
+    const anyMimeTypes = context.requestedMimeTypes.filter((m) => allowsAny(m));
+    if (anyMimeTypes.length === 0) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -470,7 +493,7 @@ function unsupportedCombinationMessage(error: UnsupportedOperation): string {
 // 'configs' ServiceConfig[] configs All service configurations that have matched so far.
 // 'requestedOperations' string[] Operations requested to be performed. Used for messages
 //     when no services could be found to fulfill the request.
-const operationFilterFns = [
+const allFilterFns = [
   filterCollectionMatches,
   filterVariableSubsettingMatches,
   filterSpatialSubsettingMatches,
@@ -484,6 +507,18 @@ const operationFilterFns = [
   filterOutputFormatMatches,
 ];
 
+// In some cases we want to do as much as we can for a request rather than rejecting it
+// because not all of the requested services could be applied. This list of functions omits
+// filter functions that are considered optional for matching.
+const requiredFilterFns = [
+  filterCollectionMatches,
+  filterVariableSubsettingMatches,
+  filterReprojectionMatches,
+  filterOutputFormatMatches,
+];
+
+const bestEffortMessage = 'spatial extents were used to constrain results, but unable to crop files to match the extent';
+
 /**
  * Returns true if the collectionId has available backends
  *
@@ -492,6 +527,68 @@ const operationFilterFns = [
  */
 export function isCollectionSupported(collection: CmrCollection): boolean {
   return serviceConfigs.find((sc) => sc.collections.includes(collection.id)) !== undefined;
+}
+
+/**
+ * Returns the service configuration to use for the given data operation and request context
+ * by using the provided filter functions.
+ * @param operation The operation to perform. Note that this function may mutate the operation.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs The configuration to use for finding the operation, with all variables
+ *     resolved (default: the contents of config/services.yml)
+ * @returns the service configuration to use
+ * @private
+ */
+function filterServiceConfigs(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[],
+  filterFns: Function[],
+): ServiceConfig<unknown> {
+  let serviceConfig;
+  let matches = configs;
+  const requestedOperations = [];
+  try {
+    for (const filterFn of filterFns) {
+      matches = filterFn(operation, context, matches, requestedOperations);
+    }
+    serviceConfig = matches[0];
+  } catch (e) {
+    if (e instanceof UnsupportedOperation) {
+      noOpService.message = unsupportedCombinationMessage(e);
+      logger.info(`Returning download links because ${noOpService.message}.`);
+      serviceConfig = noOpService;
+    } else {
+      throw e;
+    }
+  }
+  return serviceConfig;
+}
+
+/**
+ * Whether the operation should be strictly matched against the service capabilities.
+ * For example if the request contains spatial subsetting and reformatting it is
+ * optional for the spatial subsetting to be performed but required for the reformatting.
+ *
+ * @param operation The operation to perform.
+ * @param context Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @returns true if the operation needs to have all capabilities strictly matched
+ *     and false otherwise
+ * @private
+ */
+function requiresStrictCapabilitiesMatching(
+  operation: DataOperation,
+  context: RequestContext,
+): boolean {
+  let strictMatching = false;
+  if ((!requiresSpatialSubsetting(operation) && !requiresShapefileSubsetting(operation))
+      || (!requiresVariableSubsetting(operation) && !requiresReprojection(operation)
+         && !requiresReformatting(operation, context))) {
+    strictMatching = true;
+  }
+  return strictMatching;
 }
 
 /**
@@ -508,21 +605,13 @@ export function chooseServiceConfig(
   context: RequestContext,
   configs: ServiceConfig<unknown>[] = serviceConfigs,
 ): ServiceConfig<unknown> {
-  let serviceConfig;
-  let matches = configs;
-  const requestedOperations = [];
-  try {
-    for (const filterFn of operationFilterFns) {
-      matches = filterFn(operation, context, matches, requestedOperations);
-    }
-    serviceConfig = matches[0];
-  } catch (e) {
-    if (e instanceof UnsupportedOperation) {
-      noOpService.message = unsupportedCombinationMessage(e);
-      logger.info(`Returning download links because ${noOpService.message}.`);
-      serviceConfig = noOpService;
-    } else {
-      throw e;
+  let serviceConfig = filterServiceConfigs(operation, context, configs, allFilterFns);
+  if (serviceConfig.name === 'noOpService' && !requiresStrictCapabilitiesMatching(operation, context)) {
+    // if we couldn't find a matching service, make a best effort to find a service that
+    // can do part of what the operation requested
+    serviceConfig = filterServiceConfigs(operation, context, configs, requiredFilterFns);
+    if (serviceConfig.name !== 'noOpService') {
+      serviceConfig.message = bestEffortMessage;
     }
   }
   return serviceConfig;
