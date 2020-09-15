@@ -509,7 +509,7 @@ const requiredFilterFns = [
   filterOutputFormatMatches,
 ];
 
-const bestEffortMessage = 'spatial extents were used to constrain results, but unable to crop files to match the extent';
+const bestEffortMessage = 'Spatial extents were used to constrain results, but unable to crop files to match the extents.';
 
 /**
  * Returns true if the collectionId has available backends
