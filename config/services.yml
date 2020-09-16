@@ -56,6 +56,7 @@ https://cmr.uat.earthdata.nasa.gov:
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
     collections:
+      - C1225776654-ASF
       - C1207038647-ASF
       - C1233629671-ASF
     capabilities:
@@ -91,7 +92,6 @@ https://cmr.uat.earthdata.nasa.gov:
     collections:
       - C1233800302-EEDTEST
       - C1234088182-EEDTEST
-      - C1225776654-ASF
     capabilities:
       subsetting:
         bbox: true
