@@ -1,7 +1,10 @@
+import _ from 'lodash';
 import { Logger } from 'winston';
 import * as axios from 'axios';
-import BaseService from './base-service';
+import BaseService, { functionalSerializeOperation } from './base-service';
 import InvocationResult from './invocation-result';
+import { batchOperations } from '../../util/batch';
+
 import env = require('../../util/env');
 
 export interface ArgoServiceParams {
@@ -10,6 +13,7 @@ export interface ArgoServiceParams {
   template: string;
   image: string;
   imagePullPolicy?: string;
+  batchSize?: number;
   env: { [key: string]: string };
 }
 
@@ -29,7 +33,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
   async _run(logger: Logger): Promise<InvocationResult> {
     const url = `${this.params.argo_url}/api/v1/workflows/${this.params.namespace}`;
     const { user, requestId } = this.operation;
-    const input = this.serializeOperation();
 
     const dockerEnv = [];
     for (const variable of Object.keys(this.params.env)) {
@@ -39,8 +42,12 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       }
     }
 
-    const operation = JSON.parse(input);
+    const batchSize = this.params.batchSize || 5;
+    const batch = batchOperations(this.operation, batchSize);
+    const ops = batch.map((op) => JSON.parse(functionalSerializeOperation(op, this.config)));
 
+    const input = this.serializeOperation();
+    const operation = JSON.parse(input);
     const exitHandlerScript = `
     if [ "{{workflow.status}}" == "Succeeded" ]
     then
@@ -51,10 +58,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     `.trim();
 
     let params = [
-      {
-        name: 'operation',
-        value: input,
-      },
       {
         name: 'callback',
         value: operation.callback,
@@ -98,8 +101,49 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
                       template: this.params.template,
                     },
                     arguments: {
-                      parameters: params,
+                      parameters: [
+                        {
+                          name: 'operation',
+                          value: '{{item}}',
+                        },
+                        {
+                          name: 'BACKEND_HOST',
+                          value: this.params.env.BACKEND_HOST,
+                        },
+                        {
+                          name: 'TEXT_LOGGER',
+                          value: this.params.env.TEXT_LOGGER,
+                        },
+                        {
+                          name: 'STAGING_PATH',
+                          value: this.params.env.STAGING_PATH,
+                        },
+                        {
+                          name: 'AWS_DEFAULT_REGION',
+                          value: this.params.env.AWS_DEFAULT_REGION,
+                        }, {
+                          name: 'STAGING_BUCKET',
+                          value: this.params.env.STAGING_BUCKET,
+                        },
+                        {
+                          name: 'USE_LOCALSTACK',
+                          value: this.params.env.USE_LOCALSTACK,
+                        },
+                        {
+                          name: 'image-pull-policy',
+                          value: this.params.imagePullPolicy || env.defaultImagePullPolicy,
+                        },
+                        {
+                          name: 'image',
+                          value: this.params.image,
+                        },
+                        {
+                          name: 'callback',
+                          value: this.operation.callback,
+                        },
+                      ],
                     },
+                    withItems: ops,
                   },
                 ],
               ],
@@ -124,8 +168,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       await axios.default.post(url, body);
     } catch (e) {
       logger.error(`Argo workflow creation failed: ${JSON.stringify(e.response?.data)}`);
-      logger.error(`Argo url: ${url}`);
-      logger.error(`Workflow body: ${JSON.stringify(body)}`);
+      // logger.error(`Argo url: ${url}`);
+      // logger.error(`Workflow body: ${JSON.stringify(body)}`);
       throw e;
     }
 

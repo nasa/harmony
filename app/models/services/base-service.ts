@@ -58,6 +58,18 @@ export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): numbe
 }
 
 /**
+ *
+ * @param op
+ * @param config
+ */
+export function functionalSerializeOperation(
+  op: DataOperation,
+  config: ServiceConfig<unknown>,
+): string {
+  return op.serialize(config.data_operation_version, config.data_url_pattern);
+}
+
+/**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
  * callback plumbing.
  *
@@ -288,6 +300,6 @@ export default abstract class BaseService<ServiceParamType> {
    */
   serializeOperation(): string {
     const { operation, config } = this;
-    return operation.serialize(config.data_operation_version, config.data_url_pattern);
+    return functionalSerializeOperation(operation, config);
   }
 }
