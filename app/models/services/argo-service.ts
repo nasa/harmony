@@ -101,47 +101,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
                       template: this.params.template,
                     },
                     arguments: {
-                      parameters: [
-                        {
-                          name: 'operation',
-                          value: '{{item}}',
-                        },
-                        {
-                          name: 'BACKEND_HOST',
-                          value: this.params.env.BACKEND_HOST,
-                        },
-                        {
-                          name: 'TEXT_LOGGER',
-                          value: this.params.env.TEXT_LOGGER,
-                        },
-                        {
-                          name: 'STAGING_PATH',
-                          value: this.params.env.STAGING_PATH,
-                        },
-                        {
-                          name: 'AWS_DEFAULT_REGION',
-                          value: this.params.env.AWS_DEFAULT_REGION,
-                        }, {
-                          name: 'STAGING_BUCKET',
-                          value: this.params.env.STAGING_BUCKET,
-                        },
-                        {
-                          name: 'USE_LOCALSTACK',
-                          value: this.params.env.USE_LOCALSTACK,
-                        },
-                        {
-                          name: 'image-pull-policy',
-                          value: this.params.imagePullPolicy || env.defaultImagePullPolicy,
-                        },
-                        {
-                          name: 'image',
-                          value: this.params.image,
-                        },
-                        {
-                          name: 'callback',
-                          value: this.operation.callback,
-                        },
-                      ],
+                      parameters: [...params, { name: 'operation', value: '{{item}}' }],
                     },
                     withItems: ops,
                   },
@@ -168,8 +128,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       await axios.default.post(url, body);
     } catch (e) {
       logger.error(`Argo workflow creation failed: ${JSON.stringify(e.response?.data)}`);
-      // logger.error(`Argo url: ${url}`);
-      // logger.error(`Workflow body: ${JSON.stringify(body)}`);
+      logger.error(`Argo url: ${url}`);
+      logger.error(`Workflow body: ${JSON.stringify(body)}`);
       throw e;
     }
 
