@@ -129,7 +129,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates that it could not clip based on the spatial extent', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('Spatial extents were used to constrain results, but unable to crop files to match the extents.');
+        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial bounds you requested.');
       });
     });
 
@@ -157,7 +157,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates that it could not clip based on the spatial extent', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('Spatial extents were used to constrain results, but unable to crop files to match the extents.');
+        expect(serviceConfig.message).to.equal('Data in output files may extend outside the spatial bounds you requested.');
       });
     });
 

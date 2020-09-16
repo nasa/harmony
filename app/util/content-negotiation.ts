@@ -1,5 +1,3 @@
-const anyWildcard1 = '*/*';
-const anyWildcard2 = '*';
 const defaultQuality = 1.0;
 const qualityValueRegex = /^q=(.*)$/;
 
@@ -25,6 +23,9 @@ export function parseAcceptHeader(acceptHeader: string): Array<object> {
   // and if there is a tie the first in the list is used
   return mimeTypeMaps.sort((a, b) => (b.qualityValue - a.qualityValue));
 }
+
+const anyWildcard1 = '*/*';
+const anyWildcard2 = '*';
 
 /**
  * Returns true if the accept header allows any mime-type
