@@ -9,7 +9,6 @@ import { isMimeTypeAccepted } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
 import { listToText, Conjuction } from '../../util/string';
 import ArgoService from './argo-service';
-import AsynchronizerService from './asynchronizer-service';
 import HttpService from './http-service';
 import NoOpService from './no-op-service';
 import DataOperation from '../data-operation';
@@ -78,9 +77,6 @@ export function buildService(
     throw new NotFoundError(`Could not find an appropriate service class for type "${serviceConfig.type}"`);
   }
 
-  if (serviceConfig.type.synchronous_only || serviceConfig.type.single_granule_requests) {
-    return new AsynchronizerService(ServiceClass, serviceConfig, operation);
-  }
   return new ServiceClass(serviceConfig, operation);
 }
 

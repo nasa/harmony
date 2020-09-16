@@ -31,6 +31,7 @@ interface HarmonyEnv {
   syncRequestPollIntervalMs: number;
   defaultImagePullPolicy: string;
   sharedSecretKey: string;
+  defaultBatchSize: number;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -88,6 +89,8 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['OAUTH_HOST', 'https://uat.urs.earthdata.nasa.gov'],
   ['CALLBACK_URL_ROOT', null],
   ['SYNC_REQUEST_POLL_INTERVAL_MS', 100],
+  // default to no batching
+  ['DEFAULT_BATCH_SIZE', 0],
   ['DEFAULT_IMAGE_PULL_POLICY', 'Always'],
   ['SHARED_SECRET_KEY', null],
 ].forEach((value) => makeConfigVar.apply(this, value));

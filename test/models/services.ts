@@ -4,7 +4,6 @@ import { stub } from 'sinon';
 import { getMaxSynchronousGranules, getMaxAsynchronousGranules } from 'models/services/base-service';
 import DataOperation from '../../app/models/data-operation';
 import { chooseServiceConfig, buildService } from '../../app/models/services';
-import AsynchronizerService from '../../app/models/services/asynchronizer-service';
 import env from '../../app/util/env';
 
 describe('services.chooseServiceConfig and services.buildService', function () {
@@ -349,30 +348,6 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     it('indicates the reason for choosing the no op service is the collection not being configured for services', function () {
       const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
       expect(serviceConfig.message).to.equal('no operations can be performed on C123-TEST');
-    });
-  });
-
-  describe('when the service configuration indicates the service can only handle synchronous, one-granule requests', function () {
-    beforeEach(function () {
-      const collectionId = 'C123-TEST';
-      const operation = new DataOperation();
-      operation.addSource(collectionId);
-      this.operation = operation;
-      this.config = [
-        {
-          name: 'matching-service',
-          type: { name: 'argo', synchronous_only: true },
-          collections: [collectionId],
-        },
-      ];
-    });
-
-    it('returns a service configured to allow asynchronous calls through a wrapper', function () {
-      const op = this.operation;
-      const serviceConfig = chooseServiceConfig(op, {}, this.config);
-      const service = buildService(serviceConfig, this.operation) as AsynchronizerService<unknown>;
-      expect(service.constructor.name).to.equal('AsynchronizerService');
-      expect(service.SyncServiceClass.name).to.equal('ArgoService');
     });
   });
 });

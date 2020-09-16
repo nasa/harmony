@@ -79,6 +79,7 @@ https://cmr.uat.earthdata.nasa.gov:
         template: harmony-gdal
         image: !Env ${GDAL_IMAGE}
         imagePullPolicy: !Env ${GDAL_IMAGE_PULL_POLICY}
+        batchSize: 1
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -207,6 +208,7 @@ https://cmr.uat.earthdata.nasa.gov:
     enabled: !Env ${EXAMPLE_SERVICES}
     type:
       name: http
+      # TODO can I remove these lines now?
       # Uncomment the following line to make the example service only return synchronous
       # results in order to test our sync -> async conversion.
       #synchronous_only: true

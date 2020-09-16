@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { assert } from 'console';
 import DataOperation from 'models/data-operation';
 
 /**
@@ -19,9 +18,14 @@ export function operationGranuleCount(op: DataOperation): number {
  * @param batchSize The limit on the number of granules in a batch
  */
 export function batchOperations(op: DataOperation, batchSize: number): DataOperation[] {
-  assert(batchSize > 0);
+  if (batchSize < 0) {
+    throw new Error('Batch size must be positive or unlimited (0)');
+  }
 
-  if (operationGranuleCount(op) <= batchSize) return [op];
+  // if the number of granules requested is smaller than the allowed batch size of
+  // the allowed batch size if unlimited (-1) then return a batch just consisting of the
+  // original operation
+  if (operationGranuleCount(op) <= batchSize || batchSize === 0) return [op];
 
   const batch: DataOperation[] = [];
 
