@@ -152,7 +152,6 @@ Add an entry to [services.yml](../config/services.yml) under each CMR environmen
   data_operation_version: '0.8.0' # The version of the data-operation messaging schema to use
   type:                           # Configuration for service invocation
     name: queue                   # The type of service invocation, either "queue" or "http"
-    synchronous_only: true        # Indicates the service can only handle synchronous, one-granule requests (default: false)
     params:                       # Parameters specific to the service invocation type
       queue_url: !Env ${BASE_QUEUE_URL}harmony-gdal-queue  # The SQS queue to listen to for requests
   data_url_pattern: '.*'          # An optional (default = .*) regular expression for a substring that desired data URLs should contain
