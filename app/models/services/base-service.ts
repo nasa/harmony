@@ -25,7 +25,6 @@ export interface ServiceConfig<ServiceParamType> {
   type?: {
     name: string;
     params?: ServiceParamType;
-    synchronous_only?: boolean;
     single_granule_requests?: boolean;
   };
   data_url_pattern?: string;

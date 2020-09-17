@@ -1,0 +1,63 @@
+{
+  "sources": [{
+    "collection": "C1233800302-EEDTEST",
+    "variables": [{
+      "id": "V1233801716-EEDTEST",
+      "name": "blue_var",
+      "fullPath": "blue_var"
+    }],
+    "granules": [{
+      "id": "G1233800375-EEDTEST",
+      "name": "004_07_0065ff_north_america",
+      "urls": [
+        "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/004_07_0065ff_north_america.nc",
+        "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/004_07_0065ff_north_america.tif"
+      ],
+      "bbox": [
+        -180,
+        -90,
+        180,
+        90
+      ],
+      "temporal": {
+        "start": "2020-01-04T14:00:00.000Z",
+        "end": "2020-01-04T15:59:59.000Z"
+      }
+    }]
+  }],
+  "format": {
+    "mime": "image/png",
+    "interpolation": "near",
+    "scaleExtent": {
+      "x": {
+        "min": 0.5,
+        "max": 125
+      },
+      "y": {
+        "min": 52,
+        "max": 75.22
+      }
+    },
+    "scaleSize": {
+      "x": 14.2,
+      "y": 35
+    },
+    "width": 120,
+    "height": 225
+  },
+  "subset": {
+    "bbox": [
+      -20,
+      -10,
+      20,
+      10
+    ]
+  },
+  "requestId": "5fab13b7-cff1-4fb3-83ac-e4fe95775701",
+  "user": "jnorton1",
+  "client": "harmony-local",
+  "accessToken": "ABCD1234567890",
+  "isSynchronous": false,
+  "stagingLocation": "s3://localStagingBucket/public/harmony/gdal/232110b5-5267-4b31-9057-70afd0673f65/",
+  "callback": "http://example.com/callback"
+}

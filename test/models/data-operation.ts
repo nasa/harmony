@@ -1,33 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import * as fs from 'fs';
-import * as path from 'path';
 import DataOperation from 'models/data-operation';
-
-const samplesDir = './test/resources/data-operation-samples';
-
-const CURRENT_SCHEMA_VERSION = '0.9.0';
-
-const versions = [
-  '0.9.0',
-  '0.8.0',
-  '0.7.0',
-  '0.6.0',
-  '0.5.0',
-  '0.4.0',
-];
-
-/**
- * Reads and parses a file in the schemas directory as JSON
- *
- * @param filename The filename in the schemas directory to read
- * @returns the parsed JSON
- */
-function parseSchemaFile(
-  filename: string = null,
-): any { // eslint-disable-line @typescript-eslint/no-explicit-any
-  return JSON.parse(fs.readFileSync(path.join(samplesDir, filename)).toString());
-}
+import { CURRENT_SCHEMA_VERSION, parseSchemaFile, versions } from 'test/helpers/data-operation';
 
 const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 // bbox has one too many numbers
