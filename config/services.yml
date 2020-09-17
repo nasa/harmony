@@ -112,6 +112,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: podaac-l2-subsetter
         image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        imagePullPolicy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -257,6 +258,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: podaac-ps3
         image: !Env ${PODAAC_PS3_IMAGE}
+        imagePullPolicy: !Env ${PODAAC_PS3_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
