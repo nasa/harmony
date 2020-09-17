@@ -103,6 +103,7 @@ export default abstract class BaseService<ServiceParamType> {
       const prefix = `public/${config.name || this.constructor.name}/${uuid()}/`;
       this.operation.stagingLocation = defaultObjectStore().getUrlString(env.stagingBucket, prefix);
     }
+    this.message = config.message;
   }
 
   /**
@@ -235,7 +236,9 @@ export default abstract class BaseService<ServiceParamType> {
       isAsync: !this.isSynchronous,
     });
     job.addStagingBucketLink(stagingLocation);
-    if (this.warningMessage) {
+    if (this.message) {
+      job.message = this.warningMessage ? `${this.message} ${this.warningMessage}` : this.message;
+    } else if (this.warningMessage) {
       job.message = this.warningMessage;
     }
     return job;
