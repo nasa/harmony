@@ -57,9 +57,10 @@ export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): numbe
 }
 
 /**
- *
- * @param op
- * @param config
+ * Serialize the given operation with the given config.
+ * @param op The operation to serialize
+ * @param config The config to use when serializing the operation
+ * @returns The serialized operation
  */
 export function functionalSerializeOperation(
   op: DataOperation,
