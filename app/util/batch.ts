@@ -22,31 +22,31 @@ export function batchOperations(op: DataOperation, batchSize: number): DataOpera
     throw new Error('Batch size must be positive or unlimited (0)');
   }
 
-  // if the number of granules requested is smaller than the allowed batch size of
-  // the allowed batch size if unlimited (-1) then return a batch just consisting of the
+  // if the number of granules requested is smaller than the allowed batch size or
+  // the allowed batch size is unlimited (0) then return a batch just consisting of the
   // original operation
   if (operationGranuleCount(op) <= batchSize || batchSize === 0) return [op];
 
-  const batch: DataOperation[] = [];
+  const collectionBatch: DataOperation[] = [];
 
   for (let i = 0; i < op.sources.length; i++) {
     const newOp = _.cloneDeep(op);
     newOp.sources = [newOp.sources[i]];
-    batch.push(newOp);
+    collectionBatch.push(newOp);
   }
 
   const newBatch: DataOperation[] = [];
 
-  for (const batchOp of batch) {
-    let batchIndex = 0;
+  for (const batchOp of collectionBatch) {
+    let currentIndex = 0;
     const granuleCount = batchOp.sources[0].granules.length;
-    while (batchIndex * batchSize < granuleCount) {
-      const currentBatchSize = Math.min(granuleCount - batchSize * batchIndex, batchSize);
+    while (currentIndex < granuleCount) {
+      const currentBatchSize = Math.min(granuleCount - currentIndex, batchSize);
       const newOp = _.cloneDeep(batchOp);
       newOp.sources[0].granules = batchOp.sources[0].granules
-        .slice(batchIndex * batchSize, batchIndex * batchSize + currentBatchSize);
+        .slice(currentIndex, currentIndex + currentBatchSize);
       newBatch.push(newOp);
-      batchIndex += 1;
+      currentIndex += currentBatchSize;
     }
   }
 

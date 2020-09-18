@@ -44,10 +44,15 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
 
     const batchSize = _.get(this.config, 'batch_size', env.defaultBatchSize);
     const batch = batchOperations(this.operation, batchSize);
+    // we need to serialize the batch operations to get just the models and then deserialize
+    // them so we can pass them to the Argo looping/concurrency mechanism in the workflow
+    // which expects objects not strings
     const ops = batch.map((op) => JSON.parse(functionalSerializeOperation(op, this.config)));
 
-    const input = this.serializeOperation();
-    const operation = JSON.parse(input);
+    // similarly we need to get at the model for the operation to retrieve parameters needed to
+    // construct the workflow
+    const serializedOperation = this.serializeOperation();
+    const operation = JSON.parse(serializedOperation);
     const exitHandlerScript = `
     if [ "{{workflow.status}}" == "Succeeded" ]
     then
