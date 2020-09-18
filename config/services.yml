@@ -271,7 +271,7 @@ https://cmr.uat.earthdata.nasa.gov:
     collections:
       - C1234530532-EEDTEST
       - C1234530533-EEDTEST
-    maximum_async_granules: 2000
+    maximum_async_granules: 400
     capabilities:
       subsetting:
         shape: true
