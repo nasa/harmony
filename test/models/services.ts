@@ -20,7 +20,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           type: { name: 'argo' },
           collections: [collectionId],
           capabilities: {
-            output_formats: ['image/tiff', 'application/netcdf'],
+            output_formats: ['image/tiff', 'application/x-netcdf4'],
             subsetting: {
               shape: true,
             },
@@ -119,7 +119,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     describe('and the request needs both spatial subsetting and netcdf output, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.boundingRectangle = [0, 0, 10, 10];
-        this.operation.outputFormat = 'application/netcdf';
+        this.operation.outputFormat = 'application/x-netcdf4';
       });
 
       it('chooses the service that supports netcdf output, but not spatial subsetting', function () {
@@ -175,7 +175,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     describe('and the request needs both reprojection and netcdf output, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.crs = 'EPSG:4326';
-        this.operation.outputFormat = 'application/netcdf';
+        this.operation.outputFormat = 'application/x-netcdf4';
       });
 
       it('returns the no-op service', function () {
@@ -185,14 +185,14 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the combination of reprojection and reformatting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to application/netcdf on C123-TEST is unsupported');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
       });
     });
 
     describe('and the request needs spatial subsetting, reprojection, and netcdf output, but no service supports that combination', function () {
       beforeEach(function () {
         this.operation.crs = 'EPSG:4326';
-        this.operation.outputFormat = 'application/netcdf';
+        this.operation.outputFormat = 'application/x-netcdf4';
         this.operation.boundingRectangle = [0, 0, 10, 10];
       });
 
@@ -203,7 +203,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('indicates the reason for choosing the no op service is the combination of reprojection and reformatting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to application/netcdf on C123-TEST is unsupported');
+        expect(serviceConfig.message).to.equal('the requested combination of operations: reprojection and reformatting to application/x-netcdf4 on C123-TEST is unsupported');
       });
     });
   });

@@ -129,7 +129,7 @@ paths:
             bbox or temporal fields, but this is deprecated behavior and will result in outputs from those services not
             producing STAC catalogs.
           example:
-            - item[href]=s3://some-location/myfile.nc&item[type]='application/netcdf'&item[temporal]=2020-01-01T00:00:00Z,2020-01-01T00:00:00Z&item[bbox]=-100,-70,100,70
+            - item[href]=s3://some-location/myfile.nc&item[type]='application/x-netcdf4'&item[temporal]=2020-01-01T00:00:00Z,2020-01-01T00:00:00Z&item[bbox]=-100,-70,100,70
           in: query
           required: false
           style: deepObject
@@ -158,7 +158,7 @@ paths:
                 format: media-type
                 example:
                   - image/tiff;subtype=geotiff
-                  - application/netcdf
+                  - application/x-netcdf4
                   - application/x-zarr
               title:
                 type: string
