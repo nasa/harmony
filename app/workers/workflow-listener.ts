@@ -115,6 +115,7 @@ export abstract class WorkflowListener implements Worker {
   }
 
   async start(): Promise<void> {
+    this.logger.info('Starting workflow listener');
     const kc = new k8s.KubeConfig();
     if (this.cluster) {
       kc.loadFromOptions({
@@ -141,7 +142,9 @@ export abstract class WorkflowListener implements Worker {
       },
       // this callback is called if the listener terminates
       (err) => {
+        this.logger.error('Workflow listener has terminated');
         this.logger.error(err);
+        setTimeout(() => { this.start(); }, 2000);
       });
   }
 

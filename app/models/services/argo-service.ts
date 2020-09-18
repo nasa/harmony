@@ -42,7 +42,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       }
     }
 
-    const batchSize = this.params.batchSize || env.defaultBatchSize;
+    const batchSize = _.get(this.config, 'batch_size', env.defaultBatchSize);
     const batch = batchOperations(this.operation, batchSize);
     const ops = batch.map((op) => JSON.parse(functionalSerializeOperation(op, this.config)));
 

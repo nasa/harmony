@@ -20,12 +20,12 @@ export interface ServiceCapabilities {
 }
 
 export interface ServiceConfig<ServiceParamType> {
+  batch_size?: number;
   name?: string;
   data_operation_version?: string;
   type?: {
     name: string;
     params?: ServiceParamType;
-    single_granule_requests?: boolean;
   };
   data_url_pattern?: string;
   collections?: string[];

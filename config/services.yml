@@ -72,6 +72,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: harmony/gdal
     data_operation_version: '0.9.0'
+    batch_size: 1
     type:
       name: argo
       params:
