@@ -287,12 +287,7 @@ https://cmr.uat.earthdata.nasa.gov:
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
     collections:
-      - C1215698452-EDF_OPS
-      - C1222318608-EDF_OPS
-      - C1222318609-EDF_OPS
-      - C1220340201-EDF_OPS
-      - C1220698498-EDF_OPS
-      - C1223026141-EDF_OPS
+      - C1234410736-POCLOUD
     maximum_async_granules: 2000
     capabilities:
       subsetting:
