@@ -136,7 +136,6 @@ https://cmr.uat.earthdata.nasa.gov:
     batch_size: 1
     type:
       name: argo
-      single_granule_requests: true
       params:
         argo_url: !Env ${ARGO_URL}
         namespace: argo
