@@ -1,7 +1,7 @@
 import { Logger } from 'winston';
 import db from './db';
-import { Job, JobQuery } from '../models/job';
-import { NotFoundError } from './errors';
+import { Job, JobQuery, JobStatus } from '../models/job';
+import { ConflictError, NotFoundError } from './errors';
 import { terminateWorkflows } from './workflows';
 
 /**
@@ -22,10 +22,15 @@ export default async function cancelAndSaveJob(jobID: string, message: string, l
     const jobs = await Job.queryAll(tx, query);
     const job = jobs?.data[0];
     if (job) {
-      job.cancel(message);
-      await job.save(tx);
-      if (shouldTerminateWorkflows) {
-        await terminateWorkflows(job, logger);
+      if (job.status !== JobStatus.CANCELED) {
+        job.validateStatus();
+        job.cancel(message);
+        await job.save(tx);
+        if (shouldTerminateWorkflows) {
+          await terminateWorkflows(job, logger);
+        }
+      } else {
+        logger.warn(`Ignoring repeated cancel request for job ${jobID}`);
       }
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);

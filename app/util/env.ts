@@ -32,6 +32,7 @@ interface HarmonyEnv {
   defaultImagePullPolicy: string;
   sharedSecretKey: string;
   defaultBatchSize: number;
+  defaultParallelism: number;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -92,6 +93,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   // default to no batching
   ['DEFAULT_BATCH_SIZE', 0],
   ['DEFAULT_IMAGE_PULL_POLICY', 'Always'],
+  ['DEFAULT_PARALLELISM', 2],
   ['SHARED_SECRET_KEY', null],
 ].forEach((value) => makeConfigVar.apply(this, value));
 

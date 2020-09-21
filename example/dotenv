@@ -161,24 +161,31 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 # pull policy configured. See the above table for the recommend value to use
 # for the given environment.
 DEFAULT_IMAGE_PULL_POLICY='Always'
+DEFAULT_PARALLELISM=2
 
 ASF_GDAL_IMAGE=asfdataservices/gdal-subsetter:latest
 ASF_GDAL_IMAGE_PULL_POLICY='Always'
+ASF_GDAL_PARALLELISM=2
 
 GDAL_IMAGE=harmony/gdal:latest
 GDAL_IMAGE_PULL_POLICY='Always'
+GDAL_PARALLELISM=2
 
 NETCDF_TO_ZARR_IMAGE=harmony/netcdf-to-zarr:latest
 NETCDF_TO_ZARR_IMAGE_PULL_POLICY='Always'
+NETCDF_TO_ZARR_PARALLELISM=2
 
 SWOT_REPR_IMAGE=sds/swot-reproject:latest
 SWOT_REPR_IMAGE_PULL_POLICY='Always'
+SWOT_REPR_PARALLELISM=2
 
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
 VAR_SUBSETTER_IMAGE_PULL_POLICY='Always'
+VAR_SUBSETTER_REPR_PARALLELISM=2
 
 PODAAC_L2_SUBSETTER_IMAGE=podaac/l2-subsetter:latest
 PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY='Always'
+PODAAC_L2_SUBSETTER_PARALLELISM=2
 
 # The bucket where service output data will be staged, corresponds to the S3 bucket
 # created in localstack when running locally

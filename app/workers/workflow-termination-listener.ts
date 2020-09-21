@@ -8,8 +8,8 @@ export default class WorkflowTerminationListener extends WorkflowListener {
       ...config,
       ...{
         eventType: EventType.ADDED,
-        reasonRegex: 'WorkflowFailed',
-        messageRegex: 'Stopped with strategy \'Terminate\'',
+        reasonRegex: '(Workflow|WorkflowNode)Failed',
+        messageRegex: '.*Terminate.*',
         namespace: 'argo',
       },
     };

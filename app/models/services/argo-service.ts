@@ -13,7 +13,7 @@ export interface ArgoServiceParams {
   template: string;
   image: string;
   imagePullPolicy?: string;
-  batchSize?: number;
+  parallelism?: number;
   env: { [key: string]: string };
 }
 
@@ -62,6 +62,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     fi
     `.trim();
 
+    const parallelism = this.params.parallelism || env.defaultParallelism;
+
     let params = [
       {
         name: 'callback',
@@ -97,6 +99,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
           templates: [
             {
               name: 'service',
+              parallelism,
               steps: [
                 [
                   {

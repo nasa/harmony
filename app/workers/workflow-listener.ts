@@ -135,9 +135,14 @@ export abstract class WorkflowListener implements Worker {
         namespaced: this.namespace,
       },
       // this callback is called for each received object
-      (type, event) => {
+      async (type, event) => {
         if (this.shouldHandleEvent(type, event)) {
-          this.handleEvent(event);
+          try {
+            await this.handleEvent(event);
+          } catch (e) {
+            this.logger.warn('Failed to handle workflow event');
+            this.logger.warn(e);
+          }
         }
       },
       // this callback is called if the listener terminates

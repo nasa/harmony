@@ -46,6 +46,7 @@ https://cmr.uat.earthdata.nasa.gov:
         template: asf-gdal-subsetter
         image: !Env ${ASF_GDAL_IMAGE}
         imagePullPolicy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
+        parallelism: !Env ${ASF_GDAL_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -80,6 +81,7 @@ https://cmr.uat.earthdata.nasa.gov:
         template: harmony-gdal
         image: !Env ${GDAL_IMAGE}
         imagePullPolicy: !Env ${GDAL_IMAGE_PULL_POLICY}
+        parallelism: !Env ${GDAL_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -112,6 +114,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: podaac-l2-subsetter
         image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -142,6 +145,7 @@ https://cmr.uat.earthdata.nasa.gov:
         template: swot-reproject
         image: !Env ${SWOT_REPR_IMAGE}
         imagePullPolicy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
+        parallelism: !Env ${SWOT_REPR_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -180,6 +184,7 @@ https://cmr.uat.earthdata.nasa.gov:
         template: var-subsetter
         image: !Env ${VAR_SUBSETTER_IMAGE}
         imagePullPolicy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -271,6 +276,7 @@ https://cmr.uat.earthdata.nasa.gov:
         template: harmony-netcdf-to-zarr
         image: !Env ${NETCDF_TO_ZARR_IMAGE}
         imagePullPolicy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
+        parallelism: !Env ${NETCDF_TO_ZARR_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
