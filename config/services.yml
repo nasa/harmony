@@ -132,7 +132,8 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
         variable: true
       output_formats:
-        - application/netcdf
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
 
   - name: ds/swot-reproject
     data_operation_version: '0.9.0'
@@ -171,7 +172,8 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
         - image/png
         - image/gif
-        - application/netcdf
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
       reprojection: true
 
   - name: sds/variable-subsetter
@@ -202,7 +204,8 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         variable: true
       output_formats:
-        - application/netcdf
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
 
   # This is an example service and backend from example/http-backend.js mounted by
   # the frontend callback server.
@@ -246,7 +249,8 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
         variable: true
       output_formats:
-        - application/netcdf
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
 
   # PO.DAAC Shapefiles
   - name: podaac-ps3/http-service
