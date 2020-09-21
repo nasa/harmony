@@ -1,6 +1,7 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
 import { ConflictError } from 'util/errors';
+import { transcode } from 'buffer';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
@@ -140,6 +141,25 @@ export class Job extends Record {
     const items = await transaction('jobs')
       .select()
       .where(constraints)
+      .orderBy('createdAt', 'desc')
+      .paginate({ currentPage, perPage, isLengthAware: true });
+    return {
+      data: items.data.map((j) => new Job(j)),
+      pagination: items.pagination,
+    };
+  }
+
+  static async runningForMinutes(
+    transaction: Transaction,
+    minutes: number,
+    currentPage = 0,
+    perPage = 10,
+  ):
+    Promise<IWithPagination<Job[]>> {
+    const items = await transaction('jobs')
+      .select()
+      .whereRaw('status = ?? AND to_timestamp(createdAt) < NOW() - INTERVAL \'?? minutes\'',
+        [JobStatus.RUNNING, minutes])
       .orderBy('createdAt', 'desc')
       .paginate({ currentPage, perPage, isLengthAware: true });
     return {

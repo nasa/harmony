@@ -1,4 +1,4 @@
-export default interface Worker {
+export interface Worker {
   /**
    * start the worker running continuously
    * @param config the optional configuration to use
@@ -9,4 +9,8 @@ export default interface Worker {
    * Stop the worker
    */
   stop?(): Promise<void>;
+}
+
+export interface Abortable {
+  abort(): void;
 }

@@ -150,6 +150,34 @@ describe('Job', function () {
         });
       });
     });
+
+    describe('.runningForDuration', function () {
+      let job;
+      beforeEach(async function () {
+        job = createJob('jdoe');
+        await job.save(this.trx);
+      });
+
+      describe('when some jobs have been running longer than the given duration', function () {
+        it('returns the matching jobs', async function () {
+          const result = await Job.byId(this.trx, job.id);
+          expect(result.id).to.eql(job.id);
+        });
+
+        it('does not return other jobs', async function () {
+          const results = await Job.forUser(this.trx, 'jdoe');
+          const usernames = results.data.map((r) => r.username);
+          expect(usernames).to.eql(['jdoe', 'jdoe']);
+        });
+      });
+
+      describe('when no job has been running longer than the given duration', function () {
+        it('returns an empty array', async function () {
+          const results = await Job.forUser(this.trx, 'jdoe');
+          expect(results.data).to.eql([]);
+        });
+      });
+    });
   });
 
   describe('#constructor', function () {

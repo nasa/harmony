@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import { Logger } from 'winston';
-import Worker from './worker';
+import { Worker, Abortable } from './worker';
 
 export interface Cluster {
   name: string;
@@ -36,10 +36,6 @@ export interface WorkflowListenerConfig {
 
   logger: Logger;
 
-}
-
-interface Abortable {
-  abort(): void;
 }
 
 export interface WorkflowEvent {
