@@ -270,6 +270,36 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/shapefile+zip
 
+  # PO.DAAC NetCDF to COG
+  - name: podaac/netcdf-converter
+    data_operation_version: '0.9.0'
+    type:
+      name: argo
+      params:
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: podaac-netcdf-converter
+        image: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE}
+        imagePullPolicy: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/podaac/netcdf-converter
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      - C1234410736-POCLOUD
+    maximum_async_granules: 400
+    capabilities:
+      subsetting:
+        shape: false
+        variable: false
+      output_formats:
+        - image/tiff
+
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.9.0'
     type:
