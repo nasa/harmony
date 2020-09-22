@@ -112,6 +112,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: podaac-l2-subsetter
         image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        imagePullPolicy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -252,17 +253,29 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
 
   # PO.DAAC Shapefiles
-  - name: podaac-ps3/http-service
+  - name: podaac/ps3
     data_operation_version: '0.9.0'
     type:
-      name: http
-      #synchronous_only: true
+      name: argo
       params:
-        url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: podaac-ps3
+        image: !Env ${PODAAC_PS3_IMAGE}
+        imagePullPolicy: !Env ${PODAAC_PS3_IMAGE_PULL_POLICY}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/podaac/ps3
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
     collections:
       - C1234530532-EEDTEST
       - C1234530533-EEDTEST
-    maximum_async_granules: 2000
+    maximum_async_granules: 400
     capabilities:
       subsetting:
         shape: true
