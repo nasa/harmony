@@ -130,7 +130,8 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
         variable: true
       output_formats:
-        - application/netcdf
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
 
   - name: ds/swot-reproject
     data_operation_version: '0.9.0'
@@ -168,7 +169,8 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
         - image/png
         - image/gif
-        - application/netcdf
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
       reprojection: true
 
   - name: sds/variable-subsetter
@@ -198,7 +200,8 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         variable: true
       output_formats:
-        - application/netcdf
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
 
   # This is an example service and backend from example/http-backend.js mounted by
   # the frontend callback server.
@@ -246,7 +249,8 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
         variable: true
       output_formats:
-        - application/netcdf
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
 
   # PO.DAAC Shapefiles
   - name: podaac/ps3
@@ -278,6 +282,36 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: false
       output_formats:
         - application/shapefile+zip
+
+  # PO.DAAC NetCDF to COG
+  - name: podaac/netcdf-converter
+    data_operation_version: '0.9.0'
+    type:
+      name: argo
+      params:
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: podaac-netcdf-converter
+        image: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE}
+        imagePullPolicy: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/podaac/netcdf-converter
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      - C1234410736-POCLOUD
+    maximum_async_granules: 400
+    capabilities:
+      subsetting:
+        shape: false
+        variable: false
+      output_formats:
+        - image/tiff
 
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.9.0'
