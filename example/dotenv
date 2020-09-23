@@ -103,7 +103,7 @@ BASE_QUEUE_URL=http://localhost:4566/queue/
 ARGO_URL=http://localhost:2746
 
 # The time (in seconds) between invocations of the job reaper service (default 10)
-JOB_REAPER_PERIOD=10
+JOB_REAPER_PERIOD_SEC=10
 
 # Jobs older than this many minutes that are running are checked by the job reaper (default 60)
 REAPABLE_JOB_AGE_MINUTES=60
