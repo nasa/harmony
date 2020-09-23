@@ -2,7 +2,7 @@ import _ from 'lodash';
 import DataOperation from 'models/data-operation';
 
 /**
- * Return the total number of granule in the given operation
+ * Return the total number of granules in the given operation
  * @param op The operation containing the granule sources
  * @returns The number of granules in the operation
  */
