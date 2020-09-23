@@ -102,6 +102,12 @@ BASE_QUEUE_URL=http://localhost:4566/queue/
 # The URL to use for interacting with Argo
 ARGO_URL=http://localhost:2746
 
+# The time (in ms) between invocations of the job reaper service (default 10,000)
+JOB_REAPER_PERIOD_MS
+
+# Jobs older than this many minutes that are running are checked by the job reaper (default 60)
+REAPABLE_JOB_AGE_MINUTES
+
 # The name of the dead letter queue for message-queue-based services
 SERVICE_DEAD_LETTER_QUEUE_NAME=harmony-dead-letter-queue
 

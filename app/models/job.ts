@@ -1,7 +1,7 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
 import { ConflictError } from 'util/errors';
-import { transcode } from 'buffer';
+import subMinutes from 'date-fns/subMinutes';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
@@ -149,17 +149,29 @@ export class Job extends Record {
     };
   }
 
-  static async runningForMinutes(
+  /**
+   *  Returns and array of all the the jobs that are still in the RUNNING state, but have not
+   * been updated in the given number of minutes
+   * @param transaction - the transaction to use for querying
+   * @param minutes - any jobs still running and not updated in this many minutes will be returned
+   * @param currentPage - the index of the page to show
+   * @param perPage - the number of results per page
+   * @returns a list of Job's still running but not updated in the given number of minutes
+   */
+  static async notUpdatedForMinutes(
     transaction: Transaction,
     minutes: number,
     currentPage = 0,
     perPage = 10,
   ):
     Promise<IWithPagination<Job[]>> {
+    const pastDate = subMinutes(new Date(), minutes);
     const items = await transaction('jobs')
       .select()
-      .whereRaw('status = ?? AND to_timestamp(createdAt) < NOW() - INTERVAL \'?? minutes\'',
-        [JobStatus.RUNNING, minutes])
+      .where({
+        status: JobStatus.RUNNING,
+      })
+      .where('updatedAt', '<', pastDate)
       .orderBy('createdAt', 'desc')
       .paginate({ currentPage, perPage, isLengthAware: true });
     return {

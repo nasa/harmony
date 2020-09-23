@@ -2,6 +2,7 @@ import { describe, it, beforeEach } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
 import { Job, JobRecord, JobStatus, JobLink } from 'models/job';
+import MockDate from 'mockdate';
 import { hookTransactionEach } from '../helpers/db';
 
 const exampleProps = {
@@ -151,30 +152,46 @@ describe('Job', function () {
       });
     });
 
-    describe('.runningForDuration', function () {
-      let job;
+    describe('.notUpdatedForMinutes', function () {
+      let oldFinishedJob: Job;
+      let oldRunningJob: Job;
+      let newRunningJob: Job;
+      let result;
+
       beforeEach(async function () {
-        job = createJob('jdoe');
-        await job.save(this.trx);
+        MockDate.set('1/30/2000');
+        oldFinishedJob = createJob('bob');
+        oldFinishedJob.updateStatus(JobStatus.SUCCESSFUL);
+        await oldFinishedJob.save(this.trx);
+        oldRunningJob = createJob('jdoe');
+        oldRunningJob.updateStatus(JobStatus.RUNNING);
+        await oldRunningJob.save(this.trx);
+        MockDate.reset();
+        newRunningJob = createJob('mary');
+        newRunningJob.updateStatus(JobStatus.RUNNING);
+        await newRunningJob.save(this.trx);
+        result = await Job.notUpdatedForMinutes(this.trx, 60);
+      });
+
+      afterEach(function () {
+        MockDate.reset();
       });
 
       describe('when some jobs have been running longer than the given duration', function () {
         it('returns the matching jobs', async function () {
-          const result = await Job.byId(this.trx, job.id);
-          expect(result.id).to.eql(job.id);
+          expect(result.data[0].id).to.eql(oldRunningJob.id);
         });
 
         it('does not return other jobs', async function () {
-          const results = await Job.forUser(this.trx, 'jdoe');
-          const usernames = results.data.map((r) => r.username);
-          expect(usernames).to.eql(['jdoe', 'jdoe']);
+          expect(result.data.length).to.equal(1);
         });
       });
 
       describe('when no job has been running longer than the given duration', function () {
         it('returns an empty array', async function () {
-          const results = await Job.forUser(this.trx, 'jdoe');
-          expect(results.data).to.eql([]);
+          MockDate.set('1/31/2000');
+          result = await Job.notUpdatedForMinutes(this.trx, 2880); // 48 hours
+          expect(result.data).to.eql([]);
         });
       });
     });

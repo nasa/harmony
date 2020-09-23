@@ -15,6 +15,9 @@ export interface Workflow {
       user: string;
     };
   };
+  status: {
+    phase: string;
+  };
 }
 
 interface WorkflowFunction {
@@ -36,6 +39,25 @@ export async function getWorkflowsForJob(job: Job, logger: Logger): Promise<Work
     return response.data?.items || [];
   } catch (e) {
     logger.error(`Failed to retrieve workflows: ${JSON.stringify(e.response?.data)}`);
+    throw e;
+  }
+}
+
+/**
+ *
+ * Retrieve the list of archived workflows for the given Job
+ *
+ * @param job The job associated with the workflows
+ * @param logger The Logger to use for error messages
+ */
+export async function getArchivedWorkflowsForJob(job: Job, logger: Logger): Promise<Workflow[]> {
+  const { requestId } = job;
+  const url = `${env.argoUrl}/api/v1/archived-workflows?listOptions.labelSelector=request_id%3D${requestId}&listOptions.fieldSelector=metadata.namespace%3Dargo`;
+  try {
+    const response = await axios.default.get(url);
+    return response.data?.items || [];
+  } catch (e) {
+    logger.error(`Failed to retrieve archived workflows: ${JSON.stringify(e.response?.data)}`);
     throw e;
   }
 }

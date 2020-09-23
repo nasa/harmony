@@ -1,7 +1,7 @@
 import { Logger } from 'winston';
 import db from './db';
 import { Job, JobQuery, JobStatus } from '../models/job';
-import { ConflictError, NotFoundError } from './errors';
+import { NotFoundError } from './errors';
 import { terminateWorkflows } from './workflows';
 
 /**
@@ -12,8 +12,14 @@ import { terminateWorkflows } from './workflows';
  * @param shouldTerminateWorkflows true if the workflow(s) attached to the job should be terminated
  * @param username the name of the user requesting the cancel - null if the admin
  */
-export default async function cancelAndSaveJob(jobID: string, message: string, logger: Logger,
-  shouldTerminateWorkflows: boolean, username?: string): Promise<void> {
+export default async function cancelAndSaveJob(
+  jobID: string,
+  message: string,
+  logger: Logger,
+  shouldTerminateWorkflows: boolean,
+  username: string,
+  shouldIgnoreRepeats = false,
+): Promise<void> {
   await db.transaction(async (tx) => {
     const query: JobQuery = { requestId: jobID };
     if (username) {
@@ -22,7 +28,8 @@ export default async function cancelAndSaveJob(jobID: string, message: string, l
     const jobs = await Job.queryAll(tx, query);
     const job = jobs?.data[0];
     if (job) {
-      if (job.status !== JobStatus.CANCELED) {
+      if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
+        job.status = JobStatus.CANCELED;
         job.validateStatus();
         job.cancel(message);
         await job.save(tx);

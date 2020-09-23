@@ -13,6 +13,7 @@ import serviceResponseRouter from './routers/service-response-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import WorkflowTerminationListener from './workers/workflow-termination-listener';
+import JobReaper from './workers/job-reaper';
 
 /**
  * Builds an express server with appropriate logging and default routing and starts the server
@@ -69,8 +70,12 @@ function buildServer(name, port, setupFn): Server {
  *
  * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
  */
-export function start(config: Record<string, string>):
-{ frontend: Server; backend: Server; workflowTerminationListener: WorkflowTerminationListener } {
+export function start(config: Record<string, string>): {
+  frontend: Server;
+  backend: Server;
+  workflowTerminationListener: WorkflowTerminationListener;
+  jobReaper: JobReaper;
+} {
   const appPort = config.PORT || 3000;
   const backendPort = config.BACKEND_PORT || 3001;
 
@@ -101,7 +106,13 @@ export function start(config: Record<string, string>):
   const listener = new WorkflowTerminationListener(workflowTerminationListenerConfig);
   listener.start();
 
-  return { frontend, backend, workflowTerminationListener: listener };
+  const reaperConfig = {
+    logger: logger.child({ application: 'workflow-events' }),
+  };
+  const reaper = new JobReaper(reaperConfig);
+  reaper.start();
+
+  return { frontend, backend, workflowTerminationListener: listener, jobReaper: reaper };
 }
 
 /**
