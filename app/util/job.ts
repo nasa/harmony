@@ -11,6 +11,8 @@ import { terminateWorkflows } from './workflows';
  * @param logger the logger to use for logging errors/info
  * @param shouldTerminateWorkflows true if the workflow(s) attached to the job should be terminated
  * @param username the name of the user requesting the cancel - null if the admin
+ * @param shouldIgnoreRepeats flag to indicate that we should ignore repeat calls to cancel the
+ * same job - needed for the workflow termination listener (default false)
  */
 export default async function cancelAndSaveJob(
   jobID: string,
