@@ -33,7 +33,7 @@ interface HarmonyEnv {
   sharedSecretKey: string;
   defaultBatchSize: number;
   defaultParallelism: number;
-  jobReaperPeriodMs: number;
+  jobReaperPeriodSec: number;
   reapableJobAgeMinutes: number;
 }
 
@@ -82,7 +82,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['.OBJECT_STORE_TYPE', 's3'],
   ['AWS_DEFAULT_REGION', 'us-west-2'],
   ['SAME_REGION_ACCESS_ROLE'],
-  ['JOB_REAPER_PERIOD_MS', 10000],
+  ['JOB_REAPER_PERIOD_SEC', 10],
   ['REAPABLE_JOB_AGE_MINUTES', 60],
   // shapefile upload related configs
   ['MAX_POST_FIELDS', 100],

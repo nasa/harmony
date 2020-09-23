@@ -118,15 +118,22 @@ export function start(config: Record<string, string>): {
 /**
  * Stops the express servers created and returned by the start() method
  *
- * @param {object} servers An object containing "frontend" and "backend" keys tied to http.Server
- *   objects, as returned by start()
+ * @param {object} frontend http.Server object as returned by start()
+ * @param {object} backend http.Server object as returned by start()
+ * @param workflowTerminationListener listener for workflow termination events
+ * @param jobReaper service that checks for orphan jobs and marks them as canceled
  * @returns {Promise<void>} A promise that completes when the servers close
  */
-export async function stop({ frontend, backend, workflowTerminationListener }): Promise<void> {
+export async function stop({
+  frontend,
+  backend,
+  workflowTerminationListener,
+  jobReaper }): Promise<void> {
   await Promise.all([
     promisify(frontend.close.bind(frontend))(),
     promisify(backend.close.bind(backend))(),
-    workflowTerminationListener?.stop(),
+    workflowTerminationListener.stop(),
+    jobReaper.stop(),
   ]);
 }
 

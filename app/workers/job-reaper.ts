@@ -92,7 +92,7 @@ export default class WorkflowReaper implements Worker {
       this.logger.info('Starting job reaper');
       try {
         await this.cancelOrphanedJobs();
-        await sleep(10000);
+        await sleep(env.jobReaperPeriodMs * 1000);
       } catch (e) {
         this.logger.error('Error while reaping orphaned jobs');
         this.logger.error(e);
