@@ -195,9 +195,11 @@ PODAAC_L2_SUBSETTER_PARALLELISM=2
 
 PODAAC_PS3_IMAGE=podaac/podaac-cloud/podaac-shapefile-subsetter:latest
 PODAAC_PS3_IMAGE_PULL_POLICY='Always'
+PODAAC_PS3_PARALLELISM=2
 
 PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
 PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='Always'
+PODAAC_NETCDF_CONVERTER_PARALLELISM=2
 
 # The bucket where service output data will be staged, corresponds to the S3 bucket
 # created in localstack when running locally

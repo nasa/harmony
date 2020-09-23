@@ -264,6 +264,7 @@ https://cmr.uat.earthdata.nasa.gov:
         template: podaac-ps3
         image: !Env ${PODAAC_PS3_IMAGE}
         imagePullPolicy: !Env ${PODAAC_PS3_IMAGE_PULL_POLICY}
+        parallelism: !Env ${PODAAC_PS3_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -295,6 +296,7 @@ https://cmr.uat.earthdata.nasa.gov:
         template: podaac-netcdf-converter
         image: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE}
         imagePullPolicy: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${PODAAC_NETCDF_CONVERTER_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
