@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import * as axios from 'axios';
-import BaseService, { functionalSerializeOperation } from './base-service';
+import DataOperation from 'models/data-operation';
+import BaseService, { functionalSerializeOperation, getMaxAsynchronousGranules, ServiceConfig } from './base-service';
 import InvocationResult from './invocation-result';
 import { batchOperations } from '../../util/batch';
 
@@ -25,6 +26,26 @@ export interface ArgoServiceParams {
  */
 export default class ArgoService extends BaseService<ArgoServiceParams> {
   /**
+   * Returns the batch size to use for the given request
+   */
+  chooseBatchSize(): number {
+    const requestLimit = this.maxAsynchronousGranules;
+    const { maxResults } = this.operation;
+
+    let batchSize = _.get(this.config, 'batch_size', env.defaultBatchSize);
+
+    if (maxResults && maxResults > requestLimit) {
+      if (batchSize === 0) {
+        batchSize = requestLimit;
+      } else {
+        batchSize = Math.min(batchSize, requestLimit);
+      }
+    }
+
+    return batchSize;
+  }
+
+  /**
    * Invokes an Argo workflow to execute a service request
    *
    *  @param _logger the logger associated with the request
@@ -42,7 +63,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       }
     }
 
-    const batchSize = _.get(this.config, 'batch_size', env.defaultBatchSize);
+    const batchSize = this.chooseBatchSize();
+
     const batch = batchOperations(this.operation, batchSize);
     // we need to serialize the batch operations to get just the models and then deserialize
     // them so we can pass them to the Argo looping/concurrency mechanism in the workflow

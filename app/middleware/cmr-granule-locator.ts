@@ -6,6 +6,7 @@ import { CmrError, RequestValidationError, ServerError } from '../util/errors';
 import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { computeMbr, Mbr } from '../util/spatial/mbr';
+import env from '../util/env';
 
 /**
  * Gets collection from request that matches the given id
@@ -71,7 +72,9 @@ export default async function cmrGranuleLocator(req, res, next: NextFunction): P
       const startTime = new Date().getTime();
       let maxResults = getMaxAsynchronousGranules(serviceConfig);
       if ('maxresults' in query) {
-        maxResults = Math.min(maxResults, query.maxresults);
+        // Let a user request more granules than the service allows, but may not exceed the
+        // overall system limit.
+        maxResults = Math.min(env.maxGranuleLimit, query.maxresults);
       }
       operation.maxResults = maxResults;
 

@@ -39,10 +39,6 @@ interface HarmonyEnv {
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
 
-envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
-envVars.isDevelopment = process.env.NODE_ENV === 'development';
-envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
-
 /**
  * Add a symbol to module.exports with an appropriate value. The exported symbol will be in
  * camel case, e.g., `maxPostFileSize`. This approach has the drawback that these
@@ -78,7 +74,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['STAGING_BUCKET', 'localStagingBucket'],
   ['MAX_SYNCHRONOUS_GRANULES', 1],
   ['MAX_ASYNCHRONOUS_GRANULES', 20],
-  ['MAX_GRANULE_LIMIT', 2000],
+  ['MAX_GRANULE_LIMIT', 400],
   ['.OBJECT_STORE_TYPE', 's3'],
   ['AWS_DEFAULT_REGION', 'us-west-2'],
   ['SAME_REGION_ACCESS_ROLE'],
@@ -105,7 +101,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
 
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.isDevelopment = process.env.NODE_ENV === 'development';
-envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'localStagingBucket';
+envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
 envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
 
 export = envVars;

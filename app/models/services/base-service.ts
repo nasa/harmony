@@ -292,17 +292,17 @@ export default abstract class BaseService<ServiceParamType> {
    * @memberof BaseService
    */
   get warningMessage(): string {
-    const maxResultsLimited = (this.operation.maxResults
-      && this.maxAsynchronousGranules > this.operation.maxResults
-      && this.operation.cmrHits > this.operation.maxResults);
+    let granulesProcessed = this.operation.cmrHits;
+    if (this.operation.maxResults) {
+      granulesProcessed = Math.min(granulesProcessed, this.operation.maxResults);
+    } else {
+      granulesProcessed = Math.min(granulesProcessed, this.maxAsynchronousGranules);
+    }
 
     let message;
-    if (maxResultsLimited) {
+    if (this.operation.cmrHits > granulesProcessed) {
       message = `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
-      + `using maxResults to process only the first ${this.operation.maxResults} granules.`;
-    } else if (this.operation.cmrHits > this.maxAsynchronousGranules) {
-      message = `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
-        + `to process only the first ${this.maxAsynchronousGranules} granules.`;
+        + `to process only the first ${granulesProcessed} granules.`;
     }
     return message;
   }
