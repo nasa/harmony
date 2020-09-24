@@ -1,8 +1,7 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import * as axios from 'axios';
-import DataOperation from 'models/data-operation';
-import BaseService, { functionalSerializeOperation, getMaxAsynchronousGranules, ServiceConfig } from './base-service';
+import BaseService, { functionalSerializeOperation } from './base-service';
 import InvocationResult from './invocation-result';
 import { batchOperations } from '../../util/batch';
 
