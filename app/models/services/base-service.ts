@@ -20,13 +20,12 @@ export interface ServiceCapabilities {
 }
 
 export interface ServiceConfig<ServiceParamType> {
+  batch_size?: number;
   name?: string;
   data_operation_version?: string;
   type?: {
     name: string;
     params?: ServiceParamType;
-    synchronous_only?: boolean;
-    single_granule_requests?: boolean;
   };
   data_url_pattern?: string;
   collections?: string[];
@@ -55,6 +54,19 @@ export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): numbe
   const serviceLimit = config.maximum_sync_granules === undefined
     ? env.maxSynchronousGranules : config.maximum_sync_granules;
   return Math.min(env.maxGranuleLimit, serviceLimit);
+}
+
+/**
+ * Serialize the given operation with the given config.
+ * @param op The operation to serialize
+ * @param config The config to use when serializing the operation
+ * @returns The serialized operation
+ */
+export function functionalSerializeOperation(
+  op: DataOperation,
+  config: ServiceConfig<unknown>,
+): string {
+  return op.serialize(config.data_operation_version, config.data_url_pattern);
 }
 
 /**
@@ -291,6 +303,6 @@ export default abstract class BaseService<ServiceParamType> {
    */
   serializeOperation(): string {
     const { operation, config } = this;
-    return operation.serialize(config.data_operation_version, config.data_url_pattern);
+    return functionalSerializeOperation(operation, config);
   }
 }

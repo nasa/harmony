@@ -1,6 +1,7 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
 import { ConflictError } from 'util/errors';
+import subMinutes from 'date-fns/subMinutes';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
@@ -15,6 +16,7 @@ const statesToDefaultMessages = {
   running: 'The job is being processed',
   successful: 'The job has completed successfully',
   failed: 'The job failed with an unknown error',
+  canceled: 'The job was canceled',
 };
 
 const defaultMessages = Object.values(statesToDefaultMessages);
@@ -139,6 +141,37 @@ export class Job extends Record {
     const items = await transaction('jobs')
       .select()
       .where(constraints)
+      .orderBy('createdAt', 'desc')
+      .paginate({ currentPage, perPage, isLengthAware: true });
+    return {
+      data: items.data.map((j) => new Job(j)),
+      pagination: items.pagination,
+    };
+  }
+
+  /**
+   *  Returns and array of all the the jobs that are still in the RUNNING state, but have not
+   * been updated in the given number of minutes
+   * @param transaction - the transaction to use for querying
+   * @param minutes - any jobs still running and not updated in this many minutes will be returned
+   * @param currentPage - the index of the page to show
+   * @param perPage - the number of results per page
+   * @returns a list of Job's still running but not updated in the given number of minutes
+   */
+  static async notUpdatedForMinutes(
+    transaction: Transaction,
+    minutes: number,
+    currentPage = 0,
+    perPage = 10,
+  ):
+    Promise<IWithPagination<Job[]>> {
+    const pastDate = subMinutes(new Date(), minutes);
+    const items = await transaction('jobs')
+      .select()
+      .where({
+        status: JobStatus.RUNNING,
+      })
+      .where('updatedAt', '<', pastDate)
       .orderBy('createdAt', 'desc')
       .paginate({ currentPage, perPage, isLengthAware: true });
     return {
@@ -284,6 +317,16 @@ export class Job extends Record {
    */
   fail(message = statesToDefaultMessages.failed): void {
     this.updateStatus(JobStatus.FAILED, message);
+  }
+
+  /**
+   * Updates the status to canceled, providing the optional message.
+   * You must call `#save` to persist the change
+   *
+   * @param message - an error message
+   */
+  cancel(message = statesToDefaultMessages.canceled): void {
+    this.updateStatus(JobStatus.CANCELED, message);
   }
 
   /**

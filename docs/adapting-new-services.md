@@ -152,12 +152,12 @@ Add an entry to [services.yml](../config/services.yml) under each CMR environmen
   data_operation_version: '0.8.0' # The version of the data-operation messaging schema to use
   type:                           # Configuration for service invocation
     name: queue                   # The type of service invocation, either "queue" or "http"
-    synchronous_only: true        # Indicates the service can only handle synchronous, one-granule requests (default: false)
     params:                       # Parameters specific to the service invocation type
       queue_url: !Env ${BASE_QUEUE_URL}harmony-gdal-queue  # The SQS queue to listen to for requests
   data_url_pattern: '.*'          # An optional (default = .*) regular expression for a substring that desired data URLs should contain
   collections:                    # A list of CMR collection IDs that the service works on
     - C1234-EXAMPLE
+  batch_size: 1                   # The number of granules in each batch operation (defaults to 0 which means unlimited)
   maximum_sync_granules: 1        # Optional limit for the maximum number of granules for a request to be handled synchronously. Defaults to 1. Set to 0 to only allow async requests.
   maximum_async_granules: 500     # Optional limit for the maximum number of granules allowed for a single async request. Harmony has a MAX_GRANULE_LIMIT enforced for all services.
   capabilities:                   # Service capabilities

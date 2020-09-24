@@ -1,7 +1,7 @@
 import { stub, SinonStub } from 'sinon';
 import { Job } from 'models/job';
 import { Logger } from 'winston';
-import * as workflow from '../../app/util/workflows';
+import * as workflows from '../../app/util/workflows';
 
 /**
  *  Stub calls to `terminateWorkflows`
@@ -12,7 +12,7 @@ import * as workflow from '../../app/util/workflows';
  * @returns The sinon stub that was created
  */
 export function stubTerminateWorkflows(): SinonStub<[Job, Logger], Promise<void>> {
-  return stub(workflow, 'terminateWorkflows');
+  return stub(workflows, 'terminateWorkflows');
 }
 
 /**
@@ -21,7 +21,7 @@ export function stubTerminateWorkflows(): SinonStub<[Job, Logger], Promise<void>
 export function hookTerminateWorkflowError(): void {
   let terminateStub;
   before(async function () {
-    terminateStub = stub(workflow, 'terminateWorkflows').throws();
+    terminateStub = stub(workflows, 'terminateWorkflows').throws();
   });
   after(async function () {
     if (terminateStub.restore) terminateStub.restore();

@@ -2,7 +2,6 @@
 import { before, after, beforeEach, afterEach } from 'mocha';
 import sinon, { SinonStub } from 'sinon';
 import request from 'superagent';
-import AsynchronizerService from 'models/services/asynchronizer-service';
 import BaseService from 'models/services/base-service';
 import * as services from 'models/services/index';
 import { Logger } from 'winston';
@@ -176,60 +175,5 @@ export default class StubService extends BaseService<void> {
   static hookEach(callbackOptions: object = { params: { redirect: 'http://example.com' } }): void {
     beforeEach(StubService.beforeHook(callbackOptions));
     afterEach(StubService.afterHook());
-  }
-
-  /**
-   * Sets up a synchronous StubService to be invoked by the AsynchronizerService.  Be careful
-   * to ensure the Asynchronizer completes its work before ending the test
-   *
-   * @static
-   * @param callbackOptions The options to be used for _each_ callback
-   * @param type The service config type parameters e.g. { synchronous_only: true }
-   * @memberof StubService
-   */
-  static hookAsynchronized(
-    callbackOptions: object = { params: { redirect: 'http://example.com' } },
-    type: object = { synchronous_only: true },
-  ): void {
-    before(async function () {
-      const ctx = this;
-      this.callbackOptions = callbackOptions;
-      sinon.stub(services, 'buildService')
-        .callsFake((config, operation) => {
-          ctx.service = new AsynchronizerService(StubService, callbackOptions, operation);
-          ctx.service.config.type = type;
-          return ctx.service;
-        });
-    });
-
-    after(async function () {
-      const stubbed = services.buildService as SinonStub;
-      if (stubbed.restore) stubbed.restore();
-      try {
-        await this.service.promiseCompletion();
-      } catch { /* Normal for expected errors. Logs captured by the AsynchronizerService */
-      } finally {
-        delete this.service;
-        delete this.callbackOptions;
-      }
-    });
-  }
-
-  /**
-   * Adds before hooks for asynchronized service completion
-   *
-   * @static
-   * @param {boolean} [allowError=false] Whether a service error should fail the before hook
-   * @returns {void}
-   * @memberof StubService
-   */
-  static hookAsynchronizedServiceCompletion(allowError = false): void {
-    before(async function () {
-      try {
-        await this.service.promiseCompletion();
-      } catch (e) {
-        if (!allowError) throw e;
-      }
-    });
   }
 }

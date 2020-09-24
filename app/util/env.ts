@@ -31,6 +31,10 @@ interface HarmonyEnv {
   syncRequestPollIntervalMs: number;
   defaultImagePullPolicy: string;
   sharedSecretKey: string;
+  defaultBatchSize: number;
+  defaultParallelism: number;
+  jobReaperPeriodSec: number;
+  reapableJobAgeMinutes: number;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -78,6 +82,8 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['.OBJECT_STORE_TYPE', 's3'],
   ['AWS_DEFAULT_REGION', 'us-west-2'],
   ['SAME_REGION_ACCESS_ROLE'],
+  ['JOB_REAPER_PERIOD_SEC', 10],
+  ['REAPABLE_JOB_AGE_MINUTES', 60],
   // shapefile upload related configs
   ['MAX_POST_FIELDS', 100],
   ['MAX_POST_FILE_SIZE', 2000000000],
@@ -88,7 +94,10 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['OAUTH_HOST', 'https://uat.urs.earthdata.nasa.gov'],
   ['CALLBACK_URL_ROOT', null],
   ['SYNC_REQUEST_POLL_INTERVAL_MS', 100],
+  // default to no batching
+  ['DEFAULT_BATCH_SIZE', 0],
   ['DEFAULT_IMAGE_PULL_POLICY', 'Always'],
+  ['DEFAULT_PARALLELISM', 2],
   ['SHARED_SECRET_KEY', null],
 ].forEach((value) => makeConfigVar.apply(this, value));
 

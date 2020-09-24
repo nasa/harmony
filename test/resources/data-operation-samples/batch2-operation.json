@@ -1,0 +1,136 @@
+{
+  "sources": [{
+    "collection": "C1233800302-EEDTEST",
+    "variables": [{
+      "id": "V1233801716-EEDTEST",
+      "name": "blue_var",
+      "fullPath": "blue_var"
+    }],
+    "granules": [{
+        "id": "G1233800361-EEDTEST",
+        "name": "003_00_0019ff_global",
+        "urls": [
+          "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/003_00_0019ff_global.nc",
+          "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/003_00_0019ff_global.tif"
+        ],
+        "bbox": [
+          -180,
+          -90,
+          180,
+          90
+        ],
+        "temporal": {
+          "start": "2020-01-03T00:00:00.000Z",
+          "end": "2020-01-03T01:59:59.000Z"
+        }
+      },
+      {
+        "id": "G1233800362-EEDTEST",
+        "name": "003_01_0019ff_africa",
+        "urls": [
+          "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/003_01_0019ff_africa.nc",
+          "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/003_01_0019ff_africa.tif"
+        ],
+        "bbox": [
+          -180,
+          -90,
+          180,
+          90
+        ],
+        "temporal": {
+          "start": "2020-01-03T02:00:00.000Z",
+          "end": "2020-01-03T03:59:59.000Z"
+        }
+      },
+      {
+        "id": "G1233800366-EEDTEST",
+        "name": "003_07_0019ff_north_america",
+        "urls": [
+          "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/003_07_0019ff_north_america.nc",
+          "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/003_07_0019ff_north_america.tif"
+        ],
+        "bbox": [
+          -180,
+          -90,
+          180,
+          90
+        ],
+        "temporal": {
+          "start": "2020-01-03T14:00:00.000Z",
+          "end": "2020-01-03T15:59:59.000Z"
+        }
+      },
+      {
+        "id": "G1233800370-EEDTEST",
+        "name": "004_00_0065ff_global",
+        "urls": [
+          "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/004_00_0065ff_global.nc",
+          "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/004_00_0065ff_global.tif"
+        ],
+        "bbox": [
+          -180,
+          -90,
+          180,
+          90
+        ],
+        "temporal": {
+          "start": "2020-01-04T00:00:00.000Z",
+          "end": "2020-01-04T01:59:59.000Z"
+        }
+      },
+      {
+        "id": "G1233800371-EEDTEST",
+        "name": "004_01_0065ff_africa",
+        "urls": [
+          "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/004_01_0065ff_africa.nc",
+          "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/004_01_0065ff_africa.tif"
+        ],
+        "bbox": [
+          -180,
+          -90,
+          180,
+          90
+        ],
+        "temporal": {
+          "start": "2020-01-04T02:00:00.000Z",
+          "end": "2020-01-04T03:59:59.000Z"
+        }
+      }
+    ]
+  }],
+  "format": {
+    "mime": "image/png",
+    "interpolation": "near",
+    "scaleExtent": {
+      "x": {
+        "min": 0.5,
+        "max": 125
+      },
+      "y": {
+        "min": 52,
+        "max": 75.22
+      }
+    },
+    "scaleSize": {
+      "x": 14.2,
+      "y": 35
+    },
+    "width": 120,
+    "height": 225
+  },
+  "subset": {
+    "bbox": [
+      -20,
+      -10,
+      20,
+      10
+    ]
+  },
+  "requestId": "5fab13b7-cff1-4fb3-83ac-e4fe95775701",
+  "user": "jnorton1",
+  "client": "harmony-local",
+  "accessToken": "ABCD1234567890",
+  "isSynchronous": false,
+  "stagingLocation": "s3://localStagingBucket/public/harmony/gdal/232110b5-5267-4b31-9057-70afd0673f65/",
+  "callback": "http://example.com/callback"
+}

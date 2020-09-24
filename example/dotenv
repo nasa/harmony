@@ -102,6 +102,12 @@ BASE_QUEUE_URL=http://localhost:4566/queue/
 # The URL to use for interacting with Argo
 ARGO_URL=http://localhost:2746
 
+# The time (in seconds) between invocations of the job reaper service (default 10)
+JOB_REAPER_PERIOD_SEC=10
+
+# Jobs older than this many minutes that are running are checked by the job reaper (default 60)
+REAPABLE_JOB_AGE_MINUTES=60
+
 # The name of the dead letter queue for message-queue-based services
 SERVICE_DEAD_LETTER_QUEUE_NAME=harmony-dead-letter-queue
 
@@ -161,30 +167,39 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 # pull policy configured. See the above table for the recommend value to use
 # for the given environment.
 DEFAULT_IMAGE_PULL_POLICY='Always'
+DEFAULT_PARALLELISM=2
 
 ASF_GDAL_IMAGE=asfdataservices/gdal-subsetter:latest
 ASF_GDAL_IMAGE_PULL_POLICY='Always'
+ASF_GDAL_PARALLELISM=2
 
 GDAL_IMAGE=harmony/gdal:latest
 GDAL_IMAGE_PULL_POLICY='Always'
+GDAL_PARALLELISM=2
 
 NETCDF_TO_ZARR_IMAGE=harmony/netcdf-to-zarr:latest
 NETCDF_TO_ZARR_IMAGE_PULL_POLICY='Always'
+NETCDF_TO_ZARR_PARALLELISM=2
 
 SWOT_REPR_IMAGE=sds/swot-reproject:latest
 SWOT_REPR_IMAGE_PULL_POLICY='Always'
+SWOT_REPR_PARALLELISM=2
 
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
 VAR_SUBSETTER_IMAGE_PULL_POLICY='Always'
+VAR_SUBSETTER_REPR_PARALLELISM=2
 
 PODAAC_L2_SUBSETTER_IMAGE=podaac/podaac-cloud/podaac-subsetter:latest
 PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY='Always'
+PODAAC_L2_SUBSETTER_PARALLELISM=2
 
 PODAAC_PS3_IMAGE=podaac/podaac-cloud/podaac-shapefile-subsetter:latest
 PODAAC_PS3_IMAGE_PULL_POLICY='Always'
+PODAAC_PS3_PARALLELISM=2
 
 PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
 PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='Always'
+PODAAC_NETCDF_CONVERTER_PARALLELISM=2
 
 # The bucket where service output data will be staged, corresponds to the S3 bucket
 # created in localstack when running locally
