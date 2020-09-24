@@ -41,8 +41,7 @@ export interface ServiceConfig<ServiceParamType> {
  * @param config the service configuration
  */
 export function getMaxAsynchronousGranules(config: ServiceConfig<unknown>): number {
-  const serviceLimit = config.maximum_async_granules === undefined
-    ? env.maxAsynchronousGranules : config.maximum_async_granules;
+  const serviceLimit = _.get(config, 'maximum_async_granules', env.maxAsynchronousGranules);
   return Math.min(env.maxGranuleLimit, serviceLimit);
 }
 
@@ -51,8 +50,7 @@ export function getMaxAsynchronousGranules(config: ServiceConfig<unknown>): numb
  * @param config the service configuration
  */
 export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): number {
-  const serviceLimit = config.maximum_sync_granules === undefined
-    ? env.maxSynchronousGranules : config.maximum_sync_granules;
+  const serviceLimit = _.get(config, 'maximum_sync_granules', env.maxSynchronousGranules);
   return Math.min(env.maxGranuleLimit, serviceLimit);
 }
 
@@ -261,8 +259,13 @@ export default abstract class BaseService<ServiceParamType> {
       return operation.isSynchronous;
     }
 
-    const maxSyncGranules = _.get(this.config, 'maximum_sync_granules', env.maxSynchronousGranules);
-    return this.operation.cmrHits <= maxSyncGranules;
+    let numResults = this.operation.cmrHits;
+
+    if (operation.maxResults) {
+      numResults = Math.min(numResults, operation.maxResults);
+    }
+
+    return numResults <= this.maxSynchronousGranules;
   }
 
   /**
@@ -289,11 +292,19 @@ export default abstract class BaseService<ServiceParamType> {
    * @memberof BaseService
    */
   get warningMessage(): string {
-    if (this.operation.cmrHits > this.maxAsynchronousGranules) {
-      return `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
+    const maxResultsLimited = (this.operation.maxResults
+      && this.maxAsynchronousGranules > this.operation.maxResults
+      && this.operation.cmrHits > this.operation.maxResults);
+
+    let message;
+    if (maxResultsLimited) {
+      message = `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
+      + `using maxResults to process only the first ${this.operation.maxResults} granules.`;
+    } else if (this.operation.cmrHits > this.maxAsynchronousGranules) {
+      message = `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
         + `to process only the first ${this.maxAsynchronousGranules} granules.`;
     }
-    return undefined;
+    return message;
   }
 
   /**

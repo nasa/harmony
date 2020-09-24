@@ -143,6 +143,8 @@ export default class DataOperation {
 
   requireSynchronous: boolean;
 
+  maxResults?: number;
+
   cmrHits?: number;
 
   encrypter?: Encrypter;
