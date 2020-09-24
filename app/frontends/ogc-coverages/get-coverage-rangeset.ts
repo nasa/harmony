@@ -7,6 +7,7 @@ import wrap from '../../util/array';
 import parseVariables from './util/variable-parsing';
 import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
 import { parseAcceptHeader } from '../../util/content-negotiation';
+import parseMultiValueParameter from '../../util/parameter-parsing';
 import HarmonyRequest from '../../models/harmony-request';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
@@ -43,7 +44,7 @@ export default function getCoverageRangeset(
   }
 
   if (query.granuleid) {
-    operation.granuleIds = query.granuleid;
+    operation.granuleIds = parseMultiValueParameter(query.granuleid);
   }
   if (query.outputcrs) {
     try {
