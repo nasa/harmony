@@ -61,7 +61,8 @@ function getMessageForDisplay(job: Job, urlRoot: string): string {
     if (!message.endsWith('.')) {
       message += '.';
     }
-    message += ` Contains results in AWS S3. Access from AWS ${env.awsDefaultRegion} with keys from ${urlRoot}/cloud-access.sh`;
+    message += ' Contains results in AWS S3. Access from AWS '
+      + `${env.awsDefaultRegion} with keys from ${urlRoot}/cloud-access.sh`;
   }
   return message;
 }
