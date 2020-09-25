@@ -106,7 +106,7 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: true
 
   - name: podaac/l2-subsetter
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.9.0'
     type:
       name: argo
       params:
@@ -178,7 +178,7 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: true
 
   - name: sds/variable-subsetter
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.9.0'
     type:
       name: argo
       params:
@@ -233,7 +233,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   # L2SS subsetter
   - name: podaac/http-service
-    data_operation_version: '0.8.0'
+    data_operation_version: '0.9.0'
     type:
       name: http
       params:
