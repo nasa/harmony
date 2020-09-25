@@ -432,6 +432,11 @@ describe('Individual job status route', function () {
         expect(cloudAccessShLinks[0].title).to.equal('Access keys for s3:// URLs, usable from AWS us-west-2 (Shell format)');
         expect(cloudAccessShLinks[0].type).to.equal('application/x-sh');
       });
+
+      it('includes instructions in the message on how to access the S3 links', function () {
+        const job = new Job(JSON.parse(this.res.text));
+        expect(job.message).to.contain('CMR query identified 125 granules, but the request has been limited to process only the first 20 granules. Contains results in AWS S3. Access from AWS us-west-2 with keys from');
+      });
     });
 
     describe('when a job has links with temporal and bbox fields', function () {
