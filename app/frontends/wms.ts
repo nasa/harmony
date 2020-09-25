@@ -9,6 +9,8 @@ import { RequestValidationError, NotFoundError } from 'util/errors';
 import * as services from 'models/services';
 import { NextFunction } from 'express';
 import { createDecrypter, createEncrypter } from '../util/crypto';
+import parseMultiValueParameter from '../util/parameter-parsing';
+
 import env from '../util/env';
 
 const readFile = promisify(fs.readFile);
@@ -241,7 +243,7 @@ function getMap(req, res, next: NextFunction): void {
     // NOTE: we will allow a user to pass in a comma-separated list of granule IDs;
     // however, only the first granule returned by CMR is used when performing the
     // service request.
-    operation.granuleIds = query.granuleid.split(',');
+    operation.granuleIds = parseMultiValueParameter(query.granuleid);
   }
 
   // WMS requests only support synchronous execution
