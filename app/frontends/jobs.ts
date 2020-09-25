@@ -9,11 +9,25 @@ import { RequestValidationError, NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
+import env = require('../util/env');
+
+/**
+ * Returns true if the job contains S3 direct access links
+ *
+ * @param job the serialized job
+ * @returns true if job contains S3 direct access links and false otherwise
+ */
+function containsS3DirectAccessLink(job: Job): boolean {
+  const dataLinks = job.getRelatedLinks('data');
+  const directS3AccessLink = dataLinks.find((l) => l.href.match(/^s3:\/\/.*$/));
+  return !!directS3AccessLink;
+}
 
 /**
  * Analyze the links in the job to determine what links should be returned to
  * the end user. If any of the output links point to an S3 location add
  * links documenting how to obtain in region S3 access.
+ *
  * @param job the serialized job
  * @param urlRoot the root URL to be used when constructing links
  * @returns a list of job links
@@ -21,8 +35,7 @@ import db from '../util/db';
 function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
   let { links } = job;
   const dataLinks = job.getRelatedLinks('data');
-  const directS3AccessLink = dataLinks.find((l) => l.href.match(/^s3:\/\/.*$/));
-  if (directS3AccessLink) {
+  if (containsS3DirectAccessLink(job)) {
     links.unshift(getCloudAccessJsonLink(urlRoot));
     links.unshift(getCloudAccessShLink(urlRoot));
   } else {
@@ -34,6 +47,38 @@ function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
   }
   links.unshift(getStatusLink(urlRoot, job.jobID));
   return links;
+}
+
+/**
+ * Determines the message that should be displayed to an end user based on
+ * the links within the job
+ * @param job the serialized job
+ * @param urlRoot the root URL to be used when constructing links
+ */
+function getMessageForDisplay(job: Job, urlRoot: string): string {
+  let { message } = job;
+  if (containsS3DirectAccessLink(job)) {
+    if (!message.endsWith('.')) {
+      message += '.';
+    }
+    message += ` Contains results in AWS S3. Access from AWS ${env.awsDefaultRegion} with keys from ${urlRoot}/cloud-access.sh`;
+  }
+  return message;
+}
+
+/**
+ * Returns a job formatted for display to an end user.
+ *
+ * @param job the serialized job
+ * @param urlRoot the root URL to be used when constructing links
+ * @returns the job for display
+ */
+function getJobForDisplay(job: Job, urlRoot: string): Job {
+  const serializedJob = job.serialize(urlRoot);
+  serializedJob.links = getLinksForDisplay(serializedJob, urlRoot);
+  serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
+  delete serializedJob.isAsync;
+  return serializedJob;
 }
 
 export interface JobListing {
@@ -64,12 +109,7 @@ export async function getJobsListing(
     await db.transaction(async (tx) => {
       listing = await Job.queryAll(tx, query, page, limit);
     });
-    const serializedJobs = listing.data.map((j) => {
-      const serializedJob = j.serialize(root);
-      serializedJob.links = getLinksForDisplay(serializedJob, root);
-      delete serializedJob.isAsync;
-      return serializedJob;
-    });
+    const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root));
     const response: JobListing = {
       count: listing.pagination.total,
       jobs: serializedJobs,
@@ -119,9 +159,7 @@ export async function getJobStatus(
     });
     if (job) {
       const urlRoot = getRequestRoot(req);
-      const serializedJob = job.serialize(urlRoot);
-      serializedJob.links = getLinksForDisplay(serializedJob, urlRoot);
-      res.send(serializedJob);
+      res.send(getJobForDisplay(job, urlRoot));
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
