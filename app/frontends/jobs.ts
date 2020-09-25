@@ -19,8 +19,7 @@ import env = require('../util/env');
  */
 function containsS3DirectAccessLink(job: Job): boolean {
   const dataLinks = job.getRelatedLinks('data');
-  const directS3AccessLink = dataLinks.find((l) => l.href.match(/^s3:\/\/.*$/));
-  return !!directS3AccessLink;
+  return dataLinks.some((l) => l.href.match(/^s3:\/\/.*$/));
 }
 
 /**
