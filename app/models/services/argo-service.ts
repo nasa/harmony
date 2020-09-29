@@ -28,17 +28,17 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    * Returns the batch size to use for the given request
    */
   chooseBatchSize(): number {
-    const requestLimit = this.maxAsynchronousGranules;
     const { maxResults } = this.operation;
+    const maxGranules = env.maxGranuleLimit;
 
     let batchSize = _.get(this.config, 'batch_size', env.defaultBatchSize);
 
-    if (maxResults && maxResults > requestLimit) {
-      if (batchSize === 0) {
-        batchSize = requestLimit;
-      } else {
-        batchSize = Math.min(batchSize, requestLimit);
-      }
+    if (batchSize <= 0 || batchSize > maxGranules) {
+      batchSize = maxGranules;
+    }
+
+    if (maxResults) {
+      batchSize = Math.min(batchSize, maxResults);
     }
 
     return batchSize;
@@ -47,7 +47,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
   /**
    * Invokes an Argo workflow to execute a service request
    *
-   *  @param _logger the logger associated with the request
+   *  @param logger the logger associated with the request
    *  @returns A promise resolving to null
    */
   async _run(logger: Logger): Promise<InvocationResult> {

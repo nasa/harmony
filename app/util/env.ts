@@ -10,7 +10,6 @@ interface HarmonyEnv {
   logLevel: string;
   stagingBucket: string;
   maxSynchronousGranules: number;
-  maxAsynchronousGranules: number;
   maxGranuleLimit: number;
   objectStoreType: string;
   awsDefaultRegion: string;
@@ -73,8 +72,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['LOG_LEVEL', 'debug'],
   ['STAGING_BUCKET', 'localStagingBucket'],
   ['MAX_SYNCHRONOUS_GRANULES', 1],
-  ['MAX_ASYNCHRONOUS_GRANULES', 20],
-  ['MAX_GRANULE_LIMIT', 400],
+  ['MAX_GRANULE_LIMIT', 350],
   ['.OBJECT_STORE_TYPE', 's3'],
   ['AWS_DEFAULT_REGION', 'us-west-2'],
   ['SAME_REGION_ACCESS_ROLE'],
@@ -90,8 +88,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['OAUTH_HOST', 'https://uat.urs.earthdata.nasa.gov'],
   ['CALLBACK_URL_ROOT', null],
   ['SYNC_REQUEST_POLL_INTERVAL_MS', 100],
-  // default to no batching
-  ['DEFAULT_BATCH_SIZE', 0],
+  ['DEFAULT_BATCH_SIZE', 2000],
   ['DEFAULT_IMAGE_PULL_POLICY', 'Always'],
   ['DEFAULT_PARALLELISM', 2],
   ['SHARED_SECRET_KEY', null],

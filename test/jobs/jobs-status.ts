@@ -155,7 +155,7 @@ describe('Individual job status route', function () {
 
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.include('the request has been limited to process');
+          expect(job.message).to.include('The job is being processed');
         });
 
         it('does not supply a link to the STAC catalog', function () {
@@ -209,7 +209,7 @@ describe('Individual job status route', function () {
 
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.include('the request has been limited to process');
+          expect(job.message).to.include('The job has completed successfully');
         });
       });
     });
@@ -233,7 +233,7 @@ describe('Individual job status route', function () {
 
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.include('the request has been limited to process');
+          expect(job.message).to.include('The job is being processed');
         });
 
         it('does not supply a link to the STAC catalog', function () {
@@ -435,7 +435,7 @@ describe('Individual job status route', function () {
 
       it('includes instructions in the message on how to access the S3 links', function () {
         const job = new Job(JSON.parse(this.res.text));
-        expect(job.message).to.contain('CMR query identified 125 granules, but the request has been limited to process only the first 20 granules. Contains results in AWS S3. Access from AWS us-west-2 with keys from');
+        expect(job.message).to.contain('Contains results in AWS S3. Access from AWS us-west-2 with keys from');
       });
     });
 
@@ -486,7 +486,7 @@ describe('Individual job status route', function () {
 
         it('returns a human-readable message field corresponding to its state', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.include('the request has been limited to process');
+          expect(job.message).to.include('The job has completed successfully');
         });
 
         itIncludesRequestUrl('/C1104-PVC_TS2/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(-80%3A80)&subset=lon(-100%3A100)');

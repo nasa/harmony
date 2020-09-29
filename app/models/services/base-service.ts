@@ -37,15 +37,6 @@ export interface ServiceConfig<ServiceParamType> {
 }
 
 /**
- * Returns the maximum number of asynchronous granules a service allows
- * @param config the service configuration
- */
-export function getMaxAsynchronousGranules(config: ServiceConfig<unknown>): number {
-  const serviceLimit = _.get(config, 'maximum_async_granules', env.maxAsynchronousGranules);
-  return Math.min(env.maxGranuleLimit, serviceLimit);
-}
-
-/**
  * Returns the maximum number of synchronous granules a service allows
  * @param config the service configuration
  */
@@ -269,14 +260,6 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
-   * Returns the maximum number of asynchronous granules for this service
-   * @memberof BaseService
-   */
-  get maxAsynchronousGranules(): number {
-    return getMaxAsynchronousGranules(this.config);
-  }
-
-  /**
    * Returns the maximum number of synchronous granules for this service
    * @memberof BaseService
    */
@@ -296,7 +279,7 @@ export default abstract class BaseService<ServiceParamType> {
     if (this.operation.maxResults) {
       granulesProcessed = Math.min(granulesProcessed, this.operation.maxResults);
     } else {
-      granulesProcessed = Math.min(granulesProcessed, this.maxAsynchronousGranules);
+      granulesProcessed = Math.min(granulesProcessed, env.maxGranuleLimit);
     }
 
     let message;

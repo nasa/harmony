@@ -12,7 +12,9 @@ process.env.EXAMPLE_SERVICES = 'true';
  * @param {object} opts Options to pass to the server start method
  * @returns {void}
  */
-export default function hookServersStartStop(opts = { skipEarthdataLogin: true }): void {
+export default function hookServersStartStop(
+  opts = { skipEarthdataLogin: true },
+): void {
   let servers = null;
   before(async function () {
     // Skip Earthdata Login unless the test says to do otherwise
@@ -21,6 +23,8 @@ export default function hookServersStartStop(opts = { skipEarthdataLogin: true }
     servers = await harmony.start({
       EXAMPLE_SERVICES: 'true',
       skipEarthdataLogin: skipEdl,
+      startWorkflowTerminationListener: 'false',
+      startJobReaper: 'false',
       // Hardcoded to 4000 to match the port in the url for the example HTTP service in services.yml
       PORT: '4000',
       BACKEND_PORT: '0',

@@ -1,5 +1,4 @@
 import { NextFunction } from 'express';
-import { getMaxAsynchronousGranules } from 'models/services/base-service';
 import keysToLowerCase from 'util/object';
 import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
@@ -46,7 +45,7 @@ function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Mbr {
 export default async function cmrGranuleLocator(req, res, next: NextFunction): Promise<void> {
   const { operation } = req;
   const query = keysToLowerCase(req.query);
-  const { logger, serviceConfig } = req.context;
+  const { logger } = req.context;
 
   if (!operation) return next();
 
@@ -70,7 +69,7 @@ export default async function cmrGranuleLocator(req, res, next: NextFunction): P
     const queries = sources.map(async (source) => {
       logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
-      let maxResults = getMaxAsynchronousGranules(serviceConfig);
+      let maxResults = env.maxGranuleLimit;
       if ('maxresults' in query) {
         // Let a user request more granules than the service allows, but may not exceed the
         // overall system limit.

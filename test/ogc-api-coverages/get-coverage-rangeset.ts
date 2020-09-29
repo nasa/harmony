@@ -806,11 +806,11 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446398-ORNL_DAAC. CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446398-ORNL_DAAC.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(20);
+      expect(job.links.length).to.equal(117);
     });
     it('granule links include a title of the granuleId', function () {
       const job = JSON.parse(this.res.text);
