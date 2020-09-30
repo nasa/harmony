@@ -52,8 +52,8 @@ function getMaxGranules(req: HarmonyRequest): number {
  * to the given operation.
  *
  * @param req The client request, containing an operation
- * @param {http.ServerResponse} res The client response
- * @param {Function} next The next function in the middleware chain
+ * @param res The client response
+ * @param next The next function in the middleware chain
  * @returns {void}
  */
 export default async function cmrGranuleLocator(

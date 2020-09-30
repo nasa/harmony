@@ -12,9 +12,7 @@ process.env.EXAMPLE_SERVICES = 'true';
  * @param {object} opts Options to pass to the server start method
  * @returns {void}
  */
-export default function hookServersStartStop(
-  opts = { skipEarthdataLogin: true },
-): void {
+export default function hookServersStartStop(opts = { skipEarthdataLogin: true }): void {
   let servers = null;
   before(async function () {
     // Skip Earthdata Login unless the test says to do otherwise
