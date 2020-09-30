@@ -213,6 +213,21 @@ describe('Individual job status route', function () {
         });
       });
     });
+
+    describe('when the request is limited by maxResults', function () {
+      StubService.hook({ params: { status: 'successful' } });
+      hookRangesetRequest(version, collection, variableName,
+        { username: 'jdoe1', query: { maxResults: 2 } });
+
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+
+        it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('CMR query identified 177 granules, but the request has been limited to process only the first 2 granules.');
+        });
+      });
+    });
   });
 
   describe('status updates from HTTP backends', function () {

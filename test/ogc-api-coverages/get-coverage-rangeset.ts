@@ -318,6 +318,71 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when passing a maxResults parameter', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+
+    describe('set to "1"', function () {
+      const maxResults = 1;
+      hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
+
+      it('performs the request synchronously', function () {
+        expect(this.service.operation.isSynchronous).to.equal(true);
+      });
+
+      it('includes only one granule in the request', function () {
+        expect(this.service.operation.sources[0].granules.length).to.equal(1);
+      });
+    });
+
+    describe('set to "2"', function () {
+      const maxResults = 2;
+
+      hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
+
+      it('performs the request asynchronously', function () {
+        expect(this.service.operation.isSynchronous).to.equal(false);
+      });
+
+      it('includes two granules in the request', function () {
+        expect(this.service.operation.sources[0].granules.length).to.equal(2);
+      });
+    });
+
+    describe('set to "0"', function () {
+      const maxResults = 0;
+
+      hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
+
+      it('returns a 400 error', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+
+      it('includes text explaining max results needs to be greater than 0', function () {
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'openapi.ValidationError',
+          description: 'Error: query parameter "maxResults" should be >= 1',
+        });
+      });
+    });
+
+    describe('set to "invalid"', function () {
+      const maxResults = 'invalid';
+
+      hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
+
+      it('returns a 400 error', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+
+      it('includes text explaining the invalid value', function () {
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'openapi.ValidationError',
+          description: 'Error: query parameter "maxResults" should be integer',
+        });
+      });
+    });
+  });
+
   describe('when the granule spatial metadata is defined by polygons instead of a bbox', function () {
     const query = {
       granuleid: 'G1226018995-POCUMULUS',

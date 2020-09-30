@@ -51,6 +51,9 @@ CLIENT_ID=harmony-local
 # JSON format. Useful when running harmony locally and viewing logs via a terminal.
 TEXT_LOGGER=
 
+# When set to true log all database queries performed by knex
+DEBUG_KNEX=
+
 # Log level (error, warn, info, debug). Defaults to debug.
 LOG_LEVEL=
 
@@ -102,8 +105,8 @@ BASE_QUEUE_URL=http://localhost:4566/queue/
 # The URL to use for interacting with Argo
 ARGO_URL=http://localhost:2746
 
-# The time (in seconds) between invocations of the job reaper service (default 10)
-JOB_REAPER_PERIOD_SEC=10
+# The time (in seconds) between invocations of the job reaper service (default 360)
+JOB_REAPER_PERIOD_SEC=360
 
 # Jobs older than this many minutes that are running are checked by the job reaper (default 60)
 REAPABLE_JOB_AGE_MINUTES=60
