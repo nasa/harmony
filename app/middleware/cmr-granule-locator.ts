@@ -4,7 +4,7 @@ import { ServerResponse } from 'http';
 import _ from 'lodash';
 import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
-import { HarmonyGranule, TemporalRange } from '../models/data-operation';
+import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { computeMbr, Mbr } from '../util/spatial/mbr';
 import env from '../util/env';
@@ -68,8 +68,9 @@ export default async function cmrGranuleLocator(
 
   const cmrQuery: cmr.CmrQuery = {};
 
-  if (operation.temporal) {
-    const { start, end } = operation.temporal as unknown as TemporalRange;
+  const start = operation.temporal?.start;
+  const end = operation.temporal?.end;
+  if (start || end) {
     cmrQuery.temporal = `${start || ''},${end || ''}`;
   }
   if (operation.boundingRectangle) {

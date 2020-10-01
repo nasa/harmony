@@ -112,8 +112,8 @@ export interface HarmonyVariable {
 }
 
 export interface TemporalRange {
-  start: Date;
-  end: Date;
+  start?: Date;
+  end?: Date;
 }
 export interface HarmonyGranule {
   id: string;
@@ -413,31 +413,30 @@ export default class DataOperation {
    * is expressed in RFC-3339 format
    *
    * @returns The temporal range with two keys start and end
-   * WARNING: Return type is actually { start: Date, end: Date }, but Typescript does not allow
-   * setter and getter to use different types: https://github.com/microsoft/TypeScript/issues/2521
    * @memberof DataOperation
    */
-  get temporal(): Date[] {
+  get temporal(): TemporalRange {
     const { temporal } = this.model;
     if (!temporal) return null;
     return temporal;
   }
 
   /**
-   * Sets the temporal range to be acted upon by services, [ start, end ], storing each time
+   * Sets the temporal range to be acted upon by services, { start, end }, storing each time
    * as a string expressed in RFC-3339 format
    *
    * @param {Array<Date>} The [ start, end ] temporal range
    * @returns {void}
    * @memberof DataOperation
    */
-  set temporal([startTime, endTime]: Date[]) {
+  set temporal(temporalRange: TemporalRange) {
+    const { start, end } = temporalRange;
     this.model.temporal = {};
-    if (startTime) {
-      this.model.temporal.start = (typeof startTime === 'string') ? startTime : startTime.toISOString();
+    if (start) {
+      this.model.temporal.start = (typeof start === 'string') ? start : start.toISOString();
     }
-    if (endTime) {
-      this.model.temporal.end = (typeof endTime === 'string') ? endTime : endTime.toISOString();
+    if (end) {
+      this.model.temporal.end = (typeof end === 'string') ? end : end.toISOString();
     }
   }
 

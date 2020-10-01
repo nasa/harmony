@@ -26,6 +26,7 @@ export interface ArgoServiceParams {
 export default class ArgoService extends BaseService<ArgoServiceParams> {
   /**
    * Returns the batch size to use for the given request
+   * @private
    */
   chooseBatchSize(): number {
     const { maxResults } = this.operation;
