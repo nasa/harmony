@@ -11,6 +11,8 @@ https://cmr.earthdata.nasa.gov:
         namespace: argo
         template: harmony-gdal
         image: !Env ${GDAL_IMAGE}
+        image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
+        parallelism: !Env ${GDAL_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
@@ -45,7 +47,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: asf-gdal-subsetter
         image: !Env ${ASF_GDAL_IMAGE}
-        imagePullPolicy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
+        image_pull_policy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
         parallelism: !Env ${ASF_GDAL_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
@@ -80,7 +82,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: harmony-gdal
         image: !Env ${GDAL_IMAGE}
-        imagePullPolicy: !Env ${GDAL_IMAGE_PULL_POLICY}
+        image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
         parallelism: !Env ${GDAL_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
@@ -114,7 +116,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: podaac-l2-subsetter
         image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        imagePullPolicy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
+        image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
@@ -145,7 +147,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: swot-reproject
         image: !Env ${SWOT_REPR_IMAGE}
-        imagePullPolicy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
+        image_pull_policy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
         parallelism: !Env ${SWOT_REPR_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
@@ -185,7 +187,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: var-subsetter
         image: !Env ${VAR_SUBSETTER_IMAGE}
-        imagePullPolicy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
+        image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
@@ -261,7 +263,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: podaac-ps3
         image: !Env ${PODAAC_PS3_IMAGE}
-        imagePullPolicy: !Env ${PODAAC_PS3_IMAGE_PULL_POLICY}
+        image_pull_policy: !Env ${PODAAC_PS3_IMAGE_PULL_POLICY}
         parallelism: !Env ${PODAAC_PS3_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
@@ -292,7 +294,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: podaac-netcdf-converter
         image: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE}
-        imagePullPolicy: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY}
+        image_pull_policy: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${PODAAC_NETCDF_CONVERTER_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
@@ -322,7 +324,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: harmony-netcdf-to-zarr
         image: !Env ${NETCDF_TO_ZARR_IMAGE}
-        imagePullPolicy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
+        image_pull_policy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
         parallelism: !Env ${NETCDF_TO_ZARR_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}

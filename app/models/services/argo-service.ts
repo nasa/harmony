@@ -12,7 +12,7 @@ export interface ArgoServiceParams {
   namespace: string;
   template: string;
   image: string;
-  imagePullPolicy?: string;
+  image_pull_policy?: string;
   parallelism?: number;
   env: { [key: string]: string };
 }
@@ -97,7 +97,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       },
       {
         name: 'image-pull-policy',
-        value: this.params.imagePullPolicy || env.defaultImagePullPolicy,
+        value: this.params.image_pull_policy || env.defaultImagePullPolicy,
       },
     ];
 
