@@ -19,23 +19,42 @@ import env from '../../util/env';
 let serviceConfigs = null;
 
 /**
+ * Converts the !Env directive in services.yml to either a string or a number
+ * @param envDirective The !Env directive
+ */
+function parseEnvironmentDirective(envDirective: string): string | number {
+  const regex = /\$\{(\w+)\}/g;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const strValue: string | number = envDirective.replace(regex, (v: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parameter = _.camelCase(v) as any;
+    return env[parameter.match(/\w+/)] || process.env[v.match(/\w+/)] || '';
+  });
+  const intValue = parseInt(strValue, 10);
+  if (Number.isNaN(intValue)) {
+    return strValue;
+  }
+  return intValue;
+}
+
+/**
  * Loads the services configuration file.
  */
 function loadServiceConfigs(): void {
   // Setup a type, !Env, that when placed in front of a string resolves substrings like
   // "${some_env_var}" to the corresponding environment variable
-  const regex = /\$\{(\w+)\}/g;
   const EnvType = new yaml.Type('!Env', {
     kind: 'scalar',
     resolve: (data): boolean => data,
-    construct: (data): string => data.replace(regex, (v) => process.env[v.match(/\w+/)] || ''),
+    construct: (data): string | number => parseEnvironmentDirective(data),
   });
 
   // Load the config
   const buffer = fs.readFileSync(path.join(__dirname, '../../../config/services.yml'));
   const schema = yaml.Schema.create([EnvType]);
   const envConfigs = yaml.load(buffer.toString(), { schema });
-  serviceConfigs = envConfigs[env.cmrEndpoint].filter((config) => config.enabled !== false && config.enabled !== 'false');
+  serviceConfigs = envConfigs[env.cmrEndpoint]
+    .filter((config) => config.enabled !== false && config.enabled !== 'false');
 }
 
 /**
