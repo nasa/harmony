@@ -24,11 +24,11 @@ let serviceConfigs = null;
  */
 function parseEnvironmentDirective(envDirective: string): string | number {
   const regex = /\$\{(\w+)\}/g;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const strValue: string | number = envDirective.replace(regex, (v: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const parameter = _.camelCase(v) as any;
-    return env[parameter.match(/\w+/)] || process.env[v.match(/\w+/)] || '';
+  const strValue: string | number = envDirective.replace(regex, (v) => {
+    const parameter = _.camelCase(v);
+    return env[parameter.match(/\w+/) as unknown as string]
+      || process.env[v.match(/\w+/) as unknown as string]
+      || '';
   });
   const intValue = parseInt(strValue, 10);
   if (Number.isNaN(intValue)) {
