@@ -224,7 +224,7 @@ describe('Individual job status route', function () {
 
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('CMR query identified 177 granules, but the request has been limited to process only the first 2 granules.');
+          expect(job.message).to.equal('CMR query identified 177 granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults.');
         });
       });
     });

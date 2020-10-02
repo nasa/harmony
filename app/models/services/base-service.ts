@@ -285,7 +285,16 @@ export default abstract class BaseService<ServiceParamType> {
     let message;
     if (this.operation.cmrHits > granulesProcessed) {
       message = `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
-        + `to process only the first ${granulesProcessed} granules.`;
+        + `to process only the first ${granulesProcessed} granules`;
+      if (this.operation.maxResults) {
+        if (this.operation.maxResults > env.maxGranuleLimit) {
+          message += ' becasue of system constraints.';
+        } else {
+          message += ` because you requested ${this.operation.maxResults} maxResults.`;
+        }
+      } else {
+        message += ' because of system constraints.';
+      }
     }
     return message;
   }
