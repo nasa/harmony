@@ -12,7 +12,7 @@ export interface ArgoServiceParams {
   namespace: string;
   template: string;
   image: string;
-  imagePullPolicy?: string;
+  image_pull_policy?: string;
   parallelism?: number;
   env: { [key: string]: string };
 }
@@ -25,9 +25,30 @@ export interface ArgoServiceParams {
  */
 export default class ArgoService extends BaseService<ArgoServiceParams> {
   /**
+   * Returns the batch size to use for the given request
+   * @private
+   */
+  chooseBatchSize(): number {
+    const { maxResults } = this.operation;
+    const maxGranules = env.maxGranuleLimit;
+
+    let batchSize = _.get(this.config, 'batch_size', env.defaultBatchSize);
+
+    if (batchSize <= 0 || batchSize > maxGranules) {
+      batchSize = maxGranules;
+    }
+
+    if (maxResults) {
+      batchSize = Math.min(batchSize, maxResults);
+    }
+
+    return batchSize;
+  }
+
+  /**
    * Invokes an Argo workflow to execute a service request
    *
-   *  @param _logger the logger associated with the request
+   *  @param logger the logger associated with the request
    *  @returns A promise resolving to null
    */
   async _run(logger: Logger): Promise<InvocationResult> {
@@ -42,7 +63,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       }
     }
 
-    const batchSize = _.get(this.config, 'batch_size', env.defaultBatchSize);
+    const batchSize = this.chooseBatchSize();
+
     const batch = batchOperations(this.operation, batchSize);
     // we need to serialize the batch operations to get just the models and then deserialize
     // them so we can pass them to the Argo looping/concurrency mechanism in the workflow
@@ -75,7 +97,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       },
       {
         name: 'image-pull-policy',
-        value: this.params.imagePullPolicy || env.defaultImagePullPolicy,
+        value: this.params.image_pull_policy || env.defaultImagePullPolicy,
       },
     ];
 

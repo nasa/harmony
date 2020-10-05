@@ -1,10 +1,13 @@
 import { NextFunction } from 'express';
-import { getMaxAsynchronousGranules } from 'models/services/base-service';
+import keysToLowerCase from 'util/object';
+import { ServerResponse } from 'http';
+import _ from 'lodash';
 import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
 import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { computeMbr, Mbr } from '../util/spatial/mbr';
+import env from '../util/env';
 
 /**
  * Gets collection from request that matches the given id
@@ -32,18 +35,32 @@ function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Mbr {
 }
 
 /**
+ * Returns from the maximum number of granules to return from the CMR.
+ */
+function getMaxGranules(req: HarmonyRequest): number {
+  const query = keysToLowerCase(req.query);
+
+  let maxResults = env.maxGranuleLimit;
+  if ('maxresults' in query) {
+    maxResults = Math.min(env.maxGranuleLimit, query.maxresults);
+  }
+  return maxResults;
+}
+/**
  * Express.js middleware which extracts parameters from the Harmony operation
  * and performs a granule query on them, determining which files are applicable
  * to the given operation.
  *
- * @param {http.IncomingMessage} req The client request, containing an operation
- * @param {http.ServerResponse} res The client response
- * @param {Function} next The next function in the middleware chain
+ * @param req The client request, containing an operation
+ * @param res The client response
+ * @param next The next function in the middleware chain
  * @returns {void}
  */
-export default async function cmrGranuleLocator(req, res, next: NextFunction): Promise<void> {
+export default async function cmrGranuleLocator(
+  req: HarmonyRequest, res: ServerResponse, next: NextFunction,
+): Promise<void> {
   const { operation } = req;
-  const { logger, serviceConfig } = req.context;
+  const { logger } = req.context;
 
   if (!operation) return next();
 
@@ -51,8 +68,9 @@ export default async function cmrGranuleLocator(req, res, next: NextFunction): P
 
   const cmrQuery: cmr.CmrQuery = {};
 
-  if (operation.temporal) {
-    const { start, end } = operation.temporal;
+  const start = operation.temporal?.start;
+  const end = operation.temporal?.end;
+  if (start || end) {
     cmrQuery.temporal = `${start || ''},${end || ''}`;
   }
   if (operation.boundingRectangle) {
@@ -67,7 +85,9 @@ export default async function cmrGranuleLocator(req, res, next: NextFunction): P
     const queries = sources.map(async (source) => {
       logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
-      const maxAsyncGranules = getMaxAsynchronousGranules(serviceConfig);
+      const maxResults = getMaxGranules(req);
+
+      operation.maxResults = maxResults;
 
       if (operation.geojson) {
         cmrQuery.geojson = operation.geojson;
@@ -75,14 +95,14 @@ export default async function cmrGranuleLocator(req, res, next: NextFunction): P
           source.collection,
           cmrQuery,
           req.accessToken,
-          maxAsyncGranules,
+          maxResults,
         );
       } else {
         cmrResponse = await cmr.queryGranulesForCollection(
           source.collection,
           cmrQuery,
           req.accessToken,
-          maxAsyncGranules,
+          maxResults,
         );
       }
 

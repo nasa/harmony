@@ -51,6 +51,9 @@ CLIENT_ID=harmony-local
 # JSON format. Useful when running harmony locally and viewing logs via a terminal.
 TEXT_LOGGER=
 
+# When set to true log all database queries performed by knex
+DEBUG_KNEX=
+
 # Log level (error, warn, info, debug). Defaults to debug.
 LOG_LEVEL=
 
@@ -59,16 +62,16 @@ LOG_LEVEL=
 # value in services.yml for maximum_sync_granules it will override this value.
 MAX_SYNCHRONOUS_GRANULES=1
 
-# Number of granules allowed for an asynchronous request. When the request exceeds
-# this number it returns a message to the user indicating that we are limiting their
-# service request to only the first MAX_ASYNCHRONOUS_GRANULES granules. If a service
-# provides a value in services.yml for maximum_async_granules it will override this value.
-MAX_ASYNCHRONOUS_GRANULES=20
+# Number of granules submitted to a backend service within a single request. If a request
+# contains more granules, the request will result in multiple calls to the backend service
+# with DEFAULT_BATCH_SIZE granules sent in each call. If a service provides a value
+# in services.yml for maximum_async_granules it will override this value.
+DEFAULT_BATCH_SIZE=2000
 
 # The maximum allowed granules in any request synchronous or asynchronous. If a service
 # attempts to configure a value greater than this limit for either maximum_async_granules
 # or maximum_async_granules we will override the configuration to limit to this value.
-MAX_GRANULE_LIMIT=2000
+MAX_GRANULE_LIMIT=350
 
 # String to identify the type of environment.  Options:
 #  - "development" for local development.
@@ -102,8 +105,8 @@ BASE_QUEUE_URL=http://localhost:4566/queue/
 # The URL to use for interacting with Argo
 ARGO_URL=http://localhost:2746
 
-# The time (in seconds) between invocations of the job reaper service (default 10)
-JOB_REAPER_PERIOD_SEC=10
+# The time (in seconds) between invocations of the job reaper service (default 360)
+JOB_REAPER_PERIOD_SEC=360
 
 # Jobs older than this many minutes that are running are checked by the job reaper (default 60)
 REAPABLE_JOB_AGE_MINUTES=60

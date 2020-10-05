@@ -1,3 +1,5 @@
+import { TemporalRange } from 'models/data-operation';
+
 const rangeSeparator = ':';
 const unbounded = '*';
 // Regex to match lat(-10:10) or lon(*:20)
@@ -34,11 +36,6 @@ interface DimensionConfig {
 interface Range<T> {
   min?: T;
   max?: T;
-}
-
-interface TemporalRange {
-  startTime?: Date;
-  stopTime?: Date;
 }
 
 interface DimensionRanges {
@@ -232,10 +229,10 @@ export function subsetParamsToBbox(
 
 /**
  * Given a set of parsed subset params, as returned by `parseSubsetParams`, returns an object
- * containing startTime and stopTime if applicable.
+ * containing start and end if applicable.
  *
- * @param {Object} values parsed, valid subset params, as returned by `parseSubsetParams`
- * @returns {Object} An object with startTime and stopTime fields if applicable
+ * @param values parsed, valid subset params, as returned by `parseSubsetParams`
+ * @returns A temporal range with start and end fields if applicable
  */
 export function subsetParamsToTemporal(
   values: { lat?: Range<number>; lon?: Range<number>; time?: Range<Date> },
@@ -244,10 +241,10 @@ export function subsetParamsToTemporal(
   const temporal: TemporalRange = {};
   if (time) {
     if (time.min) {
-      temporal.startTime = time.min;
+      temporal.start = time.min;
     }
     if (time.max) {
-      temporal.stopTime = time.max;
+      temporal.end = time.max;
     }
   }
   return temporal;

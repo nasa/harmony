@@ -58,14 +58,22 @@ function loadServiceConfigs(): void {
 }
 
 /**
- * Logs a warning if the configuration is considered invalid.
+ * Throws an error if the configuration is invalid. Logs a warning if configuration will be ignored.
  * @param config The service configuration to validate
  */
 function validateServiceConfig(config: ServiceConfig<unknown>): void {
-  const value = config.maximum_async_granules || 0;
-  if (value > env.maxGranuleLimit) {
-    logger.warn(`Service ${config.name} attempting to allow more than the max allowed granules in a request. `
-      + `Configured to use ${config.maximum_async_granules}, but will be limited to ${env.maxGranuleLimit}`);
+  const batchSize = config.batch_size;
+  if (batchSize !== undefined) {
+    if (!_.isInteger(batchSize)) {
+      throw new TypeError(`Invalid batch_size ${batchSize}. Batch size must be an integer greater than or equal to 1.`);
+    }
+    if (batchSize <= 0) {
+      throw new TypeError(`Invalid batch_size ${batchSize}. Batch size must be greater than or equal to 1.`);
+    }
+    if (batchSize > env.maxGranuleLimit) {
+      logger.warn(`Service ${config.name} attempting to allow more than the max allowed granules in a batch. `
+        + `Configured to use ${batchSize}, but will be limited to ${env.maxGranuleLimit}`);
+    }
   }
 }
 

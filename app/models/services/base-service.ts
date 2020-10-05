@@ -33,17 +33,6 @@ export interface ServiceConfig<ServiceParamType> {
   concurrency?: number;
   message?: string;
   maximum_sync_granules?: number;
-  maximum_async_granules?: number;
-}
-
-/**
- * Returns the maximum number of asynchronous granules a service allows
- * @param config the service configuration
- */
-export function getMaxAsynchronousGranules(config: ServiceConfig<unknown>): number {
-  const serviceLimit = config.maximum_async_granules === undefined
-    ? env.maxAsynchronousGranules : config.maximum_async_granules;
-  return Math.min(env.maxGranuleLimit, serviceLimit);
 }
 
 /**
@@ -51,8 +40,7 @@ export function getMaxAsynchronousGranules(config: ServiceConfig<unknown>): numb
  * @param config the service configuration
  */
 export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): number {
-  const serviceLimit = config.maximum_sync_granules === undefined
-    ? env.maxSynchronousGranules : config.maximum_sync_granules;
+  const serviceLimit = _.get(config, 'maximum_sync_granules', env.maxSynchronousGranules);
   return Math.min(env.maxGranuleLimit, serviceLimit);
 }
 
@@ -261,16 +249,13 @@ export default abstract class BaseService<ServiceParamType> {
       return operation.isSynchronous;
     }
 
-    const maxSyncGranules = _.get(this.config, 'maximum_sync_granules', env.maxSynchronousGranules);
-    return this.operation.cmrHits <= maxSyncGranules;
-  }
+    let numResults = this.operation.cmrHits;
 
-  /**
-   * Returns the maximum number of asynchronous granules for this service
-   * @memberof BaseService
-   */
-  get maxAsynchronousGranules(): number {
-    return getMaxAsynchronousGranules(this.config);
+    if (operation.maxResults) {
+      numResults = Math.min(numResults, operation.maxResults);
+    }
+
+    return numResults <= this.maxSynchronousGranules;
   }
 
   /**
@@ -284,16 +269,35 @@ export default abstract class BaseService<ServiceParamType> {
   /**
    * Returns a warning message if some part of the request can't be fulfilled
    *
-   * @returns {string} a warning message to display, or undefined if not applicable
+   * @returns a warning message to display, or undefined if not applicable
    * @readonly
    * @memberof BaseService
    */
   get warningMessage(): string {
-    if (this.operation.cmrHits > this.maxAsynchronousGranules) {
-      return `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
-        + `to process only the first ${this.maxAsynchronousGranules} granules.`;
+    let granulesProcessed = this.operation.cmrHits;
+    if (this.operation.maxResults) {
+      granulesProcessed = Math.min(
+        granulesProcessed, this.operation.maxResults, env.maxGranuleLimit,
+      );
+    } else {
+      granulesProcessed = Math.min(granulesProcessed, env.maxGranuleLimit);
     }
-    return undefined;
+
+    let message;
+    if (this.operation.cmrHits > granulesProcessed) {
+      message = `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
+        + `to process only the first ${granulesProcessed} granules`;
+      if (this.operation.maxResults) {
+        if (this.operation.maxResults < env.maxGranuleLimit) {
+          message += ` because you requested ${this.operation.maxResults} maxResults.`;
+        } else {
+          message += ' because of system constraints.';
+        }
+      } else {
+        message += ' because of system constraints.';
+      }
+    }
+    return message;
   }
 
   /**

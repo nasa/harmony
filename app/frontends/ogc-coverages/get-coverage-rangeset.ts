@@ -73,9 +73,9 @@ export default function getCoverageRangeset(
     if (bbox) {
       operation.boundingRectangle = bbox;
     }
-    const { startTime, stopTime } = subsetParamsToTemporal(subset);
-    if (startTime || stopTime) {
-      operation.temporal = [startTime, stopTime];
+    const { start, end } = subsetParamsToTemporal(subset);
+    if (start || end) {
+      operation.temporal = { start, end };
     }
   } catch (e) {
     if (e instanceof ParameterParseError) {
