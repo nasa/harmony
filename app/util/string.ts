@@ -51,9 +51,9 @@ export function truncateString(s: string, n: number): string {
 }
 
 /**
- * Returns true if a string contains a numerical value.
+ * Returns true if a string is an integer.
  * @param value the value to check
- * @returns true if numeric and false otherwise
+ * @returns true if it is an integer and false otherwise
  */
 export function isInteger(value: string): boolean {
   return /^-?\d+$/.test(value);
