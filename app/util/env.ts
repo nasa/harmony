@@ -1,4 +1,4 @@
-import { camelCase } from 'change-case';
+import _ from 'lodash';
 import * as dotenv from 'dotenv';
 import * as winston from 'winston';
 
@@ -62,7 +62,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
     value = envValue;
   }
 
-  envVars[camelCase(envName)] = value;
+  envVars[_.camelCase(envName)] = value;
 }
 
 // create exported config variables
@@ -73,7 +73,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['STAGING_BUCKET', 'localStagingBucket'],
   ['MAX_SYNCHRONOUS_GRANULES', 1],
   ['MAX_GRANULE_LIMIT', 350],
-  ['.OBJECT_STORE_TYPE', 's3'],
+  ['OBJECT_STORE_TYPE', 's3'],
   ['AWS_DEFAULT_REGION', 'us-west-2'],
   ['SAME_REGION_ACCESS_ROLE'],
   ['JOB_REAPER_PERIOD_SEC', 360],
