@@ -33,7 +33,6 @@ export interface ServiceConfig<ServiceParamType> {
   concurrency?: number;
   message?: string;
   maximum_sync_granules?: number;
-  maximum_async_granules?: number;
 }
 
 /**
@@ -289,7 +288,7 @@ export default abstract class BaseService<ServiceParamType> {
       message = `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
         + `to process only the first ${granulesProcessed} granules`;
       if (this.operation.maxResults) {
-        if (this.operation.maxResults <= env.maxGranuleLimit) {
+        if (this.operation.maxResults < env.maxGranuleLimit) {
           message += ` because you requested ${this.operation.maxResults} maxResults.`;
         } else {
           message += ' because of system constraints.';

@@ -567,7 +567,7 @@ describe('warning messages', function () {
       });
 
       it('returns a warning message about maxResults limiting the number of results', function () {
-        expect(this.service.warningMessage).to.equal('CMR query identified 1000 granules, but the request has been limited to process only the first 100 granules because you requested 100 maxResults.');
+        expect(this.service.warningMessage).to.equal('CMR query identified 1000 granules, but the request has been limited to process only the first 100 granules because of system constraints.');
       });
     });
 
