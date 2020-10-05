@@ -33,10 +33,10 @@ export function listToText(items: string[], joinWord = Conjuction.AND): string {
  * Truncates a string to the specified number of characters. The last
  * three characters are replaced with '...'.
  *
- * @param {string} s The string to truncate
- * @param {integer} n The maximum number of characters to keep
+ * @param s The string to truncate
+ * @param n The maximum number of characters to keep
  *
- * @returns {string} The truncated string
+ * @returns The truncated string
  */
 export function truncateString(s: string, n: number): string {
   let truncatedString = s;
@@ -48,4 +48,13 @@ export function truncateString(s: string, n: number): string {
     }
   }
   return truncatedString;
+}
+
+/**
+ * Returns true if a string contains a numerical value.
+ * @param value the value to check
+ * @returns true if numeric and false otherwise
+ */
+export function isInteger(value: string): boolean {
+  return /^-?\d+$/.test(value);
 }
