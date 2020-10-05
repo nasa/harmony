@@ -325,6 +325,7 @@ paths:
       - $ref: '#/components/parameters/height'
       - $ref: '#/components/parameters/format'
       - $ref: '#/components/parameters/forceAsync'
+      - $ref: '#/components/parameters/maxResults'
       responses:
         "200":
           description: A coverage's range set.
@@ -356,6 +357,7 @@ paths:
       - $ref: '#/components/parameters/height'
       - $ref: '#/components/parameters/format'
       - $ref: '#/components/parameters/forceAsync'
+      - $ref: '#/components/parameters/maxResults'
       requestBody:
         content:
           multipart/form-data:
@@ -839,3 +841,11 @@ components:
       required: false
       schema:
         type: boolean
+    maxResults:
+      name: maxResults
+      in: query
+      description: limits the number of input granules processed in the request
+      required: false
+      schema:
+        type: integer
+        minimum: 1

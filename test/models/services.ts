@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it, beforeEach } from 'mocha';
 import { stub } from 'sinon';
-import { getMaxSynchronousGranules, getMaxAsynchronousGranules } from 'models/services/base-service';
+import { getMaxSynchronousGranules } from 'models/services/base-service';
 import DataOperation from '../../app/models/data-operation';
 import { chooseServiceConfig, buildService } from '../../app/models/services';
 import env from '../../app/util/env';
@@ -435,7 +435,6 @@ describe('granule limits', function () {
   beforeEach(() => {
     stubs = [
       stub(env, 'maxSynchronousGranules').get(() => 2),
-      stub(env, 'maxAsynchronousGranules').get(() => 10),
       stub(env, 'maxGranuleLimit').get(() => 30),
     ];
   });
@@ -449,21 +448,9 @@ describe('granule limits', function () {
     });
   });
 
-  describe('when the service allows more than the granule limit for async requests', function () {
-    it('returns the system granule limit', function () {
-      expect(getMaxAsynchronousGranules({ maximum_async_granules: 50 })).to.equal(30);
-    });
-  });
-
   describe('when the service allows less than the granule limit for sync requests', function () {
     it('returns the service specific sync granules limit', function () {
       expect(getMaxSynchronousGranules({ maximum_sync_granules: 25 })).to.equal(25);
-    });
-  });
-
-  describe('when the service allows less than the granule limit for async requests', function () {
-    it('returns the service specific async granules limit', function () {
-      expect(getMaxAsynchronousGranules({ maximum_async_granules: 25 })).to.equal(25);
     });
   });
 
@@ -473,21 +460,9 @@ describe('granule limits', function () {
     });
   });
 
-  describe('when the service allows exactly the granule limit for async requests', function () {
-    it('returns the correct limit', function () {
-      expect(getMaxAsynchronousGranules({ maximum_async_granules: 30 })).to.equal(30);
-    });
-  });
-
   describe('when the service does not configure a granule limit for sync requests', function () {
     it('returns the default sync granules limit', function () {
       expect(getMaxSynchronousGranules({})).to.equal(2);
-    });
-  });
-
-  describe('when the service does not configure a granule limit for async requests', function () {
-    it('returns the default async granules limit', function () {
-      expect(getMaxAsynchronousGranules({})).to.equal(10);
     });
   });
 
@@ -497,21 +472,118 @@ describe('granule limits', function () {
     });
   });
 
-  describe('when the service does not configure a granule limit for async requests that is less than the default', function () {
-    it('returns the service specific limit', function () {
-      expect(getMaxAsynchronousGranules({ maximum_async_granules: 1 })).to.equal(1);
-    });
-  });
-
   describe('when the service configures a granule limit for sync requests to be zero', function () {
     it('returns zero for the limit', function () {
       expect(getMaxSynchronousGranules({ maximum_sync_granules: 0 })).to.equal(0);
     });
   });
+});
 
-  describe('when the service configures a granule limit for async requests to be zero', function () {
-    it('returns zero for the limit', function () {
-      expect(getMaxAsynchronousGranules({ maximum_async_granules: 0 })).to.equal(0);
+describe('warning messages', function () {
+  describe('when selecting a service', function () {
+    beforeEach(function () {
+      const collectionId = 'C123-TEST';
+      const operation = new DataOperation();
+      operation.addSource(collectionId);
+      this.operation = operation;
+      const config = [
+        {
+          name: 'a-service',
+          type: { name: 'argo' },
+          collections: [collectionId],
+        },
+      ];
+      const serviceConfig = chooseServiceConfig(this.operation, {}, config);
+      this.service = buildService(serviceConfig, this.operation);
+    });
+
+    describe('when maxResults is not specified and the CMR hits is greater than the max granule limit', function () {
+      beforeEach(function () {
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 1);
+        this.operation.cmrHits = 10;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('returns a warning message about system limits', function () {
+        expect(this.service.warningMessage).to.equal('CMR query identified 10 granules, but the request has been limited to process only the first 1 granules because of system constraints.');
+      });
+    });
+
+    describe('when the maxResults and the granule limit are both greater than the CMR hits', function () {
+      beforeEach(function () {
+        this.operation.maxResults = 100;
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 25);
+        this.operation.cmrHits = 10;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+    });
+
+    it('does not return a warning message', function () {
+      expect(this.service.warningMessage).to.be.undefined;
+    });
+
+    describe('when the maxResults is less than the granule limit and less than the CMR hits', function () {
+      beforeEach(function () {
+        this.operation.maxResults = 30;
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 100);
+        this.operation.cmrHits = 31;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        expect(this.service.warningMessage).to.equal('CMR query identified 31 granules, but the request has been limited to process only the first 30 granules because you requested 30 maxResults.');
+      });
+    });
+
+    describe('when the maxResults is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
+      beforeEach(function () {
+        this.operation.maxResults = 32;
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 30);
+        this.operation.cmrHits = 31;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        expect(this.service.warningMessage).to.equal('CMR query identified 31 granules, but the request has been limited to process only the first 30 granules because of system constraints.');
+      });
+    });
+
+    describe('when the maxResults is equal to the granule limit, and less than the CMR hits', function () {
+      beforeEach(function () {
+        this.operation.maxResults = 100;
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 100);
+        this.operation.cmrHits = 1000;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        expect(this.service.warningMessage).to.equal('CMR query identified 1000 granules, but the request has been limited to process only the first 100 granules because of system constraints.');
+      });
+    });
+
+    describe('when maxResults, the granule limit, and the CMR hits are all equal', function () {
+      beforeEach(function () {
+        this.operation.maxResults = 100;
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 100);
+        this.operation.cmrHits = 100;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('does not return a warning message', function () {
+        expect(this.service.warningMessage).to.be.undefined;
+      });
     });
   });
 });

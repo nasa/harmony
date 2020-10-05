@@ -9,7 +9,7 @@ module.exports = {
       filename: path.resolve(__dirname, 'development.sqlite3'),
     },
     useNullAsDefault: true,
-    debug: true,
+    debug: (process.env.DEBUG_KNEX === 'true'),
     migrations,
   },
 

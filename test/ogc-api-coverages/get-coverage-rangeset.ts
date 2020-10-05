@@ -318,6 +318,71 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when passing a maxResults parameter', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+
+    describe('set to "1"', function () {
+      const maxResults = 1;
+      hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
+
+      it('performs the request synchronously', function () {
+        expect(this.service.operation.isSynchronous).to.equal(true);
+      });
+
+      it('includes only one granule in the request', function () {
+        expect(this.service.operation.sources[0].granules.length).to.equal(1);
+      });
+    });
+
+    describe('set to "2"', function () {
+      const maxResults = 2;
+
+      hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
+
+      it('performs the request asynchronously', function () {
+        expect(this.service.operation.isSynchronous).to.equal(false);
+      });
+
+      it('includes two granules in the request', function () {
+        expect(this.service.operation.sources[0].granules.length).to.equal(2);
+      });
+    });
+
+    describe('set to "0"', function () {
+      const maxResults = 0;
+
+      hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
+
+      it('returns a 400 error', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+
+      it('includes text explaining max results needs to be greater than 0', function () {
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'openapi.ValidationError',
+          description: 'Error: query parameter "maxResults" should be >= 1',
+        });
+      });
+    });
+
+    describe('set to "invalid"', function () {
+      const maxResults = 'invalid';
+
+      hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
+
+      it('returns a 400 error', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+
+      it('includes text explaining the invalid value', function () {
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'openapi.ValidationError',
+          description: 'Error: query parameter "maxResults" should be integer',
+        });
+      });
+    });
+  });
+
   describe('when the granule spatial metadata is defined by polygons instead of a bbox', function () {
     const query = {
       granuleid: 'G1226018995-POCUMULUS',
@@ -806,11 +871,11 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446398-ORNL_DAAC. CMR query identified 117 granules, but the request has been limited to process only the first 20 granules.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446398-ORNL_DAAC.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(20);
+      expect(job.links.length).to.equal(117);
     });
     it('granule links include a title of the granuleId', function () {
       const job = JSON.parse(this.res.text);

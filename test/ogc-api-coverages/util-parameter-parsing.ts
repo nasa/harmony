@@ -208,22 +208,22 @@ describe('OGC API Coverages - Utilities', function () {
   });
 
   describe('subsetParamsToTemporal', function () {
-    it('returns temporal information with startTime and stopTime when passed both a min and max', function () {
+    it('returns temporal information with start and end when passed both a min and max', function () {
       expect(subsetParamsToTemporal({
         time: { min: new Date('2001-05-01T12:35:00Z'), max: new Date('2002-07-01T13:18:55Z') },
-      })).to.eql({ startTime: new Date('2001-05-01T12:35:00Z'), stopTime: new Date('2002-07-01T13:18:55Z') });
+      })).to.eql({ start: new Date('2001-05-01T12:35:00Z'), end: new Date('2002-07-01T13:18:55Z') });
     });
 
-    it('returns temporal information without a startTime when passed only a max', function () {
+    it('returns temporal information without a start when passed only a max', function () {
       expect(subsetParamsToTemporal({
         time: { min: undefined, max: new Date('2002-07-01T13:18:55Z') },
-      })).to.eql({ stopTime: new Date('2002-07-01T13:18:55Z') });
+      })).to.eql({ end: new Date('2002-07-01T13:18:55Z') });
     });
 
-    it('returns temporal information without a stopTime when passed only a min', function () {
+    it('returns temporal information without a end when passed only a min', function () {
       expect(subsetParamsToTemporal({
         time: { min: new Date('2001-05-01T12:35:00Z'), max: undefined },
-      })).to.eql({ startTime: new Date('2001-05-01T12:35:00Z') });
+      })).to.eql({ start: new Date('2001-05-01T12:35:00Z') });
     });
 
     it('returns an empty object when both min and max are undefined', function () {
@@ -232,12 +232,12 @@ describe('OGC API Coverages - Utilities', function () {
       })).to.eql({});
     });
 
-    it('returns temporal information with startTime and stopTime when passed extra dimensions', function () {
+    it('returns temporal information with start and end when passed extra dimensions', function () {
       expect(subsetParamsToTemporal({
         lat: { min: -10, max: 10.5 },
         lon: { min: -20, max: 20.5 },
         time: { min: new Date('2001-05-01T12:35:00Z'), max: new Date('2002-07-01T13:18:55Z') },
-      })).to.eql({ startTime: new Date('2001-05-01T12:35:00Z'), stopTime: new Date('2002-07-01T13:18:55Z') });
+      })).to.eql({ start: new Date('2001-05-01T12:35:00Z'), end: new Date('2002-07-01T13:18:55Z') });
     });
   });
 });

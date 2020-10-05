@@ -50,7 +50,7 @@ describe('OGC API Coverages - describeCollections', function () {
       it('includes a title', function () {
         const listing = JSON.parse(this.res.text);
         const singleCollection = listing.collections[1];
-        expect(singleCollection.title).to.equal('/science/grids/data/amplitude SENTINEL-1_INTERFEROGRAMS v1');
+        expect(singleCollection.title).to.equal('science/grids/data/amplitude SENTINEL-1_INTERFEROGRAMS v1');
       });
 
       it('includes a description', function () {
@@ -64,8 +64,8 @@ describe('OGC API Coverages - describeCollections', function () {
         const singleCollection = listing.collections[1];
         const firstLink = singleCollection.links[0];
         expect(singleCollection.links.length).to.equal(1);
-        expect(firstLink.title).to.equal('Perform rangeset request for /science/grids/data/amplitude');
-        expect(firstLink.href).to.contain('/C1225776654-ASF/ogc-api-coverages/1.0.0/collections/%2Fscience%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
+        expect(firstLink.title).to.equal('Perform rangeset request for science/grids/data/amplitude');
+        expect(firstLink.href).to.contain('/C1225776654-ASF/ogc-api-coverages/1.0.0/collections/science%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
       });
 
       it('includes a spatial extent', function () {
@@ -107,12 +107,12 @@ describe('OGC API Coverages - describeCollections', function () {
 
   describe('when provided a collection with a nested variable such as /group/foo/var', function () {
     const nestedCollection = 'C1225776654-ASF';
-    const nestedVar = '/science/grids/data/amplitude';
+    const nestedVar = 'science/grids/data/amplitude';
     hookDescribeCollectionsRequest(nestedCollection, version);
     it('URL encodes the nested variable', function () {
       const listing = JSON.parse(this.res.text);
       const amplitudeLink = listing.collections.find((c) => c.title.includes(nestedVar));
-      expect(amplitudeLink.links[0].href).to.contain('C1225776654-ASF/ogc-api-coverages/1.0.0/collections/%2Fscience%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
+      expect(amplitudeLink.links[0].href).to.contain('C1225776654-ASF/ogc-api-coverages/1.0.0/collections/science%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
     });
   });
 
@@ -159,7 +159,7 @@ describe('OGC API Coverages - describeCollections', function () {
 describe('OGC API Coverages - describeCollection', function () {
   const collection = 'C1225776654-ASF';
   const version = '1.0.0';
-  const variablePath = '/science/grids/data/amplitude';
+  const variablePath = 'science/grids/data/amplitude';
 
   hookServersStartStop();
 
@@ -177,7 +177,7 @@ describe('OGC API Coverages - describeCollection', function () {
 
     it('includes a title', function () {
       const collectionInfo = JSON.parse(this.res.text);
-      expect(collectionInfo.title).to.equal('/science/grids/data/amplitude SENTINEL-1_INTERFEROGRAMS v1');
+      expect(collectionInfo.title).to.equal('science/grids/data/amplitude SENTINEL-1_INTERFEROGRAMS v1');
     });
 
     it('includes a description', function () {
@@ -189,8 +189,8 @@ describe('OGC API Coverages - describeCollection', function () {
       const collectionInfo = JSON.parse(this.res.text);
       const firstLink = collectionInfo.links[0];
       expect(collectionInfo.links.length).to.equal(1);
-      expect(firstLink.title).to.equal('Perform rangeset request for /science/grids/data/amplitude');
-      expect(firstLink.href).to.contain('/C1225776654-ASF/ogc-api-coverages/1.0.0/collections/%2Fscience%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
+      expect(firstLink.title).to.equal('Perform rangeset request for science/grids/data/amplitude');
+      expect(firstLink.href).to.contain('/C1225776654-ASF/ogc-api-coverages/1.0.0/collections/science%2Fgrids%2Fdata%2Famplitude/coverage/rangeset');
     });
 
     it('includes a spatial extent', function () {

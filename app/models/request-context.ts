@@ -1,6 +1,9 @@
 import { Logger } from 'winston';
 import { ServiceConfig } from './services/base-service';
 
+interface ShapefileObject {
+  typeName?: string;
+}
 /**
  * Contains additional information about a request
  */
@@ -11,7 +14,7 @@ export default class RequestContext {
 
   requestedMimeTypes?: Array<string>;
 
-  shapefile?: object;
+  shapefile?: ShapefileObject;
 
   frontend?: string;
 

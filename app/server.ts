@@ -99,18 +99,24 @@ export function start(config: Record<string, string>): {
     app.get('/', ((req, res) => res.send('OK')));
   });
 
-  const workflowTerminationListenerConfig = {
-    namespace: 'argo',
-    logger: logger.child({ application: 'workflow-events' }),
-  };
-  const listener = new WorkflowTerminationListener(workflowTerminationListenerConfig);
-  listener.start();
+  let listener;
+  if (config.startWorkflowTerminationListener !== 'false') {
+    const workflowTerminationListenerConfig = {
+      namespace: 'argo',
+      logger: logger.child({ application: 'workflow-events' }),
+    };
+    listener = new WorkflowTerminationListener(workflowTerminationListenerConfig);
+    listener.start();
+  }
 
-  const reaperConfig = {
-    logger: logger.child({ application: 'workflow-events' }),
-  };
-  const reaper = new JobReaper(reaperConfig);
-  reaper.start();
+  let reaper;
+  if (config.startJobReaper !== 'false') {
+    const reaperConfig = {
+      logger: logger.child({ application: 'workflow-events' }),
+    };
+    reaper = new JobReaper(reaperConfig);
+    reaper.start();
+  }
 
   return { frontend, backend, workflowTerminationListener: listener, jobReaper: reaper };
 }
@@ -132,8 +138,8 @@ export async function stop({
   await Promise.all([
     promisify(frontend.close.bind(frontend))(),
     promisify(backend.close.bind(backend))(),
-    workflowTerminationListener.stop(),
-    jobReaper.stop(),
+    workflowTerminationListener?.stop(),
+    jobReaper?.stop(),
   ]);
 }
 
