@@ -478,3 +478,112 @@ describe('granule limits', function () {
     });
   });
 });
+
+describe('warning messages', function () {
+  describe('when selecting a service', function () {
+    beforeEach(function () {
+      const collectionId = 'C123-TEST';
+      const operation = new DataOperation();
+      operation.addSource(collectionId);
+      this.operation = operation;
+      const config = [
+        {
+          name: 'a-service',
+          type: { name: 'argo' },
+          collections: [collectionId],
+        },
+      ];
+      const serviceConfig = chooseServiceConfig(this.operation, {}, config);
+      this.service = buildService(serviceConfig, this.operation);
+    });
+
+    describe('when maxResults is not specified and the CMR hits is greater than the max granule limit', function () {
+      beforeEach(function () {
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 1);
+        this.operation.cmrHits = 10;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('returns a warning message about system limits', function () {
+        expect(this.service.warningMessage).to.equal('CMR query identified 10 granules, but the request has been limited to process only the first 1 granules because of system constraints.');
+      });
+    });
+
+    describe('when the maxResults and the granule limit are both greater than the CMR hits', function () {
+      beforeEach(function () {
+        this.operation.maxResults = 100;
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 25);
+        this.operation.cmrHits = 10;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+    });
+
+    it('does not return a warning message', function () {
+      expect(this.service.warningMessage).to.be.undefined;
+    });
+
+    describe('when the maxResults is less than the granule limit and less than the CMR hits', function () {
+      beforeEach(function () {
+        this.operation.maxResults = 30;
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 100);
+        this.operation.cmrHits = 31;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        expect(this.service.warningMessage).to.equal('CMR query identified 31 granules, but the request has been limited to process only the first 30 granules because you requested 30 maxResults.');
+      });
+    });
+
+    describe('when the maxResults is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
+      beforeEach(function () {
+        this.operation.maxResults = 32;
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 30);
+        this.operation.cmrHits = 31;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        expect(this.service.warningMessage).to.equal('CMR query identified 31 granules, but the request has been limited to process only the first 30 granules because of system constraints.');
+      });
+    });
+
+    describe('when the maxResults is equal to the granule limit, and less than the CMR hits', function () {
+      beforeEach(function () {
+        this.operation.maxResults = 100;
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 100);
+        this.operation.cmrHits = 1000;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        expect(this.service.warningMessage).to.equal('CMR query identified 1000 granules, but the request has been limited to process only the first 100 granules because you requested 100 maxResults.');
+      });
+    });
+
+    describe('when maxResults, the granule limit, and the CMR hits are all equal', function () {
+      beforeEach(function () {
+        this.operation.maxResults = 100;
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 100);
+        this.operation.cmrHits = 100;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('does not return a warning message', function () {
+        expect(this.service.warningMessage).to.be.undefined;
+      });
+    });
+  });
+});

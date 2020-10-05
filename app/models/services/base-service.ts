@@ -270,14 +270,16 @@ export default abstract class BaseService<ServiceParamType> {
   /**
    * Returns a warning message if some part of the request can't be fulfilled
    *
-   * @returns {string} a warning message to display, or undefined if not applicable
+   * @returns a warning message to display, or undefined if not applicable
    * @readonly
    * @memberof BaseService
    */
   get warningMessage(): string {
     let granulesProcessed = this.operation.cmrHits;
     if (this.operation.maxResults) {
-      granulesProcessed = Math.min(granulesProcessed, this.operation.maxResults);
+      granulesProcessed = Math.min(
+        granulesProcessed, this.operation.maxResults, env.maxGranuleLimit,
+      );
     } else {
       granulesProcessed = Math.min(granulesProcessed, env.maxGranuleLimit);
     }
