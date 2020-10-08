@@ -7,7 +7,7 @@ import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
-import { listToText, Conjuction } from '../../util/string';
+import { listToText, Conjuction, isInteger } from '../../util/string';
 import ArgoService from './argo-service';
 import HttpService from './http-service';
 import NoOpService from './no-op-service';
@@ -30,11 +30,11 @@ function parseEnvironmentDirective(envDirective: string): string | number {
       || process.env[v.match(/\w+/) as unknown as string]
       || '';
   });
-  const intValue = parseInt(strValue, 10);
-  if (Number.isNaN(intValue)) {
-    return strValue;
+
+  if (isInteger(strValue)) {
+    return parseInt(strValue, 10);
   }
-  return intValue;
+  return strValue;
 }
 
 /**

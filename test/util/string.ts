@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { listToText, truncateString, Conjuction } from '../../app/util/string';
+import { listToText, truncateString, Conjuction, isInteger } from '../../app/util/string';
 
 describe('util/string', function () {
   describe('#listToText', function () {
@@ -65,6 +65,24 @@ describe('util/string', function () {
       it('returns just ...', function () {
         expect(truncateString(s, n)).to.equal('...');
       });
+    });
+  });
+
+  describe('#isInteger', function () {
+    it('returns true for 0', function () {
+      expect(isInteger('0')).to.be.true;
+    });
+    it('returns true for -15', function () {
+      expect(isInteger('-15')).to.be.true;
+    });
+    it('returns false for -1.5', function () {
+      expect(isInteger('-1.5')).to.be.false;
+    });
+    it('returns false for 1.5', function () {
+      expect(isInteger('1.5')).to.be.false;
+    });
+    it('returns false for 31115.foo.bar', function () {
+      expect(isInteger('31115.foo.bar')).to.be.false;
     });
   });
 });
