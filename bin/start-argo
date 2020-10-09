@@ -4,7 +4,7 @@ SELF=$(basename $0)
 
 function usage
 {
-  echo "Usage: $SELF [-d|--driver <driver>] [port]"
+  echo "Usage: $SELF [-c|--context <kubernetes-context>] [-d|--driver <driver>] [port]"
 
   echo "port must be a number"
 }
@@ -21,6 +21,11 @@ case $key in
   shift
   shift
   ;;
+  -c|--context)
+  KUBE_CONTEXT=$2
+  shift
+  shift
+  ;;
   *)
   PPORT="$1"
   shift
@@ -34,20 +39,26 @@ DRIVER_DEFAULT=docker
 
 DRIVER=${DRIVER:-$DRIVER_DEFAULT}
 
+DEFAULT_KUBE_CONTEXT=docker-desktop
+
+KUBE_CONTEXT=${KUBE_CONTEXT:-$DEFAULT_KUBE_CONTEXT}
+
 source ".env"
 
 PORT=${PPORT:-2746}
 
 [[ $PORT =~ ^[0-9]+$ ]] || (usage && exit 1)
 
-echo "$DRIVER"
+echo "Using Kubernetes context \"$KUBE_CONTEXT\""
 
-minikube start --driver="$DRIVER"
+if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
+  echo "Starting minikube using driver \"$DRIVER\""
 
-sleep 5
+  minikube start --driver="$DRIVER"
 
-# make sure we are talking to minikube and not some other environment
-kubectl config use-context minikube
+  sleep 5
+fi
+kubectl config use-context $KUBE_CONTEXT
 
 argo_namespace=$(kubectl get namespace | grep argo | cut -d ' ' -f1)
 

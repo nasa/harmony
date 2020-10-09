@@ -135,21 +135,19 @@ $ npx knex --cwd db migrate:latest
 
 #### Installing Argo Workflows
 
-##### Prerequisites
-* minikube / kubectl / the Argo CLI
-
-`minikube` is a single-node [kubernetes](https://kubernetes.io/) cluster useful for local development.
-`kubectl` is a command line interface to kubernetes.
-`Argo CLI` is the command line interface to Argo
-
-Follow [these instructions]((https://kubernetes.io/docs/tasks/tools/install-kubectl/) to install `kubectl`.
-Then follow [these instructions](https://kubernetes.io/docs/tasks/tools/install-minikube/) for installing `minikube`.
-Finally, follow [these instructions](https://github.com/argoproj/argo/releases/tag/v2.9.5) to install the `Argo CLI`.
-
-After installing `minikube`, `kubectl`, and the `Argo CLI`, you can start up `minikube` and install Argo by running the following from the Harmony top level directory:
+* Mac / Windows:
+  * Install [Docker Desktop] https://www.docker.com/products/docker-desktop comes bundled with Kubernetes and `kubectl`.  Important: you must use
+    the `kubectl` bundled with Docker Desktop rather than the binary installed using the "Linux / Generic" instructions below
+  * Run Kubernetes in Docker Desktop by selecting Preferences -> Kubernetes -> Enable Kubernetes
+  * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
+* Linux / Generic:
+  * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node kubernetes cluster useful for local development
+  * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to kubernetes.
+  * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
+  * Set `KUBE_CONTEXT=minikube` in your environment or `.env` file or pass `-c minikube` to all calls to `bin/start-argo` and `bin/stop-argo`
 
 ```
-$ ./bin/start-argo -c
+$ ./bin/start-argo
 ```
 
 This will install Argo and forward port 2746 to localhost. It will take a few minutes the first time you run it. You will know when it has completed when it prints
@@ -163,36 +161,27 @@ You can then connect to the Argo Server UI at `http://localhost:2746'.
 You can change the startup port by adding the `-p` option like so for port 8080:
 
 ```
-$ ./bin/start-argo -c -p 8080
+$ ./bin/start-argo -p 8080
 ```
 
 `minikube` will default to using the `docker` driver. You can change the driver used by minikube by using the `-d` option with `start-argo` like so
 
 ```
-$ ./bin/start-argo -c -d DRIVER
+$ ./bin/start-argo -d DRIVER
 ```
 
 where `DRIVER` is one of the supported VM drivers found [here](https://kubernetes.io/docs/setup/learning-environment/minikube/#specifying-the-vm-driver).
 
-You can stop minikube (and Argo) using the following command:
+#### Stopping Kubernetes
 
-```
-$ ./bin/stop-argo
-```
+`minikube` users can stop Kubernetes using `./bin/stop-argo` and start it again with `./bin/start-argo`.  Docker Desktop users will need to exit
+Docker or disable Kubernetes support in the UI.
 
-If you wish to completely remove the minikube cluster as well you can include the `-d` (destroy) option like so:
+To delete the Argo deployment, use the `-d` (destroy) option:
 
 ```
 $ ./bin/stop-argo -d
 ```
-
-If you have stopped (but not destroyed) Argo/minikube you can restart it using the `start-argo` command without the `-c` (create) option:
-
-```
-$ ./bin/start-argo
-```
-
-You can also specify the `-p` option to bind to a desired port.
 
 ##### Configuring the callback URL for backend services
 
