@@ -172,7 +172,7 @@ $ ./bin/start-argo -d DRIVER
 
 where `DRIVER` is one of the supported VM drivers found [here](https://kubernetes.io/docs/setup/learning-environment/minikube/#specifying-the-vm-driver).
 
-#### Stopping Kubernetes
+##### Stopping Kubernetes
 
 `minikube` users can stop Kubernetes using `./bin/stop-argo` and start it again with `./bin/start-argo`.  Docker Desktop users will need to exit
 Docker or disable Kubernetes support in the UI.
@@ -183,7 +183,7 @@ To delete the Argo deployment, use the `-d` (destroy) option:
 $ ./bin/stop-argo -d
 ```
 
-##### Configuring the callback URL for backend services
+##### (minikube only) Configuring the callback URL for backend services
 
 You can skip this step if you are using the default docker driver for minikube and set CALLBACK_URL_ROOT as described in the example dotenv file. If you are using a different driver such as virtualbox you may need to execute the following command to get the IP address minikube has bridged to localhost:
 
@@ -201,7 +201,7 @@ $ cd ..
 $ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony-gdal.git
 ```
 
-From the harmony-gdal project root, run
+(minikube only) From the harmony-gdal project root, run
 ```bash
 eval $(minikube docker-env)
 ```
