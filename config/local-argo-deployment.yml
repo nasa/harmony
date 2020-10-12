@@ -122,11 +122,6 @@ kind: ServiceAccount
 metadata:
   name: argo-server
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: github.com
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -380,19 +375,6 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: github.com
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: submit-workflow-template
-subjects:
-- kind: ServiceAccount
-  name: github.com
-  namespace: argo
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
   name: workflow-default-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -430,42 +412,6 @@ subjects:
 ---
 apiVersion: v1
 data:
-  minio: |
-    s3:
-      bucket: my-bucket
-      endpoint: minio:9000
-      insecure: true
-      accessKeySecret:
-        name: my-minio-cred
-        key: accesskey
-      secretKeySecret:
-        name: my-minio-cred
-        key: secretkey
-kind: ConfigMap
-metadata:
-  name: artifact-repositories
----
-apiVersion: v1
-data:
-  artifactRepository: |
-    archiveLogs: true
-    s3:
-      bucket: my-bucket
-      endpoint: minio:9000
-      insecure: true
-      accessKeySecret:
-        name: my-minio-cred
-        key: accesskey
-      secretKeySecret:
-        name: my-minio-cred
-        key: secretkey
-  links: |
-    - name: Example Workflow Link
-      scope: workflow
-      url: http://logging-facility?namespace=${metadata.namespace}&workflowName=${metadata.name}
-    - name: Example Pod Link
-      scope: pod
-      url: http://logging-facility?namespace=${metadata.namespace}&podName=${metadata.name}
   metricsConfig: |
     disableLegacy: true
     enabled: true
@@ -484,35 +430,6 @@ stringData:
   clientSecret: ZXhhbXBsZS1hcHAtc2VjcmV0
 ---
 apiVersion: v1
-kind: Secret
-metadata:
-  name: argo-workflows-webhook-clients
-stringData:
-  bitbucket.org: |
-    type: bitbucket
-    secret: "my-uuid"
-  bitbucketserver: |
-    type: bitbucketserver
-    secret: "shh!"
-  github.com: |
-    type: github
-    secret: "shh!"
-  gitlab.com: |
-    type: gitlab
-    secret: "shh!"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  labels:
-    app: minio
-  name: my-minio-cred
-stringData:
-  accesskey: admin
-  secretkey: password
-type: Opaque
----
-apiVersion: v1
 kind: Service
 metadata:
   name: argo-server
@@ -523,20 +440,6 @@ spec:
     targetPort: 2746
   selector:
     app: argo-server
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: minio
-  name: minio
-spec:
-  ports:
-  - port: 9000
-    protocol: TCP
-    targetPort: 9000
-  selector:
-    app: minio
 ---
 apiVersion: v1
 kind: Service
@@ -615,44 +518,3 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       serviceAccountName: argo
----
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    app: minio
-  name: minio
-spec:
-  containers:
-  - command:
-    - minio
-    - server
-    - /data
-    env:
-    - name: MINIO_ACCESS_KEY
-      value: admin
-    - name: MINIO_SECRET_KEY
-      value: password
-    image: minio/minio:RELEASE.2020-08-18T19-41-00Z
-    lifecycle:
-      postStart:
-        exec:
-          command:
-          - mkdir
-          - -p
-          - /data/my-bucket
-    livenessProbe:
-      httpGet:
-        path: /minio/health/live
-        port: 9000
-      initialDelaySeconds: 5
-      periodSeconds: 10
-    name: main
-    ports:
-    - containerPort: 9000
-    readinessProbe:
-      httpGet:
-        path: /minio/health/ready
-        port: 9000
-      initialDelaySeconds: 5
-      periodSeconds: 10
