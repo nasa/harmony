@@ -355,8 +355,6 @@ def check_stac(response):
   Arguments:
       response {response.Response} -- the response to display
   """
-  print(response.json())
-
   for i in range(len(response.json()['links'])):
     if response.json()['links'][i]['title'] == 'STAC catalog':
         stac_url = response.json()['links'][i]['href']
