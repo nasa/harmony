@@ -144,7 +144,6 @@ $ npx knex --cwd db migrate:latest
   * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node kubernetes cluster useful for local development
   * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to kubernetes.
   * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
-  * Set `KUBE_CONTEXT=minikube` in your environment or `.env` file or pass `-c minikube` to all calls to `bin/start-argo` and `bin/stop-argo`
 
 ```
 $ ./bin/start-argo

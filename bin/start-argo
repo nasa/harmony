@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 SELF=$(basename $0)
 
 function usage
@@ -39,9 +41,18 @@ DRIVER_DEFAULT=docker
 
 DRIVER=${DRIVER:-$DRIVER_DEFAULT}
 
-DEFAULT_KUBE_CONTEXT=docker-desktop
-
-KUBE_CONTEXT=${KUBE_CONTEXT:-$DEFAULT_KUBE_CONTEXT}
+if [ -n "$KUBE_CONTEXT" ]; then :
+elif kubectl config get-contexts docker-desktop &> /dev/null ; then
+  KUBE_CONTEXT='docker-desktop'
+elif command -v minikube &> /dev/null ; then
+  KUBE_CONTEXT='minikube'
+else
+  echo 'ERROR: Could not find an available Kubernetes context.' >&2
+  echo 'If you are using Docker Desktop, make sure it is running and Kubernetes is enabled.' >&2
+  echo 'If you are using minikube, make sure it is installed and in your PATH.' >&2
+  echo 'If you are using another Kubernetes, specify its context using --context.' >&2
+  exit 1
+fi
 
 source ".env"
 
