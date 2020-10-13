@@ -131,7 +131,7 @@ def show(response, varList=[], color_index=None, immediate=True):
   if content_type == 'binary/octet-stream' or content_type == 'application/octet-stream':
     print('WARNING: Let service developer know to set their content_type correctly!')
 
-  if content_type == 'application/x-netcdf' or content_type == 'application/netcdf' or content_type == 'binary/octet-stream' or content_type == 'application/octet-stream':
+  if content_type == 'application/x-netcdf' or content_type == 'application/x-netcdf4' or content_type == 'application/netcdf' or content_type == 'binary/octet-stream' or content_type == 'application/octet-stream':
     # Show NetCDF4 
     data = H5File(BytesIO(response.content), 'r')
 
