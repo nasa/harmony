@@ -117,6 +117,10 @@ SERVICE_DEAD_LETTER_QUEUE_NAME=harmony-dead-letter-queue
 # The number of ms to wait between polling to check whether a synchronous request completed
 SYNC_REQUEST_POLL_INTERVAL_MS=100
 
+# Local development: Use the following to set the Kubernetes context used by start scripts
+# (default: docker-desktop).  minikube users should set it to "minikube"
+# KUBE_CONTEXT=
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #

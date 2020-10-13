@@ -136,8 +136,8 @@ $ npx knex --cwd db migrate:latest
 #### Installing Argo Workflows
 
 * Mac / Windows:
-  * Install [Docker Desktop] https://www.docker.com/products/docker-desktop comes bundled with Kubernetes and `kubectl`.  Important: you must use
-    the `kubectl` bundled with Docker Desktop rather than the binary installed using the "Linux / Generic" instructions below
+  * Install [Docker Desktop] https://www.docker.com/products/docker-desktop. Docker Desktop comes bundled with Kubernetes and `kubectl`.
+    If you encounter issues running `kubectl` commands, first make sure you are running the version bunedled with Docker Desktop.
   * Run Kubernetes in Docker Desktop by selecting Preferences -> Kubernetes -> Enable Kubernetes
   * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
 * Linux / Generic:
@@ -172,16 +172,16 @@ $ ./bin/start-argo -d DRIVER
 
 where `DRIVER` is one of the supported VM drivers found [here](https://kubernetes.io/docs/setup/learning-environment/minikube/#specifying-the-vm-driver).
 
-##### Stopping Kubernetes
+##### Deleting Argo and Stopping Kubernetes
 
-`minikube` users can stop Kubernetes using `./bin/stop-argo` and start it again with `./bin/start-argo`.  Docker Desktop users will need to exit
-Docker or disable Kubernetes support in the UI.
-
-To delete the Argo deployment, use the `-d` (destroy) option:
+To delete the Argo deployment, run:
 
 ```
-$ ./bin/stop-argo -d
+$ kubectl delete namespaces argo
 ```
+
+`minikube` users can stop Kubernetes by pressing `ctrl-C` on the `bin/start-argo` process or run `minikube stop`.  Docker Desktop users will
+need to close Docker or disable Kubernetes support in the UI.  Note that the latter uninstalls `kubectl`.
 
 ##### (minikube only) Configuring the callback URL for backend services
 
