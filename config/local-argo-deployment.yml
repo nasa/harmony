@@ -409,7 +409,6 @@ subjects:
   name: argo-server
   namespace: argo
 ---
-# This file sets the default workflow configuration
 apiVersion: v1
 kind: ConfigMap
 metadata:
