@@ -19,6 +19,7 @@ case $key in
   KUBE_CONTEXT=$2
   shift
   shift
+  ;;
   -d|--destroy)
   DELETE=true
   shift
