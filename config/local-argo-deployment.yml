@@ -1,4 +1,3 @@
-# This is an auto-generated file. DO NOT EDIT
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -410,16 +409,28 @@ subjects:
   name: argo-server
   namespace: argo
 ---
+# This file sets the default workflow configuration
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-controller-configmap
 data:
+  # Default values that will apply to all Workflows from this controller, unless overridden on the Workflow-level
+  workflowDefaults: |
+    metadata:
+      namespace: argo
+    spec:
+      # Timeout requests after four hours
+      activeDeadlineSeconds: 14400
+      # Keep workflows for four hours after completion before archiving
+      ttlStrategy:
+        secondsAfterCompletion: 14400
+
   metricsConfig: |
     disableLegacy: true
     enabled: true
     path: /metrics
     port: 9090
-kind: ConfigMap
-metadata:
-  name: workflow-controller-configmap
 ---
 apiVersion: v1
 kind: Secret
