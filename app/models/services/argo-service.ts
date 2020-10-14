@@ -99,6 +99,10 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
         name: 'image-pull-policy',
         value: this.params.image_pull_policy || env.defaultImagePullPolicy,
       },
+      {
+        name: 'timeout',
+        value: `${env.defaultArgoPodTimeoutSecs}`, // Could use request specific value in the future
+      },
     ];
 
     params = params.concat(dockerEnv);
