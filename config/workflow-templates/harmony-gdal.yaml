@@ -16,6 +16,7 @@ spec:
           - name: STAGING_BUCKET
           - name: TEXT_LOGGER
           - name: BACKEND_HOST
+      activeDeadlineSeconds: 14400
       container:
         image: "{{inputs.parameters.image}}"
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"

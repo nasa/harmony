@@ -419,8 +419,6 @@ data:
     metadata:
       namespace: argo
     spec:
-      # Timeout requests after four hours
-      activeDeadlineSeconds: 14400
       # Keep workflows for four hours after completion before archiving
       ttlStrategy:
         secondsAfterCompletion: 14400
