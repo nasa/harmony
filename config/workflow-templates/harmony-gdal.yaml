@@ -11,12 +11,13 @@ spec:
           - name: operation
           - name: image
           - name: image-pull-policy
+          - name: timeout
           - name: AWS_DEFAULT_REGION
           - name: USE_LOCALSTACK
           - name: STAGING_BUCKET
           - name: TEXT_LOGGER
           - name: BACKEND_HOST
-      activeDeadlineSeconds: 14400
+      podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "{{inputs.parameters.image}}"
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
