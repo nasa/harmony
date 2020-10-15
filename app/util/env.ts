@@ -93,7 +93,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['DEFAULT_IMAGE_PULL_POLICY', 'Always'],
   ['DEFAULT_PARALLELISM', 2],
   ['SHARED_SECRET_KEY', null],
-  ['DEFAULT_ARGO_POD_TIMEOUT_SECS', 1],
+  ['DEFAULT_ARGO_POD_TIMEOUT_SECS', 14400],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases
