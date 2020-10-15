@@ -2,67 +2,55 @@ apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: podaac-l2-subsetter
-  namespace: argo
 spec:
   entrypoint: podaac-l2-subsetter
-  arguments:
-    parameters: # these will get filled in when the template is invoked
-    - name: operation
-      value: serialized operation
-    - name: image
-      value: podaac/podaac-cloud/podaac-subsetter:latest
-    - name: image-pull-policy
-      value: Always
-    - name: AWS_DEFAULT_REGION
-      value: us-west-2
-    - name: USE_LOCALSTACK
-      value: "false"
-    - name: STAGING_BUCKET
-      value: bucket
-    - name: TEXT_LOGGER
-      value: logger
-    - name: BACKEND_HOST
-      value: "127.0.0.1"
-
   templates:
-  - name: podaac-l2-subsetter
-    inputs:
-      parameters:
-      - name: operation
-      - name: image
-      - name: image-pull-policy
-      - name: AWS_DEFAULT_REGION
-      - name: USE_LOCALSTACK
-      - name: STAGING_BUCKET
-      - name: TEXT_LOGGER
-      - name: BACKEND_HOST
-    container:
-      image: "{{inputs.parameters.image}}"
-      imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
-      args: ["--harmony-action", "invoke", "--harmony-input", "{{inputs.parameters.operation}}"]
-      env:
-        - name: AWS_DEFAULT_REGION
-          value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
-        - name: USE_LOCALSTACK
-          value:  "{{inputs.parameters.USE_LOCALSTACK}}"
-        - name: EDL_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: argo-edl-credentials
-              key: username
-        - name: EDL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: argo-edl-credentials
-              key: password
-        - name: SHARED_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: shared-secret
-              key: secret-key
-        - name: STAGING_BUCKET
-          value:  "{{inputs.parameters.STAGING_BUCKET}}"
-        - name: TEXT_LOGGER
-          value:  "{{inputs.parameters.TEXT_LOGGER}}"
-        - name: BACKEND_HOST
-          value:  "{{inputs.parameters.BACKEND_HOST}}"
+    - name: podaac-l2-subsetter
+      inputs:
+        parameters:
+          - name: operation
+          - name: image
+          - name: image-pull-policy
+          - name: timeout
+          - name: AWS_DEFAULT_REGION
+          - name: USE_LOCALSTACK
+          - name: STAGING_BUCKET
+          - name: TEXT_LOGGER
+          - name: BACKEND_HOST
+      podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
+      container:
+        image: "{{inputs.parameters.image}}"
+        imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
+        args:
+          [
+            "--harmony-action",
+            "invoke",
+            "--harmony-input",
+            "{{inputs.parameters.operation}}",
+          ]
+        env:
+          - name: AWS_DEFAULT_REGION
+            value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
+          - name: USE_LOCALSTACK
+            value: "{{inputs.parameters.USE_LOCALSTACK}}"
+          - name: EDL_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: argo-edl-credentials
+                key: username
+          - name: EDL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: argo-edl-credentials
+                key: password
+          - name: SHARED_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: shared-secret
+                key: secret-key
+          - name: STAGING_BUCKET
+            value: "{{inputs.parameters.STAGING_BUCKET}}"
+          - name: TEXT_LOGGER
+            value: "{{inputs.parameters.TEXT_LOGGER}}"
+          - name: BACKEND_HOST
+            value: "{{inputs.parameters.BACKEND_HOST}}"

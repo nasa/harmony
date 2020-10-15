@@ -98,21 +98,18 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 # The CMR concept ID for the group whose users can access the admin interface
 ADMIN_GROUP_ID=AG1222736883-EEDTEST
 
-# The base URL to use for interacting with queues.  The default value is correct for
-# localstack.  For SQS, use `https://sqs.REGION.amazonaws.com/YOUR_ACCOUNT_ID/ENV_NAME-`
-BASE_QUEUE_URL=http://localhost:4566/queue/
-
 # The URL to use for interacting with Argo
 ARGO_URL=http://localhost:2746
 
 # The time (in seconds) between invocations of the job reaper service (default 360)
-JOB_REAPER_PERIOD_SEC=360
+JOB_REAPER_PERIOD_SEC=
 
 # Jobs older than this many minutes that are running are checked by the job reaper (default 60)
-REAPABLE_JOB_AGE_MINUTES=60
+REAPABLE_JOB_AGE_MINUTES=
 
-# The name of the dead letter queue for message-queue-based services
-SERVICE_DEAD_LETTER_QUEUE_NAME=harmony-dead-letter-queue
+# The number of seconds before timing out a single step (pod) in an Argo workflow. Defaults
+# to 14400 seconds (4 hours).
+DEFAULT_ARGO_POD_TIMEOUT_SECS=
 
 # The number of ms to wait between polling to check whether a synchronous request completed
 SYNC_REQUEST_POLL_INTERVAL_MS=100
