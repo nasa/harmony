@@ -23,13 +23,17 @@ and Harmony callbacks.  Full details as well as an example can be found in the p
 
 The service and all necessary code and dependencies to allow it to run can be packaged in a Docker container image.  Docker images can be staged anywhere Harmony can reach them, e.g. Dockerhub or AWS ECR.  Harmony will run the Docker image, passing the following command-line parameters:
 
-`--harmony-action <action> --harmony-queue-url <url>`
+`--harmony-action <action> --harmony-input <input> --harmony-sources <sources-file>`
 
-`<action>` is the action Harmony wants the service to perform, currently only `start`, which requests that the service be started as a long running service that reads requests from an SQS queue.  This may be expanded in the future for additional actions such as capability discovery.
+`<action>` is the action Harmony wants the service to perform.  Currently, Harmony only uses `invoke`, which requests that the service be run and exit.  The service library Harmony provides also supports a `start` action with parameter `--harmony-queue-url <url>`, which requests that the service be started as a long running service that reads requests from an SQS queue.  This is likely to be deprecated.
 
-The messages that are placed on the SQS queue are a JSON string containing the details of the service operation to be run.  See the latest [Harmony data-operation schema](../app/schemas/) for format details.
+`<input>` is a JSON string containing the details of the service operation to be run.  See the latest [Harmony data-operation schema](../app/schemas/) for format details.
+
+`<sources-file>` is an optional file path that may contain a JSON document whose root-level keys should override keys in `<input>`.  The intent of this file is to allow Harmony to externalize the potentially very long list of input sources to avoid command line limits while retaining the remainder of the message on the command line for easier manipulation in workflow definitions.
 
 The `Dockerfile` in the harmony-gdal project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.
+
+In addition to the defined command-line parameters, Harmony can provide the Docker container with environment variables as set in [services.yml](../config/services.yml) by setting `service.type.params.env` key/value pairs.  See the existing services.yml for examples.
 
 The [docker-compose.yml](../docker-compose.yml) should be updated to add an entry for running the container locally including an environment variables that need to be set. See the harmony-gdal service as an example.
 
@@ -187,7 +191,7 @@ Note that several of the following are under active discussion and we encourage 
 
 In order to improve user experience, metrics gathering, and to allow compatibility with future development, Harmony strongly encourages service implementations to do the following:
 
-1. Provide provenance information in output files in a manner appropriate to the file format and following EOSDIS guidelines, such that a user can recreate the output file that was generated through Harmony. The following fields are recommended to include in each output file. Note that the current software citation fields include backend service information; information on Harmony workflow is forthcoming. For NetCDF outputs, information specific to the backend service should be added to the  `history` global attribute, with all other fields added as additional global attributes. For GeoTIFF outputs, these fields can be included under `metadata` as `TIFFTAG_SOFTWARE`. See the [NASA ESDS Data Product Development Guide for Data Producers](https://earthdata.nasa.gov/files/ESDS-RFC-041.pdf) for more guidance on provenance information. 
+1. Provide provenance information in output files in a manner appropriate to the file format and following EOSDIS guidelines, such that a user can recreate the output file that was generated through Harmony. The following fields are recommended to include in each output file. Note that the current software citation fields include backend service information; information on Harmony workflow is forthcoming. For NetCDF outputs, information specific to the backend service should be added to the  `history` global attribute, with all other fields added as additional global attributes. For GeoTIFF outputs, these fields can be included under `metadata` as `TIFFTAG_SOFTWARE`. See the [NASA ESDS Data Product Development Guide for Data Producers](https://earthdata.nasa.gov/files/ESDS-RFC-041.pdf) for more guidance on provenance information.
 
 | Field Name               | Field Example                                                                                                                                            | Field Source                         |
 |--------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
