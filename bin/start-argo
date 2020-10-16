@@ -77,6 +77,17 @@ if [ -z "$argo_namespace" ]; then
   kubectl create namespace argo
 fi
 
+STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
+UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
+
+localstack_startup_script="
+awslocal s3 mb s3://${STAGING_BUCKET}
+awslocal s3 mb s3://${ARTIFACT_BUCKET}
+awslocal s3 mb s3://${UPLOAD_BUCKET}"
+
+kubectl -n argo delete configmap localstack-config 2>/dev/null || true
+kubectl -n argo create configmap localstack-config --from-literal=startup.sh="${localstack_startup_script}"
+
 cat <<EOF | kubectl -n argo apply -f -
 apiVersion: v1
 kind: Secret
@@ -100,6 +111,29 @@ EOF
 
 kubectl apply -n argo -f ./config/local-argo-deployment.yml
 
+
+[[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
+
+# In deployed environments, we also want "useSDKCreds: true" in the s3 block
+kubectl -n argo patch \
+  configmap/workflow-controller-configmap \
+  --patch "$(cat << EOF
+data:
+  artifactRepository: |
+    s3:
+      bucket: ${ARTIFACT_BUCKET}
+      endpoint: "${s3_endpoint}"
+      keyFormat: artifacts/{{workflow.name}}/{{pod.name}}
+      insecure: true
+      accessKeySecret:
+        name: localstack-creds
+        key: accessKey
+      secretKeySecret:
+        name: localstack-creds
+        key: secretKey
+EOF
+)"
+
 # wait for argo to start up
 while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argo" && sleep 5; done
 
@@ -112,4 +146,7 @@ for f in ./config/workflow-templates/*; do
   argo -n argo template create $f
 done
 
-kubectl -n argo port-forward deployment/argo-server "$PORT:2746"
+if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
+  # Allow LoadBalancer services to be reached in minikube
+  minikube tunnel
+fi
