@@ -473,12 +473,7 @@ kind: ConfigMap
 metadata:
   name: workflow-controller-configmap
 data:
-  artifactRepository: |
-    s3:
-      bucket: ${UPLOAD_BUCKET}
-      endpoint: s3.amazonaws.com
-
-  # Default values that will apply to all Workflows from this controller, unless overridden on the Workflow-level
+  # Note that this ConfigMap is patched in the start script to also set an artifactRepository
   workflowDefaults: |
     metadata:
       namespace: argo
@@ -486,6 +481,8 @@ data:
       # Keep workflows for four hours after completion before archiving
       ttlStrategy:
         secondsAfterCompletion: 14400
+      podGC:
+        strategy: OnPodCompletion
 
   metricsConfig: |
     disableLegacy: true

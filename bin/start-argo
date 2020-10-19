@@ -120,6 +120,7 @@ kubectl -n argo patch \
   --patch "$(cat << EOF
 data:
   artifactRepository: |
+    archiveLogs: true
     s3:
       bucket: ${ARTIFACT_BUCKET}
       endpoint: "${s3_endpoint}"
