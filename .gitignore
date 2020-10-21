@@ -25,3 +25,6 @@ db/*-journal
 
 # Quokka repl/playground
 playground.ts
+
+# pyenv configuration
+workload/.python-version
