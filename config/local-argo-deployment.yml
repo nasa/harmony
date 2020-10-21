@@ -546,7 +546,6 @@ spec:
       ports:
         - containerPort: 4566
         - containerPort: 4572
-        - containerPort: 4576
         - containerPort: 4592
         - containerPort: 8080
       volumeMounts:
@@ -554,7 +553,7 @@ spec:
           name: localstack-start
       env:
         - name: LOCALSTACK_SERVICES
-          value: "s3,sts,sqs"
+          value: "s3,sts"
         - name: LOCALSTACK_DEBUG
           value: "1"
   volumes:
@@ -580,9 +579,6 @@ spec:
     - name: "s3"
       port: 4572
       targetPort: 4572
-    - name: "sqs"
-      port: 4576
-      targetPort: 4576
     - name: "sts"
       port: 4592
       targetPort: 4592

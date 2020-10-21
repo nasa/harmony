@@ -78,6 +78,7 @@ if [ -z "$argo_namespace" ]; then
 fi
 
 STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
+ARTIFACT_BUCKET=${ARTIFACT_BUCKET:-local-artifact-bucket}
 UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
 
 localstack_startup_script="
