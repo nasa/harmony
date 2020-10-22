@@ -6,7 +6,8 @@ import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
 import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
-import { computeMbr, Mbr } from '../util/spatial/mbr';
+import { computeMbr } from '../util/spatial/mbr';
+import { BoundingBox } from '../util/bounding-box';
 import env from '../util/env';
 
 /**
@@ -25,7 +26,7 @@ function getCollectionFromRequest(req: HarmonyRequest, collectionId: string): cm
  * @param granule  -  a CMR granule record associated with the `collection`
  * @returns bbox  - a bounding box in [W S E N] format
  */
-function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Mbr {
+function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): BoundingBox {
   // use the given bounding box (if any), else try to use the given spatial geometry
   // to find a box; if there is none, use the spatial geometry from the collection; if
   // there is none default to a bounding box for the whole world
@@ -105,6 +106,10 @@ export default async function cmrGranuleLocator(
           maxResults,
         );
       }
+
+      // TODO: Write out the query and transfer it to the workflow here
+      // Merge query as follows
+      // { collection_concept_id: source.collection, ...cmrQuery }
 
       const { hits, granules: jsonGranules } = cmrResponse;
 

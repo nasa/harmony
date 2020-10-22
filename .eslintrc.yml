@@ -21,9 +21,11 @@ parserOptions:
   ecmaVersion: 2020
   project: "./tsconfig.json"
   projectFolderIgnoreList:
-    - "/node_modules/"
+    - ".*/node_modules/.*"
     - "/db/"
-    - "/coverage/"
+    - ".*/coverage/.*"
+    - ".*/dist/.*"
+    - ".*/built/.*"
 env:
   node: true
   es6: true
@@ -56,3 +58,6 @@ overrides:
       # the preferred method described in the Mocha docs
       prefer-arrow-callback: "off"
       func-names: "off"
+  - files: [ "tasks/query-cmr/**/*.ts" ]
+    parserOptions:
+      project: "./tasks/query-cmr/tsconfig.json"

@@ -1,4 +1,4 @@
-import boxStringsToBox from 'util/bounding-box';
+import boxStringsToBox, { BoundingBox } from '../bounding-box';
 import Arc from './arc';
 import { Coordinate, LatLng } from './coordinate';
 import { getShape, containsPole, NORTH_POLE, SOUTH_POLE } from './geo';
@@ -30,14 +30,12 @@ function circularMin(lng0: number, lng1: number): number {
   return lng1;
 }
 
-export type Mbr = [number, number, number, number];
-
 /**
  * Finds simple mbr
  * @param latlngs - an array of LatLng (lat/lng) pairs
  * @returns a tuple of the form [minLat, minLng, maxLat, maxLng]
  */
-function findSimpleMbr(latlngs: LatLng[]): Mbr {
+function findSimpleMbr(latlngs: LatLng[]): BoundingBox {
   let minLat = 91;
   let maxLat = -91;
   let minLng = 181;
@@ -114,7 +112,7 @@ function distance(lng0: number, min: number, max: number): number {
  * @param mbrs - an array of MBRs
  * @returns a single MBR that encompasses all the given MBRs
  */
-function mergeMbrs(mbrs: Mbr[]): Mbr {
+function mergeMbrs(mbrs: BoundingBox[]): BoundingBox {
   const [first, ...rest] = mbrs;
   let [minLat, minLng, maxLat, maxLng] = first;
 
@@ -161,7 +159,7 @@ function mergeMbrs(mbrs: Mbr[]): Mbr {
  * @param mbr A minimum bounding rectangle
  * @returns an array of Mbrs that don't cross the antimeridian
  */
-export function divideMbr(mbr: Mbr): Mbr[] {
+export function divideMbr(mbr: BoundingBox): BoundingBox[] {
   const [minLat, minLng, maxLat, maxLng] = Array.from(mbr);
   if (maxLng < minLng) {
     return [[minLat, -180, maxLat, maxLng], [minLat, minLng, maxLat, 180]];
@@ -200,11 +198,11 @@ function removeDuplicateEndpoint(ring: string): string {
  * @param precision - the number of decimal places to which to round each ordinate
  * @returns an Mbr with coordinates at the given precision
  */
-function roundMbrCoordiinates(mbr: Mbr, precision = 8): Mbr {
+function roundMbrCoordiinates(mbr: BoundingBox, precision = 8): BoundingBox {
   return mbr.map((ord: number) => {
     const fixed = ord.toFixed(precision);
     return parseFloat(fixed);
-  }) as Mbr;
+  }) as BoundingBox;
 }
 
 /**
@@ -212,7 +210,7 @@ function roundMbrCoordiinates(mbr: Mbr, precision = 8): Mbr {
  * @param mbr an Mbr in SWNE order
  * @returns an Mbr in SWNE order
  */
-function swneToWsen(mbr: Mbr): Mbr {
+function swneToWsen(mbr: BoundingBox): BoundingBox {
   return [mbr[1], mbr[0], mbr[3], mbr[2]];
 }
 
@@ -221,7 +219,7 @@ function swneToWsen(mbr: Mbr): Mbr {
  * @param mbr the Mbr to normalize
  * @returns An Mbr with east/west in the range -180:180 and north/south in the range -90:90
  */
-function normalizeMbr(mbr: Mbr): Mbr {
+function normalizeMbr(mbr: BoundingBox): BoundingBox {
   let [w, s, e, n] = mbr;
   if (s < -90) s = -90 - s;
   if (s > 90) s = 180 - s;
@@ -240,24 +238,24 @@ function normalizeMbr(mbr: Mbr): Mbr {
  * @param spatial - a an object containing a point, bounding box, or polygon
  * @returns an MBR or undefined
  */
-export function computeMbr(spatial: Spatial): Mbr | undefined {
+export function computeMbr(spatial: Spatial): BoundingBox | undefined {
   const { boxes, points, lines, polygons } = spatial;
   let mbrs;
 
   if (boxes) {
     return boxStringsToBox(boxes);
   } if (points) {
-    mbrs = points.map((point: string): Mbr => {
+    mbrs = points.map((point: string): BoundingBox => {
       const { lat, lng } = getShape(point)[0];
       return [lat - EPSILON, lng - EPSILON, lat + EPSILON, lng + EPSILON];
     });
   } else if (lines) {
-    mbrs = lines.map((line: string): Mbr => {
+    mbrs = lines.map((line: string): BoundingBox => {
       const lineShape = getShape(line);
       return findSimpleMbr(lineShape);
     });
   } else if (polygons) {
-    mbrs = polygons.map((polygon: string[]): Mbr => {
+    mbrs = polygons.map((polygon: string[]): BoundingBox => {
       const outerRing = polygon[0];
       const polyShape = getShape(removeDuplicateEndpoint(outerRing));
       const mbr = findSimpleMbr(polyShape);

@@ -1,0 +1,30 @@
+{
+  "name": "@harmony/query-cmr",
+  "version": "0.0.0",
+  "description": "Harmony Argo task that queries the CMR for an incoming message and produces a sources file as output",
+  "main": "app/index.ts",
+  "scripts": {
+    "test": "eslint --ext .ts . && nyc mocha && npm audit",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
+    "coverage": "nyc mocha",
+    "build": "tsc"
+  },
+  "keywords": [
+    "NASA",
+    "EOSDIS",
+    "Harmony",
+    "Services",
+    "Cumulus"
+  ],
+  "author": "NASA EOSDIS",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "yargs": "^16.1.0"
+  },
+  "engines": {
+    "node": "^12.14.1"
+  },
+  "devDependencies": {
+    "ts-node": "^9.0.0"
+  }
+}

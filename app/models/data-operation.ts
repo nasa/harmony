@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
 import _ from 'lodash';
-import logger from 'util/log';
+import logger from '../util/log';
 import { CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 
@@ -115,11 +115,16 @@ export interface TemporalRange {
   start?: Date;
   end?: Date;
 }
+
+export interface TemporalStringRange {
+  start?: string | Date;
+  end?: string | Date;
+}
 export interface HarmonyGranule {
   id: string;
   name: string;
   urls: string[];
-  temporal: TemporalRange;
+  temporal: TemporalStringRange;
   bbox?: number[];
 }
 
@@ -415,7 +420,7 @@ export default class DataOperation {
    * @returns The temporal range with two keys start and end
    * @memberof DataOperation
    */
-  get temporal(): TemporalRange {
+  get temporal(): TemporalStringRange {
     const { temporal } = this.model;
     if (!temporal) return null;
     return temporal;
@@ -429,14 +434,14 @@ export default class DataOperation {
    * @returns {void}
    * @memberof DataOperation
    */
-  set temporal(temporalRange: TemporalRange) {
+  set temporal(temporalRange: TemporalStringRange) {
     const { start, end } = temporalRange;
     this.model.temporal = {};
     if (start) {
-      this.model.temporal.start = (typeof start === 'string') ? start : start.toISOString();
+      this.model.temporal.start = (typeof start === 'string') ? start : (start as Date).toISOString();
     }
     if (end) {
-      this.model.temporal.end = (typeof end === 'string') ? end : end.toISOString();
+      this.model.temporal.end = (typeof end === 'string') ? end : (end as Date).toISOString();
     }
   }
 
