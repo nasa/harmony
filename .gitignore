@@ -25,3 +25,5 @@ db/*-journal
 
 # Quokka repl/playground
 playground.ts
+
+.idea

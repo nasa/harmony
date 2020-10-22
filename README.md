@@ -75,17 +75,6 @@ We recommend doing this any time you receive an example/dotenv update to ensure 
 ### Set up Earthdata Login application for your local Harmony instance
 To use Earthdata Login with a locally running Harmomy, you must first set up a new application in the Earthdata Login UAT environment using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS.  You will also need to add the "echo" group to the list of required application groups in order for CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update your .env file with the information from your Earthdata Login application. Additional information including OAUTH values to use when creating the application can be found in the example/dotenv file in this repository.
 
-### Start localstack
-To avoid using real S3 buckets when testing locally, you can run [Localstack](https://github.com/localstack/localstack).  Our helper
-script installs it, runs a local S3 instance, and creates the staging bucket configured in `.env`
-
-```
-$ bin/run-localstack
-```
-
-This will produce errors for about a minute as localstack starts up and creates resources needed by service listeners.  Assuming everything is configured correctly,
-it the errors will stop.  Keep this running during development.  `Ctrl-C` will exit.
-
 ### Run Tests
 
 To run the linter, tests, and coverage checks as the CI environment will, run
@@ -129,11 +118,11 @@ database, you can create and/or migrate your database by setting `NODE_ENV=produ
 $ npx knex --cwd db migrate:latest
 ```
 
-### Running Argo Workflows
+### Run Kubernetes locally with Argo and Localstack
 
-[Argo Workflows](https://github.com/argoproj/argo) are used by Harmony to manage job executions. Argo can be run locally to support development by following these instructions.
+Harmony uses [Argo Workflows](https://github.com/argoproj/argo) to manage job executions.  In development, we use [Localstack](https://github.com/localstack/localstack) to avoid allocating AWS resources.
 
-#### Installing Argo Workflows
+#### Prerequisites
 
 * Mac / Windows:
   * Install [Docker Desktop] https://www.docker.com/products/docker-desktop. Docker Desktop comes bundled with Kubernetes and `kubectl`.
@@ -144,6 +133,8 @@ $ npx knex --cwd db migrate:latest
   * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node kubernetes cluster useful for local development
   * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to kubernetes.
   * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
+
+#### Installing and running Argo and Localstack on Kubernetes
 
 ```
 $ ./bin/start-argo
@@ -171,9 +162,9 @@ $ ./bin/start-argo -d DRIVER
 
 where `DRIVER` is one of the supported VM drivers found [here](https://kubernetes.io/docs/setup/learning-environment/minikube/#specifying-the-vm-driver).
 
-##### Deleting Argo and Stopping Kubernetes
+#### Deleting applications and stopping Kubernetes
 
-To delete the Argo deployment, run:
+To delete the argo and localstack deployment, run:
 
 ```
 $ kubectl delete namespaces argo
@@ -182,7 +173,7 @@ $ kubectl delete namespaces argo
 `minikube` users can stop Kubernetes by pressing `ctrl-C` on the `bin/start-argo` process or run `minikube stop`.  Docker Desktop users will
 need to close Docker or disable Kubernetes support in the UI.  Note that the latter uninstalls `kubectl`.
 
-##### (minikube only) Configuring the callback URL for backend services
+#### (minikube only) Configuring the callback URL for backend services
 
 You can skip this step if you are using the default docker driver for minikube and set CALLBACK_URL_ROOT as described in the example dotenv file. If you are using a different driver such as virtualbox you may need to execute the following command to get the IP address minikube has bridged to localhost:
 
