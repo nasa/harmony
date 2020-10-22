@@ -108,8 +108,6 @@ export default async function cmrGranuleLocator(
       }
 
       // TODO: Write out the query and transfer it to the workflow here
-      // Merge query as follows
-      // { collection_concept_id: source.collection, ...cmrQuery }
 
       const { hits, granules: jsonGranules } = cmrResponse;
 
