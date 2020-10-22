@@ -149,6 +149,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
               },
               script: {
                 image: 'curlimages/curl',
+                imagePullPolicy: 'IfNotPresent',
                 command: ['sh'],
                 source: exitHandlerScript,
               },
