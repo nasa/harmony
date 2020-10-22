@@ -414,6 +414,11 @@ kind: ConfigMap
 metadata:
   name: workflow-controller-configmap
 data:
+  artifactRepository: |
+    s3:
+      bucket: ${UPLOAD_BUCKET}
+      endpoint: s3.amazonaws.com
+
   # Default values that will apply to all Workflows from this controller, unless overridden on the Workflow-level
   workflowDefaults: |
     metadata:
@@ -448,6 +453,7 @@ spec:
     targetPort: 2746
   selector:
     app: argo-server
+  type: LoadBalancer
 ---
 apiVersion: v1
 kind: Service
@@ -526,3 +532,67 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       serviceAccountName: argo
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: localstack-pod
+  labels:
+    name: localstack-pod
+spec:
+  containers:
+    - name: localstack
+      image: localstack/localstack:0.11.1
+      ports:
+        - containerPort: 4566
+        - containerPort: 4572
+        - containerPort: 4592
+        - containerPort: 8080
+      volumeMounts:
+        - mountPath: /docker-entrypoint-initaws.d
+          name: localstack-start
+      env:
+        - name: LOCALSTACK_SERVICES
+          value: "s3,sts"
+        - name: LOCALSTACK_DEBUG
+          value: "1"
+  volumes:
+    - name: localstack-start
+      configMap:
+        # Mount startup.sh script created by start-argo into the volume
+        name: localstack-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: localstack
+  labels:
+    name: localstack
+spec:
+  ports:
+    - name: "ui"
+      port: 8080
+      targetPort: 8080
+    - name: "edge"
+      port: 4566
+      targetPort: 4566
+    - name: "s3"
+      port: 4572
+      targetPort: 4572
+    - name: "sts"
+      port: 4592
+      targetPort: 4592
+  selector:
+    name: localstack-pod
+  type: LoadBalancer
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: localstack-creds
+type: Opaque
+data:
+  # Fake credentials for localstack that Argo uses so it avoids looking up IAM
+  accessKey: c2hoaGhoaGg=
+  secretKey: aXRzYXNlY3JldA==

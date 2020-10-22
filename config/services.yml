@@ -69,6 +69,37 @@ https://cmr.earthdata.nasa.gov:
         - image/png
         - image/gif
       reprojection: true
+  - name: podaac/l2-subsetter
+    data_operation_version: '0.9.0'
+    type:
+      name: argo
+      params:
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: podaac-l2-subsetter
+        image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/podaac/l2-subsetter
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      - C1940473819-POCLOUD
+      - C1940475563-POCLOUD
+      - C1940466008-POCLOUD
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
 
 https://cmr.uat.earthdata.nasa.gov:
 
@@ -163,6 +194,11 @@ https://cmr.uat.earthdata.nasa.gov:
           BACKEND_HOST: !Env ${BACKEND_HOST}
     collections:
       - C1234208436-POCLOUD
+      - C1234208437-POCLOUD
+      - C1234208438-POCLOUD
+      - C1234724470-POCLOUD
+      - C1234724471-POCLOUD
+      - C1234071416-POCLOUD
     capabilities:
       subsetting:
         bbox: true
@@ -265,27 +301,6 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - image/tiff
       reprojection: true
-
-  # L2SS subsetter
-  - name: podaac/http-service
-    data_operation_version: '0.9.0'
-    type:
-      name: http
-      params:
-        url: https://d241qn3lj7he8d.cloudfront.net/dataOperation
-    collections:
-      - C1234208437-POCLOUD
-      - C1234208438-POCLOUD
-      - C1234724470-POCLOUD
-      - C1234724471-POCLOUD
-      - C1234071416-POCLOUD
-    capabilities:
-      subsetting:
-        bbox: true
-        variable: true
-      output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
 
   # PO.DAAC Shapefiles
   - name: podaac/ps3

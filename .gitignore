@@ -28,3 +28,5 @@ playground.ts
 
 # pyenv configuration
 workload/.python-version
+
+.idea
