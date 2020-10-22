@@ -205,9 +205,13 @@ PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
 PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='Always'
 PODAAC_NETCDF_CONVERTER_PARALLELISM=2
 
-# The bucket where service output data will be staged, corresponds to the S3 bucket
-# created in localstack when running locally
+# The bucket where final service output data will be staged
+# Default: A bucket created for use in localstack
 STAGING_BUCKET=local-staging-bucket
+
+# The bucket where intermediate service artifacts will be staged
+# Default: A bucket created for use in localstack
+ARTIFACT_BUCKET=local-artifact-bucket
 
 # When using data that cannot accept Earthdata Login tokens from Harmony,
 # either because of application group setup or because they use a different
