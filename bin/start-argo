@@ -151,3 +151,7 @@ if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
   # Allow LoadBalancer services to be reached in minikube
   minikube tunnel
 fi
+
+echo 'Localstack has started at http://localhost:4566/'
+echo 'Argo has started at http://localhost:2746/'
+echo 'Run `kubectl delete namespaces argo` to remove all local resources'
