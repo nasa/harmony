@@ -140,7 +140,7 @@ while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.co
 
 for f in ./config/workflow-templates/*; do
   workflow=$(basename $f .yaml)
-  existing_workflow=$(argo -n argo template get $workflow | grep $workflow | cut -d ' ' -f1)
+  existing_workflow=$(argo -n argo template get $workflow 2>/dev/null | grep $workflow | cut -d ' ' -f1)
   if [ -n "$existing_workflow" ]; then
     argo -n argo template delete $workflow
   fi
@@ -152,6 +152,9 @@ if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
   minikube tunnel
 fi
 
+echo ''
+echo 'Complete!'
+echo ''
 echo 'Localstack has started at http://localhost:4566/'
 echo 'Argo has started at http://localhost:2746/'
-echo 'Run `kubectl delete namespaces argo` to remove all local resources'
+echo 'Run `kubectl delete namespaces argo` to remove all local resources or run this script again to re-deploy'
