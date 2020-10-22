@@ -23,6 +23,9 @@ export interface CallbackQuery {
   redirect?: string;
   status?: string;
   progress?: string;
+  batch_count?: string;
+  batch_completed?: string;
+  post_batch_step_count?: string;
 }
 
 /**
@@ -156,8 +159,19 @@ export async function responseHandler(req: Request, res: Response): Promise<void
       }
     }
 
+    // progress update
+    if (query.batch_completed?.toLowerCase() === 'true') {
+      const currentProgress = job.progress || 0;
+      const batchProgress = (currentProgress / 100.0) * parseInt(query.batch_count, 10) + 1;
+      const batchCount = parseInt(query.batch_count, 10);
+      const postBatchStepCount = parseInt(query.post_batch_step_count, 10) || 0;
+      query.progress = `${100 * (batchProgress / (batchCount + postBatchStepCount))}`;
+    }
+
     const fields = _.merge({}, query, queryOverrides);
     delete fields.argo;
+    delete fields.batch_count;
+    delete fields.post_batch_step_count;
     logger.info(`Updating job ${job.id} with fields: ${JSON.stringify(fields)}`);
 
     if (!query.error && query.argo?.toLowerCase() === 'true') {
