@@ -609,7 +609,7 @@ spec:
           name: localstack-start
       env:
         - name: LOCALSTACK_SERVICES
-          value: "s3,sts,sqs"
+          value: "s3,sts"
         - name: LOCALSTACK_DEBUG
           value: "1"
   volumes:

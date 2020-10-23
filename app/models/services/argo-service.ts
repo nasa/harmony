@@ -76,11 +76,18 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     const serializedOperation = this.serializeOperation();
     const operation = JSON.parse(serializedOperation);
     const exitHandlerScript = `
+    echo '{{workflow.failures}}' > /tmp/failures
+    error="{{workflow.status}}"
+    timeout_count=$(grep -c 'Pod was active on the node longer than the specified deadline' /tmp/failures)
+    if [ "$timeout_count" != "0" ]
+    then
+    error="Request%20timed%20out"
+    fi
     if [ "{{workflow.status}}" == "Succeeded" ]
     then
     curl -XPOST "{{inputs.parameters.callback}}/response?status=successful&argo=true"
     else
-    curl -XPOST "{{inputs.parameters.callback}}/response?status=failed&argo=true&error={{workflow.status}}"
+    curl -XPOST "{{inputs.parameters.callback}}/response?status=failed&argo=true&error=$error"
     fi
     `.trim();
 
