@@ -2,7 +2,7 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { AWSError, Request } from 'aws-sdk';
-import { HeadObjectOutput, GetObjectOutput, CopyObjectOutput } from 'aws-sdk/clients/s3';
+import { HeadObjectOutput, GetObjectOutput } from 'aws-sdk/clients/s3';
 import { objectStoreForProtocol, defaultObjectStore, S3ObjectStore } from '../../app/util/object-store';
 
 describe('util/object-store', function () {
