@@ -1,0 +1,97 @@
+FROM osgeo/gdal:ubuntu-full-latest
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+#
+# OPTIONAL: fake root CA for e.g. USGS / DOI networks
+#
+WORKDIR /usr/local/share/ca-certificates/doi
+COPY DOIRootCA.crt .
+RUN update-ca-certificates
+
+#
+# system packages
+# 
+RUN apt-get update && apt-get install -y bsdmainutils git libpq-dev postgresql sqlite3 sudo vim
+
+#
+# user dockeruser
+#
+RUN useradd -m dockeruser \
+    && echo "dockeruser:dockeruser" | chpasswd \
+    && adduser dockeruser sudo \
+    && echo "dockeruser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+USER dockeruser
+RUN mkdir ~/downloads
+
+#
+# Node.js
+#
+WORKDIR /home/dockeruser
+ENV NODE_VERSION 12.19.0
+RUN bash -c 'mkdir ~/.nvm' \
+    && curl -o - https://raw.githubusercontent.com/creationix/nvm/v0.36.0/install.sh | bash
+ENV NODE_PATH /home/dockeruser/.nvm/versions/node/v$NODE_VERSION/lib/modules
+ENV PATH      /home/dockeruser/.nvm/versions/node/v$NODE_VERSION/bin:$PATH
+RUN bash -c "npm config set registry http://registry.npmjs.org/"
+
+#
+# AWS cli
+#
+WORKDIR /home/dockeruser/downloads
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip -q awscliv2.zip \
+    && sudo ./aws/install
+
+#
+# Python and python environment
+#
+WORKDIR /home/dockeruser/venv
+RUN sudo apt-get install -y python3-pip python3-venv \
+    && python3 -m venv harmony \
+    && source ./harmony/bin/activate \
+    && pip install awscli-local boto3 
+
+#
+# Docker in Docker; allows containers to start sibling containers
+#
+RUN sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common \
+    && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - \
+    && sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable" \
+    && sudo apt-get install -y docker-ce-cli docker-compose
+
+#
+# Kubectl, CLI command for interfacing with Kubernetes
+#
+WORKDIR /home/dockeruser
+RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && chmod +x ./kubectl \
+    && sudo mv ./kubectl /usr/local/bin/kubectl
+# needed for the dev container to authenticate to the kubernetes API
+COPY .kube/config .kube/config
+
+#
+# Argo CLI, command for interfacing with Argo
+#
+WORKDIR /home/dockeruser
+RUN curl -LO https://github.com/argoproj/argo/releases/download/v2.9.5/argo-linux-amd64 \
+    && chmod +x ./argo-linux-amd64 \
+    && sudo mv ./argo-linux-amd64 /usr/local/bin/argo
+
+
+
+WORKDIR /home/dockeruser
+
+
+
+
+
+
+
+
+# Bundle app source
+#COPY . .
+#RUN pip3 install deps/harmony-service-lib-py
+#RUN pip3 install -r requirements.txt
+
+

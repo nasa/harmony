@@ -10,6 +10,8 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 
 ## Development Prerequisites
 
+For developing Harmony on Windows follow this document as well as the information in [docs/dev_container/README.md](docs/dev_container/README.md).
+
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
 * Node.js version 12.  We recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions
@@ -71,6 +73,8 @@ $ git diff --no-index .env example/dotenv
 ```
 
 We recommend doing this any time you receive an example/dotenv update to ensure there are no new variables needed.
+
+URS and UAT credentials need to use the same username and password, for now.
 
 ### Set up Earthdata Login application for your local Harmony instance
 To use Earthdata Login with a locally running Harmomy, you must first set up a new application in the Earthdata Login UAT environment using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS.  You will also need to add the "echo" group to the list of required application groups in order for CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update your .env file with the information from your Earthdata Login application. Additional information including OAUTH values to use when creating the application can be found in the example/dotenv file in this repository.
