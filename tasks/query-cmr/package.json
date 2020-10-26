@@ -2,12 +2,13 @@
   "name": "@harmony/query-cmr",
   "version": "0.0.0",
   "description": "Harmony Argo task that queries the CMR for an incoming message and produces a sources file as output",
-  "main": "app/index.ts",
+  "main": "app/query-granules.ts",
   "scripts": {
     "test": "eslint --ext .ts . && nyc mocha && npm audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "coverage": "nyc mocha",
-    "build": "tsc"
+    "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo -v $(pwd)/example:/app/example -v $(pwd)/tmp:/app/tmp ${npm_package_name:1}:${VERSION:-$npm_package_version}",
+    "build": "tsc && docker build -t ${npm_package_name:1}:${VERSION:-$npm_package_version} ."
   },
   "keywords": [
     "NASA",
@@ -19,12 +20,27 @@
   "author": "NASA EOSDIS",
   "license": "UNLICENSED",
   "dependencies": {
+    "ajv": "^6.12.3",
+    "aws-sdk": "^2.711.0",
+    "dotenv": "^8.1.0",
+    "form-data": "^3.0.0",
+    "lodash": "^4.17.20",
+    "node-fetch": "^2.6.1",
+    "tmp": "^0.1.0",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
+    "uuid": "^3.4.0",
+    "winston": "^3.3.3",
     "yargs": "^16.1.0"
   },
   "engines": {
     "node": "^12.14.1"
   },
   "devDependencies": {
-    "ts-node": "^9.0.0"
+    "eslint": "^6.8.0",
+    "mocha": "^7.2.0",
+    "nyc": "^15.1.0",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.3"
   }
 }
