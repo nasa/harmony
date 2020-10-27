@@ -4,4 +4,4 @@ WORKDIR /app
 COPY built package.json package-lock.json ./
 RUN npm install --production
 
-ENTRYPOINT [ "node", "tasks/query-cmr/app/index" ]
+ENTRYPOINT [ "node", "tasks/query-cmr/app/cli" ]

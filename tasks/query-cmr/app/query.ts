@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { queryGranulesForCollectionWithMultipartForm as queryGranules } from '../../../app/util/cmr';
+import { queryGranulesForCollectionWithMultipartForm as cmrQueryGranules } from '../../../app/util/cmr';
 import DataOperation, { HarmonyGranule } from '../../../app/models/data-operation';
 import { computeMbr } from '../../../app/util/spatial/mbr';
 
@@ -35,7 +35,7 @@ export async function querySource(
   while (!done) {
     const cmrQuery = JSON.parse(await fs.readFile(queryLocation, 'utf8'));
 
-    const cmrResponse = await queryGranules(
+    const cmrResponse = await cmrQueryGranules(
       source.collection,
       cmrQuery,
       token,
@@ -69,7 +69,7 @@ export async function querySource(
       return filename;
     })());
 
-    // TODO: Scroll ID and loop behavior to be added in the No Granule Limit epic.
+    // Scroll ID and loop behavior to be added in the No Granule Limit epic.
     // For now, we finish on the first page.  Will need to add logic to see if we've
     // reached the last page before we hit maxPages
     done = ++page < maxPages || true;
@@ -88,7 +88,7 @@ export async function querySource(
  * @param maxPages The maximum number of pages to be accessed from each source
  * @returns a list of all files produced
  */
-export default async function query(
+export async function queryGranules(
   operation: DataOperation,
   queries: string[],
   outputDir: string,
