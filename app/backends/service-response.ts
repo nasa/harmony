@@ -108,15 +108,6 @@ export async function responseHandler(req: Request, res: Response): Promise<void
 
   const query = req.query as CallbackQuery;
 
-  if (query.status === JobStatus.SUCCESSFUL && !query.argo) {
-    // This is temporary until we decide how we want to use callbacks. This code is to ignore the
-    // callback and not update the job status. The argo exit handler will handle updating the job
-    // to successful.
-    res.status(200);
-    res.send('Ok');
-    return;
-  }
-
   const trx = await db.transaction();
 
   const job = await Job.byRequestId(trx, requestId);
@@ -154,8 +145,9 @@ export async function responseHandler(req: Request, res: Response): Promise<void
       logger.info(`Staging to ${item.href}`);
       await store.upload(req, item.href, +req.headers['content-length'], item.type || query.item?.type);
       queryOverrides.item = item;
+
       if (!job.isAsync) {
-        queryOverrides.status = 'successful';
+        queryOverrides.status = JobStatus.SUCCESSFUL;
       }
     }
 
@@ -169,6 +161,11 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     }
 
     const fields = _.merge({}, query, queryOverrides);
+    if (job.isAsync && fields.status === JobStatus.SUCCESSFUL && !fields.argo) {
+      // This is temporary until we decide how we want to use callbacks. We avoid updating
+      // job status when the callback doesn't come from Argo
+      delete fields.status;
+    }
     delete fields.argo;
     delete fields.batch_count;
     delete fields.post_batch_step_count;

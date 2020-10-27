@@ -74,9 +74,9 @@ export class S3ObjectStore {
       Bucket: url.hostname,
       Key: url.pathname.substr(1), // Nuke leading "/"
     };
-    // Signed URLs only work when the Harmony account owns both the bucket and the key. If the
-    // object does not exist a NotFound will be thrown
-    await this._changeOwnership(object);
+
+    // Verifies that the object exists, or throws NotFound
+    await this.s3.headObject(object).promise();
     const req = this.s3.getObject(object);
 
     if (params && req.on) {
