@@ -1,0 +1,19 @@
+{
+    "stac_version": "1.0.0-beta.2",
+    "type": "Feature",
+    "id": "9c02270d-d4aa-4b97-8bca-b1e748dd3e16",
+    "title": "Transmogrifier Output Item",
+    "bbox": [-100.5, 30.4, -99.5, 31.4],
+    "geometry": {"type": "Polygon", "coordinates": []},
+    "assets": {
+        "granule": {
+            "type": "application/x-netcdf",
+            "href": "s3://s3.amazonaws.com/harmony/transient/9c02270d-d4aa-4b97-8bca-b1e748dd3e16.nc",
+            "title": "Transmogrifier Output Item"
+        }
+    },
+    "properties": {
+        "common_metadata:start_datetime": "1999-01-01T10:00:00Z",
+        "common_metadata:end_datetime": "2020-02-20T15:00:00Z"
+    }
+}

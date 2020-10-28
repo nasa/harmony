@@ -1,0 +1,19 @@
+{
+    "stac_version": "1.0.0-beta.2",
+    "type": "Feature",
+    "id": "efb9fbb5-84b2-4c3b-8dc7-556e2b0b088d",
+    "title": "Granule Locator Output Item",
+    "bbox": [-99.5, 31.4, -97.5, 32.4],
+    "geometry": {"type": "Polygon", "coordinates": []},
+    "assets": {
+        "granule": {
+            "type": "application/x-netcdf",
+            "href": "https://archive.podaac.uat.earthdata.nasa.gov/fake/data/UFO_SIGHTING_RADAR_002.nc"
+            "title": "CMR Granule G1233800344-POCLOUD"
+        }
+    },
+    "properties": {
+        "common_metadata:start_datetime": "1999-01-01T10:00:00Z",
+        "common_metadata:end_datetime": "2020-02-20T15:00:00Z"
+    }
+}
