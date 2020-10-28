@@ -58,6 +58,3 @@ overrides:
       # the preferred method described in the Mocha docs
       prefer-arrow-callback: "off"
       func-names: "off"
-  - files: [ "tasks/query-cmr/**/*.ts" ]
-    parserOptions:
-      project: "./tasks/query-cmr/tsconfig.json"

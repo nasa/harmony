@@ -18,92 +18,111 @@ function readSchema(version: string): object {
   return JSON.parse(fs.readFileSync(schemaPath).toString());
 }
 
+interface SchemaVersion {
+  // The version number of the given schema
+  version: string;
+  // The JSON schema for the version, parsed into an object
+  schema: object;
+  // A function that takes a model in the schema's version and returns a
+  // model for the schema one version lower.  If this is not provided, schema translations will
+  // be unable to downgrade from the version
+  down?: (unknown) => unknown;
+}
+
+let _schemaVersions: SchemaVersion[];
 /**
- * List of schema objects in order of descending version number.
- * Each object defines these fields:
- *   {string} version The version number of the given schema
- *   {object} schema The JSON schema for the version, parsed into an object
- *   {function} down (optional) A function that takes a model in the schema's version and returns a
- *      model for the schema one version lower.  If this is not provided, schema translations will
- *      be unable to downgrade from the version
+ * Memoized list of schema objects in order of descending version number.
+ * @returns a memoized list of schema objects in order of descending version number.
  */
-const schemaVersions = [
-  {
-    version: '0.9.0',
-    schema: readSchema('0.9.0'),
-    down: (model): unknown => {
-      const revertedModel = _.cloneDeep(model);
-      if ('accessToken' in revertedModel) {
-        delete revertedModel.accessToken; // eslint-disable-line no-param-reassign
-      }
-
-      return revertedModel;
-    },
-  },
-  {
-    version: '0.8.0',
-    schema: readSchema('0.8.0'),
-    down: (model): unknown => {
-      const revertedModel = _.cloneDeep(model);
-      revertedModel.sources.forEach((s) => {
-        if (s.variables) {
-          s.variables.forEach((v) => {
-            delete v.fullPath; // eslint-disable-line no-param-reassign
-          });
+function schemaVersions(): SchemaVersion[] {
+  if (_schemaVersions) return _schemaVersions;
+  _schemaVersions = [
+    {
+      version: '0.9.0',
+      schema: readSchema('0.9.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        if ('accessToken' in revertedModel) {
+          delete revertedModel.accessToken; // eslint-disable-line no-param-reassign
         }
-      });
 
-      return revertedModel;
+        return revertedModel;
+      },
     },
-  },
-  {
-    version: '0.7.0',
-    schema: readSchema('0.7.0'),
-    down: (model): unknown => {
-      const revertedModel = _.cloneDeep(model);
-      // remove the `bbox` and `temporal` fields from all the granules in all the sources
-      revertedModel.sources.forEach((s) => {
-        s.granules.forEach((g) => {
-          // eslint-disable-next-line no-param-reassign
-          delete g.bbox;
-          // eslint-disable-next-line no-param-reassign
-          delete g.temporal;
+    {
+      version: '0.8.0',
+      schema: readSchema('0.8.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        revertedModel.sources.forEach((s) => {
+          if (s.variables) {
+            s.variables.forEach((v) => {
+              delete v.fullPath; // eslint-disable-line no-param-reassign
+            });
+          }
         });
-      });
 
-      return revertedModel;
+        return revertedModel;
+      },
     },
-  },
-  {
-    version: '0.6.0',
-    schema: readSchema('0.6.0'),
-    down: (model): unknown => {
-      const revertedModel = _.cloneDeep(model);
-      delete revertedModel.subset.shape;
-      delete revertedModel.stagingLocation;
-      return revertedModel;
-    },
-  },
-  {
-    version: '0.5.0',
-    schema: readSchema('0.5.0'),
-    down: (model): unknown => {
-      const revertedModel = _.cloneDeep(model);
-      delete revertedModel.format.interpolation;
-      delete revertedModel.format.scaleExtent;
-      delete revertedModel.format.scaleSize;
-      return revertedModel;
-    },
-  },
-  {
-    version: '0.4.0',
-    schema: readSchema('0.4.0'),
-  },
-];
+    {
+      version: '0.7.0',
+      schema: readSchema('0.7.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        // remove the `bbox` and `temporal` fields from all the granules in all the sources
+        revertedModel.sources.forEach((s) => {
+          s.granules.forEach((g) => {
+            // eslint-disable-next-line no-param-reassign
+            delete g.bbox;
+            // eslint-disable-next-line no-param-reassign
+            delete g.temporal;
+          });
+        });
 
-const validator = new Ajv({ schemaId: 'auto' });
-for (const { schema, version } of schemaVersions) {
-  validator.addSchema(schema, version);
+        return revertedModel;
+      },
+    },
+    {
+      version: '0.6.0',
+      schema: readSchema('0.6.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        delete revertedModel.subset.shape;
+        delete revertedModel.stagingLocation;
+        return revertedModel;
+      },
+    },
+    {
+      version: '0.5.0',
+      schema: readSchema('0.5.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        delete revertedModel.format.interpolation;
+        delete revertedModel.format.scaleExtent;
+        delete revertedModel.format.scaleSize;
+        return revertedModel;
+      },
+    },
+    {
+      version: '0.4.0',
+      schema: readSchema('0.4.0'),
+    },
+  ];
+  return _schemaVersions;
+}
+
+let _validator: Ajv.Ajv;
+/**
+ * @returns a memoized validator for the data operations schema
+ */
+function validator(): Ajv.Ajv {
+  if (_validator) return _validator;
+  _validator = new Ajv({ schemaId: 'auto' });
+  for (const { schema, version } of schemaVersions()) {
+    _validator.addSchema(schema, version);
+  }
+  return _validator;
 }
 
 export interface HarmonyVariable {
@@ -692,7 +711,7 @@ export default class DataOperation {
     // To be fixed by HARMONY-203 to not default to TIFF
     toWrite.format.mime = toWrite.format.mime || 'image/tiff';
     let matchingSchema = null;
-    for (const schemaVersion of schemaVersions) {
+    for (const schemaVersion of schemaVersions()) {
       if (schemaVersion.version === version) {
         matchingSchema = schemaVersion;
         break;
@@ -708,10 +727,11 @@ export default class DataOperation {
     }
 
     toWrite.version = version;
-    const valid = validator.validate(version, toWrite);
+    const validatorInstance = validator();
+    const valid = validatorInstance.validate(version, toWrite);
     if (!valid) {
       logger.error(`Invalid JSON: ${JSON.stringify(toWrite)}`);
-      throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validator.errors)}`);
+      throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validatorInstance.errors)}`);
     }
 
     return JSON.stringify(toWrite);

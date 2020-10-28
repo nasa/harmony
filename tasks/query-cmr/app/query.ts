@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import assert from 'assert';
 import { queryGranulesForCollectionWithMultipartForm as cmrQueryGranules } from '../../../app/util/cmr';
 import DataOperation, { HarmonyGranule } from '../../../app/models/data-operation';
 import { computeMbr } from '../../../app/util/spatial/mbr';
@@ -48,6 +49,7 @@ export async function querySource(
       const links = granule.links.filter((g) => g.rel.endsWith('/data#') && !g.inherited);
       if (links.length > 0) {
         // HARMONY-554 TODO: Writing a correct bounding box requires having the collection's MBR
+        // HARMONY-554 TODO: Determine if we still need config.data_url_pattern when serializing
         const box = computeMbr(granule) /* || computeMbr(collection) */ || [-180, -90, 180, 90];
         const gran: HarmonyGranule = {
           id: granule.id,
@@ -69,7 +71,8 @@ export async function querySource(
       return filename;
     })());
 
-    // Scroll ID and loop behavior to be added in the No Granule Limit epic.
+    // TODO HARMONY-276 Scroll ID and loop behavior to be added in the No Granule Limit epic.
+    //      They should use the new scroll API changes from CMR-6830
     // For now, we finish on the first page.  Will need to add logic to see if we've
     // reached the last page before we hit maxPages
     done = ++page < maxPages || true;
@@ -97,13 +100,12 @@ export async function queryGranules(
 ): Promise<string[]> {
   const { sources, unencryptedAccessToken } = operation;
 
-  if (!sources || sources.length !== queries.length) {
-    throw new Error('One query must be provided per input source');
-  }
+  assert(sources && sources.length === queries.length, 'One query must be provided per input source');
   const promises = [];
   for (let i = 0; i < sources.length; i++) {
     const result = querySource(unencryptedAccessToken, sources[i], queries[i], outputDir, pageSize, maxPages, `${i}_`);
     promises.push(result);
   }
-  return [].concat(...await Promise.all(promises));
+  const groupedResults = await Promise.all(promises);
+  return Promise.all([].concat(...groupedResults));
 }

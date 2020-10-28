@@ -2,13 +2,11 @@ import { before } from 'mocha';
 
 // Disable import/first so we can ensure correct default replay behavior
 /* eslint-disable import/first */
-process.env.REPLAY = process.env.REPLAY || 'record';
 process.env.SHARED_SECRET_KEY = '_THIS_IS_MY_32_CHARS_SECRET_KEY_';
 process.env.NODE_ENV = 'test';
 process.env.AWS_DEFAULT_REGION = 'us-west-2';
 process.env.HARMONY_CLIENT_ID = 'harmony-test';
 
-import _replay from 'replay';
 import * as winston from 'winston';
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';

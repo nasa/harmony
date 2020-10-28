@@ -250,7 +250,7 @@ export async function cmrPostSearchBase(
   let shapefile = null;
   await Promise.all(Object.keys(form).map(async (key) => {
     const value = form[key];
-    if (value) {
+    if (value !== null && value !== undefined) {
       if (key === 'geojson') {
         shapefile = await processGeoJson(value, formData);
       } else if (Array.isArray(value)) {

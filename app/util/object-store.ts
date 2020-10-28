@@ -2,7 +2,7 @@ import aws from 'aws-sdk';
 import * as fs from 'fs';
 import * as querystring from 'querystring';
 import * as stream from 'stream';
-import * as tmp from 'tmp';
+import tmp from 'tmp';
 import { URL } from 'url';
 import * as util from 'util';
 import { PromiseResult } from 'aws-sdk/lib/request';
