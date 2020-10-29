@@ -214,3 +214,63 @@ be suffixed with `_subsetted`.  Finally, files should have the conventional file
 account or has access to the Harmony staging bucket, we recommend you place results under that location, as it will allow users to access your data via the S3 API
 and ensure correct retention policies and access logging as features are added to Harmony. It is not mandatory that you make use of this location, but highly recommended
 if your service produces files that need to be staged.
+
+## 7. New Feature Sneak Preview
+
+In order to support service-chaining--a pipeline of two or more
+services that process data--Harmony will be moving towards a new way
+of expressing the input sources and outputs of each Harmony
+service. Currently the sources for a service are provided in the
+Harmony Operation--which the Harmony Service Library is able to read
+and provide to a service implementation. In an upcoming version of
+Harmony, we will support a STAC Catalog that describes the output of
+one service, and the input to the next service in the workflow chain
+(or pipeline).
+
+In the following Harmony workflow, we show a series of services (in
+boxes) and STAC Catalogs between services which describe the data
+available for the next service. First, the Granule Locator queries CMR
+using the criteria specified in the Harmony request. It then writes a
+STAC Catalog describing the Granules and their source URLs, and this
+STAC Catalog is provided to the fictional Transmogrifier
+Service. After transmogrification is done (not an easy task), the
+service writes a STAC Catalog describing its outputs with URLs. Again,
+the fictional Flux Decoupler service does its thing (easier than it
+sounds) and writes a STAC Catalog. Finally, this is provided to the
+Results Handler which stages the final output artifacts in S3 and
+Harmony provides a STAC Catalog describing the final output of the
+original Harmony request.
+
+     -----------------------------
+     |     Granule Locator       |
+     -----------------------------
+                  |
+           (STAC Catalog)
+                  |
+     -----------------------------
+     |  Transmogrifier Service   |
+     -----------------------------
+                  |
+           (STAC Catalog)
+                  |
+     -----------------------------
+     |  Flux Decoupler Service   |
+     -----------------------------
+                  |
+           (STAC Catalog)
+                  |
+     -----------------------------
+     |     Results Handler       |
+     -----------------------------
+                  |
+           (STAC Catalog)
+
+This feature is now under development, and [example STAC
+Catalogs](../../app/schemas/workflow-stac-examples) are
+available. These will certainly evolve as we implement this new
+feature. The Harmony Service Library will be updated to include helper
+functions to read input STAC Catalog and create output STAC Catalog,
+making it easier to transition to this new format.
+
+We welcome feedback and input on this new feature in the
+#harmony-service-providers EOSDIS Slack channel.
