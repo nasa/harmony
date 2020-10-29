@@ -21,6 +21,13 @@ $ locust --tags sync
 
 For a full listing of capabilities see the [locust documentation](https://docs.locust.io/en/stable/index.html).
 
+### Using a proxy
+You can use a socks proxy to execute a run against a sandbox environment which does not have direct access. For
+example if you open a tunnel to port 8080 you can then run the following to allow access to sandbox resources:
+```
+$ HTTP_PROXY=socks5h://localhost:8080 locust
+```
+
 After starting locust, bring up a web browser pointing to http://localhost:8089 to define the number
 of concurrent requests, and which endpoint to test (e.g. http://localhost:3000 or
 https://harmony.sit.earthdata.nasa.gov). Click 'Start swarming' and the test will begin. Click 'Stop' when
