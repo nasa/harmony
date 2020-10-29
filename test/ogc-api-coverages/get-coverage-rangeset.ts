@@ -4,7 +4,7 @@ import _ from 'lodash';
 import hookCmr from '../helpers/stub-cmr';
 import isUUID from '../../app/util/uuid';
 import { itIncludesRequestUrl } from '../helpers/jobs';
-import { hookSignS3Object, hookMockS3 } from '../helpers/object-store';
+import { hookSignS3Object } from '../helpers/object-store';
 import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
@@ -161,7 +161,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('and the backend service provides POST data', function () {
       const signedPrefix = hookSignS3Object();
-      hookMockS3();
       StubService.hook({
         body: 'realistic mock data',
         headers: {

@@ -4,7 +4,7 @@ import hookServersStartStop from '../helpers/servers';
 import { eossGetGranule, hookEossGetGranule } from '../helpers/eoss';
 import StubService from '../helpers/stub-service';
 import isUUID from '../../app/util/uuid';
-import { hookSignS3Object, hookMockS3 } from '../helpers/object-store';
+import { hookSignS3Object } from '../helpers/object-store';
 
 describe('EOSS GetGranule', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -98,7 +98,6 @@ describe('EOSS GetGranule', function () {
 
     describe('and the backend service provides POST data', function () {
       const signedPrefix = hookSignS3Object();
-      hookMockS3();
       StubService.hook({
         body: 'realistic mock data',
         headers: {

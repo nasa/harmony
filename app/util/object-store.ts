@@ -42,7 +42,11 @@ export class S3ObjectStore {
   _getS3(overrides?): aws.S3 {
     const endpointSettings: aws.S3.ClientConfiguration = {};
     if (process.env.USE_LOCALSTACK === 'true') {
-      endpointSettings.endpoint = 'http://localhost:4572';
+      aws.config.update({
+        region: env.awsDefaultRegion,
+        credentials: { accessKeyId: 'localstack', secretAccessKey: 'localstack' },
+      });
+      endpointSettings.endpoint = `http://${env.localstackHost}:4572`;
       endpointSettings.s3ForcePathStyle = true;
     }
 

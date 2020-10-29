@@ -67,5 +67,8 @@ export default async function main(args: string[]): Promise<void> {
 }
 
 if (require.main === module) {
-  main(process.argv.slice(2));
+  main(process.argv.slice(2)).catch((e) => {
+    console.error(e); // eslint-disable-line no-console
+    process.exit(1);
+  });
 }

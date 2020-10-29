@@ -4,11 +4,11 @@
   "description": "Harmony Argo task that queries the CMR for an incoming message and produces a sources file as output",
   "main": "app/query-granules.ts",
   "scripts": {
-    "test": "eslint --ext .ts . && nyc mocha && npm audit && lerna run test",
+    "test": "eslint --ext .ts . && nyc mocha && npm audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "coverage": "nyc mocha",
     "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp ${npm_package_name:1}:${VERSION:-$npm_package_version}",
-    "build": "tsc && docker build -t ${npm_package_name:1}:${VERSION:-$npm_package_version} ."
+    "build": "tsc && docker build -t ${npm_package_name:1}:${VERSION:-latest} ."
   },
   "keywords": [
     "NASA",

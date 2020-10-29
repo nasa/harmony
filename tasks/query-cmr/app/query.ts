@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import assert from 'assert';
 import { queryGranulesForCollectionWithMultipartForm as cmrQueryGranules } from '../../../app/util/cmr';
+import { objectStoreForProtocol } from '../../../app/util/object-store';
 import DataOperation, { HarmonyGranule } from '../../../app/models/data-operation';
 import { computeMbr } from '../../../app/util/spatial/mbr';
 
@@ -33,9 +34,12 @@ export async function querySource(
   const result = [];
   let page = 0;
   let done = false;
-  while (!done) {
-    const cmrQuery = JSON.parse(await fs.readFile(queryLocation, 'utf8'));
 
+  const store = objectStoreForProtocol(queryLocation);
+  const queryFile = store ? await store.downloadFile(queryLocation) : queryLocation;
+  const cmrQuery = JSON.parse(await fs.readFile(queryFile, 'utf8'));
+
+  while (!done) {
     const cmrResponse = await cmrQueryGranules(
       source.collection,
       cmrQuery,

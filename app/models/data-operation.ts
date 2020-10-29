@@ -173,6 +173,8 @@ export default class DataOperation {
 
   cmrHits?: number;
 
+  cmrQueryLocations: string[] = [];
+
   encrypter?: Encrypter;
 
   decrypter?: Decrypter;
