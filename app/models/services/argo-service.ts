@@ -1,8 +1,6 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import * as axios from 'axios';
-import { Job } from 'models/job';
-import db from '../../util/db';
 import BaseService, { functionalSerializeOperation } from './base-service';
 import InvocationResult from './invocation-result';
 import { batchOperations } from '../../util/batch';
@@ -76,14 +74,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
 
     const postBatchStepCount = this.params.postBatchStepCount || 0;
 
-    // save the batch count in the job
-    // TODO add proper error handling / rollback
-    // const trx = await db.transaction();
-    // const job = await Job.byRequestId(trx, requestId);
-    // job.batchCount = ops.length;
-    // job.save(trx);
-    // trx.commit();
-
     // similarly we need to get at the model for the operation to retrieve parameters needed to
     // construct the workflow
     const serializedOperation = this.serializeOperation();
@@ -105,9 +95,10 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     `.trim();
 
     // batch completion step to report progress
-    const batchCompletionScript = `
-    curl -XPOST "{{inputs.parameters.callback}}/response?batch_completed=true&batch_count=${ops.length}&post_batch_step_count=${postBatchStepCount}"
-    `;
+    // const batchCompletionScript = `
+    // curl -XPOST "{{inputs.parameters.callback}}/response?batch_completed=true&batch_count=${ops.
+    // length}&post_batch_step_count=${postBatchStepCount}"
+    // `;
 
     const parallelism = this.params.parallelism || env.defaultParallelism;
 
