@@ -2,7 +2,7 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { AWSError, Request } from 'aws-sdk';
-import { HeadObjectOutput, GetObjectOutput, CopyObjectOutput } from 'aws-sdk/clients/s3';
+import { HeadObjectOutput, GetObjectOutput } from 'aws-sdk/clients/s3';
 import { objectStoreForProtocol, defaultObjectStore, S3ObjectStore } from '../../app/util/object-store';
 
 describe('util/object-store', function () {
@@ -67,22 +67,17 @@ describe('util/object-store', function () {
       before(async function () {
         const store = new S3ObjectStore();
         const headObjectResponse = { Metadata: { foo: 'bar' }, ContentType: 'image/png' };
-        sinon.stub(store.s3, 'headObject').returns({ promise: () => headObjectResponse } as unknown as Request<HeadObjectOutput, AWSError>);
-        sinon.stub(store.s3, 'getObject').returns({ presign: () => 'http://example.com/signed' } as unknown as Request<GetObjectOutput, AWSError>);
-        this.copyStub = sinon.stub(store.s3, 'copyObject').returns({ promise: () => null } as unknown as Request<CopyObjectOutput, AWSError>);
+        this.headObjectStub = sinon.stub(store.s3, 'headObject').returns({ promise: () => headObjectResponse } as unknown as Request<HeadObjectOutput, AWSError>);
+        this.getObjectStub = sinon.stub(store.s3, 'getObject').returns({ presign: () => 'http://example.com/signed' } as unknown as Request<GetObjectOutput, AWSError>);
         await store.signGetObject('s3://example-bucket/example/path.txt', { 'A-userid': 'joe' });
       });
 
-      it('calls s3.copyObject with the appropriate parameters for changing ownership of the object', async function () {
-        expect(this.copyStub.args[0][0]).to.eql({
-          Bucket: 'example-bucket',
-          Key: 'example/path.txt',
-          CopySource: 'example-bucket/example/path.txt',
-          Metadata: {
-            foo: 'bar',
-          },
-          ContentType: 'image/png',
-          MetadataDirective: 'REPLACE' });
+      it('calls s3.headObject to make sure the object exists', async function () {
+        expect(this.headObjectStub.calledOnce).to.be.true;
+      });
+
+      it('calls s3.getObject in order to call presign', async function () {
+        expect(this.headObjectStub.calledOnce).to.be.true;
       });
     });
   });
