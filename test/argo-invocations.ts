@@ -26,10 +26,6 @@ describe('Argo invocations', function () {
 
       hookRangesetRequest(version, collection, 'all');
 
-      it('invokes an Argo workflow', function () {
-        expect(post.calledOnceWith('http://localhost:2746/api/v1/workflows/argo')).to.be.true;
-      });
-
       it('passes CMR query locations to the Query CMR task', async function () {
         const [, body] = post.args[0];
         const template = body.workflow.spec.templates.find((t) => t.name === 'query');

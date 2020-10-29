@@ -306,7 +306,6 @@ https://cmr.uat.earthdata.nasa.gov:
   # the frontend callback server.
   - name: harmony/chaining-example
     data_operation_version: '0.9.0'
-    enabled: !Env ${EXAMPLE_SERVICES}
     batch_size: 2000
     type:
       name: argo
