@@ -52,7 +52,6 @@ describe('Argo invocations', function () {
         expect(source.collection).to.equal('C1096-PVC_TS2');
         expect(source.granules).to.be.undefined;
       });
-
     });
   });
 });

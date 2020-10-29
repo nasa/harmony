@@ -155,6 +155,7 @@ describe('query#queryGranules', function () {
 
       // Actually call it
       result = await queryGranules(operation, queryFilenames, outputDir, pageSize, maxPages);
+      result = result.sort();
 
       // Map the call arguments into something we can actually assert against
       queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
