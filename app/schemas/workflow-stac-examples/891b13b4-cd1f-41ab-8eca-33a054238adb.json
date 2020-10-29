@@ -8,7 +8,7 @@
     "assets": {
         "granule": {
             "type": "application/x-netcdf",
-            "href": "https://archive.podaac.uat.earthdata.nasa.gov/fake/data/UFO_SIGHTING_RADAR_001.nc"
+            "href": "https://archive.podaac.uat.earthdata.nasa.gov/fake/data/UFO_SIGHTING_RADAR_001.nc",
             "title": "CMR Granule G1233800343-POCLOUD"
         }
     },
