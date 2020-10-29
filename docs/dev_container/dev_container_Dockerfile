@@ -1,17 +1,20 @@
-FROM osgeo/gdal:ubuntu-full-latest
+FROM osgeo/gdal:ubuntu-full-3.1.3
+
+ARG KUBERNETES_URL=https://vm.docker.internal:6443
+ARG FAKE_ROOT_CA=DOIRootCA.crt
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 #
 # OPTIONAL: fake root CA for e.g. USGS / DOI networks
 #
-WORKDIR /usr/local/share/ca-certificates/doi
-COPY DOIRootCA.crt .
-RUN update-ca-certificates
+WORKDIR /usr/local/share/ca-certificates/mycerts
+COPY *.crt .
+RUN if [ "x$FAKE_ROOT_CA" = "x" ] ; then echo No root CAs provided ; else update-ca-certificates ; fi
 
 #
 # system packages
-# 
+#
 RUN apt-get update && apt-get install -y bsdmainutils git libpq-dev postgresql sqlite3 sudo vim
 
 #
@@ -20,7 +23,8 @@ RUN apt-get update && apt-get install -y bsdmainutils git libpq-dev postgresql s
 RUN useradd -m dockeruser \
     && echo "dockeruser:dockeruser" | chpasswd \
     && adduser dockeruser sudo \
-    && echo "dockeruser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+    && echo "dockeruser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+    && chsh --shell /bin/bash dockeruser
 USER dockeruser
 RUN mkdir ~/downloads
 
@@ -50,7 +54,7 @@ WORKDIR /home/dockeruser/venv
 RUN sudo apt-get install -y python3-pip python3-venv \
     && python3 -m venv harmony \
     && source ./harmony/bin/activate \
-    && pip install awscli-local boto3 
+    && pip install awscli-local boto3
 
 #
 # Docker in Docker; allows containers to start sibling containers
@@ -63,35 +67,22 @@ RUN sudo apt-get install -y apt-transport-https ca-certificates curl software-pr
 #
 # Kubectl, CLI command for interfacing with Kubernetes
 #
-WORKDIR /home/dockeruser
+WORKDIR /home/dockeruser/downloads
 RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" \
     && chmod +x ./kubectl \
-    && sudo mv ./kubectl /usr/local/bin/kubectl
+    && sudo mv ./kubectl /usr/local/bin/kubectl \
+    && echo alias kubectl=\"kubectl -s $KUBERNETES_URL\" >> ~/.bash_aliases
 # needed for the dev container to authenticate to the kubernetes API
-COPY .kube/config .kube/config
+COPY .kube/config ~/.kube/config
 
 #
 # Argo CLI, command for interfacing with Argo
 #
-WORKDIR /home/dockeruser
-RUN curl -LO https://github.com/argoproj/argo/releases/download/v2.9.5/argo-linux-amd64 \
+WORKDIR /home/dockeruser/downloads
+RUN curl -sLO https://github.com/argoproj/argo/releases/download/v2.11.6/argo-linux-amd64.gz \
+    && gunzip argo-linux-amd64.gz \
     && chmod +x ./argo-linux-amd64 \
-    && sudo mv ./argo-linux-amd64 /usr/local/bin/argo
-
-
+    && sudo mv ./argo-linux-amd64 /usr/local/bin/argo \
+    && argo version
 
 WORKDIR /home/dockeruser
-
-
-
-
-
-
-
-
-# Bundle app source
-#COPY . .
-#RUN pip3 install deps/harmony-service-lib-py
-#RUN pip3 install -r requirements.txt
-
-

@@ -1,6 +1,6 @@
 # Using a Dev Container for Harmony Development
 
-This README includes what is needed to develop for and run Harmony in a dev container as well as its supporting software in sibling containers within some sort of VM host. If you haven't already, please read the primary [README.md](README.md) first.
+This README includes what is needed to develop for and run Harmony in a dev container as well as its supporting software in sibling containers within some sort of VM host. If you haven't already, please read the primary [README.md](../README.md) first.
 
 The following was tested on Windows 10 running Docker Desktop 2.4.0.0 on Hyper-V.
 
@@ -11,9 +11,10 @@ The following documentation assumes you are using:
 * Docker Desktop with a bundled Kubernetes distribution
 * Visual Studio Code
 
+
 ## Dev Container
 
-### VCPUs and Docker Desktop Stability
+### vCPUs and Docker Desktop Stability
 
 If you experience occasional container lock-ups you may want to verify Docker Desktop is configured to use only 2 Cores (Settings -> Resources -> Advanced: CPUs). Also, verify you're not getting low on available host memory.
 
@@ -68,17 +69,13 @@ and the Kubernetes API service must allow the client to pass:
 * Authorization
 * and Admission Control
 
-For dev environment purposes, the easiest way to handle this is by copying the VM's `/etc/kubernetes/admin.conf` into the dev container's local user home dir (e.g. `/home/dockeruser/.kube/config`). NOTE: copying this information is not part of the dev container Dockerfile actions and is left as a manual exercise.
+For dev environment purposes, the easiest way to handle this is by copying the VM's `/etc/kubernetes/admin.conf` into the dev container's local user home dir (e.g. `/home/dockeruser/.kube/config`).
 
-Additionally, if you're using Windows and Hyper-V you may you may be unable to can't get a console on the VM via Hyper-V Manager. Without SSH, file system access or a console, one workaround is to run a privileged container for console access. The Dockerfile for this container is at [hostenter_Dockerfile](hostenter_Dockerfile). After entering the VM, copy and paste the admin.conf file from privileged container console into the dev container console from/to the aforementioned locations.
+Additionally, if you're using Windows and Hyper-V you may you may be unable to can't get a console on the VM via Hyper-V Manager. Without SSH, file system access or a console, one workaround is to run a privileged container for console access. The Dockerfile for this container is at [hostenter_Dockerfile](hostenter_Dockerfile). After entering the VM, copy and paste the admin.conf file from the privileged container console to your main host at .kube/config. dev_container_Dockerfile is set up to COPY .kube/config into ~/.kube/config.
 
-Once completed, test `kubectl` by running one of the following:
+Once completed, test `kubectl` by running the following:
 
-> kubectl -s https://vm.docker.internal:6443 get nodes
-
-> kubectl -s https://vm.docker.internal:6443 --v=9 get nodes
-
-> kubectl -s https://vm.docker.internal:6443 --insecure-skip-tls-verify=false --kubeconfig='/home/dockeruser/.kube/config' --v=9 get nodes
+> kubectl get nodes
 
 If you can retrieve node information then you're good to go. These steps will need to be repeated if you re-deploy Kubernetes or re-install Docker Desktop.
 
@@ -91,9 +88,12 @@ After starting each of these services (the first two via Kubernetes and Harmony 
 In addition to the instructions regarding the .env file in the primary README.md, you will need the following:
 
 ```
-KUBE_CONTEXT=kubernetes-admin@kubernetes
-
+ARGO_URL=http://host.docker.internal:2746
 BACKEND_HOST=host.docker.internal
+DIND=true
+KUBE_CONTEXT=kubernetes-admin@kubernetes
+KUBERNETES_URL=https://vm.docker.internal:6443
+LOCALSTACK_MOUNT=/workspaces/harmony/localstack_tmp
 ```
 
 
@@ -101,6 +101,7 @@ BACKEND_HOST=host.docker.internal
 
 * Install Docker Desktop
 * Install VSCode along with the [Remote Container Extension](https://code.visualstudio.com/docs/remote/containers)
+* Follow the instructions above
 * Build the Dev Container image
    * In VSCode, if you do `Remote Containers: Open Folder in Container' and that folder has the dev container Dockerfile, VSCode can build the image for you
-* primary README.md instructions and this README.md
+* Follow the primary Harmony repo [README.md](../README.md)

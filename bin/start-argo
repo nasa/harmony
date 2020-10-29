@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -e
 
@@ -41,17 +41,11 @@ DRIVER_DEFAULT=docker
 
 DRIVER=${DRIVER:-$DRIVER_DEFAULT}
 
-# local or dev container kubectl usage
-if cat /proc/1/cgroup | grep cpuset | grep -q docker; then
-  KUBECTL='kubectl -s https://vm.docker.internal:6443'
-else
-  KUBECTL='kubectl'
-fi
-
 source ".env"
+[[ -n $KUBERNETES_URL ]] && alias kubectl="kubectl -s $KUBERNETES_URL"
 
 if [ -n "$KUBE_CONTEXT" ]; then :
-elif $KUBECTL config get-contexts docker-desktop &> /dev/null ; then
+elif kubectl config get-contexts docker-desktop &> /dev/null ; then
   KUBE_CONTEXT='docker-desktop'
 elif command -v minikube &> /dev/null ; then
   KUBE_CONTEXT='minikube'
@@ -76,12 +70,12 @@ if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
 
   sleep 5
 fi
-$KUBECTL config use-context $KUBE_CONTEXT
+kubectl config use-context $KUBE_CONTEXT
 
-argo_namespace=$($KUBECTL get namespace | grep argo | cut -d ' ' -f1)
+argo_namespace=$(kubectl get namespace | grep argo | cut -d ' ' -f1)
 
 if [ -z "$argo_namespace" ]; then
-  $KUBECTL create namespace argo
+  kubectl create namespace argo
 fi
 
 STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
@@ -93,10 +87,10 @@ awslocal s3 mb s3://${STAGING_BUCKET}
 awslocal s3 mb s3://${ARTIFACT_BUCKET}
 awslocal s3 mb s3://${UPLOAD_BUCKET}"
 
-$KUBECTL -n argo delete configmap localstack-config 2>/dev/null || true
-$KUBECTL -n argo create configmap localstack-config --from-literal=startup.sh="${localstack_startup_script}"
+kubectl -n argo delete configmap localstack-config 2>/dev/null || true
+kubectl -n argo create configmap localstack-config --from-literal=startup.sh="${localstack_startup_script}"
 
-cat <<EOF | $KUBECTL -n argo apply -f -
+cat <<EOF | kubectl -n argo apply -f -
 apiVersion: v1
 kind: Secret
 metadata:
@@ -107,7 +101,7 @@ data:
   password: $(echo -n "${EDL_PASSWORD}" | base64)
 EOF
 
-cat <<EOF | $KUBECTL -n argo apply -f -
+cat <<EOF | kubectl -n argo apply -f -
 apiVersion: v1
 kind: Secret
 metadata:
@@ -117,13 +111,13 @@ data:
   secret-key: $(echo -n "${SHARED_SECRET_KEY}" | base64)
 EOF
 
-$KUBECTL apply -n argo -f ./config/local-argo-deployment.yml
+kubectl apply -n argo -f ./config/local-argo-deployment.yml
 
 
 [[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
 
 # In deployed environments, we also want "useSDKCreds: true" in the s3 block
-$KUBECTL -n argo patch \
+kubectl -n argo patch \
   configmap/workflow-controller-configmap \
   --patch "$(cat << EOF
 data:
@@ -144,7 +138,7 @@ EOF
 )"
 
 # wait for argo to start up
-while [[ $($KUBECTL -n argo get pods -l app=argo-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argo" && sleep 5; done
+while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argo" && sleep 5; done
 
 for f in ./config/workflow-templates/*; do
   workflow=$(basename $f .yaml)
