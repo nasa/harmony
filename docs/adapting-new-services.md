@@ -266,7 +266,7 @@ original Harmony request.
            (STAC Catalog)
 
 This feature is now under development, and [example STAC
-Catalogs](../../app/schemas/workflow-stac-examples) are
+Catalogs](../app/schemas/workflow-stac-examples) are
 available. These will certainly evolve as we implement this new
 feature. The Harmony Service Library will be updated to include helper
 functions to read input STAC Catalog and create output STAC Catalog,
