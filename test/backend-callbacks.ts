@@ -12,7 +12,7 @@ import { getNextCallback } from '../example/http-backend';
 import { validGetMapQuery, wmsRequest } from './helpers/wms';
 import db from '../app/util/db';
 import { hookJobCreationEach } from './helpers/jobs';
-import { hookMockS3, getObjectText } from './helpers/object-store';
+import { getObjectText } from './helpers/object-store';
 import { objectStoreForProtocol, S3ObjectStore } from '../app/util/object-store';
 
 /**
@@ -71,7 +71,6 @@ describe('Backend Callbacks', function () {
   const collection = 'C1104-PVC_TS2';
 
   hookServersStartStop();
-  hookMockS3();
 
   beforeEach(function () {
     // Avoid signing objects, which mock-aws-s3 cannot do the way we need it to

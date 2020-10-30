@@ -16,7 +16,7 @@
       "allowJs": true,
       "noImplicitAny": false,
       "sourceMap": true,
-      "outDir": "built",
+      "outDir": "built"
   },
   "include": [ "./app/**/*", "./test/**/*" ]
 }

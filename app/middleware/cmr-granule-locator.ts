@@ -6,8 +6,10 @@ import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
 import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
-import { computeMbr, Mbr } from '../util/spatial/mbr';
+import { computeMbr } from '../util/spatial/mbr';
+import { BoundingBox } from '../util/bounding-box';
 import env from '../util/env';
+import { defaultObjectStore } from '../util/object-store';
 
 /**
  * Gets collection from request that matches the given id
@@ -25,7 +27,7 @@ function getCollectionFromRequest(req: HarmonyRequest, collectionId: string): cm
  * @param granule  -  a CMR granule record associated with the `collection`
  * @returns bbox  - a bounding box in [W S E N] format
  */
-function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Mbr {
+function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): BoundingBox {
   // use the given bounding box (if any), else try to use the given spatial geometry
   // to find a box; if there is none, use the spatial geometry from the collection; if
   // there is none default to a bounding box for the whole world
@@ -81,8 +83,9 @@ export default async function cmrGranuleLocator(
 
   operation.cmrHits = 0;
   try {
+    const artifactPrefix = `s3://${env.artifactBucket}/harmony-inputs/query/${req.context.id}/`;
     const { sources } = operation;
-    const queries = sources.map(async (source) => {
+    const queries = sources.map(async (source, i) => {
       logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
       const startTime = new Date().getTime();
       const maxResults = getMaxGranules(req);
@@ -105,6 +108,11 @@ export default async function cmrGranuleLocator(
           maxResults,
         );
       }
+
+      const indexStr = `${i}`.padStart(5, '0');
+      const artifactUrl = `${artifactPrefix}query${indexStr}.json`;
+      await defaultObjectStore().upload(JSON.stringify(cmrQuery), artifactUrl);
+      operation.cmrQueryLocations.push(artifactUrl);
 
       const { hits, granules: jsonGranules } = cmrResponse;
 
@@ -138,6 +146,7 @@ export default async function cmrGranuleLocator(
     });
 
     await Promise.all(queries);
+    operation.cmrQueryLocations = operation.cmrQueryLocations.sort();
   } catch (e) {
     if (e instanceof RequestValidationError || e instanceof CmrError) {
       // Avoid giving confusing errors about GeoJSON due to upstream converted files

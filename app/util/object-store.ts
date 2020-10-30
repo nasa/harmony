@@ -2,7 +2,7 @@ import aws from 'aws-sdk';
 import * as fs from 'fs';
 import * as querystring from 'querystring';
 import * as stream from 'stream';
-import * as tmp from 'tmp';
+import tmp from 'tmp';
 import { URL } from 'url';
 import * as util from 'util';
 import { PromiseResult } from 'aws-sdk/lib/request';
@@ -42,7 +42,11 @@ export class S3ObjectStore {
   _getS3(overrides?): aws.S3 {
     const endpointSettings: aws.S3.ClientConfiguration = {};
     if (process.env.USE_LOCALSTACK === 'true') {
-      endpointSettings.endpoint = 'http://localhost:4572';
+      aws.config.update({
+        region: env.awsDefaultRegion,
+        credentials: { accessKeyId: 'localstack', secretAccessKey: 'localstack' },
+      });
+      endpointSettings.endpoint = `http://${env.localstackHost}:4572`;
       endpointSettings.s3ForcePathStyle = true;
     }
 

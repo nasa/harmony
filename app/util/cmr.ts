@@ -50,6 +50,14 @@ export interface CmrGranule {
   points?: string[];
   lines?: string[];
   polygons?: string[][];
+  links?: [{
+    rel: string;
+    href: string;
+    inherited: boolean;
+  }];
+  title: string;
+  time_start: string;
+  time_end: string;
 }
 
 export interface CmrGranuleHits {
@@ -242,7 +250,7 @@ export async function cmrPostSearchBase(
   let shapefile = null;
   await Promise.all(Object.keys(form).map(async (key) => {
     const value = form[key];
-    if (value) {
+    if (value !== null && value !== undefined) {
       if (key === 'geojson') {
         shapefile = await processGeoJson(value, formData);
       } else if (Array.isArray(value)) {

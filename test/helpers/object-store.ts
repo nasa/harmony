@@ -3,7 +3,7 @@ import sinon, { SinonStub } from 'sinon';
 import fs from 'fs';
 import mockAws, { S3 } from 'mock-aws-s3';
 import * as tmp from 'tmp';
-import { S3ObjectStore, objectStoreForProtocol } from 'util/object-store';
+import { S3ObjectStore, objectStoreForProtocol } from '../../app/util/object-store';
 
 // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
 const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());

@@ -9,6 +9,7 @@ if (dotenv.config().error) {
 interface HarmonyEnv {
   logLevel: string;
   stagingBucket: string;
+  artifactBucket: string;
   maxSynchronousGranules: number;
   maxGranuleLimit: number;
   objectStoreType: string;
@@ -26,6 +27,7 @@ interface HarmonyEnv {
   cmrEndpoint: string;
   oauthHost: string;
   useLocalstack: boolean;
+  localstackHost: string;
   callbackUrlRoot: string;
   syncRequestPollIntervalMs: number;
   defaultImagePullPolicy: string;
@@ -71,7 +73,8 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   // ENV_VAR, DEFAULT_VALUE
   ['ARGO_URL', 'http://localhost:4276'],
   ['LOG_LEVEL', 'debug'],
-  ['STAGING_BUCKET', 'localStagingBucket'],
+  ['STAGING_BUCKET', 'local-staging-bucket'],
+  ['ARTIFACT_BUCKET', 'local-artifact-bucket'],
   ['MAX_SYNCHRONOUS_GRANULES', 1],
   ['MAX_GRANULE_LIMIT', 350],
   ['OBJECT_STORE_TYPE', 's3'],
@@ -79,6 +82,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['SAME_REGION_ACCESS_ROLE'],
   ['JOB_REAPER_PERIOD_SEC', 360],
   ['REAPABLE_JOB_AGE_MINUTES', 60],
+  ['LOCALSTACK_HOST', 'localhost'],
   // shapefile upload related configs
   ['MAX_POST_FIELDS', 100],
   ['MAX_POST_FILE_SIZE', 2000000000],

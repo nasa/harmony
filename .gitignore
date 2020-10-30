@@ -7,6 +7,7 @@ node_modules
 # Temp and log files
 *.log
 tmp
+temp
 .DS_Store
 .nyc_output
 coverage
