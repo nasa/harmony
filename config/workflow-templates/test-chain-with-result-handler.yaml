@@ -1,0 +1,74 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: chain-with-result-handler
+spec:
+  entrypoint: chain-with-result-handler
+  templates:
+    - name: chain-with-result-handler
+      inputs:
+        parameters:
+          - name: operation
+          - name: image-pull-policy
+          - name: timeout
+          - name: callback
+          - name: batch-count
+          - name: post-batch-step-count
+          - name: AWS_DEFAULT_REGION
+          - name: USE_LOCALSTACK
+          - name: STAGING_BUCKET
+          - name: TEXT_LOGGER
+          - name: BACKEND_HOST
+      steps:
+      - - name: fake-stac-generator
+          templateRef: 
+            name: fake-stac-generator
+            template: fake-stac-generator
+          arguments:
+            parameters:
+            - name: operation
+              value: "{{inputs.parameters.operation}}"
+            - name: image-pull-policy
+              value: "{{inputs.parameters.image-pull-policy}}"
+            - name: timeout
+              value: "{{inputs.parameters.timeout}}"
+            - name: AWS_DEFAULT_REGION
+              value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
+            - name: USE_LOCALSTACK
+              value: "{{inputs.parameters.USE_LOCALSTACK}}"
+            - name: STAGING_BUCKET
+              value: "{{inputs.parameters.STAGING_BUCKET}}"
+            - name: TEXT_LOGGER
+              value: "{{inputs.parameters.TEXT_LOGGER}}"
+            - name: BACKEND_HOST
+              value: "{{inputs.parameters.BACKEND_HOST}}"
+      - - name: result-handler
+          templateRef:
+            name: result-handler
+            template: result-handler
+          arguments:
+            parameters:
+            - name: operation
+              value: "{{inputs.parameters.operation}}"
+            - name: stac-catalog-link
+              value: "{{steps.fake-stac-generator.outputs.result}}"
+            - name: timeout
+              value: "{{inputs.parameters.timeout}}"
+            - name: image-pull-policy
+              value: "{{inputs.parameters.image-pull-policy}}"
+            - name: callback
+              value: "{{inputs.parameters.callback}}"
+            - name: batch-count
+              value: "{{inputs.parameters.batch-count}}"
+            - name: post-batch-step-count
+              value: "{{inputs.parameters.post-batch-step-count}}"
+            - name: should-post-results
+              value: "true"
+            - name: AWS_DEFAULT_REGION
+              value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
+            - name: USE_LOCALSTACK
+              value: "{{inputs.parameters.USE_LOCALSTACK}}"
+            - name: STAGING_BUCKET
+              value: "{{inputs.parameters.STAGING_BUCKET}}"
+            - name: BACKEND_HOST
+              value: "{{inputs.parameters.BACKEND_HOST}}"

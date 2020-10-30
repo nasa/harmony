@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import * as axios from 'axios';
-import { readFileSync } from 'fs';
+// import { readFileSync } from 'fs';
 import BaseService, { functionalSerializeOperation } from './base-service';
 import InvocationResult from './invocation-result';
 import { batchOperations } from '../../util/batch';
@@ -297,7 +297,11 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
                       template: this.params.template,
                     },
                     arguments: {
-                      parameters: [...params, { name: 'operation', value: '{{item}}' }],
+                      parameters: [
+                        ...params,
+                        { name: 'operation', value: '{{item}}' },
+                        { name: 'batch-count', value: `${ops.length}` },
+                      ],
                     },
                     withItems: ops,
                   },
