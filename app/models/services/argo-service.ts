@@ -1,11 +1,15 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import * as axios from 'axios';
+import { readFileSync } from 'fs';
 import BaseService, { functionalSerializeOperation } from './base-service';
 import InvocationResult from './invocation-result';
 import { batchOperations } from '../../util/batch';
 
 import env = require('../../util/env');
+
+// const resultHandlerScriptTemplate = readFileSync('./config/workflow-scripts/result-handler.bash')
+//   .toString();
 
 export interface ArgoServiceParams {
   argo_url: string;
@@ -101,6 +105,9 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     // `;
 
     const parallelism = this.params.parallelism || env.defaultParallelism;
+
+    // const resultHandlerScript =
+    // resultHandlerScriptTemplate.replace('{{inputs.parameters.batch-count}}', '{batch.length}');
 
     let params = [
       {
