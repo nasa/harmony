@@ -205,8 +205,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
                   '--output-dir',
                   '/tmp/outputs',
                   '--page-size',
-                  // Hard-coded max of 2000 granules to be lifted in no granule limit epic
-                  `${this.chooseBatchSize(2000)}`,
+                  `${this.chooseBatchSize()}`,
                   // Hard-coded to run only a single page until the no granule limit epic
                   '--max-pages',
                   '1',
@@ -251,7 +250,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    */
   _legacyWorkflowBody(params: ArgoVariable[]): unknown {
     const { user, requestId } = this.operation;
-    const batchSize = this.chooseBatchSize();
+    // Further limit the batch size so the POST body doesn't exceed Argo limits
+    const batchSize = this.chooseBatchSize(Math.min(env.maxGranuleLimit, 350));
     const parallelism = this.params.parallelism || env.defaultParallelism;
 
     const batch = batchOperations(this.operation, batchSize);
