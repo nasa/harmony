@@ -251,7 +251,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
   _legacyWorkflowBody(params: ArgoVariable[]): unknown {
     const { user, requestId } = this.operation;
     // Further limit the batch size so the POST body doesn't exceed Argo limits
-    const batchSize = this.chooseBatchSize(Math.min(env.maxGranuleLimit, 350));
+    const batchSize = this.chooseBatchSize(Math.min(env.maxGranuleLimit, 200));
     const parallelism = this.params.parallelism || env.defaultParallelism;
 
     const batch = batchOperations(this.operation, batchSize);
