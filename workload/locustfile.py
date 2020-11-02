@@ -1,24 +1,9 @@
-import time
-from locust import HttpUser, task, tag, between
+from locust import task, tag
 import urllib.parse
+from harmony.common import BaseHarmonyUser
 
-class QuickstartUser(HttpUser):
-    wait_time = between(1, 2)
-    coverages_root='/{collection}/ogc-api-coverages/1.0.0/collections/{variable}/coverage/rangeset'
 
-    def on_start(self):
-        self.client.trust_env = True
-
-    @tag('cloud-access')
-    @task
-    def cloud_keys(self):
-        self.client.get('/cloud-access', name='cloud access')
-
-    @tag('landing-page')
-    @task
-    def landing_page(self):
-        self.client.get('/', name='landing page')
-
+class HarmonyUatUser(BaseHarmonyUser):
     @tag('harmony-gdal', 'sync', 'variable', 'bbox', 'reproject', 'png')
     @task(2)
     def harmony_gdal_bbox_variable_reformat(self):
@@ -71,8 +56,9 @@ class QuickstartUser(HttpUser):
                 collection=collection,
                 variable=variable
             ),
-            data={ 'subset': 'time("2009-01-09T00:00:00Z":"2009-01-09T01:00:00Z")' },
-            files={ 'shapefile': ('test_in-polygon.shp.zip', open(shapefile_location, 'rb'), 'application/shapefile+zip') },
+            data={'subset': 'time("2009-01-09T00:00:00Z":"2009-01-09T01:00:00Z")'},
+            files={'shapefile': ('test_in-polygon.shp.zip',
+                                 open(shapefile_location, 'rb'), 'application/shapefile+zip')},
             name='PODAAC Shapefile Subsetter')
 
     @tag('podaac-l2ss', 'bbox', 'sync', 'netcdf4')
@@ -102,7 +88,7 @@ class QuickstartUser(HttpUser):
         collection = 'C1225776654-ASF'
         variable = urllib.parse.quote('science/grids/data/amplitude', safe='')
         params = {
-            'granuleId' : 'G1235282694-ASF',
+            'granuleId': 'G1235282694-ASF',
             'subset': [
                 'lon(37:40)',
                 'lat(23:24)',
@@ -156,19 +142,3 @@ class QuickstartUser(HttpUser):
             name='PODAAC L2SS Async'
         )
         self.wait_for_job_completion(response)
-
-    def wait_for_job_completion(self, response):
-        """
-        Polls and waits for an async job to complete.
-
-        Arguments:
-            response {response.Response} -- the initial job status response
-        """
-        body = response.json()
-        while body['status'] not in ['successful', 'failed', 'canceled']:
-            time.sleep(1)
-            response = self.client.get(response.url)
-            body = response.json()
-        status = body['status']
-        assert(status not in ['failed', 'canceled'])
-        return status
