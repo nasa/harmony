@@ -19,6 +19,10 @@ spec:
           - name: STAGING_BUCKET
           - name: TEXT_LOGGER
           - name: BACKEND_HOST
+      outputs:
+        artifacts:
+        - name: metadata 
+          path: /tmp/metadata
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       script:
         image: "mikesir87/aws-cli"
@@ -37,8 +41,12 @@ spec:
             value: "{{inputs.parameters.BACKEND_HOST}}"
         source: |
           #!/usr/bin/env bash
-          OPERATION="{{inputs.parameters.operation}}"
-          STAC_CATALOG=<<STAC_CATALOG_EOF
+          mkdir /tmp/metadata
+          read -r -d '' OPERATION <<'OPERATION_EOF'
+          {{inputs.parameters.operation}}
+          OPERATION_EOF
+          STAGING_LOCATION=$(echo "$OPERATION"  | jq -r '.stagingLocation')
+          read -r -d '' STAC_CATALOG <<'STAC_CATALOG_EOF'
           {
             "stac_version": "1.0.0-beta.2",
             "id": "d07e0028-d94e-435a-9c71-c75a7a843d40",
@@ -53,8 +61,8 @@ spec:
             ]
           }
           STAC_CATALOG_EOF
-          echo "$STAC_CATALOG" > stac-catalog.json
-          STAC_ITEM=<<STAC_ITEM_EOF
+          echo "${STAC_CATALOG}" > /tmp/metadata/d07e0028-d94e-435a-9c71-c75a7a843d40.json
+          read -r -d '' STAC_ITEM <<STAC_ITEM_EOF
           {
             "stac_version": "1.0.0-beta.2",
             "type": "Feature",
@@ -65,7 +73,7 @@ spec:
             "assets": {
                 "granule": {
                     "type": "application/x-netcdf",
-                    "href": "${STAGING_LOCATION}/9c02270d-d4aa-4b97-8bca-b1e748dd3e16.nc",
+                    "href": "${STAGING_LOCATION}9c02270d-d4aa-4b97-8bca-b1e748dd3e16.nc",
                     "title": "Transmogrifier Output Item"
                 }
             },
@@ -75,13 +83,14 @@ spec:
             }
           }
           STAC_ITEM_EOF
-          echo "$STAC_ITEM" > 9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json
-
-          STAGING_LOCATION=$(echo "$OPERATION"  | jq -r '.stagingLocation')
-          STAC_CATALOG_LINK="${STAGING_LOCATION}/stac-catalog.json"
-          aws s3 cp stac-catalog.json "${STAC_CATALOG_LINK}"
-          aws s3 cp 9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json "${STAGING_LOCATION}/9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json"
+          echo "${STAC_ITEM}" > /tmp/metadata/9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json
+          # STAC_CATALOG_LINK="${STAGING_LOCATION}stac-catalog.json"
+          STAC_CATALOG_LINK=/tmp/metadata/stac-catalog.json
+          export AWS_ACCESS_KEY_ID=FOO
+          export AWS_SECRET_ACCESS_KEY=BAR
+          # aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp stac-catalog.json "${STAC_CATALOG_LINK}"
+          # aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp 9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json "${STAGING_LOCATION}9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json"
           # use the stack item as the data file just for test purposes
-          aws s3 cp 9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json "${STAGING_LOCATION}/9c02270d-d4aa-4b97-8bca-b1e748dd3e16.nc"
-          echo "${STAC_CATALOG_LINK}"
+          aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp /tmp/metadata/9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json "${STAGING_LOCATION}9c02270d-d4aa-4b97-8bca-b1e748dd3e16.nc" > /dev/null
+          echo "d07e0028-d94e-435a-9c71-c75a7a843d40.json"
           

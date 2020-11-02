@@ -1,11 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: chain-with-result-handler
+  name: test-chain-with-result-handler
 spec:
-  entrypoint: chain-with-result-handler
+  entrypoint: test-chain-with-result-handler
   templates:
-    - name: chain-with-result-handler
+    - name: test-chain-with-result-handler
       inputs:
         parameters:
           - name: operation
@@ -47,6 +47,9 @@ spec:
             name: result-handler
             template: result-handler
           arguments:
+            artifacts:
+            - name: metadata
+              from: "{{steps.fake-stac-generator.outputs.artifacts.metadata}}"
             parameters:
             - name: operation
               value: "{{inputs.parameters.operation}}"

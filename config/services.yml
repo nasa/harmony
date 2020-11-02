@@ -342,7 +342,7 @@ https://cmr.uat.earthdata.nasa.gov:
       name: argo
       params:
         image: harmony/query-cmr:latest
-        template: chain-with-result-handler
+        template: test-chain-with-result-handler
         argo_url: !Env ${ARGO_URL}
         namespace: argo
         image_pull_policy: Never
