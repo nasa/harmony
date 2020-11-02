@@ -361,6 +361,7 @@ https://cmr.uat.earthdata.nasa.gov:
       # Good example, being in UAT, global, many public non-global granules,
       # and not yet on the services roadmap.
       - C1233860183-EEDTEST
+      - C1096-PVC_TS2
     capabilities:
       subsetting:
         bbox: false

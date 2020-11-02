@@ -67,7 +67,7 @@ spec:
           NEW_ITEM=$(echo "$STAC_ITEM" | jq ".assets.granule.href |= \"${OUTPUT_LINK}\"")
           echo "$NEW_ITEM" > stac-item.json
           # copy the new STAC item up to S3
-          UUID=$(od -x /dev/urandom | head -1 | awk '{OFS="-"; print $2$3,$4,$5,$6,$7$8$9}')
+          UUID=$(cat /proc/sys/kernel/random/uuid)
           FILE_NAME="${UUID}.json"
           NEW_ITEM_S3_LINK="${DATA_LINK}${FILE_NAME}"
           aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp stac-item.json "$NEW_ITEM_S3_LINK"
