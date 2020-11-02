@@ -207,6 +207,9 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
                   '--page-size',
                   // Hard-coded max of 2000 granules to be lifted in no granule limit epic
                   `${this.chooseBatchSize(2000)}`,
+                  // Hard-coded to run only a single page until the no granule limit epic
+                  '--max-pages',
+                  '1',
                 ],
                 env: argoEnv,
               },
