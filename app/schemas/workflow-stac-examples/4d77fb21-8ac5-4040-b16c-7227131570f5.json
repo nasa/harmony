@@ -11,7 +11,7 @@
         "granule": {
             "type": "image/tiff",
             "href": "s3://s3.amazonaws.com/harmony/staging/4d77fb21-8ac5-4040-b16c-7227131570f5.tif",
-            "title": "<whatever is consistent with current Harmony STAC>"
+            "title": "Harmony output #2 in job 99887766"
         }
     },
     "properties": {
