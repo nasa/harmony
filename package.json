@@ -16,7 +16,7 @@
     "update-dev": "npm install && lerna run build && bin/start-argo",
     "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
     "watch-debug": "nodemon --inspect=5858 -e ts,tsx --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
-    "postinstall": "lerna exec -- npm install"
+    "postinstall": "if test \"$NODE_ENV\" != \"production\" ; then lerna exec -- npm install; fi"
   },
   "keywords": [
     "NASA",
