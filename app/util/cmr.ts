@@ -53,7 +53,10 @@ export interface CmrGranule {
   links?: [{
     rel: string;
     href: string;
-    inherited: boolean;
+    type?: string;
+    title?: string;
+    hreflang?: string;
+    inherited?: boolean;
   }];
   title: string;
   time_start: string;

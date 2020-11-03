@@ -75,6 +75,7 @@ export function hookCliParser(...args): void {
  * @returns {string} The URL prefix for use in matching responses
  */
 export function hookCliMain(args, output): void {
+  let outputDir = null;
   before(async function () {
     sinon.stub(query, 'queryGranules').callsFake((...callArgs) => {
       this.callArgs = callArgs;
@@ -82,11 +83,12 @@ export function hookCliMain(args, output): void {
     });
     sinon.spy(promises, 'mkdir');
 
+    outputDir = args[args.indexOf('--output-dir') + 1];
     await main(args);
   });
   after(function () {
     if (this.callArgs) {
-      const indexFile = path.join(this.callArgs[2], 'index.json');
+      const indexFile = path.join(outputDir, 'index.json');
       if (fs.existsSync(indexFile)) {
         fs.unlinkSync(indexFile);
       }
