@@ -195,7 +195,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
               name: 'query',
               podSpecPatch: `{"activeDeadlineSeconds":${env.defaultArgoPodTimeoutSecs}}`,
               container: {
-                image: this.params.image,
+                image: `${env.builtInTaskPrefix}harmony/query-cmr:${env.builtInTaskVersion}`,
                 imagePullPolicy: this.params.image_pull_policy,
                 args: [
                   '--harmony-input',
@@ -210,7 +210,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
                   '--max-pages',
                   '1',
                 ],
-                env: argoEnv,
+                env: argoEnv.concat({ name: 'CMR_ENDPOINT', value: env.cmrEndpoint }),
               },
               outputs: {
                 artifacts: [{ name: 'granules', path: '/tmp/outputs' }],
