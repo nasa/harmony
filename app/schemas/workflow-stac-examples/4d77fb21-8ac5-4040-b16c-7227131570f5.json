@@ -3,7 +3,10 @@
     "type": "Feature",
     "id": "4d77fb21-8ac5-4040-b16c-7227131570f5",
     "bbox": [-99.5, 31.4, -97.5, 32.4],
-    "geometry": {"type": "Polygon", "coordinates": []},
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-99.5, 31.4], [-97.5, 31.4], [-97.5, 32.4], [-99.5, 32.4], [-99.5, 31.4]]]
+    },
     "assets": {
         "granule": {
             "type": "image/tiff",

@@ -3,7 +3,10 @@
     "type": "Feature",
     "id": "891b13b4-cd1f-41ab-8eca-33a054238adb",
     "bbox": [-100.5, 30.4, -99.5, 31.4],
-    "geometry": {"type": "Polygon", "coordinates": []},
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-99.5, 31.4], [-97.5, 31.4], [-97.5, 32.4], [-99.5, 32.4], [-99.5, 31.4]]]
+    },
     "assets": {
         "granule": {
             "type": "application/x-netcdf",
