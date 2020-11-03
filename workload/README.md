@@ -4,14 +4,20 @@ The files in this directory are to support performance and load testing against 
 testing is performed using [locust.io](https://locust.io/).
 
 ## Installation
-`pip install -r requirements.txt`
+```
+$ pip install -r requirements.txt
+```
 
 ## Running
 To start a new performance test execute the following:
-`locust`
+```
+$ locust
+```
 
 You can also limit the test cases run based on tags. For example to only run synchronous requests:
-`locust --tags sync`
+```
+$ locust --tags sync
+```
 
 For a full listing of capabilities see the [locust documentation](https://docs.locust.io/en/stable/index.html).
 
@@ -23,11 +29,17 @@ you want to end the test.
 ### Running against production collections
 By default requests will be run against CMR UAT collections. In order to run against production collections
 use the production locustfile.
-`locust -f locustfile-prod.py`
+```
+$ locust -f locustfile-prod.py
+```
 
 ## Linter
 Make sure to install the dev dependencies:
-`pip install -r dev-requirements.txt`
+```
+$ pip install -r dev-requirements.txt
+```
 
 Then run:
-`flake8`
+```
+$ flake8
+```
