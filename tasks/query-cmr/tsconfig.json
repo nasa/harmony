@@ -3,12 +3,7 @@
       "module": "commonjs",
       "baseUrl": ".",
       "paths": {
-        "frontends/*": ["app/frontends/*"],
-        "backends/*": ["app/backends/*"],
-        "middleware/*": ["app/middleware/*"],
-        "models/*": ["app/models/*"],
-        "routers/*": ["app/routers/*"],
-        "util/*": ["app/util/*"]
+        "@harmony/*": ["../../app/*"]
       },
       "moduleResolution": "node",
       "target": "ES2018",
@@ -17,5 +12,6 @@
       "noImplicitAny": false,
       "sourceMap": true,
       "outDir": "built"
-  }
+  },
+  "include": [ "./app/**/*", "./test/**/*" ]
 }

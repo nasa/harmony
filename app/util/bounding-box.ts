@@ -1,6 +1,6 @@
-import { Mbr } from './spatial/mbr';
-
 const { max, min } = Math;
+
+export type BoundingBox = [number, number, number, number];
 
 /**
  * Convert a bounding box string in `'S W N E'` format to a tuple in `[W,S,E,N]` format.
@@ -9,7 +9,7 @@ const { max, min } = Math;
  * @returns - a bounding box in `[W,S,E,N]` format
  * @private
  */
-function _boundingBoxStringToBoundingBox(str: string): Mbr {
+function _boundingBoxStringToBoundingBox(str: string): BoundingBox {
   if (!str) return null;
 
   const ords = str.split(' ').map(parseFloat);
@@ -27,7 +27,7 @@ function _boundingBoxStringToBoundingBox(str: string): Mbr {
  * @returns true if the box crosses the antimeridian, false otherwise
  * @private
  */
-function crossesAntimeridian(box: Mbr): boolean {
+function crossesAntimeridian(box: BoundingBox): boolean {
   // true if W > E
   return box[0] > box[2];
 }
@@ -42,7 +42,7 @@ function crossesAntimeridian(box: Mbr): boolean {
  * @returns A box in `[W,S,E,N]` format
  * @private
  */
-function joinBoundingBoxes(box1: Mbr, box2: Mbr): Mbr {
+function joinBoundingBoxes(box1: BoundingBox, box2: BoundingBox): BoundingBox {
   // longitude range union
   let w;
   let e;
@@ -134,7 +134,7 @@ function joinBoundingBoxes(box1: Mbr, box2: Mbr): Mbr {
  * @param boxStrings - a list of strings in `'S W N E'` format
  * @returns a tuple of floats in `[W,S,E,N]` format
  */
-export default function boxStringsToBox(boxStrings: string[]): Mbr {
+export default function boxStringsToBox(boxStrings: string[]): BoundingBox {
   if (!boxStrings || boxStrings.length === 0) return null;
 
   const boxes = boxStrings.map(_boundingBoxStringToBoundingBox).filter((val) => val);

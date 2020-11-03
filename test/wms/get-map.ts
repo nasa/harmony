@@ -4,7 +4,7 @@ import isUUID from 'util/uuid';
 import hookServersStartStop from '../helpers/servers';
 import { hookGetMap, wmsRequest, validGetMapQuery } from '../helpers/wms';
 import StubService from '../helpers/stub-service';
-import { hookSignS3Object, hookMockS3 } from '../helpers/object-store';
+import { hookSignS3Object } from '../helpers/object-store';
 
 describe('WMS GetMap', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -96,7 +96,6 @@ describe('WMS GetMap', function () {
 
     describe('and the backend service provides POST data', function () {
       const signedPrefix = hookSignS3Object();
-      hookMockS3();
       StubService.hook({
         body: 'realistic mock data',
         headers: {

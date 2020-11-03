@@ -4,7 +4,7 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "eslint --ext .ts . && nyc mocha && npm audit",
+    "test": "eslint --ext .ts --ignore-pattern tasks . && nyc mocha && npm audit && lerna run test",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "coverage": "nyc mocha",
     "start": "ts-node -r tsconfig-paths/register app/server.ts",
@@ -13,8 +13,10 @@
     "build-image": "bin/build-image",
     "push-image": "bin/push-image",
     "build": "tsc",
+    "update-dev": "npm install && lerna run build && bin/start-argo",
     "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
-    "watch-debug": "nodemon --inspect=5858 -e ts,tsx --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts"
+    "watch-debug": "nodemon --inspect=5858 -e ts,tsx --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
+    "postinstall": "if test \"$NODE_ENV\" != \"production\" ; then lerna exec -- npm install; fi"
   },
   "keywords": [
     "NASA",
@@ -121,6 +123,7 @@
     "@types/axios-mock-adapter": "1.10.0",
     "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.3",
+    "@types/geojson": "^7946.0.7",
     "@types/leaflet": "^1.5.15",
     "@types/lodash": "^4.14.157",
     "@types/mocha": "^7.0.2",
@@ -144,6 +147,7 @@
     "eslint-plugin-jsdoc": "^15.9.1",
     "eslint-plugin-node": "^9.2.0",
     "eslint-plugin-tsdoc": "^0.2.5",
+    "lerna": "^3.22.1",
     "mocha": "^7.2.0",
     "mocha-junit-reporter": "^1.23.3",
     "mocha-multi": "^1.1.3",

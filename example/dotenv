@@ -205,6 +205,12 @@ PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
 PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='Always'
 PODAAC_NETCDF_CONVERTER_PARALLELISM=2
 
+# Prefix before "harmony/task-name" for built-in tasks like query-cmr, e.g. an ECR location
+# If not blank, it should end in a slash if there is a slash before "harmony"
+BUILT_IN_TASK_PREFIX=
+# Version to use for all built-in tasks.  "latest" (local / sandbox), "sit", "uat", or "prod"
+BUILT_IN_TASK_VERSION=latest
+
 # The bucket where final service output data will be staged
 # Default: A bucket created for use in localstack
 STAGING_BUCKET=local-staging-bucket

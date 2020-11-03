@@ -1,7 +1,7 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
-import { ConflictError } from 'util/errors';
 import subMinutes from 'date-fns/subMinutes';
+import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
