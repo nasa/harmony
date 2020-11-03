@@ -311,6 +311,7 @@ https://cmr.uat.earthdata.nasa.gov:
       name: argo
       params:
         # Minimal parameters for current partial chaining implementation
+        image: harmony/query-cmr:latest
         template_type: chaining
         argo_url: !Env ${ARGO_URL}
         namespace: argo
