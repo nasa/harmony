@@ -2,7 +2,6 @@
     "stac_version": "1.0.0-beta.2",
     "type": "Feature",
     "id": "4d77fb21-8ac5-4040-b16c-7227131570f5",
-    "title": "Harmony Service Output",
     "bbox": [-99.5, 31.4, -97.5, 32.4],
     "geometry": {"type": "Polygon", "coordinates": []},
     "assets": {

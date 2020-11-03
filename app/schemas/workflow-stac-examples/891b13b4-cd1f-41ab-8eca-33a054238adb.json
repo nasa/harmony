@@ -2,7 +2,6 @@
     "stac_version": "1.0.0-beta.2",
     "type": "Feature",
     "id": "891b13b4-cd1f-41ab-8eca-33a054238adb",
-    "title": "Granule Locator Output Item",
     "bbox": [-100.5, 30.4, -99.5, 31.4],
     "geometry": {"type": "Polygon", "coordinates": []},
     "assets": {

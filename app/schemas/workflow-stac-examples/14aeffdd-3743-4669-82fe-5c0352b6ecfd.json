@@ -2,7 +2,6 @@
     "stac_version": "1.0.0-beta.2",
     "type": "Feature",
     "id": "14aeffdd-3743-4669-82fe-5c0352b6ecfd",
-    "title": "Transmogrifier Output Item",
     "bbox": [-99.5, 31.4, -97.5, 32.4],
     "geometry": {"type": "Polygon", "coordinates": []},
     "assets": {
