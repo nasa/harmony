@@ -1,0 +1,23 @@
+{
+    "stac_version": "1.0.0-beta.2",
+    "type": "Feature",
+    "id": "4d77fb21-8ac5-4040-b16c-7227131570f5",
+    "bbox": [-99.5, 31.4, -97.5, 32.4],
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-99.5, 31.4], [-97.5, 31.4], [-97.5, 32.4], [-99.5, 32.4], [-99.5, 31.4]]]
+    },
+    "assets": {
+        "granule": {
+            "type": "image/tiff",
+            "href": "s3://s3.amazonaws.com/harmony/staging/4d77fb21-8ac5-4040-b16c-7227131570f5.tif",
+            "title": "Harmony output #2 in job 99887766"
+        }
+    },
+    "properties": {
+        "datetime": "1999-01-01T10:00:00Z",
+        "start_datetime": "1999-01-01T10:00:00Z",
+        "end_datetime": "2020-02-20T15:00:00Z"
+    },
+    "links": []
+}

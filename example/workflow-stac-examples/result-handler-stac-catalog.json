@@ -1,0 +1,18 @@
+{
+    "stac_version": "1.0.0-beta.2",
+    "id": "97926a17-e99f-420c-846f-b9bc739159c9",
+    "title": "Harmony Service Catalog",
+    "description": "Harmony Result Handler STAC Catalog",
+    "links": [
+        {
+            "rel": "item",
+            "href": "3dccf0e1-3528-4a5e-be31-2695e276d84d.json",
+            "title": "Result Handler Output Item"
+        },
+        {
+            "rel": "item",
+            "href": "4d77fb21-8ac5-4040-b16c-7227131570f5.json",
+            "title": "Result Handler Output Item"
+        }
+    ]
+}
