@@ -26,9 +26,10 @@ describe('bboxToGeometry conversion', function () {
 
 describe('addCmrGranules to catalog', function () {
   describe('asset extraction', function () {
+    let catalog: CmrCatalog;
     let assets: { [name: string]: StacAsset };
     before(function () {
-      const catalog = new CmrCatalog({ description: 'test' });
+      catalog = new CmrCatalog({ description: 'test' });
       catalog.addCmrGranules([{
         id: 'G0_TEST',
         title: 'g0',
@@ -73,6 +74,11 @@ describe('addCmrGranules to catalog', function () {
             title: 'OPeNDAP Data 5',
           },
         ],
+      }, {
+        id: 'G1_TEST',
+        title: 'g1',
+        time_start: '2019-01-01T00:00:00Z',
+        time_end: '2019-01-02T00:00:00Z',
       }], './test/granule_');
       // eslint-disable-next-line prefer-destructuring
       assets = (catalog.children[0] as StacItem).assets;
@@ -127,6 +133,11 @@ describe('addCmrGranules to catalog', function () {
 
     it('ignores non-data links', function () {
       expect(_.map(_.values(assets), 'href')).to.not.include('./g0_3.json');
+    });
+
+    it('does not catalog granules with no valid data links', function () {
+      expect(catalog.children.length).to.equal(1);
+      expect(catalog.links.length).to.equal(1);
     });
   });
 });

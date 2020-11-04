@@ -4,6 +4,7 @@ import StacCatalog from './catalog';
 import StacItem from './item';
 import { CmrGranule } from '../../../../app/util/cmr';
 import { computeMbr } from '../../../../app/util/spatial/mbr';
+import logger from '../../../../app/util/log';
 
 /**
  * Creates a GeoJSON geometry given a GeoJSON BBox, accounting for antimeridian
@@ -61,7 +62,7 @@ export default class CmrStacCatalog extends StacCatalog {
       const granule = granules[i];
       const bbox = computeMbr(granule) || [-180, -90, 180, 90];
       const geometry = bboxToGeometry(bbox);
-      const links = granule.links.filter((g) => g.rel.endsWith('/data#') && !g.inherited);
+      const links = (granule.links || []).filter((g) => g.rel.endsWith('/data#') && !g.inherited);
       const [opendapLinks, dataLinks] = _.partition(links, (l) => l.title && l.title.toLowerCase().indexOf('opendap') !== -1);
       // Give the first data link the title 'data' and suffix subsequent ones with their index
       const dataAssets = dataLinks.map((link, j) => ([
@@ -85,24 +86,29 @@ export default class CmrStacCatalog extends StacCatalog {
         },
       ]));
       const assets = _.fromPairs(dataAssets.concat(opendapAssets));
-      const item = new StacItem({
-        bbox,
-        geometry,
-        assets,
-        properties: {
-          start_datetime: granule.time_start,
-          end_datetime: granule.time_end,
-        },
-      });
-      this.children.push(item);
 
-      const indexStr = `${i}`.padStart(7, '0');
-      this.links.push({
-        rel: 'item',
-        href: `${pathPrefix}${indexStr}.json`,
-        type: 'application/json',
-        title: granule.title,
-      });
+      if (Object.keys(assets).length === 0) {
+        logger.warn(`Granule ${granule.id} had no data links and will be excluded from results`);
+      } else {
+        const item = new StacItem({
+          bbox,
+          geometry,
+          assets,
+          properties: {
+            start_datetime: granule.time_start,
+            end_datetime: granule.time_end,
+          },
+        });
+        this.children.push(item);
+
+        const indexStr = `${i}`.padStart(7, '0');
+        this.links.push({
+          rel: 'item',
+          href: `${pathPrefix}${indexStr}.json`,
+          type: 'application/json',
+          title: granule.title,
+        });
+      }
     }
   }
 }
