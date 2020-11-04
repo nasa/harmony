@@ -50,14 +50,14 @@ export interface CmrGranule {
   points?: string[];
   lines?: string[];
   polygons?: string[][];
-  links?: [{
+  links?: {
     rel: string;
     href: string;
     type?: string;
     title?: string;
     hreflang?: string;
     inherited?: boolean;
-  }];
+  }[];
   title: string;
   time_start: string;
   time_end: string;

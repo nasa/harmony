@@ -88,7 +88,7 @@ export class HarmonyItem {
         [west, north],
         [180, north],
         [180, south],
-        [-180, south],
+        [west, south],
       ]);
     } else {
       geometry.type = 'Polygon';

@@ -11,7 +11,7 @@ import { computeMbr } from '../../../../app/util/spatial/mbr';
  * @param bbox the bounding box to create a geometry from
  * @returns a Polygon or MultiPolygon representation of the input bbox
  */
-function bboxToGeometry(bbox: GeoJSON.BBox): GeoJSON.Geometry {
+export function bboxToGeometry(bbox: GeoJSON.BBox): GeoJSON.Geometry {
   const [west, south, east, north] = bbox;
   if (west > east) {
     return {
@@ -29,7 +29,7 @@ function bboxToGeometry(bbox: GeoJSON.BBox): GeoJSON.Geometry {
           [west, north],
           [180, north],
           [180, south],
-          [-180, south],
+          [west, south],
         ]],
       ],
     };
@@ -62,8 +62,9 @@ export default class CmrStacCatalog extends StacCatalog {
       const bbox = computeMbr(granule) || [-180, -90, 180, 90];
       const geometry = bboxToGeometry(bbox);
       const links = granule.links.filter((g) => g.rel.endsWith('/data#') && !g.inherited);
+      const [opendapLinks, dataLinks] = _.partition(links, (l) => l.title && l.title.toLowerCase().indexOf('opendap') !== -1);
       // Give the first data link the title 'data' and suffix subsequent ones with their index
-      const assets = _.fromPairs(links.map((link, j) => ([
+      const dataAssets = dataLinks.map((link, j) => ([
         `data${j === 0 ? '' : j}`,
         {
           href: link.href,
@@ -72,7 +73,18 @@ export default class CmrStacCatalog extends StacCatalog {
           type: link.type,
           roles: ['data'],
         },
-      ])));
+      ]));
+      const opendapAssets = opendapLinks.map((link, j) => ([
+        `opendap${j === 0 ? '' : j}`,
+        {
+          href: link.href,
+          title: path.basename(link.href),
+          description: link.title,
+          type: link.type,
+          roles: ['data', 'opendap'],
+        },
+      ]));
+      const assets = _.fromPairs(dataAssets.concat(opendapAssets));
       const item = new StacItem({
         bbox,
         geometry,
@@ -82,16 +94,6 @@ export default class CmrStacCatalog extends StacCatalog {
           end_datetime: granule.time_end,
         },
       });
-      const opendapLink = links.find((l) => l.title && l.title.toLowerCase().indexOf('opendap') !== -1);
-      if (opendapLink) {
-        item.assets.opendap = {
-          href: opendapLink.href,
-          title: path.basename(links[0].href),
-          description: opendapLink.title,
-          type: opendapLink.type,
-          roles: ['data', 'opendap'],
-        };
-      }
       this.children.push(item);
 
       const indexStr = `${i}`.padStart(7, '0');

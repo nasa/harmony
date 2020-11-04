@@ -196,7 +196,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
               podSpecPatch: `{"activeDeadlineSeconds":${env.defaultArgoPodTimeoutSecs}}`,
               container: {
                 image: `${env.builtInTaskPrefix}harmony/query-cmr:${env.builtInTaskVersion}`,
-                imagePullPolicy: this.params.image_pull_policy,
+                imagePullPolicy: this.params.image_pull_policy || env.defaultImagePullPolicy,
                 args: [
                   '--harmony-input',
                   JSON.stringify(serializedOperation),

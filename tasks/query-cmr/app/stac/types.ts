@@ -1,9 +1,10 @@
 /**
  * A link within a STAC item or catalog
+ * https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md#link-object
  * https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#link-object
  */
 export interface StacLink {
-  rel: 'self' | 'root' | 'parent' | 'child' | 'item';
+  rel: 'self' | 'root' | 'parent' | 'child' | 'item' | 'collection' | 'derived_from' | 'alternate' | string;
   href: string;
   type?: string;
   title?: string;
