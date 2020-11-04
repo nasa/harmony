@@ -40,6 +40,12 @@ use the production locustfile.
 $ locust -f locustfile-prod.py
 ```
 
+## Generating performance charts
+After performing a run, save a results report CSV using the Locust UI. Bring up the performance-charts Jupyter
+notebook. Modify the data sources it uses from the provided examples to the CSV report you just saved. If you
+want to compare multiple runs add each CSV filename to the list of data files to chart. Then, run all the cells
+in the notebook.
+
 ## Linter
 Make sure to install the dev dependencies:
 ```
