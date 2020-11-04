@@ -154,8 +154,8 @@ describe('cli', function () {
       const tmpDir = tmp.dirSync({ unsafeCleanup: true }).name;
       hookCliMain(['--output-dir', tmpDir, '--harmony-input', '{}', '--query', 'file.json'], new CmrStacCatalog({ description: 'done' }));
 
-      it('outputs the result data to index.json in the directory', function () {
-        const index = path.join(tmpDir, 'index.json');
+      it('outputs the result data to catalog.json in the directory', function () {
+        const index = path.join(tmpDir, 'catalog.json');
         expect(fs.existsSync(index)).to.be.true;
         expect(JSON.parse(fs.readFileSync(index, 'utf-8')).description).to.equal('done');
       });
@@ -167,7 +167,7 @@ describe('cli', function () {
       after(() => fs.rmdirSync(tmpDir, { recursive: true }));
 
       it('creates it and outputs the result data to index.json in the directory', function () {
-        const index = path.join(tmpDir, 'index.json');
+        const index = path.join(tmpDir, 'catalog.json');
         expect(fs.existsSync(index)).to.be.true;
         expect(JSON.parse(fs.readFileSync(index, 'utf-8')).description).to.equal('done');
       });

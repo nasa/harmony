@@ -68,7 +68,7 @@ export default async function main(args: string[]): Promise<void> {
     options.pageSize,
     options.maxPages,
   );
-  const filename = path.join(options.outputDir, 'index.json');
+  const filename = path.join(options.outputDir, 'catalog.json');
   await catalog.write(filename, true);
 }
 
