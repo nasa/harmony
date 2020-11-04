@@ -207,7 +207,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
               name: 'query',
               podSpecPatch: `{"activeDeadlineSeconds":${env.defaultArgoPodTimeoutSecs}}`,
               container: {
-                image: this.params.image,
+                image: `${env.builtInTaskPrefix}harmony/query-cmr:${env.builtInTaskVersion}`,
                 imagePullPolicy: this.params.image_pull_policy,
                 args: [
                   '--harmony-input',
@@ -217,10 +217,12 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
                   '--output-dir',
                   '/tmp/outputs',
                   '--page-size',
-                  // Hard-coded max of 2000 granules to be lifted in no granule limit epic
-                  `${this.chooseBatchSize(2000)}`,
+                  `${this.chooseBatchSize()}`,
+                  // Hard-coded to run only a single page until the no granule limit epic
+                  '--max-pages',
+                  '1',
                 ],
-                env: argoEnv,
+                env: argoEnv.concat({ name: 'CMR_ENDPOINT', value: env.cmrEndpoint }),
               },
               outputs: {
                 artifacts: [{ name: 'granules', path: '/tmp/outputs' }],
@@ -260,7 +262,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    */
   _legacyWorkflowBody(params: ArgoVariable[]): unknown {
     const { user, requestId } = this.operation;
-    const batchSize = this.chooseBatchSize();
+    // Further limit the batch size so the POST body doesn't exceed Argo limits
+    const batchSize = this.chooseBatchSize(Math.min(env.maxGranuleLimit, 200));
     const parallelism = this.params.parallelism || env.defaultParallelism;
 
     const batch = batchOperations(this.operation, batchSize);

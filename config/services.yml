@@ -315,7 +315,6 @@ https://cmr.uat.earthdata.nasa.gov:
         template_type: chaining
         argo_url: !Env ${ARGO_URL}
         namespace: argo
-        image_pull_policy: Never
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           LOCALSTACK_HOST: !Env ${BACKEND_HOST}

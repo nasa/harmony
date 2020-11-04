@@ -37,6 +37,8 @@ interface HarmonyEnv {
   jobReaperPeriodSec: number;
   reapableJobAgeMinutes: number;
   defaultArgoPodTimeoutSecs: number;
+  builtInTaskPrefix: string;
+  builtInTaskVersion: string;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -98,6 +100,8 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['DEFAULT_PARALLELISM', 2],
   ['SHARED_SECRET_KEY', null],
   ['DEFAULT_ARGO_POD_TIMEOUT_SECS', 14400],
+  ['BUILT_IN_TASK_PREFIX', ''],
+  ['BUILT_IN_TASK_VERSION', 'latest'],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases

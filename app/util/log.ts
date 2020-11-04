@@ -67,4 +67,18 @@ function createTextLogger(): winston.Logger {
 
 const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger() : createJsonLogger();
 
-export = logger;
+/**
+ * Configures logs so that they are written to the file with the given name, also suppressing
+ * logging to stdout if the suppressStdOut option is set to true
+ * @param filename The name of the file to write logs to
+ * @param suppressStdOut true if logs should not be written to stdout
+ */
+export function configureLogToFile(filename: string, suppressStdOut = false): void {
+  const fileTransport = new winston.transports.File({ filename });
+  while (suppressStdOut && logger.transports.length > 0) {
+    logger.remove(logger.transports[0]);
+  }
+  logger.add(fileTransport);
+}
+
+export default logger;

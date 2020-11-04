@@ -1,0 +1,18 @@
+{
+    "stac_version": "1.0.0-beta.2",
+    "id": "d07e0028-d94e-435a-9c71-c75a7a843d40",
+    "title": "Harmony Service Catalog",
+    "description": "Harmony Transmogrifier STAC Catalog",
+    "links": [
+        {
+            "rel": "item",
+            "href": "9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json",
+            "title": "Transmogrifier Output Item"
+        },
+        {
+            "rel": "item",
+            "href": "14aeffdd-3743-4669-82fe-5c0352b6ecfd.json",
+            "title": "Transmogrifier Output Item"
+        }
+    ]
+}

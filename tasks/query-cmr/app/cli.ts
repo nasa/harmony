@@ -7,11 +7,18 @@ import env from '../../../app/util/env';
 
 import { queryGranules } from './query';
 
+interface HarmonyArgv {
+  outputDir?: string;
+  harmonyInput?: object;
+  query?: (string | number)[];
+  pageSize?: number;
+  maxPages?: number;
+}
 /**
  * Builds and returns the CLI argument parser
  * @returns the CLI argument parser
  */
-export function parser(): yargs {
+export function parser(): yargs.Argv<HarmonyArgv> {
   return yargs
     .usage('Usage: --output-dir <dir> --harmony-input <message> --query <query1> <query2>')
     .option('output-dir', {
@@ -57,7 +64,7 @@ export default async function main(args: string[]): Promise<void> {
   await fs.mkdir(options.outputDir, { recursive: true });
   const results = await queryGranules(
     operation,
-    options.query,
+    options.query as string[],
     options.outputDir,
     options.pageSize,
     options.maxPages,

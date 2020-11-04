@@ -6,9 +6,9 @@ import * as querystring from 'querystring';
 import * as util from 'util';
 import { CmrError } from './errors';
 import { objectStoreForProtocol } from './object-store';
+import logger from './log';
 
 import env = require('./env');
-import logger = require('./log');
 
 const unlink = util.promisify(fs.unlink);
 

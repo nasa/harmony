@@ -57,7 +57,7 @@ Then verify the version again as above.
 
 From the harmony project root, install library dependencies:
 ```
-npm install
+$ npm install
 ```
 
 Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to run binaries from installed node modules.  If you choose not to do this, you will need to prefix node module calls with `npx`, e.g. `npx mocha` instead of just `mocha`
@@ -371,6 +371,15 @@ Skip this step if harmony-gdal is not in an ECR.
 This process is identical to "Connect a client" above, except instead of `http://localhost:3000`, the protocol and host should be that of your
 load balancer, e.g. `https://your-load-balancer-name.us-west-2.elb.amazonaws.com`.  Retrieve the precise load balancer details from the
 AWS console.
+
+### Updating development resources after pulling new code
+
+Once up and running, if you update code, you can ensure dependencies are correct, Argo is deployed, and necessary Docker images are built
+by running
+
+```
+$ npm run update-dev
+```
 
 ## Additional Resources
 
