@@ -57,8 +57,9 @@ export default class Catalog implements StacCatalog {
    */
   async write(filename: string, pretty = false): Promise<void> {
     const dirname = path.dirname(filename);
+    const childLinks = this.links.filter((l) => l.rel === 'child' || l.rel === 'item');
     const promises = this.children.map(async (item, i) => {
-      const itemFilename = path.join(dirname, this.links[i].href);
+      const itemFilename = path.join(dirname, childLinks[i].href);
       return item.write(itemFilename, pretty);
     });
     const json = pretty ? JSON.stringify(this, null, 2) : JSON.stringify(this);
