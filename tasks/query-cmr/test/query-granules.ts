@@ -11,6 +11,7 @@ import { queryGranules } from '../app/query';
 import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
 import { S3ObjectStore } from '../../../app/util/object-store';
+import env from '../../../app/util/env';
 import buildStacSchemaValidator from './helpers/stac';
 
 const geojson = '../../test/resources/complex_multipoly.geojson';
@@ -149,7 +150,7 @@ describe('query#queryGranules', function () {
     it('links STAC catalogs to the input source collection', function () {
       expect(result.children[0].links[0]).to.eql({
         rel: 'harmony_source',
-        href: 'https://cmr.earthdata.nasa.gov/search/concepts/C001-TEST',
+        href: `${env.cmrEndpoint}/search/concepts/C001-TEST`,
       });
     });
 
