@@ -31,6 +31,10 @@ export async function querySource(
   filePrefix: string,
 ): Promise<StacCatalog> {
   const result = new CmrStacCatalog({ description: `CMR Granules for ${source.collection}` });
+  result.links.push({
+    rel: 'harmony_source',
+    href: `https://cmr.earthdata.nasa.gov/search/concepts/${source.collection}`,
+  });
   let page = 0;
   let done = false;
 

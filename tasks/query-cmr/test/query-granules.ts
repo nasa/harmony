@@ -138,11 +138,18 @@ describe('query#queryGranules', function () {
     });
 
     it('produces STAC catalogs containing granule links for each input source', function () {
-      expect(result.children[0].links[0]).to.eql({
+      expect(result.children[0].links[1]).to.eql({
         rel: 'item',
         href: './granule_0_0000000.json',
         title: '001_00_7f00ff_global',
         type: 'application/json',
+      });
+    });
+
+    it('links STAC catalogs to the input source collection', function () {
+      expect(result.children[0].links[0]).to.eql({
+        rel: 'harmony_source',
+        href: 'https://cmr.earthdata.nasa.gov/search/concepts/C001-TEST',
       });
     });
 
