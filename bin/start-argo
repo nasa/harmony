@@ -41,6 +41,9 @@ DRIVER_DEFAULT=docker
 
 DRIVER=${DRIVER:-$DRIVER_DEFAULT}
 
+source ".env"
+[[ -n $KUBERNETES_URL ]] && alias kubectl="kubectl -s $KUBERNETES_URL"
+
 if [ -n "$KUBE_CONTEXT" ]; then :
 elif kubectl config get-contexts docker-desktop &> /dev/null ; then
   KUBE_CONTEXT='docker-desktop'
@@ -53,8 +56,6 @@ else
   echo 'If you are using another Kubernetes, specify its context using --context.' >&2
   exit 1
 fi
-
-source ".env"
 
 PORT=${PPORT:-2746}
 
