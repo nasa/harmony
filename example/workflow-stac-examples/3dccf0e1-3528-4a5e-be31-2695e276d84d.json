@@ -15,9 +15,9 @@
         }
     },
     "properties": {
-        "datetime": "1999-01-01T10:00:00Z",
-        "start_datetime": "1999-01-01T10:00:00Z",
-        "end_datetime": "2020-02-20T15:00:00Z"
+        "datetime": "1999-01-01T10:00:00.000Z",
+        "start_datetime": "1999-01-01T10:00:00.000Z",
+        "end_datetime": "2020-02-20T15:00:00.000Z"
     },
     "links": []
 }
