@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, urlencoded } from 'express';
 import { responseHandler } from '../backends/service-response';
 
 /**
@@ -9,6 +9,7 @@ import { responseHandler } from '../backends/service-response';
  */
 export default function router(): Router {
   const result = Router();
+  result.use(urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
   result.post('/:requestId/response', responseHandler);
   return result;
 }

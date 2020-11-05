@@ -336,7 +336,7 @@ https://cmr.uat.earthdata.nasa.gov:
    # This is an example service using a result handler
   - name: harmony/result-handler-example
     data_operation_version: '0.9.0'
-    batch_size: 1
+    batch_size: 2
     type:
       name: argo
       params:

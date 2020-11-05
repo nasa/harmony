@@ -10,7 +10,6 @@ spec:
           - name: metadata
             path: /tmp/metadata
         parameters:
-          - name: operation
           - name: stac-catalog-link 
           - name: image-pull-policy
           - name: timeout
@@ -24,7 +23,7 @@ spec:
           - name: BACKEND_HOST
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       script:
-        image: "opsgang/aws_env:stable"
+        image: "everpeace/curl-jq"
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
         command: [bash]
         env:
@@ -41,56 +40,46 @@ spec:
 
         source: |
           #!/usr/bin/env bash
-          if [[ $USE_LOCALSTACK == "true" ]]; then
-          export AWS_ACCESS_KEY_ID=ACCESS
-          export AWS_SECRET_ACCESS_KEY=SECRET
-          fi
-          read -r -d '' OPERATION <<'OPERATION_EOF'
-          {{inputs.parameters.operation}}
-          OPERATION_EOF
+          # send the progress to Harmony along with links if needed
+          if [[ "${SHOULD_POST_RESULTS}" == "true" ]]; then
           STAC_CATALOG_LINK="{{inputs.parameters.stac-catalog-link}}"
-          STAGING_LOCATION=$(echo "${OPERATION}"  | jq -r '.stagingLocation')
           STAC_CATALOG=$(cat "/tmp/metadata/${STAC_CATALOG_LINK}")
-          ID=$(echo "${STAC_CATALOG}" | jq -r '.id')
-          LINKS=$(echo $STAC_CATALOG | jq -r '.links[] | select(.rel=="item") | .href')
+          LINKS=$(echo "${STAC_CATALOG}" | jq -r '.links[] | select(.rel=="item") | .href')
           IFS=$'\n' read -rd '' -a LINKS_ARRAY <<< "${LINKS}"
+          LINK_INDEX=0
+          LINK_COUNT="${#LINKS_ARRAY[@]}"
+          LINKS_JSON="["
           for LINK in "${LINKS_ARRAY[@]}"
           do
+          LINK_INDEX=$((LINK_INDEX+1))
           # read and parse the STAC item file
           STAC_ITEM=$(cat "/tmp/metadata/${LINK}")
-          DATA_LINK=$(echo "$STAC_ITEM" | jq -r '.assets.granule.href')
-          BASENAME=$(basename "$DATA_LINK")
-          OUTPUT_LINK="${STAGING_LOCATION}${BASENAME}"
-          # copy the file to the S3 staging location
-          aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp "$DATA_LINK" "$OUTPUT_LINK"
-          # update the link in the STAC item file to create a new file
-          NEW_ITEM=$(echo "$STAC_ITEM" | jq ".assets.granule.href |= \"${OUTPUT_LINK}\"")
-          echo "$NEW_ITEM" > stac-item.json
-          # copy the new STAC item up to S3
-          UUID=$(cat /proc/sys/kernel/random/uuid)
-          FILE_NAME="${UUID}.json"
-          NEW_ITEM_S3_LINK="${DATA_LINK}${FILE_NAME}"
-          aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp stac-item.json "$NEW_ITEM_S3_LINK"
-          # update the STAC catalog to point to the new STAC item in S3
-          STAC_CATALOG=$(echo "$STAC_CATALOG" | jq "(.links[] | select(.href==\"${LINK}\") | .href) |= \"${FILE_NAME}\"")
+          DATA_LINK=$(echo "${STAC_ITEM}" | jq -r '.assets.granule')
+          START=$(echo "${STAC_ITEM}" | jq -r '.properties.start_datetime')
+          END=$(echo "${STAC_ITEM}" | jq -r '.properties.end_datetime')
+          BBOX=$(echo "${STAC_ITEM}" | jq -r '.bbox')
+          BBOX="\"bbox\": ${BBOX}"
+          TEMPORAL="{\"temporal\": \"${START},${END}\",${BBOX}, "
+          DATA_LINK="${DATA_LINK/{/$TEMPORAL}"
+          LINKS_JSON="${LINKS_JSON}${DATA_LINK}"
+          if [[ "${LINK_INDEX}" -lt "${LINK_COUNT}" ]]; then
+          LINKS_JSON="${LINKS_JSON}, "
+          fi
+          # LINKS_JSON="${LINKS_JSON} \n"
           done
-          echo "${STAC_CATALOG}" > stac-catalog.json
-          # copy the new STAC catalog up to S3
-          STAC_CATALOG_S3_LINK="${STAGING_LOCATION}/stac-catalog-${ID}.json"
-          aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp stac-catalog.json "${STAC_CATALOG_S3_LINK}"
-          # send the link to the new STAC catalog to Harmony along with progress data if needed
-          if [[ "${SHOULD_POST_RESULTS}" == "true" ]]; then
+          LINKS_JSON="${LINKS_JSON}]"
+          echo "${LINKS_JSON}"
           curl -XPOST \
           --data-urlencode "batch_completed=true" \
           --data-urlencode "batch_count={{inputs.parameters.batch-count}}" \
           --data-urlencode "post_batch_step_count={{inputs.parameters.post-batch-step-count}}" \
-          --data-urlencode "stac_catalog_link=${STAC_CATALOG_S3_LINK}" \
-          "{{inputs.parameters.callback}}/response"
+          --data-urlencode "items=${LINKS_JSON}" \
+          "{{inputs.parameters.callback}}/response" > /dev/null
           else
           curl -XPOST \
           --data-urlencode "batch_completed=true" \
           --data-urlencode "batch_count={{inputs.parameters.batch-count}}" \
           --data-urlencode "post_batch_step_count={{inputs.parameters.post-batch-step-count}}" \
-          "{{inputs.parameters.callback}}/response"
+          "{{inputs.parameters.callback}}/response" > /dev/null
           fi
           
