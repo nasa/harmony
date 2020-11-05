@@ -5,24 +5,27 @@ import log from '../util/log';
 import { ServerError, RequestValidationError } from '../util/errors';
 import db from '../util/db';
 import { Job, JobLink, JobStatus } from '../models/job';
-import { objectStoreForProtocol } from '../util/object-store';
 
-export interface CallbackQueryItem {
+interface CallbackQueryItem {
   href?: string;
   type?: string; // Mime type
   rel: string;
   title?: string;
   temporal?: string;
-  bbox?: string;
+  bbox?: string | number[];
 }
 
-export interface CallbackQuery {
+interface CallbackQuery {
   item?: CallbackQueryItem;
+  items?: CallbackQueryItem[];
   error?: string;
   argo?: string; // This is temporary until we decide what to do with callbacks
   redirect?: string;
   status?: string;
   progress?: string;
+  batch_count?: string;
+  batch_completed?: string;
+  post_batch_step_count?: string;
 }
 
 /**
@@ -36,32 +39,34 @@ export interface CallbackQuery {
  * @throws {RequestValidationError} If the callback parameters fail validation
  * @throws {ServerError} If job update fails unexpectedly
  */
-export function updateJobFields(
+function updateJobFields(
   logger: Logger,
   job: Job,
   query: CallbackQuery,
 ): void { /* eslint-disable no-param-reassign */
-  const { error, item, status, redirect, progress } = query;
+  const { error, items, status, redirect, progress } = query;
   try {
-    if (item) {
-      const link = _.pick(item, ['href', 'type', 'rel', 'title']) as JobLink;
-      if (item.bbox) {
-        const bbox = item.bbox.split(',').map(parseFloat);
-        if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
-          throw new TypeError('Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North');
+    if (items && items.length > 0) {
+      items.forEach((item, _index) => {
+        const link = _.pick(item, ['href', 'type', 'rel', 'title']) as JobLink;
+        if (item.bbox) {
+          const bbox = item.bbox instanceof String ? item.bbox.split(',').map(parseFloat) : item.bbox as number[];
+          if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
+            throw new TypeError('Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North');
+          }
+          link.bbox = bbox;
         }
-        link.bbox = bbox;
-      }
-      if (item.temporal) {
-        const temporal = item.temporal.split(',').map((t) => Date.parse(t));
-        if (temporal.length !== 2 || temporal.some(Number.isNaN)) {
-          throw new TypeError('Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End');
+        if (item.temporal) {
+          const temporal = item.temporal.split(',').map((t) => Date.parse(t));
+          if (temporal.length !== 2 || temporal.some(Number.isNaN)) {
+            throw new TypeError('Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End');
+          }
+          const [start, end] = temporal.map((t) => new Date(t).toISOString());
+          link.temporal = { start, end };
         }
-        const [start, end] = temporal.map((t) => new Date(t).toISOString());
-        link.temporal = { start, end };
-      }
-      link.rel = link.rel || 'data';
-      job.addLink(link);
+        link.rel = link.rel || 'data';
+        job.addLink(link);
+      });
     }
     if (progress) {
       if (Number.isNaN(+progress)) {
@@ -86,16 +91,12 @@ export function updateJobFields(
 
 /**
  * Express.js handler on a service-facing endpoint that receives responses
- * from backends and updates corresponding job records.
- *
- * Because this is on a different endpoint with different middleware, it receives
- * an express Request rather than a HarmonyRequest, must construct its own, does
- * not have access to EDL info, etc
+ * from argo and updates corresponding job records.
  *
  * @param req - The request sent by the service
  * @param res - The response to send to the service
  */
-export async function responseHandler(req: Request, res: Response): Promise<void> {
+export default async function responseHandler(req: Request, res: Response): Promise<void> {
   const { requestId } = req.params;
   const logger = log.child({
     component: 'callback',
@@ -116,45 +117,41 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     return;
   }
 
+  const { body } = req;
+
   try {
     const queryOverrides = {} as CallbackQuery;
-    if (!query.item?.href && !query.error && req.headers['content-length'] && req.headers['content-length'] !== '0') {
-      // If the callback doesn't contain a redirect or error and has some content in the body,
-      // assume the content is a file result.
-      const stagingLocation = job.getRelatedLinks('s3-access')[0].href;
 
-      const item = {} as CallbackQueryItem;
-      const store = objectStoreForProtocol(stagingLocation);
-      if (req.headers['content-type'] && req.headers['content-type'] !== 'application/x-www-form-urlencoded') {
-        item.type = req.headers['content-type'];
-      }
-      let filename = query.item?.title;
-      if (req.headers['content-disposition']) {
-        const filenameMatch = req.headers['content-disposition'].match(/filename="([^"]+)"/);
-        if (filenameMatch) {
-          filename = filenameMatch[1];
-        }
-      }
-      if (!filename) {
-        throw new TypeError('Services providing output via POST body must send a filename via a "Content-Disposition" header or "item[title]" query parameter');
-      }
-      item.href = stagingLocation + filename;
-      logger.info(`Staging to ${item.href}`);
-      await store.upload(req, item.href, +req.headers['content-length'], item.type || query.item?.type);
-      queryOverrides.item = item;
+    // progress update
+    if (body?.batch_completed?.toLowerCase() === 'true') {
+      const currentProgress = job.progress || 0;
+      const batchCount = parseInt(body.batch_count, 10);
+      const batchProgress = (currentProgress / 100.0) * batchCount + 1;
+      const postBatchStepCount = parseInt(body.post_batch_step_count, 10) || 0;
+      // always hold back 1% to reserve time for the exit handler
+      const progress = 100 * (batchProgress / (batchCount + postBatchStepCount)) - 1;
+      query.progress = `${progress}`;
+    }
 
-      if (!job.isAsync) {
-        queryOverrides.status = JobStatus.SUCCESSFUL;
-      }
+    // add links if provided
+    if (body.items) {
+      const items = JSON.parse(body.items);
+      queryOverrides.items = items.map((itemMap): CallbackQueryItem => {
+        const newItem = {} as CallbackQueryItem;
+        newItem.bbox = itemMap.bbox;
+        newItem.temporal = itemMap.temporal;
+        newItem.href = itemMap.href;
+        newItem.title = itemMap.title;
+        newItem.type = itemMap.type;
+        newItem.rel = 'data';
+        return newItem;
+      });
     }
 
     const fields = _.merge({}, query, queryOverrides);
-    if (job.isAsync && fields.status === JobStatus.SUCCESSFUL && !fields.argo) {
-      // This is temporary until we decide how we want to use callbacks. We avoid updating
-      // job status when the callback doesn't come from Argo
-      delete fields.status;
-    }
     delete fields.argo;
+    delete fields.batch_count;
+    delete fields.post_batch_step_count;
     logger.info(`Updating job ${job.id} with fields: ${JSON.stringify(fields)}`);
 
     if (!query.error && query.argo?.toLowerCase() === 'true') {

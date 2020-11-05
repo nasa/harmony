@@ -74,12 +74,12 @@ spec:
           --data-urlencode "batch_count={{inputs.parameters.batch-count}}" \
           --data-urlencode "post_batch_step_count={{inputs.parameters.post-batch-step-count}}" \
           --data-urlencode "items=${LINKS_JSON}" \
-          "{{inputs.parameters.callback}}/response" > /dev/null
+          "{{inputs.parameters.callback}}/argo-response" > /dev/null
           else
           curl -XPOST \
           --data-urlencode "batch_completed=true" \
           --data-urlencode "batch_count={{inputs.parameters.batch-count}}" \
           --data-urlencode "post_batch_step_count={{inputs.parameters.post-batch-step-count}}" \
-          "{{inputs.parameters.callback}}/response" > /dev/null
+          "{{inputs.parameters.callback}}/argo-response" > /dev/null
           fi
           
