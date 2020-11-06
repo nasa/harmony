@@ -131,7 +131,7 @@ export default async function responseHandler(req: Request, res: Response): Prom
 
     // add links if provided
     if (body.items) {
-      const items = JSON.parse(body.items);
+      const items = body.items instanceof String ? JSON.parse(body.items) : body.items;
       queryOverrides.items = items.map((itemMap): ArgoCallbackQueryItem => {
         const newItem = {} as ArgoCallbackQueryItem;
         newItem.bbox = itemMap.bbox;
