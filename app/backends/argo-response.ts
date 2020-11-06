@@ -125,7 +125,8 @@ export default async function responseHandler(req: Request, res: Response): Prom
       const batchProgress = (currentProgress / 100.0) * batchCount + 1;
       const postBatchStepCount = parseInt(body.post_batch_step_count, 10) || 0;
       // always hold back 1% to reserve time for the exit handler
-      const progress = 100 * (batchProgress / (batchCount + postBatchStepCount)) - 1;
+      let progress = Math.floor(100 * (batchProgress / (batchCount + postBatchStepCount)) - 1);
+      progress = progress < 0 ? 0 : progress;
       query.progress = `${progress}`;
     }
 
