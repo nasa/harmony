@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 import plotly.graph_objects as go
 
@@ -20,24 +21,57 @@ def create_bar(name, df, column='90%'):
         x=df['Name'],
         y=df[column])
 
+def remove_job_status_rows(df):
+    """
+    Removes all of the rows representing calls to the jobs status endpoint.
 
-def create_data_frame(filename):
+    For async requests we have a row for each request that pings the job status route. This
+    row is not useful for capturing performance information and when there are many async
+    requests in a run this can lead to the charts having way too many values on the x axis
+    and making the charts difficult to use and filled with information we do not want.
+
+    Arguments:
+        df {pandas.DataFrame} -- The dataframe to act on.
+    Returns:
+        {pandas.DataFrame} -- The original dataframe with all job status rows removed.
+    """
+    job_status_regex = re.compile(r'\/jobs.*')
+    jobs_rows_filter = df['Name'].str.contains(job_status_regex)
+    return df[~jobs_rows_filter]
+
+
+def create_data_frame(filename, drop_job_status=True, drop_aggregated=True):
     """
     Creates a pandas DataFrame from the provided CSV file containing workload performance
-    numbers from a locust run. The last row in the file is ignored because the Aggregated
-    performance numbers are not useful since it combines all the requests together which
-    have quite different performance characteristics and can vary wildly from run to run
-    depending on the percentage of fast requests such as landing page requests executed
-    during the given run.
+    numbers from a locust run.
+
+    Optionally deletes the Aggregated row and optionally deletes and job status rows.
+
+    The aggregated performance numbers are generally not useful since it combines all the
+    requests together which have quite different performance characteristics and can vary
+    wildly from run to run depending on the percentage of fast requests such as landing
+    page requests executed during the given run.
+
+    For async requests we have a row for each request that pings the job status route. This
+    row is not useful for capturing performance information and when there are many async
+    requests in a run this can lead to the charts having way too many values on the x axis
+    and making the charts difficult to use and filled with information we do not want.
 
     Arguments:
         filename {String} -- The input CSV filename from which to create the DataFrame.
+        drop_job_status {Boolean} -- Whether to remove the job status rows. Defaults to True.
+        drop_aggregated {Boolean} -- Whether to remove the aggregated row. Defaults to True.
 
     Returns:
-        {pandas.DataFrame} -- A DataFrame containing the CSV data.
+        {pandas.DataFrame} -- A DataFrame containing the CSV data with any unwanted rows
+                              removed.
     """
     df = pd.read_csv(filename)
-    return df.drop(len(df) - 1)
+    if (drop_aggregated):
+        df = df[df['Name'] != 'Aggregated']
+    if (drop_job_status):
+        df = remove_job_status_rows(df)
+    return df
 
 def display_bar_chart(figure, title='', yaxis_title='', xaxis_title = ''):
     """
