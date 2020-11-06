@@ -40,7 +40,7 @@ describe('Argo Callbacks', function () {
       hookArgoCallbackEach((r) => r.send({ batch_completed: 'true', batch_count: '4', post_batch_step_count: '0' }));
       it('sets the job progress correctly', async function () {
         const job = await loadJobForCallback(this.callback);
-        expect(job.progress).to.equal(24.0);
+        expect(job.progress).to.equal(24);
       });
     });
 
