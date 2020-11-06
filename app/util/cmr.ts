@@ -88,6 +88,7 @@ export interface CmrQuery
   extends NodeJS.Dict<string | string[] | number | number[] | boolean | boolean[] | null> {
   concept_id?: string | string[];
   page_size?: number;
+  downloadable?: boolean;
 }
 
 export interface CmrResponse extends Response {
@@ -338,7 +339,9 @@ async function queryGranules(
   query: CmrQuery, token: string,
 ): Promise<CmrGranuleHits> {
   // TODO: Paging / hits
-  const granulesResponse = await _cmrSearch('/search/granules.json', query, token) as CmrGranulesResponse;
+  const downloadableQuery = query;
+  downloadableQuery.downloadable = true;
+  const granulesResponse = await _cmrSearch('/search/granules.json', downloadableQuery, token) as CmrGranulesResponse;
   const cmrHits = parseInt(granulesResponse.headers.get('cmr-hits'), 10);
   return {
     hits: cmrHits,

@@ -229,7 +229,7 @@ https://cmr.uat.earthdata.nasa.gov:
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
     collections:
-      # - C1233860183-EEDTEST
+      - C1233860183-EEDTEST
       - C1233800302-EEDTEST
       - C1221286860-NSIDC_TS1
       - C1226288788-EDF_DEV07
@@ -359,7 +359,6 @@ https://cmr.uat.earthdata.nasa.gov:
       # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
       # Good example, being in UAT, global, many public non-global granules,
       # and not yet on the services roadmap.
-      - C1233860183-EEDTEST
       - C1096-PVC_TS2
     capabilities:
       subsetting:

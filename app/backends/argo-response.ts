@@ -5,19 +5,19 @@ import log from '../util/log';
 import { ServerError, RequestValidationError } from '../util/errors';
 import db from '../util/db';
 import { Job, JobLink, JobStatus } from '../models/job';
+import { validateBbox, validateTemporal } from './service-response';
 
-interface CallbackQueryItem {
+interface ArgoCallbackQueryItem {
   href?: string;
   type?: string; // Mime type
   rel: string;
   title?: string;
   temporal?: string;
-  bbox?: string | number[];
+  bbox?: number[];
 }
 
-interface CallbackQuery {
-  item?: CallbackQueryItem;
-  items?: CallbackQueryItem[];
+interface ArgoCallbackQuery {
+  items?: ArgoCallbackQueryItem[];
   error?: string;
   argo?: string; // This is temporary until we decide what to do with callbacks
   redirect?: string;
@@ -42,26 +42,22 @@ interface CallbackQuery {
 function updateJobFields(
   logger: Logger,
   job: Job,
-  query: CallbackQuery,
+  query: ArgoCallbackQuery,
 ): void { /* eslint-disable no-param-reassign */
   const { error, items, status, redirect, progress } = query;
   try {
     if (items && items.length > 0) {
       items.forEach((item, _index) => {
         const link = _.pick(item, ['href', 'type', 'rel', 'title']) as JobLink;
-        if (item.bbox) {
-          const bbox = item.bbox instanceof String ? item.bbox.split(',').map(parseFloat) : item.bbox as number[];
-          if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
-            throw new TypeError('Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North');
-          }
+        const { bbox, temporal } = item;
+        if (bbox) {
+          validateBbox(bbox);
           link.bbox = bbox;
         }
-        if (item.temporal) {
-          const temporal = item.temporal.split(',').map((t) => Date.parse(t));
-          if (temporal.length !== 2 || temporal.some(Number.isNaN)) {
-            throw new TypeError('Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End');
-          }
-          const [start, end] = temporal.map((t) => new Date(t).toISOString());
+        if (temporal) {
+          const temporalArray = item.temporal.split(',').map((t) => Date.parse(t));
+          validateTemporal(temporalArray);
+          const [start, end] = temporalArray.map((t) => new Date(t).toISOString());
           link.temporal = { start, end };
         }
         link.rel = link.rel || 'data';
@@ -104,7 +100,7 @@ export default async function responseHandler(req: Request, res: Response): Prom
     requestId,
   });
 
-  const query = req.query as CallbackQuery;
+  const query = req.query as ArgoCallbackQuery;
 
   const trx = await db.transaction();
 
@@ -120,7 +116,7 @@ export default async function responseHandler(req: Request, res: Response): Prom
   const { body } = req;
 
   try {
-    const queryOverrides = {} as CallbackQuery;
+    const queryOverrides = {} as ArgoCallbackQuery;
 
     // progress update
     if (body?.batch_completed?.toLowerCase() === 'true') {
@@ -136,8 +132,8 @@ export default async function responseHandler(req: Request, res: Response): Prom
     // add links if provided
     if (body.items) {
       const items = JSON.parse(body.items);
-      queryOverrides.items = items.map((itemMap): CallbackQueryItem => {
-        const newItem = {} as CallbackQueryItem;
+      queryOverrides.items = items.map((itemMap): ArgoCallbackQueryItem => {
+        const newItem = {} as ArgoCallbackQueryItem;
         newItem.bbox = itemMap.bbox;
         newItem.temporal = itemMap.temporal;
         newItem.href = itemMap.href;
@@ -153,11 +149,6 @@ export default async function responseHandler(req: Request, res: Response): Prom
     delete fields.batch_count;
     delete fields.post_batch_step_count;
     logger.info(`Updating job ${job.id} with fields: ${JSON.stringify(fields)}`);
-
-    if (!query.error && query.argo?.toLowerCase() === 'true') {
-      // this is temporary until we decide how we want to use callbacks
-      job.succeed();
-    }
 
     updateJobFields(logger, job, fields);
     await job.save(trx);

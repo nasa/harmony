@@ -26,6 +26,26 @@ export interface CallbackQuery {
 }
 
 /**
+ *  Validate that an array is a valid bounding box, i.e., consists of four numbers
+ * @param bbox A bounding box
+ */
+export function validateBbox(bbox: number[]): void {
+  if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
+    throw new TypeError('Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North');
+  }
+}
+
+/**
+ * Validate that an array contains two valid date strings
+ * @param temporal An array containing two RFC-3339 strings (start and end datetime)
+ */
+export function validateTemporal(temporal: number[]): void {
+  if (temporal.length !== 2 || temporal.some(Number.isNaN)) {
+    throw new TypeError('Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End');
+  }
+}
+
+/**
  * Helper for updating a job, given a query string provided in a callback
  *
  * Note: parameter reassignment is allowed, since it's the purpose of this function.
@@ -47,16 +67,12 @@ export function updateJobFields(
       const link = _.pick(item, ['href', 'type', 'rel', 'title']) as JobLink;
       if (item.bbox) {
         const bbox = item.bbox.split(',').map(parseFloat);
-        if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
-          throw new TypeError('Unrecognized bounding box format.  Must be 4 comma-separated floats as West,South,East,North');
-        }
+        validateBbox(bbox);
         link.bbox = bbox;
       }
       if (item.temporal) {
         const temporal = item.temporal.split(',').map((t) => Date.parse(t));
-        if (temporal.length !== 2 || temporal.some(Number.isNaN)) {
-          throw new TypeError('Unrecognized temporal format.  Must be 2 RFC-3339 dates with optional fractional seconds as Start,End');
-        }
+        validateTemporal(temporal);
         const [start, end] = temporal.map((t) => new Date(t).toISOString());
         link.temporal = { start, end };
       }
