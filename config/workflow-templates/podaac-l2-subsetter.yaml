@@ -17,6 +17,10 @@ spec:
           - name: STAGING_BUCKET
           - name: TEXT_LOGGER
           - name: BACKEND_HOST
+          - name: URS_URL
+          - name: EDL_CLIENT_ID
+          - name: EDL_REDIRECT_URI
+          - name: FALLBACK_AUTHN_ENABLED
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "{{inputs.parameters.image}}"
@@ -54,3 +58,11 @@ spec:
             value: "{{inputs.parameters.TEXT_LOGGER}}"
           - name: BACKEND_HOST
             value: "{{inputs.parameters.BACKEND_HOST}}"
+          - name: URS_URL
+            value: "{{inputs.parameters.URS_URL}}"
+          - name: EDL_CLIENT_ID
+            value: "{{inputs.parameters.EDL_CLIENT_ID}}"
+          - name: EDL_REDIRECT_URI
+            value: "{{inputs.parameters.EDL_REDIRECT_URI}}"
+          - name: FALLBACK_AUTHN_ENABLED
+            value: "{{inputs.parameters.FALLBACK_AUTHN_ENABLED}}"

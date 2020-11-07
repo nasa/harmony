@@ -172,6 +172,37 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/gif
       reprojection: true
 
+  - name: harmony/starter-pack
+    data_operation_version: '0.9.0'
+    type:
+      name: argo
+      params:
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        template: podaac-l2-subsetter
+        image: harmony/starter-pack:latest
+        imagePullPolicy: 'Never'
+        parallelism: 1
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/podaac/l2-subsetter
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      - C1234208436-POCLOUD
+    maximum_async_granules: 2000
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+
   - name: podaac/l2-subsetter
     data_operation_version: '0.9.0'
     type:
