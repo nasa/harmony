@@ -23,6 +23,7 @@ interface ArgoCallbackQuery {
   redirect?: string;
   status?: string;
   progress?: string;
+  batchesCompleted?: string;
   batch_count?: string;
   batch_completed?: string;
   post_batch_step_count?: string;
@@ -44,7 +45,7 @@ function updateJobFields(
   job: Job,
   query: ArgoCallbackQuery,
 ): void { /* eslint-disable no-param-reassign */
-  const { error, items, status, redirect, progress } = query;
+  const { error, items, status, redirect, progress, batchesCompleted } = query;
   try {
     if (items && items.length > 0) {
       items.forEach((item, _index) => {
@@ -69,6 +70,10 @@ function updateJobFields(
         throw new TypeError('Job record is invalid: ["Job progress must be between 0 and 100"]');
       }
       job.progress = parseInt(progress, 10);
+    }
+
+    if (batchesCompleted) {
+      job.batchesCompleted = parseInt(batchesCompleted, 10);
     }
 
     if (error) {
@@ -120,9 +125,8 @@ export default async function responseHandler(req: Request, res: Response): Prom
 
     // progress update
     if (body?.batch_completed?.toLowerCase() === 'true') {
-      const currentProgress = job.progress || 0;
       const batchCount = parseInt(body.batch_count, 10);
-      const batchProgress = (currentProgress / 100.0) * batchCount + 1;
+      const batchProgress = job.batchesCompleted + 1;
       const postBatchStepCount = parseInt(body.post_batch_step_count, 10) || 0;
       // always hold back 1% to reserve time for the exit handler
       let progress = Math.min(100 * (batchProgress / (batchCount + postBatchStepCount)), 99);
@@ -131,6 +135,7 @@ export default async function responseHandler(req: Request, res: Response): Prom
       // progress must be an integer
       progress = Math.floor(progress);
       query.progress = `${progress}`;
+      query.batchesCompleted = `${batchProgress}`;
     }
 
     // add links if provided

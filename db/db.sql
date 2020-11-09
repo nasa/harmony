@@ -6,6 +6,7 @@ CREATE TABLE `jobs` (
   `status` text check (`status` in ('accepted', 'running', 'successful', 'failed', 'canceled')) not null,
   `message` varchar(255) not null,
   `progress` integer not null,
+  `batchesCompleted` integer not null,
   `_json_links` json not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
