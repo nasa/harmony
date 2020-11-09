@@ -1,14 +1,22 @@
 import time
 from locust import HttpUser, task, tag, between
+import requests
 
+session_cookies = None
 
 class BaseHarmonyUser(HttpUser):
     abstract = True
-    wait_time = between(1, 2)
+    wait_time = between(5, 20)
     coverages_root = '/{collection}/ogc-api-coverages/1.0.0/collections/{variable}/coverage/rangeset'
 
     def on_start(self):
+        global session_cookies
         self.client.trust_env = True
+        if session_cookies is None:
+            self.client.get('/cloud-access', name='cloud access')
+            session_cookies = self.client.cookies
+        else:
+            self.client.cookies = session_cookies
 
     @tag('cloud-access')
     @task
