@@ -68,7 +68,6 @@ spec:
           # LINKS_JSON="${LINKS_JSON} \n"
           done
           LINKS_JSON="${LINKS_JSON}]"
-          echo "${LINKS_JSON}"
           curl -XPOST \
           --data-urlencode "batch_completed=true" \
           --data-urlencode "batch_count={{inputs.parameters.batch-count}}" \
