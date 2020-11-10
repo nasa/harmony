@@ -56,6 +56,7 @@ export interface JobRecord {
   status?: JobStatus;
   message?: string;
   progress?: number;
+  batchesCompleted?: number;
   _json_links?: string | JobLink[];
   links?: string | JobLink[];
   request: string;
@@ -71,6 +72,7 @@ export interface JobQuery {
   status?: JobStatus;
   message?: string;
   progress?: number;
+  batchesCompleted?: number;
   request?: string;
   isAsync?: boolean;
   createdAt?: number;
@@ -110,6 +112,8 @@ export class Job extends Record {
   requestId: string;
 
   progress: number;
+
+  batchesCompleted: number;
 
   request: string;
 
@@ -243,6 +247,7 @@ export class Job extends Record {
     this.request = fields.request && truncateString(fields.request, 4096);
     this.updateStatus(fields.status || JobStatus.ACCEPTED, fields.message);
     this.progress = fields.progress || 0;
+    this.batchesCompleted = fields.batchesCompleted || 0;
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     this.links = fields.links
       || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : fields._json_links)
@@ -263,6 +268,9 @@ export class Job extends Record {
     const errors = [];
     if (this.progress < 0 || this.progress > 100) {
       errors.push('Job progress must be between 0 and 100');
+    }
+    if (this.batchesCompleted < 0) {
+      errors.push('Job batchesCompleted must be greater than or equal to 0');
     }
     if (!this.request.match(/^https?:\/\/.+$/)) {
       errors.push(`Invalid request ${this.request}. Job request must be a URL.`);
@@ -422,6 +430,7 @@ export class Job extends Record {
     }
     const job = new Job(serializedJob as JobRecord); // We need to clean this up
     delete job.originalStatus;
+    delete job.batchesCompleted;
     return job;
   }
 

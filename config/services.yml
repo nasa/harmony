@@ -333,6 +333,45 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
       reprojection: true
 
+   # This is an example service using a result handler
+  - name: harmony/result-handler-example
+    data_operation_version: '0.9.0'
+    batch_size: 2
+    type:
+      name: argo
+      params:
+        image: harmony/query-cmr:latest
+        template: test-chain-with-result-handler
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        image_pull_policy: Never
+        parallelism: !Env ${SWOT_REPR_PARALLELISM}
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          AWS_DEFAULT_REGION: us-west-2
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          STAGING_BUCKET: !Env ${STAGING_BUCKET}
+          STAGING_PATH: public/sds/swot-reproject
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          BACKEND_HOST: !Env ${BACKEND_HOST}
+    collections:
+      # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
+      # Good example, being in UAT, global, many public non-global granules,
+      # and not yet on the services roadmap.
+      - C1096-PVC_TS2
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: false
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+      reprojection: true
+
   # PO.DAAC Shapefiles
   - name: podaac/ps3
     data_operation_version: '0.9.0'
