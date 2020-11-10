@@ -2,11 +2,9 @@ import _ from 'lodash';
 import * as dotenv from 'dotenv';
 import * as winston from 'winston';
 
-console.log(process.env);
 if (dotenv.config().error) {
   winston.warn('Did not read a .env file');
 }
-console.log(process.env);
 
 interface HarmonyEnv {
   logLevel: string;
@@ -41,10 +39,6 @@ interface HarmonyEnv {
   defaultArgoPodTimeoutSecs: number;
   builtInTaskPrefix: string;
   builtInTaskVersion: string;
-  ursUrl: string;
-  edlClientId: string;
-  edlRedirectUri: string;
-  fallbackAuthnEnabled: boolean;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -64,8 +58,6 @@ const envVars: HarmonyEnv = {} as HarmonyEnv;
 function makeConfigVar(envName: string, defaultValue?: string | number): void {
   const envValue = process.env[envName];
   let value;
-
-  console.log(envName, defaultValue, envValue);
 
   if (!envValue) {
     value = defaultValue;
@@ -110,9 +102,6 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['DEFAULT_ARGO_POD_TIMEOUT_SECS', 14400],
   ['BUILT_IN_TASK_PREFIX', ''],
   ['BUILT_IN_TASK_VERSION', 'latest'],
-  ['URS_URL', 'https://uat.urs.earthdata.nasa.gov'],
-  ['EDL_CLIENT_ID', null],
-  ['EDL_REDIRECT_URI', 'http://localhost:3000/oauth2/redirect'],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases
@@ -121,6 +110,5 @@ envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.isDevelopment = process.env.NODE_ENV === 'development';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
 envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
-envVars.fallbackAuthnEnabled = process.env.FALLBACK_AUTHN_ENABLED === 'true';
 
 export = envVars;
