@@ -219,15 +219,6 @@ STAGING_BUCKET=local-staging-bucket
 # Default: A bucket created for use in localstack
 ARTIFACT_BUCKET=local-artifact-bucket
 
-# When using data that cannot accept Earthdata Login tokens from Harmony,
-# either because of application group setup or because they use a different
-# Earthdata Login endpoint (e.g. Data needs production while Harmony and
-# CMR need UAT), these provide a minimally-privileged user login for
-# fetching remote data behind Earthdata Login.   This user should exist in
-# all environments being used to fetch data
-EDL_USERNAME=
-EDL_PASSWORD=
-
 # Random string used for encrypting and decrypting Earthdata login tokens
 # sent to backend services
 # `cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
@@ -252,22 +243,39 @@ BACKEND_HOST=host.docker.internal
 # https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application #
 #############################################################################
 
-# The application client ID of your registered Earthdata Login application
+# Variable            Description                 Example
+#--------------------------------------------------------------------------------------
+# OAUTH_CLIENT_ID     EDL App Client ID           rCjHBluumLhppiIX5iZxoQ
+# OAUTH_UID           EDL App UID                 harmony_kbeam
+# OAUTH_PASSWORD      EDL App Password            top_secret
+# OAUTH_REDIRECT_URI  Valid EDL App Redirect URL  http://localhost:3000/oauth2/redirect
+# OAUTH_HOST          Earthdata Login URL         https://uat.urs.earthdata.nasa.gov
+
+# Notes:
+# The OAUTH_REDIRECT_URI needs to be provided verbatim when setting up the
+# Earthdata Login app. Each EDL app has a list of valid Redirect URLs, and
+# Harmony requires a URI endpoint of "/oauth2/redirect" for all environments.
+# When running Harmony locally, for example, add a Redirect URL of
+# `http://localhost:3000/oauth2/redirect`. Use HTTPS for non-local instances.
+#
+# The OAUTH_HOST is used by the Harmony API as well as Harmony services.
+# This should be the same EDL environment as used by backend data sources.
+# For example, if OAUTH_HOST points to UAT EDL, downloading data from a
+# TEA endpoint that's integrated with PROD EDL will fail.
+
 OAUTH_CLIENT_ID=
-
-# The application password set when creating the Earthdata Login
-# application
+OAUTH_UID=
 OAUTH_PASSWORD=
-
-# The URI that Earthdata Login will redirect to for token validation, which
-# needs to be provided verbatim when setting up the Earthdata Login app.
-# Leave "/oauth2/redirect" intact for all apps using Harmony.  Be sure to
-# use HTTPS for non-local instances.
 OAUTH_REDIRECT_URI=http://localhost:3000/oauth2/redirect
-
-# The OAuth2 endpoint used to authenticate users into Harmony.  CMR and
-# backend services must use the same endpoint to get full integration
 OAUTH_HOST=https://uat.urs.earthdata.nasa.gov
+
+# CAUTION: This fallback authentication switch should normally be disabled.
+# Enabling this could result in skewed metrics since downloads will
+# appear to be done by Harmony--not the actual end-user--if the fallback
+# authentication is used (e.g., a backend data source doesn't yet support
+# EDL federated tokens).
+
+FALLBACK_AUTHN_ENABLED=False
 
 ###########################################################################
 #                               Test Suite                                #
