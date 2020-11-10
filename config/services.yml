@@ -147,7 +147,7 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         template: harmony-gdal
         image: !Env ${GDAL_IMAGE}
-        image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
+        image_pull_policy: 'Never'
         parallelism: !Env ${GDAL_PARALLELISM}
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
@@ -158,7 +158,12 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/gdal
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
+          EDL_ROOT_URL: !Env ${EDL_ROOT_URL}
+          EDL_CLIENT_ID: !Env ${EDL_CLIENT_ID}
+          EDL_REDIRECT_URI: !Env ${EDL_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
+      - C1234208436-POCLOUD
       - C1233800302-EEDTEST
       - C1234088182-EEDTEST
     capabilities:
@@ -192,6 +197,10 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/l2-subsetter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
+          EDL_ROOT_URL: !Env ${EDL_ROOT_URL}
+          EDL_CLIENT_ID: !Env ${EDL_CLIENT_ID}
+          EDL_REDIRECT_URI: !Env ${EDL_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       - C1234208436-POCLOUD
     maximum_async_granules: 2000
