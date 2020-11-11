@@ -42,12 +42,12 @@ spec:
           - name: OAUTH_UID
             valueFrom:
               secretKeyRef:
-                name: argo-edl-credentials
+                name: argo-oauth-credentials
                 key: username
           - name: OAUTH_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: argo-edl-credentials
+                name: argo-oauth-credentials
                 key: password
           - name: EDL_USERNAME
             valueFrom:

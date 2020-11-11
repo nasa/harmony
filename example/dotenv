@@ -269,13 +269,33 @@ OAUTH_PASSWORD=
 OAUTH_REDIRECT_URI=http://localhost:3000/oauth2/redirect
 OAUTH_HOST=https://uat.urs.earthdata.nasa.gov
 
-# CAUTION: This fallback authentication switch should normally be disabled.
-# Enabling this could result in skewed metrics since downloads will
-# appear to be done by Harmony--not the actual end-user--if the fallback
-# authentication is used (e.g., a backend data source doesn't yet support
-# EDL federated tokens).
+###########################################################################
+#                        Fallback Authentication                          #
+###########################################################################
+
+# When using data that cannot accept Earthdata Login tokens from
+# Harmony, either because of application group setup or because they
+# use a different Earthdata Login endpoint (e.g. Data needs production
+# while Harmony and CMR need UAT), these provide a
+# minimally-privileged EDL user login for fetching remote data behind
+# Earthdata Login. This user should exist in all environments being
+# used to fetch data.
+
+# CAUTION: This fallback authentication switch should normally be
+# disabled.
+
+# CAUTION: This EDL user should *not* have accepted any EDL
+# application EULAs. Doing so can result in users getting data for
+# which they have not personally accepted the EULA.
+
+# CAUTION: Enabling this could result in skewed metrics since
+# downloads will appear to be done by Harmony--not the actual
+# end-user--if the fallback authentication is used (e.g., a backend
+# data source doesn't yet support EDL federated tokens).
 
 FALLBACK_AUTHN_ENABLED=False
+EDL_USERNAME=
+EDL_PASSWORD=
 
 ###########################################################################
 #                               Test Suite                                #

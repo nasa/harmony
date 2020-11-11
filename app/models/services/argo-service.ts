@@ -68,13 +68,10 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
   async _run(logger: Logger): Promise<InvocationResult> {
     const url = `${this.params.argo_url}/api/v1/workflows/${this.params.namespace}`;
 
-    const dockerEnv = [];
-    for (const variable of Object.keys(this.params.env)) {
-      // do not send OAUTH credentials
-      if (variable !== 'OAUTH_UID' && variable !== 'OAUTH_PASSWORD') {
-        dockerEnv.push({ name: variable, value: this.params.env[variable] });
-      }
-    }
+    const goodVars = _.reject(Object.keys(this.params.env),
+      (variable) => _.includes(['OAUTH_UID', 'OAUTH_PASSWORD', 'EDL_USERNAME', 'EDL_PASSWORD'], variable));
+    const dockerEnv = _.map(goodVars,
+      (variable) => ({ name: variable, value: this.params.env[variable] }));
 
     // similarly we need to get at the model for the operation to retrieve parameters needed to
     // construct the workflow

@@ -96,6 +96,17 @@ metadata:
   name: argo-edl-credentials
 type: Opaque
 data:
+  username: $(echo -n "${EDL_USERNAME}" | base64)
+  password: $(echo -n "${EDL_PASSWORD}" | base64)
+EOF
+
+cat <<EOF | kubectl -n argo apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argo-oauth-credentials
+type: Opaque
+data:
   username: $(echo -n "${OAUTH_UID}" | base64)
   password: $(echo -n "${OAUTH_PASSWORD}" | base64)
 EOF
@@ -112,8 +123,8 @@ EOF
 
 kubectl apply -n argo -f ./config/local-argo-deployment.yml
 
-
-[[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
+# [[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
+s3_endpoint="10.108.69.193:4572"
 
 # In deployed environments, we also want "useSDKCreds: true" in the s3 block
 kubectl -n argo patch \
