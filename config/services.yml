@@ -167,7 +167,6 @@ https://cmr.uat.earthdata.nasa.gov:
           OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
           FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
-      - C1234208436-POCLOUD
       - C1233800302-EEDTEST
       - C1234088182-EEDTEST
     capabilities:
@@ -180,41 +179,6 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/png
         - image/gif
       reprojection: true
-
-  - name: harmony/starter-pack
-    data_operation_version: '0.9.0'
-    type:
-      name: argo
-      params:
-        argo_url: !Env ${ARGO_URL}
-        namespace: argo
-        template: podaac-l2-subsetter
-        image: harmony/starter-pack:latest
-        imagePullPolicy: 'Never'
-        parallelism: 1
-        env:
-          AWS_DEFAULT_REGION: us-west-2
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-          OAUTH_UID: !Env ${OAUTH_UID}
-          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
-          STAGING_BUCKET: !Env ${STAGING_BUCKET}
-          STAGING_PATH: public/podaac/l2-subsetter
-          TEXT_LOGGER: !Env ${TEXT_LOGGER}
-          BACKEND_HOST: !Env ${BACKEND_HOST}
-          OAUTH_HOST: !Env ${OAUTH_HOST}
-          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
-          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
-          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
-    collections:
-      - C1234208436-POCLOUD
-    maximum_async_granules: 2000
-    capabilities:
-      subsetting:
-        bbox: true
-        variable: true
-      output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
 
   - name: podaac/l2-subsetter
     data_operation_version: '0.9.0'
