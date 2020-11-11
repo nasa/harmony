@@ -340,14 +340,6 @@ https://cmr.uat.earthdata.nasa.gov:
           LOCALSTACK_HOST: !Env ${BACKEND_HOST}
           AWS_DEFAULT_REGION: us-west-2
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
-          OAUTH_HOST: !Env ${OAUTH_HOST}
-          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
-          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
-          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
-          OAUTH_HOST: !Env ${OAUTH_HOST}
-          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
-          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
-          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
       # Good example, being in UAT, global, many public non-global granules,
