@@ -1,4 +1,7 @@
 import { Response } from 'express';
+import { defaultContainerRegistry, ECR } from 'util/container-registry';
+import { Logger } from 'winston';
+import { toISODateTime } from 'util/date';
 import { getServiceConfigs } from '../models/services';
 import { ServiceConfig } from '../models/services/base-service';
 import HarmonyRequest from '../models/harmony-request';
@@ -9,7 +12,9 @@ interface ServiceVersion {
   name: string;
   image: string;
   tag: string;
-  image_pull_policy: string;
+  imagePullPolicy: string;
+  imageDigest?: string;
+  lastUpdated?: string;
 }
 
 /**
@@ -26,22 +31,47 @@ function sanitizeImage(image: string): string {
 }
 
 /**
+ * Returns true if the image repository for the given image is ECR
+ *
+ * @param image the full image string
+ * @returns true if the image is in ECR and false otherwise
+ */
+function inECR(image: string): boolean {
+  return /.*amazonaws.com\//.test(image);
+}
+
+/**
  * Returns an object with only the fields desired to display on the /versions endpoint.
+ * For ECR images also display the digest and last updated time.
+ *
  * @param service The service whose version information is being displayed
  * @return The version information for the service
  */
-function getServiceForDisplay(service: ServiceConfig<ArgoServiceParams>): ServiceVersion {
+async function getServiceForDisplay(
+  service: ServiceConfig<ArgoServiceParams>, ecr: ECR, logger: Logger,
+): Promise<ServiceVersion> {
   const { image } = service.type.params;
   const imagePullPolicy = service.type.params.image_pull_policy || env.defaultImagePullPolicy;
   const tagSeparatorIndex = image.lastIndexOf(':');
   const imageName = sanitizeImage(image.substring(0, tagSeparatorIndex));
   const imageTag = image.substring(tagSeparatorIndex + 1, image.length);
-  return {
+  const serviceInfo: ServiceVersion = {
     name: service.name,
     image: imageName,
     tag: imageTag,
-    image_pull_policy: imagePullPolicy,
+    imagePullPolicy,
   };
+  if (inECR(image)) {
+    try {
+      const { lastUpdated, imageDigest } = await ecr.describeImage(imageName, imageTag);
+      serviceInfo.lastUpdated = toISODateTime(lastUpdated);
+      serviceInfo.imageDigest = imageDigest;
+    } catch (e) {
+      logger.warn('Failed to retrieve image information from ECR');
+      logger.warn(e);
+    }
+  }
+  return serviceInfo;
 }
 
 /**
@@ -53,9 +83,11 @@ function getServiceForDisplay(service: ServiceConfig<ArgoServiceParams>): Servic
  * @param res The response to send to the client
  * @returns {void}
  */
-export default function getVersions(req: HarmonyRequest, res: Response): void {
-  const argoServices = getServiceConfigs()
+export default async function getVersions(req: HarmonyRequest, res: Response): Promise<void> {
+  const ecr = defaultContainerRegistry();
+  const logger = req.context.logger.child({ component: 'versions.getVersions' });
+  const argoServices = await Promise.all((getServiceConfigs() as ServiceConfig<ArgoServiceParams>[])
     .filter((s) => s.type.name === 'argo')
-    .map(getServiceForDisplay);
+    .map((service) => getServiceForDisplay(service, ecr, logger)));
   res.json(argoServices);
 }
