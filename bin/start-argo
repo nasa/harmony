@@ -123,6 +123,7 @@ EOF
 
 kubectl apply -n argo -f ./config/local-argo-deployment.yml
 
+
 [[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
 
 # In deployed environments, we also want "useSDKCreds: true" in the s3 block
