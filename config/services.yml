@@ -16,8 +16,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          OAUTH_UID: !Env ${OAUTH_UID}
-          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/asfdataservices/gdal-subsetter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
@@ -51,8 +51,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          OAUTH_UID: !Env ${OAUTH_UID}
-          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/harmony/gdal
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
@@ -83,8 +83,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          OAUTH_UID: !Env ${OAUTH_UID}
-          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
+          EDL_USERNAME: !Env ${EDL_USERNAME}
+          EDL_PASSWORD: !Env ${EDL_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/podaac/l2-subsetter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
