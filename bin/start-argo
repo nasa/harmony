@@ -96,8 +96,8 @@ metadata:
   name: argo-edl-credentials
 type: Opaque
 data:
-  username: $(echo -n "${EDL_USERNAME}" | base64)
-  password: $(echo -n "${EDL_PASSWORD}" | base64)
+  username: $(echo -n "${OAUTH_UID}" | base64)
+  password: $(echo -n "${OAUTH_PASSWORD}" | base64)
 EOF
 
 cat <<EOF | kubectl -n argo apply -f -

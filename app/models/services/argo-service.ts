@@ -70,8 +70,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
 
     const dockerEnv = [];
     for (const variable of Object.keys(this.params.env)) {
-      // do not send EDL credentials
-      if (variable !== 'EDL_USERNAME' && variable !== 'EDL_PASSWORD') {
+      // do not send OAUTH credentials
+      if (variable !== 'OAUTH_UID' && variable !== 'OAUTH_PASSWORD') {
         dockerEnv.push({ name: variable, value: this.params.env[variable] });
       }
     }

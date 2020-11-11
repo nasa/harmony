@@ -17,6 +17,10 @@ spec:
           - name: STAGING_BUCKET
           - name: TEXT_LOGGER
           - name: BACKEND_HOST
+          - name: OAUTH_HOST
+          - name: OAUTH_CLIENT_ID
+          - name: OAUTH_REDIRECT_URI
+          - name: FALLBACK_AUTHN_ENABLED
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "{{inputs.parameters.image}}"
@@ -36,6 +40,16 @@ spec:
             value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
           - name: USE_LOCALSTACK
             value: "{{inputs.parameters.USE_LOCALSTACK}}"
+          - name: OAUTH_UID
+            valueFrom:
+              secretKeyRef:
+                name: argo-edl-credentials
+                key: username
+          - name: OAUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: argo-edl-credentials
+                key: password
           - name: EDL_USERNAME
             valueFrom:
               secretKeyRef:
@@ -57,3 +71,11 @@ spec:
             value: "{{inputs.parameters.TEXT_LOGGER}}"
           - name: BACKEND_HOST
             value: "{{inputs.parameters.BACKEND_HOST}}"
+          - name: OAUTH_HOST
+            value: "{{inputs.parameters.OAUTH_HOST}}"
+          - name: OAUTH_CLIENT_ID
+            value: "{{inputs.parameters.OAUTH_CLIENT_ID}}"
+          - name: OAUTH_REDIRECT_URI
+            value: "{{inputs.parameters.OAUTH_REDIRECT_URI}}"
+          - name: FALLBACK_AUTHN_ENABLED
+            value: "{{inputs.parameters.FALLBACK_AUTHN_ENABLED}}"

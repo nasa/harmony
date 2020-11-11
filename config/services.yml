@@ -16,8 +16,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/asfdataservices/gdal-subsetter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
@@ -51,8 +51,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/harmony/gdal
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
@@ -83,8 +83,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/podaac/l2-subsetter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
@@ -115,14 +115,18 @@ https://cmr.uat.earthdata.nasa.gov:
         image_pull_policy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
         parallelism: !Env ${ASF_GDAL_PARALLELISM}
         env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/asfdataservices/gdal-subsetter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       - C1225776654-ASF
       - C1207038647-ASF
@@ -150,17 +154,17 @@ https://cmr.uat.earthdata.nasa.gov:
         image_pull_policy: 'Never'
         parallelism: !Env ${GDAL_PARALLELISM}
         env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/harmony/gdal
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
-          EDL_ROOT_URL: !Env ${EDL_ROOT_URL}
-          EDL_CLIENT_ID: !Env ${EDL_CLIENT_ID}
-          EDL_REDIRECT_URI: !Env ${EDL_REDIRECT_URI}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
           FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       - C1234208436-POCLOUD
@@ -189,17 +193,17 @@ https://cmr.uat.earthdata.nasa.gov:
         imagePullPolicy: 'Never'
         parallelism: 1
         env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/podaac/l2-subsetter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
-          EDL_ROOT_URL: !Env ${EDL_ROOT_URL}
-          EDL_CLIENT_ID: !Env ${EDL_CLIENT_ID}
-          EDL_REDIRECT_URI: !Env ${EDL_REDIRECT_URI}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
           FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       - C1234208436-POCLOUD
@@ -224,14 +228,18 @@ https://cmr.uat.earthdata.nasa.gov:
         image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
         env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/podaac/l2-subsetter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       - C1234208436-POCLOUD
       - C1234208437-POCLOUD
@@ -260,14 +268,18 @@ https://cmr.uat.earthdata.nasa.gov:
         image_pull_policy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
         parallelism: !Env ${SWOT_REPR_PARALLELISM}
         env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/sds/swot-reproject
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       - C1233860183-EEDTEST
       - C1233800302-EEDTEST
@@ -300,14 +312,18 @@ https://cmr.uat.earthdata.nasa.gov:
         image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
         env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/sds/variable-subsetter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     data_url_pattern: 'opendap' # look for the string literal "opendap" in the data URL
     collections:
       - C1234714691-EEDTEST  # ATL03
@@ -360,6 +376,14 @@ https://cmr.uat.earthdata.nasa.gov:
           LOCALSTACK_HOST: !Env ${BACKEND_HOST}
           AWS_DEFAULT_REGION: us-west-2
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
       # Good example, being in UAT, global, many public non-global granules,
@@ -388,12 +412,16 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/podaac/ps3
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       - C1234530532-EEDTEST
       - C1234530533-EEDTEST
@@ -419,12 +447,16 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/podaac/netcdf-converter
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       - C1234410736-POCLOUD
     maximum_sync_granules: 0
@@ -449,12 +481,16 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
+          OAUTH_UID: !Env ${OAUTH_UID}
+          OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
           STAGING_BUCKET: !Env ${STAGING_BUCKET}
           STAGING_PATH: public/harmony/gdal
           TEXT_LOGGER: !Env ${TEXT_LOGGER}
           BACKEND_HOST: !Env ${BACKEND_HOST}
+          OAUTH_HOST: !Env ${OAUTH_HOST}
+          OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+          OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+          FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
     collections:
       - C1234088182-EEDTEST
       - C1233800302-EEDTEST
