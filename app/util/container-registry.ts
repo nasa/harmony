@@ -8,7 +8,7 @@ export interface ImageDetails {
 }
 
 export class ECR {
-  ecr: aws.ECR;
+  private ecr: aws.ECR;
 
   /**
    * Builds and returns an Elastic container registry object for interacting with the
@@ -20,7 +20,12 @@ export class ECR {
     this.ecr = this._getECR(overrides);
   }
 
-  _getECR(overrides?): aws.ECR {
+  /**
+   * Returns a new aws.ECR object
+   *
+   * @param overrides values to set when constructing the underlying ECR.
+   */
+  private _getECR(overrides?): aws.ECR {
     const endpointSettings: aws.ECR.ClientConfiguration = {};
     if (process.env.USE_LOCALSTACK === 'true') {
       aws.config.update({
