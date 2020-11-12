@@ -45,7 +45,7 @@ function inECR(image: string): boolean {
  * For ECR images also display the digest and last updated time.
  *
  * @param service The service whose version information is being displayed
- * @return The version information for the service
+ * @returns The version information for the service
  */
 async function getServiceForDisplay(
   service: ServiceConfig<ArgoServiceParams>, ecr: ECR, logger: Logger,
@@ -61,6 +61,7 @@ async function getServiceForDisplay(
     tag: imageTag,
     imagePullPolicy,
   };
+
   if (inECR(image)) {
     try {
       const { lastUpdated, imageDigest } = await ecr.describeImage(imageName, imageTag);
@@ -81,7 +82,6 @@ async function getServiceForDisplay(
  * the name of the image being used, and the tag.
  * @param req The request sent by the client
  * @param res The response to send to the client
- * @returns {void}
  */
 export default async function getVersions(req: HarmonyRequest, res: Response): Promise<void> {
   const ecr = defaultContainerRegistry();
