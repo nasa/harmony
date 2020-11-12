@@ -62,15 +62,14 @@ export default async function main(args: string[]): Promise<void> {
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
   await fs.mkdir(options.outputDir, { recursive: true });
-  const results = await queryGranules(
+  const catalog = await queryGranules(
     operation,
     options.query as string[],
-    options.outputDir,
     options.pageSize,
     options.maxPages,
   );
-  const filename = path.join(options.outputDir, 'index.json');
-  await fs.writeFile(filename, JSON.stringify(results), 'utf8');
+  const filename = path.join(options.outputDir, 'catalog.json');
+  await catalog.write(filename, true);
 }
 
 if (require.main === module) {

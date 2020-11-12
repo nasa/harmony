@@ -384,13 +384,13 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when the granule spatial metadata is defined by polygons instead of a bbox', function () {
     const query = {
-      granuleid: 'G1226018995-POCUMULUS',
+      granuleid: 'G1235282638-ASF',
       subset: ['lat(-45.75:45)', 'lon(-90:90)'],
     };
 
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+      hookRangesetRequest(version, 'C1225776654-ASF', 'all', { query });
 
       it('synchronously makes the request', function () {
         expect(this.service.operation.isSynchronous).to.equal(true);
@@ -425,7 +425,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       coordinate_system: 'CARTESIAN',
       summary: 'A summary',
       orbit_parameters: {},
-      id: 'C1225996408-POCUMULUS',
+      id: 'C1225776654-ASF',
       has_formats: true,
       original_format: 'UMM_JSON',
       archive_center: 'PO.DAAC',
@@ -453,11 +453,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         coordinate_system: 'CARTESIAN',
         day_night_flag: 'UNSPECIFIED',
         time_end: '2018-01-01T05:54:08.000Z',
-        id: 'G1226018995-POCUMULUS',
+        id: 'G1235282638-ASF',
         original_format: 'UMM_JSON',
         granule_size: '1.0242048E7',
         browse_flag: false,
-        collection_concept_id: 'C1225996408-POCUMULUS',
+        collection_concept_id: 'C1225776654-ASF',
         online_access_flag: true,
         links: [
           {
@@ -472,7 +472,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when the granule spatial metadata is defined by polygons instead of a bbox', function () {
     const query = {
-      granuleid: 'G1226018995-POCUMULUS',
+      granuleid: 'G1235282638-ASF',
     };
 
     const cmrResp = _.set(_.cloneDeep(cmrGranuleResp), ['granules', 0, 'polygons'], [['0 35 0 40 10 40 10 35 0 35']]);
@@ -480,7 +480,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
 
-      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+      hookRangesetRequest(version, 'C1225776654-ASF', 'all', { query });
 
       it('adds a bbox field to the granule', function () {
         const source = this.service.operation.sources[0];
@@ -491,14 +491,14 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when the granule spatial metadata is defined by lines instead of a bbox', function () {
     const query = {
-      granuleid: 'G1226018995-POCUMULUS',
+      granuleid: 'G1235282638-ASF',
     };
 
     const cmrResp = _.set(_.cloneDeep(cmrGranuleResp), ['granules', 0, 'lines'], ['0 35 10 50']);
     hookCmr('queryGranulesForCollection', cmrResp);
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+      hookRangesetRequest(version, 'C1225776654-ASF', 'all', { query });
 
       it('adds a bbox field to the granule', function () {
         const source = this.service.operation.sources[0];
@@ -509,7 +509,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when the granule spatial metadata is defined by points instead of a bbox', function () {
     const query = {
-      granuleid: 'G1226018995-POCUMULUS',
+      granuleid: 'G1235282638-ASF',
     };
 
     const cmrResp = _.set(_.cloneDeep(cmrGranuleResp), ['granules', 0, 'points'], ['0, 35']);
@@ -517,7 +517,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('queryGranulesForCollection', cmrResp);
-      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+      hookRangesetRequest(version, 'C1225776654-ASF', 'all', { query });
 
       it('adds a bbox field to the granule', function () {
         const source = this.service.operation.sources[0];
@@ -528,7 +528,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when the granule spatial metadata does not exist', function () {
     const query = {
-      granuleid: 'G1226018995-POCUMULUS',
+      granuleid: 'G1235282638-ASF',
     };
 
     describe('calling the backend service', function () {
@@ -537,7 +537,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       hookCmr('getCollectionsByIds', cmrCollSpatialResp);
       hookCmr('queryGranulesForCollection', cmrGranuleResp);
-      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+      hookRangesetRequest(version, 'C1225776654-ASF', 'all', { query });
       describe('and the collection has spatial metadata', function () {
         it('uses the collection spatial', function () {
           const source = this.service.operation.sources[0];
@@ -549,14 +549,14 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when the granule spatial metadata does not exist', function () {
     const query = {
-      granuleid: 'G1226018995-POCUMULUS',
+      granuleid: 'G1235282638-ASF',
     };
 
     describe('calling the backend service', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookCmr('getCollectionsByIds', cmrCollResp);
       hookCmr('queryGranulesForCollection', cmrGranuleResp);
-      hookRangesetRequest(version, 'C1225996408-POCUMULUS', 'all', { query });
+      hookRangesetRequest(version, 'C1225776654-ASF', 'all', { query });
       describe('and the collection has no spatial metadata', function () {
         it('uses a whole world bounding box', function () {
           const source = this.service.operation.sources[0];

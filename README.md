@@ -8,7 +8,41 @@ Harmony has two fundamental goals in life:
 
 For general project information, visit the [Harmony wiki](https://wiki.earthdata.nasa.gov/display/Harmony). Harmony discussion and collaboration occurs in the EOSDIS #harmony Slack channel.
 
+
+## Table of Contents
+
+1. [Development Prerequisites](#Development-Prerequisites)
+    1. [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement)
+    2. [Software Requirements](#Software-Requirements)
+2. [Running Harmony](#Running-Harmony)
+    1. [Set Up Environment Variables](#Set-Up-Environment-Variables)
+    2. [Run Tests](#Run-Tests)
+    3. [Set Up A Database](#Set-Up-A-Database)
+    4. [Set Up and Run Argo, Localstack](#Set-Up-and-Run-Argo,-Localstack)
+    5. [Add A Service Backend](#Add-A-Service-Backend)
+    6. [Run Harmony](#Run-Harmony)
+    7. [Connect A Client](#Connect-A-Client)
+3. [Local Development Of Workflows Using Visual Studio Code](#Local-Development-Of-Workflows-Using-Visual-Studio-Code)
+4. [Running in AWS](#Running-in-AWS)
+5. [Additional Resources](#Additional-Resources)
+
 ## Development Prerequisites
+
+For developing Harmony on Windows follow this document as well as the information in [docs/dev_container/README.md](docs/dev_container/README.md).
+
+### Earthdata Login Application Requirement
+
+To use Earthdata Login with a locally running Harmomy, you must first set up a new application in the Earthdata Login UAT environment using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  This is a four step process:
+
+1. Request and receive permission to be an Application Creator
+2. Create a local/dev Harmony Application in the EDL web interface
+3. Add the necessary Required Application Group
+4. Update .env with credentials
+
+You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS.  You will also need to add the "eosdis_enterprise" group to the list of required application groups in order for CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update `OAUTH_CLIENT_ID` and `OAUTH_PASSWORD` in .env with the information from your Earthdata Login application. Additional information including other OAUTH values to use when creating the application can be found in the example/dotenv file in this repository.
+
+
+### Software Requirements
 
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
@@ -21,6 +55,7 @@ Required:
 * [SQLite3 commandline](https://sqlite.org/index.html) - Used to create the local development and test databases. Install using your OS package manager, or [download precompiled binaries from SQLite](https://www.sqlite.org/download.html)
 * PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
 * Earthdata Login application in UAT (Details below in the 'Set up Earthdata Login application for your local Harmony instance' section)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
 
 
 Highly Recommended:
@@ -34,7 +69,7 @@ Optional:
 
 ## Running Harmony
 
-### Setup Environment
+### Set up Environment
 If you have not yet cloned the Harmony repository, run
 ```
 $ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony.git
@@ -62,7 +97,7 @@ $ npm install
 
 Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to run binaries from installed node modules.  If you choose not to do this, you will need to prefix node module calls with `npx`, e.g. `npx mocha` instead of just `mocha`
 
-### Set up environment variables
+### Set Up Environment Variables
 
 Copy the file [example/dotenv](example/dotenv) to a file named `.env` in the root project directory.  Follow the instructions in that file to populate any blank variables.  Variables that have values in the example can be kept as-is, as they provide good defaults for local development.  To check environment differences between the example and local, run:
 
@@ -71,9 +106,6 @@ $ git diff --no-index .env example/dotenv
 ```
 
 We recommend doing this any time you receive an example/dotenv update to ensure there are no new variables needed.
-
-### Set up Earthdata Login application for your local Harmony instance
-To use Earthdata Login with a locally running Harmomy, you must first set up a new application in the Earthdata Login UAT environment using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS.  You will also need to add the "echo" group to the list of required application groups in order for CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update your .env file with the information from your Earthdata Login application. Additional information including OAUTH values to use when creating the application can be found in the example/dotenv file in this repository.
 
 ### Run Tests
 
@@ -98,7 +130,7 @@ the `REPLAY` environment variable, as described in the
 
 To re-record everything, remove the fixtures directory and run the test suite. This should be done to cull the recordings when a code change makes many of them obsolete, when CMR adds response fields that Harmony needs to make use of, and periodically to ensure no impactful CMR changes or regressions.
 
-### Setup the Database
+### Set Up A Database
 
 To setup a sqlite3 database with the correct schema for local execution, run
 
@@ -118,13 +150,13 @@ database, you can create and/or migrate your database by setting `NODE_ENV=produ
 $ npx knex --cwd db migrate:latest
 ```
 
-### Run Kubernetes locally with Argo and Localstack
+### Set Up and Run Argo, Localstack
 
 Harmony uses [Argo Workflows](https://github.com/argoproj/argo) to manage job executions.  In development, we use [Localstack](https://github.com/localstack/localstack) to avoid allocating AWS resources.
 
 #### Prerequisites
 
-* Mac / Windows:
+* Mac:
   * Install [Docker Desktop] https://www.docker.com/products/docker-desktop. Docker Desktop comes bundled with Kubernetes and `kubectl`.
     If you encounter issues running `kubectl` commands, first make sure you are running the version bunedled with Docker Desktop.
   * Run Kubernetes in Docker Desktop by selecting Preferences -> Kubernetes -> Enable Kubernetes
@@ -183,7 +215,7 @@ minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
 
 This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
 
-### Add a backend
+### Add A Service Backend
 
 Clone the Harmony GDAL service repository into a peer directory of the main Harmony repo
 ```
@@ -216,7 +248,7 @@ In production, we use `$ npm run start` which does the same but does not add the
 
 You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend application receives requests from users, while the backend application receives callbacks from services.
 
-### Connect a client
+### Connect A Client
 
 You should now be able to view the outputs of performing a simple transformation request.  Harmony has its own test collection
 set up for sanity checking harmony with the harmony-gdal backend.  This will fetch a granule from that collection converted to GeoTIFF:
@@ -230,16 +262,17 @@ PNG from the test server.
 
 You can also use the Argo dashboard at http://localhost:2746 to visualize the workflows that were kicked off from your Harmony transformation requests.
 
-#### Local development of workflows using Visual Studio Code
+
+## Local Development Of Workflows Using Visual Studio Code
 
 This section describes a VS Code based approach to local development. The general ideas are, however, applicable to other editors.
 
 There are two components to local development. The first is mounting your local project directory to a pod in a workflow so that changes to your code are automatically picked up whenever you run the workflow. The second is attaching a debugger to code running in a pod container (unless you prefer the print-debug method, in which case you can use the logs).
 
-##### Prerequisites
+#### Prerequisites
 * [Visual Studio Code](https://code.visualstudio.com/) and the [Kubernetes plugin](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools)
 
-##### Mounting a local directory to a pod running in a workflow
+### Mounting a local directory to a pod running in a workflow
 
 This is accomplished in two steps. The first step is to mount a local directory to a node in your `kubernetes/minikube` cluster. On a mac using the `virtualbox` driver the `/Users` directory is automatically mounted as `/Uses` on the single node in `minikube`. On Linux using the `virtualbox`driver the `/home` directory is automatically mounted at `/hosthome`. Other options for mounting a local directory can be found [here](https://minikube.sigs.k8s.io/docs/handbook/mount/).
 
@@ -289,7 +322,7 @@ spec:
 
 Now the pod will be able to access local code directly in the `/test-mount` directory. Updates to code in the developers local project will immediately show up in workflows.
 
-##### Attaching a debugger to a running workflow
+### Attaching a debugger to a running workflow
 
 Argo Workflow steps run as kubernetes [jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/), which means that the containers that run them are short-lived. This complicates the process of attaching a debugger to them somewhat. In order to attach the debugger to code running in a container in a workflow you have to start the code in a manner that will pause the code on the first line when it runs and wait for a debugger to attach.
 
@@ -334,7 +367,7 @@ Open the plugin by clicking on the `kubernetes` icon in the left sidebar. Expend
 
 At this point the editor should open the file that is the starting point for your applications and it should be stopped on the first line of code to be run. You can then perform all the usual debugging operations such as stepping trough code and examining variables.
 
-### Setting up to run in AWS
+## Running in AWS
 
 Note: It is currently easiest to allow the CI/CD service to deploy the service remotely; it is deployed to the sandbox after each merge to `master`.
 As the deployment simply uploads the code, sets environment variables, kills the old server and runs `$ npm run start`, at present, there is not
@@ -347,12 +380,12 @@ it done manually.
 * Once per account, run `$ bin/account-setup` to create a service linked role for ECS.
 * Upload the harmony/gdal Docker image somewhere accessible to an EC2 deployment.  This should be done any time the image changes.  The easiest way is to create an ECR in your account and push the image there.  Running `$ bin/build-image && bin/push-image` from the harmony-gdal repository will perform this step..
 
-#### Stop here and set up CI/CD
+### Stop here and set up CI/CD
 
 Deploying the code should be done using the harmony-ci-cd project from Bamboo rather than manually.  Apart from that project and CI/CD setup,
 we do not yet have automation scripts for (re)deploying to AWS manually, as it is typically not needed during development.
 
-#### Deploy the code to AWS
+### Deploy the code to AWS
 
 Note: The harmony-ci-cd repository contains automation code to do the following, usable from Bamboo.  You may use it locally by setting all
 relevant environment variables in a `.env` file, running `$ bin/build-image` in the root directory of the harmony-ci-cd project, and then
@@ -387,3 +420,4 @@ $ npm run update-dev
 * [Harmony message schemas](app/schemas/data-operation)
 * [EOSS protocol OpenAPI Specification](app/schemas/eoss)
 * [Harmony GDAL service repository](https://git.earthdata.nasa.gov/projects/HARMONY/repos/harmony-gdal/browse)
+* [Linux Container-based development with Harmony](docs/dev_container/README.md) (n.b. Windows users)

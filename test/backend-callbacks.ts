@@ -1,71 +1,18 @@
 import { describe, it, beforeEach, afterEach, after } from 'mocha';
 import { expect } from 'chai';
 import request from 'supertest';
-import url from 'url';
 import Sinon, { SinonStub } from 'sinon';
 import { Job, JobStatus } from 'models/job';
 import { HTTPError } from 'superagent';
 import { truncateAll } from './helpers/db';
 import hookServersStartStop from './helpers/servers';
 import { rangesetRequest } from './helpers/ogc-api-coverages';
-import { getNextCallback } from '../example/http-backend';
 import { validGetMapQuery, wmsRequest } from './helpers/wms';
 import db from '../app/util/db';
 import { hookJobCreationEach } from './helpers/jobs';
 import { getObjectText } from './helpers/object-store';
 import { objectStoreForProtocol, S3ObjectStore } from '../app/util/object-store';
-
-/**
- * Adds before / after hooks calling the http backend service, awaiting the initial invocation,
- * and making sure the request completes in the after hook.  `this.userPromise` is a promise to
- * the HTTP response to the Harmony request made by `fn`.  `this.callback` is the callback URL
- * for the service request.
- * @param {() => Promise<Test>} fn A function that makes a Harmony request, returning a promise
- *   for its result
- * @returns {void}
- */
-function hookHttpBackendEach(fn): void {
-  beforeEach(async function () {
-    const callbackPromise = getNextCallback();
-    this.userPromise = fn.call(this);
-    this.userPromise.then(); // The supertest request won't get sent until `then` is called
-    const callbackRoot = await callbackPromise;
-    this.callback = `${new url.URL(callbackRoot).pathname}/response`;
-  });
-
-  afterEach(async function () {
-    // Both of these should succeed, but their sequence depends on async vs sync, so use Promise.all
-    await Promise.all([
-      this.userPromise,
-      request(this.backend).post(this.callback).query({ status: 'successful', argo: 'true' }),
-    ]);
-  });
-}
-
-/**
- * Adds a beforeEach hook to provide a callback and await its processing
- *
- * @param fn A function that takes a callback request and returns it augmented with any query
- *   params, post bodies, etc
- * @param finish True if the hook should wait for the user request to finish
- */
-function hookCallbackEach(fn: (req: request.Test) => request.Test, finish = false): void {
-  beforeEach(async function () {
-    this.callbackRes = await fn(request(this.backend).post(this.callback));
-    if (finish) {
-      this.userResp = await this.userPromise;
-    }
-  });
-}
-
-/**
- * Loads the job for the provided callback URL
- * @param callback - the callback URL for the job that needs to be loaded
- */
-async function loadJobForCallback(callback: string): Promise<Job> {
-  const requestId = callback.replace('/response', '').split('/').pop();
-  return Job.byRequestId(db, requestId);
-}
+import { hookCallbackEach, hookHttpBackendEach, loadJobForCallback } from './helpers/callbacks';
 
 describe('Backend Callbacks', function () {
   const collection = 'C1104-PVC_TS2';

@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import { Router, urlencoded } from 'express';
 import { responseHandler } from '../backends/service-response';
+import argoResponsehandler from '../backends/argo-response';
 
 /**
  * Creates and returns an Router instance that can receive callbacks from backend
@@ -10,5 +11,7 @@ import { responseHandler } from '../backends/service-response';
 export default function router(): Router {
   const result = Router();
   result.post('/:requestId/response', responseHandler);
+  result.use(urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+  result.post('/:requestId/argo-response', argoResponsehandler);
   return result;
 }

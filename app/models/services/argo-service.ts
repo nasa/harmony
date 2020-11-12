@@ -15,6 +15,7 @@ export interface ArgoServiceParams {
   image: string;
   image_pull_policy?: string;
   parallelism?: number;
+  postBatchStepCount?: number;
   env: { [key: string]: string };
 }
 
@@ -78,6 +79,9 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     const serializedOperation = this.serializeOperation();
     const operation = JSON.parse(serializedOperation);
 
+    // const resultHandlerScript =
+    // resultHandlerScriptTemplate.replace('{{inputs.parameters.batch-count}}', '{batch.length}');
+
     let params = [
       {
         name: 'callback',
@@ -94,6 +98,10 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       {
         name: 'timeout',
         value: `${env.defaultArgoPodTimeoutSecs}`, // Could use request specific value in the future
+      },
+      {
+        name: 'post-batch-step-count',
+        value: `${this.params.postBatchStepCount || 0}`,
       },
     ];
 
@@ -193,7 +201,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
               podSpecPatch: `{"activeDeadlineSeconds":${env.defaultArgoPodTimeoutSecs}}`,
               container: {
                 image: `${env.builtInTaskPrefix}harmony/query-cmr:${env.builtInTaskVersion}`,
-                imagePullPolicy: this.params.image_pull_policy,
+                imagePullPolicy: this.params.image_pull_policy || env.defaultImagePullPolicy,
                 args: [
                   '--harmony-input',
                   JSON.stringify(serializedOperation),
@@ -285,7 +293,11 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
                       template: this.params.template,
                     },
                     arguments: {
-                      parameters: [...params, { name: 'operation', value: '{{item}}' }],
+                      parameters: [
+                        ...params,
+                        { name: 'operation', value: '{{item}}' },
+                        { name: 'batch-count', value: `${ops.length}` },
+                      ],
                     },
                     withItems: ops,
                   },
