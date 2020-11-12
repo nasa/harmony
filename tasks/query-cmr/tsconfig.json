@@ -13,5 +13,6 @@
       "sourceMap": true,
       "outDir": "built"
   },
+  "typeRoots": [ "./node_modules/@types", "./app/stac" ],
   "include": [ "./app/**/*", "./test/**/*" ]
 }
