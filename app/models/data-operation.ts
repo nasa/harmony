@@ -38,6 +38,18 @@ function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
     {
+      version: '0.10.0',
+      schema: readSchema('0.10.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        if ('format.srs' in revertedModel) {
+          delete revertedModel.format.srs; // eslint-disable-line no-param-reassign
+        }
+
+        return revertedModel;
+      },
+    },
+    {
       version: '0.9.0',
       schema: readSchema('0.9.0'),
       down: (model): unknown => {
@@ -269,6 +281,28 @@ export default class DataOperation {
    */
   set crs(crs: string) {
     this.model.format.crs = crs;
+  }
+
+  /**
+   * Returns an object of SRS (CRS) transform information with keys proj4, wkt, and epsg (if
+   * available).
+   *
+   * @returns {Object} The CRS into which the data should be transformed
+   * @memberof DataOperation
+   */
+  get srs(): object {
+    return this.model.format.srs;
+  }
+
+  /**
+   * Sets the SRS (CRS) transform information. Should include keys proj4, wkt, and epsg.
+   *
+   * @param {Object} srs The new SRS value
+   * @returns {void}
+   * @memberof DataOperation
+   */
+  set srs(srs: object) {
+    this.model.format.srs = srs;
   }
 
   /**

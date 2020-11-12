@@ -48,7 +48,14 @@ export default function getCoverageRangeset(
   }
   if (query.outputcrs) {
     try {
-      operation.crs = SpatialReference.fromUserInput(query.outputcrs).toProj4();
+      const srs = SpatialReference.fromUserInput(query.outputcrs);
+      const epsg = /^[eE][pP][sS][gG]\:\d{4,5}$/.test(query.outputcrs) ? query.outputcrs : '';
+      operation.crs = srs.toProj4();
+      operation.srs = {
+        proj4: srs.toProj4(),
+        wkt: srs.toWKT(),
+        epsg: epsg
+      };
     } catch (e) {
       throw new RequestValidationError('query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.');
     }

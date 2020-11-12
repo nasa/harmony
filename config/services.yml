@@ -38,7 +38,7 @@ https://cmr.earthdata.nasa.gov:
       reprojection: true
 
   - name: harmony/gdal
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.10.0'
     type:
       name: argo
       params:
@@ -396,7 +396,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
 
   - name: harmony/netcdf-to-zarr
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.10.0'
     type:
       name: argo
       params:

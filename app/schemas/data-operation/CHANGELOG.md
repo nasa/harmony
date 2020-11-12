@@ -1,3 +1,7 @@
+## [0.10.0] - UNMERGED
+### Added
+- DataOperation.srs - An object with keys 'proj4', 'wkt', and 'epsg'. 'epsg' may be an empty string if unknown.
+
 ## [0.9.0] - UNMERGED
 ### Added
 - DataOperation.accessToken - The EarthData Login token of the user who is making the request.

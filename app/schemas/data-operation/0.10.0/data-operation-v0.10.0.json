@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.9.0.json",
+  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.10.0.json",
   "$ref": "#/definitions/DataOperation",
   "definitions": {
     "DataOperation": {
@@ -103,6 +103,35 @@
           "examples": [
             "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
           ]
+        },
+        "srs": {
+          "type": "object",
+          "description": "SRS / CRS information for requested output projection",
+          "additionalProperties": false,
+          "properties": {
+            "proj4": {
+              "type": "string",
+              "description": "The requested output projection in Proj4",
+              "examples": [
+                "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+              ]
+            },
+            "wkt": {
+              "type": "string",
+              "description": "The requested output projection in WKT",
+              "examples": [
+                "PROJCS[\"NAD83 / California zone 6 (ftUS)\",GEOGCS[\"NAD83\",DATUM[\"North_American_Datum_1983\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"6269\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4269\"]],PROJECTION[\"Lambert_Conformal_Conic_2SP\"],PARAMETER[\"latitude_of_origin\",32.1666666666667],PARAMETER[\"central_meridian\",-116.25],PARAMETER[\"standard_parallel_1\",33.8833333333333],PARAMETER[\"standard_parallel_2\",32.7833333333333],PARAMETER[\"false_easting\",6561666.667],PARAMETER[\"false_northing\",1640416.667],UNIT[\"US survey foot\",0.304800609601219,AUTHORITY[\"EPSG\",\"9003\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"2230\"]]"
+              ]
+            },
+            "epsg": {
+              "type": "string",
+              "description": "The requested output projection in EPSG. Optional; empty string when absent.",
+              "examples": [
+                "EPSG:7030"
+              ]
+            }
+          },
+          "required": []
         },
         "isTransparent": {
           "type": "boolean",
