@@ -336,7 +336,7 @@ https://cmr.uat.earthdata.nasa.gov:
    # This is an example service using a result handler
   - name: harmony/result-handler-example
     data_operation_version: '0.9.0'
-    batch_size: 2
+    batch_size: 1
     type:
       name: argo
       params:
@@ -346,6 +346,8 @@ https://cmr.uat.earthdata.nasa.gov:
         namespace: argo
         image_pull_policy: Never
         parallelism: !Env ${SWOT_REPR_PARALLELISM}
+        templateRef: fake-stac-generator
+        embedded-template: fake-stac-generator
         env:
           USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
           AWS_DEFAULT_REGION: us-west-2

@@ -12,6 +12,8 @@ export interface ArgoServiceParams {
   namespace: string;
   template: string;
   template_type?: string;
+  template_ref?: string;
+  embedded_template?: string;
   image: string;
   image_pull_policy?: string;
   parallelism?: number;
@@ -300,6 +302,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
                         ...params,
                         { name: 'operation', value: '{{item}}' },
                         { name: 'batch-count', value: `${ops.length}` },
+                        { name: 'template-ref', value: 'fake-stac-generator2' },
                       ],
                     },
                     withItems: ops,

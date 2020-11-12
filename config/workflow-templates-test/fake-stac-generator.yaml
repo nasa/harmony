@@ -93,9 +93,6 @@ spec:
           STAC_CATALOG_LINK=/tmp/metadata/stac-catalog.json
           export AWS_ACCESS_KEY_ID=FOO
           export AWS_SECRET_ACCESS_KEY=BAR
-          # aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp stac-catalog.json "${STAC_CATALOG_LINK}"
-          # aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp 9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json "${STAGING_LOCATION}9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json"
-          # use the stack item as the data file just for test purposes
           aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp /tmp/metadata/9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json "${STAGING_LOCATION}9c02270d-d4aa-4b97-8bca-b1e748dd3e16.nc" > /dev/null
           echo "d07e0028-d94e-435a-9c71-c75a7a843d40.json"
           

@@ -41,6 +41,7 @@ spec:
         source: |
           #!/usr/bin/env bash
           # send the progress to Harmony along with links if needed
+          EXIT_CODE=0
           if [[ "${SHOULD_POST_RESULTS}" == "true" ]]; then
           STAC_CATALOG_LINK="{{inputs.parameters.stac-catalog-link}}"
           STAC_CATALOG=$(cat "/tmp/metadata/${STAC_CATALOG_LINK}")
@@ -68,17 +69,20 @@ spec:
           # LINKS_JSON="${LINKS_JSON} \n"
           done
           LINKS_JSON="${LINKS_JSON}]"
-          curl -XPOST \
+          curl -f -XPOST \
           --data-urlencode "batch_completed=true" \
           --data-urlencode "batch_count={{inputs.parameters.batch-count}}" \
           --data-urlencode "post_batch_step_count={{inputs.parameters.post-batch-step-count}}" \
           --data-urlencode "items=${LINKS_JSON}" \
           "{{inputs.parameters.callback}}/argo-response" > /dev/null
           else
-          curl -XPOST \
+          curl -f -XPOST \
           --data-urlencode "batch_completed=true" \
           --data-urlencode "batch_count={{inputs.parameters.batch-count}}" \
           --data-urlencode "post_batch_step_count={{inputs.parameters.post-batch-step-count}}" \
           "{{inputs.parameters.callback}}/argo-response" > /dev/null
           fi
+          EXIT_CODE=$?
+          echo "Progress callback completed with exit code ${EXIT_CODE}"
+          exit $EXIT_CODE
           

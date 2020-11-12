@@ -142,6 +142,7 @@ while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.co
 
 function install_template {
   f=$1
+  echo "Installing template ${f}"
   workflow=$(basename $f .yaml)
   existing_workflow=$(argo -n argo template get $workflow 2>/dev/null | grep $workflow | cut -d ' ' -f1)
   if [ -n "$existing_workflow" ]; then
@@ -150,8 +151,39 @@ function install_template {
   argo -n argo template create $f
 }
 
-for f in ./config/workflow-templates/*; do
+function create_batch_template {
+   f=$1
+  workflow=$(basename $f .yaml)
+  new_template_name="${workflow}-batch"
+  template=$(cat ./config/base-workflow-templates/batch-skeleton.yaml)
+  template="${template//\<placeholder-template-steps\>/${workflow}-steps}"
+  template="${template//\<placeholder-template\>/${workflow}}"
+  template="${template//\<batch-skeleton\>/${new_template_name}}"
+  out_file="/tmp/${new_template_name}.yaml"
+  echo "${template}" > "${out_file}"
+  echo "${out_file}"
+}
+
+function parameterize_template {
+  f=$1
+  workflow=$(basename $f .yaml)
+  new_template_name="${workflow}-chain"
+  template=$(cat ./config/base-workflow-templates/chained-workflow-skeleton.yaml)
+  template="${template//\<placeholder-template\>/${workflow}}"
+  template="${template//\<chained-workflow-skeleton\>/${new_template_name}}"
+  out_file="/tmp/${new_template_name}.yaml"
+  echo "${template}" > "${out_file}"
+  echo "${out_file}"
+}
+
+for f in ./config/workflow-component-templates/*; do
   install_template $f
+done
+
+for f in ./config/workflow-templates/*; do
+  file=$(create_batch_template $f)
+  install_template $f
+  install_template $file
 done
 
 for f in ./config/workflow-templates-test/*; do

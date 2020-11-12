@@ -3,12 +3,15 @@ kind: WorkflowTemplate
 metadata:
   name: asf-gdal-subsetter
 spec:
-  entrypoint: asf-gdal-subsetter
+  entrypoint: asf-gdal-subsetter-steps
   templates:
-    - name: asf-gdal-subsetter
+    - name: asf-gdal-subsetter-steps
       inputs:
+        artifacts:
+        - name: metadata
         parameters:
           - name: operation
+          - name: stac-catalog-link
           - name: image
           - name: image-pull-policy
           - name: timeout
@@ -17,12 +20,71 @@ spec:
           - name: STAGING_BUCKET
           - name: TEXT_LOGGER
           - name: BACKEND_HOST
+      steps:
+      - - name: last-step
+          template: asf-gdal-subsetter-service
+          arguments:
+            artifacts:
+            - name: metadata
+              from: "{{inputs.artifacts.metadata}}"
+            parameters:
+            - name: operation
+              value: "{{inputs.parameters.operation}}"
+            - name: stac-catalog-link
+              value: "{{inputs.parameters.stac-catalog-link}}"
+            - name: image
+              value: "{{inputs.parameters.image}}"
+            - name: image-pull-policy
+              value: "{{inputs.parameters.image-pull-policy}}"
+            - name: timeout
+              value: "{{inputs.parameters.timeout}}"
+            - name: AWS_DEFAULT_REGION
+              value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
+            - name: USE_LOCALSTACK
+              value: "{{inputs.parameters.USE_LOCALSTACK}}"
+            - name: STAGING_BUCKET
+              value: "{{inputs.parameters.STAGING_BUCKET}}"
+            - name: TEXT_LOGGER
+              value: "{{inputs.parameters.TEXT_LOGGER}}"
+            - name: BACKEND_HOST
+              value: "{{inputs.parameters.BACKEND_HOST}}"
+
+      outputs:
+        artifacts:
+          - name: metadata
+            from: "{{steps.last-step.outputs.artifacts.metadata}}"
+        parameters:
+          - name: stac-catalog-link
+            value: "/tmp/stac-catalog.json"
+    - name: asf-gdal-subsetter-service
+      inputs:
+        artifacts:
+        - name: metadata
+          path: /tmp/metadata
+        parameters:
+          - name: operation
+          - name: stac-catalog-link
+          - name: image
+          - name: image-pull-policy
+          - name: timeout
+          - name: AWS_DEFAULT_REGION
+          - name: USE_LOCALSTACK
+          - name: STAGING_BUCKET
+          - name: TEXT_LOGGER
+          - name: BACKEND_HOST
+      outputs:
+        artifacts:
+        # generate metadata artfiact from /tmp/metadata directory
+        - name: metadata
+          path: /tmp/metadata
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "{{inputs.parameters.image}}"
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
         command: ["python3"]
         args:
+        # TODO need to pass in the stac-catalog-link so the library knows which stac catalog
+        # to use
           [
             "-m",
             "gdal_subsetter",
