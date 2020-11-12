@@ -140,7 +140,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-argo-params
         template: harmony-gdal
         image: !Env ${GDAL_IMAGE}
-        image_pull_policy: 'Never'
+        image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
         parallelism: !Env ${GDAL_PARALLELISM}
         env:
           <<: *default-argo-env
@@ -300,17 +300,16 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.9.0'
     batch_size: 2
     type:
-      name: argo
+      <<: *default-argo-config
       params:
+        <<: *default-argo-params
         image: harmony/query-cmr:latest
         template: test-chain-with-result-handler
-        argo_url: !Env ${ARGO_URL}
-        namespace: argo
-        image_pull_policy: Never
-        parallelism: !Env ${SWOT_REPR_PARALLELISM}
+        image_pull_policy: !Env ${DEFAULT_IMAGE_PULL_POLICY}
+        parallelism: !Env ${DEFAULT_PARALLELISM}
         env:
           <<: *default-argo-env
-          STAGING_PATH: public/sds/swot-reproject
+          STAGING_PATH: public/harmony/result-handler-example
     collections:
       # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
       # Good example, being in UAT, global, many public non-global granules,
