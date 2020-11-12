@@ -15,6 +15,7 @@ spec:
           - name: AWS_DEFAULT_REGION
           - name: USE_LOCALSTACK
           - name: STAGING_BUCKET
+          - name: STAGING_PATH
           - name: TEXT_LOGGER
           - name: BACKEND_HOST
           - name: OAUTH_HOST
@@ -67,6 +68,8 @@ spec:
                 key: secret-key
           - name: STAGING_BUCKET
             value: "{{inputs.parameters.STAGING_BUCKET}}"
+          - name: STAGING_PATH
+            value: "{{inputs.parameters.STAGING_PATH}}"
           - name: TEXT_LOGGER
             value: "{{inputs.parameters.TEXT_LOGGER}}"
           - name: BACKEND_HOST
