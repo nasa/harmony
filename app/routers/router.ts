@@ -21,6 +21,7 @@ import * as eoss from '../frontends/eoss';
 import * as ogcCoverageApi from '../frontends/ogc-coverages/index';
 import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import landingPage from '../frontends/landing-page';
+import getVersions from '../frontends/versions';
 import serviceInvoker from '../backends/service-invoker';
 import HarmonyRequest from '../models/harmony-request';
 
@@ -190,6 +191,7 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   result.use(logged(setRequestId));
 
   result.get('/', landingPage);
+  result.get('/versions', getVersions);
   result.get(collectionPrefix('(wms|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);

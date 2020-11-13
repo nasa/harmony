@@ -1,5 +1,4 @@
-import { ServerResponse } from 'http';
-import { NextFunction } from 'express';
+import { NextFunction, Response } from 'express';
 import { ServiceConfig } from '../models/services/base-service';
 import HarmonyRequest from '../models/harmony-request';
 import { chooseServiceConfig } from '../models/services';
@@ -11,9 +10,7 @@ import { chooseServiceConfig } from '../models/services';
  * @param next The next function in the middleware chain
  */
 export default function chooseService(
-  req: HarmonyRequest,
-  _res: ServerResponse,
-  next: NextFunction,
+  req: HarmonyRequest, _res: Response, next: NextFunction,
 ): void {
   const { operation, context } = req;
   if (!operation?.sources) {
