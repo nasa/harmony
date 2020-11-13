@@ -2,7 +2,7 @@
 import { before, after, beforeEach, afterEach } from 'mocha';
 import sinon, { SinonStub } from 'sinon';
 import request from 'superagent';
-import BaseService from 'models/services/base-service';
+import BaseService, { ServiceConfig } from 'models/services/base-service';
 import * as services from 'models/services/index';
 import { Logger } from 'winston';
 import { CallbackQuery } from 'backends/service-response';
@@ -176,4 +176,20 @@ export default class StubService extends BaseService<void> {
     beforeEach(StubService.beforeHook(callbackOptions));
     afterEach(StubService.afterHook());
   }
+}
+
+/**
+ * Adds before and after hooks to stub the services in the system
+ */
+export function hookServices(serviceConfigs: ServiceConfig<unknown>[]): void {
+  let stubService;
+
+  before(function () {
+    stubService = sinon.stub(services, 'getServiceConfigs')
+      .returns(serviceConfigs);
+  });
+
+  after(function () {
+    stubService.restore();
+  });
 }

@@ -1,5 +1,7 @@
-import { getRequestRoot } from 'util/url';
-import { getCloudAccessJsonLink, getCloudAccessShLink } from 'util/links';
+import { Response } from 'express';
+import HarmonyRequest from '../models/harmony-request';
+import { getRequestRoot } from '../util/url';
+import { getCloudAccessJsonLink, getCloudAccessShLink } from '../util/links';
 import env from '../util/env';
 
 /**
@@ -7,11 +9,11 @@ import env from '../util/env';
  *
  * Includes minimal JSON with a list of all of the Harmony routes. Flush this out as an
  * OpenAPI document at some point.
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
+ * @param req The request sent by the client
+ * @param res The response to send to the client
  * @returns {void}
  */
-export default function landingPage(req, res): void {
+export default function landingPage(req: HarmonyRequest, res: Response): void {
   const root = getRequestRoot(req);
   const cloudAccessJsonLink = getCloudAccessJsonLink(root);
   const cloudAccessShLink = getCloudAccessShLink(root);

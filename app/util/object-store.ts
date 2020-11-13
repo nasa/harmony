@@ -33,7 +33,7 @@ export class S3ObjectStore {
    * Will use localstack if USE_LOCALSTACK is true (default false) and AWS_DEFAULT_REGION
    * (default "us-west-2")
    *
-   * @param {object} overrides values to set when constructing the underlying S3 store
+   * @param overrides values to set when constructing the underlying S3 store
    */
   constructor(overrides?: object) {
     this.s3 = this._getS3(overrides);
@@ -63,9 +63,9 @@ export class S3ObjectStore {
    * Returns an HTTPS URL that can be used to perform a GET on the given object
    * store URL
    *
-   * @param {string|URL} objectUrl the URL of the object to sign
-   * @param {Object} params an optional mapping of parameter key/values to put in the URL
-   * @returns {Promise<string>} a signed URL
+   * @param objectUrl the URL of the object to sign
+   * @param params an optional mapping of parameter key/values to put in the URL
+   * @returns a signed URL
    * @throws {TypeError} if the URL is not a recognized protocol or cannot be parsed
    * @memberof S3ObjectStore
    */
@@ -95,10 +95,10 @@ export class S3ObjectStore {
   /**
    * Get an object from the object store (see AWS S3 SDK `getObject`)
    *
-   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   * @param paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
    *   be retrieved or the object URL
-   * @param {*} callback an optional callback function
-   * @returns  {AWS.Request} An object with a `promise` function that can be called to obtain a
+   * @param callback an optional callback function
+   * @returns An object with a `promise` function that can be called to obtain a
    *   promise containing the retrieved object
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
@@ -114,9 +114,9 @@ export class S3ObjectStore {
    * Call HTTP HEAD on an object to get its headers without retrieving it (see AWS S3 SDK
    * `headObject`)
    *
-   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   * @param paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
    *   be retrieved or the object URL
-   * @returns  {Promise<Object>} A promise for the object's header to value pairs
+   * @returns A promise for the object's header to value pairs
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
@@ -130,9 +130,9 @@ export class S3ObjectStore {
    * Helper method for converting a param that is either S3 parameters (Bucket, Key, etc) or
    * a URL into a param that is S3 parameters.
    *
-   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   * @param paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
    *   be retrieved or the object URL
-   * @returns {Object} S3 parameters corresponding to the input
+   * @returns S3 parameters corresponding to the input
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
@@ -152,9 +152,9 @@ export class S3ObjectStore {
    * Downloads the given object from the store, returning a temporary file location containing the
    * object.  Note, the caller MUST remove the file when complete
    *
-   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   * @param paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
    *   be retrieved or the object URL
-   * @returns {string} path to a temporary file containing the object
+   * @returns path to a temporary file containing the object
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
@@ -168,10 +168,10 @@ export class S3ObjectStore {
   /**
    * Uploads the given file from the store, returning the URL to the uploaded file
    *
-   * @param {string} fileName the path to the file to upload
-   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   * @param fileName the path to the file to upload
+   * @param paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
    *   be uploaded or a URL location
-   * @returns {Promise<string>} a URL to the uploaded file
+   * @returns a URL to the uploaded file
    * @throws {TypeError} if an invalid URL is supplied
    * @memberof S3ObjectStore
    */
@@ -186,12 +186,12 @@ export class S3ObjectStore {
   /**
    * Stream upload an object to S3 (see AWS S3 SDK `upload`)
    *
-   * @param {Object} stringOrStream the text string or stream to upload
-   * @param {Object|string} paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
+   * @param stringOrStream the text string or stream to upload
+   * @param paramsOrUrl a map of parameters (Bucket, Key) indicating the object to
    *   be uploaded or a URL location
-   * @param {number} contentLength The length of the stream, required if a stream is provided
-   * @param {string} contentType The content type to associate with the object
-   * @returns {Promise<AWS.Request>} The response from the store
+   * @param contentLength The length of the stream, required if a stream is provided
+   * @param contentType The content type to associate with the object
+   * @returns The response from the store
    * @throws {TypeError} if an invalid URL is supplied or contentLength is not supplied
    * @memberof S3ObjectStore
    */
@@ -238,9 +238,9 @@ export class S3ObjectStore {
   /**
    * Returns a URL string for an object with the given bucket and key (prefix)
    *
-   * @param {string} bucket the bucket containing the URL to construct
-   * @param {string} key the key or key prefix for the location
-   * @returns {string} the URL for the object
+   * @param bucket the bucket containing the URL to construct
+   * @param key the key or key prefix for the location
+   * @returns the URL for the object
    * @memberof S3ObjectStore
    */
   getUrlString(bucket: string, key: string): string {
@@ -272,9 +272,9 @@ export class S3ObjectStore {
  * Returns a class to interact with the object store appropriate for
  * the provided protocol, or null if no such store exists.
  *
- * @param {string} protocol the protocol used in object store URLs.  This may be a full URL, in
+ * @param protocol the protocol used in object store URLs.  This may be a full URL, in
  *   which case the protocol will be read from the front of the URL.
- * @returns {ObjectStore} an object store for interacting with the given protocol
+ * @returns an object store for interacting with the given protocol
  */
 export function objectStoreForProtocol(protocol?: string): S3ObjectStore {
   if (!protocol) {
@@ -292,7 +292,7 @@ export function objectStoreForProtocol(protocol?: string): S3ObjectStore {
  * Returns the default object store for this instance of Harmony.  Allows requesting an
  * object store without first knowing a protocol.
  *
- * @returns {ObjectStore} the default object store for Harmony.
+ * @returns the default object store for Harmony.
  */
 export function defaultObjectStore(): S3ObjectStore {
   return new S3ObjectStore({});
