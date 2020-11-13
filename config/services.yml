@@ -10,11 +10,17 @@ x-argo-config: &default-argo-config
     env: &default-argo-env
       USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
       AWS_DEFAULT_REGION: us-west-2
-      EDL_USERNAME: !Env ${EDL_USERNAME}
-      EDL_PASSWORD: !Env ${EDL_PASSWORD}
       STAGING_BUCKET: !Env ${STAGING_BUCKET}
       TEXT_LOGGER: !Env ${TEXT_LOGGER}
       BACKEND_HOST: !Env ${BACKEND_HOST}
+      EDL_USERNAME: !Env ${EDL_USERNAME}
+      EDL_PASSWORD: !Env ${EDL_PASSWORD}
+      OAUTH_UID: !Env ${OAUTH_UID}
+      OAUTH_PASSWORD: !Env ${OAUTH_PASSWORD}
+      OAUTH_HOST: !Env ${OAUTH_HOST}
+      OAUTH_CLIENT_ID: !Env ${OAUTH_CLIENT_ID}
+      OAUTH_REDIRECT_URI: !Env ${OAUTH_REDIRECT_URI}
+      FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
 
 https://cmr.earthdata.nasa.gov:
   - name: asfdataservices/gdal-subsetter
@@ -70,6 +76,7 @@ https://cmr.earthdata.nasa.gov:
         - image/png
         - image/gif
       reprojection: true
+
   - name: podaac/l2-subsetter
     data_operation_version: '0.9.0'
     type:
@@ -293,25 +300,18 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.9.0'
     batch_size: 1
     type:
-      name: argo
+      <<: *default-argo-config
       params:
+        <<: *default-argo-params
         image: harmony/query-cmr:latest
         template: test-chain-with-result-handler
-        argo_url: !Env ${ARGO_URL}
-        namespace: argo
-        image_pull_policy: Never
-        parallelism: !Env ${SWOT_REPR_PARALLELISM}
         templateRef: fake-stac-generator
         embedded-template: fake-stac-generator
+        image_pull_policy: !Env ${DEFAULT_IMAGE_PULL_POLICY}
+        parallelism: !Env ${DEFAULT_PARALLELISM}
         env:
-          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
-          AWS_DEFAULT_REGION: us-west-2
-          EDL_USERNAME: !Env ${EDL_USERNAME}
-          EDL_PASSWORD: !Env ${EDL_PASSWORD}
-          STAGING_BUCKET: !Env ${STAGING_BUCKET}
-          STAGING_PATH: public/sds/swot-reproject
-          TEXT_LOGGER: !Env ${TEXT_LOGGER}
-          BACKEND_HOST: !Env ${BACKEND_HOST}
+          <<: *default-argo-env
+          STAGING_PATH: public/harmony/result-handler-example
     collections:
       # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
       # Good example, being in UAT, global, many public non-global granules,
