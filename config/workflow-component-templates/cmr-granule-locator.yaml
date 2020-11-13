@@ -16,7 +16,13 @@ spec:
           - name: timeout
           - name: CMR_ENDPOINT
       outputs:
+        artifacts:
+          - name: metadata
+            path: /tmp/metadata
         parameters:
+          - name: batch-count
+            valueFrom:
+              path: /tmp/batch-count.txt
           - name: batch-catalogs
             valueFrom:
               path: /tmp/batch-catalogs.json

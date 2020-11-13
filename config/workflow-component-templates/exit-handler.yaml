@@ -16,7 +16,7 @@ spec:
       script:
         image: "everpeace/curl-jq"
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
-        command: [bash]
+        command: [sh]
         source: |
           echo '{{inputs.parameters.failures}}' > /tmp/failures
           error="{{inputs.parameters.status}}"

@@ -4,7 +4,11 @@ metadata:
   name: <chained-workflow-skeleton>
 spec:
   entrypoint: chained-workflow
-  onExit: exit-handler
+  # onExit: exit-handler
+  # arguments:
+  #   parameters:
+  #   - name: image-pull-policy
+  #     value: Never
   templates:
     - name: chained-workflow
       inputs:
@@ -12,6 +16,7 @@ spec:
           - name: operation
           - name: query
           - name: page-size
+          - name: batch-size
           - name: granule-locator-image
           - name: image
           - name: image-pull-policy
@@ -37,6 +42,8 @@ spec:
               value: "{{inputs.parameters.query}}"
             - name: page-size
               value: "{{inputs.parameters.page-size}}"
+            - name: batch-size
+              value: "{{inputs.parameters.batch-size}}"
             - name: image 
               value: "{{inputs.parameters.granule-locator-image}}"
             - name: image-pull-policy
@@ -50,11 +57,20 @@ spec:
             name: <placeholder-template>
             template: <placeholder-template>
           arguments:
+            artifacts:
+              - name: metadata
+                from: "{{steps.cmr-granule-locator.outputs.artifacts.metadata}}"
             parameters:
             - name: stac-catalog-link
               value: "{{item}}"
             - name: operation
               value: "{{inputs.parameters.operation}}"
+            - name: batch-count
+              value: "{{steps.cmr-granule-locator.outputs.parameters.batch-count}}"
+            - name: post-batch-step-count
+              value: "{{inputs.parameters.post-batch-step-count}}"
+            - name: callback
+              value: "{{inputs.parameters.callback}}"
             - name: image
               value: "{{inputs.parameters.image}}"
             - name: image-pull-policy
@@ -72,26 +88,38 @@ spec:
             - name: BACKEND_HOST
               value: "{{inputs.parameters.BACKEND_HOST}}"
           withParam: "{{steps.cmr-granule-locator.outputs.parameters.batch-catalogs}}"
-    - name: exit-handler
+    - name: exit-handler-body
       inputs:
         parameters:
           - name: image-pull-policy
           - name: timeout
           - name: callback
+          - name: status
+          - name: failures
       steps:
-      - - name: exit-handler
+      - - name: exit-handler-step
           templateRef:
             name: exit-handler
             template: exit-handler
           arguments:
             parameters:
-              - name: image-pull-policy
-                value: "{{inputs.parameters.image-pull-policy}}"
-              - name: timeout
-                value: "{{inputs.parameters.timeout}}"
-              - name: callback
-                value: "{{inputs.parameters.callback}}"
-              - name: status
-                value: "{{workflow.status}}"
-              - name: failures
-                value: "{{workflow.failures}}"
+            - name: image-pull-policy
+              value: "{{inputs.parameters.image-pull-policy}}"
+            - name: timeout
+              value: "{{inputs.parameters.timeout}}"
+            - name: callback
+              value: "{{inputs.parameters.callback}}"
+            - name: status
+              value: "{{inputs.parameters.status}}"
+            - name: failures
+              value: "{{inputs.parameters.failures}}"
+    - name: exit-handler
+      steps:
+      - - name: exit-handler
+          template: exit-handler-body
+          arguments:
+            parameters:
+            - name: status
+              value: "{{workflow.status}}"
+            - name: failures
+              value: "{{workflow.failures}}"

@@ -169,7 +169,7 @@ function parameterize_template {
   workflow=$(basename $f .yaml)
   new_template_name="${workflow}-chain"
   template=$(cat ./config/base-workflow-templates/chained-workflow-skeleton.yaml)
-  template="${template//\<placeholder-template\>/${workflow}}"
+  template="${template//\<placeholder-template\>/${workflow}-batch}"
   template="${template//\<chained-workflow-skeleton\>/${new_template_name}}"
   out_file="/tmp/${new_template_name}.yaml"
   echo "${template}" > "${out_file}"
@@ -181,9 +181,11 @@ for f in ./config/workflow-component-templates/*; do
 done
 
 for f in ./config/workflow-templates/*; do
-  file=$(create_batch_template $f)
+  batch_file=$(create_batch_template $f)
+  chain_file=$(parameterize_template $f)
   install_template $f
-  install_template $file
+  install_template $batch_file
+  install_template $chain_file
 done
 
 for f in ./config/workflow-templates-test/*; do

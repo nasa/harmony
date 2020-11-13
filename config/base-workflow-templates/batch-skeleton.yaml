@@ -11,10 +11,7 @@ spec:
           - name: metadata
         parameters:
           - name: operation
-          - name: query
-          - name: page-size
           - name: batch-count
-          - name: granule-locator-image
           - name: image
           - name: image-pull-policy
           - name: timeout
@@ -25,7 +22,6 @@ spec:
           - name: STAGING_BUCKET
           - name: TEXT_LOGGER
           - name: BACKEND_HOST
-          - name: CMR_ENDPOINT
       steps:
       - - name: main-loop
           templateRef: 
@@ -68,7 +64,7 @@ spec:
             - name: operation
               value: "{{inputs.parameters.operation}}"
             - name: stac-catalog-link
-              value: "{{steps.main-loop.outputs.stac-catalog-link}}"
+              value: "{{steps.main-loop.outputs.parameters.stac-catalog-link}}"
             - name: timeout
               value: "{{inputs.parameters.timeout}}"
             - name: image-pull-policy
@@ -89,4 +85,4 @@ spec:
               value: "{{inputs.parameters.STAGING_BUCKET}}"
             - name: BACKEND_HOST
               value: "{{inputs.parameters.BACKEND_HOST}}"
-  
+  # TODO add an output artifact here so we can use it with any post batch step(s)
