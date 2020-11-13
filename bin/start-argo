@@ -105,6 +105,17 @@ cat <<EOF | kubectl -n argo apply -f -
 apiVersion: v1
 kind: Secret
 metadata:
+  name: argo-oauth-credentials
+type: Opaque
+data:
+  username: $(echo -n "${OAUTH_UID}" | base64)
+  password: $(echo -n "${OAUTH_PASSWORD}" | base64)
+EOF
+
+cat <<EOF | kubectl -n argo apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
   name: shared-secret
 type: Opaque
 data:
