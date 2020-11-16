@@ -163,7 +163,7 @@ function install_template {
 }
 
 function create_batch_template {
-   f=$1
+  f=$1
   workflow=$(basename $f .yaml)
   new_template_name="${workflow}-batch"
   template=$(cat ./config/base-workflow-templates/batch-skeleton.yaml)
