@@ -124,38 +124,46 @@ describe('query#queryGranules', function () {
       fs.rmdirSync(outputDir, { recursive: true });
     });
 
-    it('returns a STAC catalog containing a sub-catalog for each input source', function () {
+    it('returns a STAC catalog containing links to all of the granules', function () {
       expect(result[0].links).to.eql([{
-        rel: 'child',
-        href: './source_0.json',
-        title: 'CMR Granules for C001-TEST',
+        href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C001-TEST',
+        rel: 'harmony_source',
+      }, {
+        href: './granule_0_00000000.json',
+        rel: 'item',
+        title: '001_00_7f00ff_global',
         type: 'application/json',
       }, {
-        rel: 'child',
-        href: './source_1.json',
-        title: 'CMR Granules for C002-TEST',
+        href: './granule_0_00000001.json',
+        rel: 'item',
+        title: '001_01_7f00ff_africa',
+        type: 'application/json',
+      }, {
+        href: './granule_0_00000002.json',
+        rel: 'item',
+        title: '001_01_7f00ff_africa_poly',
         type: 'application/json',
       }]);
     });
 
     it('produces STAC catalogs containing granule links for each input source', function () {
-      expect(result[0].children[0].links[1]).to.eql({
+      expect(result[1].links[1]).to.eql({
         rel: 'item',
-        href: './granule_0_0000000.json',
+        href: './granule_1_00000000.json',
         title: '001_00_7f00ff_global',
         type: 'application/json',
       });
     });
 
     it('links STAC catalogs to the input source collection', function () {
-      expect(result[0].children[0].links[0]).to.eql({
+      expect(result[0].links[0]).to.eql({
         rel: 'harmony_source',
         href: `${env.cmrEndpoint}/search/concepts/C001-TEST`,
       });
     });
 
     it('produces STAC items for each granule', function () {
-      const item = result[0].children[0].children[0];
+      const item = result[0].children[0];
       expect(item).to.eql({
         stac_version: '1.0.0-beta.2',
         stac_extensions: [],
@@ -194,12 +202,12 @@ describe('query#queryGranules', function () {
 
     it('produces valid STAC output for the source catalogs', function () {
       const validate = buildStacSchemaValidator('catalog');
-      expect(validate(result[0].children[0].toJSON())).to.equal(true);
+      expect(validate(result[0].toJSON())).to.equal(true);
     });
 
     it('produces valid STAC output for the granule items', function () {
       const validate = buildStacSchemaValidator('item');
-      expect(validate(result[0].children[0].children[0])).to.equal(false);
+      expect(validate(result[0].children[0])).to.equal(false);
     });
 
     xit('produces a separate output file for each page of results up to supplied maximum (HARMONY-276)', function () {

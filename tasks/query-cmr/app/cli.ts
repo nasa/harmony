@@ -77,7 +77,6 @@ export default async function main(args: string[]): Promise<void> {
     options.batchSize,
   );
 
-  // const numBatches = Math.ceil(catalog.links.length / options.batchSize);
   const promises = catalogs.map(async (catalog, i) => {
     const filename = path.join(options.outputDir, `catalog${i}.json`);
     await catalog.write(filename, true);
