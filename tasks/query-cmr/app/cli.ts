@@ -13,6 +13,7 @@ interface HarmonyArgv {
   query?: (string | number)[];
   pageSize?: number;
   maxPages?: number;
+  batchSize?: number;
 }
 /**
  * Builds and returns the CLI argument parser
@@ -49,6 +50,12 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       describe: 'the maximum number of pages to provide per source',
       type: 'number',
       default: 1,
+    })
+    .option('batch-size', {
+      alias: 'b',
+      describe: 'number of batches in a request; create one catalog file per batch',
+      type: 'number',
+      default: 1,
     });
 }
 
@@ -62,14 +69,20 @@ export default async function main(args: string[]): Promise<void> {
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
   await fs.mkdir(options.outputDir, { recursive: true });
-  const catalog = await queryGranules(
+  const catalogs = await queryGranules(
     operation,
     options.query as string[],
     options.pageSize,
     options.maxPages,
+    options.batchSize,
   );
-  const filename = path.join(options.outputDir, 'catalog.json');
-  await catalog.write(filename, true);
+
+  // const numBatches = Math.ceil(catalog.links.length / options.batchSize);
+  const promises = catalogs.map(async (catalog, i) => {
+    const filename = path.join(options.outputDir, `catalog${i}.json`);
+    await catalog.write(filename, true);
+  });
+  await Promise.all(promises);
 }
 
 if (require.main === module) {

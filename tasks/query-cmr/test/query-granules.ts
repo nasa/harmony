@@ -65,7 +65,7 @@ async function fetchPostArgsToFields(
 describe('query#queryGranules', function () {
   describe('when called with a mismatched number of input sources and query files', function () {
     it('throws an error', function () {
-      expect(queryGranules(operation, ['fake-tmp.json'], 10, 1))
+      expect(queryGranules(operation, ['fake-tmp.json'], 10, 1, 2000))
         .to.eventually.be.rejectedWith('One query must be provided per input source');
     });
   });
@@ -110,7 +110,7 @@ describe('query#queryGranules', function () {
       fetchPost.onCall(queries.length + 1).throws();
 
       // Actually call it
-      result = await queryGranules(operation, queryFilenames, pageSize, maxPages);
+      result = await queryGranules(operation, queryFilenames, pageSize, maxPages, 2000);
 
       // Map the call arguments into something we can actually assert against
       queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
@@ -125,7 +125,7 @@ describe('query#queryGranules', function () {
     });
 
     it('returns a STAC catalog containing a sub-catalog for each input source', function () {
-      expect(result.links).to.eql([{
+      expect(result[0].links).to.eql([{
         rel: 'child',
         href: './source_0.json',
         title: 'CMR Granules for C001-TEST',
@@ -139,7 +139,7 @@ describe('query#queryGranules', function () {
     });
 
     it('produces STAC catalogs containing granule links for each input source', function () {
-      expect(result.children[0].links[1]).to.eql({
+      expect(result[0].children[0].links[1]).to.eql({
         rel: 'item',
         href: './granule_0_0000000.json',
         title: '001_00_7f00ff_global',
@@ -148,14 +148,14 @@ describe('query#queryGranules', function () {
     });
 
     it('links STAC catalogs to the input source collection', function () {
-      expect(result.children[0].links[0]).to.eql({
+      expect(result[0].children[0].links[0]).to.eql({
         rel: 'harmony_source',
         href: `${env.cmrEndpoint}/search/concepts/C001-TEST`,
       });
     });
 
     it('produces STAC items for each granule', function () {
-      const item = result.children[0].children[0];
+      const item = result[0].children[0].children[0];
       expect(item).to.eql({
         stac_version: '1.0.0-beta.2',
         stac_extensions: [],
@@ -189,17 +189,17 @@ describe('query#queryGranules', function () {
 
     it('produces valid STAC output for the root catalog', function () {
       const validate = buildStacSchemaValidator('catalog');
-      expect(validate(result.toJSON())).to.equal(true);
+      expect(validate(result[0].toJSON())).to.equal(true);
     });
 
     it('produces valid STAC output for the source catalogs', function () {
       const validate = buildStacSchemaValidator('catalog');
-      expect(validate(result.children[0].toJSON())).to.equal(true);
+      expect(validate(result[0].children[0].toJSON())).to.equal(true);
     });
 
     it('produces valid STAC output for the granule items', function () {
       const validate = buildStacSchemaValidator('item');
-      expect(validate(result.children[0].children[0])).to.equal(false);
+      expect(validate(result[0].children[0].children[0])).to.equal(false);
     });
 
     xit('produces a separate output file for each page of results up to supplied maximum (HARMONY-276)', function () {

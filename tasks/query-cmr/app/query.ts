@@ -71,6 +71,7 @@ export async function querySource(
  * @param queries A list of file locations containing the queries to perform
  * @param pageSize The size of each page to be accessed
  * @param maxPages The maximum number of pages to be accessed from each source
+ * @param batchSize The number
  * @returns a root STAC catalog pointing to source catalogs for each data source
  */
 export async function queryGranules(
@@ -78,7 +79,8 @@ export async function queryGranules(
   queries: string[],
   pageSize: number,
   maxPages: number,
-): Promise<StacCatalog> {
+  batchSize: number,
+): Promise<StacCatalog[]> {
   const { sources, unencryptedAccessToken } = operation;
 
   assert(sources && sources.length === queries.length, 'One query must be provided per input source');
@@ -87,13 +89,16 @@ export async function queryGranules(
     const result = querySource(unencryptedAccessToken, sources[i], queries[i], pageSize, maxPages, `./granule_${i}_`);
     promises.push(result);
   }
-  const catalog = new CmrStacCatalog({ description: `Granule results for request ${operation.requestId}` });
-  catalog.children = await Promise.all(promises);
-  catalog.links = catalog.children.map((child, i) => ({
-    rel: 'child',
-    href: `./source_${i}.json`,
-    type: 'application/json',
-    title: (child as CmrStacCatalog).description,
-  }));
-  return catalog;
+  if (batchSize > -999) {
+    const catalog = new CmrStacCatalog({ description: `Granule results for request ${operation.requestId}` });
+    catalog.children = await Promise.all(promises);
+    catalog.links = catalog.children.map((child, i) => ({
+      rel: 'child',
+      href: `./source_${i}.json`,
+      type: 'application/json',
+      title: (child as CmrStacCatalog).description,
+    }));
+    return [catalog];
+  }
+  return [];
 }
