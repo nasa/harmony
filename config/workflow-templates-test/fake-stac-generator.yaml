@@ -1,0 +1,101 @@
+# This template simply copies some fake STAC data to S3 to help in testing
+# It should NOT be used in production workflows
+# It incorrecly stages the STAC files in the main staging bucket purely for convenience - a real
+# template should use transient buckets for intermediate data like this
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: fake-stac-generator
+spec:
+  templates:
+    - name: fake-stac-generator
+      inputs:
+        parameters:
+          - name: operation
+          - name: image-pull-policy
+          - name: timeout
+          - name: AWS_DEFAULT_REGION
+          - name: USE_LOCALSTACK
+          - name: STAGING_BUCKET
+          - name: TEXT_LOGGER
+          - name: BACKEND_HOST
+      outputs:
+        artifacts:
+        - name: metadata 
+          path: /tmp/metadata
+      podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
+      script:
+        image: "mikesir87/aws-cli"
+        imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
+        command: [bash]
+        env:
+          - name: AWS_DEFAULT_REGION
+            value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
+          - name: USE_LOCALSTACK
+            value: "{{inputs.parameters.USE_LOCALSTACK}}"
+          - name: STAGING_BUCKET
+            value: "{{inputs.parameters.STAGING_BUCKET}}"
+          - name: TEXT_LOGGER
+            value: "{{inputs.parameters.TEXT_LOGGER}}"
+          - name: BACKEND_HOST
+            value: "{{inputs.parameters.BACKEND_HOST}}"
+        source: |
+          #!/usr/bin/env bash
+          mkdir /tmp/metadata
+          read -r -d '' OPERATION <<'OPERATION_EOF'
+          {{inputs.parameters.operation}}
+          OPERATION_EOF
+          STAGING_LOCATION=$(echo "$OPERATION"  | jq -r '.stagingLocation')
+          read -r -d '' STAC_CATALOG <<'STAC_CATALOG_EOF'
+          {
+            "stac_version": "1.0.0-beta.2",
+            "id": "d07e0028-d94e-435a-9c71-c75a7a843d40",
+            "title": "Harmony Service Catalog",
+            "description": "Harmony Transmogrifier STAC Catalog",
+            "links": [
+                {
+                    "rel": "item",
+                    "href": "9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json",
+                    "title": "Transmogrifier Output Item"
+                },
+                {
+                    "rel": "item",
+                    "href": "9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json",
+                    "title": "Transmogrifier Output Item"
+                }    
+            ]
+          }
+          STAC_CATALOG_EOF
+          echo "${STAC_CATALOG}" > /tmp/metadata/d07e0028-d94e-435a-9c71-c75a7a843d40.json
+          read -r -d '' STAC_ITEM <<STAC_ITEM_EOF
+          {
+            "stac_version": "1.0.0-beta.2",
+            "type": "Feature",
+            "id": "9c02270d-d4aa-4b97-8bca-b1e748dd3e16",
+            "title": "Transmogrifier Output Item",
+            "bbox": [-100.5, 30.4, -99.5, 31.4],
+            "geometry": {"type": "Polygon", "coordinates": []},
+            "assets": {
+                "granule": {
+                    "type": "application/x-netcdf",
+                    "href": "${STAGING_LOCATION}9c02270d-d4aa-4b97-8bca-b1e748dd3e16.nc",
+                    "title": "Transmogrifier Output Item"
+                }
+            },
+            "properties": {
+                "start_datetime": "1999-01-01T10:00:00Z",
+                "end_datetime": "2020-02-20T15:00:00Z"
+            }
+          }
+          STAC_ITEM_EOF
+          echo "${STAC_ITEM}" > /tmp/metadata/9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json
+          # STAC_CATALOG_LINK="${STAGING_LOCATION}stac-catalog.json"
+          STAC_CATALOG_LINK=/tmp/metadata/stac-catalog.json
+          export AWS_ACCESS_KEY_ID=FOO
+          export AWS_SECRET_ACCESS_KEY=BAR
+          # aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp stac-catalog.json "${STAC_CATALOG_LINK}"
+          # aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp 9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json "${STAGING_LOCATION}9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json"
+          # use the stack item as the data file just for test purposes
+          aws --endpoint-url="http://${BACKEND_HOST}:4566" s3 cp /tmp/metadata/9c02270d-d4aa-4b97-8bca-b1e748dd3e16.json "${STAGING_LOCATION}9c02270d-d4aa-4b97-8bca-b1e748dd3e16.nc" > /dev/null
+          echo "d07e0028-d94e-435a-9c71-c75a7a843d40.json"
+          

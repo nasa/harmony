@@ -77,6 +77,16 @@ function validateServiceConfig(config: ServiceConfig<unknown>): void {
   }
 }
 
+/**
+ * Returns the service configuration. Makes a clone copy so that a caller cannot
+ * mutate the service configs used in this namespace.
+ *
+ * @returns a copy of the service configurations
+ */
+export function getServiceConfigs(): ServiceConfig<unknown>[] {
+  return _.cloneDeep(serviceConfigs);
+}
+
 // Load config at require-time to ensure presence / validity early
 loadServiceConfigs();
 serviceConfigs.map(validateServiceConfig);

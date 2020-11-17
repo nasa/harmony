@@ -1,0 +1,28 @@
+GET /search/granules.json?collection_concept_id=C1000000099-ORNL_DAAC&page_size=350&concept_id=&downloadable=true
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+connection: close
+date: Fri, 06 Nov 2020 15:47:28 GMT
+set-cookie: AWSALB=y2phzrUEPkWX6NZ3iuOM+dA2eBiVXOYMrNgyh6bAvevsKVMLTNFV+E9WT/ZPUSW5OrycN7xz5tnGWzBnSGMkRfoUIwo8AYMmjYuxwy3u01xtQE+rhv78r7zrZ0hG; Expires=Fri, 13 Nov 2020 15:47:28 GMT; Path=/
+set-cookie: AWSALBCORS=y2phzrUEPkWX6NZ3iuOM+dA2eBiVXOYMrNgyh6bAvevsKVMLTNFV+E9WT/ZPUSW5OrycN7xz5tnGWzBnSGMkRfoUIwo8AYMmjYuxwy3u01xtQE+rhv78r7zrZ0hG; Expires=Fri, 13 Nov 2020 15:47:28 GMT; Path=/; SameSite=None
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+access-control-allow-origin: *
+cmr-hits: 1
+cmr-took: 16
+cmr-request-id: 55610dc3-ae3d-4915-8fe0-92d5c0ba733c
+x-request-id: 55610dc3-ae3d-4915-8fe0-92d5c0ba733c
+vary: Accept-Encoding, User-Agent
+server: Jetty(9.4.z-SNAPSHOT)
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+strict-transport-security: max-age=31536000
+x-cache: Miss from cloudfront
+via: 1.1 a0042b5b0abdf83ac753e9d8be59e4e5.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: s3YIo6yH2wpCHohiHrGxmZisa9GhWjN8-q0loNI0HJqzmT5V1O8oQQ==
+
+{"feed":{"updated":"2020-11-06T15:47:28.044Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json?collection_concept_id=C1000000099-ORNL_DAAC&page_size=350&concept_id=&downloadable=true","title":"ECHO granule metadata","entry":[{"boxes":["-42.5 -117.861 63.2336 117.597"],"time_start":"1985-01-01T00:00:00.000Z","updated":"2014-07-18T00:00:00.000Z","dataset_id":"A Global Database of Soil Phosphorus Compiled from Studies Using Hedley Fractionation","data_center":"ORNL_DAAC","title":"GLOBAL_PHOSPHORUS_HEDLEY_FRACT.HedleyP_database_20140708.csv","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2010-12-31T00:00:00.000Z","id":"G1220962180-ORNL_DAAC","original_format":"ECHO10","granule_size":"0.021861","browse_flag":false,"collection_concept_id":"C1000000099-ORNL_DAAC","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","title":"This link provides direct download access to the granule.","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract//data/HedleyP_database_20140708.csv"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","title":"ORNL DAAC Data Set Documentation (USERS GUIDE)","hreflang":"en-US","href":"https://daac.ornl.gov/SOILS/guides/Global_Phosphorus_Hedley_Fract.html"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","title":"Data set Landing Page DOI URL (DATA SET LANDING PAGE)","hreflang":"en-US","href":"https://dx.doi.org/10.3334/ORNLDAAC/1230"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","title":"Data Set Documentation (GENERAL DOCUMENTATION)","hreflang":"en-US","href":"https:/daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract/comp/Global_Phosphorus_Hedley_Fract.pdf"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","title":"Data Set Documentation (GENERAL DOCUMENTATION)","hreflang":"en-US","href":"https:/daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract/comp/References_HedleyPdatabase.pdf"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","title":"Data Set Documentation (GENERAL DOCUMENTATION)","hreflang":"en-US","href":"https:/daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract/comp/Yang_and_Post_2011_bg-8-2907-2011.pdf"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract//"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/SOILS/guides/Global_Phosphorus_Hedley_Fract.html"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","hreflang":"en-US","href":"https://doi.org/10.3334/ORNLDAAC/1230"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract//comp/Global_Phosphorus_Hedley_Fract.pdf"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract//comp/References_HedleyPdatabase.pdf"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/global_soil/Global_Phosphorus_Hedley_Fract//comp/Yang_and_Post_2011_bg-8-2907-2011.pdf"}]}]}}
