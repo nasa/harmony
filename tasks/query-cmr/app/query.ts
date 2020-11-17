@@ -101,41 +101,6 @@ export async function queryGranules(
   }
 
   const catalogs = _.flatten(await Promise.all(promises));
-  // const wrappedCatalogs = [];
-  // catalogs.forEach((sourceCatalog, index) => {
-  //   const catalog = new CmrStacCatalog({ description: `Granule results for request ${operation.requestId} batch ${index}` });
-  //   catalog.children = [{
-  //     rel: 'child',
-  //     href: `./source_${index}.json`,
-  //     type: 'application/json',
-  //     title: sourceCatalog.description,
-  //   }];
-  //   wrappedCatalogs.push(catalog);
-  // });
-  // return catalogs;
-  // catalogs.forEach((catalog, index) => {
-  //   const catalog = new CmrStacCatalog({ description: `Granule results for request ${operation.requestId} batch ${index}` });
-  //   catalog.children = batch.map((child, i) => ({
-  //     rel: 'child',
-  //     href: `./source_${i}.json`,
-  //     type: 'application/json',
-  //     title: (child as CmrStacCatalog).description,
-  //   }));
-
-  // const batches = _.flatMap(sourceGranules, ((s) => _.chunk(s, batchSize)));
-
-  // const catalogs = [];
-  // batches.forEach((batch, index) => {
-  //   const catalog = new CmrStacCatalog({ description: `Granule results for request ${operation.requestId} batch ${index}` });
-  //   catalog.children = batch.map((child, i) => ({
-  //     rel: 'child',
-  //     href: `./source_${i}.json`,
-  //     type: 'application/json',
-  //     title: (child as CmrStacCatalog).description,
-  //   }));
-  //   catalogs.push(catalog);
-  // });
 
   return catalogs;
-  // return wrappedCatalogs;
 }
