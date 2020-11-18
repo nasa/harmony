@@ -4,7 +4,6 @@ import path from 'path';
 import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
 import env from '../../../app/util/env';
-
 import { queryGranules } from './query';
 
 interface HarmonyArgv {
@@ -53,9 +52,9 @@ export function parser(): yargs.Argv<HarmonyArgv> {
     })
     .option('batch-size', {
       alias: 'b',
-      describe: 'number of batches in a request; create one catalog file per batch',
+      describe: 'number of granules to include in a single batch; create one catalog file per batch',
       type: 'number',
-      default: 1,
+      default: 5, // TODO put back to 2000 prior to merge
     });
 }
 
@@ -77,11 +76,21 @@ export default async function main(args: string[]): Promise<void> {
     options.batchSize,
   );
 
+  const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {
-    const filename = path.join(options.outputDir, `catalog${i}.json`);
+    const relativeFilename = `catalog${i}.json`;
+    const filename = path.join(options.outputDir, relativeFilename);
+    catalogFilenames.push(relativeFilename);
     await catalog.write(filename, true);
   });
+
+  const catalogListFilename = path.join(options.outputDir, 'batch-catalogs.json');
+  const catalogCountFilename = path.join(options.outputDir, 'batch-count.txt');
+
   await Promise.all(promises);
+
+  await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
+  await fs.writeFile(catalogCountFilename, catalogFilenames.length);
 }
 
 if (require.main === module) {

@@ -129,17 +129,17 @@ describe('query#queryGranules', function () {
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C001-TEST',
         rel: 'harmony_source',
       }, {
-        href: './granule_0_00000000.json',
+        href: './granule_0_0_0000000.json',
         rel: 'item',
         title: '001_00_7f00ff_global',
         type: 'application/json',
       }, {
-        href: './granule_0_00000001.json',
+        href: './granule_0_0_0000001.json',
         rel: 'item',
         title: '001_01_7f00ff_africa',
         type: 'application/json',
       }, {
-        href: './granule_0_00000002.json',
+        href: './granule_0_0_0000002.json',
         rel: 'item',
         title: '001_01_7f00ff_africa_poly',
         type: 'application/json',
@@ -149,7 +149,7 @@ describe('query#queryGranules', function () {
     it('produces STAC catalogs containing granule links for each input source', function () {
       expect(result[1].links[1]).to.eql({
         rel: 'item',
-        href: './granule_1_00000000.json',
+        href: './granule_1_0_0000000.json',
         title: '001_00_7f00ff_global',
         type: 'application/json',
       });

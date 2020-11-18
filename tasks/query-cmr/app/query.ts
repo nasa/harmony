@@ -37,9 +37,10 @@ export async function querySource(
   let page = 0;
   let done = false;
 
-  const store = objectStoreForProtocol(queryLocation);
-  const queryFile = store ? await store.downloadFile(queryLocation) : queryLocation;
-  const cmrQuery = JSON.parse(await fs.readFile(queryFile, 'utf8'));
+  // const store = objectStoreForProtocol(queryLocation);
+  // const queryFile = store ? await store.downloadFile(queryLocation) : queryLocation;
+  // const cmrQuery = JSON.parse(await fs.readFile(queryFile, 'utf8'));
+  const cmrQuery = {};
   const catalogs = [];
   while (!done) {
     const cmrResponse = await cmrQueryGranules(
@@ -56,7 +57,7 @@ export async function querySource(
         rel: 'harmony_source',
         href: `${env.cmrEndpoint}/search/concepts/${source.collection}`,
       });
-      result.addCmrGranules(batch, `${filePrefix}${index}`);
+      result.addCmrGranules(batch, `${filePrefix}_${index}_`);
       catalogs.push(result);
     });
 
@@ -96,7 +97,7 @@ export async function queryGranules(
   assert(sources && sources.length === queries.length, 'One query must be provided per input source');
   const promises = [];
   for (let i = 0; i < sources.length; i++) {
-    const result = querySource(unencryptedAccessToken, sources[i], queries[i], pageSize, maxPages, batchSize, `./granule_${i}_`);
+    const result = querySource(unencryptedAccessToken, sources[i], queries[i], pageSize, maxPages, batchSize, `./granule_${i}`);
     promises.push(result);
   }
 

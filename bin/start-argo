@@ -195,8 +195,8 @@ for f in ./config/workflow-templates/*; do
   batch_file=$(create_batch_template $f)
   chain_file=$(parameterize_template $f)
   install_template $f
-  install_template $batch_file
-  install_template $chain_file
+  # install_template $batch_file
+  # install_template $chain_file
 done
 
 for f in ./config/workflow-templates-test/*; do
