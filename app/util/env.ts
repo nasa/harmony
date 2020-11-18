@@ -39,7 +39,6 @@ interface HarmonyEnv {
   defaultArgoPodTimeoutSecs: number;
   builtInTaskPrefix: string;
   builtInTaskVersion: string;
-  feedbackUrl: string;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
