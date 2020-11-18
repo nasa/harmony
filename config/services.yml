@@ -282,6 +282,7 @@ https://cmr.uat.earthdata.nasa.gov:
         template_type: chaining
         env:
           <<: *default-argo-env
+          LOCALSTACK_HOST: !Env ${BACKEND_HOST}
     collections:
       # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
       # Good example, being in UAT, global, many public non-global granules,

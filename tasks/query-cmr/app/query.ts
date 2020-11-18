@@ -37,10 +37,9 @@ export async function querySource(
   let page = 0;
   let done = false;
 
-  // const store = objectStoreForProtocol(queryLocation);
-  // const queryFile = store ? await store.downloadFile(queryLocation) : queryLocation;
-  // const cmrQuery = JSON.parse(await fs.readFile(queryFile, 'utf8'));
-  const cmrQuery = {};
+  const store = objectStoreForProtocol(queryLocation);
+  const queryFile = store ? await store.downloadFile(queryLocation) : queryLocation;
+  const cmrQuery = JSON.parse(await fs.readFile(queryFile, 'utf8'));
   const catalogs = [];
   while (!done) {
     const cmrResponse = await cmrQueryGranules(
