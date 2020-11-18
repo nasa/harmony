@@ -118,6 +118,9 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 # (default: docker-desktop).  minikube users should set it to "minikube"
 # KUBE_CONTEXT=
 
+# URL for the feedback module, displayed on the landing page
+# FEEDBACK_URL=
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #

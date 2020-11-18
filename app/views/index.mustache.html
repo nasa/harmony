@@ -11,6 +11,10 @@
         footer a {
             color: #92bfec;
         }
+        a .badge-dark {
+            text-decoration: none;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -114,10 +118,11 @@
                         <li class="list-inline-item"><a href="http://www.nasa.gov/FOIA/index.html">FOIA</a></li>
                         <li class="list-inline-item"><a href="http://www.nasa.gov/about/highlights/HP_Privacy.html">NASA Privacy Policy</a></li>
                         <li class="list-inline-item"><a href="http://www.usa.gov/">USA.gov</a></li>
+                        {{#feedbackUrl}}<li class="list-inline-item"><a href="{{{feedbackUrl}}}">Feedback</a></li>{{/feedbackUrl}}
                     </ul>
                 </div>
                 <div class="col-md-4">
-                    <p class="text-right"><span class="badge bg-dark">v {{version}}</span></p>
+                    <p class="text-right"><a href="/versions"><span class="badge bg-dark">v {{version}}</span></a></p>
                 </div>
             </div>
         </div>

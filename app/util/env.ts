@@ -39,6 +39,7 @@ interface HarmonyEnv {
   defaultArgoPodTimeoutSecs: number;
   builtInTaskPrefix: string;
   builtInTaskVersion: string;
+  feedbackUrl: string;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -102,6 +103,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['DEFAULT_ARGO_POD_TIMEOUT_SECS', 14400],
   ['BUILT_IN_TASK_PREFIX', ''],
   ['BUILT_IN_TASK_VERSION', 'latest'],
+  ['FEEDBACK_URL', null],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases

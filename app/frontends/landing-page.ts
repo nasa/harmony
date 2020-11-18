@@ -19,5 +19,6 @@ export default async function landingPage(req: HarmonyRequest, res: Response): P
     root,
     edlUrl: env.oauthHost,
     version,
+    feedbackUrl: env.feedbackUrl,
   });
 }
