@@ -9,6 +9,7 @@ x-argo-config: &default-argo-config
     namespace: argo
     env: &default-argo-env
       USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+      LOCALSTACK_HOST: !Env ${BACKEND_HOST}
       AWS_DEFAULT_REGION: us-west-2
       STAGING_BUCKET: !Env ${STAGING_BUCKET}
       TEXT_LOGGER: !Env ${TEXT_LOGGER}

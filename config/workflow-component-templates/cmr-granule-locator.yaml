@@ -33,16 +33,14 @@ spec:
           [
             "--harmony-input",
             "{{inputs.parameters.operation}}",
-            '--query',
+            "--query",
             "{{inputs.parameters.query}}",
-            '--output-dir',
-            '/tmp/outputs',
-            '--batch-size',
+            "--output-dir",
+            "/tmp/outputs",
+            "--batch-size",
             "{{inputs.parameters.batch-size}}",
-            '--page-size',
+            "--page-size",
             "{{inputs.parameters.page-size}}",
-            "--harmony-input",
-            "{{inputs.parameters.operation}}",
           ]
         envFrom:
           - configMapRef:

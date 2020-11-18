@@ -1,10 +1,8 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import * as axios from 'axios';
-// import { param } from 'express-validator';
 import BaseService, { functionalSerializeOperation } from './base-service';
 import InvocationResult from './invocation-result';
-// import { batchOperations } from '../../util/batch';
 
 import env = require('../../util/env');
 
@@ -15,7 +13,6 @@ export interface ArgoServiceParams {
   template_type?: string;
   template_ref?: string;
   embedded_template?: string;
-  service_images?: ServiceImage[];
   image_pull_policy?: string;
   parallelism?: number;
   postBatchStepCount?: number;
@@ -119,10 +116,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
         value: operation.callback,
       },
       {
-        name: 'service-images',
-        value: this.params.service_images,
-      },
-      {
         name: 'cmr-granule-locator-image',
         value: env.cmrGranuleLocatorImage,
       },
@@ -150,12 +143,11 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
         name: 'parallelism',
         value: this.params.parallelism || env.defaultParallelism,
       },
+      {
+        name: 'query',
+        value: this.operation.cmrQueryLocations.join(' '),
+      },
     ];
-
-    // Add mappings from service names to the Docker image names for the services
-    for (const serviceImage of this.params.service_images) {
-      params.push({ name: `${serviceImage.name}-image`, value: serviceImage.image });
-    }
 
     params = params.concat(dockerEnv);
 
@@ -311,7 +303,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     // we need to serialize the batch operation to get just the model and then deserialize
     // it so we can pass it to the Argo looping/concurrency mechanism in the workflow
     // which expects objects not strings
-    const serializedOp = JSON.parse(functionalSerializeOperation(this.operation, this.config));
+    const serializedOp = functionalSerializeOperation(this.operation, this.config);
     const argoParams = [...params, { name: 'operation', value: serializedOp }];
     return {
       namespace: this.params.namespace,
@@ -329,7 +321,9 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
           arguments: {
             parameters: argoParams,
           },
-          workflowTemplateRef: `${this.params.template}-chain`,
+          workflowTemplateRef: {
+            name: `${this.params.template}-chain`,
+          },
         },
       },
     };
