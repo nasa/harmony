@@ -17,14 +17,14 @@ spec:
       outputs:
         artifacts:
           - name: metadata
-            path: /tmp/metadata
+            path: /tmp/outputs
         parameters:
           - name: batch-count
             valueFrom:
-              path: /tmp/batch-count.txt
+              path: /tmp/outputs/batch-count.txt
           - name: batch-catalogs
             valueFrom:
-              path: /tmp/batch-catalogs.json
+              path: /tmp/outputs/batch-catalogs.json
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "{{inputs.parameters.image}}"

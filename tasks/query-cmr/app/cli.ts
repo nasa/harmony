@@ -4,7 +4,6 @@ import path from 'path';
 import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
 import env from '../../../app/util/env';
-
 import { queryGranules } from './query';
 
 interface HarmonyArgv {
@@ -13,6 +12,7 @@ interface HarmonyArgv {
   query?: (string | number)[];
   pageSize?: number;
   maxPages?: number;
+  batchSize?: number;
 }
 /**
  * Builds and returns the CLI argument parser
@@ -49,6 +49,12 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       describe: 'the maximum number of pages to provide per source',
       type: 'number',
       default: 1,
+    })
+    .option('batch-size', {
+      alias: 'b',
+      describe: 'number of granules to include in a single batch; create one catalog file per batch',
+      type: 'number',
+      default: 5, // TODO put back to 2000 prior to merge
     });
 }
 
@@ -62,14 +68,29 @@ export default async function main(args: string[]): Promise<void> {
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
   await fs.mkdir(options.outputDir, { recursive: true });
-  const catalog = await queryGranules(
+  const catalogs = await queryGranules(
     operation,
     options.query as string[],
     options.pageSize,
     options.maxPages,
+    options.batchSize,
   );
-  const filename = path.join(options.outputDir, 'catalog.json');
-  await catalog.write(filename, true);
+
+  const catalogFilenames = [];
+  const promises = catalogs.map(async (catalog, i) => {
+    const relativeFilename = `catalog${i}.json`;
+    const filename = path.join(options.outputDir, relativeFilename);
+    catalogFilenames.push(relativeFilename);
+    await catalog.write(filename, true);
+  });
+
+  const catalogListFilename = path.join(options.outputDir, 'batch-catalogs.json');
+  const catalogCountFilename = path.join(options.outputDir, 'batch-count.txt');
+
+  await Promise.all(promises);
+
+  await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
+  await fs.writeFile(catalogCountFilename, catalogFilenames.length);
 }
 
 if (require.main === module) {
