@@ -12,6 +12,7 @@ spec:
         parameters:
           - name: operation
           - name: batch-count
+          - name: stac-catalog-link
           - name: image-pull-policy
           - name: timeout
           - name: callback
@@ -28,7 +29,7 @@ spec:
               from: "{{inputs.artifacts.metadata}}"
             parameters:
             - name: stac-catalog-link
-              value: "{{item}}"
+              value: "{{inputs.parameters.stac-catalog-link}}"
             - name: operation
               value: "{{inputs.parameters.operation}}"
             - name: image-pull-policy

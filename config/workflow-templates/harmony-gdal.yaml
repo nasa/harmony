@@ -58,7 +58,8 @@ spec:
             path: /tmp/metadata
         parameters:
           - name: stac-catalog-link
-            value: "/tmp/stac-catalog.json"
+            valueFrom: 
+              path: /tmp/stac-catalog.json
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "<DOCKER_IMAGE>"
