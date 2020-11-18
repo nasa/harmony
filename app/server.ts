@@ -1,4 +1,5 @@
 import express from 'express';
+import mustacheExpress from 'mustache-express';
 import { v4 as uuid } from 'uuid';
 import expressWinston from 'express-winston';
 import * as path from 'path';
@@ -80,7 +81,12 @@ export function start(config: Record<string, string>): {
   const backendPort = config.BACKEND_PORT || 3001;
 
   // Setup the frontend server to handle client requests
-  const frontend = buildServer('frontend', appPort, (app) => {
+  const frontend = buildServer('frontend', appPort, (app: express.Application) => {
+    // Setup mustache as a templating engine for HTML views
+    app.engine('mustache.html', mustacheExpress());
+    app.set('view engine', 'mustache.html');
+    app.set('views', path.join(__dirname, 'views'));
+
     if (config.EXAMPLE_SERVICES !== 'false') {
       app.use('/example', exampleBackend.router());
     }

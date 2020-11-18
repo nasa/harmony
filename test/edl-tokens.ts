@@ -54,15 +54,12 @@ describe('Earthdata login bearer token passing', function () {
       hookEdlTokenAuthenticationError();
       hookLandingPage();
 
-      it('returns a description mentioning the OGC coverages api', function () {
-        const { description } = JSON.parse(this.res.text);
-        expect(description).to.include('/{collectionId}/ogc-api-coverages/1.0.0');
+      it('returns an http success status', function () {
+        expect(this.res.statusCode).to.equal(200);
       });
 
-      it('ignores the passed in token and successfully directs to the requested page', function () {
-        expect(this.res.statusCode).to.equal(200);
-        const { description } = JSON.parse(this.res.text);
-        expect(description).to.include('/{collectionId}/ogc-api-coverages/1.0.0');
+      it('renders the requested resource', function () {
+        expect(this.res.text).to.include('Harmony allows you to seamlessly');
       });
     });
   });
