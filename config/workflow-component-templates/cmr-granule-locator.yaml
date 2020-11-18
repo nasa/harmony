@@ -14,7 +14,6 @@ spec:
           - name: batch-size
           - name: image-pull-policy
           - name: timeout
-          - name: CMR_ENDPOINT
       outputs:
         artifacts:
           - name: metadata
@@ -38,16 +37,15 @@ spec:
             "{{inputs.parameters.query}}",
             '--output-dir',
             '/tmp/outputs',
+            '--batch-size',
+            "{{inputs.parameters.batch-size}}",
             '--page-size',
             "{{inputs.parameters.page-size}}",
             "--harmony-input",
             "{{inputs.parameters.operation}}",
           ]
-        env:
-          - name: CMR_ENDPOINT
-            value: "{{inputs.parameters.CMR_ENDPOINT}}"
-          - name: SHARED_SECRET_KEY
-            valueFrom:
-              secretKeyRef:
-                name: shared-secret
-                key: secret-key
+        envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets

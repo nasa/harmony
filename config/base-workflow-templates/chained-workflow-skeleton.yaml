@@ -4,11 +4,28 @@ metadata:
   name: <chained-workflow-skeleton>
 spec:
   entrypoint: chained-workflow
-  # onExit: exit-handler
-  # arguments:
-  #   parameters:
-  #   - name: image-pull-policy
-  #     value: Never
+  onExit: exit-handler
+  arguments:
+    parameters:
+    - name: callback
+      value: ""
+    - name: timeout
+      value: "3600"
+    - name: parallelism
+      value: "10"
+    - name: operation
+      value: "{{inputs.parameters.operation}}"
+    - name: query
+      value: "{{inputs.parameters.query}}"
+    - name: page-size
+      value: "{{inputs.parameters.page-size}}"
+    - name: batch-size
+      value: "{{inputs.parameters.batch-size}}"
+    - name: cmr-granule-locator-image 
+      value: "{{inputs.parameters.cmr-granule-locator-image}}"
+    - name: image-pull-policy
+      value: "{{inputs.parameters.image-pull-policy}}"
+    
   templates:
     - name: chained-workflow
       inputs:
@@ -17,23 +34,12 @@ spec:
           - name: query
           - name: page-size
           - name: batch-size
-          - name: granule-locator-image
-          - name: image
+          - name: cmr-granule-locator-image
           - name: image-pull-policy
           - name: timeout
           - name: callback
           - name: post-batch-step-count
-          - name: AWS_DEFAULT_REGION
-          - name: USE_LOCALSTACK
-          - name: STAGING_BUCKET
           - name: STAGING_PATH
-          - name: TEXT_LOGGER
-          - name: BACKEND_HOST
-          - name: CMR_ENDPOINT
-          - name: OAUTH_HOST
-          - name: OAUTH_CLIENT_ID
-          - name: OAUTH_REDIRECT_URI
-          - name: FALLBACK_AUTHN_ENABLED
       steps:
       - - name: cmr-granule-locator
           templateRef: 
@@ -50,13 +56,11 @@ spec:
             - name: batch-size
               value: "{{inputs.parameters.batch-size}}"
             - name: image 
-              value: "{{inputs.parameters.granule-locator-image}}"
+              value: "{{inputs.parameters.cmr-granule-locator-image}}"
             - name: image-pull-policy
               value: "{{inputs.parameters.image-pull-policy}}"
             - name: timeout
               value: "{{inputs.parameters.timeout}}"
-            - name: CMR_ENDPOINT
-              value: "{{inputs.parameters.CMR_ENDPOINT}}"
       - - name: main-loop
           templateRef: 
             name: <placeholder-template>
@@ -76,65 +80,29 @@ spec:
               value: "{{inputs.parameters.post-batch-step-count}}"
             - name: callback
               value: "{{inputs.parameters.callback}}"
-            - name: image
-              value: "{{inputs.parameters.image}}"
             - name: image-pull-policy
               value: "{{inputs.parameters.image-pull-policy}}"
             - name: timeout
               value: "{{inputs.parameters.timeout}}"
-            - name: AWS_DEFAULT_REGION
-              value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
-            - name: USE_LOCALSTACK
-              value: "{{inputs.parameters.USE_LOCALSTACK}}"
-            - name: STAGING_BUCKET
-              value: "{{inputs.parameters.STAGING_BUCKET}}"
             - name: STAGING_PATH
-              value: "{{inputs.parameters.STAGING_BUCKET}}"
-            - name: TEXT_LOGGER
-              value: "{{inputs.parameters.TEXT_LOGGER}}"
-            - name: BACKEND_HOST
-              value: "{{inputs.parameters.BACKEND_HOST}}"
-            - name: OAUTH_HOST
-              value: "{{inputs.parameters.OAUTH_HOST}}"
-            - name: OAUTH_CLIENT_ID
-              value: "{{inputs.parameters.OAUTH_CLIENT_ID}}"
-            - name: OAUTH_REDIRECT_URI
-              value: "{{inputs.parameters.OAUTH_REDIRECT_URI}}"
-            - name: FALLBACK_AUTHN_ENABLED
-              value: "{{inputs.parameters.FALLBACK_AUTHN_ENABLED}}"
+              value: "{{inputs.parameters.STAGING_PATH}}"
           withParam: "{{steps.cmr-granule-locator.outputs.parameters.batch-catalogs}}"
-    - name: exit-handler-body
-      inputs:
-        parameters:
-          - name: image-pull-policy
-          - name: timeout
-          - name: callback
-          - name: status
-          - name: failures
-      steps:
-      - - name: exit-handler-step
-          templateRef:
-            name: exit-handler
-            template: exit-handler
-          arguments:
-            parameters:
-            - name: image-pull-policy
-              value: "{{inputs.parameters.image-pull-policy}}"
-            - name: timeout
-              value: "{{inputs.parameters.timeout}}"
-            - name: callback
-              value: "{{inputs.parameters.callback}}"
-            - name: status
-              value: "{{inputs.parameters.status}}"
-            - name: failures
-              value: "{{inputs.parameters.failures}}"
     - name: exit-handler
       steps:
       - - name: exit-handler
-          template: exit-handler-body
+          templateRef:
+            name: exit-handler
+            template: exit-handler
           arguments:
             parameters:
             - name: status
               value: "{{workflow.status}}"
             - name: failures
               value: "{{workflow.failures}}"
+            - name: image-pull-policy
+              value: IfNotPresent
+            - name: callback
+              value: "{{workflow.parameters.callback}}"
+            - name: timeout
+              value: "{{workflow.parameters.timeout}}"
+            

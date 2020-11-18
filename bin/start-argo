@@ -41,6 +41,7 @@ DRIVER_DEFAULT=docker
 
 DRIVER=${DRIVER:-$DRIVER_DEFAULT}
 
+source ".service-images"
 source ".env"
 [[ -n $KUBERNETES_URL ]] && alias kubectl="kubectl -s $KUBERNETES_URL"
 
@@ -92,34 +93,34 @@ kubectl -n argo create configmap localstack-config --from-literal=startup.sh="${
 
 cat <<EOF | kubectl -n argo apply -f -
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: argo-edl-credentials
-type: Opaque
+  name: harmony-env
 data:
-  username: $(echo -n "${EDL_USERNAME}" | base64)
-  password: $(echo -n "${EDL_PASSWORD}" | base64)
+  AWS_DEFAULT_REGION: "${AWS_DEFAULT_REGION}"
+  USE_LOCALSTACK: "${USE_LOCALSTACK}"
+  STAGING_BUCKET: "${STAGING_BUCKET}"
+  STAGING_PATH: "${STAGING_PATH}"
+  TEXT_LOGGER: "${TEXT_LOGGER}"
+  BACKEND_HOST: "${BACKEND_HOST}"
+  OAUTH_HOST: "${OAUTH_HOST}"
+  OAUTH_CLIENT_ID: "${OAUTH_CLIENT_ID}"
+  OAUTH_REDIRECT_URI: "${OAUTH_REDIRECT_URI}"
+  FALLBACK_AUTHN_ENABLED: "${FALLBACK_AUTHN_ENABLED}"
 EOF
 
 cat <<EOF | kubectl -n argo apply -f -
 apiVersion: v1
 kind: Secret
 metadata:
-  name: argo-oauth-credentials
+  name: harmony-secrets
 type: Opaque
 data:
-  username: $(echo -n "${OAUTH_UID}" | base64)
-  password: $(echo -n "${OAUTH_PASSWORD}" | base64)
-EOF
-
-cat <<EOF | kubectl -n argo apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: shared-secret
-type: Opaque
-data:
-  secret-key: $(echo -n "${SHARED_SECRET_KEY}" | base64)
+  OAUTH_UID: $(echo -n "${OAUTH_UID}" | base64)
+  OAUTH_PASSWORD: $(echo -n "${OAUTH_PASSWORD}" | base64)
+  EDL_USERNAME: $(echo -n "${EDL_USERNAME}" | base64)
+  EDL_PASSWORD: $(echo -n "${EDL_PASSWORD}" | base64)
+  SHARED_SECRET_KEY: $(echo -n "${SHARED_SECRET_KEY}" | base64)
 EOF
 
 kubectl apply -n argo -f ./config/local-argo-deployment.yml
@@ -187,6 +188,20 @@ function parameterize_template {
   echo "${out_file}"
 }
 
+# set the `image` for a container definition in a workflow using the images defined in
+# .service-images
+function inject_docker_image {
+  f=$1
+  workflow=$(basename $f .yaml)
+  image_key="${workflow//-/_}_image"
+  image=${!image_key}
+  new_template_path="/tmp/${workflow}.yaml"
+  raw_template=$(cat $f)
+  new_template="${raw_template//\<DOCKER_IMAGE\>/${image}}"
+  echo "${new_template}" > "${new_template_path}"
+  echo "${new_template_path}"
+}
+
 for f in ./config/workflow-component-templates/*; do
   install_template $f
 done
@@ -194,13 +209,11 @@ done
 for f in ./config/workflow-templates/*; do
   batch_file=$(create_batch_template $f)
   chain_file=$(parameterize_template $f)
-  install_template $f
+  workflow_file=$(inject_docker_image $f)
+  
+  install_template $workflow_file
   install_template $batch_file
   install_template $chain_file
-done
-
-for f in ./config/workflow-templates-test/*; do
-  install_template $f
 done
 
 if [[ "$KUBE_CONTEXT" == "minikube" ]]; then

@@ -17,27 +17,17 @@ spec:
           - name: batch-count
           - name: should-post-results
           - name: post-batch-step-count
-          - name: AWS_DEFAULT_REGION
-          - name: USE_LOCALSTACK
-          - name: STAGING_BUCKET
-          - name: BACKEND_HOST
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       script:
         image: "everpeace/curl-jq"
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
         command: [bash]
+        envFrom:
+          - configMapRef:
+              name: harmony-env
         env:
-          - name: AWS_DEFAULT_REGION
-            value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
-          - name: USE_LOCALSTACK
-            value: "{{inputs.parameters.USE_LOCALSTACK}}"
-          - name: STAGING_BUCKET
-            value: "{{inputs.parameters.STAGING_BUCKET}}"
           - name: SHOULD_POST_RESULTS
             value: "{{inputs.parameters.should-post-results}}"
-          - name: BACKEND_HOST
-            value: "{{inputs.parameters.BACKEND_HOST}}"
-
         source: |
           #!/usr/bin/env bash
           # send the progress to Harmony along with links if needed

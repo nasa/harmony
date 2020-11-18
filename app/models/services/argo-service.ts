@@ -1,9 +1,10 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import * as axios from 'axios';
+// import { param } from 'express-validator';
 import BaseService, { functionalSerializeOperation } from './base-service';
 import InvocationResult from './invocation-result';
-import { batchOperations } from '../../util/batch';
+// import { batchOperations } from '../../util/batch';
 
 import env = require('../../util/env');
 
@@ -14,11 +15,16 @@ export interface ArgoServiceParams {
   template_type?: string;
   template_ref?: string;
   embedded_template?: string;
-  image: string;
+  service_images?: ServiceImage[];
   image_pull_policy?: string;
   parallelism?: number;
   postBatchStepCount?: number;
   env: { [key: string]: string };
+}
+
+export interface ServiceImage {
+  name: string;
+  image: string;
 }
 
 interface ArgoVariable {
@@ -63,6 +69,29 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
   }
 
   /**
+   * Returns the page size to use for the given request
+   * @private
+   *
+   * @param maxGranules The system-wide maximum granules
+   * @returns The number of granules per page of results from the CMR
+   */
+  choosePageSize(maxGranules = env.maxGranuleLimit): number {
+    const { maxResults } = this.operation;
+    // TODO create an env var for this based on CMR max page size
+    let pageSize = 2000;
+
+    if (pageSize > maxGranules) {
+      pageSize = maxGranules;
+    }
+
+    if (maxResults) {
+      pageSize = Math.min(pageSize, maxResults);
+    }
+
+    return pageSize;
+  }
+
+  /**
    * Invokes an Argo workflow to execute a service request
    *
    *  @param logger the logger associated with the request
@@ -90,8 +119,12 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
         value: operation.callback,
       },
       {
-        name: 'image',
-        value: this.params.image,
+        name: 'service-images',
+        value: this.params.service_images,
+      },
+      {
+        name: 'cmr-granule-locator-image',
+        value: env.cmrGranuleLocatorImage,
       },
       {
         name: 'image-pull-policy',
@@ -105,7 +138,24 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
         name: 'post-batch-step-count',
         value: `${this.params.postBatchStepCount || 0}`,
       },
+      {
+        name: 'page-size',
+        value: `${this.chooseBatchSize()}`,
+      },
+      {
+        name: 'batch-size',
+        value: `${this.choosePageSize()}`,
+      },
+      {
+        name: 'parallelism',
+        value: this.params.parallelism || env.defaultParallelism,
+      },
     ];
+
+    // Add mappings from service names to the Docker image names for the services
+    for (const serviceImage of this.params.service_images) {
+      params.push({ name: `${serviceImage.name}-image`, value: serviceImage.image });
+    }
 
     params = params.concat(dockerEnv);
 
@@ -257,22 +307,18 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    */
   _legacyWorkflowBody(params: ArgoVariable[]): unknown {
     const { user, requestId } = this.operation;
-    // Further limit the batch size so the POST body doesn't exceed Argo limits
-    const batchSize = this.chooseBatchSize(Math.min(env.maxGranuleLimit, 200));
-    const parallelism = this.params.parallelism || env.defaultParallelism;
 
-    const batch = batchOperations(this.operation, batchSize);
-    // we need to serialize the batch operations to get just the models and then deserialize
-    // them so we can pass them to the Argo looping/concurrency mechanism in the workflow
+    // we need to serialize the batch operation to get just the model and then deserialize
+    // it so we can pass it to the Argo looping/concurrency mechanism in the workflow
     // which expects objects not strings
-    const ops = batch.map((op) => JSON.parse(functionalSerializeOperation(op, this.config)));
-
+    const serializedOp = JSON.parse(functionalSerializeOperation(this.operation, this.config));
+    const argoParams = [...params, { name: 'operation', value: serializedOp }];
     return {
       namespace: this.params.namespace,
       serverDryRun: false,
       workflow: {
         metadata: {
-          generateName: `${this.params.template}-`,
+          generateName: `${this.params.template}-chain-`,
           namespace: this.params.namespace,
           labels: {
             user,
@@ -280,46 +326,10 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
           },
         },
         spec: {
-          entryPoint: 'service',
-          onExit: 'exit-handler',
-          templates: [
-            {
-              name: 'service',
-              parallelism,
-              steps: [
-                [
-                  {
-                    name: 'service',
-                    templateRef: {
-                      name: this.params.template,
-                      template: this.params.template,
-                    },
-                    arguments: {
-                      parameters: [
-                        ...params,
-                        { name: 'operation', value: '{{item}}' },
-                        { name: 'batch-count', value: `${ops.length}` },
-                        { name: 'template-ref', value: 'fake-stac-generator2' },
-                      ],
-                    },
-                    withItems: ops,
-                  },
-                ],
-              ],
-            },
-            {
-              name: 'exit-handler',
-              inputs: {
-                parameters: params,
-              },
-              script: {
-                image: 'curlimages/curl',
-                imagePullPolicy: 'IfNotPresent',
-                command: ['sh'],
-                source: this._buildExitHandlerScript(),
-              },
-            },
-          ],
+          arguments: {
+            parameters: argoParams,
+          },
+          workflowTemplateRef: `${this.params.template}-chain`,
         },
       },
     };

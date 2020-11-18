@@ -3,31 +3,70 @@ kind: WorkflowTemplate
 metadata:
   name: var-subsetter
 spec:
-  entrypoint: var-subsetter
+  entrypoint: var-subsetter-steps
   templates:
-    - name: var-subsetter
+    - name: var-subsetter-steps
       inputs:
+        artifacts:
+        - name: metadata
         parameters:
           - name: operation
-          - name: image
+          - name: stac-catalog-link
           - name: image-pull-policy
           - name: timeout
-          - name: AWS_DEFAULT_REGION
-          - name: USE_LOCALSTACK
-          - name: STAGING_BUCKET
           - name: STAGING_PATH
-          - name: TEXT_LOGGER
-          - name: BACKEND_HOST
-          - name: OAUTH_HOST
-          - name: OAUTH_CLIENT_ID
-          - name: OAUTH_REDIRECT_URI
-          - name: FALLBACK_AUTHN_ENABLED
+      steps:
+      - - name: last-step
+          template: var-subsetter-service
+          arguments:
+            artifacts:
+            - name: metadata
+              from: "{{inputs.artifacts.metadata}}"
+            parameters:
+            - name: operation
+              value: "{{inputs.parameters.operation}}"
+            - name: stac-catalog-link
+              value: "{{inputs.parameters.stac-catalog-link}}"
+            - name: image-pull-policy
+              value: "{{inputs.parameters.image-pull-policy}}"
+            - name: timeout
+              value: "{{inputs.parameters.timeout}}"
+            - name: STAGING_PATH
+              value: "{{inputs.parameters.STAGING_PATH}}"
+      outputs:
+        artifacts:
+          - name: metadata
+            from: "{{steps.last-step.outputs.artifacts.metadata}}"
+        parameters:
+          - name: stac-catalog-link
+            value: "/tmp/stac-catalog.json"
+    - name: var-subsetter-service
+      inputs:
+        artifacts:
+        - name: metadata
+          path: /tmp/metadata
+        parameters:
+          - name: operation
+          - name: stac-catalog-link
+          - name: image-pull-policy
+          - name: timeout
+          - name: STAGING_PATH
+      outputs:
+        artifacts:
+        # generate metadata artfiact from /tmp/metadata directory
+          - name: metadata
+            path: /tmp/metadata
+        parameters:
+          - name: stac-catalog-link
+            value: "/tmp/stac-catalog.json"
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
-        image: "{{inputs.parameters.image}}"
+        image: "<DOCKER_IMAGE>"
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
         command: ["python3"]
         args:
+         # TODO need to pass in the stac-catalog-link so the library knows which stac catalog
+        # to use
           [
             "subsetter.py",
             "--harmony-action",
@@ -35,49 +74,11 @@ spec:
             "--harmony-input",
             "{{inputs.parameters.operation}}",
           ]
+        envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
         env:
-          - name: AWS_DEFAULT_REGION
-            value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
-          - name: USE_LOCALSTACK
-            value: "{{inputs.parameters.USE_LOCALSTACK}}"
-          - name: OAUTH_UID
-            valueFrom:
-              secretKeyRef:
-                name: argo-oauth-credentials
-                key: username
-          - name: OAUTH_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: argo-oauth-credentials
-                key: password
-          - name: EDL_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: argo-edl-credentials
-                key: username
-          - name: EDL_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: argo-edl-credentials
-                key: password
-          - name: SHARED_SECRET_KEY
-            valueFrom:
-              secretKeyRef:
-                name: shared-secret
-                key: secret-key
-          - name: STAGING_BUCKET
-            value: "{{inputs.parameters.STAGING_BUCKET}}"
           - name: STAGING_PATH
             value: "{{inputs.parameters.STAGING_PATH}}"
-          - name: TEXT_LOGGER
-            value: "{{inputs.parameters.TEXT_LOGGER}}"
-          - name: BACKEND_HOST
-            value: "{{inputs.parameters.BACKEND_HOST}}"
-          - name: OAUTH_HOST
-            value: "{{inputs.parameters.OAUTH_HOST}}"
-          - name: OAUTH_CLIENT_ID
-            value: "{{inputs.parameters.OAUTH_CLIENT_ID}}"
-          - name: OAUTH_REDIRECT_URI
-            value: "{{inputs.parameters.OAUTH_REDIRECT_URI}}"
-          - name: FALLBACK_AUTHN_ENABLED
-            value: "{{inputs.parameters.FALLBACK_AUTHN_ENABLED}}"

@@ -12,21 +12,11 @@ spec:
         parameters:
           - name: operation
           - name: batch-count
-          - name: image
           - name: image-pull-policy
           - name: timeout
           - name: callback
           - name: post-batch-step-count
-          - name: AWS_DEFAULT_REGION
-          - name: USE_LOCALSTACK
-          - name: STAGING_BUCKET
           - name: STAGING_PATH
-          - name: TEXT_LOGGER
-          - name: BACKEND_HOST
-          - name: OAUTH_HOST
-          - name: OAUTH_CLIENT_ID
-          - name: OAUTH_REDIRECT_URI
-          - name: FALLBACK_AUTHN_ENABLED
       steps:
       - - name: main-loop
           templateRef: 
@@ -41,32 +31,12 @@ spec:
               value: "{{item}}"
             - name: operation
               value: "{{inputs.parameters.operation}}"
-            - name: image
-              value: "{{inputs.parameters.image}}"
             - name: image-pull-policy
               value: "{{inputs.parameters.image-pull-policy}}"
             - name: timeout
               value: "{{inputs.parameters.timeout}}"
-            - name: AWS_DEFAULT_REGION
-              value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
-            - name: USE_LOCALSTACK
-              value: "{{inputs.parameters.USE_LOCALSTACK}}"
-            - name: STAGING_BUCKET
-              value: "{{inputs.parameters.STAGING_BUCKET}}"
             - name: STAGING_PATH
               value: "{{inputs.parameters.STAGING_PATH}}"
-            - name: TEXT_LOGGER
-              value: "{{inputs.parameters.TEXT_LOGGER}}"
-            - name: BACKEND_HOST
-              value: "{{inputs.parameters.BACKEND_HOST}}"
-            - name: OAUTH_HOST
-              value: "{{inputs.parameters.OAUTH_HOST}}"
-            - name: OAUTH_CLIENT_ID
-              value: "{{inputs.parameters.OAUTH_CLIENT_ID}}"
-            - name: OAUTH_REDIRECT_URI
-              value: "{{inputs.parameters.OAUTH_REDIRECT_URI}}"
-            - name: FALLBACK_AUTHN_ENABLED
-              value: "{{inputs.parameters.FALLBACK_AUTHN_ENABLED}}"
       - - name: result-handler
           templateRef:
             name: result-handler
@@ -92,12 +62,4 @@ spec:
               value: "{{inputs.parameters.post-batch-step-count}}"
             - name: should-post-results
               value: "true"
-            - name: AWS_DEFAULT_REGION
-              value: "{{inputs.parameters.AWS_DEFAULT_REGION}}"
-            - name: USE_LOCALSTACK
-              value: "{{inputs.parameters.USE_LOCALSTACK}}"
-            - name: STAGING_BUCKET
-              value: "{{inputs.parameters.STAGING_BUCKET}}"
-            - name: BACKEND_HOST
-              value: "{{inputs.parameters.BACKEND_HOST}}"
   # TODO add an output artifact here so we can use it with any post batch step(s)
