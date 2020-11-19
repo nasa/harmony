@@ -51,7 +51,7 @@ https://cmr.earthdata.nasa.gov:
         - image/gif
       reprojection: true
 
-- name: harmony/netcdf-to-zarr
+  - name: harmony/netcdf-to-zarr
     data_operation_version: '0.9.0'
     type:
       <<: *default-argo-config
