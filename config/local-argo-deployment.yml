@@ -482,7 +482,9 @@ data:
       ttlStrategy:
         secondsAfterCompletion: 14400
       podGC:
-        strategy: OnPodCompletion
+        # TODO: Put this back to OnPodCompletion - needed to do this to debug because pods
+        # were getting deleted before the logs were being saved as artifacts in some cases
+        strategy: OnPodSuccess
 
   metricsConfig: |
     disableLegacy: true

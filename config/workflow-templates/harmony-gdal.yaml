@@ -39,7 +39,7 @@ spec:
             from: "{{steps.last-step.outputs.artifacts.metadata}}"
         parameters:
           - name: stac-catalog-link
-            valueFrom: 
+            valueFrom:
               parameter: "{{steps.last-step.outputs.parameters.stac-catalog-link}}"
     - name: harmony-gdal-service
       inputs:
@@ -57,14 +57,14 @@ spec:
         # generate metadata artifact from /tmp/outputs directory
           - name: metadata
             # TODO this will fail because the path does not exist
-            path: /tmp/outputs
+            # path: /tmp/outputs
             # THIS will "work" because the path exists, but it is not correct
-            # path: /tmp/metadata
+            path: /tmp/metadata
         parameters:
           - name: stac-catalog-link
-            valueFrom: 
+            valueFrom:
             # TODO FIX THIS
-              path: /tmp/metadata/batch-count.txt
+              path: /tmp/outputs/metadata/batch-count.txt
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "<DOCKER_IMAGE>"
@@ -80,6 +80,10 @@ spec:
             "invoke",
             "--harmony-input",
             "{{inputs.parameters.operation}}",
+            "--harmony-sources",
+            "/tmp/metadata/{{inputs.parameters.stac-catalog-link}}",
+            "--harmony-metadata-dir",
+            "/tmp/outputs/metadata"
           ]
         envFrom:
           - configMapRef:

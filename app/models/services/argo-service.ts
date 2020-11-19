@@ -304,6 +304,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     // it so we can pass it to the Argo looping/concurrency mechanism in the workflow
     // which expects objects not strings
     const serializedOp = functionalSerializeOperation(this.operation, this.config);
+    // TODO - remove the sources from the operation
     const argoParams = [...params, { name: 'operation', value: serializedOp }];
     return {
       namespace: this.params.namespace,
