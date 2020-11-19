@@ -17,6 +17,7 @@ export interface ArgoServiceParams {
   parallelism?: number;
   postBatchStepCount?: number;
   env: { [key: string]: string };
+  image?: string;
 }
 
 export interface ServiceImage {
@@ -304,8 +305,14 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     // it so we can pass it to the Argo looping/concurrency mechanism in the workflow
     // which expects objects not strings
     const serializedOp = functionalSerializeOperation(this.operation, this.config);
+
+    const serializedOperation = JSON.parse(serializedOp);
+    for (const source of serializedOperation.sources) {
+      delete source.granules;
+    }
+
     // TODO - remove the sources from the operation
-    const argoParams = [...params, { name: 'operation', value: serializedOp }];
+    const argoParams = [...params, { name: 'operation', value: JSON.stringify(serializedOperation) }];
     return {
       namespace: this.params.namespace,
       serverDryRun: false,

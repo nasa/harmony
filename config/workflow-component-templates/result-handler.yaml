@@ -10,7 +10,7 @@ spec:
           - name: metadata
             path: /tmp/metadata
         parameters:
-          - name: stac-catalog-link 
+          - name: stac-catalog-link
           - name: image-pull-policy
           - name: timeout
           - name: callback
@@ -30,6 +30,7 @@ spec:
             value: "{{inputs.parameters.should-post-results}}"
         source: |
           #!/usr/bin/env bash
+          set -x
           # send the progress to Harmony along with links if needed
           EXIT_CODE=0
           if [[ "${SHOULD_POST_RESULTS}" == "true" ]]; then
@@ -75,4 +76,3 @@ spec:
           EXIT_CODE=$?
           echo "Progress callback completed with exit code ${EXIT_CODE}"
           exit $EXIT_CODE
-          

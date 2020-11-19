@@ -56,23 +56,18 @@ spec:
         artifacts:
         # generate metadata artifact from /tmp/outputs directory
           - name: metadata
-            # TODO this will fail because the path does not exist
-            # path: /tmp/outputs
-            # THIS will "work" because the path exists, but it is not correct
-            path: /tmp/metadata
+            path: /tmp/outputs/metadata
         parameters:
           - name: stac-catalog-link
             valueFrom:
-            # TODO FIX THIS
-              path: /tmp/outputs/metadata/batch-count.txt
+              default: catalog.json
+              path: 'does-not-exist.fake' # Required but we want the fallback
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "<DOCKER_IMAGE>"
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
         command: ["python3"]
         args:
-        # TODO need to pass in the stac-catalog-link so the library knows which stac catalog
-        # to use
           [
             "-m",
             "harmony_gdal",
