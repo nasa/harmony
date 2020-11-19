@@ -53,12 +53,12 @@ spec:
           - name: STAGING_PATH
       outputs:
         artifacts:
-        # generate metadata artfiact from /tmp/metadata directory
+        # generate metadata artifact from /tmp/outputs directory
           - name: metadata
-            path: /tmp/metadata
+            path: /tmp/outputs/metadata
         parameters:
           - name: stac-catalog-link
-            value: "/tmp/stac-catalog.json"
+            value: catalog.json
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "<DOCKER_IMAGE>"
@@ -73,6 +73,10 @@ spec:
             "invoke",
             "--harmony-input",
             "{{inputs.parameters.operation}}",
+            "--harmony-sources",
+            "/tmp/metadata/{{inputs.parameters.stac-catalog-link}}",
+            "--harmony-metadata-dir",
+            "/tmp/outputs/metadata"
           ]
         envFrom:
           - configMapRef:

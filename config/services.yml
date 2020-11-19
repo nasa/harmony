@@ -136,6 +136,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: harmony/gdal
     data_operation_version: '0.9.0'
+    batch_size: 10
     type:
       <<: *default-argo-config
       params:
@@ -198,6 +199,7 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: swot-reproject
+        template_type: chaining
         image: !Env ${SWOT_REPR_IMAGE}
         image_pull_policy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
         parallelism: !Env ${SWOT_REPR_PARALLELISM}
@@ -231,6 +233,7 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: var-subsetter
+        template_type: chaining
         image: !Env ${VAR_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
@@ -269,68 +272,6 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
       output_formats:
         - image/tiff
-      reprojection: true
-
-  # This is an example service and backend from example/http-backend.js mounted by
-  # the frontend callback server.
-  - name: harmony/chaining-example
-    data_operation_version: '0.9.0'
-    batch_size: 2000
-    type:
-      <<: *default-argo-config
-      params:
-        <<: *default-argo-params
-        # Minimal parameters for current partial chaining implementation
-        image: harmony/query-cmr:latest
-        template_type: chaining
-        env:
-          <<: *default-argo-env
-          LOCALSTACK_HOST: !Env ${BACKEND_HOST}
-    collections:
-      # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
-      # Good example, being in UAT, global, many public non-global granules,
-      # and not yet on the services roadmap.
-      - C1096-PVC_TS2
-    capabilities:
-      subsetting:
-        variable: true
-        bbox: true
-      output_formats:
-        - image/tiff
-      reprojection: true
-
-   # This is an example service using a result handler
-  - name: harmony/result-handler-example
-    data_operation_version: '0.9.0'
-    batch_size: 1
-    type:
-      <<: *default-argo-config
-      params:
-        <<: *default-argo-params
-        image: harmony/query-cmr:latest
-        template: test-chain-with-result-handler
-        templateRef: fake-stac-generator
-        embedded-template: fake-stac-generator
-        image_pull_policy: !Env ${DEFAULT_IMAGE_PULL_POLICY}
-        parallelism: !Env ${DEFAULT_PARALLELISM}
-        env:
-          <<: *default-argo-env
-          STAGING_PATH: public/harmony/result-handler-example
-    collections:
-      # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
-      # Good example, being in UAT, global, many public non-global granules,
-      # and not yet on the services roadmap.
-      - C1096-PVC_TS2
-    capabilities:
-      subsetting:
-        bbox: false
-        variable: false
-      output_formats:
-        - image/tiff
-        - image/png
-        - image/gif
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
       reprojection: true
 
   # PO.DAAC Shapefiles
@@ -388,6 +329,7 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: harmony-netcdf-to-zarr
+        template_type: chaining
         image: !Env ${NETCDF_TO_ZARR_IMAGE}
         image_pull_policy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
         parallelism: !Env ${NETCDF_TO_ZARR_PARALLELISM}

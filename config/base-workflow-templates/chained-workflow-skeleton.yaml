@@ -11,8 +11,6 @@ spec:
       value: ""
     - name: timeout
       value: "3600"
-    - name: parallelism
-      value: "10"
     - name: operation
       value: "{{inputs.parameters.operation}}"
     - name: query

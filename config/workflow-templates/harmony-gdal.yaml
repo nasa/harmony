@@ -59,9 +59,7 @@ spec:
             path: /tmp/outputs/metadata
         parameters:
           - name: stac-catalog-link
-            valueFrom:
-              default: catalog.json
-              path: 'does-not-exist.fake' # Required but we want the fallback
+            value: catalog.json
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "<DOCKER_IMAGE>"
