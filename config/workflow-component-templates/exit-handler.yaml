@@ -25,7 +25,7 @@ spec:
           then
           error="Request%20timed%20out"
           fi
-          if [ "{{inputs.parameters.status}}" == "Succeeded" ]
+          if [ "{{inputs.parameters.status}}" = 'Succeeded' ]
           then
           curl -XPOST "{{inputs.parameters.callback}}/response?status=successful&argo=true"
           else

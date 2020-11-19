@@ -75,8 +75,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    */
   choosePageSize(maxGranules = env.maxGranuleLimit): number {
     const { maxResults } = this.operation;
-    // TODO create an env var for this based on CMR max page size
-    let pageSize = 2000;
+    let pageSize = env.cmrMaxPageSize;
 
     if (pageSize > maxGranules) {
       pageSize = maxGranules;
@@ -186,11 +185,12 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
   }
 
   /**
-   * Returns a workflow POST body for Argo for invoking chainable services
+   * Returns a workflow POST body for Argo for invoking legacy (non-chained, low-granule limit)
+   * services
    * @param params The common workflow parameters to be passed to each service
    * @returns a JSON-serializable object to be POST-ed to initiate the Argo workflows
    */
-  _chainedWorkflowBody(params: ArgoVariable[]): unknown {
+  _legacyWorkflowBody(params: ArgoVariable[]): unknown {
     const { user, requestId } = this.operation;
     const serviceEnv = this.params.env;
     const envKeys = Object.keys(serviceEnv);
@@ -205,7 +205,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       delete source.granules;
     }
 
-    // TODO: HARMONY-559: Complete and move to permanent home.  For now, calls CMR and echoes result
     return {
       namespace: this.params.namespace,
       serverDryRun: false,
@@ -293,12 +292,11 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
   }
 
   /**
-   * Returns a workflow POST body for Argo for invoking legacy (non-chained, low-granule limit)
-   * services
+   * Returns a workflow POST body for Argo for invoking chainable services
    * @param params The common workflow parameters to be passed to each service
    * @returns a JSON-serializable object to be POST-ed to initiate the Argo workflows
    */
-  _legacyWorkflowBody(params: ArgoVariable[]): unknown {
+  _chainedWorkflowBody(params: ArgoVariable[]): unknown {
     const { user, requestId } = this.operation;
 
     // we need to serialize the batch operation to get just the model and then deserialize
@@ -311,7 +309,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       delete source.granules;
     }
 
-    // TODO - remove the sources from the operation
     const argoParams = [...params, { name: 'operation', value: JSON.stringify(serializedOperation) }];
     return {
       namespace: this.params.namespace,

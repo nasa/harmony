@@ -40,6 +40,7 @@ interface HarmonyEnv {
   builtInTaskPrefix: string;
   builtInTaskVersion: string;
   cmrGranuleLocatorImage: string;
+  cmrMaxPageSize: number;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -104,6 +105,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['BUILT_IN_TASK_PREFIX', ''],
   ['BUILT_IN_TASK_VERSION', 'latest'],
   ['CMR_GRANULE_LOCATOR_IMAGE', 'harmony/query-cmr'],
+  ['CMR_MAX_PAGE_SIZE', 2000],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases

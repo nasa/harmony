@@ -59,6 +59,7 @@ https://cmr.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: harmony-gdal
+        template_type: chaining
         image: !Env ${GDAL_IMAGE}
         image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
         parallelism: !Env ${GDAL_PARALLELISM}
@@ -140,6 +141,7 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: harmony-gdal
+        template_type: chaining
         image: !Env ${GDAL_IMAGE}
         image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
         parallelism: !Env ${GDAL_PARALLELISM}

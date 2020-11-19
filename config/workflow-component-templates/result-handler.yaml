@@ -30,7 +30,6 @@ spec:
             value: "{{inputs.parameters.should-post-results}}"
         source: |
           #!/usr/bin/env bash
-          set -x
           # send the progress to Harmony along with links if needed
           EXIT_CODE=0
           if [[ "${SHOULD_POST_RESULTS}" == "true" ]]; then
@@ -46,7 +45,7 @@ spec:
           LINK_INDEX=$((LINK_INDEX+1))
           # read and parse the STAC item file
           STAC_ITEM=$(cat "/tmp/metadata/${LINK}")
-          DATA_LINK=$(echo "${STAC_ITEM}" | jq -r '.assets.granule')
+          DATA_LINK=$(echo "${STAC_ITEM}" | jq -r '.assets.data')
           START=$(echo "${STAC_ITEM}" | jq -r '.properties.start_datetime')
           END=$(echo "${STAC_ITEM}" | jq -r '.properties.end_datetime')
           BBOX=$(echo "${STAC_ITEM}" | jq -r '.bbox')
