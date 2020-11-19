@@ -5,7 +5,7 @@ import { Response, NextFunction } from 'express';
 import { HttpError, RequestValidationError, buildErrorResponse } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 
-const errorTemplate = fs.readFileSync(path.join(__dirname, '../templates/server-error.mustache.html'), { encoding: 'utf8' });
+const errorTemplate = fs.readFileSync(path.join(__dirname, '../views/server-error.mustache.html'), { encoding: 'utf8' });
 const jsonErrorRoutesRegex = /jobs|ogc-api-coverages/;
 
 /**

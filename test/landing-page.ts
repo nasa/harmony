@@ -1,7 +1,14 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
+import request from 'supertest';
 import hookServersStartStop from './helpers/servers';
+import { hookRequest } from './helpers/hooks';
 import { hookLandingPage } from './helpers/landing-page';
+import env from '../app/util/env';
+import version from '../app/util/version';
+
+// This is the bulk of our HTML content.  If we do anything significant with HTML, we should
+// use a more capable testing framework like nightwatch.
 
 describe('Landing page', function () {
   hookServersStartStop();
@@ -13,47 +20,52 @@ describe('Landing page', function () {
       expect(this.res.statusCode).to.equal(200);
     });
 
-    it('returns a JSON response', function () {
-      expect(this.res.get('Content-Type')).to.equal('application/json; charset=utf-8');
+    it('returns an HTML response', function () {
+      expect(this.res.get('Content-Type')).to.equal('text/html; charset=utf-8');
     });
 
-    it('returns a description mentioning the OGC coverages api', function () {
-      const { description } = JSON.parse(this.res.text);
-      expect(description).to.include('/{collectionId}/ogc-api-coverages/1.0.0');
+    it('provides a link to the current EDL environment', function () {
+      expect(this.res.text).to.include(`<a href="${env.oauthHost}">Earthdata Login</a>`);
     });
 
-    it('returns a link to itself', function () {
-      const { links } = JSON.parse(this.res.text);
-      expect(links[0].title).to.equal('Harmony landing page');
-      expect(links[0].href).to.match(/^http.*/);
-      expect(links[0].rel).to.equal('self');
-      expect(links[0].type).to.equal('application/json');
+    it('links to notebook example', function () {
+      expect(this.res.text).to.match(/<a[^>]* href="\/notebook-example.html"[^>]*>View Jupyter Notebook Demo<\/a>/);
     });
 
-    it('returns a link to the jobs route', function () {
-      const { links } = JSON.parse(this.res.text);
-      expect(links[1].title).to.equal('Jobs listing returning all jobs for the logged in user');
-      expect(links[1].href).to.match(/^http.*\/jobs$/);
-      expect(links[1].rel).to.equal('jobs');
-      expect(links[1].type).to.equal('application/json');
+    it('links to a Swagger UI for the coverages API', function () {
+      expect(this.res.text).to.match(/<a[^>]* href="\/docs\/api\/"[^>]*>API Documentation<\/a>/);
     });
 
-    it('returns a link to the cloud access JSON route', function () {
-      const { links } = JSON.parse(this.res.text);
-      expect(links[2].title).to.include('Access keys for s3:// URLs, usable from AWS ');
-      expect(links[2].title).to.include('(JSON format)');
-      expect(links[2].href).to.match(/^http.*\/cloud-access$/);
-      expect(links[2].rel).to.equal('cloud-access-json');
-      expect(links[2].type).to.equal('application/json');
+    it('displays the current Harmony version', function () {
+      expect(this.res.text).to.include(`v ${version}`);
     });
 
-    it('returns a link to the cloud access shell script route', function () {
-      const { links } = JSON.parse(this.res.text);
-      expect(links[3].title).to.include('Access keys for s3:// URLs, usable from AWS ');
-      expect(links[3].title).to.include('(Shell format)');
-      expect(links[3].href).to.match(/^http.*\/cloud-access.sh$/);
-      expect(links[3].rel).to.equal('cloud-access-sh');
-      expect(links[3].type).to.equal('application/x-sh');
+    it('provides an absolute URL template for the OGC API Coverages endpoint', function () {
+      expect(this.res.text).to.match(/http:&#x2F;&#x2F;[^/]+\/{collectionId}\/ogc-api-coverages\/1\.0\.0/);
+    });
+
+    it('provides an absolute URL template for the WMS endpoint', function () {
+      expect(this.res.text).to.match(/http:&#x2F;&#x2F;[^/]+\/{collectionId}\/wms/);
+    });
+
+    describe('opening the notebook example link', function () {
+      // URL's existence verified above
+      hookRequest((app) => request(app).get('/notebook-example.html'));
+
+      it('provides an HTML representation of the Harmony Introduction notebook', function () {
+        expect(this.res.statusCode).to.equal(200);
+        expect(this.res.text).to.include('Harmony API Introduction');
+      });
+    });
+
+    describe('opening the API documentation link', function () {
+      // URL's existence verified above
+      hookRequest((app) => request(app).get('/docs/api/'));
+
+      it('provides a swagger UI representation of the Harmony API', function () {
+        expect(this.res.statusCode).to.equal(200);
+        expect(this.res.text).to.include('Swagger UI');
+      });
     });
   });
 });

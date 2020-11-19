@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="eui.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js" integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/" crossorigin="anonymous"></script>
+    <title>Harmony</title>
+    <style>
+        footer a {
+            color: #92bfec;
+        }
+        a .badge-dark {
+            text-decoration: none;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-lg">
+            <a class="navbar-brand nasa" href="#">Earthdata Harmony</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            </div>
+        </div>
+    </nav>
+    <div class="hero-callout" style="background-color: #2276ac;">
+        <div class="container-lg">
+            <div class="row pt-5">
+                <h1 class="text-center text-light display-4">Harmony allows you to seamlessly analyze Earth observation data from different NASA data centers</h1>
+            </div>
+            <div class="row pt-4 justify-content-center cta">
+                <div class="col-md-6 text-center"><a class="btn btn-lg btn-success" href="/notebook-example.html" role="button">View Jupyter Notebook Demo</a> <a class="btn btn-lg btn-outline-light" href="/docs/api/" role="button">API Documentation</a></div>
+            </div>
+            <div class="row pt-4">
+                <div class="col-12">
+                    <img class="img-fluid" alt="terminal" src="jupyter-harmony-grad.png" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-lg">
+        <div class="row pt-5 justify-content-center">
+            <h2 class="text-center display-4">Features</h2>
+        </div>
+        <div class="row pt-3 justify-content-center">
+            <div class="col-md-6">
+                <ul>
+                    <li><mark><strong>Consistent access patterns to EOSDIS holdings</strong></mark> make cross-data center data access easier</li>
+                    <li><mark><strong>Data reduction services</strong></mark> allow users to request only the data they want, in the format and projection they want</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul>
+                    <li><mark><strong>Analysis Ready Data</strong></mark> and cloud access will help reduce time-to-science</li>
+                    <li><mark><strong>Community Development</strong></mark> helps reduce the barriers for re-use of code and sharing of domain knowledge</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row pt-5 justify-content-center">
+            <h2 class="text-center display-4">Harmony Goals</h2>
+        </div>
+        <div class="row pt-3 pb-4 justify-content-center">
+            <div class="col-md-8">
+                <div class="card mb-3">
+                  <div class="row g-0">
+                    <div class="col-md-3 d-flex justify-content-center" style="background-color: #e3e3e3;">
+                        <img class="align-self-lg-center" src="columns-gap.svg"  alt="..." width="75" height="75">
+                    </div>
+                    <div class="col-md-9">
+                      <div class="card-body">
+                        <h5 class="card-title">Services</h5>
+                        <p class="card-text">Users should be able to seamlessly analyze data from different NASA data centers in ways previously unachievable. Harmony aims to increase usage and ease of use of EOSDIS' data, focusing on opportunities made possible by cloud-accessible data.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="card mb-3">
+                  <div class="row g-0">
+                    <div class="col-md-3 d-flex justify-content-center" style="background-color: #e3e3e3;">
+                      <img class="align-self-lg-center" src="columns.svg"  alt="..." width="75" height="75">
+                    </div>
+                    <div class="col-md-9">
+                      <div class="card-body">
+                        <h5 class="card-title">Together</h5>
+                        <p class="card-text">Transform how the development community works together to achieve #1. Let's reuse the simple, but necessary components (e.g. EDL, UMM, CMR and Metrics integration) and let's work together on the hard stuff like chaining, scaling and cloud optimizations.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="hero-callout" style="background-color: #e3e3e3;">
+        <div class="container-lg">
+            <div class="row pt-5 pb-4">
+                <div class="col-md-6">
+                    <p>Transformations can be performed using one of several Open Geospatial Consortium (OGC)-inspired APIs. Each API requires a collection concept ID CMR, and then transformations can be performed using</p>
+                    <p><code>{{root}}/{collectionId}/ogc-api-coverages/1.0.0</code> or<br><code>{{root}}/{collectionId}/wms</code></p>
+                    <p>All users will need an Earthdata login account from <a href="{{{edlUrl}}}">Earthdata Login</a> in order to perform transformations. See the links field for additional Harmony routes.</p>
+                </div>
+                <div class="col-md-6">
+                    <p><img src="harmony.png" alt="" class="img-fluid img-thumbnail" /></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div class="container-lg">
+            <div class="row pt-3">
+                <div class="col-md-8">
+                    <ul class="list-inline">
+                        <li class="list-inline-item">NASA Official: Stephen Berrick</li>
+                        <li class="list-inline-item"><a href="http://www.nasa.gov/FOIA/index.html">FOIA</a></li>
+                        <li class="list-inline-item"><a href="http://www.nasa.gov/about/highlights/HP_Privacy.html">NASA Privacy Policy</a></li>
+                        <li class="list-inline-item"><a href="http://www.usa.gov/">USA.gov</a></li>
+                        <li class="list-inline-item"><a href="#" onclick="javascript:feedback.showForm();">Feedback</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <p class="text-right"><a href="/versions"><span class="badge bg-dark">v {{version}}</span></a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script type="text/javascript" src="https://fbm.earthdata.nasa.gov/for/Harmony/feedback.js"></script>
+    <script type="text/javascript">feedback.init({showIcon: false});</script>
+</body>
+</html>

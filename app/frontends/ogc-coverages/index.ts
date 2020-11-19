@@ -15,7 +15,7 @@ import HarmonyRequest from '../../models/harmony-request';
 const version = '1.0.0';
 const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverages', version);
 const openApiPath = path.join(openApiRoot, `ogc-api-coverages-v${version}.yml`);
-const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
+export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
 
 /**
  * Express handler that returns a 501 error and "not yet implemented" message to the client
