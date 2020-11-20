@@ -41,7 +41,6 @@ DRIVER_DEFAULT=docker
 
 DRIVER=${DRIVER:-$DRIVER_DEFAULT}
 
-source ".service-images"
 source ".env"
 [[ -n $KUBERNETES_URL ]] && alias kubectl="kubectl -s $KUBERNETES_URL"
 
@@ -189,12 +188,12 @@ function parameterize_template {
   echo "${out_file}"
 }
 
-# set the `image` for a container definition in a workflow using the images defined in
-# .service-images
 function inject_docker_image {
   f=$1
   workflow=$(basename $f .yaml)
+  # Use the image environment variable that matches the basename of the workflow _IMAGE
   image_key="${workflow//-/_}_image"
+  image_key=$(echo "$image_key" | awk '{print toupper($0)}')
   image=${!image_key}
   new_template_path="/tmp/${workflow}.yaml"
   raw_template=$(cat $f)

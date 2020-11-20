@@ -31,9 +31,9 @@ https://cmr.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: asf-gdal-subsetter
-        image: !Env ${ASF_GDAL_IMAGE}
-        image_pull_policy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${ASF_GDAL_PARALLELISM}
+        image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
+        image_pull_policy: !Env ${ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${ASF_GDAL_SUBSETTER_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
@@ -60,9 +60,9 @@ https://cmr.earthdata.nasa.gov:
         <<: *default-argo-params
         template: harmony-gdal
         template_type: chaining
-        image: !Env ${GDAL_IMAGE}
-        image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${GDAL_PARALLELISM}
+        image: !Env ${HARMONY_GDAL_IMAGE}
+        image_pull_policy: !Env ${HARMONY_GDAL_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_GDAL_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/gdal
@@ -113,9 +113,9 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: asf-gdal-subsetter
-        image: !Env ${ASF_GDAL_IMAGE}
-        image_pull_policy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${ASF_GDAL_PARALLELISM}
+        image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
+        image_pull_policy: !Env ${ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${ASF_GDAL_SUBSETTER_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
@@ -143,9 +143,9 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-argo-params
         template: harmony-gdal
         template_type: chaining
-        image: !Env ${GDAL_IMAGE}
-        image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${GDAL_PARALLELISM}
+        image: !Env ${HARMONY_GDAL_IMAGE}
+        image_pull_policy: !Env ${HARMONY_GDAL_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_GDAL_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/gdal
@@ -200,9 +200,9 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-argo-params
         template: swot-reproject
         template_type: chaining
-        image: !Env ${SWOT_REPR_IMAGE}
-        image_pull_policy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${SWOT_REPR_PARALLELISM}
+        image: !Env ${SWOT_REPROJECT_IMAGE}
+        image_pull_policy: !Env ${SWOT_REPROJECT_IMAGE_PULL_POLICY}
+        parallelism: !Env ${SWOT_REPROJECT_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/swot-reproject
@@ -330,9 +330,9 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-argo-params
         template: harmony-netcdf-to-zarr
         template_type: chaining
-        image: !Env ${NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${NETCDF_TO_ZARR_PARALLELISM}
+        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
