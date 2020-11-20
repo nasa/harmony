@@ -205,6 +205,9 @@ PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
 PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='Always'
 PODAAC_NETCDF_CONVERTER_PARALLELISM=2
 
+CMR_GRANULE_LOCATOR_IMAGE=harmony/query-cmr:latest
+CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY='Always'
+
 # Prefix before "harmony/task-name" for built-in tasks like query-cmr, e.g. an ECR location
 # If not blank, it should end in a slash if there is a slash before "harmony"
 BUILT_IN_TASK_PREFIX=

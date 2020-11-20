@@ -3,6 +3,10 @@ Any changes to the environment variables will be documented in this file in chro
 order with the most recent changes first.
 
 ## 2020-11-20
+### Added
+- CMR_GRANULE_LOCATOR_IMAGE - New image for issuing queries to the CMR to identify granules for a request
+- CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY - Pull policy for the new granule locator image
+
 ### Changed
 - ASF_GDAL_IMAGE to ASF_GDAL_SUBSETTER_IMAGE
 - ASF_GDAL_IMAGE_PULL_POLICY to ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY
