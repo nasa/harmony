@@ -108,9 +108,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     const serializedOperation = this.serializeOperation();
     const operation = JSON.parse(serializedOperation);
 
-    // const resultHandlerScript =
-    // resultHandlerScriptTemplate.replace('{{inputs.parameters.batch-count}}', '{batch.length}');
-
     let params = [
       {
         name: 'callback',

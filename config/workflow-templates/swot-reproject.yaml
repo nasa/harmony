@@ -66,8 +66,6 @@ spec:
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
         command: ["python3"]
         args:
-        # TODO need to pass in the stac-catalog-link so the library knows which stac catalog
-        # to use
           [
             "swotrepr.py",
             "--harmony-action",
