@@ -90,41 +90,9 @@ awslocal s3 mb s3://${UPLOAD_BUCKET}"
 kubectl -n argo delete configmap localstack-config 2>/dev/null || true
 kubectl -n argo create configmap localstack-config --from-literal=startup.sh="${localstack_startup_script}"
 
-cat <<EOF | kubectl -n argo apply -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: harmony-env
-data:
-  AWS_DEFAULT_REGION: "${AWS_DEFAULT_REGION}"
-  USE_LOCALSTACK: "${USE_LOCALSTACK}"
-  LOCALSTACK_HOST: "${BACKEND_HOST}"
-  STAGING_BUCKET: "${STAGING_BUCKET}"
-  STAGING_PATH: "${STAGING_PATH}"
-  TEXT_LOGGER: "${TEXT_LOGGER}"
-  BACKEND_HOST: "${BACKEND_HOST}"
-  OAUTH_HOST: "${OAUTH_HOST}"
-  OAUTH_CLIENT_ID: "${OAUTH_CLIENT_ID}"
-  OAUTH_REDIRECT_URI: "${OAUTH_REDIRECT_URI}"
-  FALLBACK_AUTHN_ENABLED: "${FALLBACK_AUTHN_ENABLED}"
-EOF
-
-cat <<EOF | kubectl -n argo apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: harmony-secrets
-type: Opaque
-data:
-  OAUTH_UID: $(echo -n "${OAUTH_UID}" | base64)
-  OAUTH_PASSWORD: $(echo -n "${OAUTH_PASSWORD}" | base64)
-  EDL_USERNAME: $(echo -n "${EDL_USERNAME}" | base64)
-  EDL_PASSWORD: $(echo -n "${EDL_PASSWORD}" | base64)
-  SHARED_SECRET_KEY: $(echo -n "${SHARED_SECRET_KEY}" | base64)
-EOF
+. ./bin/create-k8s-config-maps-and-secrets
 
 kubectl apply -n argo -f ./config/local-argo-deployment.yml
-
 
 [[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
 
@@ -152,69 +120,7 @@ EOF
 # wait for argo to start up
 while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argo" && sleep 5; done
 
-function install_template {
-  f=$1
-  echo "Installing template ${f}"
-  workflow=$(basename $f .yaml)
-  existing_workflow=$(argo -n argo template get $workflow 2>/dev/null | grep $workflow | cut -d ' ' -f1)
-  if [ -n "$existing_workflow" ]; then
-    argo -n argo template delete $workflow
-  fi
-  argo -n argo template create $f
-}
-
-function create_batch_template {
-  f=$1
-  workflow=$(basename $f .yaml)
-  new_template_name="${workflow}-batch"
-  template=$(cat ./config/base-workflow-templates/batch-skeleton.yaml)
-  template="${template//\<placeholder-template-steps\>/${workflow}-steps}"
-  template="${template//\<placeholder-template\>/${workflow}}"
-  template="${template//\<batch-skeleton\>/${new_template_name}}"
-  out_file="/tmp/${new_template_name}.yaml"
-  echo "${template}" > "${out_file}"
-  echo "${out_file}"
-}
-
-function parameterize_template {
-  f=$1
-  workflow=$(basename $f .yaml)
-  new_template_name="${workflow}-chain"
-  template=$(cat ./config/base-workflow-templates/chained-workflow-skeleton.yaml)
-  template="${template//\<placeholder-template\>/${workflow}-batch}"
-  template="${template//\<chained-workflow-skeleton\>/${new_template_name}}"
-  out_file="/tmp/${new_template_name}.yaml"
-  echo "${template}" > "${out_file}"
-  echo "${out_file}"
-}
-
-function inject_docker_image {
-  f=$1
-  workflow=$(basename $f .yaml)
-  # Use the image environment variable that matches the basename of the workflow _IMAGE
-  image_key="${workflow//-/_}_image"
-  image_key=$(echo "$image_key" | awk '{print toupper($0)}')
-  image=${!image_key}
-  new_template_path="/tmp/${workflow}.yaml"
-  raw_template=$(cat $f)
-  new_template="${raw_template//\<DOCKER_IMAGE\>/${image}}"
-  echo "${new_template}" > "${new_template_path}"
-  echo "${new_template_path}"
-}
-
-for f in ./config/workflow-component-templates/*; do
-  install_template $f
-done
-
-for f in ./config/workflow-templates/*; do
-  batch_file=$(create_batch_template $f)
-  chain_file=$(parameterize_template $f)
-  workflow_file=$(inject_docker_image $f)
-
-  install_template $workflow_file
-  install_template $batch_file
-  install_template $chain_file
-done
+. ./bin/create-workflow-templates
 
 if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
   # Allow LoadBalancer services to be reached in minikube
