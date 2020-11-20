@@ -62,6 +62,12 @@ done
 
 wait
 
+for f in ./config/legacy-workflow-templates/*; do
+  install_template $f&
+done
+
+wait
+
 function install_full_templates {
   f=$1
   batch_file=$(create_batch_template $f)

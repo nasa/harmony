@@ -199,7 +199,6 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: swot-reproject
-        template_type: chaining
         image: !Env ${SWOT_REPROJECT_IMAGE}
         image_pull_policy: !Env ${SWOT_REPROJECT_IMAGE_PULL_POLICY}
         parallelism: !Env ${SWOT_REPROJECT_PARALLELISM}
@@ -233,7 +232,6 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: var-subsetter
-        template_type: chaining
         image: !Env ${VAR_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
@@ -360,7 +358,6 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: harmony-netcdf-to-zarr
-        template_type: chaining
         image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
         parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
