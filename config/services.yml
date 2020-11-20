@@ -199,6 +199,7 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: swot-reproject
+        template_type: chaining
         image: !Env ${SWOT_REPROJECT_IMAGE}
         image_pull_policy: !Env ${SWOT_REPROJECT_IMAGE_PULL_POLICY}
         parallelism: !Env ${SWOT_REPROJECT_PARALLELISM}

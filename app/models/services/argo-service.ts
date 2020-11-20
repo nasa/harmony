@@ -120,6 +120,11 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
         name: 'cmr-granule-locator-image',
         value: env.cmrGranuleLocatorImage,
       },
+      // Only needed for legacy workflow templates
+      {
+        name: 'image',
+        value: this.params.image,
+      },
       {
         name: 'image-pull-policy',
         value: this.params.image_pull_policy || env.defaultImagePullPolicy,
@@ -183,6 +188,50 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     curl -XPOST "{{inputs.parameters.callback}}/response?status=failed&argo=true&error=$error"
     fi
     `.trim();
+  }
+
+  /**
+   * Returns a workflow POST body for Argo for invoking chainable services
+   * @param params The common workflow parameters to be passed to each service
+   * @returns a JSON-serializable object to be POST-ed to initiate the Argo workflows
+   */
+  _chainedWorkflowBody(params: ArgoVariable[]): unknown {
+    const { user, requestId } = this.operation;
+
+    // we need to serialize the batch operation to get just the model and then deserialize
+    // it so we can pass it to the Argo looping/concurrency mechanism in the workflow
+    // which expects objects not strings
+    const serializedOp = functionalSerializeOperation(this.operation, this.config);
+
+    const serializedOperation = JSON.parse(serializedOp);
+    for (const source of serializedOperation.sources) {
+      delete source.granules;
+    }
+
+    const argoParams = [...params, { name: 'operation', value: JSON.stringify(serializedOperation) }];
+    return {
+      namespace: this.params.namespace,
+      serverDryRun: false,
+      workflow: {
+        metadata: {
+          generateName: `${this.params.template}-chain-`,
+          namespace: this.params.namespace,
+          labels: {
+            user,
+            request_id: requestId,
+          },
+        },
+        spec: {
+          arguments: {
+            parameters: argoParams,
+          },
+          parallelism: this.params.parallelism || env.defaultParallelism,
+          workflowTemplateRef: {
+            name: `${this.params.template}-chain`,
+          },
+        },
+      },
+    };
   }
 
   /**
@@ -255,50 +304,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
               },
             },
           ],
-        },
-      },
-    };
-  }
-
-  /**
-   * Returns a workflow POST body for Argo for invoking chainable services
-   * @param params The common workflow parameters to be passed to each service
-   * @returns a JSON-serializable object to be POST-ed to initiate the Argo workflows
-   */
-  _chainedWorkflowBody(params: ArgoVariable[]): unknown {
-    const { user, requestId } = this.operation;
-
-    // we need to serialize the batch operation to get just the model and then deserialize
-    // it so we can pass it to the Argo looping/concurrency mechanism in the workflow
-    // which expects objects not strings
-    const serializedOp = functionalSerializeOperation(this.operation, this.config);
-
-    const serializedOperation = JSON.parse(serializedOp);
-    for (const source of serializedOperation.sources) {
-      delete source.granules;
-    }
-
-    const argoParams = [...params, { name: 'operation', value: JSON.stringify(serializedOperation) }];
-    return {
-      namespace: this.params.namespace,
-      serverDryRun: false,
-      workflow: {
-        metadata: {
-          generateName: `${this.params.template}-chain-`,
-          namespace: this.params.namespace,
-          labels: {
-            user,
-            request_id: requestId,
-          },
-        },
-        spec: {
-          arguments: {
-            parameters: argoParams,
-          },
-          parallelism: this.params.parallelism || env.defaultParallelism,
-          workflowTemplateRef: {
-            name: `${this.params.template}-chain`,
-          },
         },
       },
     };
