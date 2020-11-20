@@ -106,6 +106,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['BUILT_IN_TASK_VERSION', 'latest'],
   ['CMR_GRANULE_LOCATOR_IMAGE', 'harmony/query-cmr:latest'],
   ['CMR_MAX_PAGE_SIZE', 2000],
+  ['FEEDBACK_URL', null],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases

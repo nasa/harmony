@@ -1,6 +1,8 @@
 import process from 'process';
 import express, { RequestHandler, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
+import yaml from 'js-yaml';
 import log from '../util/log';
 
 // Middleware requires in outside-in order
@@ -185,6 +187,7 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
     next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
 
+  result.use(express.static('public'));
   result.use(logged(shapefileConverter));
   result.use(logged(chooseService));
   result.use(logged(cmrGranuleLocator));
@@ -192,6 +195,7 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
 
   result.get('/', landingPage);
   result.get('/versions', getVersions);
+  result.use('/docs/api', swaggerUi.serve, swaggerUi.setup(yaml.load(ogcCoverageApi.openApiContent)));
   result.get(collectionPrefix('(wms|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
