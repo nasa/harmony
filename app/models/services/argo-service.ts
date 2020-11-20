@@ -21,11 +21,6 @@ export interface ArgoServiceParams {
   image?: string;
 }
 
-export interface ServiceImage {
-  name: string;
-  image: string;
-}
-
 interface ArgoVariable {
   name: string;
   value?: string;
