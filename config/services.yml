@@ -274,6 +274,37 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
       reprojection: true
 
+  # This is an example service and backend from example/http-backend.js mounted by
+  # the frontend callback server.
+  - name: harmony/chaining-example
+    data_operation_version: '0.9.0'
+    batch_size: 2000
+    type:
+      name: argo
+      params:
+        # Minimal parameters for current partial chaining implementation
+        image: harmony/query-cmr:latest
+        template_type: chaining
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
+        env:
+          USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+          LOCALSTACK_HOST: !Env ${BACKEND_HOST}
+          AWS_DEFAULT_REGION: us-west-2
+          TEXT_LOGGER: !Env ${TEXT_LOGGER}
+    collections:
+      # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
+      # Good example, being in UAT, global, many public non-global granules,
+      # and not yet on the services roadmap.
+      - C1096-PVC_TS2
+    capabilities:
+      subsetting:
+        variable: true
+        bbox: true
+      output_formats:
+        - image/tiff
+      reprojection: true
+
   # PO.DAAC Shapefiles
   - name: podaac/ps3
     data_operation_version: '0.9.0'
