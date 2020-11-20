@@ -51,6 +51,28 @@ https://cmr.earthdata.nasa.gov:
         - image/gif
       reprojection: true
 
+  - name: harmony/netcdf-to-zarr
+    data_operation_version: '0.9.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: harmony-netcdf-to-zarr
+        image: !Env ${NETCDF_TO_ZARR_IMAGE}
+        image_pull_policy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
+        parallelism: !Env ${NETCDF_TO_ZARR_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/harmony/netcdf-to-zarr
+    collections:
+      - C1940468263-POCLOUD
+    maximum_sync_granules: 0
+    capabilities:
+      subsetting:
+        variable: false
+      output_formats:
+        - application/x-zarr
+
   - name: harmony/gdal
     data_operation_version: '0.9.0'
     type:
