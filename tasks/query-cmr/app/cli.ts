@@ -54,7 +54,7 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       alias: 'b',
       describe: 'number of granules to include in a single batch; create one catalog file per batch',
       type: 'number',
-      default: 5, // TODO put back to 2000 prior to merge
+      default: 2000,
     });
 }
 
