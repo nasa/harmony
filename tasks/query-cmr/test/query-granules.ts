@@ -62,6 +62,66 @@ async function fetchPostArgsToFields(
   return result;
 }
 
+/**
+ * Sets up before and after hooks to run queryGranules with three granules each in
+ * two different collections.
+ * @param batchSize The number of granules to include in each batch
+ */
+function hookQueryGranules(batchSize: number): void {
+  const output = {
+    headers: new fetch.Headers({}),
+    ...JSON.parse(fs.readFileSync(path.resolve(__dirname, 'resources/atom-granules.json'), 'UTF-8')),
+  };
+  const queries = [{
+    _index: 0,
+    fake_param: 'fake_value',
+    geojson: 's3://fake-bucket/fake/geo.json',
+  }, { _index: 1 }];
+
+  let fetchPost: sinon.SinonStub;
+  let downloadFile: sinon.SinonStub;
+  let outputDir: string;
+  let queryFilenames: string[];
+  const pageSize = 5;
+  const maxPages = 1;
+  before(async function () {
+    // Stub access to S3 geojson file
+    downloadFile = sinon.stub(S3ObjectStore.prototype, 'downloadFile');
+    const shapefile = tmp.tmpNameSync();
+    fs.copyFileSync(geojson, shapefile);
+    downloadFile.returns(shapefile);
+
+    // Create an output dir
+    outputDir = tmp.dirSync({ unsafeCleanup: true }).name;
+
+    // Stub cmr fetch post to return the contents of queries
+    fetchPost = sinon.stub(cmr, 'fetchPost');
+    queryFilenames = queries.map((q, i) => {
+      const filename = tmp.tmpNameSync();
+      fs.writeFileSync(filename, JSON.stringify(q));
+      fetchPost.onCall(i).returns(Promise.resolve(output));
+      return filename;
+    });
+    fetchPost.onCall(queries.length + 1).throws();
+
+    // Actually call it
+    this.result = await queryGranules(operation, queryFilenames, pageSize, maxPages, batchSize);
+
+    // Map the call arguments into something we can actually assert against
+    this.queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
+
+    this.queryFields = this.queryFields.sort((a, b) => a._index - b._index);
+  });
+  after(function () {
+    queryFilenames.forEach(fs.unlinkSync);
+    fetchPost.restore();
+    downloadFile.restore();
+    fs.rmdirSync(outputDir, { recursive: true });
+    delete this.result;
+    delete this.queryFields;
+  });
+}
+
 describe('query#queryGranules', function () {
   describe('when called with a mismatched number of input sources and query files', function () {
     it('throws an error', function () {
@@ -70,62 +130,11 @@ describe('query#queryGranules', function () {
     });
   });
 
-  describe('when called with valid input sources and queries', function () {
-    const output = {
-      headers: new fetch.Headers({}),
-      ...JSON.parse(fs.readFileSync(path.resolve(__dirname, 'resources/atom-granules.json'), 'UTF-8')),
-    };
-    const queries = [{
-      _index: 0,
-      fake_param: 'fake_value',
-      geojson: 's3://fake-bucket/fake/geo.json',
-    }, { _index: 1 }];
-
-    let fetchPost: sinon.SinonStub;
-    let downloadFile: sinon.SinonStub;
-    let outputDir: string;
-    let queryFilenames: string[];
-    const pageSize = 5;
-    const maxPages = 1;
-    let queryFields;
-    let result;
-    before(async function () {
-      // Stub access to S3 geojson file
-      downloadFile = sinon.stub(S3ObjectStore.prototype, 'downloadFile');
-      const shapefile = tmp.tmpNameSync();
-      fs.copyFileSync(geojson, shapefile);
-      downloadFile.returns(shapefile);
-
-      // Create an output dir
-      outputDir = tmp.dirSync({ unsafeCleanup: true }).name;
-
-      // Stub cmr fetch post to return the contents of queries
-      fetchPost = sinon.stub(cmr, 'fetchPost');
-      queryFilenames = queries.map((q, i) => {
-        const filename = tmp.tmpNameSync();
-        fs.writeFileSync(filename, JSON.stringify(q));
-        fetchPost.onCall(i).returns(Promise.resolve(output));
-        return filename;
-      });
-      fetchPost.onCall(queries.length + 1).throws();
-
-      // Actually call it
-      result = await queryGranules(operation, queryFilenames, pageSize, maxPages, 2000);
-
-      // Map the call arguments into something we can actually assert against
-      queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
-
-      queryFields = queryFields.sort((a, b) => a._index - b._index);
-    });
-    after(function () {
-      queryFilenames.forEach(fs.unlinkSync);
-      fetchPost.restore();
-      downloadFile.restore();
-      fs.rmdirSync(outputDir, { recursive: true });
-    });
+  describe('when called with valid input sources and queries', async function () {
+    hookQueryGranules(2000);
 
     it('returns a STAC catalog containing links to all of the granules', function () {
-      expect(result[0].links).to.eql([{
+      expect(this.result[0].links).to.eql([{
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C001-TEST',
         rel: 'harmony_source',
       }, {
@@ -147,7 +156,7 @@ describe('query#queryGranules', function () {
     });
 
     it('produces STAC catalogs containing granule links for each input source', function () {
-      expect(result[1].links[1]).to.eql({
+      expect(this.result[1].links[1]).to.eql({
         rel: 'item',
         href: './granule_1_0_0000000.json',
         title: '001_00_7f00ff_global',
@@ -156,14 +165,14 @@ describe('query#queryGranules', function () {
     });
 
     it('links STAC catalogs to the input source collection', function () {
-      expect(result[0].links[0]).to.eql({
+      expect(this.result[0].links[0]).to.eql({
         rel: 'harmony_source',
         href: `${env.cmrEndpoint}/search/concepts/C001-TEST`,
       });
     });
 
     it('produces STAC items for each granule', function () {
-      const item = result[0].children[0];
+      const item = this.result[0].children[0];
       expect(item).to.eql({
         stac_version: '1.0.0-beta.2',
         stac_extensions: [],
@@ -197,17 +206,17 @@ describe('query#queryGranules', function () {
 
     it('produces valid STAC output for the root catalog', function () {
       const validate = buildStacSchemaValidator('catalog');
-      expect(validate(result[0].toJSON())).to.equal(true);
+      expect(validate(this.result[0].toJSON())).to.equal(true);
     });
 
     it('produces valid STAC output for the source catalogs', function () {
       const validate = buildStacSchemaValidator('catalog');
-      expect(validate(result[0].toJSON())).to.equal(true);
+      expect(validate(this.result[0].toJSON())).to.equal(true);
     });
 
     it('produces valid STAC output for the granule items', function () {
       const validate = buildStacSchemaValidator('item');
-      expect(validate(result[0].children[0])).to.equal(false);
+      expect(validate(this.result[0].children[0])).to.equal(false);
     });
 
     xit('produces a separate output file for each page of results up to supplied maximum (HARMONY-276)', function () {
@@ -215,12 +224,99 @@ describe('query#queryGranules', function () {
     });
 
     it('uses the supplied page size to limit each page of results', function () {
-      expect(queryFields[0].page_size).to.equal('5');
-      expect(queryFields[1].page_size).to.equal('5');
+      expect(this.queryFields[0].page_size).to.equal('5');
+      expect(this.queryFields[1].page_size).to.equal('5');
     });
 
     it('uses geojson stored in an S3 location in the query', function () {
-      expect(queryFields[0].shapefile).to.match(/"FeatureCollection"/);
+      expect(this.queryFields[0].shapefile).to.match(/"FeatureCollection"/);
+    });
+  });
+
+  describe('when called with a batch size of 1', function () {
+    hookQueryGranules(1);
+
+    it('returns multiple STAC catalogs - one for each batch', async function () {
+      expect(this.result.length).to.equal(6);
+    });
+
+    it('includes a link to the source in each catalog', function () {
+      for (let i = 0; i < 3; i++) {
+        expect(this.result[i].links[0]).to.eql({
+          href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C001-TEST',
+          rel: 'harmony_source',
+        });
+      }
+      for (let j = 3; j < 6; j++) {
+        expect(this.result[j].links[0]).to.eql({
+          href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C002-TEST',
+          rel: 'harmony_source',
+        });
+      }
+    });
+
+    it('includes a link to a single granule in each catalog', function () {
+      for (const catalog of this.result) {
+        expect(catalog.links.length).to.equal(2);
+        expect(catalog.links[1].rel).to.equal('item');
+      }
+    });
+
+    it('produces STAC catalogs for each granule', function () {
+      expect(this.result[5].links[1]).to.eql({
+        rel: 'item',
+        href: './granule_1_2_0000000.json',
+        title: '001_01_7f00ff_africa_poly',
+        type: 'application/json',
+      });
+    });
+
+    it('produces STAC items for each granule', function () {
+      const item = this.result[0].children[0];
+      expect(item).to.eql({
+        stac_version: '1.0.0-beta.2',
+        stac_extensions: [],
+        id: item.id,
+        type: 'Feature',
+        links: [],
+        properties: {
+          start_datetime: '2020-01-01T00:00:00.000Z',
+          end_datetime: '2020-01-01T01:59:59.000Z',
+        },
+        bbox: [-180, -90, 180, 90],
+        geometry: { type: 'Polygon', coordinates: [[[-180, -90], [-180, 90], [180, 90], [180, -90], [-180, -90]]] },
+        assets: {
+          data: {
+            href: 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_7f00ff_global.nc',
+            title: '001_00_7f00ff_global.nc',
+            description: undefined,
+            type: 'application/x-netcdf4',
+            roles: ['data'],
+          },
+          data1: {
+            href: 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/001_00_7f00ff_global.tif',
+            title: '001_00_7f00ff_global.tif',
+            description: undefined,
+            type: 'image/tiff',
+            roles: ['data'],
+          },
+        },
+      });
+    });
+
+    it('produces valid STAC output for the root catalog', function () {
+      const validate = buildStacSchemaValidator('catalog');
+      expect(validate(this.result[0].toJSON())).to.equal(true);
+    });
+
+    it('produces valid STAC output for the source catalogs', function () {
+      const validate = buildStacSchemaValidator('catalog');
+      expect(validate(this.result[0].toJSON())).to.equal(true);
+    });
+
+    it('produces valid STAC output for the granule items', function () {
+      const validate = buildStacSchemaValidator('item');
+      expect(validate(this.result[0].children[0])).to.equal(false);
     });
   });
 });
