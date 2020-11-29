@@ -1,3 +1,4 @@
+import { SpatialReference } from 'gdal-next';
 import * as mustache from 'mustache';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -225,7 +226,24 @@ function getMap(req, res, next: NextFunction): void {
     operation.addSource(collectionId, variablesByCollection[collectionId]);
   }
 
-  operation.crs = query.crs;
+  try {
+    const srs = SpatialReference.fromUserInput(query.crs);
+    const epsg = /^[eE][pP][sS][gG]:\d{4,5}$/.test(query.crs) ? query.crs : '';
+    operation.crs = srs.toProj4();
+    operation.srs = {
+      proj4: srs.toProj4(),
+      wkt: srs.toWKT(),
+      epsg,
+    };
+  } catch (e) {
+    operation.crs = query.crs;
+    operation.srs = {
+      proj4: '',
+      wkt: '',
+      epsg: '',
+    };
+  }
+
   operation.isTransparent = query.transparent === 'TRUE';
   if (query.format) {
     operation.outputFormat = query.format;

@@ -13,7 +13,7 @@ export const validGetMapQuery = {
   service: 'WMS',
   request: 'GetMap',
   layers: validCollection,
-  crs: 'CRS:84',
+  crs: 'EPSG:4326',
   format: 'image/tiff',
   styles: '',
   width: 128,

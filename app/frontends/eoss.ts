@@ -1,4 +1,5 @@
 /* eslint-disable import/prefer-default-export */
+import { SpatialReference } from 'gdal-next';
 import { initialize } from 'express-openapi';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -54,7 +55,23 @@ export function addOpenApiRoutes(app: Router): void {
         const decrypter = createDecrypter(env.sharedSecretKey);
         const operation = new DataOperation(null, encrypter, decrypter);
 
-        operation.crs = query.crs;
+        try {
+          const srs = SpatialReference.fromUserInput(query.crs);
+          const epsg = /^[eE][pP][sS][gG]:\d{4,5}$/.test(query.crs) ? query.crs : '';
+          operation.crs = srs.toProj4();
+          operation.srs = {
+            proj4: srs.toProj4(),
+            wkt: srs.toWKT(),
+            epsg,
+          };
+        } catch (e) {
+          operation.crs = query.crs;
+          operation.srs = {
+            proj4: '',
+            wkt: '',
+            epsg: '',
+          };
+        }
         if (query.format) {
           operation.outputFormat = query.format;
         }

@@ -133,7 +133,7 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: true
 
   - name: harmony/gdal
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.10.0'
     type:
       <<: *default-argo-config
       params:
@@ -249,7 +249,7 @@ https://cmr.uat.earthdata.nasa.gov:
   # the frontend callback server.
   # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
   - name: harmony/example
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.10.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     type:
       name: http

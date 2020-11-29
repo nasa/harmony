@@ -19,7 +19,7 @@ describe('EOSS GetGranule', function () {
     const query = {
       rangeSubset: variableName,
       format: 'image/tiff',
-      crs: 'CRS:84',
+      crs: 'EPSG:4326',
       bbox: '-180,-90,180,90',
     };
 
@@ -49,7 +49,7 @@ describe('EOSS GetGranule', function () {
       });
 
       it('passes the crs parameter to the backend', function () {
-        expect(this.service.operation.crs).to.equal('CRS:84');
+        expect(this.service.operation.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
       });
 
       it('passes the format parameter to the backend', function () {
@@ -122,7 +122,7 @@ describe('EOSS GetGranule', function () {
     const query = {
       rangeSubset: 'red_var,green_var',
       format: 'image/tiff',
-      crs: 'CRS:84',
+      crs: 'EPSG:4326',
       bbox: '-180,-90,180,90',
     };
     const variableId1 = 'V1233801695-EEDTEST';

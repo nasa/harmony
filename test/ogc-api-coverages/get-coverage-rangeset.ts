@@ -21,7 +21,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   describe('when provided a valid set of parameters', function () {
     const query = {
       granuleId,
-      outputCrs: 'CRS:84',
+      outputCrs: 'EPSG:4326',
       subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
       interpolation: 'near',
       // TODO: it might only make sense to include width and height with a scaleExtent
@@ -244,7 +244,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
   describe('when provided a valid temporal range', function () {
     const query = {
-      outputCrs: 'CRS:84',
+      outputCrs: 'EPSG:4326',
       // Time range matches exactly one granule
       subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
     };
