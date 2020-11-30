@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: zharmony-gdal-swot-reproject
+spec:
+  entrypoint: zharmony-gdal-swot-reproject-steps
+  templates:
+    - name: zharmony-gdal-swot-reproject-steps
+      inputs:
+        artifacts:
+        - name: metadata
+        parameters:
+          - name: operation
+          - name: stac-catalog-link
+          - name: image-pull-policy
+          - name: timeout
+          - name: STAGING_PATH
+      steps:
+      - - name: harmony-gdal-step
+          templateRef: 
+            name: harmony-gdal
+            template: harmony-gdal-service
+          arguments:
+            artifacts:
+            - name: metadata
+              from: "{{inputs.artifacts.metadata}}"
+            parameters:
+            - name: operation
+              value: "{{inputs.parameters.operation}}"
+            - name: stac-catalog-link
+              value: "{{inputs.parameters.stac-catalog-link}}"
+            - name: image-pull-policy
+              value: "{{inputs.parameters.image-pull-policy}}"
+            - name: timeout
+              value: "{{inputs.parameters.timeout}}"
+            - name: STAGING_PATH
+              value: "{{inputs.parameters.STAGING_PATH}}"
+      - - name: last-step
+          templateRef: 
+            name: swot-reproject
+            template: swot-reproject-service
+          arguments:
+            artifacts:
+            - name: metadata
+              from: "{{steps.harmony-gdal-step.outputs.artifacts.metadata}}"
+            parameters:
+            - name: operation
+              value: "{{inputs.parameters.operation}}"
+            - name: stac-catalog-link
+              value: "{{steps.harmony-gdal-step.outputs.parameters.stac-catalog-link}}"
+            - name: image-pull-policy
+              value: "{{inputs.parameters.image-pull-policy}}"
+            - name: timeout
+              value: "{{inputs.parameters.timeout}}"
+            - name: STAGING_PATH
+              value: "{{inputs.parameters.STAGING_PATH}}"
+          # TODO we can't support a conditional here until https://github.com/argoproj/argo/issues/2496
+          # is worked
+          # when: "{{inputs.parameters.convert}} == true"
+      outputs:
+        artifacts:
+          - name: metadata
+            from: "{{steps.last-step.outputs.artifacts.metadata}}"
+        parameters:
+          - name: stac-catalog-link
+            valueFrom:
+              parameter: "{{steps.last-step.outputs.parameters.stac-catalog-link}}"

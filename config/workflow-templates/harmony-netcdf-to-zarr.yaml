@@ -1,11 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: swot-reproject
+  name: harmony-netcdf-to-zarr
 spec:
-  entrypoint: swot-reproject-steps
+  entrypoint: harmony-netcdf-to-zarr-steps
   templates:
-    - name: swot-reproject-steps
+    - name: harmony-netcdf-to-zarr-steps
       inputs:
         artifacts:
         - name: metadata
@@ -17,7 +17,7 @@ spec:
           - name: STAGING_PATH
       steps:
       - - name: last-step
-          template: swot-reproject-service
+          template: harmony-netcdf-to-zarr-service
           arguments:
             artifacts:
             - name: metadata
@@ -41,7 +41,7 @@ spec:
           - name: stac-catalog-link
             valueFrom:
               parameter: "{{steps.last-step.outputs.parameters.stac-catalog-link}}"
-    - name: swot-reproject-service
+    - name: harmony-netcdf-to-zarr-service
       inputs:
         artifacts:
         - name: metadata
@@ -67,7 +67,8 @@ spec:
         command: ["python3"]
         args:
           [
-            "swotrepr.py",
+            "-m",
+            "harmony_netcdf_to_zarr",
             "--harmony-action",
             "invoke",
             "--harmony-input",

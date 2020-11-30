@@ -74,9 +74,9 @@ spec:
             "--harmony-input",
             "{{inputs.parameters.operation}}",
             "--harmony-sources",
-            "/tmp/metadata/{{inputs.parameters.stac-catalog-link}}",
+            "{{inputs.artifacts.metadata.path}}/{{inputs.parameters.stac-catalog-link}}",
             "--harmony-metadata-dir",
-            "/tmp/outputs/metadata"
+            "{{outputs.artifacts.metadata.path}}"
           ]
         envFrom:
           - configMapRef:

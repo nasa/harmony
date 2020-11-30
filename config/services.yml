@@ -374,11 +374,13 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.9.0'
+    batch_size: 1
     type:
       <<: *default-argo-config
       params:
         <<: *default-argo-params
         template: harmony-netcdf-to-zarr
+        template_type: chaining
         image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
         parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
@@ -403,3 +405,68 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: false
       output_formats:
         - application/x-zarr
+    
+  # CHAINED SERVICES BELOW HERE
+  - name: harmony/swot-repr-netcdf-to-zarr
+    data_operation_version: '0.9.0'
+    batch_size: 1
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: zswot-reproject-netcdf-to-zarr
+        template_type: chaining
+        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/harmony/netcdf-to-zarr
+    collections:
+      - C1233860183-EEDTEST
+      - C1233800302-EEDTEST
+      - C1234724470-POCLOUD
+    maximum_sync_granules: 0
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: false
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+        - application/x-zarr
+      reprojection: true
+
+  - name: harmony/gdal-swot-repr
+    data_operation_version: '0.9.0'
+    batch_size: 1
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: zharmony-gdal-swot-reproject
+        template_type: chaining
+        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/harmony/netcdf-to-zarr
+    collections:
+      - C1233800302-EEDTEST
+    maximum_sync_granules: 0
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - image/tiff
+        - image/png
+        - image/gif
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+      reprojection: true

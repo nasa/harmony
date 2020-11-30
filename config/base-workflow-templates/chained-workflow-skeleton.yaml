@@ -5,6 +5,13 @@ metadata:
 spec:
   entrypoint: chained-workflow
   onExit: exit-handler
+  podGC:
+    # pod gc strategy must be one of the following
+    # * OnPodCompletion - delete pods immediately when pod is completed (including errors/failures)
+    # * OnPodSuccess - delete pods immediately when pod is successful
+    # * OnWorkflowCompletion - delete pods when workflow is completed
+    # * OnWorkflowSuccess - delete pods when workflow is successful
+    strategy: OnPodSuccess
   arguments:
     parameters:
     - name: callback
