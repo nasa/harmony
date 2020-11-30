@@ -66,6 +66,9 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/netcdf-to-zarr
     collections:
       - C1940468263-POCLOUD
+      - C1938032626-POCLOUD
+      - C1940473819-POCLOUD
+      - C1940473819-POCLOUD
     maximum_sync_granules: 0
     capabilities:
       subsetting:
