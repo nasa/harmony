@@ -39,7 +39,6 @@ interface HarmonyEnv {
   defaultArgoPodTimeoutSecs: number;
   builtInTaskPrefix: string;
   builtInTaskVersion: string;
-  cmrGranuleLocatorImage: string;
   cmrMaxPageSize: number;
 }
 
@@ -104,7 +103,6 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['DEFAULT_ARGO_POD_TIMEOUT_SECS', 14400],
   ['BUILT_IN_TASK_PREFIX', ''],
   ['BUILT_IN_TASK_VERSION', 'latest'],
-  ['CMR_GRANULE_LOCATOR_IMAGE', 'harmony/query-cmr:latest'],
   ['CMR_MAX_PAGE_SIZE', 2000],
   ['FEEDBACK_URL', null],
 ].forEach((value) => makeConfigVar.apply(this, value));

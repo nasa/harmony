@@ -99,6 +99,7 @@ Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to r
 
 ### Set Up Environment Variables
 
+Read the `ENV_CHANGELOG.md` file to see what environment variables have been added, dropped, or changed. 
 Copy the file [example/dotenv](example/dotenv) to a file named `.env` in the root project directory.  Follow the instructions in that file to populate any blank variables.  Variables that have values in the example can be kept as-is, as they provide good defaults for local development.  To check environment differences between the example and local, run:
 
 ```

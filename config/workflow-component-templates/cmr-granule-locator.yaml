@@ -10,7 +10,6 @@ spec:
           - name: operation
           - name: query
           - name: page-size
-          - name: image
           - name: batch-size
           - name: image-pull-policy
           - name: timeout
@@ -27,7 +26,7 @@ spec:
               path: /tmp/outputs/batch-catalogs.json
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
-        image: "{{inputs.parameters.image}}"
+        image: "<DOCKER_IMAGE>"
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
         args:
           [

@@ -47,19 +47,11 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    * @returns The number of granules per batch of results processed
    */
   chooseBatchSize(maxGranules = env.maxGranuleLimit): number {
-    const { maxResults } = this.operation;
-
+    const maxResults = this.operation.maxResults || Number.MAX_SAFE_INTEGER;
     let batchSize = _.get(this.config, 'batch_size', env.defaultBatchSize);
+    batchSize = batchSize <= 0 ? Number.MAX_SAFE_INTEGER : batchSize;
 
-    if (batchSize <= 0 || batchSize > maxGranules) {
-      batchSize = maxGranules;
-    }
-
-    if (maxResults) {
-      batchSize = Math.min(batchSize, maxResults);
-    }
-
-    return batchSize;
+    return Math.min(maxGranules, batchSize, maxResults);
   }
 
   /**
@@ -70,18 +62,9 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    * @returns The number of granules per page of results from the CMR
    */
   choosePageSize(maxGranules = env.maxGranuleLimit): number {
-    const { maxResults } = this.operation;
-    let pageSize = env.cmrMaxPageSize;
+    const maxResults = this.operation.maxResults || Number.MAX_SAFE_INTEGER;
 
-    if (pageSize > maxGranules) {
-      pageSize = maxGranules;
-    }
-
-    if (maxResults) {
-      pageSize = Math.min(pageSize, maxResults);
-    }
-
-    return pageSize;
+    return Math.min(maxResults, maxGranules, env.cmrMaxPageSize);
   }
 
   /**
@@ -107,10 +90,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       {
         name: 'callback',
         value: operation.callback,
-      },
-      {
-        name: 'cmr-granule-locator-image',
-        value: env.cmrGranuleLocatorImage,
       },
       // Only needed for legacy workflow templates
       {
