@@ -45,7 +45,7 @@ spec:
               from: "{{steps.podaac-l2-subsetter-step.outputs.artifacts.metadata}}"
             parameters:
             - name: operation
-              value: "{{inputs.parameters.operation}}"
+              value: "{{steps.podaac-l2-subsetter-step.outputs.parameters.operation}}"
             - name: stac-catalog-link
               value: "{{steps.podaac-l2-subsetter-step.outputs.parameters.stac-catalog-link}}"
             - name: image-pull-policy

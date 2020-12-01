@@ -12,7 +12,7 @@ spec:
           - name: page-size
           - name: batch-size
           - name: image-pull-policy
-          - name: timeout
+          - name: timeout 
       outputs:
         artifacts:
           - name: metadata

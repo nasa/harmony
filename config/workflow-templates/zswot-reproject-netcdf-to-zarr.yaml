@@ -1,11 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: zharmony-gdal-swot-reproject
+  name: zswot-reproject-netcdf-to-zarr
 spec:
-  entrypoint: zharmony-gdal-swot-reproject-steps
+  entrypoint: zswot-reproject-netcdf-to-zarr-steps
   templates:
-    - name: zharmony-gdal-swot-reproject-steps
+    - name: zswot-reproject-netcdf-to-zarr-steps
       inputs:
         artifacts:
         - name: metadata
@@ -16,10 +16,10 @@ spec:
           - name: timeout
           - name: STAGING_PATH
       steps:
-      - - name: harmony-gdal-step
+      - - name: swot-reproject-step
           templateRef: 
-            name: harmony-gdal
-            template: harmony-gdal-service
+            name: swot-reproject
+            template: swot-reproject-service
           arguments:
             artifacts:
             - name: metadata
@@ -37,17 +37,17 @@ spec:
               value: "{{inputs.parameters.STAGING_PATH}}"
       - - name: last-step
           templateRef: 
-            name: swot-reproject
-            template: swot-reproject-service
+            name: harmony-netcdf-to-zarr
+            template: harmony-netcdf-to-zarr-service
           arguments:
             artifacts:
             - name: metadata
-              from: "{{steps.harmony-gdal-step.outputs.artifacts.metadata}}"
+              from: "{{steps.swot-reproject-step.outputs.artifacts.metadata}}"
             parameters:
             - name: operation
-              value: "{{inputs.parameters.operation}}"
+              value: "{{steps.swot-reproject-step.outputs.parameters.operation}}"
             - name: stac-catalog-link
-              value: "{{steps.harmony-gdal-step.outputs.parameters.stac-catalog-link}}"
+              value: "{{steps.swot-reproject-step.outputs.parameters.stac-catalog-link}}"
             - name: image-pull-policy
               value: "{{inputs.parameters.image-pull-policy}}"
             - name: timeout

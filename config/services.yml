@@ -108,6 +108,7 @@ https://cmr.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: podaac-l2-subsetter
+        template_type: chaining
         image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
@@ -192,6 +193,7 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: podaac-l2-subsetter
+        template_type: chaining
         image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}

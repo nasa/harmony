@@ -60,6 +60,9 @@ spec:
         parameters:
           - name: stac-catalog-link
             value: catalog.json
+          - name: operation
+            valueFrom:
+              path: /tmp/outputs/metadata/message.json
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "<DOCKER_IMAGE>"
