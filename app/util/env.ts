@@ -26,6 +26,7 @@ interface HarmonyEnv {
   argoUrl: string;
   cmrEndpoint: string;
   oauthHost: string;
+  oauthUid: string;
   useLocalstack: boolean;
   localstackHost: string;
   callbackUrlRoot: string;
@@ -93,6 +94,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['ADMIN_GROUP_ID', null],
   ['CMR_ENDPOINT', 'https://cmr.uat.earthdata.nasa.gov'],
   ['OAUTH_HOST', 'https://uat.urs.earthdata.nasa.gov'],
+  ['OAUTH_UID', null],
   ['CALLBACK_URL_ROOT', null],
   ['SYNC_REQUEST_POLL_INTERVAL_MS', 100],
   ['DEFAULT_BATCH_SIZE', 2000],

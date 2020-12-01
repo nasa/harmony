@@ -1,8 +1,10 @@
-import { stub, SinonStub } from 'sinon';
+import { stub, match, SinonStub } from 'sinon';
+import axios from 'axios';
 import { serialize } from 'cookie';
 import { sign } from 'cookie-signature';
 import { prototype } from 'simple-oauth2/lib/client';
 import { Plugin, SuperAgentRequest } from 'superagent';
+import { Token } from 'simple-oauth2';
 
 /**
  * Stubs Earthdata Login HTTP calls exactly matching the given URL and parameters, returning the
@@ -56,7 +58,7 @@ export function token({
   expiresDelta = 3600,
   accessToken = 'fake_access',
   refreshToken = 'fake_refresh',
-}): object {
+}): Token {
   return {
     token_type: 'Bearer',
     access_token: accessToken,
@@ -114,6 +116,19 @@ export function auth({
       cookieStr = `${cookieStr};${newCookie}`;
     });
   }
+
+  // Stub the call to validate the token
+  let fakePost = (axios.post as SinonStub);
+  if (!fakePost.restore) {
+    fakePost = stub(axios, 'post');
+  }
+  fakePost.resetHistory();
+  fakePost.withArgs(
+    match(/\/oauth\/tokens\/user\?token=/),
+    null,
+    match.object,
+  ).returns(null);
+  fakePost.callThrough();
 
   return (request): void => { request.set('Cookie', cookieStr); };
 }
