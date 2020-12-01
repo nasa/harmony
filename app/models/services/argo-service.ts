@@ -108,10 +108,6 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
         name: 'callback',
         value: operation.callback,
       },
-      {
-        name: 'cmr-granule-locator-image',
-        value: env.cmrGranuleLocatorImage,
-      },
       // Only needed for legacy workflow templates
       {
         name: 'image',

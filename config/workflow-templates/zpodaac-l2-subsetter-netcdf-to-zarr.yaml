@@ -1,11 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: zswot-reproject-netcdf-to-zarr
+  name: zpodaac-l2-subsetter-netcdf-to-zarr
 spec:
-  entrypoint: zswot-reproject-netcdf-to-zarr-steps
+  entrypoint: zpodaac-l2-subsetter-netcdf-to-zarr-steps
   templates:
-    - name: zswot-reproject-netcdf-to-zarr-steps
+    - name: zpodaac-l2-subsetter-netcdf-to-zarr-steps
       inputs:
         artifacts:
         - name: metadata
@@ -16,10 +16,10 @@ spec:
           - name: timeout
           - name: STAGING_PATH
       steps:
-      - - name: swot-reproject-step
+      - - name: podaac-l2-subsetter-step
           templateRef: 
-            name: swot-reproject
-            template: swot-reproject-service
+            name: podaac-l2-subsetter
+            template: podaac-l2-subsetter-service
           arguments:
             artifacts:
             - name: metadata
@@ -42,12 +42,12 @@ spec:
           arguments:
             artifacts:
             - name: metadata
-              from: "{{steps.swot-reproject-step.outputs.artifacts.metadata}}"
+              from: "{{steps.podaac-l2-subsetter-step.outputs.artifacts.metadata}}"
             parameters:
             - name: operation
               value: "{{inputs.parameters.operation}}"
             - name: stac-catalog-link
-              value: "{{steps.swot-reproject-step.outputs.parameters.stac-catalog-link}}"
+              value: "{{steps.podaac-l2-subsetter-step.outputs.parameters.stac-catalog-link}}"
             - name: image-pull-policy
               value: "{{inputs.parameters.image-pull-policy}}"
             - name: timeout
