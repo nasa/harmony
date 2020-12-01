@@ -46,7 +46,7 @@ function describeHttpBackendBehavior(performRequestFn: Function): void {
     hookFunction(performRequestFn, 'res', 'ERROR:422');
 
     it('propagates the message to the user', function () {
-      expect(this.res.text).to.match(/(Try an EPSG code or Proj4 string)|(An intentional error occurred)/);
+      expect(this.res.text).to.contain('An intentional error occurred');
     });
 
     it('propagates the status code to the user', function () {
@@ -58,7 +58,7 @@ function describeHttpBackendBehavior(performRequestFn: Function): void {
     hookFunction(performRequestFn, 'res', 'ERROR:501');
 
     it('propagates the message to the user', function () {
-      expect(this.res.text).to.match(/(Try an EPSG code or Proj4 string)|(An intentional error occurred)/);
+      expect(this.res.text).to.contain('An intentional error occurred');
     });
 
     it('propagates the status code to the user', function () {

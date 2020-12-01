@@ -165,6 +165,12 @@ interface DataSource {
   variables: HarmonyVariable[];
 }
 
+export interface SRS {
+  proj4: string;
+  wkt: string;
+  epsg?: string;
+}
+
 /**
  * Encapsulates an operation to be performed against a backend.  Currently the
  * class is largely getters and setters.  The eventual intent is to allow us
@@ -274,10 +280,6 @@ export default class DataOperation {
 
   /**
    * Sets the CRS into which the data should be transformed
-   *
-   * @param {string} crs The new CRS value
-   * @returns {void}
-   * @memberof DataOperation
    */
   set crs(crs: string) {
     this.model.format.crs = crs;
@@ -286,22 +288,17 @@ export default class DataOperation {
   /**
    * Returns an object of SRS (CRS) transform information with keys proj4, wkt, and epsg (if
    * available).
-   *
-   * @returns {Object} The CRS into which the data should be transformed
-   * @memberof DataOperation
    */
-  get srs(): object {
+  get srs(): SRS {
+    const { srs } = this.model.format;
+    if (!srs) return null;
     return this.model.format.srs;
   }
 
   /**
-   * Sets the SRS (CRS) transform information. Should include keys proj4, wkt, and epsg.
-   *
-   * @param {Object} srs The new SRS value
-   * @returns {void}
-   * @memberof DataOperation
+   * Sets the SRS (CRS) transform information.
    */
-  set srs(srs: object) {
+  set srs(srs: SRS) {
     this.model.format.srs = srs;
   }
 

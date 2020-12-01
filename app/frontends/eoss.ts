@@ -1,16 +1,16 @@
 /* eslint-disable import/prefer-default-export */
-import { SpatialReference } from 'gdal-next';
 import { initialize } from 'express-openapi';
 import * as fs from 'fs';
 import * as path from 'path';
 import keysToLowerCase from 'util/object';
 import { RequestValidationError, NotFoundError } from 'util/errors';
-import DataOperation from 'models/data-operation';
 import * as services from 'models/services';
 import { Router, Application } from 'express';
 import _ from 'lodash';
+import DataOperation from 'models/data-operation';
 import { CmrUmmVariable } from '../util/cmr';
 import { createDecrypter, createEncrypter } from '../util/crypto';
+import parseCRS from '../util/crs';
 import env from '../util/env';
 
 const version = '0.1.0';
@@ -55,23 +55,10 @@ export function addOpenApiRoutes(app: Router): void {
         const decrypter = createDecrypter(env.sharedSecretKey);
         const operation = new DataOperation(null, encrypter, decrypter);
 
-        try {
-          const srs = SpatialReference.fromUserInput(query.crs);
-          const epsg = /^[eE][pP][sS][gG]:\d{4,5}$/.test(query.crs) ? query.crs : '';
-          operation.crs = srs.toProj4();
-          operation.srs = {
-            proj4: srs.toProj4(),
-            wkt: srs.toWKT(),
-            epsg,
-          };
-        } catch (e) {
-          operation.crs = query.crs;
-          operation.srs = {
-            proj4: '',
-            wkt: '',
-            epsg: '',
-          };
-        }
+        const [crs, srs] = parseCRS({ queryCRS_: query.crs, validate: false });
+        operation.crs = crs || query.crs;
+        operation.srs = srs;
+
         if (query.format) {
           operation.outputFormat = query.format;
         }

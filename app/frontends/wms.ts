@@ -1,4 +1,3 @@
-import { SpatialReference } from 'gdal-next';
 import * as mustache from 'mustache';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -11,6 +10,7 @@ import * as services from 'models/services';
 import { NextFunction } from 'express';
 import { createDecrypter, createEncrypter } from '../util/crypto';
 import parseMultiValueParameter from '../util/parameter-parsing';
+import parseCRS from '../util/crs';
 
 import env from '../util/env';
 
@@ -226,23 +226,9 @@ function getMap(req, res, next: NextFunction): void {
     operation.addSource(collectionId, variablesByCollection[collectionId]);
   }
 
-  try {
-    const srs = SpatialReference.fromUserInput(query.crs);
-    const epsg = /^[eE][pP][sS][gG]:\d{4,5}$/.test(query.crs) ? query.crs : '';
-    operation.crs = srs.toProj4();
-    operation.srs = {
-      proj4: srs.toProj4(),
-      wkt: srs.toWKT(),
-      epsg,
-    };
-  } catch (e) {
-    operation.crs = query.crs;
-    operation.srs = {
-      proj4: '',
-      wkt: '',
-      epsg: '',
-    };
-  }
+  const [crs, srs] = parseCRS({ queryCRS_: query.crs, validate: false });
+  operation.crs = crs || query.crs;
+  operation.srs = srs;
 
   operation.isTransparent = query.transparent === 'TRUE';
   if (query.format) {
