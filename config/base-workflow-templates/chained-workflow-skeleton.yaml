@@ -26,8 +26,6 @@ spec:
       value: "{{inputs.parameters.page-size}}"
     - name: batch-size
       value: "{{inputs.parameters.batch-size}}"
-    - name: cmr-granule-locator-image 
-      value: "{{inputs.parameters.cmr-granule-locator-image}}"
     - name: image-pull-policy
       value: "{{inputs.parameters.image-pull-policy}}"
     
@@ -39,7 +37,6 @@ spec:
           - name: query
           - name: page-size
           - name: batch-size
-          - name: cmr-granule-locator-image
           - name: image-pull-policy
           - name: timeout
           - name: callback
@@ -60,8 +57,6 @@ spec:
               value: "{{inputs.parameters.page-size}}"
             - name: batch-size
               value: "{{inputs.parameters.batch-size}}"
-            - name: image 
-              value: "{{inputs.parameters.cmr-granule-locator-image}}"
             - name: image-pull-policy
               value: "{{inputs.parameters.image-pull-policy}}"
             - name: timeout
