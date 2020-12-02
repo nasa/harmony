@@ -1,11 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: zpodaac-l2-subsetter-netcdf-to-zarr
+  name: swot-reproject-netcdf-to-zarr
 spec:
-  entrypoint: zpodaac-l2-subsetter-netcdf-to-zarr-steps
+  entrypoint: swot-reproject-netcdf-to-zarr-steps
   templates:
-    - name: zpodaac-l2-subsetter-netcdf-to-zarr-steps
+    - name: swot-reproject-netcdf-to-zarr-steps
       inputs:
         artifacts:
         - name: metadata
@@ -16,10 +16,10 @@ spec:
           - name: timeout
           - name: STAGING_PATH
       steps:
-      - - name: podaac-l2-subsetter-step
+      - - name: swot-reproject-step
           templateRef: 
-            name: podaac-l2-subsetter
-            template: podaac-l2-subsetter-service
+            name: swot-reproject
+            template: swot-reproject-service
           arguments:
             artifacts:
             - name: metadata
@@ -35,19 +35,19 @@ spec:
               value: "{{inputs.parameters.timeout}}"
             - name: STAGING_PATH
               value: "{{inputs.parameters.STAGING_PATH}}"
-      - - name: last-step
+      - - name: harmony-netcdf-to-zarr
           templateRef: 
             name: harmony-netcdf-to-zarr
             template: harmony-netcdf-to-zarr-service
           arguments:
             artifacts:
             - name: metadata
-              from: "{{steps.podaac-l2-subsetter-step.outputs.artifacts.metadata}}"
+              from: "{{steps.swot-reproject-step.outputs.artifacts.metadata}}"
             parameters:
             - name: operation
-              value: "{{steps.podaac-l2-subsetter-step.outputs.parameters.operation}}"
+              value: "{{steps.swot-reproject-step.outputs.parameters.operation}}"
             - name: stac-catalog-link
-              value: "{{steps.podaac-l2-subsetter-step.outputs.parameters.stac-catalog-link}}"
+              value: "{{steps.swot-reproject-step.outputs.parameters.stac-catalog-link}}"
             - name: image-pull-policy
               value: "{{inputs.parameters.image-pull-policy}}"
             - name: timeout
@@ -60,8 +60,8 @@ spec:
       outputs:
         artifacts:
           - name: metadata
-            from: "{{steps.last-step.outputs.artifacts.metadata}}"
+            from: "{{steps.harmony-netcdf-to-zarr.outputs.artifacts.metadata}}"
         parameters:
           - name: stac-catalog-link
             valueFrom:
-              parameter: "{{steps.last-step.outputs.parameters.stac-catalog-link}}"
+              parameter: "{{steps.harmony-netcdf-to-zarr.outputs.parameters.stac-catalog-link}}"

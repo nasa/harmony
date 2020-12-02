@@ -297,35 +297,6 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
       reprojection: true
 
-  # This is an example service and backend from example/http-backend.js mounted by
-  # the frontend callback server.
-  - name: harmony/chaining-example
-    data_operation_version: '0.9.0'
-    batch_size: 2000
-    type:
-      name: argo
-      params:
-        # Minimal parameters for current partial chaining implementation
-        image: harmony/query-cmr:latest
-        template_type: chaining
-        argo_url: !Env ${ARGO_URL}
-        namespace: argo
-        env:
-          <<: *default-argo-env
-          LOCALSTACK_HOST: !Env ${BACKEND_HOST}
-    collections:
-      # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
-      # Good example, being in UAT, global, many public non-global granules,
-      # and not yet on the services roadmap.
-      - C1096-PVC_TS2
-    capabilities:
-      subsetting:
-        variable: true
-        bbox: true
-      output_formats:
-        - image/tiff
-      reprojection: true
-
   # PO.DAAC Shapefiles
   - name: podaac/ps3
     data_operation_version: '0.9.0'
@@ -416,13 +387,14 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-argo-config
       params:
         <<: *default-argo-params
-        template: zpodaac-l2-subsetter-netcdf-to-zarr
+        template: podaac-l2-subsetter-netcdf-to-zarr
         template_type: chaining
+        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
         parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
         env:
           <<: *default-argo-env
-          STAGING_PATH: public/harmony/netcdf-to-zarr
+          STAGING_PATH: public/harmony/podaac-l2-subsetter-netcdf-to-zarr
     maximum_sync_granules: 0
     collections:
       - C1234208436-POCLOUD
@@ -445,7 +417,7 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-argo-config
       params:
         <<: *default-argo-params
-        template: zswot-reproject-netcdf-to-zarr
+        template: swot-reproject-netcdf-to-zarr
         template_type: chaining
         image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}

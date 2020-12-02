@@ -63,4 +63,4 @@ spec:
               value: "{{inputs.parameters.post-batch-step-count}}"
             - name: should-post-results
               value: "true"
-  # TODO add an output artifact here so we can use it with any post batch step(s)
+  # TODO HARMONY-641 add an output artifact here so we can use it with any post batch step(s)
