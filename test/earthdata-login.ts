@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import request from 'supertest';
+import axios from 'axios';
+import { SinonStub, match } from 'sinon';
 
 import hookServersStartStop from './helpers/servers';
 import { auth, authRedirect, token, stubEdlRequest, stubEdlError, unstubEdlRequest } from './helpers/auth';
@@ -52,6 +54,11 @@ describe('Earthdata Login', function () {
 
       it('provides the Earthdata Login user name to the application request handler', function () {
         expect(this.service.operation.user).to.equal(fakeUsername);
+      });
+
+      it('validates the token with Earthdata Login to ensure it is not revoked', function () {
+        const fakePost = axios.post as SinonStub;
+        expect(fakePost.calledWithMatch('/oauth/tokens/user?token=fake_access', null, match.any)).to.be.true;
       });
     });
 
@@ -133,6 +140,22 @@ describe('Earthdata Login', function () {
           expect(this.res.headers['set-cookie'][1]).to.include(encodeURIComponent('service=WMS'));
         });
       });
+    });
+  });
+
+  describe('When a request provides a revoked token', function () {
+    beforeEach(async function () {
+      const authentication = auth({ username: fakeUsername });
+      const fakePost = axios.post as SinonStub;
+      fakePost
+        .withArgs(match(/\/oauth\/tokens\/user\?token=fake_access/), null, match.any)
+        .throws('Unknown token');
+      this.res = await wmsRequest(this.frontend).use(authentication);
+    });
+
+    it('redirects to Earthdata Login', function () {
+      expect(this.res.statusCode).to.equal(303);
+      expect(this.res.headers.location).to.include(process.env.OAUTH_HOST);
     });
   });
 
