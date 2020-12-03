@@ -82,6 +82,27 @@ class HarmonyUatUser(BaseHarmonyUser):
             name='PODAAC L2SS'
         )
 
+    @tag('podaac-l2ss', 'bbox', 'sync', 'netcdf4', 'agu', 'variable')
+    @task(5)
+    def podaac_l2ss_sync_variable(self):
+        collection = 'C1234208438-POCLOUD'
+        variable = 'mean_sea_surface'
+        params = {
+            'maxResults': 1,
+            'subset': [
+                'lon(-160:160)',
+                'lat(-80:80)'
+            ]
+        }
+        self.client.get(
+            self.coverages_root.format(
+                collection=collection,
+                variable=variable
+            ),
+            params=params,
+            name='PODAAC L2SS mean sea surface'
+        )
+
     @tag('asf-gdal', 'sync', 'bbox', 'variable', 'temporal', 'hierarchical-variable', 'netcdf4')
     @task(2)
     def asf_gdal(self):
