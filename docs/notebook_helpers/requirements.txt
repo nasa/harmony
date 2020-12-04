@@ -8,3 +8,4 @@ geopandas >= 0.7.0
 descartes >= 1.1.0
 contextily >= 1.0.0
 sat-stac >= 0.4.0
+xarray >= 0.16.2
