@@ -40,6 +40,7 @@ interface HarmonyEnv {
   defaultArgoPodTimeoutSecs: number;
   builtInTaskPrefix: string;
   builtInTaskVersion: string;
+  cmrMaxPageSize: number;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -104,6 +105,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['DEFAULT_ARGO_POD_TIMEOUT_SECS', 14400],
   ['BUILT_IN_TASK_PREFIX', ''],
   ['BUILT_IN_TASK_VERSION', 'latest'],
+  ['CMR_MAX_PAGE_SIZE', 2000],
   ['FEEDBACK_URL', null],
 ].forEach((value) => makeConfigVar.apply(this, value));
 

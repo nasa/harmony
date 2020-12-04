@@ -12,11 +12,13 @@ export interface ArgoServiceParams {
   namespace: string;
   template: string;
   template_type?: string;
-  image: string;
+  template_ref?: string;
+  embedded_template?: string;
   image_pull_policy?: string;
   parallelism?: number;
   postBatchStepCount?: number;
   env: { [key: string]: string };
+  image?: string;
 }
 
 interface ArgoVariable {
@@ -45,19 +47,24 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    * @returns The number of granules per batch of results processed
    */
   chooseBatchSize(maxGranules = env.maxGranuleLimit): number {
-    const { maxResults } = this.operation;
-
+    const maxResults = this.operation.maxResults || Number.MAX_SAFE_INTEGER;
     let batchSize = _.get(this.config, 'batch_size', env.defaultBatchSize);
+    batchSize = batchSize <= 0 ? Number.MAX_SAFE_INTEGER : batchSize;
 
-    if (batchSize <= 0 || batchSize > maxGranules) {
-      batchSize = maxGranules;
-    }
+    return Math.min(maxGranules, batchSize, maxResults);
+  }
 
-    if (maxResults) {
-      batchSize = Math.min(batchSize, maxResults);
-    }
+  /**
+   * Returns the page size to use for the given request
+   * @private
+   *
+   * @param maxGranules The system-wide maximum granules
+   * @returns The number of granules per page of results from the CMR
+   */
+  choosePageSize(maxGranules = env.maxGranuleLimit): number {
+    const maxResults = this.operation.maxResults || Number.MAX_SAFE_INTEGER;
 
-    return batchSize;
+    return Math.min(maxResults, maxGranules, env.cmrMaxPageSize);
   }
 
   /**
@@ -79,14 +86,12 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     const serializedOperation = this.serializeOperation();
     const operation = JSON.parse(serializedOperation);
 
-    // const resultHandlerScript =
-    // resultHandlerScriptTemplate.replace('{{inputs.parameters.batch-count}}', '{batch.length}');
-
     let params = [
       {
         name: 'callback',
         value: operation.callback,
       },
+      // Only needed for legacy workflow templates
       {
         name: 'image',
         value: this.params.image,
@@ -102,6 +107,22 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       {
         name: 'post-batch-step-count',
         value: `${this.params.postBatchStepCount || 0}`,
+      },
+      {
+        name: 'page-size',
+        value: `${this.choosePageSize()}`,
+      },
+      {
+        name: 'batch-size',
+        value: `${this.chooseBatchSize()}`,
+      },
+      {
+        name: 'parallelism',
+        value: this.params.parallelism || env.defaultParallelism,
+      },
+      {
+        name: 'query',
+        value: this.operation.cmrQueryLocations.join(' '),
       },
     ];
 
@@ -147,26 +168,24 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    */
   _chainedWorkflowBody(params: ArgoVariable[]): unknown {
     const { user, requestId } = this.operation;
-    const serviceEnv = this.params.env;
-    const envKeys = Object.keys(serviceEnv);
-    const argoEnv: ArgoVariable[] = envKeys.map((k) => ({ name: k, value: serviceEnv[k] }));
-    argoEnv.push({
-      name: 'SHARED_SECRET_KEY',
-      valueFrom: { secretKeyRef: { name: 'shared-secret', key: 'secret-key' } },
-    });
 
-    const serializedOperation = JSON.parse(this.serializeOperation());
+    // we need to serialize the batch operation to get just the model and then deserialize
+    // it so we can pass it to the Argo looping/concurrency mechanism in the workflow
+    // which expects objects not strings
+    const serializedOp = functionalSerializeOperation(this.operation, this.config);
+
+    const serializedOperation = JSON.parse(serializedOp);
     for (const source of serializedOperation.sources) {
       delete source.granules;
     }
 
-    // TODO: HARMONY-559: Complete and move to permanent home.  For now, calls CMR and echoes result
+    const argoParams = [...params, { name: 'operation', value: JSON.stringify(serializedOperation) }];
     return {
       namespace: this.params.namespace,
       serverDryRun: false,
       workflow: {
         metadata: {
-          generateName: `${this.config.name.replace('/', '-')}-`,
+          generateName: `${this.params.template}-chain-`,
           namespace: this.params.namespace,
           labels: {
             user,
@@ -174,74 +193,13 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
           },
         },
         spec: {
-          entryPoint: 'service',
-          onExit: 'exit-handler',
-          templates: [
-            {
-              name: 'service',
-              steps: [
-                [{
-                  name: 'query-granules',
-                  template: 'query',
-                }],
-                [{
-                  name: 'print-files',
-                  template: 'print',
-                  arguments: {
-                    artifacts: [{
-                      name: 'files',
-                      from: '{{steps.query-granules.outputs.artifacts.granules}}',
-                    }],
-                  },
-                }],
-              ],
-            },
-            {
-              name: 'query',
-              podSpecPatch: `{"activeDeadlineSeconds":${env.defaultArgoPodTimeoutSecs}}`,
-              container: {
-                image: `${env.builtInTaskPrefix}harmony/query-cmr:${env.builtInTaskVersion}`,
-                imagePullPolicy: this.params.image_pull_policy || env.defaultImagePullPolicy,
-                args: [
-                  '--harmony-input',
-                  JSON.stringify(serializedOperation),
-                  '--query',
-                  ...this.operation.cmrQueryLocations,
-                  '--output-dir',
-                  '/tmp/outputs',
-                  '--page-size',
-                  `${this.chooseBatchSize()}`,
-                  // Hard-coded to run only a single page until the no granule limit epic
-                  '--max-pages',
-                  '1',
-                ],
-                env: argoEnv.concat({ name: 'CMR_ENDPOINT', value: env.cmrEndpoint }),
-              },
-              outputs: {
-                artifacts: [{ name: 'granules', path: '/tmp/outputs' }],
-              },
-            },
-            {
-              name: 'print',
-              inputs: { artifacts: [{ name: 'files', path: '/tmp/files' }] },
-              container: {
-                image: 'alpine:latest',
-                command: ['sh', '-c'],
-                args: ['find /tmp/files -type f -exec cat {} \\;'],
-              },
-            },
-            {
-              name: 'exit-handler',
-              inputs: {
-                parameters: params,
-              },
-              script: {
-                image: 'curlimages/curl',
-                command: ['sh'],
-                source: this._buildExitHandlerScript(),
-              },
-            },
-          ],
+          arguments: {
+            parameters: argoParams,
+          },
+          parallelism: this.params.parallelism || env.defaultParallelism,
+          workflowTemplateRef: {
+            name: `${this.params.template}-chain`,
+          },
         },
       },
     };

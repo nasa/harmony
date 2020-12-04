@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: harmony-netcdf-to-zarr
+spec:
+  entrypoint: harmony-netcdf-to-zarr
+  templates:
+    - name: harmony-netcdf-to-zarr
+      inputs:
+        parameters:
+          - name: operation
+          - name: image
+          - name: image-pull-policy
+          - name: timeout
+          - name: AWS_DEFAULT_REGION
+          - name: USE_LOCALSTACK
+          - name: STAGING_BUCKET
+          - name: TEXT_LOGGER
+          - name: BACKEND_HOST
+      podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
+      container:
+        image: "{{inputs.parameters.image}}"
+        imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
+        command: ["python3"]
+        args:
+          [
+            "-m",
+            "harmony_netcdf_to_zarr",
+            "--harmony-action",
+            "invoke",
+            "--harmony-input",
+            "{{inputs.parameters.operation}}",
+          ]
+        envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets

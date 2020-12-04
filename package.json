@@ -148,6 +148,7 @@
     "eslint-plugin-jsdoc": "^15.9.1",
     "eslint-plugin-node": "^9.2.0",
     "eslint-plugin-tsdoc": "^0.2.5",
+    "fast-check": "^2.7.0",
     "lerna": "^3.22.1",
     "mocha": "^7.2.0",
     "mocha-junit-reporter": "^1.23.3",

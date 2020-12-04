@@ -152,10 +152,13 @@ describe('cli', function () {
   describe('main', function () {
     describe('when the output directory exists', function () {
       const tmpDir = tmp.dirSync({ unsafeCleanup: true }).name;
-      hookCliMain(['--output-dir', tmpDir, '--harmony-input', '{}', '--query', 'file.json'], new CmrStacCatalog({ description: 'done' }));
+      hookCliMain(
+        ['--output-dir', tmpDir, '--harmony-input', '{}', '--query', 'file.json'],
+        [new CmrStacCatalog({ description: 'done' })],
+      );
 
       it('outputs the result data to catalog.json in the directory', function () {
-        const index = path.join(tmpDir, 'catalog.json');
+        const index = path.join(tmpDir, 'catalog0.json');
         expect(fs.existsSync(index)).to.be.true;
         expect(JSON.parse(fs.readFileSync(index, 'utf-8')).description).to.equal('done');
       });
@@ -163,13 +166,19 @@ describe('cli', function () {
 
     describe('when the output directory does not exist', function () {
       const tmpDir = tmp.tmpNameSync();
-      hookCliMain(['--output-dir', tmpDir, '--harmony-input', '{}', '--query', 'file.json'], new CmrStacCatalog({ description: 'done' }));
+      hookCliMain(
+        ['--output-dir', tmpDir, '--harmony-input', '{}', '--query', 'file.json'],
+        [new CmrStacCatalog({ description: 'first' }), new CmrStacCatalog({ description: 'second' })],
+      );
       after(() => fs.rmdirSync(tmpDir, { recursive: true }));
 
-      it('creates it and outputs the result data to index.json in the directory', function () {
-        const index = path.join(tmpDir, 'catalog.json');
-        expect(fs.existsSync(index)).to.be.true;
-        expect(JSON.parse(fs.readFileSync(index, 'utf-8')).description).to.equal('done');
+      it('creates the directory and one catalog file for each returned catalog', function () {
+        const firstCatalog = path.join(tmpDir, 'catalog0.json');
+        const secondCatalog = path.join(tmpDir, 'catalog1.json');
+        expect(fs.existsSync(firstCatalog)).to.be.true;
+        expect(fs.existsSync(secondCatalog)).to.be.true;
+        expect(JSON.parse(fs.readFileSync(firstCatalog, 'utf-8')).description).to.equal('first');
+        expect(JSON.parse(fs.readFileSync(secondCatalog, 'utf-8')).description).to.equal('second');
       });
     });
   });

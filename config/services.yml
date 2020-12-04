@@ -9,6 +9,7 @@ x-argo-config: &default-argo-config
     namespace: argo
     env: &default-argo-env
       USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
+      LOCALSTACK_HOST: !Env ${BACKEND_HOST}
       AWS_DEFAULT_REGION: us-west-2
       STAGING_BUCKET: !Env ${STAGING_BUCKET}
       TEXT_LOGGER: !Env ${TEXT_LOGGER}
@@ -30,9 +31,9 @@ https://cmr.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: asf-gdal-subsetter
-        image: !Env ${ASF_GDAL_IMAGE}
-        image_pull_policy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${ASF_GDAL_PARALLELISM}
+        image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
+        image_pull_policy: !Env ${ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${ASF_GDAL_SUBSETTER_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
@@ -58,9 +59,9 @@ https://cmr.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: harmony-netcdf-to-zarr
-        image: !Env ${NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${NETCDF_TO_ZARR_PARALLELISM}
+        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
@@ -83,9 +84,10 @@ https://cmr.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: harmony-gdal
-        image: !Env ${GDAL_IMAGE}
-        image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${GDAL_PARALLELISM}
+        template_type: chaining
+        image: !Env ${HARMONY_GDAL_IMAGE}
+        image_pull_policy: !Env ${HARMONY_GDAL_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_GDAL_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/gdal
@@ -136,9 +138,9 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: asf-gdal-subsetter
-        image: !Env ${ASF_GDAL_IMAGE}
-        image_pull_policy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${ASF_GDAL_PARALLELISM}
+        image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
+        image_pull_policy: !Env ${ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${ASF_GDAL_SUBSETTER_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
@@ -159,14 +161,16 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: harmony/gdal
     data_operation_version: '0.9.0'
+    batch_size: 10
     type:
       <<: *default-argo-config
       params:
         <<: *default-argo-params
         template: harmony-gdal
-        image: !Env ${GDAL_IMAGE}
-        image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${GDAL_PARALLELISM}
+        template_type: chaining
+        image: !Env ${HARMONY_GDAL_IMAGE}
+        image_pull_policy: !Env ${HARMONY_GDAL_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_GDAL_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/gdal
@@ -220,9 +224,10 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: swot-reproject
-        image: !Env ${SWOT_REPR_IMAGE}
-        image_pull_policy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${SWOT_REPR_PARALLELISM}
+        template_type: chaining
+        image: !Env ${SWOT_REPROJECT_IMAGE}
+        image_pull_policy: !Env ${SWOT_REPROJECT_IMAGE_PULL_POLICY}
+        parallelism: !Env ${SWOT_REPROJECT_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/swot-reproject
@@ -299,12 +304,13 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.9.0'
     batch_size: 2000
     type:
-      <<: *default-argo-config
+      name: argo
       params:
-        <<: *default-argo-params
         # Minimal parameters for current partial chaining implementation
         image: harmony/query-cmr:latest
         template_type: chaining
+        argo_url: !Env ${ARGO_URL}
+        namespace: argo
         env:
           <<: *default-argo-env
           LOCALSTACK_HOST: !Env ${BACKEND_HOST}
@@ -319,38 +325,6 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
       output_formats:
         - image/tiff
-      reprojection: true
-
-   # This is an example service using a result handler
-  - name: harmony/result-handler-example
-    data_operation_version: '0.9.0'
-    batch_size: 2
-    type:
-      <<: *default-argo-config
-      params:
-        <<: *default-argo-params
-        image: harmony/query-cmr:latest
-        template: test-chain-with-result-handler
-        image_pull_policy: !Env ${DEFAULT_IMAGE_PULL_POLICY}
-        parallelism: !Env ${DEFAULT_PARALLELISM}
-        env:
-          <<: *default-argo-env
-          STAGING_PATH: public/harmony/result-handler-example
-    collections:
-      # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
-      # Good example, being in UAT, global, many public non-global granules,
-      # and not yet on the services roadmap.
-      - C1096-PVC_TS2
-    capabilities:
-      subsetting:
-        bbox: false
-        variable: false
-      output_formats:
-        - image/tiff
-        - image/png
-        - image/gif
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
       reprojection: true
 
   # PO.DAAC Shapefiles
@@ -408,9 +382,9 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: harmony-netcdf-to-zarr
-        image: !Env ${NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${NETCDF_TO_ZARR_PARALLELISM}
+        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
