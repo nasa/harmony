@@ -2,6 +2,9 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2020-12-02
+### Added
+- CMR_MAX_PAGE_SIZE - page_size parameter to use for CMR requests
 ## 2020-11-20
 ### Added
 - CMR_GRANULE_LOCATOR_IMAGE - New image for issuing queries to the CMR to identify granules for a request

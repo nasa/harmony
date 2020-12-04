@@ -89,6 +89,7 @@ done
 wait
 
 function install_full_templates {
+  # TODO HARMONY-640 parse out template name instead of using file name
   f=$1
   batch_file=$(create_batch_template $f)
   chain_file=$(parameterize_template $f)
@@ -100,6 +101,11 @@ function install_full_templates {
 }
 
 for f in ./config/workflow-templates/*; do
+  install_full_templates $f&
+done
+wait
+
+for f in ./config/chained-workflow-templates/*; do
   install_full_templates $f&
 done
 wait

@@ -173,9 +173,6 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 DEFAULT_IMAGE_PULL_POLICY='Always'
 DEFAULT_PARALLELISM=2
 
-# Docker image for the cmr-granule-locator
-CMR_GRANULE_LOCATOR_IMAGE=harmony/query-cmr:latest
-
 ASF_GDAL_SUBSETTER_IMAGE=asfdataservices/gdal-subsetter:latest
 ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY='Always'
 ASF_GDAL_SUBSETTER_PARALLELISM=2
@@ -210,6 +207,9 @@ PODAAC_NETCDF_CONVERTER_PARALLELISM=2
 
 CMR_GRANULE_LOCATOR_IMAGE=harmony/query-cmr:latest
 CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY='Always'
+
+# page size to use with CMR calls
+CMR_MAX_PAGE_SIZE=2000
 
 # Prefix before "harmony/task-name" for built-in tasks like query-cmr, e.g. an ECR location
 # If not blank, it should end in a slash if there is a slash before "harmony"

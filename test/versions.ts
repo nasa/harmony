@@ -33,6 +33,8 @@ describe('Versions endpoint', function () {
           'podaac/ps3',
           'podaac/netcdf-converter',
           'harmony/netcdf-to-zarr',
+          'harmony/podaac-l2-subsetter-netcdf-to-zarr',
+          'harmony/swot-repr-netcdf-to-zarr',
         ]);
       });
 

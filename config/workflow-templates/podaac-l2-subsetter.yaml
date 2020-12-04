@@ -1,11 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: harmony-gdal
+  name: podaac-l2-subsetter
 spec:
-  entrypoint: harmony-gdal-steps
+  entrypoint: podaac-l2-subsetter-steps
   templates:
-    - name: harmony-gdal-steps
+    - name: podaac-l2-subsetter-steps
       inputs:
         artifacts:
         - name: metadata
@@ -17,7 +17,7 @@ spec:
           - name: STAGING_PATH
       steps:
       - - name: last-step
-          template: harmony-gdal-service
+          template: podaac-l2-subsetter-service
           arguments:
             artifacts:
             - name: metadata
@@ -41,7 +41,7 @@ spec:
           - name: stac-catalog-link
             valueFrom:
               parameter: "{{steps.last-step.outputs.parameters.stac-catalog-link}}"
-    - name: harmony-gdal-service
+    - name: podaac-l2-subsetter-service
       inputs:
         artifacts:
         - name: metadata
@@ -67,11 +67,8 @@ spec:
       container:
         image: "<DOCKER_IMAGE>"
         imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
-        command: ["python3"]
         args:
           [
-            "-m",
-            "harmony_gdal",
             "--harmony-action",
             "invoke",
             "--harmony-input",
@@ -89,4 +86,3 @@ spec:
         env:
           - name: STAGING_PATH
             value: "{{inputs.parameters.STAGING_PATH}}"
-

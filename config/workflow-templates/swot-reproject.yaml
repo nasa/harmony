@@ -60,6 +60,9 @@ spec:
         parameters:
           - name: stac-catalog-link
             value: catalog.json
+          - name: operation
+            valueFrom:
+              path: /tmp/outputs/metadata/message.json
       podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
       container:
         image: "<DOCKER_IMAGE>"
@@ -73,9 +76,9 @@ spec:
             "--harmony-input",
             "{{inputs.parameters.operation}}",
             "--harmony-sources",
-            "/tmp/metadata/{{inputs.parameters.stac-catalog-link}}",
+            "{{inputs.artifacts.metadata.path}}/{{inputs.parameters.stac-catalog-link}}",
             "--harmony-metadata-dir",
-            "/tmp/outputs/metadata"
+            "{{outputs.artifacts.metadata.path}}"
           ]
         envFrom:
           - configMapRef:
