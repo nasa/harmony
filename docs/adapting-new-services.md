@@ -153,7 +153,7 @@ Add an entry to [services.yml](../config/services.yml) under each CMR environmen
 
 ```yaml
 - name: harmony/docker-example    # A unique identifier string for the service, conventionally <team>/<service>
-  data_operation_version: '0.8.0' # The version of the data-operation messaging schema to use
+  data_operation_version: '0.10.0' # The version of the data-operation messaging schema to use
   type:                           # Configuration for service invocation
     name: queue                   # The type of service invocation, either "queue" or "http"
     params:                       # Parameters specific to the service invocation type

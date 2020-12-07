@@ -38,6 +38,18 @@ function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
     {
+      version: '0.10.0',
+      schema: readSchema('0.10.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        if ('format.srs' in revertedModel) {
+          delete revertedModel.format.srs; // eslint-disable-line no-param-reassign
+        }
+
+        return revertedModel;
+      },
+    },
+    {
       version: '0.9.0',
       schema: readSchema('0.9.0'),
       down: (model): unknown => {
@@ -153,6 +165,12 @@ interface DataSource {
   variables: HarmonyVariable[];
 }
 
+export interface SRS {
+  proj4: string;
+  wkt: string;
+  epsg?: string;
+}
+
 /**
  * Encapsulates an operation to be performed against a backend.  Currently the
  * class is largely getters and setters.  The eventual intent is to allow us
@@ -262,13 +280,26 @@ export default class DataOperation {
 
   /**
    * Sets the CRS into which the data should be transformed
-   *
-   * @param {string} crs The new CRS value
-   * @returns {void}
-   * @memberof DataOperation
    */
   set crs(crs: string) {
     this.model.format.crs = crs;
+  }
+
+  /**
+   * Returns an object of SRS (CRS) transform information with keys proj4, wkt, and epsg (if
+   * available).
+   */
+  get srs(): SRS {
+    const { srs } = this.model.format;
+    if (!srs) return null;
+    return this.model.format.srs;
+  }
+
+  /**
+   * Sets the SRS (CRS) transform information.
+   */
+  set srs(srs: SRS) {
+    this.model.format.srs = srs;
   }
 
   /**

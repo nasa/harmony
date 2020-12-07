@@ -1,6 +1,6 @@
 {
-  "$schema": "../app/schemas/data-operation/0.8.0/data-operation-v0.8.0.json",
-  "version": "0.8.0",
+  "$schema": "../app/schemas/data-operation/0.10.0/data-operation-v0.10.0.json",
+  "version": "0.10.0",
   "callback": "http://localhost/some-path",
   "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
   "user": "jdoe",
@@ -37,6 +37,11 @@
   ],
   "format": {
     "crs": "CRS:84",
+    "srs": {
+      "proj4": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+      "wkt": "PROJCS[ ... ]",
+      "epsg": "EPSG:7030"
+    },
     "isTransparent": true,
     "mime": "image/tiff",
     "width": 881,

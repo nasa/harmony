@@ -1,9 +1,16 @@
-FROM osgeo/gdal:ubuntu-full-3.1.3
+FROM ubuntu:20.04
 
-ARG KUBERNETES_URL=https://vm.docker.internal:6443
+ARG DEBIAN_FRONTEND=noninteractive
 ARG FAKE_ROOT_CA=DOIRootCA.crt
+ARG KUBERNETES_URL=https://vm.docker.internal:6443
+ARG TZ=America/Chicago
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+
+#
+# Update and install system packages; runs before certificate work below because we must have ca-certificates package installed first 
+#
+RUN apt update && apt upgrade -y && apt install -y bind9-host bsdmainutils ca-certificates curl git iputils-ping libpq-dev postgresql sqlite3 sudo unzip vim
 
 #
 # OPTIONAL: fake root CA for e.g. USGS / DOI networks
@@ -11,11 +18,6 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /usr/local/share/ca-certificates/mycerts
 COPY *.crt .
 RUN if [ "x$FAKE_ROOT_CA" = "x" ] ; then echo No root CAs provided ; else update-ca-certificates ; fi
-
-#
-# system packages
-#
-RUN apt-get update && apt-get install -y bsdmainutils git libpq-dev postgresql sqlite3 sudo vim
 
 #
 # user dockeruser
@@ -54,7 +56,7 @@ WORKDIR /home/dockeruser/venv
 RUN sudo apt-get install -y python3-pip python3-venv \
     && python3 -m venv harmony \
     && source ./harmony/bin/activate \
-    && pip install awscli-local boto3
+    && pip install awscli-local boto3 ipykernel wheel
 
 #
 # Docker in Docker; allows containers to start sibling containers
@@ -84,5 +86,18 @@ RUN curl -sLO https://github.com/argoproj/argo/releases/download/v2.11.6/argo-li
     && chmod +x ./argo-linux-amd64 \
     && sudo mv ./argo-linux-amd64 /usr/local/bin/argo \
     && argo version
+
+#
+# GDAL
+#
+WORKDIR /home/dockeruser/venv
+ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
+ENV C_INCLUDE_PATH=/usr/include/gdal
+RUN sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable \
+    && sudo apt update \
+    && sudo apt install -y gdal-bin libgdal-dev
+RUN source ./harmony/bin/activate \
+    && pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+
 
 WORKDIR /home/dockeruser

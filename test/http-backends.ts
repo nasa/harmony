@@ -14,10 +14,10 @@ import { hookFunction } from './helpers/hooks';
  */
 function describeHttpBackendBehavior(performRequestFn: Function): void {
   describe('a service success response', function () {
-    hookFunction(performRequestFn, 'res', 'SUCCESS');
+    hookFunction(performRequestFn, 'res', 'EPSG:4326');
 
     it('propagates the service response verbatim to the user', function () {
-      expect(this.res.body.format.crs).to.equal('SUCCESS');
+      expect(this.res.body.format.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
     });
 
     it('returns a 200 OK status code to the user', function () {

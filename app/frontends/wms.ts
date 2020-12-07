@@ -10,6 +10,7 @@ import * as services from 'models/services';
 import { NextFunction } from 'express';
 import { createDecrypter, createEncrypter } from '../util/crypto';
 import parseMultiValueParameter from '../util/parameter-parsing';
+import parseCRS from '../util/crs';
 
 import env from '../util/env';
 
@@ -225,7 +226,10 @@ function getMap(req, res, next: NextFunction): void {
     operation.addSource(collectionId, variablesByCollection[collectionId]);
   }
 
-  operation.crs = query.crs;
+  const [crs, srs] = parseCRS({ queryCRS_: query.crs, validate: false });
+  operation.crs = crs || query.crs;
+  operation.srs = srs;
+
   operation.isTransparent = query.transparent === 'TRUE';
   if (query.format) {
     operation.outputFormat = query.format;

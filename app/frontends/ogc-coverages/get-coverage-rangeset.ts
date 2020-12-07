@@ -1,4 +1,3 @@
-import { SpatialReference } from 'gdal-next';
 import DataOperation from 'models/data-operation';
 import { Response, NextFunction } from 'express';
 import keysToLowerCase from '../../util/object';
@@ -10,6 +9,7 @@ import { parseAcceptHeader } from '../../util/content-negotiation';
 import parseMultiValueParameter from '../../util/parameter-parsing';
 import HarmonyRequest from '../../models/harmony-request';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
+import parseCRS from '../../util/crs';
 import env from '../../util/env';
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -47,11 +47,9 @@ export default function getCoverageRangeset(
     operation.granuleIds = parseMultiValueParameter(query.granuleid);
   }
   if (query.outputcrs) {
-    try {
-      operation.crs = SpatialReference.fromUserInput(query.outputcrs).toProj4();
-    } catch (e) {
-      throw new RequestValidationError('query parameter "outputCrs" could not be parsed.  Try an EPSG code or Proj4 string.');
-    }
+    const [crs, srs] = parseCRS({ queryCRS_: query.outputcrs });
+    operation.crs = crs;
+    operation.srs = srs;
   }
   operation.interpolationMethod = query.interpolation;
   if (query.scaleextent) {

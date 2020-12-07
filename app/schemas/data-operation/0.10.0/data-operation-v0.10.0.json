@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.9.0.json",
+  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.10.0.json",
   "$ref": "#/definitions/DataOperation",
   "definitions": {
     "DataOperation": {
@@ -103,6 +103,35 @@
           "examples": [
             "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
           ]
+        },
+        "srs": {
+          "type": ["object", "null"],
+          "description": "SRS / CRS information for requested output projection",
+          "additionalProperties": false,
+          "properties": {
+            "proj4": {
+              "type": "string",
+              "description": "The requested output projection in Proj4",
+              "examples": [
+                "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+              ]
+            },
+            "wkt": {
+              "type": "string",
+              "description": "The requested output projection in WKT",
+              "examples": [
+                "PROJCS[ ... ]"
+              ]
+            },
+            "epsg": {
+              "type": "string",
+              "description": "The requested output projection in EPSG. Optional; empty string when absent.",
+              "examples": [
+                "EPSG:7030"
+              ]
+            }
+          },
+          "required": []
         },
         "isTransparent": {
           "type": "boolean",
