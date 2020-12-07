@@ -67,6 +67,7 @@ def create_data_frame(filename, drop_job_status=True, drop_aggregated=True):
                               removed.
     """
     df = pd.read_csv(filename)
+    df = df[df['Name'] != 'Set up shared session cookies']
     if (drop_aggregated):
         df = df[df['Name'] != 'Aggregated']
     if (drop_job_status):

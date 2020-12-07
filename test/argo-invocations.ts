@@ -28,9 +28,8 @@ describe('Argo invocations', function () {
 
       it('passes CMR query locations to the Query CMR task', async function () {
         const [, body] = post.args[0];
-        const template = body.workflow.spec.templates.find((t) => t.name === 'query');
-        const { args } = template.container;
-        const query = args[3];
+        const template = body.workflow.spec.arguments.parameters.find((t) => t.name === 'query');
+        const query = template.value;
         expect(query).to.match(/^s3:\/\//);
         const store = objectStoreForProtocol(query);
         const queryFile = await store.downloadFile(query);
@@ -41,9 +40,9 @@ describe('Argo invocations', function () {
 
       it('passes no granules to the Query CMR input', function () {
         const [, body] = post.args[0];
-        const template = body.workflow.spec.templates.find((t) => t.name === 'query');
-        const { args } = template.container;
-        const message = JSON.parse(args[1]);
+        const template = body.workflow.spec.arguments.parameters.find((t) => t.name === 'operation');
+        const operation = template.value;
+        const message = JSON.parse(operation);
         const source = message.sources[0];
         expect(source.collection).to.equal('C1096-PVC_TS2');
         expect(source.granules).to.be.undefined;

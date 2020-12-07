@@ -30,10 +30,11 @@ describe('Versions endpoint', function () {
           'ds/swot-reproject',
           'sds/variable-subsetter',
           'harmony/chaining-example',
-          'harmony/result-handler-example',
           'podaac/ps3',
           'podaac/netcdf-converter',
           'harmony/netcdf-to-zarr',
+          'harmony/podaac-l2-subsetter-netcdf-to-zarr',
+          'harmony/swot-repr-netcdf-to-zarr',
         ]);
       });
 

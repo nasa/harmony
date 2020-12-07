@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# Create the Argo workflow templates - note that there is no way to update a template
+# so we need to delete the existing template and then create the new one to make sure
+# we're always using the latest template. There's a race condition here where requests
+# can fail when the template is deleted and the new one has not been created.
+function install_template {
+  f=$1
+  echo "Installing template ${f}"
+  workflow=$(basename $f .yaml)
+  existing_workflow=$(argo -n argo template get $workflow 2>/dev/null | grep $workflow | cut -d ' ' -f1)
+  if [ -n "$existing_workflow" ]; then
+    argo -n argo template delete $workflow
+  fi
+  argo -n argo template create $f
+}
+
+# This function takes a service template or chain of services template and wraps it in a batch
+# template to be called from the chain skeleton template. The new batch template is written
+# out to a new file that will be used to create a workflow template in argo. The purpose of the 
+# batch templates is to allow them to be called in a loop (concurrent) inside the chaining
+# template.
+function create_batch_template {
+  f=$1
+  workflow=$(basename $f .yaml)
+  new_template_name="${workflow}-batch"
+  # read in the batch skeleton
+  template=$(cat ./config/base-workflow-templates/batch-skeleton.yaml)
+  # replace some of the template fields with values constructed from the name of the given workflow
+  template="${template//\<placeholder-template-steps\>/${workflow}-steps}"
+  template="${template//\<placeholder-template\>/${workflow}}"
+  template="${template//\<batch-skeleton\>/${new_template_name}}"
+  # write out a new batch template file from the filled in skeleton
+  out_file="/tmp/${new_template_name}.yaml"
+  echo "${template}" > "${out_file}"
+  echo "${out_file}"
+}
+
+# Create a chained workflow template file using the given workflow template file by embedding
+# a reference to the given template in the chained workflow template skeleton file. Write out
+# the new file to the /tmp directory so it can be installed as a workflow template in argo.
+function parameterize_template {
+  f=$1
+  workflow=$(basename $f .yaml)
+  new_template_name="${workflow}-chain"
+  # read in the chaining skeleton file
+  template=$(cat ./config/base-workflow-templates/chained-workflow-skeleton.yaml)
+  # replace some of the template fields with values constructed from the name of the given workflow 
+  template="${template//\<placeholder-template\>/${workflow}-batch}"
+  template="${template//\<chained-workflow-skeleton\>/${new_template_name}}"
+  # write out a new chainging tempalte file from the filled in skeleton
+  out_file="/tmp/${new_template_name}.yaml"
+  echo "${template}" > "${out_file}"
+  echo "${out_file}"
+}
+
+# Fill in the docker image for a workflow template or template componenent using the image
+# specified by an environment variable like `CMR_GRANIULE_LOCATOR_IMAGE`.
+function inject_docker_image {
+  f=$1
+  workflow=$(basename $f .yaml)
+  # Use the image environment variable that matches the basename of the workflow plus _IMAGE
+  image_key="${workflow//-/_}_image"
+  image_key=$(echo "$image_key" | awk '{print toupper($0)}')
+  # get the value of the variable with the name given by image_key
+  image=${!image_key}
+  new_template_path="/tmp/${workflow}.yaml"
+  raw_template=$(cat $f)
+  # replace '<DOCKER_IMAGE>' in the file with the value from the env var
+  new_template="${raw_template//\<DOCKER_IMAGE\>/${image}}"
+  # write out hte file to the temp file
+  echo "${new_template}" > "${new_template_path}"
+  echo "${new_template_path}"
+}
+
+# Testing things in parallel
+
+for f in ./config/workflow-component-templates/*; do
+  component_file=$(inject_docker_image $f)
+  install_template $component_file&
+done
+
+wait
+
+for f in ./config/legacy-workflow-templates/*; do
+  install_template $f&
+done
+
+wait
+
+function install_full_templates {
+  # TODO HARMONY-640 parse out template name instead of using file name
+  f=$1
+  batch_file=$(create_batch_template $f)
+  chain_file=$(parameterize_template $f)
+  workflow_file=$(inject_docker_image $f)
+
+  install_template $workflow_file
+  install_template $batch_file
+  install_template $chain_file
+}
+
+for f in ./config/workflow-templates/*; do
+  install_full_templates $f&
+done
+wait
+
+for f in ./config/chained-workflow-templates/*; do
+  install_full_templates $f&
+done
+wait

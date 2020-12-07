@@ -1,0 +1,101 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: <chained-workflow-skeleton>
+spec:
+  entrypoint: chained-workflow
+  onExit: exit-handler
+  arguments:
+    parameters:
+    - name: callback
+      value: ""
+    - name: timeout
+      value: "3600"
+    - name: operation
+      value: "{{inputs.parameters.operation}}"
+    - name: query
+      value: "{{inputs.parameters.query}}"
+    - name: page-size
+      value: "{{inputs.parameters.page-size}}"
+    - name: batch-size
+      value: "{{inputs.parameters.batch-size}}"
+    - name: image-pull-policy
+      value: "{{inputs.parameters.image-pull-policy}}"
+    
+  templates:
+    - name: chained-workflow
+      inputs:
+        parameters:
+          - name: operation
+          - name: query
+          - name: page-size
+          - name: batch-size
+          - name: image-pull-policy
+          - name: timeout
+          - name: callback
+          - name: post-batch-step-count
+          - name: STAGING_PATH
+      steps:
+      - - name: cmr-granule-locator
+          templateRef: 
+            name: cmr-granule-locator
+            template: cmr-granule-locator
+          arguments:
+            parameters:
+            - name: operation
+              value: "{{inputs.parameters.operation}}"
+            - name: query
+              value: "{{inputs.parameters.query}}"
+            - name: page-size
+              value: "{{inputs.parameters.page-size}}"
+            - name: batch-size
+              value: "{{inputs.parameters.batch-size}}"
+            - name: image-pull-policy
+              value: "{{inputs.parameters.image-pull-policy}}"
+            - name: timeout
+              value: "{{inputs.parameters.timeout}}"
+      - - name: main-loop
+          templateRef: 
+            name: <placeholder-template>
+            template: <placeholder-template>
+          arguments:
+            artifacts:
+              - name: metadata
+                from: "{{steps.cmr-granule-locator.outputs.artifacts.metadata}}"
+            parameters:
+            - name: stac-catalog-link
+              value: "{{item}}"
+            - name: operation
+              value: "{{inputs.parameters.operation}}"
+            - name: batch-count
+              value: "{{steps.cmr-granule-locator.outputs.parameters.batch-count}}"
+            - name: post-batch-step-count
+              value: "{{inputs.parameters.post-batch-step-count}}"
+            - name: callback
+              value: "{{inputs.parameters.callback}}"
+            - name: image-pull-policy
+              value: "{{inputs.parameters.image-pull-policy}}"
+            - name: timeout
+              value: "{{inputs.parameters.timeout}}"
+            - name: STAGING_PATH
+              value: "{{inputs.parameters.STAGING_PATH}}"
+          withParam: "{{steps.cmr-granule-locator.outputs.parameters.batch-catalogs}}"
+    - name: exit-handler
+      steps:
+      - - name: exit-handler
+          templateRef:
+            name: exit-handler
+            template: exit-handler
+          arguments:
+            parameters:
+            - name: status
+              value: "{{workflow.status}}"
+            - name: failures
+              value: "{{workflow.failures}}"
+            - name: image-pull-policy
+              value: IfNotPresent
+            - name: callback
+              value: "{{workflow.parameters.callback}}"
+            - name: timeout
+              value: "{{workflow.parameters.timeout}}"
+            

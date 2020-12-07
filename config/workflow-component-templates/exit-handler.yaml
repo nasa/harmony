@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: exit-handler
+spec:
+  templates:
+    - name: exit-handler
+      inputs:
+        parameters:
+          - name: image-pull-policy
+          - name: timeout
+          - name: callback
+          - name: status
+          - name: failures
+      podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
+      script:
+        image: "everpeace/curl-jq"
+        imagePullPolicy: "{{inputs.parameters.image-pull-policy}}"
+        command: [sh]
+        source: |
+          echo '{{inputs.parameters.failures}}' > /tmp/failures
+          error="{{inputs.parameters.status}}"
+          timeout_count=$(grep -c 'Pod was active on the node longer than the specified deadline' /tmp/failures)
+          if [ "$timeout_count" != "0" ]
+          then
+          error="Request%20timed%20out"
+          fi
+          if [ "{{inputs.parameters.status}}" = 'Succeeded' ]
+          then
+          curl -XPOST "{{inputs.parameters.callback}}/response?status=successful&argo=true"
+          else
+          curl -XPOST "{{inputs.parameters.callback}}/response?status=failed&argo=true&error=$error"
+          fi
+          

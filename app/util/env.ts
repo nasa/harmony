@@ -26,6 +26,7 @@ interface HarmonyEnv {
   argoUrl: string;
   cmrEndpoint: string;
   oauthHost: string;
+  oauthUid: string;
   useLocalstack: boolean;
   localstackHost: string;
   callbackUrlRoot: string;
@@ -39,6 +40,7 @@ interface HarmonyEnv {
   defaultArgoPodTimeoutSecs: number;
   builtInTaskPrefix: string;
   builtInTaskVersion: string;
+  cmrMaxPageSize: number;
 }
 
 const envVars: HarmonyEnv = {} as HarmonyEnv;
@@ -93,6 +95,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['ADMIN_GROUP_ID', null],
   ['CMR_ENDPOINT', 'https://cmr.uat.earthdata.nasa.gov'],
   ['OAUTH_HOST', 'https://uat.urs.earthdata.nasa.gov'],
+  ['OAUTH_UID', null],
   ['CALLBACK_URL_ROOT', null],
   ['SYNC_REQUEST_POLL_INTERVAL_MS', 100],
   ['DEFAULT_BATCH_SIZE', 2000],
@@ -102,6 +105,8 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['DEFAULT_ARGO_POD_TIMEOUT_SECS', 14400],
   ['BUILT_IN_TASK_PREFIX', ''],
   ['BUILT_IN_TASK_VERSION', 'latest'],
+  ['CMR_MAX_PAGE_SIZE', 2000],
+  ['FEEDBACK_URL', null],
 ].forEach((value) => makeConfigVar.apply(this, value));
 
 // special cases

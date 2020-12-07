@@ -1,9 +1,11 @@
-import simpleOAuth2, { OAuthClient } from 'simple-oauth2';
+import axios from 'axios';
+import simpleOAuth2, { OAuthClient, Token } from 'simple-oauth2';
 import { RequestHandler, NextFunction } from 'express';
 import { listToText } from '../util/string';
 import { ForbiddenError } from '../util/errors';
 import { setCookiesForEdl } from '../util/cookies';
 import HarmonyRequest from '../models/harmony-request';
+import env from '../util/env';
 
 const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
@@ -107,6 +109,24 @@ function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next): void {
 }
 
 /**
+ * Validates an EDL token to ensure that EDL hasn't revoked it before the expiration
+ * @param token The token to check
+ * @throws AxiosError if the token is invalid
+ */
+async function validateUserToken(token: Token): Promise<void> {
+  await axios.post(
+    `${oauthOptions.auth.tokenHost}/oauth/tokens/user?token=${encodeURIComponent(token.access_token)}`,
+    null,
+    {
+      auth: {
+        username: env.oauthUid,
+        password: oauthOptions.client.secret,
+      },
+    },
+  );
+}
+
+/**
  * Handles a call that has already been authorized through Earthdata Login, refreshing the token
  * as necessary and calling the provided function with the authorized username
  *
@@ -127,6 +147,8 @@ async function handleAuthorized(oauth2: OAuthClient, req, res, next: NextFunctio
       const refreshed = await oauthToken.refresh();
       res.cookie('token', refreshed.token, cookieOptions);
       req.accessToken = refreshed.token.access_token;
+    } else {
+      await validateUserToken(oauthToken.token);
     }
     const user = oauthToken.token.endpoint.split('/').pop();
     req.context.logger = req.context.logger.child({ user });
