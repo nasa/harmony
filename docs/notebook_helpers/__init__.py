@@ -116,7 +116,7 @@ def show(response, varList=[], color_index=None, immediate=True):
   Keyword Arguments:
       color_index {number} -- Set for monochromatic images to put the output in a color band (0=red, 1=green, 2=blue) (default: {None})
       immediate {bool} -- True if the data should be shown immediately in the notebook (default: {True})
-      
+
   """
 
 
@@ -132,7 +132,7 @@ def show(response, varList=[], color_index=None, immediate=True):
     print('WARNING: Let service developer know to set their content_type correctly!')
 
   if content_type == 'application/x-netcdf' or content_type == 'application/x-netcdf4' or content_type == 'application/netcdf' or content_type == 'binary/octet-stream' or content_type == 'application/octet-stream':
-    # Show NetCDF4 
+    # Show NetCDF4
     data = H5File(BytesIO(response.content), 'r')
 
     #If user didn't provide any specific vars to plot, pull all of them into varList
@@ -252,7 +252,7 @@ def show_async(response, varList = []):
 
 def print_async_status(body):
   """Prints the status, progress and any messages for the async job
-  
+
   Arguments:
       body {json} -- the response body to display
 
@@ -287,6 +287,7 @@ def show_async_condensed(response, varList = [], show_results=True):
   if show_results:
     displayed_link_count = show_response_condensed(response, varList, displayed_link_count)
   while body['status'] not in ['successful', 'failed', 'canceled']:
+    sleep(0.5)
     progress = body['progress']
     status = body['status']
     response = session.get(response.url)
@@ -295,11 +296,11 @@ def show_async_condensed(response, varList = [], show_results=True):
       if show_results:
         displayed_link_count = show_response_condensed(response, varList, displayed_link_count)
       print_async_status(body)
-  
+
   assert(body['status'] not in ['failed'])
   check_stac(response)
   print('Async request is complete')
-  
+
 
 
 def check_bbox_subset(response, req_lat_min, req_lat_max, req_lon_min, req_lon_max):
@@ -325,16 +326,16 @@ def check_bbox_subset(response, req_lat_min, req_lat_max, req_lon_min, req_lon_m
   print(lat_min)
   print(lat_max)
 
-  assert lat_max <= req_lat_max 
+  assert lat_max <= req_lat_max
   assert lat_min >= req_lat_min
 
-  attr_data = data['lon'][:] 
+  attr_data = data['lon'][:]
   lon_min = (attr_data.min() + 180) % 360 - 180
   lon_max = (attr_data.max() + 180) % 360 - 180
   print(lon_min)
   print(lon_max)
 
-  assert lon_max <= req_lon_max 
+  assert lon_max <= req_lon_max
   assert lon_min >= req_lon_min
 
 def check_status(response):
@@ -347,9 +348,9 @@ def check_status(response):
     errStr = 'Request failed with status code ' + str(response.status_code)
     assert False, errStr
 
-    
+
 def check_stac(response):
-  """Asserts if the response contains a valid STAC catalog and prints it out.  More robust assertions could 
+  """Asserts if the response contains a valid STAC catalog and prints it out.  More robust assertions could
     be done here in the future to confirm that the STAC metadata is valid per the request parameters
 
   Arguments:
@@ -358,7 +359,7 @@ def check_stac(response):
   for i in range(len(response.json()['links'])):
     if response.json()['links'][i]['title'] == 'STAC catalog':
         stac_url = response.json()['links'][i]['href']
-  
+
   assert(stac_url)
   cat = Catalog.open(stac_url)
 
@@ -372,4 +373,3 @@ def check_stac(response):
     print('\t', 'Date:', i.datetime)
     print('\t', 'Bounding Box:', i.bbox)
     print('\t', 'File:', list(i.assets.keys()))
- 
