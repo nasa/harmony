@@ -3,8 +3,8 @@ const qualityValueRegex = /^q=(.*)$/;
 
 /**
  * Returns an array of mime-type objects in descending order of quality value
- * @param acceptHeader The full accept header string value
- * @return an array of objects with two fields, mimeType (String) and
+ * @param acceptHeader - The full accept header string value
+ * @returns an array of objects with two fields, mimeType (String) and
  *     qualityValue (Float);
  */
 export function parseAcceptHeader(acceptHeader: string): Array<object> {
@@ -29,7 +29,7 @@ const anyWildcard2 = '*';
 
 /**
  * Returns true if the accept header allows any mime-type
- * @param acceptHeader the value of the accept header
+ * @param acceptHeader - the value of the accept header
  * @returns true if the accept header allows any mime-type and false otherwise
  */
 export function allowsAny(acceptHeader: string): boolean {
@@ -38,9 +38,9 @@ export function allowsAny(acceptHeader: string): boolean {
 
 /**
  * Returns true if the mimeType provided is a match against the provided accept header
- * @param mimeType The mime-type trying to match against
- * @param acceptHeader The accept header
- * @return true if the mimeType is a match for the accept header and false otherwise
+ * @param mimeType - The mime-type trying to match against
+ * @param acceptHeader - The accept header
+ * @returns true if the mimeType is a match for the accept header and false otherwise
  */
 export function isMimeTypeAccepted(mimeType: string, acceptHeader: string): boolean {
   if (allowsAny(acceptHeader)) {

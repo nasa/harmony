@@ -20,9 +20,8 @@ export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
 /**
  * Express handler that returns a 501 error and "not yet implemented" message to the client
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {void}
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
  */
 function TODO(req: HarmonyRequest, res: Response): void {
   res.status(501);
@@ -32,9 +31,8 @@ function TODO(req: HarmonyRequest, res: Response): void {
 /**
  * Express handler that returns the OpenAPI spec for a collection
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {void}
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
  */
 function getSpecification(req: HarmonyRequest, res: Response): void {
   // Defined inline because the index file deals with the YAML spec.
@@ -45,8 +43,7 @@ function getSpecification(req: HarmonyRequest, res: Response): void {
 /**
  * Sets up the express application with the OpenAPI routes for OGC API - Coverages
  *
- * @param {Application} app The express application
- * @returns {void}
+ * @param app - The express application
  */
 export function addOpenApiRoutes(app: Router): void {
   initialize({
@@ -76,8 +73,7 @@ export function addOpenApiRoutes(app: Router): void {
 
 /**
  * Adds error handling appropriate to the OGC API to the given app
- * @param {Application} app The express application which needs error handling routes
- * @returns {void}
+ * @param app - The express application which needs error handling routes
  */
 export function handleOpenApiErrors(app: Application): void {
   app.use((err, req, res, next) => {

@@ -5,12 +5,12 @@ import { Application } from 'express';
 /**
  * Performs an EOS service request on the given collection with the given params
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {String} version The EOSS version
- * @param {string} collection The CMR Collection ID to perform a service on
- * @param {string} granule The CMR Granule ID to perform a service on
- * @param {object} query The query parameters to pass to the EOSS request
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @param version - The EOSS version
+ * @param collection - The CMR Collection ID to perform a service on
+ * @param granule - The CMR Granule ID to perform a service on
+ * @param query - The query parameters to pass to the EOSS request
+ * @returns The response
  */
 export function eossGetGranule(
   app: Application, version: string, collection: string, granule: string, query: object = {},
@@ -23,11 +23,10 @@ export function eossGetGranule(
 /**
  * Adds before/after hooks to run an EOS service request
  *
- * @param {String} version The EOSS version
- * @param {string} collection The CMR Collection ID to perform a service on
- * @param {string} granule The CMR Granule ID to perform a service on
- * @param {object} query The query parameters to pass to the EOSS request
- * @returns {void}
+ * @param version - The EOSS version
+ * @param collection - The CMR Collection ID to perform a service on
+ * @param granule - The CMR Granule ID to perform a service on
+ * @param query - The query parameters to pass to the EOSS request
  */
 export function hookEossGetGranule(
   version: string, collection: string, granule: string, query: object,
@@ -43,9 +42,9 @@ export function hookEossGetGranule(
 /**
  * Makes a call to return the EOSS spec.
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {String} version The specification version
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @param version - The specification version
+ * @returns The response
  */
 export function eossSpecRequest(app: Application, version: string): request.Test {
   return request(app).get(`/docs/eoss/${version}/spec`);
@@ -54,8 +53,8 @@ export function eossSpecRequest(app: Application, version: string): request.Test
 /**
  * Makes a call to return the EOSS landing page.
  *
- * @param {any} app The express application (typically this.frontend)
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @returns The response
  */
 export function eossLandingPageRequest(app: Application): request.Test {
   return request(app).get('/docs/eoss');

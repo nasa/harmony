@@ -156,7 +156,7 @@ function mergeMbrs(mbrs: BoundingBox[]): BoundingBox {
 
 /**
  * Divides mbr at antimeridian
- * @param mbr A minimum bounding rectangle
+ * @param mbr - A minimum bounding rectangle
  * @returns an array of Mbrs that don't cross the antimeridian
  */
 export function divideMbr(mbr: BoundingBox): BoundingBox[] {
@@ -207,7 +207,7 @@ function roundMbrCoordiinates(mbr: BoundingBox, precision = 8): BoundingBox {
 
 /**
  * Convert an Mbr in SWNE order to one in WSEN order
- * @param mbr an Mbr in SWNE order
+ * @param mbr - an Mbr in SWNE order
  * @returns an Mbr in SWNE order
  */
 function swneToWsen(mbr: BoundingBox): BoundingBox {
@@ -216,7 +216,7 @@ function swneToWsen(mbr: BoundingBox): BoundingBox {
 
 /**
  * Normalizes mbr ordinates to be within -90:90, -180:180
- * @param mbr the Mbr to normalize
+ * @param mbr - the Mbr to normalize
  * @returns An Mbr with east/west in the range -180:180 and north/south in the range -90:90
  */
 function normalizeMbr(mbr: BoundingBox): BoundingBox {

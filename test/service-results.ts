@@ -29,8 +29,7 @@ describe('service-results', function () {
      * Adds an `it` statement asserting createPublicPermalink does not alter links with
      * the given protocol
      *
-     * @param {string} protocol the protocol to assert
-     * @returns {void}
+     * @param protocol - the protocol to assert
      */
     function itDoesNotAlter(protocol: string): void {
       it(`returns ${protocol} links unaltered`, function () {

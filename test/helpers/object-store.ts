@@ -17,9 +17,8 @@ S3MockPrototype.upload = function (...args): mockAws.S3.ManagedUpload {
  * Causes calls to aws.S3 to return a mock S3 object that stores to a temp dir on the
  * local filesystem.
  *
- * @param {string[]} _buckets An optional list of buckets to create in the mock S3 (not implemented
+ * @param _buckets - An optional list of buckets to create in the mock S3 (not implemented
  * yet)
- * @returns {void}
  */
 export function hookMockS3(_buckets?: string[]): void {
   let dir;
@@ -40,7 +39,7 @@ export function hookMockS3(_buckets?: string[]): void {
 /**
  * Adds stubs to S3 object signing that retain the username from the 'A-userid' parameter.
  *
- * @returns {string} The URL prefix for use in matching responses
+ * @returns The URL prefix for use in matching responses
  */
 export function hookSignS3Object(): string {
   const prefix = 'https://example.com/s3/signed/';
@@ -57,8 +56,8 @@ export function hookSignS3Object(): string {
 /**
  * Gets JSON from the given object store URL.  Uses synchronous functions only suitable for testing.
  * If using mock-aws-s3, use getObjectText below
- * @param {string} url the Object store URL to get
- * @returns {*} the JSON contents of the file at the given URL
+ * @param url - the Object store URL to get
+ * @returns the JSON contents of the file at the given URL
  */
 export async function getJson(url: string):
 Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -74,7 +73,7 @@ Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
 /**
  * Returns the text contents of the object at the provided URL.  If the object is mocked using
  * mock-aws-s3 this is likely to produce better results than `getJson` above.
- * @param url the Object store URL to read
+ * @param url - the Object store URL to read
  */
 export async function getObjectText(url: string): Promise<string> {
   const contents: S3.GetObjectOutput = await new Promise((resolve, reject) => {

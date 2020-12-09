@@ -10,9 +10,8 @@ import { getNextCallback } from '../../example/http-backend';
  * and making sure the request completes in the after hook.  `this.userPromise` is a promise to
  * the HTTP response to the Harmony request made by `fn`.  `this.callback` is the callback URL
  * for the service request.
- * @param {() => Promise<Test>} fn A function that makes a Harmony request, returning a promise
+ * @param fn - A function that makes a Harmony request, returning a promise
  *   for its result
- * @returns {void}
  */
 export function hookHttpBackendEach(fn): void {
   beforeEach(async function () {
@@ -36,9 +35,9 @@ export function hookHttpBackendEach(fn): void {
 /**
  * Adds a beforeEach hook to provide a callback and await its processing
  *
- * @param fn A function that takes a callback request and returns it augmented with any query
+ * @param fn - A function that takes a callback request and returns it augmented with any query
  *   params, post bodies, etc
- * @param finish True if the hook should wait for the user request to finish
+ * @param finish - True if the hook should wait for the user request to finish
  */
 export function hookCallbackEach(fn: (req: request.Test) => request.Test, finish = false): void {
   beforeEach(async function () {
@@ -52,9 +51,9 @@ export function hookCallbackEach(fn: (req: request.Test) => request.Test, finish
 /**
  * Adds a beforeEach hook to provide a result-handler callback and await its processing
  *
- * @param fn A function that takes a callback request and returns it augmented with any query
+ * @param fn - A function that takes a callback request and returns it augmented with any query
  *   params, post bodies, etc
- * @param finish True if the hook should wait for the user request to finish
+ * @param finish - True if the hook should wait for the user request to finish
  */
 export function hookArgoCallbackEach(
   fn: (req: request.Test) => request.Test, finish = false,

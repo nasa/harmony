@@ -21,7 +21,7 @@ interface ServiceVersion {
  * Removes AWS account ECR information or maven.earthdata.nasa.gov from the image name
  * since we may not want to expose that information.
  *
- * @param image The image name to sanitize
+ * @param image - The image name to sanitize
  * @returns the sanitized image name
  */
 function sanitizeImage(image: string): string {
@@ -33,7 +33,7 @@ function sanitizeImage(image: string): string {
 /**
  * Returns true if the image repository for the given image is ECR
  *
- * @param image the full image string
+ * @param image - the full image string
  * @returns true if the image is in ECR and false otherwise
  */
 function inECR(image: string): boolean {
@@ -44,7 +44,7 @@ function inECR(image: string): boolean {
  * Returns an object with only the fields desired to display on the /versions endpoint.
  * For ECR images also display the digest and last updated time.
  *
- * @param service The service whose version information is being displayed
+ * @param service - The service whose version information is being displayed
  * @returns The version information for the service
  */
 async function getServiceForDisplay(
@@ -80,8 +80,8 @@ async function getServiceForDisplay(
  *
  * Displays JSON with a list of all of the harmony services showing the service name,
  * the name of the image being used, and the tag.
- * @param req The request sent by the client
- * @param res The response to send to the client
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
  */
 export default async function getVersions(req: HarmonyRequest, res: Response): Promise<void> {
   const ecr = defaultContainerRegistry();

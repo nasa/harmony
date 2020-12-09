@@ -9,7 +9,7 @@ import env = require('util/env');
 /**
  * Build a middleware for uploading shapefiles passed in with the request to S3
  *
- * @returns {*} A middleware object that handles shapefile uploads
+ * @returns A middleware object that handles shapefile uploads
  */
 export default function buildShapefileUploadMiddleware(): RequestHandler {
   const { uploadBucket } = env;

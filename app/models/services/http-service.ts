@@ -15,13 +15,11 @@ export interface HttpServiceParams {
  * message to its configured endpoint and conveying its response back to the caller,
  * or creating a Job to poll and listening for service updates for async services.
  *
- * @class HttpService
- * @extends {BaseService}
  */
 export default class HttpService extends BaseService<HttpServiceParams> {
   /**
    * Calls the HTTP backend and returns a promise for its result
-   * @returns {Promise<InvocationResult>} A promise resolving to the result of the callback.
+   * @returns A promise resolving to the result of the callback.
    */
   _run(logger): Promise<InvocationResult> {
     return new Promise((resolve, reject) => {

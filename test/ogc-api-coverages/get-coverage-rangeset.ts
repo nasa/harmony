@@ -728,10 +728,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
      * Creates an it assertion that the passed in query causes a 400 validation error
      * with the given error message
      *
-     * @param {Object} queryParams The query parameters to send to the request
-     * @param {String} message The error message that should be returned
-     * @param {String} code The error code of the message
-     * @returns {void}
+     * @param queryParams - The query parameters to send to the request
+     * @param message - The error message that should be returned
+     * @param code - The error code of the message
      */
     function itReturnsAValidationError(
       queryParams: object, message: string, code = 'openapi.ValidationError',

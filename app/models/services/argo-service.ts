@@ -35,15 +35,12 @@ interface ArgoVariable {
 /**
  * Service implementation which invokes an Argo workflow and creates a Job to poll for service
  * updates.
- * @class ArgoService
- * @extends {BaseService}
  */
 export default class ArgoService extends BaseService<ArgoServiceParams> {
   /**
    * Returns the batch size to use for the given request
-   * @private
    *
-   * @param maxGranules The system-wide maximum granules
+   * @param maxGranules - The system-wide maximum granules
    * @returns The number of granules per batch of results processed
    */
   chooseBatchSize(maxGranules = env.maxGranuleLimit): number {
@@ -56,9 +53,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
 
   /**
    * Returns the page size to use for the given request
-   * @private
    *
-   * @param maxGranules The system-wide maximum granules
+   * @param maxGranules - The system-wide maximum granules
    * @returns The number of granules per page of results from the CMR
    */
   choosePageSize(maxGranules = env.maxGranuleLimit): number {
@@ -70,7 +66,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
   /**
    * Invokes an Argo workflow to execute a service request
    *
-   *  @param logger the logger associated with the request
+   *  @param logger - the logger associated with the request
    *  @returns A promise resolving to null
    */
   async _run(logger: Logger): Promise<InvocationResult> {
@@ -163,7 +159,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
 
   /**
    * Returns a workflow POST body for Argo for invoking chainable services
-   * @param params The common workflow parameters to be passed to each service
+   * @param params - The common workflow parameters to be passed to each service
    * @returns a JSON-serializable object to be POST-ed to initiate the Argo workflows
    */
   _chainedWorkflowBody(params: ArgoVariable[]): unknown {
@@ -208,7 +204,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
   /**
    * Returns a workflow POST body for Argo for invoking legacy (non-chained, low-granule limit)
    * services
-   * @param params The common workflow parameters to be passed to each service
+   * @param params - The common workflow parameters to be passed to each service
    * @returns a JSON-serializable object to be POST-ed to initiate the Argo workflows
    */
   _legacyWorkflowBody(params: ArgoVariable[]): unknown {

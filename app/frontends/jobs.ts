@@ -14,7 +14,7 @@ import env = require('../util/env');
 /**
  * Returns true if the job contains S3 direct access links
  *
- * @param job the serialized job
+ * @param job - the serialized job
  * @returns true if job contains S3 direct access links and false otherwise
  */
 function containsS3DirectAccessLink(job: Job): boolean {
@@ -27,8 +27,8 @@ function containsS3DirectAccessLink(job: Job): boolean {
  * the end user. If any of the output links point to an S3 location add
  * links documenting how to obtain in region S3 access.
  *
- * @param job the serialized job
- * @param urlRoot the root URL to be used when constructing links
+ * @param job - the serialized job
+ * @param urlRoot - the root URL to be used when constructing links
  * @returns a list of job links
  */
 function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
@@ -51,8 +51,8 @@ function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
 /**
  * Determines the message that should be displayed to an end user based on
  * the links within the job
- * @param job the serialized job
- * @param urlRoot the root URL to be used when constructing links
+ * @param job - the serialized job
+ * @param urlRoot - the root URL to be used when constructing links
  */
 function getMessageForDisplay(job: Job, urlRoot: string): string {
   let { message } = job;
@@ -69,8 +69,8 @@ function getMessageForDisplay(job: Job, urlRoot: string): string {
 /**
  * Returns a job formatted for display to an end user.
  *
- * @param job the serialized job
- * @param urlRoot the root URL to be used when constructing links
+ * @param job - the serialized job
+ * @param urlRoot - the root URL to be used when constructing links
  * @returns the job for display
  */
 function getJobForDisplay(job: Job, urlRoot: string): Job {
@@ -90,9 +90,9 @@ export interface JobListing {
 /**
  * Express.js handler that handles the jobs listing endpoint (/jobs)
  *
- * @param req The request sent by the client
- * @param res The response to send to the client
- * @param next The next function in the call chain
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
  * @returns Resolves when the request is complete
  */
 export async function getJobsListing(
@@ -126,7 +126,7 @@ export async function getJobsListing(
 
 /**
  * Throws an exception if the JobID is not in the valid format for a jobID.
- * @param jobID The jobID to validate
+ * @param jobID - The jobID to validate
  */
 function validateJobId(jobID: string): void {
   if (!isUUID(jobID)) {
@@ -135,11 +135,11 @@ function validateJobId(jobID: string): void {
 }
 
 /**
- * Express.js handler that returns job status for a single job (/jobs/{jobID})
+ * Express.js handler that returns job status for a single job `(/jobs/{jobID})`
  *
- * @param req The request sent by the client
- * @param res The response to send to the client
- * @param next The next function in the call chain
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
  * @returns Resolves when the request is complete
  */
 export async function getJobStatus(
@@ -171,12 +171,12 @@ export async function getJobStatus(
 }
 
 /**
- * Express.js handler that cancels a single job (POST /jobs/{jobID}). A user can cancel their own
+ * Express.js handler that cancels a single job `(POST /jobs/{jobID})`. A user can cancel their own
  * request. An admin can cancel any user's request.
  *
- * @param req The request sent by the client
- * @param res The response to send to the client
- * @param next The next function in the call chain
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
  * @returns Resolves when the request is complete
  */
 export async function cancelJob(

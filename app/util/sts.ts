@@ -8,7 +8,6 @@ const { awsDefaultRegion } = env;
 /**
  * Class to use when interacting with AWS STS
  *
- * @class SecureTokenService
  */
 export default class SecureTokenService {
   private sts: aws.STS;
@@ -18,7 +17,7 @@ export default class SecureTokenService {
    * Will use localstack if USE_LOCALSTACK is true (default false) and AWS_DEFAULT_REGION
    * (default "us-west-2")
    *
-   * @param {Object} overrides values to set when constructing the underlying S3 store
+   * @param overrides - values to set when constructing the underlying S3 store
    */
   constructor(overrides?: aws.STS.ClientConfiguration) {
     const endpointSettings: aws.STS.ClientConfiguration = {};
@@ -37,9 +36,8 @@ export default class SecureTokenService {
   /**
    * Calls AWS STS assumeRole returning credentials (see AWS S3 SDK `assumeRole`)
    *
-   * @param {Object} params an object describing the role to assume
-   * @returns {Promise<Object>} resolves to credentials with access to the role provided
-   * @memberof SecureTokenService
+   * @param params - an object describing the role to assume
+   * @returns resolves to credentials with access to the role provided
    */
   async assumeRole(params: aws.STS.AssumeRoleRequest): Promise<AssumeRoleResponse> {
     return this.sts.assumeRole(params).promise();

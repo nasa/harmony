@@ -9,11 +9,10 @@ import HarmonyRequest from '../../models/harmony-request';
  * This function merely sets up a query and proxies the request to the `getCoverageRangeset`
  * function.
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @param {Function} next The next express handler
- * @returns {void}
- * @throws {RequestValidationError} Thrown if the request has validation problems and
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next express handler
+ * @throws RequestValidationError - Thrown if the request has validation problems and
  *   cannot be performed
  */
 export default function postCoverageRangeset(

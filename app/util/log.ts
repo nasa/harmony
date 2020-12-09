@@ -7,7 +7,7 @@ const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmony
 /**
  * Creates a logger that logs messages in JSON format.
  *
- * @returns {Logger} The JSON Winston logger
+ * @returns The JSON Winston logger
  */
 function createJsonLogger(): winston.Logger {
   const jsonLogger = winston.createLogger({
@@ -27,8 +27,8 @@ function createJsonLogger(): winston.Logger {
 /**
  * Helper method that formats a string as a log tag only if it is provided
  *
- * @param {string} tag The tag string to add
- * @returns {string} The input string in tag format, or the empty string if tag does not exist
+ * @param tag - The tag string to add
+ * @returns The input string in tag format, or the empty string if tag does not exist
  */
 function optionalTag(tag: string): string {
   return tag ? ` [${tag}]` : '';
@@ -46,7 +46,7 @@ const textformat = winston.format.printf(
  * Creates a logger that log messages as a text string. Useful when testing locally and viewing
  * logs via a terminal.
  *
- * @returns {Logger} The text string Winston logger
+ * @returns The text string Winston logger
  */
 function createTextLogger(): winston.Logger {
   const textLogger = winston.createLogger({
@@ -70,8 +70,8 @@ const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger() : createJ
 /**
  * Configures logs so that they are written to the file with the given name, also suppressing
  * logging to stdout if the suppressStdOut option is set to true
- * @param filename The name of the file to write logs to
- * @param suppressStdOut true if logs should not be written to stdout
+ * @param filename - The name of the file to write logs to
+ * @param suppressStdOut - true if logs should not be written to stdout
  */
 export function configureLogToFile(filename: string, suppressStdOut = false): void {
   const fileTransport = new winston.transports.File({ filename });

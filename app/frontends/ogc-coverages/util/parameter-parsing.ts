@@ -70,8 +70,6 @@ const dimensionConfig: DimensionConfig = {
 /**
  * Tag class for denoting errors during parsing
  *
- * @class ParameterParseError
- * @extends {Error}
  */
 export class ParameterParseError extends Error {}
 
@@ -79,11 +77,11 @@ export class ParameterParseError extends Error {}
  * Helper function for subset parameters that parses and validates numeric values
  * specified in subset parameters, including "*"
  *
- * @param {object} dim information about the dimension (see dimensionInfo)
- * @param {string} valueStr the unparsed number as it appears in the input
- * @param {Number} defaultValue the value to return if "*" is specified
- * @returns {Number} the parsed result
- * @throws {ParameterParseError} if there are errors while parsing
+ * @param dim - information about the dimension (see dimensionInfo)
+ * @param valueStr - the unparsed number as it appears in the input
+ * @param defaultValue - the value to return if "*" is specified
+ * @returns the parsed result
+ * @throws ParameterParseError - if there are errors while parsing
  */
 function parseNumeric(dim: Dimension, valueStr: string, defaultValue: number): number {
   const { name, min, max } = dim;
@@ -109,10 +107,10 @@ function parseNumeric(dim: Dimension, valueStr: string, defaultValue: number): n
  * Helper function for subset parameters that parses and validates date values
  * specified in subset parameters, including ".."
  *
- * @param {object} dim information about the dimension (see dimensionInfo)
- * @param {string} valueStr the unparsed date as it appears in the input
- * @returns {Date} the parsed date or undefined if the open range indicator is specified
- * @throws {ParameterParseError} if there are errors while parsing
+ * @param dim - information about the dimension (see dimensionInfo)
+ * @param valueStr - the unparsed date as it appears in the input
+ * @returns the parsed date or undefined if the open range indicator is specified
+ * @throws ParameterParseError - if there are errors while parsing
  */
 function parseDate(dim: Dimension, valueStr: string): Date {
   const { name } = dim;
@@ -134,8 +132,8 @@ const dimensionNameRegex = /^(\w+)\(.+\)$/;
 /**
  * Returns the dimension name (e.g. time, lat, lon) from the value provided.
  * A valid example value is lat(-10:10).
- * @param {String} value The value of the subset parameter
- * @returns {String} the dimension name
+ * @param value - The value of the subset parameter
+ * @returns the dimension name
  */
 function _getDimensionName(value: string): string {
   const match = value.match(dimensionNameRegex);
@@ -147,12 +145,12 @@ function _getDimensionName(value: string): string {
  * Parses the provided subset parameters and ensures they are valid, throwing an error message
  * if not
  *
- * @param {string[]} values An array of all the specified subset= parameters from the request
- * @param {object} dimConfig A mapping of dimension names to min, max, and data type values,
+ * @param values - An array of all the specified subset= parameters from the request
+ * @param dimConfig - A mapping of dimension names to min, max, and data type values,
  *   see `dimensionInfo` (the default value) in this file.  Usually should not be specified,
  *   except for testing.
- * @returns {DimensionRanges} An object mapping dimension names to objects with min and max ranges
- * @throws {ParameterParseError} if a subset parameter cannot be parsed, has unrecognized
+ * @returns An object mapping dimension names to objects with min and max ranges
+ * @throws ParameterParseError - if a subset parameter cannot be parsed, has unrecognized
  *   axis names, or is otherwise invalid
  */
 export function parseSubsetParams(
@@ -207,8 +205,8 @@ export function parseSubsetParams(
  * array corresponding to the set value.  If only one of lat or lon is specified, sets the
  * other to full coverage.  If neither is specified, returns null.
  *
- * @param {object} values parsed, valid subset params, as returned by `parseSubsetParams`
- * @returns {number[]} An array of 4 numbers corresponding to the [West, South, East, North]
+ * @param values - parsed, valid subset params, as returned by `parseSubsetParams`
+ * @returns An array of 4 numbers corresponding to the [West, South, East, North]
  *   bounding box, or null if there is no lat or lon subsetting in values
  */
 export function subsetParamsToBbox(
@@ -231,7 +229,7 @@ export function subsetParamsToBbox(
  * Given a set of parsed subset params, as returned by `parseSubsetParams`, returns an object
  * containing start and end if applicable.
  *
- * @param values parsed, valid subset params, as returned by `parseSubsetParams`
+ * @param values - parsed, valid subset params, as returned by `parseSubsetParams`
  * @returns A temporal range with start and end fields if applicable
  */
 export function subsetParamsToTemporal(

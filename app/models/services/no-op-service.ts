@@ -8,8 +8,6 @@ import InvocationResult from './invocation-result';
  * to data files. For each granule requested return just the download links
  * in a response format similar to the asynchronous job status response.
  *
- * @class NoOpService
- * @extends {BaseService}
  */
 export default class NoOpService extends BaseService<void> {
   message: string;
@@ -18,9 +16,8 @@ export default class NoOpService extends BaseService<void> {
    * Creates an instance of the NoOpService. The NoOpService will include a message
    * to indicate the reason the NoOpService is being used rather than a transformation.
    *
-   * @param {object} config The service configuration from config/services.yml
-   * @param {DataOperation} operation The data operation being requested of the service
-   * @memberof BaseService
+   * @param config - The service configuration from config/services.yml
+   * @param operation - The data operation being requested of the service
    */
   constructor(config, operation) {
     super(config, operation);
@@ -29,7 +26,7 @@ export default class NoOpService extends BaseService<void> {
 
   /**
    * Does nothing useful, but needed to fulfill the BaseService contract.
-   * @returns {Promise<InvocationResult>} A promise resolving to a useless result.
+   * @returns A promise resolving to a useless result.
    */
   async _run(_logger: Logger): Promise<InvocationResult> {
     return {

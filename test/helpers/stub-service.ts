@@ -12,8 +12,6 @@ import InvocationResult from '../../app/models/services/invocation-result';
 /**
  * Service implementation used for stubbing invocations for tests
  *
- * @class StubService
- * @extends {BaseService}
  */
 export default class StubService extends BaseService<void> {
   callbackOptions: object | Function;
@@ -27,13 +25,12 @@ export default class StubService extends BaseService<void> {
   /**
    * Creates an instance of StubService.
    *
-   * @param {Object|Function} callbackOptions The request options to be used for the callback, with
+   * @param callbackOptions - The request options to be used for the callback, with
    *   keys for params (query parameter object), headers (headers to set), and body (body to POST).
    *   If a function is passed instead of an object, it will be called with no arguments to a
    *   callback options object.
-   * @param {DataOperation} operation The data operation being requested of the service
-   * @param {String} serviceName The service name
-   * @memberof StubService
+   * @param operation - The data operation being requested of the service
+   * @param serviceName - The service name
    */
   constructor(callbackOptions: object | Function, operation: DataOperation, serviceName: string) {
     super({ name: 'harmony/stub' }, operation);
@@ -46,9 +43,7 @@ export default class StubService extends BaseService<void> {
   /**
    * Runs the service.  For synchronous services, this will callback immediately.  For async,
    * `complete` must be run for a callback to occur.
-   * @param {Logger} _logger the logger associated with the request
-   * @memberof StubService
-   * @returns {Promise<InvocationResult>}
+   * @param _logger - the logger associated with the request
    */
   async _run(_logger: Logger): Promise<InvocationResult> {
     this.isRun = true;
@@ -61,8 +56,6 @@ export default class StubService extends BaseService<void> {
    * Asynchronously POSTs to the operation's callback using the callback options provided to the
    * constructor
    *
-   * @returns {void}
-   * @memberof StubService
    */
   async complete(): Promise<void> {
     // Allow tests / helpers to not care if a request is sync or async and always call `complete`
@@ -76,10 +69,9 @@ export default class StubService extends BaseService<void> {
    * Asynchronously POSTs a response to the backend using the supplied
    * query parameters but not marking the service complete.
    *
-   * @param query an object to be serialized as query params to the callback, defaults to
+   * @param query - an object to be serialized as query params to the callback, defaults to
    *   the callback options parameters
-   * @returns {request} an awaitable response
-   * @memberof StubService
+   * @returns an awaitable response
    */
   sendResponse(query?: CallbackQuery): request.SuperAgentRequest {
     const options = typeof this.callbackOptions === 'function' ? this.callbackOptions() : this.callbackOptions;
@@ -111,11 +103,9 @@ export default class StubService extends BaseService<void> {
    * Returns a function that can be passed to a before / beforeEach call to route
    * service requests to StubService
    *
-   * @static
-   * @param {object} callbackOptions The options to be used for the callback (merged with
+   * @param callbackOptions - The options to be used for the callback (merged with
    *   request method and URL)
-   * @returns {Function} A function to supply to before / beforeEach
-   * @memberof StubService
+   * @returns A function to supply to before / beforeEach
    */
   static beforeHook(callbackOptions: object = { params: { redirect: 'http://example.com' } }): () => void {
     return function (): void {
@@ -131,9 +121,7 @@ export default class StubService extends BaseService<void> {
   /**
    * Returns a function for tearing down hooks created by beforeHook
    *
-   * @static
-   * @returns {Function} A function to supply to after / afterEach
-   * @memberof StubService
+   * @returns A function to supply to after / afterEach
    */
   static afterHook(): () => Promise<void> {
     return async function (): Promise<void> {
@@ -150,11 +138,8 @@ export default class StubService extends BaseService<void> {
    * into service invocations within the current context.  Sets context.service
    * to the most recently created stub service.
    *
-   * @static
-   * @param {object} callbackOptions The options to be used for the callback (merged with
+   * @param callbackOptions - The options to be used for the callback (merged with
    *   request method and URL)
-   * @returns {void}
-   * @memberof StubService
    */
   static hook(callbackOptions: object | Function = { params: { redirect: 'http://example.com' } }): void {
     before(StubService.beforeHook(callbackOptions));
@@ -166,11 +151,8 @@ export default class StubService extends BaseService<void> {
    * into service invocations within the current context.  Sets context.service
    * to the most recently created stub service.
    *
-   * @static
-   * @param {object} callbackOptions The options to be used for the callback (merged with
+   * @param callbackOptions - The options to be used for the callback (merged with
    *   request method and URL)
-   * @returns {void}
-   * @memberof StubService
    */
   static hookEach(callbackOptions: object = { params: { redirect: 'http://example.com' } }): void {
     beforeEach(StubService.beforeHook(callbackOptions));

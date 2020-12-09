@@ -5,10 +5,10 @@ import { getRequestUrl, getSanitizedRequestUrl, getRequestRoot } from '../../app
 /**
  * Returns a request object to be used in tests to simulate different URLs
  *
- * @param {String} hostname The hostname for the mock request
- * @param {String} path the URL path
- * @param {Object} params the query parameters
- * @returns {Object} An object emulating an http.IncomingMessage
+ * @param hostname - The hostname for the mock request
+ * @param path - the URL path
+ * @param params - the query parameters
+ * @returns An object emulating an http.IncomingMessage
  */
 function createRequest(
   hostname: string,

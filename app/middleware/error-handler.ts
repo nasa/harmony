@@ -10,8 +10,8 @@ const jsonErrorRoutesRegex = /jobs|ogc-api-coverages/;
 
 /**
  * Returns true if the provided error should be returned as JSON.
- * @param {Error} err The error that occurred
- * @param {http.IncomingMessage} req The client request
+ * @param err - The error that occurred
+ * @param req - The client request
  */
 function shouldReturnJson(err: Error, req: HarmonyRequest): boolean {
   // This logic may not make a lot of sense right now, initially this
@@ -25,7 +25,7 @@ function shouldReturnJson(err: Error, req: HarmonyRequest): boolean {
 
 /**
  * Returns the appropriate http status code for the provided error
- * @param err The error that occured
+ * @param err - The error that occured
  */
 function getHttpStatusCode(err: HttpError): number {
   let code = (+err.code) || 500;
@@ -40,11 +40,10 @@ function getHttpStatusCode(err: HttpError): number {
  * Express.js middleware catching errors that escape service protocol handling and sending them
  * to users
  *
- * @param {Error} err The error that occurred
- * @param {http.IncomingMessage} req The client request
- * @param {http.ServerResponse} res The client response
- * @param {Function} next The next function in the middleware chain
- * @returns {void}
+ * @param err - The error that occurred
+ * @param req - The client request
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
  */
 export default function errorHandler(
   err: HttpError, req: HarmonyRequest, res: Response, next: NextFunction,

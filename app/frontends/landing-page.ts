@@ -9,9 +9,8 @@ import version from '../util/version';
  *
  * Includes minimal JSON with a list of all of the Harmony routes. Flush this out as an
  * OpenAPI document at some point.
- * @param req The request sent by the client
- * @param res The response to send to the client
- * @returns {void}
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
  */
 export default async function landingPage(req: HarmonyRequest, res: Response): Promise<void> {
   const root = getRequestRoot(req);

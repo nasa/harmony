@@ -45,7 +45,7 @@ describe('Canceling a job - user endpoint', function () {
   describe('For a user who is not logged in', function () {
     before(async function () {
       terminateWorkflowsStub.resetHistory();
-      this.res = await cancelJob(this.frontend, { jobID }).redirects(0);
+      this.res = await cancelJob(this.frontend, { jobID } as Job).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
       expect(this.res.statusCode).to.equal(303);
@@ -288,7 +288,7 @@ describe('Canceling a job - admin endpoint', function () {
   describe('For a user who is not logged in', function () {
     before(async function () {
       terminateWorkflowsStub.resetHistory();
-      this.res = await adminCancelJob(this.frontend, { jobID }).redirects(0);
+      this.res = await adminCancelJob(this.frontend, { jobID } as Job).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
       expect(this.res.statusCode).to.equal(303);

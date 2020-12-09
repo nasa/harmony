@@ -11,12 +11,9 @@ import env = require('../util/env');
 /**
  * Copies the header with the given name from the given request to the given response
  *
- * @param {Object<{
- *  headers: object
- * }>} serviceResult The service result to copy from
- * @param {http.ServerResponse} res The response to copy to
- * @param {string} header The name of the header to set
- * @returns {void}
+ * @param serviceResult - The service result to copy from
+ * @param res - The response to copy to
+ * @param header - The name of the header to set
  */
 function copyHeader(serviceResult: InvocationResult, res: Response, header: string): void {
   res.set(header, serviceResult.headers[header.toLowerCase()]);
@@ -26,15 +23,10 @@ function copyHeader(serviceResult: InvocationResult, res: Response, header: stri
  * Translates the given request sent by a backend service into the given
  * response sent to the client.
  *
- * @param {Object<{
- *   error: string,
- *   redirect: string,
- *   body: http.IncomingMessage,
- * }>} serviceResult The service result
- * @param {string} user The user making the request
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {void}
- * @throws {ServiceError} If the backend service returns an error
+ * @param serviceResult - The service result
+ * @param user - The user making the request
+ * @param res - The response to send to the client
+ * @throws ServiceError - If the backend service returns an error
  */
 async function translateServiceResult(serviceResult, user, res): Promise<void> {
   for (const k of Object.keys(serviceResult.headers || {})) {
@@ -65,11 +57,11 @@ async function translateServiceResult(serviceResult, user, res): Promise<void> {
  * Express.js handler that calls backend services, registering a URL for the backend
  * to POST to when complete.  Responds to the client once the backend responds.
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {Promise<void>} Resolves when the request is complete
- * @throws {ServiceError} if the service call fails or returns an error
- * @throws {NotFoundError} if no service can handle the callback
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @returns Resolves when the request is complete
+ * @throws ServiceError - if the service call fails or returns an error
+ * @throws NotFoundError - if no service can handle the callback
  */
 export default async function serviceInvoker(
   req: HarmonyRequest, res: Response,

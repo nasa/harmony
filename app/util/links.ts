@@ -12,8 +12,8 @@ export interface Link {
 /**
  * Returns a link to the cloud-access JSON endpoint
  *
- * @param {String} urlRoot The harmony root URL
- * @returns {Object} the link to the cloud-access JSON endpoint
+ * @param urlRoot - The harmony root URL
+ * @returns the link to the cloud-access JSON endpoint
  */
 export function getCloudAccessJsonLink(urlRoot: string): Link {
   return {
@@ -27,8 +27,8 @@ export function getCloudAccessJsonLink(urlRoot: string): Link {
 /**
  * Returns a link to the cloud-access shell script endpoint
  *
- * @param {String} urlRoot The harmony root URL
- * @returns {Object} the link to the cloud-access shell script endpoint
+ * @param urlRoot - The harmony root URL
+ * @returns the link to the cloud-access shell script endpoint
  */
 export function getCloudAccessShLink(urlRoot: string): Link {
   return {
@@ -42,9 +42,9 @@ export function getCloudAccessShLink(urlRoot: string): Link {
 /**
  * Returns a link to the STAC catalog for the given job
  *
- * @param {string} urlRoot The harmony root URL
- * @param {string} jobID The UUID of the job
- * @returns {Object} the link to the STAC catalog
+ * @param urlRoot - The harmony root URL
+ * @param jobID - The UUID of the job
+ * @returns the link to the STAC catalog
  */
 export function getStacCatalogLink(urlRoot: string, jobID: string): Link {
   return {
@@ -58,9 +58,9 @@ export function getStacCatalogLink(urlRoot: string, jobID: string): Link {
 /**
  * Returns a link to the status page for the job
  *
- * @param {string} urlRoot The harmony root URL
- * @param {string} jobID The UUID of the job
- * @returns {Object} the link to the STAC catalog
+ * @param urlRoot - The harmony root URL
+ * @param jobID - The UUID of the job
+ * @returns the link to the STAC catalog
  */
 export function getStatusLink(urlRoot: string, jobID: string): Link {
   return {

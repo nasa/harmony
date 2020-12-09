@@ -5,9 +5,9 @@ import { auth } from './auth';
 /**
  * Navigates to the STAC catalog route for the given job ID
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {String} jobId The job ID
- * @returns {Response} An awaitable object that resolves to the request response
+ * @param app - The express application (typically this.frontend)
+ * @param jobId - The job ID
+ * @returns An awaitable object that resolves to the request response
  */
 export function stacCatalog(app: Express.Application, jobId: string): request.Test {
   return request(app).get(`/stac/${jobId}`);
@@ -16,10 +16,10 @@ export function stacCatalog(app: Express.Application, jobId: string): request.Te
 /**
  * Navigates to the STAC item route for the given job ID and item index
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {String} jobId The job ID
- * @param {number} index The index of the stac item in the stac catalog
- * @returns {Response} An awaitable object that resolves to the request response
+ * @param app - The express application (typically this.frontend)
+ * @param jobId - The job ID
+ * @param index - The index of the stac item in the stac catalog
+ * @returns An awaitable object that resolves to the request response
  */
 export function stacItem(app: Express.Application, jobId: string, index: number): request.Test {
   return request(app).get(`/stac/${jobId}/${index}`);
@@ -28,9 +28,8 @@ export function stacItem(app: Express.Application, jobId: string, index: number)
 /**
  * Adds before/after hooks to navigate to the STAC catalog route
  *
- * @param {String} jobId The job ID
- * @param {String} username optional user to simulate logging in as
- * @returns {void}
+ * @param jobId - The job ID
+ * @param username - optional user to simulate logging in as
  */
 export function hookStacCatalog(jobId: string, username: string = undefined): void {
   before(async function () {
@@ -48,10 +47,9 @@ export function hookStacCatalog(jobId: string, username: string = undefined): vo
 /**
 * Adds before/after hooks to navigate to the STAC item route
 *
-* @param {String} jobId The job ID
-* @param {number} index The item index
-* @param {String} username optional user to simulate logging in as
-* @returns {void}
+* @param jobId - The job ID
+* @param index - The item index
+* @param username - optional user to simulate logging in as
 */
 export function hookStacItem(jobId: string, index: number, username: string = undefined): void {
   before(async function () {

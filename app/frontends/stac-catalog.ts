@@ -29,7 +29,6 @@ export interface SerializableCatalog {
  * jsonObj = catalog.toJSON();
  * jsonStr = JSON.stringify(catalog, null, 2);
  *
- * @class HarmonyCatalog
  */
 class HarmonyCatalog implements SerializableCatalog {
   id: string;
@@ -44,9 +43,9 @@ class HarmonyCatalog implements SerializableCatalog {
 
   /**
    *
-   * @param {string} id - ID of the STAC Catalog
-   * @param {string} title - Title of the STAC Catalog
-   * @param {string} description - Description of the STAC Catalog
+   * @param id - ID of the STAC Catalog
+   * @param title - Title of the STAC Catalog
+   * @param description - Description of the STAC Catalog
    */
   constructor(id: string, title = '', description = '') {
     this.id = id;
@@ -59,11 +58,10 @@ class HarmonyCatalog implements SerializableCatalog {
   /**
    * Adds a member to 'links' property of a STAC Catalog
    *
-   * @param {string} url - Link URL
-   * @param {string} relType - Relation type: [self, root, item]
-   * @param {string} title - Link title (human readable)
+   * @param url - Link URL
+   * @param relType - Relation type: [self, root, item]
+   * @param title - Link title (human readable)
    *
-   * @returns {void}
    */
   addLink(url: string, relType: string, title: string): void {
     this.links.push({
@@ -76,7 +74,7 @@ class HarmonyCatalog implements SerializableCatalog {
   /**
    * Placeholder method to support custom stringification
    *
-   * @returns {SerializableCatalog} - STAC Catalog JSON
+   * @returns - STAC Catalog JSON
    */
   toJSON(): SerializableCatalog {
     const paths = ['id', 'stac_version', 'title', 'description', 'links'];
@@ -87,9 +85,9 @@ class HarmonyCatalog implements SerializableCatalog {
 /**
  * Function to create the STAC Catalog given a Harmony Job object
  *
- * @param {any} job - Harmony Job object
+ * @param job - Harmony Job object
  *
- * @returns {SerializableCatalog} - STAC Catalog JSON
+ * @returns - STAC Catalog JSON
  *
  * @example
  * const catalog = require('HarmonyCatalog');

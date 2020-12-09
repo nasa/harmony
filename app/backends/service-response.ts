@@ -27,7 +27,7 @@ export interface CallbackQuery {
 
 /**
  *  Validate that an array is a valid bounding box, i.e., consists of four numbers
- * @param bbox A bounding box
+ * @param bbox - A bounding box
  */
 export function validateBbox(bbox: number[]): void {
   // eslint-disable-next-line no-restricted-globals
@@ -38,7 +38,7 @@ export function validateBbox(bbox: number[]): void {
 
 /**
  * Validate that an array contains two valid date strings
- * @param temporal An array containing two RFC-3339 strings (start and end datetime)
+ * @param temporal - An array containing two RFC-3339 strings (start and end datetime)
  */
 export function validateTemporal(temporal: number[]): void {
   // eslint-disable-next-line no-restricted-globals
@@ -55,8 +55,8 @@ export function validateTemporal(temporal: number[]): void {
  * @param logger - The logger associated with this request
  * @param job - The job record to update
  * @param query - The parsed query coming from a service callback
- * @throws {RequestValidationError} If the callback parameters fail validation
- * @throws {ServerError} If job update fails unexpectedly
+ * @throws RequestValidationError - If the callback parameters fail validation
+ * @throws ServerError - If job update fails unexpectedly
  */
 export function updateJobFields(
   logger: Logger,

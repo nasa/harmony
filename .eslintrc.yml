@@ -36,7 +36,7 @@ rules:
   class-methods-use-this: "off"
   no-underscore-dangle: "off"
   require-jsdoc: ["warn"]
-  # tsdoc/syntax: ["warn"]
+  tsdoc/syntax: ["error"]
   no-await-in-loop: ["off"]
   object-curly-newline: ["off"]
   no-plusplus: ["off"]

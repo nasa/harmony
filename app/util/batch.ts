@@ -3,7 +3,7 @@ import DataOperation from 'models/data-operation';
 
 /**
  * Return the total number of granules in the given operation
- * @param op The operation containing the granule sources
+ * @param op - The operation containing the granule sources
  * @returns The number of granules in the operation
  */
 export function operationGranuleCount(op: DataOperation): number {
@@ -14,8 +14,8 @@ export function operationGranuleCount(op: DataOperation): number {
  * Split an operation into one or more operations to limit the number of granules in an operation.
  * This function first splits the operation along 'sources' to try to avoid splitting collections
  * across operations if it can be avoided.
- * @param op The operation to batch
- * @param batchSize The limit on the number of granules in a batch
+ * @param op - The operation to batch
+ * @param batchSize - The limit on the number of granules in a batch
  */
 export function batchOperations(op: DataOperation, batchSize: number): DataOperation[] {
   if (batchSize < 0) {

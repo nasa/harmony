@@ -18,8 +18,8 @@ interface Extent {
 
 /**
  * Creates the extent object returned in the collection listing
- * @param {Object} collection the collection info as returned by the CMR
- * @returns {Object} the extent object
+ * @param collection - the collection info as returned by the CMR
+ * @returns the extent object
  */
 export function generateExtent(collection: CmrCollection): Extent {
   let spatial;
@@ -41,12 +41,11 @@ export function generateExtent(collection: CmrCollection): Extent {
  * Helper that returns the information needed for a describe collection response
  * for the given CMR collection.
  *
- * @param {Object} collection The CMR collection information
- * @param {Object} variable The variable information
- * @param {String} requestUrl The request URL to use within links
- * @param {Object} extent The spatial and temporal extent information for the CMR collection.
- * @returns {Object} The collection info matching the collectionInfo OGC schema.
- * @private
+ * @param collection - The CMR collection information
+ * @param variable - The variable information
+ * @param requestUrl - The request URL to use within links
+ * @param extent - The spatial and temporal extent information for the CMR collection.
+ * @returns The collection info matching the collectionInfo OGC schema.
  */
 function buildCollectionInfo(
   collection: CmrCollection, variable: CmrUmmVariable, requestUrl: string, extent: Extent,
@@ -72,10 +71,9 @@ function buildCollectionInfo(
  * Express.js-style handler that responds to OGC API - Coverages describe
  * collections requests.
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {void}
- * @throws {RequestValidationError} Thrown if the request has validation problems and
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @throws RequestValidationError - Thrown if the request has validation problems and
  *   cannot be performed
  */
 export function describeCollections(req: HarmonyRequest, res: Response): void {
@@ -123,10 +121,9 @@ export function describeCollections(req: HarmonyRequest, res: Response): void {
  * Express.js-style handler that responds to OGC API - Coverages describe
  * collection requests.
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {void}
- * @throws {RequestValidationError} Thrown if the request has validation problems and
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @throws RequestValidationError - Thrown if the request has validation problems and
  *   cannot be performed
  */
 export function describeCollection(req: HarmonyRequest, res: Response): void {

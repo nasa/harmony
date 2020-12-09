@@ -17,12 +17,12 @@ import { getJson } from '../helpers/object-store';
 /**
  * Common steps in the validation tests
  *
- * @param {Object} app The express application
- * @param {Response} res The response object
- * @param {string} version The OGC version
- * @param {string} collection The collection id
- * @param {string} variableName The variable name
- * @returns {Response} the response from the request
+ * @param app - The express application
+ * @param res - The response object
+ * @param version - The OGC version
+ * @param collection - The collection id
+ * @param variableName - The variable name
+ * @returns the response from the request
  */
 function commonValidationSteps(
   app: Application, res: Response, version: string, collection: string, variableName: string,

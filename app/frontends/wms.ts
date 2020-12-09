@@ -20,10 +20,10 @@ const readFile = promisify(fs.readFile);
  * Validates that the given parameters are present in the map, throwing
  * a RequestValidationError if any are missing
  *
- * @param {object} lowercasedParamMap A map of all-lowercase request params to values
- * @param  {...string} paramNames Names of parameters to check
- * @returns {boolean} true
- * @throws {RequestValidationError} If any parameter is missing
+ * @param lowercasedParamMap - A map of all-lowercase request params to values
+ * @param paramNames - Names of parameters to check
+ * @returns true
+ * @throws RequestValidationError - If any parameter is missing
  */
 function validateParamExists(lowercasedParamMap: object, ...paramNames: string[]): boolean {
   const failures = [];
@@ -46,12 +46,12 @@ function validateParamExists(lowercasedParamMap: object, ...paramNames: string[]
  * Validates that the given parameter has one of the values given by the values array,
  * throwing a RequestValidationError if not
  *
- * @param {object} lowercasedParamMap A map of all-lowercase request params to values
- * @param {string} paramName The name of the parameter to check
- * @param {Array<string>} values The list of acceptable values
- * @param {boolean} allowNull Whether a null value for the parameter should be accepted
- * @returns {boolean} true
- * @throws {RequestValidationError} If any parameter has an invalid value
+ * @param lowercasedParamMap - A map of all-lowercase request params to values
+ * @param paramName - The name of the parameter to check
+ * @param values - The list of acceptable values
+ * @param allowNull - Whether a null value for the parameter should be accepted
+ * @returns true
+ * @throws RequestValidationError - If any parameter has an invalid value
  */
 function validateParamIn(
   lowercasedParamMap: object, paramName: string, values: Array<string>, allowNull = false,
@@ -74,8 +74,8 @@ function validateParamIn(
 /**
  * Returns a mustache template for the given request type, e.g. REQUEST=GetCapabilities
  *
- * @param {string} requestParam The WMS REQUEST parameter
- * @returns {string} the mustache template for the given request type for WMS 1.3.0
+ * @param requestParam - The WMS REQUEST parameter
+ * @returns the mustache template for the given request type for WMS 1.3.0
  */
 async function getWmsResponseTemplate(requestParam: string): Promise<string> {
   // TODO This could / should be cached
@@ -87,9 +87,9 @@ async function getWmsResponseTemplate(requestParam: string): Promise<string> {
  * Renders the XML response for the given context and request type,
  * e.g. REQUEST=GetCapabilities
  *
- * @param {string} requestParam The WMS REQUEST parameter
- * @param {object} context A context object that fills in the mustache template values
- * @returns{string} The response document
+ * @param requestParam - The WMS REQUEST parameter
+ * @param context - A context object that fills in the mustache template values
+ * @returns The response document
  */
 async function renderToTemplate(requestParam: string, context: object): Promise<string> {
   const template = await getWmsResponseTemplate(requestParam);
@@ -99,9 +99,8 @@ async function renderToTemplate(requestParam: string, context: object): Promise<
 /**
  * Renders a JSON (TODO: XML) response to the client with status 400 containing the given message
  *
- * @param {http.ServerResponse} res The response object being built for the client
- * @param {string} message The error message to send
- * @returns {void}
+ * @param res - The response object being built for the client
+ * @param message - The error message to send
  */
 function requestError(res, message: string): void {
   res.status(400).json(message);
@@ -113,11 +112,11 @@ function requestError(res, message: string): void {
  * Note: This does not call the next() parameter.  It returns a GetCapabilities response rather
  * than fulfilling a service request.
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @param {Function} _next An unsued parameter that is included to provide the correct function
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param _next - An unsued parameter that is included to provide the correct function
  *  signature for an Express.js handler
- * @returns {Promise<void>} Resolves when the request is complete
+ * @returns Resolves when the request is complete
  */
 async function getCapabilities(req, res, _next: NextFunction): Promise<void> {
   const collections = [];
@@ -172,10 +171,9 @@ async function getCapabilities(req, res, _next: NextFunction): Promise<void> {
 /**
  * Express.js-style handler that handles calls to WMS GetMap requests
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @param {Function} next The next function in the chain
- * @returns {void}
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the chain
  */
 function getMap(req, res, next: NextFunction): void {
   // http://portal.opengeospatial.org/files/?artifact_id=14416
@@ -259,10 +257,9 @@ function getMap(req, res, next: NextFunction): void {
 /**
  * Express.js handler that handles calls to the WMS endpoint
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @param {Function} next The next function in the chain
- * @returns {void}
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the chain
  */
 export default async function wmsFrontend(req, res, next: NextFunction): Promise<void> {
   req.context.frontend = 'wms';

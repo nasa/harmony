@@ -16,11 +16,11 @@ import { NotFoundError } from '../util/errors';
  *      URL and is returned unchanged.
  *    - If the link is anything else, throws a TypeError
  *
- * @param {string} url a URL to the data location
- * @param {string} frontendRoot The root URL to use when producing URLs relative to the Harmony root
- * @param {string} mimeType The mime type of the link
- * @returns {string} a URL which getServiceResult can route to when mounted to the site root
- * @throws {TypeError} If the provided URL cannot be handled
+ * @param url - a URL to the data location
+ * @param frontendRoot - The root URL to use when producing URLs relative to the Harmony root
+ * @param mimeType - The mime type of the link
+ * @returns a URL which getServiceResult can route to when mounted to the site root
+ * @throws TypeError - If the provided URL cannot be handled
  */
 export function createPublicPermalink(
   url: string, frontendRoot: string, mimeType?: string,
@@ -49,11 +49,11 @@ export function createPublicPermalink(
 /**
  * Express.js handler that returns redirects to pre-signed URLs
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @param {Function} next The next function in the call chain
- * @returns {Promise<void>} Resolves when the request is complete
- * @throws {NotFoundError} if the given URL cannot be signed, typically due to permissions
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ * @throws NotFoundError - if the given URL cannot be signed, typically due to permissions
  */
 export async function getServiceResult(req, res, next: NextFunction): Promise<void> {
   const { bucket, key } = req.params;

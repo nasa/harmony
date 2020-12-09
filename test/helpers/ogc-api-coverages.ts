@@ -11,12 +11,18 @@ export const defaultGranuleId = 'G1233800352-EEDTEST';
 export const defaultCoverageId = 'all';
 export const defaultVersion = '1.0.0';
 
+interface QueryOptions {
+  query?: object;
+  headers?: object;
+  cookies?: { shapefile: string };
+  username?: string;
+}
+
 /**
  * Strip the signature from a signed cookie value
  *
- * @param {string} value The value portion of the cookie
- * @returns {string} the unsigned cookie value
- * @private
+ * @param value - The value portion of the cookie
+ * @returns the unsigned cookie value
  */
 export function stripSignature(value: string): string {
   let m = value.match(/^s:j:(.*)\..*$/);
@@ -34,10 +40,9 @@ export function stripSignature(value: string): string {
 /**
  * Get value string from encoded cookie
  *
- * @param {string} encodedValue The encoded cookie value
- * @param {string} key The key for the cookie
- * @returns {string} The unencoded cookie string
- * @private
+ * @param encodedValue - The encoded cookie value
+ * @param key - The key for the cookie
+ * @returns The unencoded cookie string
  */
 function cookieValue(encodedValue: string, key: string): string {
   const decoded = decodeURIComponent(encodedValue);
@@ -48,9 +53,8 @@ function cookieValue(encodedValue: string, key: string): string {
 /**
  * Adds before/after hooks to navigate from the coverages landing page to a related resource
  *
- * @param {string} collection The CMR Collection ID to query
- * @param {string} version The OGC API - Coverages version to use
- * @returns {void}
+ * @param collection - The CMR Collection ID to query
+ * @param version - The OGC API - Coverages version to use
  */
 export function hookLandingPage(collection: string, version: string): void {
   before(async function () {
@@ -65,15 +69,12 @@ export function hookLandingPage(collection: string, version: string): void {
 /**
  * Performs getCoverageRangeset request on the given collection with the given params
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {String} version The OGC coverages API version
- * @param {String} collection The CMR Collection ID to perform a service on
- * @param {String} coverageId The coverage ID(s) / variable name(s), or "all"
- * @param {Object} options additional options for the request
- * @param {Object} [options.query] The query parameters to pass to the rangeset request
- * @param {String} [options.headers] The headers to pass to the rangeset request
- * @param {String} [options.cookies] The cookies to set on the call
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @param version - The OGC coverages API version
+ * @param collection - The CMR Collection ID to perform a service on
+ * @param coverageId - The coverage ID(s) / variable name(s), or "all"
+ * @param options - additional options for the request
+ * @returns The response
  */
 export function rangesetRequest(
   app: Application,
@@ -82,7 +83,7 @@ export function rangesetRequest(
   coverageId: string = defaultCoverageId,
   { query = {},
     headers = {},
-    cookies = null } = {},
+    cookies = null }: QueryOptions = {},
 ): Test {
   const encodedCoverageId = encodeURIComponent(coverageId);
   const req = request(app)
@@ -91,7 +92,7 @@ export function rangesetRequest(
     .set(headers);
 
   if (cookies) {
-    req.set('Cookie', [cookies]);
+    req.set('Cookie', [cookies as unknown as string]);
   }
 
   return req;
@@ -101,12 +102,12 @@ export function rangesetRequest(
  * Performs getCoverageRangeset request on the given collection with the given params
  * using a multipart/form-data POST
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {String} version The OGC version
- * @param {string} collection The CMR Collection ID to perform a service on
- * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
- * @param {object} form The form parameters to pass to the request
- * @returns {supertest.Test} An 'awaitable' object that resolves to a Response
+ * @param app - The express application (typically this.frontend)
+ * @param version - The OGC version
+ * @param collection - The CMR Collection ID to perform a service on
+ * @param coverageId - The coverage ID(s) / variable name(s), or "all"
+ * @param form - The form parameters to pass to the request
+ * @returns An 'awaitable' object that resolves to a Response
  */
 export function postRangesetRequest(
   app: Express.Application, version: string, collection: string, coverageId: string, form: object,
@@ -128,20 +129,16 @@ export function postRangesetRequest(
 /**
  * Adds before/after hooks to run an OGC API coverages rangeset request
  *
- * @param {String} version The OGC coverages API version
- * @param {String} collection The CMR Collection ID to perform a service on
- * @param {String} coverageId The coverage ID(s) / variable name(s), or "all"
- * @param {Object} options additional options for the request
- * @param {Object} [options.query] The query parameters to pass to the rangeset request
- * @param {String} [options.headers] The headers to pass to the rangeset request
- * @param {String} [options.username] Optional username to simulate logging in
- * @returns {void}
+ * @param version - The OGC coverages API version
+ * @param collection - The CMR Collection ID to perform a service on
+ * @param coverageId - The coverage ID(s) / variable name(s), or "all"
+ * @param options - additional options for the request
  */
 export function hookRangesetRequest(
   version?: string, collection?: string, coverageId?: string, {
     query = {},
     headers = {},
-    username = undefined } = {},
+    username = undefined }: QueryOptions = {},
 ): void {
   before(async function () {
     if (!username) {
@@ -172,14 +169,10 @@ export function hookRangesetRequest(
  * by adding a default granule ID to the request.  Caller must ensure that the resulting
  * request is not constrained such that the granule is excluded
  *
- * @param {String} version The OGC coverages API version
- * @param {String} collection The CMR Collection ID to perform a service on
- * @param {String} coverageId The coverage ID(s) / variable name(s), or "all"
- * @param {Object} options additional options for the request
- * @param {Object} [options.query] The query parameters to pass to the rangeset request
- * @param {String} [options.headers] The headers to pass to the rangeset request
- * @param {String} [options.username] Optional username to simulate logging in
- * @returns {void}
+ * @param version - The OGC coverages API version
+ * @param collection - The CMR Collection ID to perform a service on
+ * @param coverageId - The coverage ID(s) / variable name(s), or "all"
+ * @param options - additional options for the request
  */
 export function hookSyncRangesetRequest(
   version?: string,
@@ -189,7 +182,7 @@ export function hookSyncRangesetRequest(
     query = {},
     headers = {},
     username = 'anonymous',
-  } = {},
+  }: QueryOptions = {},
 ): void {
   hookRangesetRequest(
     version,
@@ -202,11 +195,10 @@ export function hookSyncRangesetRequest(
 /**
  * Adds before/after hooks to run a POST getCoverageRangeset request
  *
- * @param {string} version The OGC API version
- * @param {string} collection The CMR Collection ID to perform a service on
- * @param {string} coverageId The coverage ID(s) / variable name(s), or "all"
- * @param {object} form The form data to be POST'd
- * @returns {void}
+ * @param version - The OGC API version
+ * @param collection - The CMR Collection ID to perform a service on
+ * @param coverageId - The coverage ID(s) / variable name(s), or "all"
+ * @param form - The form data to be POST'd
  */
 export function hookPostRangesetRequest(
   version: string, collection: string, coverageId: string, form: object,
@@ -236,6 +228,7 @@ export function hookPostRangesetRequest(
     })[0];
 
     const redirect = cookieValue(redirectHeader, 'redirect');
+    // HARMONY-290 Should be query parmams, not a string
     const query = redirect.split('?')[1];
 
     this.res = await rangesetRequest(
@@ -244,7 +237,7 @@ export function hookPostRangesetRequest(
       collection,
       coverageId,
       {
-        query,
+        query: query as unknown as object, // Fix along with HARMONY-290 to parse query params
         cookies,
       },
     ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
@@ -259,7 +252,6 @@ export function hookPostRangesetRequest(
  * where the caller just needs to run a request without caring about any of the
  * parameters to send to the request.
  *
- * @returns {void}
  */
 export function hookDefaultRangesetRequest(): void {
   hookRangesetRequest(defaultVersion, defaultCollection, defaultCoverageId, { username: 'anonymous' });
@@ -270,11 +262,10 @@ export function hookDefaultRangesetRequest(): void {
  * further specs about its contents.  Expects the current page response to exist in the `this.res`
  * object.
  *
- * @param {string} rel The link relation to find in the "links" array of the current response
- * @param {string} description A human-readable name for what the relation is, e.g.
+ * @param rel - The link relation to find in the "links" array of the current response
+ * @param description - A human-readable name for what the relation is, e.g.
  *   "the Open API Spec"
- * @param {function} fn The body of the describe statement
- * @returns {void}
+ * @param fn - The body of the describe statement
  */
 export function describeRelation(rel: string, description: string, fn: Function): void {
   it(`provides a link relation, \`${rel}\`, to ${description}`, function () {
@@ -313,10 +304,10 @@ export function describeRelation(rel: string, description: string, fn: Function)
 /**
  * Makes a call to return the OGC API Coverages Open API spec.
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {string} collection The CMR Collection ID to query
- * @param {String} version The specification version
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @param collection - The CMR Collection ID to query
+ * @param version - The specification version
+ * @returns The response
  */
 export function coveragesSpecRequest(
   app: Express.Application, collection: string, version: string,
@@ -327,10 +318,10 @@ export function coveragesSpecRequest(
 /**
  * Makes a call to return the OGC API Coverages landing page.
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {string} collection The CMR Collection ID to query
- * @param {String} version The specification version
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @param collection - The CMR Collection ID to query
+ * @param version - The specification version
+ * @returns The response
  */
 export function coveragesLandingPageRequest(
   app: Express.Application, collection: string, version: string,
@@ -341,11 +332,11 @@ export function coveragesLandingPageRequest(
 /**
  * Makes a call to return the OGC API Coverages describe collections page.
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {string} collection The CMR Collection ID to query
- * @param {String} version The specification version
- * @param {Object} query The query parameters to pass to the describe collections request
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @param collection - The CMR Collection ID to query
+ * @param version - The specification version
+ * @param query - The query parameters to pass to the describe collections request
+ * @returns The response
  */
 export function describeCollectionsRequest(
   app: Express.Application, collection: string, version: string, query: object,
@@ -358,10 +349,9 @@ export function describeCollectionsRequest(
 /**
  * Adds before/after hooks when calling the OGC API Coverages describe collections page.
  *
- * @param {string} collection The CMR Collection ID to query
- * @param {String} version The specification version
- * @param {Object} query The query parameters to pass to the describe collections request
- * @returns {void}
+ * @param collection - The CMR Collection ID to query
+ * @param version - The specification version
+ * @param query - The query parameters to pass to the describe collections request
  */
 export function hookDescribeCollectionsRequest(
   collection: string, version: string, query: object = {},
@@ -378,12 +368,12 @@ export function hookDescribeCollectionsRequest(
 /**
  * Makes a call to return the OGC API Coverages describe collections page.
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {String} collection The CMR Collection ID to query
- * @param {String} version The specification version
- * @param {String} variablePath The full path of the variable
- * @param {Object} query The query parameters to pass to the describe collections request
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @param collection - The CMR Collection ID to query
+ * @param version - The specification version
+ * @param variablePath - The full path of the variable
+ * @param query - The query parameters to pass to the describe collections request
+ * @returns The response
  */
 export function describeCollectionRequest(
   app: Express.Application,
@@ -401,11 +391,10 @@ export function describeCollectionRequest(
 /**
  * Adds before/after hooks when calling the OGC API Coverages describe collections page.
  *
- * @param {String} collection The CMR Collection ID to query
- * @param {String} version The specification version
- * @param {String} variablePath The full path of the variable
- * @param {Object} query The query parameters to pass to the describe collections request
- * @returns {void}
+ * @param collection - The CMR Collection ID to query
+ * @param version - The specification version
+ * @param variablePath - The full path of the variable
+ * @param query - The query parameters to pass to the describe collections request
  */
 export function hookDescribeCollectionRequest(
   collection: string, version: string, variablePath: string, query: object = {},

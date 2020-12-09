@@ -18,9 +18,9 @@ const clientCredentialsData = {
  * Makes a request to the EDL users endpoint to validate a token and return the user ID
  * associated with that token.
  *
- * @param clientToken The harmony client token
- * @param userToken The user's token
- * @param logger The logger associated with the request
+ * @param clientToken - The harmony client token
+ * @param userToken - The user's token
+ * @param logger - The logger associated with the request
  * @returns the username associated with the token
  * @throws ForbiddenError if the token is invalid
  */
@@ -47,7 +47,7 @@ export async function getUserIdRequest(clientToken, userToken, logger): Promise<
 
 /**
  * Returns the bearer token to use in all EDL requests from Harmony
- * @param logger The logger associated with the request
+ * @param logger - The logger associated with the request
  */
 export async function getClientCredentialsToken(logger): Promise<string> {
   try {
@@ -65,7 +65,7 @@ export async function getClientCredentialsToken(logger): Promise<string> {
  * Only used for routes that require authentication. If no token is passed in then the
  * middleware does nothing and forces the user through the oauth workflow.
  *
- * @param paths Paths that require authentication
+ * @param paths - Paths that require authentication
  * @returns Express.js middleware for doing EDL token authentication
  */
 export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): RequestHandler {
