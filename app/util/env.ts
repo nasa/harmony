@@ -32,6 +32,7 @@ interface HarmonyEnv {
   callbackUrlRoot: string;
   syncRequestPollIntervalMs: number;
   defaultImagePullPolicy: string;
+  cmrGranuleLocatorImagePullPolicy: string;
   sharedSecretKey: string;
   defaultBatchSize: number;
   defaultParallelism: number;
@@ -100,6 +101,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
   ['SYNC_REQUEST_POLL_INTERVAL_MS', 100],
   ['DEFAULT_BATCH_SIZE', 2000],
   ['DEFAULT_IMAGE_PULL_POLICY', 'Always'],
+  ['CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY', 'Always'],
   ['DEFAULT_PARALLELISM', 2],
   ['SHARED_SECRET_KEY', null],
   ['DEFAULT_ARGO_POD_TIMEOUT_SECS', 14400],

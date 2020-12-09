@@ -3,9 +3,11 @@ import sinon from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import * as axios from 'axios';
 import fs from 'fs';
+
 import hookServersStartStop from './helpers/servers';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import { objectStoreForProtocol } from '../app/util/object-store';
+import env from '../app/util/env';
 
 describe('Argo invocations', function () {
   const collection = 'C1096-PVC_TS2'; // Chaining example
@@ -16,12 +18,15 @@ describe('Argo invocations', function () {
   describe('calling a service that has an Argo backend', function () {
     describe('calling the backend service', function () {
       let post;
+      let stub;
       before(function () {
         post = sinon.stub(axios.default, 'post');
+        stub = sinon.stub(env, 'cmrGranuleLocatorImagePullPolicy').get(() => 'FOO');
       });
 
       after(function () {
         post.restore();
+        stub.restore();
       });
 
       hookRangesetRequest(version, collection, 'all');
@@ -46,6 +51,13 @@ describe('Argo invocations', function () {
         const source = message.sources[0];
         expect(source.collection).to.equal('C1096-PVC_TS2');
         expect(source.granules).to.be.undefined;
+      });
+
+      it('passes cmr-granule-locator-image-pull-policy to the Argo workflow', async function () {
+        const [, body] = post.args[0];
+        const template = body.workflow.spec.arguments.parameters.find((t) => t.name === 'cmr-granule-locator-image-pull-policy');
+        const policy = template.value;
+        expect(policy).to.equal('FOO');
       });
     });
   });

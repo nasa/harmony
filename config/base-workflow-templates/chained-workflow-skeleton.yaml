@@ -21,6 +21,8 @@ spec:
       value: "{{inputs.parameters.batch-size}}"
     - name: image-pull-policy
       value: "{{inputs.parameters.image-pull-policy}}"
+    - name: cmr-granule-locator-image-pull-policy
+      value: "{{inputs.parameters.cmr-granule-locator-image-pull-policy}}"
     
   templates:
     - name: chained-workflow
