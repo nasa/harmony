@@ -1,7 +1,7 @@
 export interface Worker {
   /**
    * start the worker running continuously
-   * @param config the optional configuration to use
+   * @param config - the optional configuration to use
    */
   start(): Promise<void>;
 

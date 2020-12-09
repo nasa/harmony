@@ -28,10 +28,10 @@ export const validGetMapQuery = {
  * it will perform a GetMap request against a collection configured to accept GetMap.
  * Note this will perform an actual service call unless stubbed.
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {string} collection The collection on which the request should be performed
- * @param {object} query The query parameters to pass to the WMS request
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @param collection - The collection on which the request should be performed
+ * @param query - The query parameters to pass to the WMS request
+ * @returns The response
  */
 export function wmsRequest(
   app: Express.Application, collection: string = validCollection, query: object = validGetMapQuery,
@@ -44,8 +44,7 @@ export function wmsRequest(
 /**
  * Adds before/after hooks to run a GetCapabilities request on the given collection
  *
- * @param {string} collection The CMR Collection ID to query
- * @returns {void}
+ * @param collection - The CMR Collection ID to query
  */
 export function hookGetCapabilities(collection: string): void {
   before(async function () {
@@ -62,9 +61,8 @@ export function hookGetCapabilities(collection: string): void {
  * is configured for WMS.  You should almost always run StubService.hook before
  * this to avoid invoking an actual service call.
  *
- * @param {string} collection The CMR Collection ID to query
- * @param {object} query Query parameters other than "service" and "request" to send
- * @returns {void}
+ * @param collection - The CMR Collection ID to query
+ * @param query - Query parameters other than "service" and "request" to send
  */
 export function hookGetMap(
   collection: string = validCollection, query: object = validGetMapQuery,

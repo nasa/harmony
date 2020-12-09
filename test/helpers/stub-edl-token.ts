@@ -7,8 +7,7 @@ import * as edlAuth from '../../app/middleware/earthdata-login-token-authorizer'
  * Adds before / after hooks in mocha to replace calls to EDL token interaction
  * to automatically set the username
  *
- * @param {string} username The name of the user to return for the provided token
- * @returns {void}
+ * @param username - The name of the user to return for the provided token
  */
 export function hookEdlTokenAuthentication(username: string): void {
   let clientCredentialsStub;
@@ -28,7 +27,6 @@ export function hookEdlTokenAuthentication(username: string): void {
 /**
  * Adds before / after hooks in mocha to replace calls to EDL token interaction
  * to throw an error
- * @returns {void}
  */
 export function hookEdlTokenAuthenticationError(): void {
   let clientCredentialsStub;

@@ -43,7 +43,7 @@ describe('Individual job status route', function () {
   const jobID = aJob.requestId;
   describe('For a user who is not logged in', function () {
     before(async function () {
-      this.res = await jobStatus(this.frontend, { jobID }).redirects(0);
+      this.res = await jobStatus(this.frontend, { jobID } as Job).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
       expect(this.res.statusCode).to.equal(303);

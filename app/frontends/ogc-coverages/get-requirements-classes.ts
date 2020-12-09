@@ -2,9 +2,8 @@
  * Express handler that responds to OGC API conformance requests, returning
  * the list of specifications this API conforms to.
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {void}
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
  */
 export default function getRequirementsClasses(req, res): void {
   res.json({

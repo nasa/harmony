@@ -6,11 +6,10 @@ import { auth } from './auth';
  * Adds before / after hooks which call the given function with the given params, awaiting
  * its return value and placing it on `this[returnValueName]`
  *
- * @param {function} fn the (potentially async) function to hook
- * @param {string} returnValueName the name of the property on `this` where the return value
+ * @param fn - the (potentially async) function to hook
+ * @param returnValueName - the name of the property on `this` where the return value
  *   should go
- * @param {...any} params the parameters to the function call
- * @returns {void}
+ * @param params - the parameters to the function call
  */
 export function hookFunction<T>(fn: Function, returnValueName: string, ...params: T[]): void {
   before(async function () {
@@ -24,9 +23,8 @@ export function hookFunction<T>(fn: Function, returnValueName: string, ...params
 /**
  * Adds before / after hooks to follow a given URL
  *
- * @param {function|string} urlOrFn the URL to follow
- * @param {string} username optional username to provide for auth
- * @returns {void}
+ * @param urlOrFn - the URL to follow
+ * @param username - optional username to provide for auth
  */
 export function hookUrl(urlOrFn: Function | string, username = 'anonymous'): void {
   before(async function () {
@@ -47,8 +45,7 @@ export function hookUrl(urlOrFn: Function | string, username = 'anonymous'): voi
  * Adds before / after hooks to follow an HTTP redirect contained in this.res, setting this.res
  * to the response from following the redirect and this.redirectRes to the original response.
  *
- * @param {string} username optional username to provide for auth
- * @returns {void}
+ * @param username - optional username to provide for auth
  */
 export function hookRedirect(username: string = undefined): void {
   hookUrl(function () {
@@ -62,8 +59,7 @@ export function hookRedirect(username: string = undefined): void {
  * Adds before / after hooks to execute an HTTP request against a harmony endpoint and setting
  * the result to this.res
  *
- * @param {function} requestFn The request function to execute
- * @returns {void}
+ * @param requestFn - The request function to execute
  */
 export function hookRequest(
   requestFn: Function, { username, ...options } = { username: undefined },

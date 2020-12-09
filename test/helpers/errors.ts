@@ -6,10 +6,9 @@ import { expect } from 'chai';
  * Adds `it` statements that assert that the given error has occurred on the
  * response object contained in `this.res`
  *
- * @param {number} code the HTTP status code for the response (default: 404)
- * @param {string} message the error message
- * @param {number} html assert the page is EUI-themed HTML (default: true)
- * @returns {void}
+ * @param code - the HTTP status code for the response (default: 404)
+ * @param message - the error message
+ * @param html - assert the page is EUI-themed HTML (default: true)
  */
 export function itRespondsWithError(code: number, message: string, html = true): void {
   it(`returns an error page with status code ${code}`, function () {
@@ -30,24 +29,26 @@ export function itRespondsWithError(code: number, message: string, html = true):
   }
 }
 
+interface Config {
+  condition: string; // the `describe` condition without leading "when "
+  path: string; // the server path which should produce the error
+  message: string | { code: string; description: string }; // the error message
+  code?: number; // the HTTP status code for the response (default: 404)
+  html?: boolean; // assert the page is EUI-themed HTML (default: true)
+}
+
 /**
  * Adds a `describe` and `it` statement that call the given path
  * and assert an error is returned with the provided code.
  *
- * @param {object} config named parameters for this call
- * @param {string} [config.condition] the `describe` condition without leading "when "
- * @param {string} [config.path] the server path which should produce the error
- * @param {string} [config.message] the error message
- * @param {number} [config.code] the HTTP status code for the response (default: 404)
- * @param {number} [config.html] assert the page is EUI-themed HTML (default: true)
- * @returns {void}
+ * @param config - named parameters for this call
  */
 export function describeErrorCondition(
   { condition,
     path,
     message,
     code = 404,
-    html = true },
+    html = true }: Config,
 ): void {
   describe(`when ${condition}`, function () {
     before(async function () {
@@ -57,6 +58,6 @@ export function describeErrorCondition(
       delete this.res;
     });
 
-    itRespondsWithError(code, message, html);
+    itRespondsWithError(code, message as string, html);
   });
 }

@@ -20,9 +20,8 @@ export const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === '
 /**
  * Recipe for a cookie to support handling shapefiles
  *
- * @param {object} req The request
- * @return {Array} a tuple containing the name and value for the cookie
- * @private
+ * @param req - The request
+ * @returns a tuple containing the name and value for the cookie
  */
 function _shapefile(req: HarmonyRequest): string[] {
   // if a shapefile was uploaded set a cookie with a url for the shapefile and
@@ -37,9 +36,8 @@ function _shapefile(req: HarmonyRequest): string[] {
 /**
  * Recipe for the 'redirect' cookie
  *
- * @param {*} req The request
- * @returns {Array} a tuple containing the name and value for the cookie
- * @private
+ * @param req - The request
+ * @returns a tuple containing the name and value for the cookie
  */
 function _redirect(req: HarmonyRequest): string[] {
   if (req.files) {
@@ -63,10 +61,9 @@ const authorizedRecipes = [
 /**
  * Set cookies on the response before calling EDL.
  *
- * @param {object} req The request
- * @param {object} res The response
- * @param {object} options The options to use when setting the cookie
- * @returns {void}
+ * @param req - The request
+ * @param res - The response
+ * @param options - The options to use when setting the cookie
  */
 export function setCookiesForEdl(req: HarmonyRequest, res: Response, options: object): void {
   edlRecipes.forEach((recipe) => {
@@ -80,10 +77,9 @@ export function setCookiesForEdl(req: HarmonyRequest, res: Response, options: ob
 /**
  * Set cookies on the response when handling an authorized request.
  *
- * @param {object} req The request
- * @param {object} res The response
- * @param {object} options The options to use when setting the cookie
- * @returns {void}
+ * @param req - The request
+ * @param res - The response
+ * @param options - The options to use when setting the cookie
  */
 export function setCookiesForAuthorized(req: HarmonyRequest, res: Response, options: object): void {
   authorizedRecipes.forEach((recipe) => {

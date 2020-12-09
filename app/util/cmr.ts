@@ -123,10 +123,9 @@ export interface CmrGranulesResponse extends CmrResponse {
 /**
  * Create a token header for the given access token string
  *
- * @param token The access token for the user
+ * @param token - The access token for the user
  * @returns An object with an 'Authorization' key and 'Bearer token' as the value,
  * or an empty object if the token is not set
- * @private
  */
 function _makeTokenHeader(token: string): object {
   return cmrApiConfig.useToken && token ? { Authorization: `Bearer ${token}` } : {};
@@ -134,10 +133,8 @@ function _makeTokenHeader(token: string): object {
 /**
  * Handle any errors in the CMR response
  *
- * @param {Response} response The response from the CMR
- * @returns {void}
- * @throws {CmrError} if the CMR response indicates an error
- * @private
+ * @param response - The response from the CMR
+ * @throws CmrError - if the CMR response indicates an error
  */
 function _handleCmrErrors(response: Response): void {
   const { status } = response;
@@ -185,12 +182,11 @@ export async function cmrSearchBase(
  * Performs a CMR search at the given path with the given query string. This function wraps
  * `CmrSearchBase` to make it easier to test.
  *
- * @param {string} path The absolute path on the CMR API to the resource being queried
- * @param {object} query The key/value pairs to send to the CMR query string
- * @param {string} token Access token for user request
- * @returns {Promise<object>} The CMR query result
- * @throws {CmrError} If the CMR returns an error status
- * @private
+ * @param path - The absolute path on the CMR API to the resource being queried
+ * @param query - The key/value pairs to send to the CMR query string
+ * @param token - Access token for user request
+ * @returns The CMR query result
+ * @throws CmrError - If the CMR returns an error status
  */
 async function _cmrSearch(
   path: string, query: CmrQuery, token: string,
@@ -206,10 +202,10 @@ async function _cmrSearch(
  * uploads to the CMR. By pulling it into a separate function we can stub it to have
  * the necessary response.
  *
- * @param {string} path The URL path
- * @param {*} formData A FormData object to be POST'd
- * @param {object} headers The headers to be sent with the POST
- * @returns {Response} A SuperAgent Response object
+ * @param path - The URL path
+ * @param formData - A FormData object to be POST'd
+ * @param headers - The headers to be sent with the POST
+ * @returns A SuperAgent Response object
  */
 export async function fetchPost(
   path: string, formData: FormData, headers: { [key: string]: string },
@@ -227,9 +223,9 @@ export async function fetchPost(
  * Process a GeoJSON entry by downloading the file from S3 and adding an entry for it in
  * a mulitpart/form-data object to be uploaded to the CMR.
  *
- * @param {string} geoJsonUrl The location of the shapefile
- * @param {Object} formData the Form data
- * @returns {Promise<string>} The a promise for a temporary filename containing the shapefile
+ * @param geoJsonUrl - The location of the shapefile
+ * @param formData - the Form data
+ * @returns The a promise for a temporary filename containing the shapefile
  */
 async function processGeoJson(geoJsonUrl: string, formData: FormData): Promise<string> {
   const tempFile = await objectStoreForProtocol(geoJsonUrl).downloadFile(geoJsonUrl);
@@ -242,10 +238,10 @@ async function processGeoJson(geoJsonUrl: string, formData: FormData): Promise<s
 /**
  * Post a query to the CMR with the parameters in the given form
  *
- * @param {string} path The absolute path on the CMR API to the resource being queried
- * @param {object} form An object with keys and values representing the parameters for the query
- * @param {string} token Access token for the user
- * @returns {Promise<object>} The CMR query result
+ * @param path - The absolute path on the CMR API to the resource being queried
+ * @param form - An object with keys and values representing the parameters for the query
+ * @param token - Access token for the user
+ * @returns The CMR query result
  */
 export async function cmrPostSearchBase(
   path: string, form: object, token: string,
@@ -286,12 +282,11 @@ export async function cmrPostSearchBase(
  * Post a query to the CMR with the parameters in the given form. This function wraps
  * `CmrPostSearchBase` to make it easier to test.
  *
- * @param {string} path The absolute path on the cmR API to the resource being queried
- * @param {object} form An object with keys and values representing the parameters for the query
- * @param {string} token Access token for the user
- * @returns {Promise<object>} The CMR query result
- * @throws {CmrError} If the CMR returns an error status
- * @private
+ * @param path - The absolute path on the cmR API to the resource being queried
+ * @param form - An object with keys and values representing the parameters for the query
+ * @param token - Access token for the user
+ * @returns The CMR query result
+ * @throws CmrError - If the CMR returns an error status
  */
 async function _cmrPostSearch(path: string, form: CmrQuery, token: string): Promise<CmrResponse> {
   const response = await module.exports.cmrPostSearchBase(path, form, token);
@@ -303,10 +298,9 @@ async function _cmrPostSearch(path: string, form: CmrQuery, token: string): Prom
 /**
  * Performs a CMR variables.json search with the given query string
  *
- * @param {object} query The key/value pairs to search
- * @param {string} token Access token for user request
- * @returns {Promise<Array<CmrVariable>>} The variable search results
- * @private
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The variable search results
  */
 async function queryVariables(
   query: CmrQuery, token: string,
@@ -318,10 +312,9 @@ async function queryVariables(
 /**
  * Performs a CMR collections.json search with the given query string
  *
- * @param {object} query The key/value pairs to search
- * @param {string} token Access token for user request
- * @returns {Promise<Array<CmrCollection>>} The collection search results
- * @private
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The collection search results
  */
 async function queryCollections(
   query: CmrQuery, token: string,
@@ -333,10 +326,9 @@ async function queryCollections(
 /**
  * Performs a CMR granules.json search with the given query string
  *
- * @param {object} query The key/value pairs to search
- * @param {string} token Access token for user request
- * @returns {Promise<Array<CmrGranule>>} The granule search results
- * @private
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The granule search results
  */
 async function queryGranules(
   query: CmrQuery, token: string,
@@ -355,11 +347,10 @@ async function queryGranules(
 /**
  * Performs a CMR granules.json search with the given form data
  *
- * @param {object} form The key/value pairs to search including a `shapefile` parameter
+ * @param form - The key/value pairs to search including a `shapefile` parameter
  * pointing to a file on the file system
- * @param {string} token Access token for user request
- * @returns {Promise<Array<CmrGranule>>} The granule search results
- * @private
+ * @param token - Access token for user request
+ * @returns The granule search results
  */
 async function queryGranuleUsingMultipartForm(
   form: CmrQuery, // could not figure out how to use FormData here because
@@ -377,9 +368,9 @@ async function queryGranuleUsingMultipartForm(
 /**
  * Queries and returns the CMR JSON collections corresponding to the given CMR Collection IDs
  *
- * @param {Array<string>} ids The collection IDs to find
- * @param {string} token Access token for user request
- * @returns {Promise<Array<CmrCollection>>} The collections with the given ids
+ * @param ids - The collection IDs to find
+ * @param token - Access token for user request
+ * @returns The collections with the given ids
  */
 export function getCollectionsByIds(
   ids: Array<string>, token: string,
@@ -393,9 +384,9 @@ export function getCollectionsByIds(
 /**
  * Queries and returns the CMR JSON variables corresponding to the given CMR Variable IDs
  *
- * @param {Array<string>} ids The variable IDs to find
- * @param {string} token Access token for user request
- * @returns {Promise<Array<CmrVariable>>} The variables with the given ids
+ * @param ids - The variable IDs to find
+ * @param token - Access token for user request
+ * @returns The variables with the given ids
  */
 export function getVariablesByIds(
   ids: Array<string>,
@@ -410,9 +401,9 @@ export function getVariablesByIds(
 /**
  * Queries and returns the CMR JSON variables that are associated with the given CMR JSON collection
  *
- * @param {CmrCollection} collection The collection whose variables should be returned
- * @param {string} token Access token for user request
- * @returns {Promise<Array<CmrVariable>>} The variables associated with the input collection
+ * @param collection - The collection whose variables should be returned
+ * @param token - Access token for user request
+ * @returns The variables associated with the input collection
  */
 export async function getVariablesForCollection(
   collection: CmrCollection, token: string,
@@ -427,11 +418,11 @@ export async function getVariablesForCollection(
 /**
  * Queries and returns the CMR JSON granules for the given collection ID with the given query params
  *
- * @param {string} collectionId The ID of the collection whose granules should be searched
- * @param {object} query The CMR granule query parameters to pass
- * @param {string} token Access token for user request
- * @param {number} [limit=10] The maximum number of granules to return
- * @returns {Promise<Array<CmrGranule>>} The granules associated with the input collection
+ * @param collectionId - The ID of the collection whose granules should be searched
+ * @param query - The CMR granule query parameters to pass
+ * @param token - Access token for user request
+ * @param limit - The maximum number of granules to return
+ * @returns The granules associated with the input collection
  */
 export function queryGranulesForCollection(
   collectionId: string, query: CmrQuery, token: string, limit = 10,
@@ -447,11 +438,11 @@ export function queryGranulesForCollection(
  * Queries the CMR using a multipart/form-data POST for granules with the given collection ID
  * using the given form object
  *
- * @param {string} collectionId The ID of the collection whose granules should be searched
- * @param {object} form An object containing the parameters and values for the CMR query
- * @param {string} token Access token for user request
- * @param {number} [limit=10] The maximum number of granules to return
- * @returns  {Promise<Array<CmrGranule>>} The granules associated with the input collection
+ * @param collectionId - The ID of the collection whose granules should be searched
+ * @param form - An object containing the parameters and values for the CMR query
+ * @param token - Access token for user request
+ * @param limit - The maximum number of granules to return
+ * @returns The granules associated with the input collection
  */
 export function queryGranulesForCollectionWithMultipartForm(
   collectionId: string, form: CmrQuery, token: string, limit = 10,

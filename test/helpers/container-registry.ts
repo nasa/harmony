@@ -3,7 +3,7 @@ import { ECR, ImageDetails } from 'util/container-registry';
 
 /**
  * Adds before and after hooks to the ECR describe image call.
- * @param imageResponse The response to return from all ECR describe images calls.
+ * @param imageResponse - The response to return from all ECR describe images calls.
  *
  */
 export default function hookDescribeImage(imageResponse: ImageDetails): void {

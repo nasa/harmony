@@ -36,8 +36,8 @@ import envVars = require('../util/env');
  * information and ensures the logger accessed by the input function
  * describes the middleware that produced it.
  *
- * @param {Function} fn The middleware handler to wrap with logging
- * @returns {Function} The handler wrapped with logging information
+ * @param fn - The middleware handler to wrap with logging
+ * @returns The handler wrapped with logging information
  */
 function logged(fn: RequestHandler): RequestHandler {
   const scope = `middleware.${fn.name}`;
@@ -68,9 +68,9 @@ function logged(fn: RequestHandler): RequestHandler {
  * Returns a function that the incoming request is a valid service request before
  * invoking its handler.
  *
- * @param {Function} fn The service handler
- * @returns {Function} The handler wrapped in validation
- * @throws {NotFoundError} If there are no collections in the request
+ * @param fn - The service handler
+ * @returns The handler wrapped in validation
+ * @throws NotFoundError - If there are no collections in the request
  */
 function service(fn: RequestHandler): RequestHandler {
   return async (req: HarmonyRequest, res, next): Promise<void> => {
@@ -98,8 +98,8 @@ function service(fn: RequestHandler): RequestHandler {
 /**
  * Given a path, returns a regular expression for that path prefixed by one or more collections
  *
- * @param {string} path The URL path
- * @returns {string} The path prefixed by one or more collection IDs
+ * @param path - The URL path
+ * @returns The path prefixed by one or more collection IDs
  */
 function collectionPrefix(path: string): RegExp {
   const result = new RegExp(cmrCollectionReader.collectionRegex.source + path);
@@ -112,10 +112,9 @@ const collectionRoute = /^(\/(?!docs).*\/)(wms|eoss|ogc-api-coverages)/;
 /**
  * Validates that routes which require a collection identifier are using the correct
  * format for a collection identifier.
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @param {Function} next The next function in the call chain
- * @returns {void}
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
  */
 function validateCollectionRoute(req, res, next: NextFunction): void {
   const { path } = req;

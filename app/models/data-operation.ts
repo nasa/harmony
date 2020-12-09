@@ -9,9 +9,8 @@ import { Encrypter, Decrypter } from '../util/crypto';
 /**
  * Synchronously reads and parses the JSON Schema at the given path
  *
- * @param {string} version The version number of the schema to read
- * @returns {object} The parsed JSON Schema object
- * @private
+ * @param version - The version number of the schema to read
+ * @returns The parsed JSON Schema object
  */
 function readSchema(version: string): object {
   const schemaPath = path.join(__dirname, '..', 'schemas', 'data-operation', version, `data-operation-v${version}.json`);
@@ -177,7 +176,6 @@ export interface SRS {
  * to maintain multiple versions of the operation JSON schema, which this class
  * or its children would know how to serialize
  *
- * @class DataOperation
  */
 export default class DataOperation {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -200,13 +198,12 @@ export default class DataOperation {
   /**
    * Creates an instance of DataOperation.
    *
-   * @param {object} [model=null] The initial model, useful when receiving serialized operations
-   * @param [encrypter=identity] A function used to encrypt the accessToken
-   * @param [decrypter=identity] A function used to decrypt the accessToken
+   * @param model - The initial model, useful when receiving serialized operations
+   * @param encrypter - A function used to encrypt the accessToken
+   * @param decrypter - A function used to decrypt the accessToken
    *
    * Note that `decrypter(encrypter(message))` should equal `message`.
    *
-   * @memberof DataOperation
    */
   constructor(
     model: object = null,
@@ -227,8 +224,7 @@ export default class DataOperation {
    * Returns the service data sources, a list of objects containing a collection ID with the
    * variables and granules to operate on.
    *
-   * @returns {DataSource[]} The service data sources
-   * @memberof DataOperation
+   * @returns The service data sources
    */
   get sources(): DataSource[] {
     return this.model.sources;
@@ -238,9 +234,7 @@ export default class DataOperation {
    * Sets the service data sources, a list of objects containing a collection ID with the variables
    * and granules to operate on
    *
-   * @param {DataSource[]} sources The service data sources
-   * @returns {void}
-   * @memberof DataOperation
+   * @param sources - The service data sources
    */
   set sources(sources: DataSource[]) {
     this.model.sources = sources;
@@ -249,11 +243,9 @@ export default class DataOperation {
   /**
    * Adds a new service data source to the list of those to operate on
    *
-   * @param {string} collection The CMR ID of the collection being operated on
-   * @param {Array<object>?} vars An array of objects containing variable id and name
-   * @param {Array<object>?} granules An array of objects containing granule id, name, and url
-   * @returns {void}
-   * @memberof DataOperation
+   * @param collection - The CMR ID of the collection being operated on
+   * @param vars - An array of objects containing variable id and name
+   * @param granules - An array of objects containing granule id, name, and url
    */
   addSource(
     collection: string,
@@ -271,8 +263,7 @@ export default class DataOperation {
   /**
    * Returns the CRS into which the data should be transformed
    *
-   * @returns {string} The CRS into which the data should be transformed
-   * @memberof DataOperation
+   * @returns The CRS into which the data should be transformed
    */
   get crs(): string {
     return this.model.format.crs;
@@ -305,8 +296,7 @@ export default class DataOperation {
   /**
    * Returns true if the service output should be transparent where there is no data (if possible)
    *
-   * @returns {boolean} true if the service output should be transparent where there is no data
-   * @memberof DataOperation
+   * @returns true if the service output should be transparent where there is no data
    */
   get isTransparent(): boolean {
     return this.model.format.isTransparent;
@@ -316,9 +306,7 @@ export default class DataOperation {
    * Sets the flag indicating whether the service output should be transparent where there is no
    * data, if possible.  True if so, false otherwise.
    *
-   * @param {boolean} isTransparent true if the output should be transparent where there is no data
-   * @returns {void}
-   * @memberof DataOperation
+   * @param isTransparent - true if the output should be transparent where there is no data
    */
   set isTransparent(isTransparent: boolean) {
     this.model.format.isTransparent = isTransparent;
@@ -327,8 +315,7 @@ export default class DataOperation {
   /**
    * Returns the mime type which the service should provide as its output format, e.g. "image/tiff"
    *
-   * @returns {string} the mime type which the service should provide as its output format
-   * @memberof DataOperation
+   * @returns the mime type which the service should provide as its output format
    */
   get outputFormat(): string {
     return this.model.format.mime;
@@ -337,9 +324,7 @@ export default class DataOperation {
   /**
    * Sets the mime type which the service should provide as its output format, e.g. "image/tiff"
    *
-   * @param {string} mime the mime type to use as an output format
-   * @returns {void}
-   * @memberof DataOperation
+   * @param mime - the mime type to use as an output format
    */
   set outputFormat(mime: string) {
     this.model.format.mime = mime;
@@ -348,9 +333,7 @@ export default class DataOperation {
   /**
    * Sets the requested dots-per-inch resolution for image output.
    *
-   * @param {number} dpi The DPI resolution for image output
-   * @returns {void}
-   * @memberof DataOperation
+   * @param dpi - The DPI resolution for image output
    */
   set outputDpi(dpi: number) {
     this.model.format.dpi = dpi;
@@ -359,8 +342,7 @@ export default class DataOperation {
   /**
    * Returns the scale extent which the service should use.
    *
-   * @returns {Object} the scale extent
-   * @memberof DataOperation
+   * @returns the scale extent
    */
   get scaleExtent(): object {
     return this.model.format.scaleExtent;
@@ -369,11 +351,9 @@ export default class DataOperation {
   /**
    * Sets the scale extent which the service should use.
    *
-   * @param {Object} scaleExtent the scale extent
-   * Example: { x: { min: 0, max: 5 }, y: { min: 5, max: 15} }
+   * @param scaleExtent - the scale extent
+   * Example: `{ x: { min: 0, max: 5 }, y: { min: 5, max: 15} }`
    *
-   * @returns {void}
-   * @memberof DataOperation
    */
   set scaleExtent(scaleExtent: object) {
     this.model.format.scaleExtent = scaleExtent;
@@ -382,19 +362,16 @@ export default class DataOperation {
   /**
    * Returns the scale size which the service should use.
    *
-   * @returns {Object} the scale size, e.g. { x: 2, y: 1 }
-   * @memberof DataOperation
+   * @returns the scale size, e.g. `{ x: 2, y: 1 }`
    */
   get scaleSize(): { x: number; y: number } {
     return this.model.format.scaleSize;
   }
 
   /**
-   * Sets the scale size which the service should use, e.g. { x: 2, y: 1 }
+   * Sets the scale size which the service should use, e.g. `{ x: 2, y: 1 }`
    *
-   * @param {*} scaleSize the scale size which the service should use.
-   * @returns {void}
-   * @memberof DataOperation
+   * @param scaleSize - the scale size which the service should use.
    */
   set scaleSize(scaleSize: { x: number; y: number }) {
     this.model.format.scaleSize = scaleSize;
@@ -403,8 +380,7 @@ export default class DataOperation {
   /**
    * Returns interpolation method the service should use, e.g. "bilinear"
    *
-   * @returns {string} the interpolation method which the service should use
-   * @memberof DataOperation
+   * @returns the interpolation method which the service should use
    */
   get interpolationMethod(): string {
     return this.model.format.interpolation;
@@ -413,9 +389,7 @@ export default class DataOperation {
   /**
    * Sets the interpolation method the service should use, e.g. "bilinear"
    *
-   * @param {string} interpolationMethod the interpolation method which the service should use
-   * @returns {void}
-   * @memberof DataOperation
+   * @param interpolationMethod - the interpolation method which the service should use
    */
   set interpolationMethod(interpolationMethod: string) {
     this.model.format.interpolation = interpolationMethod;
@@ -425,9 +399,7 @@ export default class DataOperation {
    * Sets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
    *   [ East, South, West, North ]
    *
-   * @param {Array<number>} bbox The subsetting bounding rectangle, [ East, South, West, North ]
-   * @returns {void}
-   * @memberof DataOperation
+   * @param bbox - The subsetting bounding rectangle, [ East, South, West, North ]
    */
   set boundingRectangle(bbox: Array<number>) {
     this.model.subset.bbox = bbox;
@@ -437,8 +409,7 @@ export default class DataOperation {
    * Gets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
    *   [ East, South, West, North ]
    *
-   * @returns {Array<number>} The subsetting bounding rectangle, [ East, South, West, North ]
-   * @memberof DataOperation
+   * @returns The subsetting bounding rectangle, [ East, South, West, North ]
    */
   get boundingRectangle(): Array<number> {
     return this.model.subset.bbox;
@@ -447,9 +418,7 @@ export default class DataOperation {
   /**
    * Sets the object store URI to the geojson shape used for spatial subsetting
    *
-   * @param {string} geojsonUri A URI to the geojson shape
-   * @returns {void}
-   * @memberof DataOperation
+   * @param geojsonUri - A URI to the geojson shape
    */
   set geojson(geojsonUri: string) {
     this.model.subset.shape = { type: 'application/geo+json', href: geojsonUri };
@@ -458,8 +427,7 @@ export default class DataOperation {
   /**
    * Gets the object store URI for the geojson shape used for spatial subsetting
    *
-   * @returns {string} A URI to the geojson shape
-   * @memberof DataOperation
+   * @returns A URI to the geojson shape
    */
   get geojson(): string {
     return this.model.subset.shape && this.model.subset.shape.href;
@@ -470,7 +438,6 @@ export default class DataOperation {
    * is expressed in RFC-3339 format
    *
    * @returns The temporal range with two keys start and end
-   * @memberof DataOperation
    */
   get temporal(): TemporalStringRange {
     const { temporal } = this.model;
@@ -479,12 +446,10 @@ export default class DataOperation {
   }
 
   /**
-   * Sets the temporal range to be acted upon by services, { start, end }, storing each time
+   * Sets the temporal range to be acted upon by services, `{ start, end }`, storing each time
    * as a string expressed in RFC-3339 format
    *
-   * @param {Array<Date>} The [ start, end ] temporal range
-   * @returns {void}
-   * @memberof DataOperation
+   * @param The - [ start, end ] temporal range
    */
   set temporal(temporalRange: TemporalStringRange) {
     const { start, end } = temporalRange;
@@ -500,8 +465,7 @@ export default class DataOperation {
   /**
    * Returns the requested width of the output file in pixels
    *
-   * @returns {number} the requested width of the output file in pixels
-   * @memberof DataOperation
+   * @returns the requested width of the output file in pixels
    */
   get outputWidth(): number {
     return this.model.format.width;
@@ -510,9 +474,7 @@ export default class DataOperation {
   /**
    * Sets the requested width of the output file in pixels
    *
-   * @param {number} width the requested width of the output file in pixels
-   * @returns {void}
-   * @memberof DataOperation
+   * @param width - the requested width of the output file in pixels
    */
   set outputWidth(width: number) {
     this.model.format.width = width;
@@ -521,8 +483,7 @@ export default class DataOperation {
   /**
    * Returns the requested height of the output file in pixels
    *
-   * @returns {number} the requested height of the output file in pixels
-   * @memberof DataOperation
+   * @returns the requested height of the output file in pixels
    */
   get outputHeight(): number {
     return this.model.format.height;
@@ -531,9 +492,7 @@ export default class DataOperation {
   /**
    * Sets the requested height of the output file in pixels
    *
-   * @param {number} height the requested height of the output file in pixels
-   * @returns {void}
-   * @memberof DataOperation
+   * @param height - the requested height of the output file in pixels
    */
   set outputHeight(height: number) {
     this.model.format.height = height;
@@ -542,8 +501,7 @@ export default class DataOperation {
   /**
    * Gets the EDL username of the user requesting the service
    *
-   * @returns {string} The EDL username of the service invoker
-   * @memberof DataOperation
+   * @returns The EDL username of the service invoker
    */
   get user(): string {
     return this.model.user;
@@ -552,9 +510,7 @@ export default class DataOperation {
   /**
    * Sets the EDL username of the user requesting the service
    *
-   * @param {string} user The EDL username of the service invoker
-   * @returns {void}
-   * @memberof DataOperation
+   * @param user - The EDL username of the service invoker
    */
   set user(user: string) {
     this.model.user = user;
@@ -564,7 +520,6 @@ export default class DataOperation {
    * Gets the EDL token of the user requesting the service
    *
    * @returns The EDL token of the service invoker
-   * @memberof DataOperation
    */
   get accessToken(): string {
     return this.model.accessToken;
@@ -577,8 +532,7 @@ export default class DataOperation {
    * unencrypted token is not accidentally serialized, written to logs, etc.
    * To get the original token, use the the `unencryptedAccessToken` method.
    *
-   * @param user The EDL token of the service invoker
-   * @memberof DataOperation
+   * @param user - The EDL token of the service invoker
    */
   set accessToken(accessToken: string) {
     this.model.accessToken = accessToken ? this.encrypter(accessToken) : accessToken;
@@ -588,7 +542,6 @@ export default class DataOperation {
    * Gets the decrypted EDL token of the user requesting the service
    *
    * @returns The unencrypted EDL token of the service invoker
-   * @memberof DataOperation
    */
   get unencryptedAccessToken(): string {
     return this.model.accessToken ? this.decrypter(this.accessToken) : this.model.accessToken;
@@ -597,8 +550,7 @@ export default class DataOperation {
   /**
    * Gets the URL to which data services should call back when they have completed
    *
-   * @returns {string} The callback URL data services should send results to
-   * @memberof DataOperation
+   * @returns The callback URL data services should send results to
    */
   get callback(): string {
     return this.model.callback;
@@ -607,9 +559,7 @@ export default class DataOperation {
   /**
    * Sets the URL to which data services should call back when they have completed
    *
-   * @param {string} value The callback URL data services should send results to
-   * @returns {void}
-   * @memberof DataOperation
+   * @param value - The callback URL data services should send results to
    */
   set callback(value: string) {
     this.model.callback = value;
@@ -618,8 +568,7 @@ export default class DataOperation {
   /**
    * Gets the Client ID that is submitting the request
    *
-   * @returns {string} The Client ID that is submitting the request
-   * @memberof DataOperation
+   * @returns The Client ID that is submitting the request
    */
   get client(): string {
     return this.model.client;
@@ -628,9 +577,7 @@ export default class DataOperation {
   /**
    * Sets the Client ID that is submitting the request
    *
-   * @param {string} value The Client ID that is submitting the request
-   * @returns {void}
-   * @memberof DataOperation
+   * @param value - The Client ID that is submitting the request
    */
   set client(value: string) {
     this.model.client = value;
@@ -640,8 +587,7 @@ export default class DataOperation {
    * Gets whether the service is being invoked synchronously or asynchronously from
    * the perspective of the end user.
    *
-   * @returns {Boolean} isSynchronous
-   * @memberof DataOperation
+   * @returns isSynchronous
    */
   get isSynchronous(): boolean {
     return this.model.isSynchronous;
@@ -651,9 +597,7 @@ export default class DataOperation {
    * Sets whether the service is being invoked synchronously or asynchronously from
    * the perspective of the end user.
    *
-   * @param {Boolean} value The synchronous flag
-   * @returns {void}
-   * @memberof DataOperation
+   * @param value - The synchronous flag
    */
   set isSynchronous(value: boolean) {
     this.model.isSynchronous = value;
@@ -662,8 +606,7 @@ export default class DataOperation {
   /**
    * Gets the UUID associated with this request.
    *
-   * @returns {String} UUID associated with this request.
-   * @memberof DataOperation
+   * @returns UUID associated with this request.
    */
   get requestId(): string {
     return this.model.requestId;
@@ -672,9 +615,7 @@ export default class DataOperation {
   /**
    * Sets the UUID associated with this request.
    *
-   * @param {String} value UUID associated with this request.
-   * @returns {void}
-   * @memberof DataOperation
+   * @param value - UUID associated with this request.
    */
   set requestId(value: string) {
     this.model.requestId = value;
@@ -683,8 +624,7 @@ export default class DataOperation {
   /**
    * Gets the staging location URL for data produced by this request
    *
-   * @returns {String} the staging location URL
-   * @memberof DataOperation
+   * @returns the staging location URL
    */
   get stagingLocation(): string {
     return this.model.stagingLocation;
@@ -693,9 +633,7 @@ export default class DataOperation {
   /**
    * Sets the staging location URL for data produced by this request
    *
-   * @param {String} value the staging location URL
-   * @returns {void}
-   * @memberof DataOperation
+   * @param value - the staging location URL
    */
   set stagingLocation(value: string) {
     this.model.stagingLocation = value;
@@ -704,8 +642,7 @@ export default class DataOperation {
   /**
    *  Returns a deep copy of this operation
    *
-   * @returns {DataOperation} a deep copy of this operation
-   * @memberof DataOperation
+   * @returns a deep copy of this operation
    */
   clone(): DataOperation {
     return new DataOperation(_.cloneDeep(this.model));
@@ -715,11 +652,11 @@ export default class DataOperation {
    * Returns a JSON string representation of the data operation serialized according
    * to the provided JSON schema version ID (default: highest available)
    *
-   * @param version The version to serialize
-   * @param urlPattern A pattern to look for when matching data URLs.
+   * @param version - The version to serialize
+   * @param urlPattern - A pattern to look for when matching data URLs.
    * @returns The serialized data operation in the requested version
-   * @throws {TypeError} If validate is `true` and validation fails, or if version is not provided
-   * @throws {RangeError} If the provided version cannot be serialized
+   * @throws TypeError - If validate is `true` and validation fails, or if version is not provided
+   * @throws RangeError - If the provided version cannot be serialized
    */
   serialize(version: string, urlPattern: string = null): string {
     if (!version) {

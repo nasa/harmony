@@ -38,11 +38,10 @@ const oauthOptions = {
  * state if valid, and redirecting the client to either the redirect specified in cookies or
  * the server root
  *
- * @param  oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
- * @param req The client request
- * @param res The client response
- * @param  _next The next function in the middleware chain
- * @returns {void}
+ * @param oauth2 - A simpleOAuth2 client configured to interact with Earthdata Login
+ * @param req - The client request
+ * @param res - The client response
+ * @param _next - The next function in the middleware chain
  */
 async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promise<void> {
   const tokenConfig = {
@@ -61,11 +60,10 @@ async function handleCodeValidation(oauth2: OAuthClient, req, res, _next): Promi
  * Handles a logout by deleting the token persisted on the client.  Note: Due to non-standard
  * implementation, this does not currently invalidate the underlying token with Earthdata Login
  *
- * @param {Object} oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
- * @param {http.IncomingMessage} req The client request
- * @param {http.ServerResponse} res The client response
- * @param {Function} _next The next function in the middleware chain
- * @returns {void}
+ * @param oauth2 - A simpleOAuth2 client configured to interact with Earthdata Login
+ * @param req - The client request
+ * @param res - The client response
+ * @param _next - The next function in the middleware chain
  */
 function handleLogout(oauth2: OAuthClient, req, res, _next): void {
   const { redirect } = req.query;
@@ -92,11 +90,10 @@ function handleLogout(oauth2: OAuthClient, req, res, _next): void {
  * Handles a call that has no authorization data and is not a redirect or validation, persisting
  * the current URL on the client for future redirection and then redirecting to Earthdata Login
  *
- * @param {Object} oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
- * @param {http.IncomingMessage} req The client request
- * @param {http.ServerResponse} res The client response
- * @param {Function} _next The next function in the middleware chain
- * @returns {void}
+ * @param oauth2 - A simpleOAuth2 client configured to interact with Earthdata Login
+ * @param req - The client request
+ * @param res - The client response
+ * @param _next - The next function in the middleware chain
  */
 function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next): void {
   const url = oauth2.authorizationCode.authorizeURL({
@@ -110,7 +107,7 @@ function handleNeedsAuthorized(oauth2: OAuthClient, req, res, _next): void {
 
 /**
  * Validates an EDL token to ensure that EDL hasn't revoked it before the expiration
- * @param token The token to check
+ * @param token - The token to check
  * @throws AxiosError if the token is invalid
  */
 async function validateUserToken(token: Token): Promise<void> {
@@ -130,13 +127,12 @@ async function validateUserToken(token: Token): Promise<void> {
  * Handles a call that has already been authorized through Earthdata Login, refreshing the token
  * as necessary and calling the provided function with the authorized username
  *
- * @param {Object} oauth2 A simpleOAuth2 client configured to interact with Earthdata Login
- * @param {http.IncomingMessage} req The client request
- * @param {http.ServerResponse} res The client response
- * @param {Function} next The next function in the middleware chain
- * @returns {void}
+ * @param oauth2 - A simpleOAuth2 client configured to interact with Earthdata Login
+ * @param req - The client request
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
  *
- * @returns {*} The result of calling the adapter's redirect method
+ * @returns The result of calling the adapter's redirect method
  */
 async function handleAuthorized(oauth2: OAuthClient, req, res, next: NextFunction): Promise<void> {
   const { token } = req.signedCookies;
@@ -170,8 +166,8 @@ async function handleAuthorized(oauth2: OAuthClient, req, res, next: NextFunctio
  * OAUTH_REDIRECT_URI: The URI EDL will redirect to after auth
  * OAUTH_HOST: URL to the Earthdata Login server instance to use
  *
- * @param {Array<string>} paths Paths that require auth
- * @returns {Function} Express.js middleware for doing EDL
+ * @param paths - Paths that require auth
+ * @returns Express.js middleware for doing EDL
  */
 export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): RequestHandler {
   return async function earthdataLoginAuthorizer(req: HarmonyRequest, res, next): Promise<void> {

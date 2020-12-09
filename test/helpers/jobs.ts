@@ -16,9 +16,9 @@ export const adminUsername = 'adam';
  * Returns true if the passed in job record matches the serialized Job for all fields
  * and all links with rel === data
  *
- * @param {Object} jobRecord a job record
- * @param {Object} serializedJob a job record serialized
- * @returns {Boolean} true if the jobs are the same
+ * @param jobRecord - a job record
+ * @param serializedJob - a job record serialized
+ * @returns true if the jobs are the same
  */
 export function jobsEqual(jobRecord: JobRecord, serializedJob: Job): boolean {
   const recordLinks = new Job(jobRecord).getRelatedLinks('data');
@@ -36,9 +36,9 @@ export function jobsEqual(jobRecord: JobRecord, serializedJob: Job): boolean {
 /**
  * Returns true if the job is found in the passed in job list
  *
- * @param {Object} job The job to search for
- * @param {Array} jobList An array of jobs
- * @returns {Boolean} true if the object is found
+ * @param job - The job to search for
+ * @param jobList - An array of jobs
+ * @returns true if the object is found
  */
 export function containsJob(job: JobRecord, jobList: JobListing): boolean {
   return !!jobList.jobs.find((j) => jobsEqual(job, new Job(j)));
@@ -46,9 +46,9 @@ export function containsJob(job: JobRecord, jobList: JobListing): boolean {
 
 /**
  * Makes a job listing request
- * @param {Application} app The express application (typically this.frontend)
- * @param {object} query Mapping of query param names to values
- * @returns {Test} The response
+ * @param app - The express application (typically this.frontend)
+ * @param query - Mapping of query param names to values
+ * @returns The response
  */
 export function jobListing(app: Application, query: object = {}): Test {
   return request(app).get('/jobs').query(query);
@@ -67,44 +67,40 @@ export function adminJobListing(app: Application, query: object = {}): Test {
 /**
  * Navigates to the job status route as the given user
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {Object} [options.jobID] The job ID
- * @returns {void}
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
  */
-export function jobStatus(app: Express.Application, { jobID }): Test {
+export function jobStatus(app: Express.Application, { jobID }: Job): Test {
   return request(app).get(`/jobs/${jobID}`);
 }
 
 /**
  * Navigates to the job status route as the given user
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {Object} [options.jobID] The job ID
- * @returns {void}
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
  */
-export function adminJobStatus(app: Express.Application, { jobID }): Test {
+export function adminJobStatus(app: Express.Application, { jobID }: Job): Test {
   return request(app).get(`/admin/jobs/${jobID}`);
 }
 
 /**
  * Submits a cancel job request as the given user
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {Object} [options.jobID] The job ID
- * @returns {void}
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
  */
-export function cancelJob(app: Express.Application, { jobID }): Test {
+export function cancelJob(app: Express.Application, { jobID }: Job): Test {
   return request(app).post(`/jobs/${jobID}/cancel`);
 }
 
 /**
  * Submits a cancel job request as the given user
  *
- * @param {Express.Application} app The express application (typically this.frontend)
- * @param {Object} [options.jobID] The job ID
- * @returns {void}
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
  */
-export function adminCancelJob(app: Express.Application, { jobID }): Test {
+export function adminCancelJob(app: Express.Application, { jobID }: Job): Test {
   return request(app).post(`/admin/jobs/${jobID}/cancel`);
 }
 
@@ -119,8 +115,8 @@ export const hookAdminCancelJob = hookRequest.bind(this, adminCancelJob);
  * Given a string returns a new string with all characters escaped such that the string
  * can be used in a regular expression.
  *
- * @param {string} s the string to escape
- * @returns {string} the escaped string to use in a regular expression
+ * @param s - the string to escape
+ * @returns the escaped string to use in a regular expression
  */
 function _escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -128,8 +124,7 @@ function _escapeRegExp(s: string): string {
 /**
  * Asserts that the request URL contains the expected path.
  *
- * @param {string} expectedPath the expected relative path and query string
- * @returns {void}
+ * @param expectedPath - the expected relative path and query string
  */
 export function itIncludesRequestUrl(expectedPath: string): void {
   it('returns a request field with the URL used to generate the request', function () {

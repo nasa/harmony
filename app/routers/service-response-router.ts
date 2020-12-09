@@ -6,7 +6,7 @@ import argoResponsehandler from '../backends/argo-response';
  * Creates and returns an Router instance that can receive callbacks from backend
  * services and route them to frontend requests that may be awaiting responses.
  *
- * @returns {Router} A router which can respond to backend services
+ * @returns A router which can respond to backend services
  */
 export default function router(): Router {
   const result = Router();

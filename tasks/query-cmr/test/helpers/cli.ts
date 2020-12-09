@@ -10,7 +10,7 @@ import * as query from '../../app/query';
  * DO NOT DEPLOY.  For testing only.  Importantly does not deal with environment variables or
  * shell expressions
  *
- * @param args command line arguments to convert
+ * @param args - command line arguments to convert
  * @returns the arguments converted to a string
  */
 export function argsToString(...args): string {
@@ -33,7 +33,7 @@ export interface ParseResult {
 /**
  * Parses the provided command line arguments into a ParseResult object. Does not reject
  * or exit the process if there is a failure but places the error into the "error" field.
- * @param args the arguments to parse
+ * @param args - the arguments to parse
  * @returns the parse result containing errors, output, and/or parsed arguments
  */
 export async function parse(...args): Promise<ParseResult> {
@@ -49,9 +49,8 @@ export async function parse(...args): Promise<ParseResult> {
  * Adds before/after hooks that pass the args into the CLI and store the result in this.error,
  * this.argv, and this.output
  *
- * @param {string} collection The CMR Collection ID to query
- * @param {string} version The OGC API - Coverages version to use
- * @returns {void}
+ * @param collection - The CMR Collection ID to query
+ * @param version - The OGC API - Coverages version to use
  */
 export function hookCliParser(...args): void {
   before(async function () {
@@ -72,7 +71,7 @@ export function hookCliParser(...args): void {
  * Stubs the queryGranules method and calls cli.main with the given args, unlinking
  * the written output file.  Does not delete any created directories
  *
- * @returns {string} The URL prefix for use in matching responses
+ * @returns The URL prefix for use in matching responses
  */
 export function hookCliMain(args, output): void {
   let outputDir = null;

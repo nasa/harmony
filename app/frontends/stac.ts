@@ -9,10 +9,10 @@ import db from '../util/db';
 /**
  * Generic handler for STAC requests
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @param {*} callback A function that excepts a single serialized Job as its parameter
- * @returns {Promise<void>} Resolves when the request is complete
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param callback - A function that excepts a single serialized Job as its parameter
+ * @returns Resolves when the request is complete
  */
 async function handleStacRequest(req, res, callback: Function): Promise<void> {
   const { jobId } = req.params;
@@ -45,9 +45,9 @@ async function handleStacRequest(req, res, callback: Function): Promise<void> {
 /**
  * Express.js handler that returns a STAC catalog for a single job
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {Promise<void>} Resolves when the request is complete
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @returns Resolves when the request is complete
  */
 export async function getStacCatalog(req, res): Promise<void> {
   const { jobId } = req.params;
@@ -66,9 +66,9 @@ export async function getStacCatalog(req, res): Promise<void> {
 /**
  * Express.js handler that returns a STAC item for a job
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {Promise<void>} Resolves when the request is complete
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @returns Resolves when the request is complete
  */
 export async function getStacItem(req, res): Promise<void> {
   const { jobId, itemIndex } = req.params;

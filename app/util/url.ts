@@ -3,8 +3,8 @@ import * as url from 'url';
 /**
  * Returns the protocol (http or https) depending on whether using localhost or not
  *
- * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
- * @returns {string} The protocol (http or https) to use for public Harmony URLs
+ * @param req - The incoming request whose URL should be gleaned
+ * @returns The protocol (http or https) to use for public Harmony URLs
  */
 function _getProtocol(req): string {
   const host = req.get('host');
@@ -16,10 +16,10 @@ function _getProtocol(req): string {
 /**
  * Returns the full string URL being accessed by a http.IncomingMessage, "req" object
  *
- * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
- * @param {boolean} includeQuery Include the query string in the returned URL (default: true)
- * @param {object} queryOverrides Key/value pairs to set / override in the query
- * @returns {string} The URL the incoming request is requesting
+ * @param req - The incoming request whose URL should be gleaned
+ * @param includeQuery - Include the query string in the returned URL (default: true)
+ * @param queryOverrides - Key/value pairs to set / override in the query
+ * @returns The URL the incoming request is requesting
  */
 export function getRequestUrl(req, includeQuery = true, queryOverrides: object = {}): string {
   return url.format({
@@ -34,9 +34,9 @@ export function getRequestUrl(req, includeQuery = true, queryOverrides: object =
  * Returns the full string URL being accessed by a http.IncomingMessage, "req" object
  * after removing any trailing slashes from the path
  *
- * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
- * @param {boolean} includeQuery Include the query string in the returned URL (default: true)
- * @returns {string} The URL the incoming request is requesting
+ * @param req - The incoming request whose URL should be gleaned
+ * @param includeQuery - Include the query string in the returned URL (default: true)
+ * @returns The URL the incoming request is requesting
  */
 export function getSanitizedRequestUrl(req, includeQuery = true): string {
   return url.format({
@@ -50,8 +50,8 @@ export function getSanitizedRequestUrl(req, includeQuery = true): string {
 /**
  * Returns the root of the request (protocol, host, port, with path = "/")
  *
- * @param {http.IncomingMessage} req The incoming request whose URL should be gleaned
- * @returns {string} The URL the incoming request is requesting
+ * @param req - The incoming request whose URL should be gleaned
+ * @returns The URL the incoming request is requesting
  */
 export function getRequestRoot(req): string {
   return url.format({

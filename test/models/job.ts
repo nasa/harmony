@@ -18,8 +18,8 @@ const exampleProps = {
 /**
  * Creates a Job object for the provided username
  *
- * @param {String} username The user that requested the job
- * @returns {Job} An example job for the user
+ * @param username - The user that requested the job
+ * @returns An example job for the user
  */
 function createJob(username): Job {
   return new Job({

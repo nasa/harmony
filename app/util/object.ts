@@ -3,8 +3,8 @@
 
 /**
  * Converts all of the keys in the passed in object to lowercase strings.
- * @param {Object} object The object
- * @returns {Object} The object passed in with all of the keys converted to lowercase strings
+ * @param object - The object
+ * @returns The object passed in with all of the keys converted to lowercase strings
  */
 export default function keysToLowerCase(object: Record<string, any>):
 Record<string, any> {

@@ -23,9 +23,9 @@ const writeFile = util.promisify(fs.writeFile);
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
  * the caller MUST unlink the result to delete it
  *
- * @param {string} filename the path to the ESRI shapefile to convert (must be a .zip file)
- * @returns {string} path to a temporary file containing the GeoJSON
- * @throws {RequestValidationError} if something goes wrong
+ * @param filename - the path to the ESRI shapefile to convert (must be a .zip file)
+ * @returns path to a temporary file containing the GeoJSON
+ * @throws RequestValidationError - if something goes wrong
  */
 async function _esriToGeoJson(filename: string): Promise<string> {
   let geoJsonFile;
@@ -47,9 +47,9 @@ async function _esriToGeoJson(filename: string): Promise<string> {
  * Converts the given KML file to GeoJSON and returns the resulting file.   Note, the caller MUST
  * unlink the result to delete it
  *
- * @param {string} filename the path to the KML file to convert
- * @param {Logger} logger the logger to use for errors
- * @returns {string} path to a temporary file containing the GeoJSON
+ * @param filename - the path to the KML file to convert
+ * @param logger - the logger to use for errors
+ * @returns path to a temporary file containing the GeoJSON
  */
 async function _kmlToGeoJson(filename: string, logger: Logger): Promise<string> {
   let geoJsonFile;
@@ -90,10 +90,9 @@ const contentTypesToConverters = {
  * Express.js middleware which extracts shapefiles from the incoming request and
  * ensures that they are in GeoJSON in the data operation
  *
- * @param {http.IncomingMessage} req The client request, containing an operation
- * @param {http.ServerResponse} res The client response
- * @param {Function} next The next function in the middleware chain
- * @returns {void}
+ * @param req - The client request, containing an operation
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
  */
 export default async function shapefileConverter(req, res, next: NextFunction): Promise<void> {
   const { operation } = req;

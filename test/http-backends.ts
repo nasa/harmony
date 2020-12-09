@@ -8,9 +8,8 @@ import { hookFunction } from './helpers/hooks';
 /**
  * Define common test cases for HTTP backends that don't vary by access protocol.
  *
- * @param {function} performRequestFn A function that takes a string CRS and performs a frontend
+ * @param performRequestFn - A function that takes a string CRS and performs a frontend
  *   request with it, returning a promise for the superagent response
- * @returns {void}
  */
 function describeHttpBackendBehavior(performRequestFn: Function): void {
   describe('a service success response', function () {

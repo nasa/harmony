@@ -20,10 +20,10 @@ import JobReaper from './workers/job-reaper';
  * Builds an express server with appropriate logging and default routing and starts the server
  * listening on the provided port.
  *
- * @param {string} name The name of the server, as identified in logs
- * @param {number} port The port the server should listen on
- * @param {Function} setupFn A function that takes an express app and adds non-default behavior
- * @returns {express.Application} The running express application
+ * @param name - The name of the server, as identified in logs
+ * @param port - The port the server should listen on
+ * @param setupFn - A function that takes an express app and adds non-default behavior
+ * @returns The running express application
  */
 function buildServer(name, port, setupFn): Server {
   const appLogger = logger.child({ application: name });
@@ -60,16 +60,16 @@ function buildServer(name, port, setupFn): Server {
 /**
  * Starts the servers required to serve Harmony
  *
- * @param {object} [config={}] An optional configuration object containing server config.
+ * @param config - An optional configuration object containing server config.
  *   When running this module using the CLI, the configuration is pulled from the environment.
  *   Config values:
- *     PORT: {number} The port to run the frontend server on
- *     BACKEND_PORT: {number} The port to run the backend server on
- *     CALLBACK_URL_ROOT: {string} The base URL for callbacks to use
- *     EXAMPLE_SERVICES: {bool} True if we should run example services, false otherwise.  Should
+ *     PORT: The port to run the frontend server on
+ *     BACKEND_PORT: The port to run the backend server on
+ *     CALLBACK_URL_ROOT: The base URL for callbacks to use
+ *     EXAMPLE_SERVICES: True if we should run example services, false otherwise.  Should
  *       be false in production.  Defaults to true until we have real HTTP services.
  *
- * @returns {object} An object with "frontend" and "backend" keys with running http.Server objects
+ * @returns An object with "frontend" and "backend" keys with running http.Server objects
  */
 export function start(config: Record<string, string>): {
   frontend: Server;
@@ -130,11 +130,11 @@ export function start(config: Record<string, string>): {
 /**
  * Stops the express servers created and returned by the start() method
  *
- * @param {object} frontend http.Server object as returned by start()
- * @param {object} backend http.Server object as returned by start()
- * @param workflowTerminationListener listener for workflow termination events
- * @param jobReaper service that checks for orphan jobs and marks them as canceled
- * @returns {Promise<void>} A promise that completes when the servers close
+ * @param frontend - http.Server object as returned by start()
+ * @param backend - http.Server object as returned by start()
+ * @param workflowTerminationListener - listener for workflow termination events
+ * @param jobReaper - service that checks for orphan jobs and marks them as canceled
+ * @returns A promise that completes when the servers close
  */
 export async function stop({
   frontend,

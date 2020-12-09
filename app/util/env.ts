@@ -52,11 +52,10 @@ const envVars: HarmonyEnv = {} as HarmonyEnv;
  * config variables don't show up in VS Code autocomplete, but the reduction in repeated
  * boilerplate code is probably worth it.
  *
- * @param {string} envName The environment variable corresponding to the config variable in
+ * @param envName - The environment variable corresponding to the config variable in
  *   CONSTANT_CASE form
- * @param {*} defaultValue The value to use if the environment variable is not set. Only strings
+ * @param defaultValue - The value to use if the environment variable is not set. Only strings
  *   and integers are supported
- * @returns {void}
  */
 function makeConfigVar(envName: string, defaultValue?: string | number): void {
   const envValue = process.env[envName];

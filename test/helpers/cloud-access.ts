@@ -7,8 +7,8 @@ import sts from '../../app/util/sts';
 
 /**
  * Makes a cloud-access JSON request
- * @param {Express.Application} app The express application (typically this.frontend)
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @returns The response
  */
 export function cloudAccessJson(app: Express.Application): request.Test {
   return request(app).get('/cloud-access');
@@ -16,8 +16,8 @@ export function cloudAccessJson(app: Express.Application): request.Test {
 
 /**
  * Makes a cloud-access.sh request
- * @param {Express.Application} app The express application (typically this.frontend)
- * @returns {Promise<Response>} The response
+ * @param app - The express application (typically this.frontend)
+ * @returns The response
  */
 export function cloudAccessSh(app: Express.Application): request.Test {
   return request(app).get('/cloud-access.sh');

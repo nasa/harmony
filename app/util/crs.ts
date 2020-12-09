@@ -6,11 +6,11 @@ import { SRS } from '../models/data-operation';
  * Express middleware that responds to OGC API - Coverages coverage
  * rangeset requests.  Responds with the actual coverage data.
  *
- * @param {string} queryCRS The CRS information to be processed
- * @param {boolean=true} validate An optional boolean on whether to throw an exception
+ * @param queryCRS - The CRS information to be processed
+ * @param validate - An optional boolean on whether to throw an exception
  *   on failure
- * @returns {[string, SRS]} The proj4 string and SRS
- * @throws {RequestValidationError} Thrown if the request has validation problems and
+ * @returns The proj4 string and SRS
+ * @throws RequestValidationError - Thrown if the request has validation problems and
  *   cannot be performed
  */
 export default function parseCRS(

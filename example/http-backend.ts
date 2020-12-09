@@ -40,7 +40,7 @@ let callbackResolutions = [];
  * Returns a promise that will resolve to the callback URL the next time the service is invoked
  * to allow exploration of what various callback options do.
  *
- * @returns {Promise<string>} a promise that will resolve to the next callback URL
+ * @returns a promise that will resolve to the next callback URL
  */
 export function getNextCallback(): Promise<string> {
   return new Promise((resolve) => { callbackResolutions.push(resolve); });
@@ -59,9 +59,9 @@ export function getNextCallback(): Promise<string> {
  *   can GET for a 200 response
  * Default: Return a 200 response containing the incoming message
  *
- * @param {express.Request} req The request sent by the client
- * @param {express.Response} res The response to send to the client
- * @returns {Promise<void>} Resolves when the request is complete
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @returns Resolves when the request is complete
  */
 async function handleHarmonyMessage(req: BackendRequest, res: express.Response): Promise<void> {
   const { body } = req;
@@ -102,9 +102,9 @@ async function handleHarmonyMessage(req: BackendRequest, res: express.Response):
  * Shows how to send asynchronous status.  Whenever something external sends a GET
  * request to this endpoint, we forward a status onto Harmony.
  *
- * @param {express.Request} req The request sent by the client
- * @param {express.Response} res The response to send to the client
- * @returns {Promise<void>} Resolves when the request is complete
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @returns Resolves when the request is complete
  */
 async function sendAsyncHarmonyStatus(req: express.Request, res: express.Response): Promise<void> {
   const { id } = req.query;
@@ -125,7 +125,7 @@ async function sendAsyncHarmonyStatus(req: express.Request, res: express.Respons
  * Creates and returns an express.Router instance that runs the example server, allowing
  * it to be mounted onto another express server
  *
- * @returns {express.Router} A router which can respond to example service requests
+ * @returns A router which can respond to example service requests
  */
 export function router(): express.Router {
   const result = express.Router();
@@ -150,12 +150,12 @@ export function router(): express.Router {
 /**
  * Starts the example server
  *
- * @param {object} [config={}] An optional configuration object containing server config.
+ * @param config - An optional configuration object containing server config.
  *   When running this module using the CLI, the configuration is pulled from the environment.
  *   Config values:
- *     port: {number} The port to run the example server on (default: 3002)
+ *     `port: {number}` The port to run the example server on (default: 3002)
  *
- * @returns {http.Server} The started server
+ * @returns The started server
  */
 export function start(config: Record<string, string> = {}): http.Server {
   const port = parseInt(config.PORT || '0', 10);
@@ -169,8 +169,8 @@ export function start(config: Record<string, string> = {}): http.Server {
 /**
  * Stops the express server created and returned by the start() method
  *
- * @param {http.Server} server A running server as returned by start()
- * @returns {Promise<void>} A promise that completes when the server closes
+ * @param server - A running server as returned by start()
+ * @returns A promise that completes when the server closes
  */
 export function stop(server: http.Server): Promise<void> {
   return promisify(server.close.bind(server))(server);

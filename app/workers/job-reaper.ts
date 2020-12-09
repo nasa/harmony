@@ -8,7 +8,7 @@ import sleep from '../util/sleep';
 
 /**
  * Returns true if the workflows are empty or contain a terminated workflow
- * @param workflows The workflows to check
+ * @param workflows - The workflows to check
  * @returns true if the workflow array is empty or if any of its workflows have failed
  */
 function isOrphan(workflows: Workflow[]): boolean {

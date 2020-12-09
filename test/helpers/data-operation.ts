@@ -18,7 +18,7 @@ export const versions = [
 /**
  * Reads and parses a file in the schemas directory as JSON
  *
- * @param filename The filename in the schemas directory to read
+ * @param filename - The filename in the schemas directory to read
  * @returns the parsed JSON
  */
 export function parseSchemaFile(

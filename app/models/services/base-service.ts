@@ -37,7 +37,7 @@ export interface ServiceConfig<ServiceParamType> {
 
 /**
  * Returns the maximum number of synchronous granules a service allows
- * @param config the service configuration
+ * @param config - the service configuration
  */
 export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): number {
   const serviceLimit = _.get(config, 'maximum_sync_granules', env.maxSynchronousGranules);
@@ -46,8 +46,8 @@ export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): numbe
 
 /**
  * Serialize the given operation with the given config.
- * @param op The operation to serialize
- * @param config The config to use when serializing the operation
+ * @param op - The operation to serialize
+ * @param config - The config to use when serializing the operation
  * @returns The serialized operation
  */
 export function functionalSerializeOperation(
@@ -61,8 +61,6 @@ export function functionalSerializeOperation(
  * Abstract base class for services.  Provides a basic interface and handling of backend response
  * callback plumbing.
  *
- * @class BaseService
- * @abstract
  */
 export default abstract class BaseService<ServiceParamType> {
   config: ServiceConfig<ServiceParamType>;
@@ -77,9 +75,8 @@ export default abstract class BaseService<ServiceParamType> {
 
   /**
    * Creates an instance of BaseService.
-   * @param {object} config The service configuration from config/services.yml
-   * @param {DataOperation} operation The data operation being requested of the service
-   * @memberof BaseService
+   * @param config - The service configuration from config/services.yml
+   * @param operation - The data operation being requested of the service
    */
   constructor(config: ServiceConfig<ServiceParamType>, operation: DataOperation) {
     this.config = config;
@@ -99,8 +96,7 @@ export default abstract class BaseService<ServiceParamType> {
    * Returns the capabilities as specified in config/services.yml
    *
    * @readonly
-   * @memberof BaseService
-   * @returns {object} The service capabilities
+   * @returns The service capabilities
    */
   get capabilities(): ServiceCapabilities {
     return this.config.capabilities;
@@ -109,12 +105,11 @@ export default abstract class BaseService<ServiceParamType> {
   /**
    * Invokes the service, returning a promise for the invocation result
    *
-   * @param {Logger} logger The logger associated with this request
-   * @param {String} harmonyRoot The harmony root URL
-   * @param {String} requestUrl The URL the end user invoked
+   * @param logger - The logger associated with this request
+   * @param harmonyRoot - The harmony root URL
+   * @param requestUrl - The URL the end user invoked
    *
-   * @returns {Promise<InvocationResult>} A promise resolving to the result of the callback.
-   * @memberof BaseService
+   * @returns A promise resolving to the result of the callback.
    */
   async invoke(
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
@@ -192,9 +187,7 @@ export default abstract class BaseService<ServiceParamType> {
    * Subclasses must implement this method if using the default invoke() implementation.
    * The method will be invoked asynchronously, completing when the service's callback is
    * received.
-   * @param {Logger} _logger the logger associated with the request
-   * @memberof BaseService
-   * @returns {Promise<InvocationResult>}
+   * @param _logger - the logger associated with the request
    */
   protected abstract async _run(_logger: Logger): Promise<InvocationResult>;
 
@@ -202,13 +195,12 @@ export default abstract class BaseService<ServiceParamType> {
    * Creates a new job for this service's operation, with appropriate logging, errors,
    * and warnings.
    *
-   * @param {knex.Transaction} transaction The transaction to use when creating the job
-   * @param {Logger} logger The logger associated with this request
-   * @param {String} requestUrl The URL the end user invoked
-   * @param {String} stagingLocation The staging location for this job
-   * @returns {Job} The created job
-   * @memberof BaseService
-   * @throws {ServerError} if the job cannot be created
+   * @param transaction - The transaction to use when creating the job
+   * @param logger - The logger associated with this request
+   * @param requestUrl - The URL the end user invoked
+   * @param stagingLocation - The staging location for this job
+   * @returns The created job
+   * @throws ServerError - if the job cannot be created
    */
   protected async _createJob(
     logger: Logger,
@@ -236,7 +228,7 @@ export default abstract class BaseService<ServiceParamType> {
   /**
    * Returns true if a request should be handled synchronously, false otherwise
    *
-   * @returns {boolean} true if the request is synchronous, false otherwise
+   * @returns true if the request is synchronous, false otherwise
    *
    */
   get isSynchronous(): boolean {
@@ -260,7 +252,6 @@ export default abstract class BaseService<ServiceParamType> {
 
   /**
    * Returns the maximum number of synchronous granules for this service
-   * @memberof BaseService
    */
   get maxSynchronousGranules(): number {
     return getMaxSynchronousGranules(this.config);
@@ -271,7 +262,6 @@ export default abstract class BaseService<ServiceParamType> {
    *
    * @returns a warning message to display, or undefined if not applicable
    * @readonly
-   * @memberof BaseService
    */
   get warningMessage(): string {
     let granulesProcessed = this.operation.cmrHits;

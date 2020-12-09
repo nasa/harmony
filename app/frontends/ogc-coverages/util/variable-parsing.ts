@@ -29,11 +29,11 @@ function doesPathMatch(v: CmrUmmVariable, p: string): boolean {
  * Given a list of EOSDIS collections and variables parsed from the CMR and an OGC
  * collectionId parameter return the full variables which match.
  *
- * @param {Array<Object>} eosdisCollections An array of collections
- * @param {Object} collectionIdParam The OGC collectionId query parameter
- * @returns {Array<Object>} an array of objects with a collectionId and list
- *   of variables e.g. [{ collectionId: C123-PROV1, variables: [<Variable object>] }]
- * @throws {RequestValidationError} if the requested OGC collection ID parameter is not valid
+ * @param eosdisCollections - An array of collections
+ * @param collectionIdParam - The OGC collectionId query parameter
+ * @returns an array of objects with a collectionId and list
+ *   of variables e.g. `[{ collectionId: C123-PROV1, variables: [<Variable object>] }]`
+ * @throws RequestValidationError - if the requested OGC collection ID parameter is not valid
  * based on the variables in the collections
  */
 export default function parseVariables(

@@ -95,14 +95,14 @@ export abstract class WorkflowListener implements Worker {
 
   /**
    * Handle an argo workflow event
-   * @param event The workflow event to handle
+   * @param event - The workflow event to handle
    */
   async abstract handleEvent(event: WorkflowEvent): Promise<void>;
 
   /**
    * Filter to determine if this listener should handle the given event
-   * @param type Event type
-   * @param event  the workflow event
+   * @param type - Event type
+   * @param event - the workflow event
    */
   shouldHandleEvent(type: string, event: WorkflowEvent): boolean {
     return type === this.eventType

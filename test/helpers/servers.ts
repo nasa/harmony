@@ -9,8 +9,7 @@ process.env.EXAMPLE_SERVICES = 'true';
  * Add before / after hooks to start up and shut down Harmony's servers
  * on ephemeral ports
  *
- * @param {object} opts Options to pass to the server start method
- * @returns {void}
+ * @param opts - Options to pass to the server start method
  */
 export default function hookServersStartStop(opts = { skipEarthdataLogin: true }): void {
   let servers = null;

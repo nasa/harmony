@@ -32,10 +32,10 @@ export class HarmonyItem {
 
   /**
    *
-   * @param {string} id - ID of the STAC Item
-   * @param {string} title - Title of the STAC Item
-   * @param {string} description - Description of the STAC Item
-   * @param {number} index - The index of this item in the STAC catalog
+   * @param id - ID of the STAC Item
+   * @param title - Title of the STAC Item
+   * @param description - Description of the STAC Item
+   * @param index - The index of this item in the STAC catalog
    */
   constructor(id: string = uuid(), title = '', description = '', index: number) {
     this.id = `${id}_${index}`;
@@ -54,8 +54,7 @@ export class HarmonyItem {
    * Adds GeoJSON Feature to the STAC Item
    * In future, this should take a polygon and derive a bounding box.
    *
-   * @param {number[]} bbox - GeoJSON bounding box
-   * @returns {void}
+   * @param bbox - GeoJSON bounding box
    */
   addSpatialExtent(bbox: number[]): void {
     // Validate bounding box; should compliant with GeoJSON spec
@@ -107,11 +106,10 @@ export class HarmonyItem {
   /**
    * Adds links to a STAC Item
    *
-   * @param {string} url - Link URL
-   * @param {string} relType - Relation type: [self, root, item]
-   * @param {string} title - Link title (human readable)
+   * @param url - Link URL
+   * @param relType - Relation type: [self, root, item]
+   * @param title - Link title (human readable)
    *
-   * @returns {void}
    */
   addLink(url: string, relType: string, title: string): void {
     this.links.push({
@@ -124,10 +122,9 @@ export class HarmonyItem {
   /**
    * Adds temporal properties for a STAC Item
    *
-   * @param {string} start - Data start datetime
-   * @param {string} end - Data end datetime
+   * @param start - Data start datetime
+   * @param end - Data end datetime
    *
-   * @returns {void}
    */
   addTemporalExtent(start: string, end: string): void {
     // Validate
@@ -138,10 +135,9 @@ export class HarmonyItem {
 
   /**
    * Sets a property for a STAC Item
-   * @param {string} name - Name of the property
-   * @param {string} value - Value of the property
+   * @param name - Name of the property
+   * @param value - Value of the property
    *
-   * @returns {void}
    */
   setProperty(name: string, value: string): void {
     this.properties[name] = value;
@@ -151,12 +147,11 @@ export class HarmonyItem {
    *
    * Adds an asset to the STAC Item
    *
-   * @param {string} href - Asset URL
-   * @param {string} title - Asset title
-   * @param {string} mimetype - Asset mimetype
-   * @param {string} role - Asset role [thumbnail,overview,data,metadata]
+   * @param href - Asset URL
+   * @param title - Asset title
+   * @param mimetype - Asset mimetype
+   * @param role - Asset role [thumbnail,overview,data,metadata]
    *
-   * @returns {void}
    */
   addAsset(href: string, title: string, mimetype: string): void {
     let role = 'data';
@@ -196,7 +191,7 @@ export class HarmonyItem {
   /**
    * Placeholder method to support custom stringification
    *
-   * @returns {Object} - STAC item JSON
+   * @returns - STAC item JSON
    */
   toJSON(): object {
     const paths = ['id', 'stac_version', 'title', 'description', 'type', 'bbox', 'geometry', 'properties', 'assets', 'links'];
@@ -207,10 +202,10 @@ export class HarmonyItem {
 /**
  * Function to create the STAC Catalog given a Harmony Job object
  *
- * @param {Job} job - Harmony Job object
- * @param {number} index - Index of the Link item in Job
+ * @param job - Harmony Job object
+ * @param index - Index of the Link item in Job
  *
- * @returns  {Record<string, any>} - STAC Item JSON
+ * @returns STAC Item JSON
  */
 export default function create(job: Job, index: number): HarmonyItem {
   const title = `Harmony output #${index} in job ${job.jobID}`;

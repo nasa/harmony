@@ -155,7 +155,7 @@ function rotationDirection(angles: number[]): number {
  * Any Pole: containsPole(...) != 0
  * Neither Pole: containsPole(...) == 0
  *
- * @param latlngs
+ * @param latlngs - Array of lat/long values
  * @returns pole
  */
 export function containsPole(latlngs: LatLng[]): number {
@@ -376,8 +376,8 @@ interface SplitPoly {
 }
 
 /**
- *  Given a list of latlngs constituting a polygon, returns an object:
- * {interiors: [...], boundaries: [...]}
+ * Given a list of latlngs constituting a polygon, returns an object:
+ * `{interiors: [...], boundaries: [...]}`
  * When the interiors are drawn as filled un-stroked leaflet polygons and the
  * boundaries are drawn as leaflet strokes (polylines), the displayed area
  * is equivalent to how ECHO interprets the original latlngs.
@@ -620,7 +620,7 @@ export function dividePolygon(latLngs: LatLng[][]): SplitPoly {
 /**
  * Takes a string of lat/lon pairs and returns array of objects with lat/lon keys
  * input: '0 10 10 20'
- * output: [{ lat: 0, lng: 10 }, { lat: 10, lng: 20 }]
+ * output: `[{ lat: 0, lng: 10 }, { lat: 10, lng: 20 }]`
  *
  * @param points - an array of strings representing lng/lat pairs
  * @returns shape - an array of LatLng objects

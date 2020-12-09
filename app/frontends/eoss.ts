@@ -23,8 +23,7 @@ const GRANULE_URL_PATH_REGEX = /\/(?:G\d+-\w+)/g;
 /**
  * Sets up the express application with the OpenAPI routes for EOSS
  *
- * @param {express.Application} router The express router
- * @returns {void}
+ * @param router - The express router
  */
 export function addOpenApiRoutes(app: Router): void {
   initialize({

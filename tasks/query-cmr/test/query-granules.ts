@@ -27,8 +27,7 @@ interface CombinedStream extends Stream {
 
 /**
  * Reads a formdata stream into a string
- * @param formdata the formdata stream
- * @returns
+ * @param formdata - the formdata stream
  */
 async function formDataToString(formdata: CombinedStream): Promise<string> {
   const chunks = [];
@@ -45,8 +44,8 @@ async function formDataToString(formdata: CombinedStream): Promise<string> {
  * This is a very simple multipart form parser that works for CMR.  Libraries built
  * for either didn't work or required HTTP involvement
  *
- * @param _ (Ignored path argument)
- * @param formdata form data being posted to CMR
+ * @param _ - (Ignored path argument)
+ * @param formdata - form data being posted to CMR
  * @returns key/value pairs of form data name to value
  */
 async function fetchPostArgsToFields(
@@ -65,7 +64,7 @@ async function fetchPostArgsToFields(
 /**
  * Sets up before and after hooks to run queryGranules with three granules each in
  * two different collections.
- * @param batchSize The number of granules to include in each batch
+ * @param batchSize - The number of granules to include in each batch
  */
 function hookQueryGranules(batchSize: number): void {
   const output = {

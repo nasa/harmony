@@ -28,7 +28,7 @@ export default class Catalog implements StacCatalog {
   /**
    * Constructs a Catalog with the given properties.  At least description
    * is required
-   * @param properties the properties to set on the catalog (description is required)
+   * @param properties - the properties to set on the catalog (description is required)
    */
   constructor(properties: Partial<StacCatalog>) {
     this.stac_version = '1.0.0-beta.2';
@@ -52,8 +52,8 @@ export default class Catalog implements StacCatalog {
   /**
    * Writes this catalog and all of its children, with child filenames determined
    * by their relative link paths
-   * @param filename the filename to write this catalog to
-   * @param pretty if output JSON should be pretty-formatted
+   * @param filename - the filename to write this catalog to
+   * @param pretty - if output JSON should be pretty-formatted
    */
   async write(filename: string, pretty = false): Promise<void> {
     const dirname = path.dirname(filename);

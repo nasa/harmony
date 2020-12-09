@@ -14,7 +14,7 @@ export class ECR {
    * Builds and returns an Elastic container registry object for interacting with the
    * AWS SDK.
    *
-   * @param overrides values to set when constructing the underlying ECR.
+   * @param overrides - values to set when constructing the underlying ECR.
    */
   constructor(overrides?: object) {
     this.ecr = this._getECR(overrides);
@@ -23,7 +23,7 @@ export class ECR {
   /**
    * Returns a new aws.ECR object
    *
-   * @param overrides values to set when constructing the underlying ECR.
+   * @param overrides - values to set when constructing the underlying ECR.
    */
   private _getECR(overrides?): aws.ECR {
     const endpointSettings: aws.ECR.ClientConfiguration = {};

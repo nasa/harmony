@@ -53,10 +53,9 @@ function getMaxGranules(req: HarmonyRequest): number {
  * and performs a granule query on them, determining which files are applicable
  * to the given operation.
  *
- * @param req The client request, containing an operation
- * @param res The client response
- * @param next The next function in the middleware chain
- * @returns {void}
+ * @param req - The client request, containing an operation
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
  */
 export default async function cmrGranuleLocator(
   req: HarmonyRequest, res: ServerResponse, next: NextFunction,

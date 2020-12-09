@@ -4,7 +4,7 @@ import Ajv from 'ajv';
 
 /**
  * Builds a schema validator for the given STAC type ('item' or 'catalog')
- * @param type The type of validator to build ('item' or 'catalog')
+ * @param type - The type of validator to build ('item' or 'catalog')
  * @returns the appropriate validator for the given type
  */
 export default function buildStacSchemaValidator(type: 'item' | 'catalog'): Ajv.ValidateFunction {

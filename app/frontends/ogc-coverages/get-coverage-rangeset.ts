@@ -15,11 +15,10 @@ import env from '../../util/env';
  * Express middleware that responds to OGC API - Coverages coverage
  * rangeset requests.  Responds with the actual coverage data.
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @param {Function} next The next express handler
- * @returns {void}
- * @throws {RequestValidationError} Thrown if the request has validation problems and
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next express handler
+ * @throws RequestValidationError - Thrown if the request has validation problems and
  *   cannot be performed
  */
 export default function getCoverageRangeset(

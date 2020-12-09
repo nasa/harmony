@@ -4,8 +4,8 @@
  * value, returns an array with one item containing that value.  If it is
  * an array, returns it.
  *
- * @param {any} value the object to wrap
- * @returns {object[]} an array-wrapped version of the input value
+ * @param value - the object to wrap
+ * @returns an array-wrapped version of the input value
  */
 export default function wrap<T>(value: T): T | T[] {
   if (value === null || typeof value === 'undefined' || value.toString() === '') {

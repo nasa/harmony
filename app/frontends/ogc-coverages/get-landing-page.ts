@@ -3,8 +3,8 @@ import { getRequestUrl } from 'util/url';
 /**
  *  Returns the URL of the request with no trailing slash
  *
- * @param {http.Request} req the incoming request
- * @returns {string} The URL of the request with no trailing slash
+ * @param req - the incoming request
+ * @returns The URL of the request with no trailing slash
  */
 function requestRoot(req): string {
   const root = getRequestUrl(req, false);
@@ -14,9 +14,8 @@ function requestRoot(req): string {
 /**
  * Express handler that responds to OGC API landing page requests
  *
- * @param {http.IncomingMessage} req The request sent by the client
- * @param {http.ServerResponse} res The response to send to the client
- * @returns {void}
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
  */
 export default function getLandingPage(req, res): void {
   const root = requestRoot(req);

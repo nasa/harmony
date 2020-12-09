@@ -5,9 +5,8 @@ export type BoundingBox = [number, number, number, number];
 /**
  * Convert a bounding box string in `'S W N E'` format to a tuple in `[W,S,E,N]` format.
  *
- * @param str -  bounding box string in `'S W N E'`` format.
- * @returns - a bounding box in `[W,S,E,N]` format
- * @private
+ * @param str -  bounding box string in `'S W N E'` format.
+ * @returns a bounding box in `[W,S,E,N]` format
  */
 function _boundingBoxStringToBoundingBox(str: string): BoundingBox {
   if (!str) return null;
@@ -25,7 +24,6 @@ function _boundingBoxStringToBoundingBox(str: string): BoundingBox {
  *
  * @param box - a box in `[W,S,E,N]` format
  * @returns true if the box crosses the antimeridian, false otherwise
- * @private
  */
 function crossesAntimeridian(box: BoundingBox): boolean {
   // true if W > E
@@ -40,7 +38,6 @@ function crossesAntimeridian(box: BoundingBox): boolean {
  * @param box1 - A box in `[W,S,E,N]` format
  * @param box2 - A box in `[W,S,E,N]` format
  * @returns A box in `[W,S,E,N]` format
- * @private
  */
 function joinBoundingBoxes(box1: BoundingBox, box2: BoundingBox): BoundingBox {
   // longitude range union

@@ -16,13 +16,13 @@ export interface DataSource {
 /**
  * Queries all pages of a single source, creating a STAC catalog and items for all
  * granules
- * @param token the token to use for the query
- * @param source the source collection / variables from the Harmony message
- * @param queryLocation a file location containing a CMR query to perform
- * @param pageSize The size of each page to be accessed
- * @param maxPages The maximum number of pages to be accessed from each source
- * @param batchSize The maximum number of granules to include in each catalog
- * @param filePrefix the prefix to give each file placed in the directory
+ * @param token - the token to use for the query
+ * @param source - the source collection / variables from the Harmony message
+ * @param queryLocation - a file location containing a CMR query to perform
+ * @param pageSize - The size of each page to be accessed
+ * @param maxPages - The maximum number of pages to be accessed from each source
+ * @param batchSize - The maximum number of granules to include in each catalog
+ * @param filePrefix - the prefix to give each file placed in the directory
  * @returns a STAC catalog containing items for each granule
  */
 export async function querySource(
@@ -77,11 +77,11 @@ export async function querySource(
  * producing a STAC catalog per source.  Returns a STAC parent catalog containing
  * all of the sources
  *
- * @param operation The operation which containing sources to query
- * @param queries A list of file locations containing the queries to perform
- * @param pageSize The size of each page to be accessed
- * @param maxPages The maximum number of pages to be accessed from each source
- * @param batchSize The maximum number of granules to include in each catalog
+ * @param operation - The operation which containing sources to query
+ * @param queries - A list of file locations containing the queries to perform
+ * @param pageSize - The size of each page to be accessed
+ * @param maxPages - The maximum number of pages to be accessed from each source
+ * @param batchSize - The maximum number of granules to include in each catalog
  * @returns a root STAC catalog pointing to source catalogs for each data source
  */
 export async function queryGranules(

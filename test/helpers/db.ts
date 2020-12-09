@@ -13,7 +13,7 @@ const exec = util.promisify(require('child_process').exec);
 /**
  * Truncates all database tables
  *
- * @returns {Promise<void>} A promise that resolves to nothing on completion
+ * @returns A promise that resolves to nothing on completion
  */
 export async function truncateAll(): Promise<void> {
   await Promise.all(tables.map((t) => db(t).truncate()));
@@ -38,7 +38,6 @@ before(async function () {
  * If one already exists, does nothing.  If none exists, creates one.
  * Rolls back the transaction during the after hook
  *
- * @returns {void}
  */
 export function hookTransaction(): void {
   let transactionSet = false;
@@ -60,7 +59,6 @@ export function hookTransaction(): void {
  * If one already exists, does nothing.  If none exists, creates one.
  * Rolls back the transaction during the after hook
  *
- * @returns {void}
  */
 export function hookTransactionEach(): void {
   let transactionSet = false;
@@ -81,7 +79,6 @@ export function hookTransactionEach(): void {
  * Before/after hooks to have calls to create a database transaction throw an exception for
  * just that test.
  *
- * @returns {void}
  */
 export function hookTransactionFailure(): void {
   let txStub;

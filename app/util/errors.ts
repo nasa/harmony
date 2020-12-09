@@ -52,9 +52,9 @@ interface HttpErrorResponse {
 
 /**
  * Builds an error response to return based on the provided error
- * @param error The HTTP error that occurred
- * @param errorCode An optional string indicated the class of error that occurred
- * @param errorMessage An optional string containing the message to return
+ * @param error - The HTTP error that occurred
+ * @param errorCode - An optional string indicated the class of error that occurred
+ * @param errorMessage - An optional string containing the message to return
  */
 export function buildErrorResponse(
   error: HttpError,

@@ -8,10 +8,8 @@ type CmrMethodName = 'cmrSearchBase' | 'fetchPost' | 'cmrPostSearchBase' | 'getC
  * Replace a function in the `cmr` module with a given function. This is needed because
  * `replay` does not handle POSTs to the CMR correctly.
  *
- * @param {string} functionName The name of the function to be stubbed
- * @param {*} response The response the function should return
- * @returns {void}
- * @private
+ * @param functionName - The name of the function to be stubbed
+ * @param response - The response the function should return
  */
 function stubCmr(functionName: CmrMethodName, response: object): void {
   sinon.stub(cmr, functionName)
@@ -21,9 +19,7 @@ function stubCmr(functionName: CmrMethodName, response: object): void {
 /**
  * Remove a stub from the `cmr` module
  *
- * @param {string} functionName The name of the function to reset
- * @returns {void}
- * @private
+ * @param functionName - The name of the function to reset
  */
 function unStubCmr(functionName: string): void {
   if (cmr[functionName].restore) cmr[functionName].restore();
@@ -40,9 +36,8 @@ function unStubCmr(functionName: string): void {
     data: { errors: ['Corrupt zip file'] }
   });
  * ```
- * @param {string} functionName The name of the function to stub
- * @param {object} response The desired response
- * @returns {void}
+ * @param functionName - The name of the function to stub
+ * @param response - The desired response
  */
 export default function hookCmr(functionName: CmrMethodName, response: object): void {
   before(async function () {

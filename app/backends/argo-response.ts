@@ -37,8 +37,8 @@ interface ArgoCallbackQuery {
  * @param logger - The logger associated with this request
  * @param job - The job record to update
  * @param query - The parsed query coming from a service callback
- * @throws {RequestValidationError} If the callback parameters fail validation
- * @throws {ServerError} If job update fails unexpectedly
+ * @throws RequestValidationError - If the callback parameters fail validation
+ * @throws ServerError - If job update fails unexpectedly
  */
 function updateJobFields(
   logger: Logger,
