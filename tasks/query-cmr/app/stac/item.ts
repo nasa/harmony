@@ -29,7 +29,7 @@ export default class Item implements StacItem {
 
   /**
    * Creates an item with the given properties
-   * @param properties non-default properties to set on the item.  Per the spec, either bbox or
+   * @param properties - non-default properties to set on the item.  Per the spec, either bbox or
    *   geometry is required
    */
   constructor(properties: Partial<StacItem>) {
@@ -45,8 +45,8 @@ export default class Item implements StacItem {
 
   /**
    * Writes this item as JSON to the given filename
-   * @param filename the name of the file to write
-   * @param pretty whether to pretty-format the JSON
+   * @param filename - the name of the file to write
+   * @param pretty - whether to pretty-format the JSON
    */
   async write(filename: string, pretty = false): Promise<void> {
     const json = pretty ? JSON.stringify(this, null, 2) : JSON.stringify(this);

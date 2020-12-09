@@ -9,7 +9,7 @@ import logger from '../../../../app/util/log';
 /**
  * Creates a GeoJSON geometry given a GeoJSON BBox, accounting for antimeridian
  *
- * @param bbox the bounding box to create a geometry from
+ * @param bbox - the bounding box to create a geometry from
  * @returns a Polygon or MultiPolygon representation of the input bbox
  */
 export function bboxToGeometry(bbox: GeoJSON.BBox): GeoJSON.Geometry {
@@ -53,8 +53,8 @@ export function bboxToGeometry(bbox: GeoJSON.BBox): GeoJSON.Geometry {
 export default class CmrStacCatalog extends StacCatalog {
   /**
    * Adds the given CMR Atom granules as child items of this catalog
-   * @param granules the atom granules to add
-   * @param pathPrefix the prefix to use for href values on the link.  The link href will be
+   * @param granules - the atom granules to add
+   * @param pathPrefix - the prefix to use for href values on the link.  The link href will be
    *   the path prefix followed by the padded index of the granule plus .json
    */
   addCmrGranules(granules: CmrGranule[], pathPrefix: string): void {
