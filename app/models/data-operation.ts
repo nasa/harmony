@@ -41,7 +41,7 @@ function schemaVersions(): SchemaVersion[] {
       schema: readSchema('0.10.0'),
       down: (model): unknown => {
         const revertedModel = _.cloneDeep(model);
-        if ('format.srs' in revertedModel) {
+        if (_.has(revertedModel, 'format.srs')) {
           delete revertedModel.format.srs; // eslint-disable-line no-param-reassign
         }
 
