@@ -17,7 +17,8 @@
   "format": {
     "mime": "image/png",
     "width": 120,
-    "height": 225
+    "height": 225,
+    "crs": "CRS84"
   },
   "user": "test-user",
   "subset": {
