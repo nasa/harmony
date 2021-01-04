@@ -40,7 +40,7 @@ describe('WMS GetMap', function () {
 
       it('passes the crs parameter to the backend via srs object', function () {
         expect(this.service.operation.srs.proj4).to.equal('+proj=longlat +datum=WGS84 +no_defs');
-        expect(this.service.operation.srs.wkt).to.equal('GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AXIS["Latitude",NORTH],AXIS["Longitude",EAST],AUTHORITY["EPSG","4326"]]');
+        expect(this.service.operation.srs.wkt).to.equal('GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]');
         expect(this.service.operation.srs.epsg).to.equal('EPSG:4326');
       });
 
