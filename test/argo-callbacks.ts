@@ -13,6 +13,8 @@ import { S3ObjectStore } from '../app/util/object-store';
 import { hookArgoCallbackEach, hookHttpBackendEach, loadJobForCallback } from './helpers/callbacks';
 
 describe('Argo Callbacks', function () {
+  // Seeing frequent timeouts in CI environment for this test with the default 2 second timeout
+  this.timeout(10000);
   const collection = 'C1104-PVC_TS2';
 
   hookServersStartStop();
