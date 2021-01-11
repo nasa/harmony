@@ -382,6 +382,23 @@ export function getCollectionsByIds(
 }
 
 /**
+ * Queries and returns the CMR JSON collections corresponding to the given collection short names
+ *
+ * @param shortName - The collection short name to search for
+ * @param token - Access token for user request
+ * @returns The collections with the given ids
+ */
+export function getCollectionsByShortName(
+  shortName: string, token: string,
+): Promise<Array<CmrCollection>> {
+  return queryCollections({
+    short_name: shortName,
+    page_size: 2000,
+    sort_key: '-revisionDate',
+  }, token);
+}
+
+/**
  * Queries and returns the CMR JSON variables corresponding to the given CMR Variable IDs
  *
  * @param ids - The variable IDs to find
