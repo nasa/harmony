@@ -415,6 +415,32 @@ by running
 $ npm run update-dev
 ```
 
+## Submitting a Pull Request
+
+If you are a developer on another team and would like to submit a Pull
+Request to this repo, follow the steps below:
+
+1. Create a fork of the harmony repository.
+2. In the fork repo's BitBucket permissions, add the `edc_snyk_user`
+   to have `Read` access
+3. In the #harmony-service-providers Slack channel, ask a Harmony
+   team member to import your fork repo into Snyk. NOTE: This step should
+   be done before submitting a PR from the fork back to the main repo
+4. When ready, submit a PR from the fork's branch back to harmony
+   master branch. Ideally name the PR with a Jira ticket name (e.g.,
+   HARMONY-314)
+5. The PR's 'build' tab should not show errors
+
+## Harmony Team: How to import a fork into Snyk
+
+1. Open [Snyk](https://app.snyk.io/org/esdis-cumulus-core-gibs-cmr-etc./reports/)
+2. Click [Integrations](https://app.snyk.io/org/esdis-cumulus-core-gibs-cmr-etc./integrations)
+   on the navbar at the top of the page
+3. Click the 'Bitbucket Server' card
+4. Search for 'harmony' using the search box at the top of the page
+5. Click the checkbox on the developer's newly-created fork repo
+6. Click the 'Import selected repositories' button at the top of the page
+
 ## Additional Resources
 
 * [Adapting new services to Harmony](docs/adapting-new-services.md)
