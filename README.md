@@ -425,14 +425,13 @@ shown below.
 ### Submitting a Pull Request
 
 If you are a developer on another team and would like to submit a Pull
-Request to this repo, follow the steps below:
+Request to this repo:
 
 1. Create a fork of the harmony repository.
 2. In the fork repo's BitBucket permissions, add the `edc_snyk_user`
    to have `Read` access
 3. In the `#harmony-service-providers` Slack channel, ask a Harmony
-   team member to import your fork repo into Snyk. NOTE: This step should
-   be done before submitting a PR from the fork back to the main repo
+   team member to import your fork repo into Snyk (see below).
 4. When ready, submit a PR from the fork's branch back to the harmony
    master branch. Ideally name the PR with a Jira ticket name (e.g.,
    HARMONY-314)
@@ -447,14 +446,14 @@ fork needs to be imported into Snyk:
 2. Click [Integrations](https://app.snyk.io/org/esdis-cumulus-core-gibs-cmr-etc./integrations)
    on the navbar at the top of the page
 3. Click the 'Bitbucket Server' card
-4. Search for 'harmony' using the search box at the top of the page
+4. Search for 'harmony' using the search box
 5. Click the checkbox on the developer's newly-created fork repo
-6. Click the 'Import selected repositories' button at the top of the page
+6. Click the 'Import selected repositories' button
 
 This import should be done before the developer submits a PR. If it
-hasn't been, the PR 'build' (tab in BitBucket) will fail and the PR
-will be blocked. If this is the case, the project can still be
-imported into Snyk, but the PR will need to be declined and
+hasn't, the PR 'build' (tab in BitBucket) will fail and the PR
+will be blocked. In this situation, the project can still be
+imported into Snyk, but then the PR will need to be declined and
 resubmitted.
 
 ## Additional Resources
