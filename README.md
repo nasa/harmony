@@ -24,7 +24,8 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
     7. [Connect A Client](#Connect-A-Client)
 3. [Local Development Of Workflows Using Visual Studio Code](#Local-Development-Of-Workflows-Using-Visual-Studio-Code)
 4. [Running in AWS](#Running-in-AWS)
-5. [Additional Resources](#Additional-Resources)
+5. [Contributing to Harmony](#Contributing-to-Harmony)
+6. [Additional Resources](#Additional-Resources)
 
 ## Development Prerequisites
 
@@ -415,7 +416,13 @@ by running
 $ npm run update-dev
 ```
 
-## Submitting a Pull Request
+## Contributing to Harmony
+
+We welcome Pull Requests from developers not on the Harmony
+team. Please follow the standard "Fork and Pull Request" workflow
+shown below.
+
+### Submitting a Pull Request
 
 If you are a developer on another team and would like to submit a Pull
 Request to this repo, follow the steps below:
@@ -423,15 +430,18 @@ Request to this repo, follow the steps below:
 1. Create a fork of the harmony repository.
 2. In the fork repo's BitBucket permissions, add the `edc_snyk_user`
    to have `Read` access
-3. In the #harmony-service-providers Slack channel, ask a Harmony
+3. In the `#harmony-service-providers` Slack channel, ask a Harmony
    team member to import your fork repo into Snyk. NOTE: This step should
    be done before submitting a PR from the fork back to the main repo
-4. When ready, submit a PR from the fork's branch back to harmony
+4. When ready, submit a PR from the fork's branch back to the harmony
    master branch. Ideally name the PR with a Jira ticket name (e.g.,
    HARMONY-314)
 5. The PR's 'build' tab should not show errors
 
-## Harmony Team: How to import a fork into Snyk
+### Importing a Fork Repo Into Snyk
+
+To run Snyk on a fork of the repo (see above), the developer's
+fork needs to be imported into Snyk:
 
 1. Open [Snyk](https://app.snyk.io/org/esdis-cumulus-core-gibs-cmr-etc./reports/)
 2. Click [Integrations](https://app.snyk.io/org/esdis-cumulus-core-gibs-cmr-etc./integrations)
@@ -440,6 +450,12 @@ Request to this repo, follow the steps below:
 4. Search for 'harmony' using the search box at the top of the page
 5. Click the checkbox on the developer's newly-created fork repo
 6. Click the 'Import selected repositories' button at the top of the page
+
+This import should be done before the developer submits a PR. If it
+hasn't been, the PR 'build' (tab in BitBucket) will fail and the PR
+will be blocked. If this is the case, the project can still be
+imported into Snyk, but the PR will need to be declined and
+resubmitted.
 
 ## Additional Resources
 
