@@ -264,25 +264,43 @@ export default abstract class BaseService<ServiceParamType> {
    * @readonly
    */
   get warningMessage(): string {
-    let granulesProcessed = this.operation.cmrHits;
+    let message;
+    const { numCollectionsMatchingShortName, selectedCollectionConceptId } = this.operation;
+    if (numCollectionsMatchingShortName > 1) {
+      message = `There were ${numCollectionsMatchingShortName} collections that matched the provided short name.`
+        + ` ${selectedCollectionConceptId} was selected. To use a different collection submit a new request`
+        + ' specifying the desired CMR concept ID instead of the collection short name.';
+    }
+    if (this.granulesProcessedMessage) {
+      if (message) {
+        message += ` ${this.granulesProcessedMessage}`;
+      } else {
+        message = this.granulesProcessedMessage;
+      }
+    }
+    return message;
+  }
+
+  /**
+   * Returns a warning message if some part of the request can't be fulfilled
+   *
+   * @returns a warning message to display, or undefined if not applicable
+   * @readonly
+   */
+  get granulesProcessedMessage(): string {
+    let numGranules = this.operation.cmrHits;
     if (this.operation.maxResults) {
-      granulesProcessed = Math.min(
-        granulesProcessed, this.operation.maxResults, env.maxGranuleLimit,
-      );
+      numGranules = Math.min(numGranules, this.operation.maxResults, env.maxGranuleLimit);
     } else {
-      granulesProcessed = Math.min(granulesProcessed, env.maxGranuleLimit);
+      numGranules = Math.min(numGranules, env.maxGranuleLimit);
     }
 
     let message;
-    if (this.operation.cmrHits > granulesProcessed) {
+    if (this.operation.cmrHits > numGranules) {
       message = `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
-        + `to process only the first ${granulesProcessed} granules`;
-      if (this.operation.maxResults) {
-        if (this.operation.maxResults < env.maxGranuleLimit) {
-          message += ` because you requested ${this.operation.maxResults} maxResults.`;
-        } else {
-          message += ' because of system constraints.';
-        }
+        + `to process only the first ${numGranules} granules`;
+      if (this.operation.maxResults && this.operation.maxResults < env.maxGranuleLimit) {
+        message += ` because you requested ${this.operation.maxResults} maxResults.`;
       } else {
         message += ' because of system constraints.';
       }

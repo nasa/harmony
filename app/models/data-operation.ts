@@ -195,6 +195,10 @@ export default class DataOperation {
 
   decrypter?: Decrypter;
 
+  numCollectionsMatchingShortName = 0;
+
+  selectedCollectionConceptId?: string;
+
   /**
    * Creates an instance of DataOperation.
    *

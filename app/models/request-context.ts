@@ -18,6 +18,8 @@ export default class RequestContext {
 
   frontend?: string;
 
+  numCollectionsMatchingShortName?: number;
+
   /**
    * True if the request is from a verified admin making a request against an admin interface
    * (/admin/*)

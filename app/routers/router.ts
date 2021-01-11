@@ -16,7 +16,6 @@ import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
 import chooseService from '../middleware/service-selection';
-import setRequestId from '../middleware/request-id';
 import shapefileConverter from '../middleware/shapefile-converter';
 import { NotFoundError } from '../util/errors';
 import * as eoss from '../frontends/eoss';
@@ -25,7 +24,7 @@ import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import landingPage from '../frontends/landing-page';
 import getVersions from '../frontends/versions';
 import serviceInvoker from '../backends/service-invoker';
-import HarmonyRequest from '../models/harmony-request';
+import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
 
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
@@ -167,7 +166,7 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   result.use(logged(shapefileConverter));
   result.use(logged(chooseService));
   result.use(logged(cmrGranuleLocator));
-  result.use(logged(setRequestId));
+  result.use(logged(addRequestContextToOperation));
 
   result.get('/', landingPage);
   result.get('/versions', getVersions);

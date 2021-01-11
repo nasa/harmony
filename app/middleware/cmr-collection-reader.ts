@@ -1,7 +1,8 @@
-import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName } from 'util/cmr';
-import { listToText } from 'util/string';
-import { NotFoundError } from 'util/errors';
 import { NextFunction } from 'express';
+import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName } from '../util/cmr';
+import { NotFoundError } from '../util/errors';
+import HarmonyRequest from '../models/harmony-request';
+import { listToText } from '../util/string';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
@@ -50,7 +51,7 @@ async function loadVariablesForCollection(collection: CmrCollection, token: stri
  * @param res - The client response
  * @param next - The next function in the middleware chain
  */
-async function cmrCollectionReader(req, res, next: NextFunction): Promise<void> {
+async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction): Promise<void> {
   try {
     const collectionMatch = req.url.match(CMR_CONCEPT_ID_URL_PATH_REGEX);
     if (collectionMatch) {
@@ -87,6 +88,7 @@ async function cmrCollectionReader(req, res, next: NextFunction): Promise<void> 
           req.collections = [firstCollection];
           req.collectionIds = [firstCollection.id];
           await loadVariablesForCollection(firstCollection, req.accessToken);
+          req.context.numCollectionsMatchingShortName = collections.length;
         } else {
           const message = `Route must include a collection short name or CMR collection identifier. The collection short name ${shortName} could not be found.`;
           throw new NotFoundError(message);
