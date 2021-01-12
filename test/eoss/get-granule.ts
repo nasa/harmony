@@ -7,9 +7,9 @@ import isUUID from '../../app/util/uuid';
 import { hookSignS3Object } from '../helpers/object-store';
 
 describe('EOSS GetGranule', function () {
-  const collection = 'C1233800302-EEDTEST';
-  const granule = 'G1233800343-EEDTEST';
-  const variableId = 'V1233801695-EEDTEST';
+  const collection = 'C1234088182-EEDTEST';
+  const granule = 'G1234088196-EEDTEST';
+  const variableId = 'V1234088187-EEDTEST';
   const variableName = 'red_var';
   const version = '0.1.0';
 
@@ -125,11 +125,33 @@ describe('EOSS GetGranule', function () {
       crs: 'EPSG:4326',
       bbox: '-180,-90,180,90',
     };
-    const variableId1 = 'V1233801695-EEDTEST';
-    const variableId2 = 'V1233801696-EEDTEST';
+    const variableId1 = 'V1234088187-EEDTEST';
+    const variableId2 = 'V1234088188-EEDTEST';
 
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookEossGetGranule(version, collection, granule, query);
+
+    it('passes multiple variables to the backend service', function () {
+      const source = this.service.operation.sources[0];
+      expect(source.variables.length === 2);
+      expect(source.variables[0].id).to.equal(variableId1);
+      expect(source.variables[1].id).to.equal(variableId2);
+    });
+  });
+
+  describe('can specify a short name instead of a collection concept ID', function () {
+    const shortName = 'harmony_example';
+    const query = {
+      rangeSubset: 'red_var,green_var',
+      format: 'image/tiff',
+      crs: 'EPSG:4326',
+      bbox: '-180,-90,180,90',
+    };
+    const variableId1 = 'V1234088187-EEDTEST';
+    const variableId2 = 'V1234088188-EEDTEST';
+
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookEossGetGranule(version, shortName, granule, query);
 
     it('passes multiple variables to the backend service', function () {
       const source = this.service.operation.sources[0];

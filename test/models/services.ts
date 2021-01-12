@@ -480,7 +480,7 @@ describe('granule limits', function () {
 });
 
 describe('warning messages', function () {
-  describe('when selecting a service', function () {
+  describe('when making a service request using CMR concept ID', function () {
     beforeEach(function () {
       const collectionId = 'C123-TEST';
       const operation = new DataOperation();
@@ -583,6 +583,50 @@ describe('warning messages', function () {
 
       it('does not return a warning message', function () {
         expect(this.service.warningMessage).to.be.undefined;
+      });
+    });
+  });
+
+  describe('when simulating a service request using collection short name', function () {
+    beforeEach(function () {
+      const collectionId = 'C123-TEST';
+      const operation = new DataOperation();
+      operation.addSource(collectionId);
+      operation.selectedCollectionConceptId = collectionId;
+      this.operation = operation;
+      const config = [
+        {
+          name: 'a-service',
+          type: { name: 'argo' },
+          collections: [collectionId],
+        },
+      ];
+      const serviceConfig = chooseServiceConfig(this.operation, {}, config);
+      this.service = buildService(serviceConfig, this.operation);
+    });
+
+    describe('when multiple collections share the same short name', function () {
+      beforeEach(function () {
+        this.operation.numCollectionsMatchingShortName = 2;
+      });
+
+      it('returns a warning message about the multiple matching collections', function () {
+        expect(this.service.warningMessage).to.equal('There were 2 collections that matched the provided short name. C123-TEST was selected. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name.');
+      });
+    });
+
+    describe('when multiple collections share the same short name and the granule limit is exceeded', function () {
+      beforeEach(function () {
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 1);
+        this.operation.cmrHits = 10;
+        this.operation.numCollectionsMatchingShortName = 2;
+      });
+      afterEach(function () {
+        this.glStub.restore();
+      });
+
+      it('returns a warning message that includes both warnings', function () {
+        expect(this.service.warningMessage).to.equal('There were 2 collections that matched the provided short name. C123-TEST was selected. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name. CMR query identified 10 granules, but the request has been limited to process only the first 1 granules because of system constraints.');
       });
     });
   });

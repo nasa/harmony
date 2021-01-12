@@ -1,0 +1,29 @@
+GET /search/granules.json?collection_concept_id=C1219601808-SCIOPSTEST&page_size=350&temporal=1987-05-29T00%3A00%3A00.000Z%2C1987-05-30T00%3A00%3A00.000Z&bounding_box=-100%2C30%2C0%2C40&concept_id=&downloadable=true
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 347
+connection: close
+date: Tue, 12 Jan 2021 16:40:21 GMT
+set-cookie: AWSALB=glB83i7MuJN13k35VFHywJCPT8OEm2gvx+zbc1yBd+kO2ggAKCRNXDqdR4EUYnZCcRd7ELyP+0qjVcmu+BOMFL07GpT3wSXkmMDinp5SVyazA992UthwRX2jbc6b; Expires=Tue, 19 Jan 2021 16:40:21 GMT; Path=/
+set-cookie: AWSALBCORS=glB83i7MuJN13k35VFHywJCPT8OEm2gvx+zbc1yBd+kO2ggAKCRNXDqdR4EUYnZCcRd7ELyP+0qjVcmu+BOMFL07GpT3wSXkmMDinp5SVyazA992UthwRX2jbc6b; Expires=Tue, 19 Jan 2021 16:40:21 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: f2338c10-2e4c-4e4b-8006-023234bc156c
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 19
+x-request-id: f2338c10-2e4c-4e4b-8006-023234bc156c
+vary: Accept-Encoding, User-Agent
+server: Jetty(9.4.z-SNAPSHOT)
+x-cache: Miss from cloudfront
+via: 1.1 41d17421c3cbd1f0e8a454b1a3df7a65.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: W_4CWlvcOElxdEh0kQEZZ4mc7e3k8ZcWqEYBiKUXvAv9vkgC-mePTA==
+
+{"feed":{"updated":"2021-01-12T16:40:21.978Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json?collection_concept_id=C1219601808-SCIOPSTEST&page_size=350&temporal=1987-05-29T00%3A00%3A00.000Z%2C1987-05-30T00%3A00%3A00.000Z&bounding_box=-100%2C30%2C0%2C40&concept_id=&downloadable=true","title":"ECHO granule metadata","entry":[]}}

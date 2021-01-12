@@ -1,0 +1,28 @@
+GET /search/collections.json?short_name=Canada_SCI_BowenIsGeoLibrary_Test_4-14-a&page_size=2000&sort_key=-revisionDate
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+connection: close
+date: Tue, 12 Jan 2021 16:40:21 GMT
+set-cookie: AWSALB=TTyxYVAWabRlsSYHWiUfRTqMkt3GlDda209nzH6cqMPluslbPU1bKLHyuPLDuL7Cx7oN9EN7/0ytwS1f1Ifj+6d+a75gWjgbgPl2+vXZex9E+G/SODjYp+/sd56d; Expires=Tue, 19 Jan 2021 16:40:21 GMT; Path=/
+set-cookie: AWSALBCORS=TTyxYVAWabRlsSYHWiUfRTqMkt3GlDda209nzH6cqMPluslbPU1bKLHyuPLDuL7Cx7oN9EN7/0ytwS1f1Ifj+6d+a75gWjgbgPl2+vXZex9E+G/SODjYp+/sd56d; Expires=Tue, 19 Jan 2021 16:40:21 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 2591cb2d-9f2c-4b7b-b70a-d493ddb104ff
+strict-transport-security: max-age=31536000
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 11
+x-request-id: 2591cb2d-9f2c-4b7b-b70a-d493ddb104ff
+vary: Accept-Encoding, User-Agent
+server: Jetty(9.4.z-SNAPSHOT)
+x-cache: Miss from cloudfront
+via: 1.1 559646da243fba751e339785a59b5394.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: fZGTkcPSTA-lwACNJtzz0iDFOjYQtK4OfieP8vWm7wSzCtP_AWCxhg==
+
+{"feed":{"updated":"2021-01-12T16:40:21.494Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?short_name=Canada_SCI_BowenIsGeoLibrary_Test_4-14-a&page_size=2000&sort_key=-revisionDate","title":"ECHO dataset metadata","entry":[{"processing_level_id":"1","boxes":["49.337 -123.45 49.426 -123.325"],"time_start":"1970-01-01T00:00:00.000Z","version_id":"Not provided","dataset_id":"(SCI) The Bowen Island GeoLibrary (Data Collection)","has_spatial_subsetting":false,"has_transforms":false,"has_variables":false,"data_center":"SCIOPSTEST","short_name":"Canada_SCI_BowenIsGeoLibrary_Test_4-14-a","organizations":["BIFWMS"],"title":"(SCI) The Bowen Island GeoLibrary (Data Collection)","coordinate_system":"CARTESIAN","summary":"The Bowen Island GeoLibrary is a collection of map, text and image-based\r\n      information that reflects what we currently know about our island and about\r\n      ourselves as a community.\r\n      \r\n      It includes an atlas of biophysical and land use planning maps, and a\r\n      repository of key documents, including the Bowen Island Official Community\r\n      Plan, the Green Zone report, the State of Bowen Island Report, the Crown Lands\r\n      Report and more.\r\n      \r\n      The Bowen Island Sustainability Project (BISP) was initiated in June 2000 as an\r\n      extension of work conducted by the Capilano College Environmental Science\r\n      Program.\r\n      \r\n      BISP proceeded with direct funding by the Real Estate Foundation, and through\r\n      partnerships with Bowen Island Municipality, the Geological Survey of Canada\r\n      and Capilano College. The deliverables from this project are two-fold: a) State\r\n      of Bowen Island (SoBI) report and b) Bowen Island Information System. The Bowen\r\n      Island Information System includes four subdeliverables: a database catalogue,\r\n      Geographic Information System (GIS) atlas, maps & spatial data for the SoBI\r\n      report, and an information system summary report.\r\n      \r\n      Through the deliverables, the Bowen Island Sustainability Project will assist\r\n      the community, the municipality, and any future initiatives in evaluating and\r\n      facilitating the decision making processes that leads to more sustainable\r\n      communities.The purpose of developing the information system as part of the\r\n      Bowen Island Sustainability Project is to support and provide critical\r\n      information about Bowen Island for the ?State of Bowen Island' report. It also\r\n      facilitates the use of information, both spatial and non-spatial, on Bowen\r\n      Island in future initiatives, by compiling a vital information catalogue and a\r\n      collection of GIS data for the community.\r\n      Spatial Data Organization Information -\r\n      \r\n          Indirect Spatial Reference:\r\n          Direct Spatial Reference:\r\n          Raster Object Type:\r\n          Row Count:\r\n          Column Count:\r\n          Vertical Count:\r\n      Spatial Reference Information -\r\n           Horizontal Coordinate System Definition -\r\n      \r\n      Planar -\r\n      \r\n      \r\n      \r\n      \r\n          Planar Coordinate Encoding Method:\r\n          Coordinate Representation:\r\n           Abscissa Resolution:\r\n           Ordinate Resolution:\r\n          Distance and Bearing Representation:\r\n           Distance Resolution:\r\n           Bearing Resolution:\r\n           Bearing Units:\r\n           Bearing Reference Direction:\r\n           Bearing Reference Meridian:\r\n          Planar Distance Units:\r\n      \r\n         Geodetic Model:\r\n           Horizontal Datum Name:\r\n          Ellipsoid Name:\r\n          Semi-major Axis:\r\n          Denominator of Flattening Ratio:\r\n\r\n* Test 1\r\n* Test 2\r\n* Test 3\r\n* Test 4","orbit_parameters":{},"id":"C1219601808-SCIOPSTEST","has_formats":false,"original_format":"UMM_JSON","archive_center":"BIFWMS","has_temporal_subsetting":false,"browse_flag":false,"online_access_flag":false,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"http://geodiscover.cgdi.ca/"}]}]}}
