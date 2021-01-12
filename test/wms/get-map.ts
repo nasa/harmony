@@ -207,7 +207,7 @@ describe('WMS GetMap', function () {
     });
   });
 
-  const unsupportedCollection = 'C446398-ORNL_DAAC';
+  const unsupportedCollection = 'C446474-ORNL_DAAC';
   describe('collection that does not have any supported services', function () {
     const query = {
       service: 'WMS',

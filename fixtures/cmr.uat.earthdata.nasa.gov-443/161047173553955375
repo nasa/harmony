@@ -1,0 +1,29 @@
+GET /search/collections.json?concept_id=C1225996408-POCUMULUS&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 208
+connection: close
+date: Tue, 12 Jan 2021 17:15:35 GMT
+set-cookie: AWSALB=Odu28Ia3uCW0U8sKFcgy5TNAunQ3ms5UogRf948/QlbXGJ615cPL5CEjuuWkYmbj/zUOTUhWLnzAbOl9QApe9nswf38JUzwgRLjaiu0baAicsdiv0iNmmpTCZbFH; Expires=Tue, 19 Jan 2021 17:15:35 GMT; Path=/
+set-cookie: AWSALBCORS=Odu28Ia3uCW0U8sKFcgy5TNAunQ3ms5UogRf948/QlbXGJ615cPL5CEjuuWkYmbj/zUOTUhWLnzAbOl9QApe9nswf38JUzwgRLjaiu0baAicsdiv0iNmmpTCZbFH; Expires=Tue, 19 Jan 2021 17:15:35 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: b46b4b31-4434-471f-8493-7279cf9ea3b1
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 7
+x-request-id: b46b4b31-4434-471f-8493-7279cf9ea3b1
+vary: Accept-Encoding, User-Agent
+server: Jetty(9.4.z-SNAPSHOT)
+x-cache: Miss from cloudfront
+via: 1.1 798fb06c416f07d7eaba25e2728dc5ac.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: zOuTDv_V4rkPPa6P3ozKAR1mpG4A-tuHKiDLiF-tbkGe4IcilHlXsw==
+
+{"feed":{"updated":"2021-01-12T17:15:35.694Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1225996408-POCUMULUS&page_size=2000","title":"ECHO dataset metadata","entry":[]}}

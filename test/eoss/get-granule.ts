@@ -205,7 +205,7 @@ describe('EOSS GetGranule', function () {
       });
     });
     it('returns an HTTP 404 "Not Found" error for a collection with no services defined', async function () {
-      const unsupportedCollection = 'C446398-ORNL_DAAC';
+      const unsupportedCollection = 'C446474-ORNL_DAAC';
       const res = await eossGetGranule(
         this.frontend,
         version,

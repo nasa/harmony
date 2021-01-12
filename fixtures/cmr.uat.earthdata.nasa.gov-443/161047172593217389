@@ -1,0 +1,20 @@
+GET /access-control/groups/AG1222736883-EEDTEST/members?
+accept: application/json
+x-harmony-user: eve
+accept-encoding: gzip,deflate
+
+HTTP/1.1 401 Unauthorized
+content-type: application/json
+content-length: 123
+connection: close
+date: Tue, 12 Jan 2021 17:15:26 GMT
+set-cookie: AWSALB=5g+ER/tRFHMrFxx237kWHzYYWX/U98TOSYf6umn702NI+b/N27OjPQ8moFY0CgG/Q1N5z9tfH89qPuyXJ3ueiHVuHTWEK6V3p9YaIrQAlg//1NkjRsLFFZec9PbB; Expires=Tue, 19 Jan 2021 17:15:26 GMT; Path=/
+set-cookie: AWSALBCORS=5g+ER/tRFHMrFxx237kWHzYYWX/U98TOSYf6umn702NI+b/N27OjPQ8moFY0CgG/Q1N5z9tfH89qPuyXJ3ueiHVuHTWEK6V3p9YaIrQAlg//1NkjRsLFFZec9PbB; Expires=Tue, 19 Jan 2021 17:15:26 GMT; Path=/; SameSite=None
+access-control-allow-origin: *
+server: Jetty(9.4.z-SNAPSHOT)
+x-cache: Error from cloudfront
+via: 1.1 b5a3a07d269412210ea111017ec1157f.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: 8h5UDZ9osdA0JI9O8hfRdnaoS4lIKoSsH5JOfdZkDbH33Dh-xwxeYQ==
+
+{"errors":["You do not have permission to read access control group [EEDTEST Administrator Group] in provider [EEDTEST]."]}
