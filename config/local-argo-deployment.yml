@@ -482,7 +482,7 @@ data:
       ttlStrategy:
         secondsAfterCompletion: 14400
       podGC:
-        strategy: OnPodCompletion
+        strategy: OnPodSuccess
 
   metricsConfig: |
     disableLegacy: true
