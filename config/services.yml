@@ -59,6 +59,7 @@ https://cmr.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: harmony-netcdf-to-zarr
+        template_type: chaining
         image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
         parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
