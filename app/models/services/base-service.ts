@@ -215,6 +215,7 @@ export default abstract class BaseService<ServiceParamType> {
       status: JobStatus.RUNNING,
       request: requestUrl,
       isAsync: !this.isSynchronous,
+      numInputGranules: this.numInputGranules,
     });
     job.addStagingBucketLink(stagingLocation);
     if (this.message) {
@@ -282,18 +283,29 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
-   * Returns a warning message if some part of the request can't be fulfilled
+   * Returns the number of input granules for this operation
    *
-   * @returns a warning message to display, or undefined if not applicable
+   * @returns the number of input granules for this operation
    * @readonly
    */
-  get granulesProcessedMessage(): string {
+  get numInputGranules(): number {
     let numGranules = this.operation.cmrHits;
     if (this.operation.maxResults) {
       numGranules = Math.min(numGranules, this.operation.maxResults, env.maxGranuleLimit);
     } else {
       numGranules = Math.min(numGranules, env.maxGranuleLimit);
     }
+    return numGranules;
+  }
+
+  /**
+   * Returns a warning message if some part of the request can't be fulfilled
+   *
+   * @returns a warning message to display, or undefined if not applicable
+   * @readonly
+   */
+  get granulesProcessedMessage(): string {
+    const numGranules = this.numInputGranules;
 
     let message;
     if (this.operation.cmrHits > numGranules) {

@@ -11,4 +11,5 @@ CREATE TABLE `jobs` (
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   `request` varchar(4096) not null default 'unknown',
-  `isAsync` boolean);
+  `isAsync` boolean,
+  `numInputGranules` integer not null default 0);

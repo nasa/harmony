@@ -12,6 +12,7 @@ const runningJob = {
   status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
+  numInputGranules: 100,
   links: [{
     href: 'http://example.com',
     type: 'application/octet-stream',
@@ -31,6 +32,7 @@ const completedJob = {
   status: JobStatus.SUCCESSFUL,
   message: 'it is done',
   progress: 100,
+  numInputGranules: 5,
   links: [{
     href: 'http://example.com',
     type: 'application/octet-stream',
@@ -50,6 +52,7 @@ const completedNonStacJob = {
   status: JobStatus.SUCCESSFUL,
   message: 'it is done',
   progress: 100,
+  numInputGranules: 12,
   links: [{
     href: 'http://example.com',
     type: 'application/octet-stream',

@@ -31,6 +31,7 @@ const aJob: JobRecord = {
       },
     }],
   request: 'http://example.com/harmony?job=aJob',
+  numInputGranules: 58,
 };
 
 describe('Individual job status route', function () {

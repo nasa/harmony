@@ -16,6 +16,7 @@ const woodyJob1: JobRecord = {
   links: [{ href: 'http://example.com/woody1', rel: 'link', type: 'text/plain' }],
   request: 'http://example.com/harmony?request=woody1',
   isAsync: true,
+  numInputGranules: 3,
 };
 
 const woodyJob2: JobRecord = {
@@ -27,6 +28,7 @@ const woodyJob2: JobRecord = {
   links: [],
   request: 'http://example.com/harmony?request=woody2',
   isAsync: true,
+  numInputGranules: 5,
 };
 
 const woodySyncJob: JobRecord = {
@@ -34,10 +36,11 @@ const woodySyncJob: JobRecord = {
   requestId: uuid().toString(),
   status: JobStatus.RUNNING,
   message: 'In progress',
-  progress: 60,
+  progress: 0,
   links: [],
   request: 'http://example.com/harmony?request=woody2',
   isAsync: false,
+  numInputGranules: 1,
 };
 
 const buzzJob1: JobRecord = {
@@ -49,6 +52,7 @@ const buzzJob1: JobRecord = {
   links: [],
   request: 'http://example.com/harmony?request=buzz1',
   isAsync: true,
+  numInputGranules: 10,
 };
 
 describe('Jobs listing route', function () {

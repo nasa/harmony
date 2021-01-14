@@ -11,6 +11,7 @@ const jobProps = {
   progress: 100,
   message: 'Success',
   status: JobStatus.SUCCESSFUL,
+  numInputGranules: 2,
   links: [
     {
       href: 'file_1.nc',

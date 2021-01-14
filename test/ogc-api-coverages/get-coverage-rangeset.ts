@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import _ from 'lodash';
+import { hookRedirect } from 'test/helpers/hooks';
 import hookCmr from '../helpers/stub-cmr';
 import isUUID from '../../app/util/uuid';
-import { itIncludesRequestUrl } from '../helpers/jobs';
+import { adminUsername, expectedJobKeys, expectedNoOpJobKeys, itIncludesRequestUrl } from '../helpers/jobs';
 import { hookSignS3Object } from '../helpers/object-store';
 import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
@@ -241,6 +242,62 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(location).to.match(/^\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
   });
+
+  // TODO Figure out why I can't use hookRedirect in this test
+  //   describe('When following the redirect to the job status URL', function () {
+  //     hookRedirect(adminUsername);
+
+  //     it('returns an HTTP success response', function () {
+  //       expect(this.res.statusCode).to.equal(200);
+  //     });
+
+  //     it('returns a good message', function () {
+  //       expect(this.res.text).to.equal(200);
+  //     });
+
+  //     it('returns a single job record in JSON format', function () {
+  //       const actualJob = JSON.parse(this.res.text);
+  //       expect(Object.keys(actualJob)).to.eql(expectedJobKeys);
+  //     });
+
+  //     it('returns a successful status', function () {
+  //       const job = JSON.parse(this.res.text);
+  //       expect(job.status).to.eql('successful');
+  //     });
+
+  //     it('returns 100 for progress', function () {
+  //       const job = JSON.parse(this.res.text);
+  //       expect(job.progress).to.eql(100);
+  //     });
+
+  //     it('returns the number of CMR hits as the number of input granules', function () {
+  //       const job = JSON.parse(this.res.text);
+  //       expect(job.numInputGranules).to.eql(39);
+  //     });
+
+  //     it('returns a message when results are truncated', function () {
+  //       const job = JSON.parse(this.res.text);
+  //       expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446474-ORNL_DAAC.');
+  //     });
+
+  //     it('returns granule links', function () {
+  //       const job = JSON.parse(this.res.text);
+  //       expect(job.links.length).to.equal(39);
+  //     });
+
+  //     it('granule links include a title of the granuleId', function () {
+  //       const job = JSON.parse(this.res.text);
+  //       expect(job.links[0].title).to.equal('G1239610894-ORNL_DAAC');
+  //     });
+
+  //     it('granule links include a download link', function () {
+  //       const job = JSON.parse(this.res.text);
+  //       expect(job.links[0].href).to.not.equal(undefined);
+  //     });
+
+  //     itIncludesRequestUrl('/C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
+  //   });
+  // });
 
   describe('When specifying a collection short name instead of a CMR concept ID', function () {
     const shortName = 'harmony_example';
@@ -857,10 +914,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 });
 
-const expectedNoOpJobKeys = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
-];
-
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
   const collection = 'C446474-ORNL_DAAC';
   const version = '1.0.0';
@@ -884,6 +937,10 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     it('returns 100 for progress', function () {
       const job = JSON.parse(this.res.text);
       expect(job.progress).to.eql(100);
+    });
+    it('returns the number of CMR hits as the number of input granules', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.numInputGranules).to.eql(39);
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);

@@ -22,7 +22,7 @@ const statesToDefaultMessages = {
 const defaultMessages = Object.values(statesToDefaultMessages);
 
 const serializedJobFields = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -63,6 +63,7 @@ export interface JobRecord {
   isAsync?: boolean;
   createdAt?: Date | number;
   updatedAt?: Date | number;
+  numInputGranules: number;
 }
 
 export interface JobQuery {
@@ -126,6 +127,8 @@ export class Job extends Record {
   jobID: string;
 
   originalStatus: JobStatus;
+
+  numInputGranules: number;
 
   /**
    * Returns an array of all jobs that match the given constraints
