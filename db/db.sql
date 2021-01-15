@@ -4,7 +4,7 @@ CREATE TABLE `jobs` (
   `requestId` char(36) not null,
   `username` varchar(255) not null,
   `status` text check (`status` in ('accepted', 'running', 'successful', 'failed', 'canceled')) not null,
-  `message` varchar(255) not null,
+  `message` varchar(4096) not null,
   `progress` integer not null,
   `batchesCompleted` integer not null,
   `_json_links` json not null,

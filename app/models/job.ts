@@ -246,8 +246,6 @@ export class Job extends Record {
    */
   constructor(fields: JobRecord) {
     super(fields);
-    // Allow up to 4096 chars for the request string
-    this.request = fields.request && truncateString(fields.request, 4096);
     this.updateStatus(fields.status || JobStatus.ACCEPTED, fields.message);
     this.progress = fields.progress || 0;
     this.batchesCompleted = fields.batchesCompleted || 0;
@@ -399,6 +397,8 @@ export class Job extends Record {
     // Need to validate the original status before removing it as part of saving to the database
     // May want to change in the future to have a way to have non-database fields on a record.
     this.validateStatus();
+    this.message = truncateString(this.message, 4096);
+    this.request = truncateString(this.request, 4096);
     // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     const { links, originalStatus } = this;
     delete this.links;
