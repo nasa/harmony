@@ -72,7 +72,7 @@
     "@types/uuid": "^7.0.4",
     "@types/xmldom": "^0.1.30",
     "ajv": "^6.12.3",
-    "aws-sdk": "^2.711.0",
+    "aws-sdk": "^2.814.0",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.5",
