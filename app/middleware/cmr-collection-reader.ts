@@ -64,11 +64,16 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
       const { collections } = req;
 
       // Could not find a requested collection
-      if (collections.length !== collectionIds.length) {
+      if (collections.length === 0) {
+        const message = `${collectionIdStr} must be a collection short name or CMR collection identifier, but we could not `
+        + 'find a matching collection. Please make sure the collection is correct and that you have access to it.';
+        throw new NotFoundError(message);
+      } else if (collections.length !== collectionIds.length) {
         const foundIds = collections.map((c) => c.id);
         const missingIds = collectionIds.filter((c) => !foundIds.includes(c));
         const s = missingIds.length > 1 ? 's' : '';
-        const message = `Route must include a collection short name or CMR collection identifier. The collection${s} ${listToText(missingIds)} could not be found.`;
+        const message = `The collection${s} ${listToText(missingIds)} could not be found. Please make sure the`
+          + ' collection identifiers are correct and that you have access to each collection.';
         throw new NotFoundError(message);
       }
 
@@ -88,9 +93,14 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
           req.collections = [firstCollection];
           req.collectionIds = [firstCollection.id];
           await loadVariablesForCollection(firstCollection, req.accessToken);
-          req.context.numCollectionsMatchingShortName = collections.length;
+          if (collections.length > 1) {
+            req.context.messages.push(`There were ${collections.length} collections that matched the provided short name.`
+            + ` ${firstCollection.id} was selected. To use a different collection submit a new request`
+            + ' specifying the desired CMR concept ID instead of the collection short name.');
+          }
         } else {
-          const message = `Route must include a collection short name or CMR collection identifier. The collection short name ${shortName} could not be found.`;
+          const message = `${shortName} must be a collection short name or CMR collection identifier, but we could not`
+            + ' find a matching collection. Please make sure the collection is correct and that you have access to it.';
           throw new NotFoundError(message);
         }
       }

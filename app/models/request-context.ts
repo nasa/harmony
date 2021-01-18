@@ -18,8 +18,6 @@ export default class RequestContext {
 
   frontend?: string;
 
-  numCollectionsMatchingShortName?: number;
-
   /**
    * True if the request is from a verified admin making a request against an admin interface
    * (/admin/*)
@@ -27,6 +25,8 @@ export default class RequestContext {
   isAdminAccess?: boolean;
 
   serviceConfig?: ServiceConfig<unknown>;
+
+  messages?: string[];
 
   /**
    * Creates an instance of RequestContext.
@@ -36,5 +36,6 @@ export default class RequestContext {
   constructor(id) {
     this.id = id;
     this.isAdminAccess = false;
+    this.messages = [];
   }
 }

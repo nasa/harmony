@@ -21,7 +21,8 @@ export default class NoOpService extends BaseService<void> {
    */
   constructor(config, operation) {
     super(config, operation);
-    this.message = `Returning direct download links because ${config.message}.`;
+    const downloadLinkMessage = `Returning direct download links because ${config.message}.`;
+    this.message = this.operation.message ? `${downloadLinkMessage} ${this.operation.message}` : downloadLinkMessage;
   }
 
   /**
@@ -47,7 +48,6 @@ export default class NoOpService extends BaseService<void> {
     const granuleLists = this.operation.sources.map((source) => source.granules);
     const granules = granuleLists.reduce((acc, val) => acc.concat(val), []);
     const links = granules.map((granule) => ({ title: granule.id, href: granule.urls[0], rel: 'data' }));
-    const message = this.warningMessage ? `${this.message} ${this.warningMessage}` : this.message;
     let job = new Job({
       username: this.operation.user,
       requestId: this.operation.requestId,
@@ -55,7 +55,7 @@ export default class NoOpService extends BaseService<void> {
       progress: 100,
       createdAt: now,
       updatedAt: now,
-      message,
+      message: this.message,
       links,
       request: requestUrl,
       numInputGranules: this.operation.cmrHits,
