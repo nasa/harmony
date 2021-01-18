@@ -88,7 +88,11 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
           req.collections = [firstCollection];
           req.collectionIds = [firstCollection.id];
           await loadVariablesForCollection(firstCollection, req.accessToken);
-          req.context.numCollectionsMatchingShortName = collections.length;
+          if (collections.length > 1) {
+            req.context.messages.push(`There were ${collections.length} collections that matched the provided short name.`
+            + ` ${firstCollection.id} was selected. To use a different collection submit a new request`
+            + ' specifying the desired CMR concept ID instead of the collection short name.');
+          }
         } else {
           const message = `Route must include a collection short name or CMR collection identifier. The collection short name ${shortName} could not be found.`;
           throw new NotFoundError(message);

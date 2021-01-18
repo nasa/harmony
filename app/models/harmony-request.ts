@@ -33,7 +33,8 @@ export function addRequestContextToOperation(
   if (!operation) return next();
 
   operation.requestId = context.id;
-  operation.numCollectionsMatchingShortName = context.numCollectionsMatchingShortName;
-  operation.selectedCollectionConceptId = req.collectionIds[0];
+  if (req.context.messages.length > 0) {
+    operation.message = req.context.messages.join(' ');
+  }
   return next();
 }

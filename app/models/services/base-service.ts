@@ -71,8 +71,6 @@ export default abstract class BaseService<ServiceParamType> {
 
   invocation: Promise<boolean>;
 
-  message?: string;
-
   /**
    * Creates an instance of BaseService.
    * @param config - The service configuration from config/services.yml
@@ -89,7 +87,6 @@ export default abstract class BaseService<ServiceParamType> {
       const prefix = `public/${config.name || this.constructor.name}/${uuid()}/`;
       this.operation.stagingLocation = defaultObjectStore().getUrlString(env.stagingBucket, prefix);
     }
-    this.message = config.message;
   }
 
   /**
@@ -215,13 +212,9 @@ export default abstract class BaseService<ServiceParamType> {
       status: JobStatus.RUNNING,
       request: requestUrl,
       isAsync: !this.isSynchronous,
+      message: this.operation.message,
     });
     job.addStagingBucketLink(stagingLocation);
-    if (this.message) {
-      job.message = this.warningMessage ? `${this.message} ${this.warningMessage}` : this.message;
-    } else if (this.warningMessage) {
-      job.message = this.warningMessage;
-    }
     return job;
   }
 
@@ -255,57 +248,6 @@ export default abstract class BaseService<ServiceParamType> {
    */
   get maxSynchronousGranules(): number {
     return getMaxSynchronousGranules(this.config);
-  }
-
-  /**
-   * Returns a warning message if some part of the request can't be fulfilled
-   *
-   * @returns a warning message to display, or undefined if not applicable
-   * @readonly
-   */
-  get warningMessage(): string {
-    let message;
-    const { numCollectionsMatchingShortName, selectedCollectionConceptId } = this.operation;
-    if (numCollectionsMatchingShortName > 1) {
-      message = `There were ${numCollectionsMatchingShortName} collections that matched the provided short name.`
-        + ` ${selectedCollectionConceptId} was selected. To use a different collection submit a new request`
-        + ' specifying the desired CMR concept ID instead of the collection short name.';
-    }
-    if (this.granulesProcessedMessage) {
-      if (message) {
-        message += ` ${this.granulesProcessedMessage}`;
-      } else {
-        message = this.granulesProcessedMessage;
-      }
-    }
-    return message;
-  }
-
-  /**
-   * Returns a warning message if some part of the request can't be fulfilled
-   *
-   * @returns a warning message to display, or undefined if not applicable
-   * @readonly
-   */
-  get granulesProcessedMessage(): string {
-    let numGranules = this.operation.cmrHits;
-    if (this.operation.maxResults) {
-      numGranules = Math.min(numGranules, this.operation.maxResults, env.maxGranuleLimit);
-    } else {
-      numGranules = Math.min(numGranules, env.maxGranuleLimit);
-    }
-
-    let message;
-    if (this.operation.cmrHits > numGranules) {
-      message = `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
-        + `to process only the first ${numGranules} granules`;
-      if (this.operation.maxResults && this.operation.maxResults < env.maxGranuleLimit) {
-        message += ` because you requested ${this.operation.maxResults} maxResults.`;
-      } else {
-        message += ' because of system constraints.';
-      }
-    }
-    return message;
   }
 
   /**

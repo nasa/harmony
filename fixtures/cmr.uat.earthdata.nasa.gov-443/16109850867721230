@@ -1,0 +1,28 @@
+GET /search/granules.json?collection_concept_id=C1234088182-EEDTEST&page_size=2&concept_id=&downloadable=true
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+connection: close
+date: Mon, 18 Jan 2021 15:51:26 GMT
+set-cookie: AWSALB=+dVuVKUnkfyytgoLG+A/Fl25IH3YVXTL0I5YcWK7To+e+o0gEPKAZ/AW7omCvg1gF/mtor/FxwTGvMI4evECEuuTtxfWxIF32n29lU7ElB64p0dnouX+jF5+NzUJ; Expires=Mon, 25 Jan 2021 15:51:26 GMT; Path=/
+set-cookie: AWSALBCORS=+dVuVKUnkfyytgoLG+A/Fl25IH3YVXTL0I5YcWK7To+e+o0gEPKAZ/AW7omCvg1gF/mtor/FxwTGvMI4evECEuuTtxfWxIF32n29lU7ElB64p0dnouX+jF5+NzUJ; Expires=Mon, 25 Jan 2021 15:51:26 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: e61e3b4e-8342-43b2-8985-b7eb16b72067
+strict-transport-security: max-age=31536000
+cmr-hits: 176
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 17
+x-request-id: e61e3b4e-8342-43b2-8985-b7eb16b72067
+vary: Accept-Encoding, User-Agent
+server: Jetty(9.4.z-SNAPSHOT)
+x-cache: Miss from cloudfront
+via: 1.1 fa3f15cd366c19b686cb5e8157aee207.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: dz8wZAoLhYXmhzRyCGO1fDmJ2VgxilM2JWqw4eJu6ixVm4eRFFd5og==
+
+{"feed":{"updated":"2021-01-18T15:51:26.737Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json?collection_concept_id=C1234088182-EEDTEST&page_size=2&concept_id=&downloadable=true","title":"ECHO granule metadata","entry":[{"producer_granule_id":"2020_01_01_7f00ff_global","boxes":["-89.95 -179.95 89.95 179.95"],"time_start":"2020-01-01T00:00:00.000Z","updated":"2020-03-21T01:32:21.000Z","dataset_id":"Harmony Example Data v2","data_center":"EEDTEST","title":"2020_01_01_7f00ff_global","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T23:59:59.000Z","id":"G1234088196-EEDTEST","original_format":"ECHO10","granule_size":"0.7383966445922852","browse_flag":false,"collection_concept_id":"C1234088182-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf4","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example_v2/nc/2020_01_01_7f00ff_global.nc"}]},{"producer_granule_id":"2020_01_02_3200ff_global","boxes":["-89.95 -179.95 89.95 179.95"],"time_start":"2020-01-02T00:00:00.000Z","updated":"2020-03-21T01:32:21.000Z","dataset_id":"Harmony Example Data v2","data_center":"EEDTEST","title":"2020_01_02_3200ff_global","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-02T23:59:59.000Z","id":"G1234088197-EEDTEST","original_format":"ECHO10","granule_size":"0.5225448608398438","browse_flag":false,"collection_concept_id":"C1234088182-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf4","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example_v2/nc/2020_01_02_3200ff_global.nc"}]}]}}
