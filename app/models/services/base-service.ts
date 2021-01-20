@@ -258,13 +258,9 @@ export default abstract class BaseService<ServiceParamType> {
    * @readonly
    */
   get numInputGranules(): number {
-    let numGranules = this.operation.cmrHits;
-    if (this.operation.maxResults) {
-      numGranules = Math.min(numGranules, this.operation.maxResults, env.maxGranuleLimit);
-    } else {
-      numGranules = Math.min(numGranules, env.maxGranuleLimit);
-    }
-    return numGranules;
+    return Math.min(this.operation.cmrHits,
+      this.operation.maxResults || Number.MAX_SAFE_INTEGER,
+      env.maxGranuleLimit);
   }
 
   /**
