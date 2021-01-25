@@ -1,5 +1,5 @@
 import { NextFunction } from 'express';
-import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName } from '../util/cmr';
+import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName, cmrApiConfig } from '../util/cmr';
 import { NotFoundError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import { listToText } from '../util/string';
@@ -65,15 +65,16 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
 
       // Could not find a requested collection
       if (collections.length === 0) {
-        const message = `${collectionIdStr} must be a collection short name or CMR collection identifier, but we could not `
-        + 'find a matching collection. Please make sure the collection is correct and that you have access to it.';
+        const message = `${collectionIdStr} must be a collection short name or CMR collection`
+        + ' identifier, but we could not find a matching collection. Please make sure the collection'
+        + ' is correct and that you have access to it.';
         throw new NotFoundError(message);
       } else if (collections.length !== collectionIds.length) {
         const foundIds = collections.map((c) => c.id);
         const missingIds = collectionIds.filter((c) => !foundIds.includes(c));
         const s = missingIds.length > 1 ? 's' : '';
-        const message = `The collection${s} ${listToText(missingIds)} could not be found. Please make sure the`
-          + ' collection identifiers are correct and that you have access to each collection.';
+        const message = `The collection${s} ${listToText(missingIds)} could not be found. Please make`
+        + ' sure the collection identifiers are correct and that you have access to each collection.';
         throw new NotFoundError(message);
       }
 
@@ -94,13 +95,17 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
           req.collectionIds = [firstCollection.id];
           await loadVariablesForCollection(firstCollection, req.accessToken);
           if (collections.length > 1) {
-            req.context.messages.push(`There were ${collections.length} collections that matched the provided short name.`
-            + ` ${firstCollection.id} was selected. To use a different collection submit a new request`
+            const collectionLandingPage = `${cmrApiConfig.baseURL}/concepts/${firstCollection.id}`;
+            req.context.messages.push(`There were ${collections.length} collections that matched the`
+            + ` provided short name ${shortName}. See ${collectionLandingPage} for details on the`
+            + ' selected collection. The version ID for the selected collection is '
+            + `${firstCollection.version_id}. To use a different collection submit a new request`
             + ' specifying the desired CMR concept ID instead of the collection short name.');
           }
         } else {
-          const message = `${shortName} must be a collection short name or CMR collection identifier, but we could not`
-            + ' find a matching collection. Please make sure the collection is correct and that you have access to it.';
+          const message = `${shortName} must be a collection short name or CMR collection identifier,`
+            + ' but we could not find a matching collection. Please make sure the collection is'
+            + ' correct and that you have access to it.';
           throw new NotFoundError(message);
         }
       }

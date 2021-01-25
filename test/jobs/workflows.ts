@@ -31,6 +31,7 @@ const singleWorkflowJobRecord: JobRecord = {
       },
     }],
   request: 'http://example.com/harmony?job=singleWorkflowJob',
+  numInputGranules: 15,
 };
 
 const multipleWorkflowJobRecord: JobRecord = {
@@ -51,6 +52,7 @@ const multipleWorkflowJobRecord: JobRecord = {
       },
     }],
   request: 'http://example.com/harmony?job=multipleWorkflowJob',
+  numInputGranules: 128,
 };
 
 // single workflow per job - normally this would be the only case

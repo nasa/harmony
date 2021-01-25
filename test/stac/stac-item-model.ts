@@ -9,6 +9,7 @@ const jobProps = {
   request: 'example.com',
   username: 'jdoe',
   createdAt: new Date('2020-02-02T00:00:00Z'),
+  numInputGranules: 5,
   links: [
     {
       href: 'file_1.nc',

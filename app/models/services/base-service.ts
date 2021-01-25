@@ -212,6 +212,7 @@ export default abstract class BaseService<ServiceParamType> {
       status: JobStatus.RUNNING,
       request: requestUrl,
       isAsync: !this.isSynchronous,
+      numInputGranules: this.numInputGranules,
       message: this.operation.message,
     });
     job.addStagingBucketLink(stagingLocation);
@@ -248,6 +249,18 @@ export default abstract class BaseService<ServiceParamType> {
    */
   get maxSynchronousGranules(): number {
     return getMaxSynchronousGranules(this.config);
+  }
+
+  /**
+   * Returns the number of input granules for this operation
+   *
+   * @returns the number of input granules for this operation
+   * @readonly
+   */
+  get numInputGranules(): number {
+    return Math.min(this.operation.cmrHits,
+      this.operation.maxResults || Number.MAX_SAFE_INTEGER,
+      env.maxGranuleLimit);
   }
 
   /**

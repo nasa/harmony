@@ -25,6 +25,7 @@ const aJob: JobRecord = {
       },
     }],
   request: 'http://example.com/harmony?job=aJob',
+  numInputGranules: 100,
 };
 
 const anotherJob: JobRecord = {
@@ -45,6 +46,7 @@ const anotherJob: JobRecord = {
       },
     }],
   request: 'http://example.com/harmony?job=aJob',
+  numInputGranules: 200,
 };
 
 describe('Canceling a job', async function () {

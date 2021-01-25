@@ -31,6 +31,7 @@ const aJob: JobRecord = {
       },
     }],
   request: 'http://example.com/harmony?job=aJob',
+  numInputGranules: 58,
 };
 
 describe('Individual job status route', function () {
@@ -525,6 +526,11 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
         });
+
+        it('limits the input granules to the system limit', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(2);
+        });
       });
 
       describe('when the maxResults and the granule limit are both greater than the CMR hits', function () {
@@ -542,6 +548,11 @@ describe('Individual job status route', function () {
         it('does not return a warning message', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.equal('The job is being processed');
+        });
+
+        it('includes all of the granules', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(118);
         });
       });
 
@@ -561,11 +572,16 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 30 granules because you requested 30 maxResults.');
         });
+
+        it('limits the input granules to the maxResults value', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(30);
+        });
       });
 
       describe('when the maxResults is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
         before(function () {
-          this.glStub = stub(env, 'maxGranuleLimit').get(() => 30);
+          this.glStub = stub(env, 'maxGranuleLimit').get(() => 25);
         });
         after(function () {
           this.glStub.restore();
@@ -577,7 +593,12 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about maxResults limiting the number of results', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 30 granules because of system constraints.');
+          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 25 granules because of system constraints.');
+        });
+
+        it('limits the input granules to the system limit', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(25);
         });
       });
 
@@ -597,6 +618,11 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 100 granules because of system constraints.');
         });
+
+        it('limits the input granules to the system limit and maxResults limit', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(100);
+        });
       });
 
       describe('when maxResults, the granule limit, and the CMR hits are all equal', function () {
@@ -615,6 +641,11 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.equal('The job is being processed');
         });
+
+        it('includes all of the granules', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(118);
+        });
       });
 
       describe('when multiple collections share the same short name', function () {
@@ -624,7 +655,12 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about the multiple matching collections', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('There were 2 collections that matched the provided short name. C1234088182-EEDTEST was selected. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name.');
+          expect(job.message).to.equal('There were 2 collections that matched the provided short name harmony_example. See https://cmr.uat.earthdata.nasa.gov/concepts/C1234088182-EEDTEST for details on the selected collection. The version ID for the selected collection is 2. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name.');
+        });
+
+        it('includes all of the granules', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(176);
         });
       });
 
@@ -642,7 +678,12 @@ describe('Individual job status route', function () {
 
         it('returns a warning message that includes both warnings', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('There were 2 collections that matched the provided short name. C1234088182-EEDTEST was selected. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name. CMR query identified 176 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
+          expect(job.message).to.equal('There were 2 collections that matched the provided short name harmony_example. See https://cmr.uat.earthdata.nasa.gov/concepts/C1234088182-EEDTEST for details on the selected collection. The version ID for the selected collection is 2. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name. CMR query identified 176 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
+        });
+
+        it('limits the input granules to the system limit', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(2);
         });
       });
     });

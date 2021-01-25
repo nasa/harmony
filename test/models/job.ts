@@ -13,6 +13,7 @@ const exampleProps = {
   progress: 42,
   links: [{ href: 'http://example.com' }],
   request: 'http://example.com/harmony?foo=bar',
+  numInputGranules: 100,
 } as JobRecord;
 
 /**
@@ -26,6 +27,7 @@ function createJob(username): Job {
     username,
     requestId: uuid().toString(),
     request: `http://example.com/${username}`,
+    numInputGranules: 2,
   });
 }
 
@@ -75,6 +77,7 @@ describe('Job', function () {
           username: 'jdoe',
           requestId: uuid().toString(),
           request: 'http://example.com/jdoe',
+          numInputGranules: 5,
         });
         await job.save(this.trx);
       });

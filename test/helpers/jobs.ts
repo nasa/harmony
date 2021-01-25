@@ -12,6 +12,12 @@ import { truncateAll } from './db';
 
 export const adminUsername = 'adam';
 
+export const expectedJobKeys = [
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID',
+];
+
+export const expectedNoOpJobKeys = expectedJobKeys.filter((k) => k !== 'jobID');
+
 /**
  * Returns true if the passed in job record matches the serialized Job for all fields
  * and all links with rel === data
@@ -163,6 +169,7 @@ export async function createIndexedJobs(
       links: [],
       request: `http://example.com/${progress}`,
       isAsync: true,
+      numInputGranules: count,
     });
     await job.save(trx);
     // Explicitly set created dates to ensure they are sequential (must be done in an update)
@@ -234,6 +241,7 @@ export function hookJobCreation(
       username: 'anonymous',
       requestId: uuid().toString(),
       request: 'http://example.com/',
+      numInputGranules: 1,
       ...props,
     });
     this.job.save(db);

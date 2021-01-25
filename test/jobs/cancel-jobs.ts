@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import _ from 'lodash';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
-import { jobsEqual, cancelJob, hookCancelJob, adminUsername, adminCancelJob, hookAdminCancelJob, hookJobStatus } from '../helpers/jobs';
+import { jobsEqual, cancelJob, hookCancelJob, adminUsername, adminCancelJob, hookAdminCancelJob, hookJobStatus, expectedJobKeys } from '../helpers/jobs';
 import { hookRedirect } from '../helpers/hooks';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
 import { stubTerminateWorkflows, hookTerminateWorkflowError } from '../helpers/workflows';
@@ -26,6 +26,7 @@ const aJob: JobRecord = {
       },
     }],
   request: 'http://example.com/harmony?job=aJob',
+  numInputGranules: 33,
 };
 
 describe('Canceling a job - user endpoint', function () {
@@ -81,9 +82,6 @@ describe('Canceling a job - user endpoint', function () {
 
       it('returns a single job record in JSON format', function () {
         const actualJob = JSON.parse(this.res.text);
-        const expectedJobKeys = [
-          'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'jobID',
-        ];
         expect(Object.keys(actualJob)).to.eql(expectedJobKeys);
       });
 
@@ -347,9 +345,6 @@ describe('Canceling a job - admin endpoint', function () {
 
       it('returns a single job record in JSON format', function () {
         const actualJob = JSON.parse(this.res.text);
-        const expectedJobKeys = [
-          'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'jobID',
-        ];
         expect(Object.keys(actualJob)).to.eql(expectedJobKeys);
       });
 

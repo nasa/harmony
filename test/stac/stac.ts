@@ -23,6 +23,7 @@ const runningJob = {
     },
   }],
   request: 'http://example.com/harmony?job=runningJob',
+  numInputGranules: 100,
 };
 
 const completedJob = {
@@ -42,6 +43,7 @@ const completedJob = {
     },
   }],
   request: 'http://example.com/harmony?job=completedJob',
+  numInputGranules: 5,
 };
 
 describe('STAC catalog route', function () {

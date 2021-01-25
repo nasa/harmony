@@ -3,7 +3,7 @@ import { describe, it } from 'mocha';
 import _ from 'lodash';
 import hookCmr from '../helpers/stub-cmr';
 import isUUID from '../../app/util/uuid';
-import { itIncludesRequestUrl } from '../helpers/jobs';
+import { expectedNoOpJobKeys, itIncludesRequestUrl } from '../helpers/jobs';
 import { hookSignS3Object } from '../helpers/object-store';
 import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
@@ -857,10 +857,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   });
 });
 
-const expectedNoOpJobKeys = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request',
-];
-
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
   const collection = 'C446474-ORNL_DAAC';
   const version = '1.0.0';
@@ -884,6 +880,10 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     it('returns 100 for progress', function () {
       const job = JSON.parse(this.res.text);
       expect(job.progress).to.eql(100);
+    });
+    it('returns the number of CMR hits as the number of input granules', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.numInputGranules).to.eql(39);
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
