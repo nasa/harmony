@@ -4,7 +4,7 @@ import request, { Test } from 'supertest';
 /**
  * Example of a collection that can be hooked up to WMS
  */
-export const validCollection = 'C1233800302-EEDTEST';
+export const validCollection = 'C1234088182-EEDTEST';
 
 /**
  * Example of a valid WMS query for use in tests.

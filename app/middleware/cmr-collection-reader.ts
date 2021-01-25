@@ -1,11 +1,15 @@
-import { getVariablesForCollection, CmrCollection, getCollectionsByIds } from 'util/cmr';
-import { listToText } from 'util/string';
-import { NotFoundError } from 'util/errors';
 import { NextFunction } from 'express';
+import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName } from '../util/cmr';
+import { NotFoundError } from '../util/errors';
+import HarmonyRequest from '../models/harmony-request';
+import { listToText } from '../util/string';
 
 // CMR Collection IDs separated by delimiters of single "+" or single whitespace
 // (some clients may translate + to space)
-const COLLECTION_URL_PATH_REGEX = /^\/(?:C\d+-\w+[+\s])*(?:C\d+-\w+)+\//g;
+const CMR_CONCEPT_ID_URL_PATH_REGEX = /^\/(?:C\d+-\w+[+\s])*(?:C\d+-\w+)+\//g;
+
+// Regex for any routes that we expect to begin with a CMR collection identifier
+const COLLECTION_ROUTE_REGEX = /^(\/(?!docs).*\/)(wms|eoss|ogc-api-coverages)/;
 
 /**
  * Loads the variables for the given collection from the CMR and sets the collection's
@@ -47,24 +51,29 @@ async function loadVariablesForCollection(collection: CmrCollection, token: stri
  * @param res - The client response
  * @param next - The next function in the middleware chain
  */
-async function cmrCollectionReader(req, res, next: NextFunction): Promise<void> {
+async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction): Promise<void> {
   try {
-    const collectionMatch = req.url.match(COLLECTION_URL_PATH_REGEX);
+    const collectionMatch = req.url.match(CMR_CONCEPT_ID_URL_PATH_REGEX);
     if (collectionMatch) {
       const collectionIdStr = collectionMatch[0].substr(1, collectionMatch[0].length - 2);
       const collectionIds = collectionIdStr.split(/[+\s]/g);
       req.collectionIds = collectionIds;
-      req.context.logger.info(`Matched collections: ${collectionIds}`);
+      req.context.logger.info(`Matched CMR concept IDs: ${collectionIds}`);
 
       req.collections = await getCollectionsByIds(collectionIds, req.accessToken);
       const { collections } = req;
 
       // Could not find a requested collection
-      if (collections.length !== collectionIds.length) {
+      if (collections.length === 0) {
+        const message = `${collectionIdStr} must be a collection short name or CMR collection identifier, but we could not `
+        + 'find a matching collection. Please make sure the collection is correct and that you have access to it.';
+        throw new NotFoundError(message);
+      } else if (collections.length !== collectionIds.length) {
         const foundIds = collections.map((c) => c.id);
         const missingIds = collectionIds.filter((c) => !foundIds.includes(c));
         const s = missingIds.length > 1 ? 's' : '';
-        const message = `Route must include a CMR collection identifier. The collection${s} with ID${s} ${listToText(missingIds)} could not be found.`;
+        const message = `The collection${s} ${listToText(missingIds)} could not be found. Please make sure the`
+          + ' collection identifiers are correct and that you have access to each collection.';
         throw new NotFoundError(message);
       }
 
@@ -74,8 +83,27 @@ async function cmrCollectionReader(req, res, next: NextFunction): Promise<void> 
       }
       await Promise.all(promises);
     } else {
-      req.collectionIds = [];
-      req.collections = [];
+      // The request used a short name
+      const shortNameMatch = req.url.match(COLLECTION_ROUTE_REGEX);
+      if (shortNameMatch) {
+        const shortName = shortNameMatch[1].substr(1, shortNameMatch[1].length - 2);
+        const collections = await getCollectionsByShortName(shortName, req.accessToken);
+        const firstCollection = collections[0];
+        if (firstCollection) {
+          req.collections = [firstCollection];
+          req.collectionIds = [firstCollection.id];
+          await loadVariablesForCollection(firstCollection, req.accessToken);
+          if (collections.length > 1) {
+            req.context.messages.push(`There were ${collections.length} collections that matched the provided short name.`
+            + ` ${firstCollection.id} was selected. To use a different collection submit a new request`
+            + ' specifying the desired CMR concept ID instead of the collection short name.');
+          }
+        } else {
+          const message = `${shortName} must be a collection short name or CMR collection identifier, but we could not`
+            + ' find a matching collection. Please make sure the collection is correct and that you have access to it.';
+          throw new NotFoundError(message);
+        }
+      }
     }
     next();
   } catch (error) {
@@ -85,6 +113,6 @@ async function cmrCollectionReader(req, res, next: NextFunction): Promise<void> 
   }
 }
 
-cmrCollectionReader.collectionRegex = COLLECTION_URL_PATH_REGEX;
+cmrCollectionReader.collectionRegex = COLLECTION_ROUTE_REGEX;
 
 export = cmrCollectionReader;

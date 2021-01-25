@@ -1,0 +1,28 @@
+GET /search/variables.umm_json_v1_6?concept_id=V1234600147-ASF&concept_id=V1234600037-ASF&concept_id=V1234599990-ASF&concept_id=V1234600145-ASF&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.6; charset=utf-8
+content-length: 3205
+connection: close
+date: Tue, 12 Jan 2021 17:15:28 GMT
+set-cookie: AWSALB=5aahfIypfScIbXSJDFgp3QEayV9+HPh7LRuABhp5lpJMYZqYjxLCPm2coEbyoPDibZ5QqjasVIDTrbEa9oSyCfcv9R8kbvbPIPxScgN/vgruwejjheLID/BdOk0n; Expires=Tue, 19 Jan 2021 17:15:28 GMT; Path=/
+set-cookie: AWSALBCORS=5aahfIypfScIbXSJDFgp3QEayV9+HPh7LRuABhp5lpJMYZqYjxLCPm2coEbyoPDibZ5QqjasVIDTrbEa9oSyCfcv9R8kbvbPIPxScgN/vgruwejjheLID/BdOk0n; Expires=Tue, 19 Jan 2021 17:15:28 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 4d0d51a4-7b23-45a4-bd6a-dbc00714b3da
+strict-transport-security: max-age=31536000
+cmr-hits: 4
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 147
+x-request-id: 4d0d51a4-7b23-45a4-bd6a-dbc00714b3da
+server: Jetty(9.4.z-SNAPSHOT)
+x-cache: Miss from cloudfront
+via: 1.1 1299a022d10cdc620f209ba0440a48e9.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: nbFfje_rdeRQj39U_lerZrzQhQ3cFnO0nISyskjG2yxTW0apCDSyhQ==
+
+{"hits":4,"took":146,"items":[{"meta":{"revision-id":66,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"ASF","user-id":"cirrusasf","native-id":"amplitude","concept-id":"V1234599990-ASF","revision-date":"2020-08-11T23:40:57.404Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"float32","Offset":0,"Scale":1,"Sets":[{"Name":"data","Type":"data","Size":4,"Index":4}],"Dimensions":[{"Name":"latitude","Size":2166,"Type":"LATITUDE_DIMENSION"},{"Name":"longitude","Size":4061,"Type":"LONGITUDE_DIMENSION"}],"Definition":"2D Amplitude of IFG","Name":"science/grids/data/amplitude","AcquisitionSourceName":"SENTINEL-1 C-SAR","ValidRanges":[{"Min":0}],"Units":"watt","LongName":"Amplitude"},"associations":{"collections":[{"concept-id":"C1225776654-ASF"}]}},{"meta":{"revision-id":52,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"ASF","user-id":"cirrusasf","native-id":"coherence","concept-id":"V1234600037-ASF","revision-date":"2020-08-11T23:41:00.319Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"float32","Offset":0,"Scale":1,"Sets":[{"Name":"data","Type":"data","Size":4,"Index":2}],"Dimensions":[{"Name":"latitude","Size":2166,"Type":"LATITUDE_DIMENSION"},{"Name":"longitude","Size":4061,"Type":"LONGITUDE_DIMENSION"}],"Definition":"2D Coherence [0-1] from filtered IFG","Name":"science/grids/data/coherence","AcquisitionSourceName":"SENTINEL-1 C-SAR","ValidRanges":[{"Min":0,"Max":1}],"LongName":"Coherence"},"associations":{"collections":[{"concept-id":"C1225776654-ASF"}]}},{"meta":{"revision-id":51,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"ASF","user-id":"cirrusasf","native-id":"connectedComponents","concept-id":"V1234600145-ASF","revision-date":"2020-08-11T23:41:02.682Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"float32","Offset":0,"Scale":1,"Sets":[{"Name":"data","Type":"data","Size":4,"Index":3}],"Dimensions":[{"Name":"latitude","Size":2166,"Type":"LATITUDE_DIMENSION"},{"Name":"longitude","Size":4061,"Type":"LONGITUDE_DIMENSION"}],"Definition":"2D Connected component file","Name":"science/grids/data/connectedComponents","AcquisitionSourceName":"SENTINEL-1 C-SAR","ValidRanges":[{"Min":0,"Max":20}],"LongName":"Snaphu connected components"},"associations":{"collections":[{"concept-id":"C1225776654-ASF"}]}},{"meta":{"revision-id":50,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"ASF","user-id":"cirrusasf","native-id":"unwrappedPhase","concept-id":"V1234600147-ASF","revision-date":"2020-08-11T23:41:05.456Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"float32","Offset":0,"Scale":1,"Sets":[{"Name":"data","Type":"data","Size":4,"Index":1}],"Dimensions":[{"Name":"latitude","Size":2166,"Type":"LATITUDE_DIMENSION"},{"Name":"longitude","Size":4061,"Type":"LONGITUDE_DIMENSION"}],"Definition":"2D Filtered unwrapped IFG geocoded","Name":"science/grids/data/unwrappedPhase","AcquisitionSourceName":"SENTINEL-1 C-SAR","Units":"rad","LongName":"Unwrapped Phase"},"associations":{"collections":[{"concept-id":"C1225776654-ASF"}]}}]}

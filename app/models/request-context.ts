@@ -26,6 +26,8 @@ export default class RequestContext {
 
   serviceConfig?: ServiceConfig<unknown>;
 
+  messages?: string[];
+
   /**
    * Creates an instance of RequestContext.
    *
@@ -34,5 +36,6 @@ export default class RequestContext {
   constructor(id) {
     this.id = id;
     this.isAdminAccess = false;
+    this.messages = [];
   }
 }

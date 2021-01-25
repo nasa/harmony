@@ -7,9 +7,9 @@ import StubService from '../helpers/stub-service';
 import { hookSignS3Object } from '../helpers/object-store';
 
 describe('WMS GetMap', function () {
-  const collection = 'C1233800302-EEDTEST';
-  const variable = 'V1233801695-EEDTEST';
-  const defaultGranuleId = 'G1233800343-EEDTEST';
+  const collection = 'C1234088182-EEDTEST';
+  const variable = 'V1234088187-EEDTEST';
+  const defaultGranuleId = 'G1234088196-EEDTEST';
 
   hookServersStartStop();
 
@@ -122,7 +122,7 @@ describe('WMS GetMap', function () {
     });
   });
   describe('can provide an optional granule ID', function () {
-    const specificGranuleId = 'G1233800344-EEDTEST';
+    const specificGranuleId = 'G1234088197-EEDTEST';
     const query = {
       service: 'WMS',
       request: 'GetMap',
@@ -148,6 +148,34 @@ describe('WMS GetMap', function () {
         expect(source.variables[0].id).to.equal(variable);
         expect(source.granules.length === 1);
         expect(source.granules[0].id).to.equal(specificGranuleId);
+      });
+    });
+  });
+
+  describe('can specify a short name instead of a CMR concept ID', function () {
+    const shortName = 'harmony_example';
+    const query = {
+      service: 'WMS',
+      request: 'GetMap',
+      layers: `${collection}/${variable}`,
+      crs: 'EPSG:4326',
+      format: 'image/tiff',
+      styles: '',
+      width: 128,
+      height: 128,
+      version: '1.3.0',
+      bbox: '-180,-90,180,90',
+      transparent: 'TRUE',
+    };
+
+    describe('calling the backend service', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookGetMap(shortName, query);
+
+      it('successfully passes the source collection and variables to the backend', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.collection).to.equal(collection);
+        expect(source.variables[0].id).to.equal(variable);
       });
     });
   });
@@ -179,7 +207,7 @@ describe('WMS GetMap', function () {
     });
   });
 
-  const unsupportedCollection = 'C446398-ORNL_DAAC';
+  const unsupportedCollection = 'C446474-ORNL_DAAC';
   describe('collection that does not have any supported services', function () {
     const query = {
       service: 'WMS',

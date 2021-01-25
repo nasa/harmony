@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
+import sinon, { stub } from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
@@ -505,6 +505,145 @@ describe('Individual job status route', function () {
         });
 
         itIncludesRequestUrl('/C1104-PVC_TS2/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(-80%3A80)&subset=lon(-100%3A100)');
+      });
+    });
+
+    describe('warning messages', function () {
+      describe('when maxResults is not specified and the CMR hits is greater than the max granule limit', function () {
+        before(function () {
+          this.glStub = stub(env, 'maxGranuleLimit').get(() => 2);
+        });
+        after(function () {
+          this.glStub.restore();
+        });
+
+        StubService.hook({ params: { status: 'successful' } });
+        hookRangesetRequest(version, collection, variableName, { username: 'jdoe3' });
+        hookRedirect('jdoe3');
+
+        it('returns a warning message about system limits', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
+        });
+      });
+
+      describe('when the maxResults and the granule limit are both greater than the CMR hits', function () {
+        before(function () {
+          this.glStub = stub(env, 'maxGranuleLimit').get(() => 200);
+        });
+        after(function () {
+          this.glStub.restore();
+        });
+
+        StubService.hook({ params: { status: 'successful' } });
+        hookRangesetRequest(version, collection, variableName, { username: 'jdoe3', query: { maxResults: 200 } });
+        hookRedirect('jdoe3');
+
+        it('does not return a warning message', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('The job is being processed');
+        });
+      });
+
+      describe('when the maxResults is less than the granule limit and less than the CMR hits', function () {
+        before(function () {
+          this.glStub = stub(env, 'maxGranuleLimit').get(() => 200);
+        });
+        after(function () {
+          this.glStub.restore();
+        });
+
+        StubService.hook({ params: { status: 'successful' } });
+        hookRangesetRequest(version, collection, variableName, { username: 'jdoe3', query: { maxResults: 30 } });
+        hookRedirect('jdoe3');
+
+        it('returns a warning message about maxResults limiting the number of results', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 30 granules because you requested 30 maxResults.');
+        });
+      });
+
+      describe('when the maxResults is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
+        before(function () {
+          this.glStub = stub(env, 'maxGranuleLimit').get(() => 30);
+        });
+        after(function () {
+          this.glStub.restore();
+        });
+
+        StubService.hook({ params: { status: 'successful' } });
+        hookRangesetRequest(version, collection, variableName, { username: 'jdoe3', query: { maxResults: 200 } });
+        hookRedirect('jdoe3');
+
+        it('returns a warning message about maxResults limiting the number of results', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 30 granules because of system constraints.');
+        });
+      });
+
+      describe('when the maxResults is equal to the granule limit, and less than the CMR hits', function () {
+        before(function () {
+          this.glStub = stub(env, 'maxGranuleLimit').get(() => 100);
+        });
+        after(function () {
+          this.glStub.restore();
+        });
+
+        StubService.hook({ params: { status: 'successful' } });
+        hookRangesetRequest(version, collection, variableName, { username: 'jdoe3', query: { maxResults: 100 } });
+        hookRedirect('jdoe3');
+
+        it('returns a warning message about maxResults limiting the number of results', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 100 granules because of system constraints.');
+        });
+      });
+
+      describe('when maxResults, the granule limit, and the CMR hits are all equal', function () {
+        before(function () {
+          this.glStub = stub(env, 'maxGranuleLimit').get(() => 118);
+        });
+        after(function () {
+          this.glStub.restore();
+        });
+
+        StubService.hook({ params: { status: 'successful' } });
+        hookRangesetRequest(version, collection, variableName, { username: 'jdoe3', query: { maxResults: 118 } });
+        hookRedirect('jdoe3');
+
+        it('does not return a warning message', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('The job is being processed');
+        });
+      });
+
+      describe('when multiple collections share the same short name', function () {
+        StubService.hook({ params: { status: 'successful' } });
+        hookRangesetRequest(version, 'harmony_example', variableName, { username: 'jdoe3' });
+        hookRedirect('jdoe3');
+
+        it('returns a warning message about the multiple matching collections', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('There were 2 collections that matched the provided short name. C1234088182-EEDTEST was selected. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name.');
+        });
+      });
+
+      describe('when multiple collections share the same short name and the granule limit is exceeded', function () {
+        before(function () {
+          this.glStub = stub(env, 'maxGranuleLimit').get(() => 2);
+        });
+        after(function () {
+          this.glStub.restore();
+        });
+
+        StubService.hook({ params: { status: 'successful' } });
+        hookRangesetRequest(version, 'harmony_example', variableName, { username: 'jdoe3' });
+        hookRedirect('jdoe3');
+
+        it('returns a warning message that includes both warnings', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('There were 2 collections that matched the provided short name. C1234088182-EEDTEST was selected. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name. CMR query identified 176 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
+        });
       });
     });
   });

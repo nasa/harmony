@@ -15,25 +15,25 @@ describe('Routing', function () {
   describeErrorCondition({
     condition: 'accessing a collection ID that is not in CMR',
     path: `/${invalidCollection}/${wms}`,
-    message: `Route must include a CMR collection identifier. The collection with ID ${invalidCollection} could not be found.`,
+    message: `${invalidCollection} must be a collection short name or CMR collection identifier, but we could not find a matching collection. Please make sure the collection is correct and that you have access to it.`,
   });
 
   describeErrorCondition({
     condition: 'accessing multiple collections, one of which is not in CMR',
     path: `/${validCollection}+${invalidCollection}/${wms}`,
-    message: `Route must include a CMR collection identifier. The collection with ID ${invalidCollection} could not be found.`,
+    message: `The collection ${invalidCollection} could not be found. Please make sure the collection identifiers are correct and that you have access to each collection.`,
   });
 
   describeErrorCondition({
     condition: 'accessing multiple collections, multiple of which are not in CMR',
     path: `/${validCollection}+${invalidCollection}+${invalidCollection2}/${wms}`,
-    message: `Route must include a CMR collection identifier. The collections with IDs ${invalidCollection} and ${invalidCollection2} could not be found.`,
+    message: `The collections ${invalidCollection} and ${invalidCollection2} could not be found. Please make sure the collection identifiers are correct and that you have access to each collection.`,
   });
 
   describeErrorCondition({
     condition: 'providing an invalid format for a CMR collection ID',
     path: `/bogus-not-a-cmr-id/${wms}`,
-    message: 'Route must include a CMR collection identifier. bogus-not-a-cmr-id is not a valid collection identifier.',
+    message: 'bogus-not-a-cmr-id must be a collection short name or CMR collection identifier, but we could not find a matching collection. Please make sure the collection is correct and that you have access to it.',
   });
 
   describeErrorCondition({
@@ -41,7 +41,7 @@ describe('Routing', function () {
     path: '/BOGUS-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset',
     message: {
       code: 'harmony.NotFoundError',
-      description: 'Error: Route must include a CMR collection identifier. BOGUS-EEDTEST is not a valid collection identifier.',
+      description: 'Error: BOGUS-EEDTEST must be a collection short name or CMR collection identifier, but we could not find a matching collection. Please make sure the collection is correct and that you have access to it.',
     },
     html: false,
   });

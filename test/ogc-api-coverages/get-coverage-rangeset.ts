@@ -242,6 +242,24 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('When specifying a collection short name instead of a CMR concept ID', function () {
+    const shortName = 'harmony_example';
+
+    StubService.hook({ params: { status: 'successful' } });
+    hookRangesetRequest(version, shortName, variableName, {});
+
+    it('is processed asynchronously', function () {
+      expect(this.service.operation.isSynchronous).to.equal(false);
+    });
+
+    it('returns a redirect to the job status URL', function () {
+      const { status, headers } = this.res;
+      const { location } = headers;
+      expect(status).to.equal(303);
+      expect(location).to.match(/^\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    });
+  });
+
   describe('when provided a valid temporal range', function () {
     const query = {
       outputCrs: 'EPSG:4326',
@@ -844,7 +862,7 @@ const expectedNoOpJobKeys = [
 ];
 
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
-  const collection = 'C446398-ORNL_DAAC';
+  const collection = 'C446474-ORNL_DAAC';
   const version = '1.0.0';
 
   hookServersStartStop();
@@ -869,22 +887,22 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446398-ORNL_DAAC.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446474-ORNL_DAAC.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(117);
+      expect(job.links.length).to.equal(39);
     });
     it('granule links include a title of the granuleId', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links[0].title).to.equal('G1220944164-ORNL_DAAC');
+      expect(job.links[0].title).to.equal('G1239610894-ORNL_DAAC');
     });
     it('granule links include a download link', function () {
       const job = JSON.parse(this.res.text);
       expect(job.links[0].href).to.not.equal(undefined);
     });
 
-    itIncludesRequestUrl('/C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
+    itIncludesRequestUrl('/C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
   });
 
   describe('when using accept headers', function () {
@@ -942,10 +960,10 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('limits results to only those that match the spatial and temporal subset', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(10);
+      expect(job.links.length).to.equal(1);
     });
 
-    itIncludesRequestUrl('C446398-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
+    itIncludesRequestUrl('C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
   });
 
   describe('when specifying an invalid variable', function () {
@@ -960,6 +978,19 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
         code: 'harmony.RequestValidationError',
         description: 'Error: Coverages were not found for the provided CMR collection: badVar',
       });
+    });
+  });
+
+  describe('when using short name for a collection with granules but no services configured', function () {
+    const shortName = 'GLOBAL_MICROBIAL_BIOMASS_C_N_P_1264';
+    hookRangesetRequest(version, shortName, 'all', {});
+
+    it('returns a 200 successful response', function () {
+      expect(this.res.status).to.equal(200);
+    });
+    it('returns a JSON body in the format of a job status without a job ID', function () {
+      const job = JSON.parse(this.res.text);
+      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
     });
   });
 });

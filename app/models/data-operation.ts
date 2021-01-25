@@ -195,6 +195,8 @@ export default class DataOperation {
 
   decrypter?: Decrypter;
 
+  message: string;
+
   /**
    * Creates an instance of DataOperation.
    *

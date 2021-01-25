@@ -4,7 +4,7 @@ import { ServerResponse } from 'http';
 import _ from 'lodash';
 import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
-import { HarmonyGranule } from '../models/data-operation';
+import DataOperation, { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { computeMbr } from '../util/spatial/mbr';
 import { BoundingBox } from '../util/bounding-box';
@@ -47,6 +47,33 @@ function getMaxGranules(req: HarmonyRequest): number {
     maxResults = Math.min(env.maxGranuleLimit, query.maxresults);
   }
   return maxResults;
+}
+
+/**
+ * Returns a warning message if not all matching granules will be processed for the request
+ *
+ * @returns a warning message if not all matching granules will be processed, or undefined
+ * if not applicable
+ */
+function getResultsLimitedMessage(operation: DataOperation): string {
+  let numGranules = operation.cmrHits;
+  if (operation.maxResults) {
+    numGranules = Math.min(numGranules, operation.maxResults, env.maxGranuleLimit);
+  } else {
+    numGranules = Math.min(numGranules, env.maxGranuleLimit);
+  }
+
+  let message;
+  if (operation.cmrHits > numGranules) {
+    message = `CMR query identified ${operation.cmrHits} granules, but the request has been limited `
+     + `to process only the first ${numGranules} granules`;
+    if (operation.maxResults && operation.maxResults < env.maxGranuleLimit) {
+      message += ` because you requested ${operation.maxResults} maxResults.`;
+    } else {
+      message += ' because of system constraints.';
+    }
+  }
+  return message;
 }
 /**
  * Express.js middleware which extracts parameters from the Harmony operation
@@ -146,6 +173,10 @@ export default async function cmrGranuleLocator(
 
     await Promise.all(queries);
     operation.cmrQueryLocations = operation.cmrQueryLocations.sort();
+    const limitedMessage = getResultsLimitedMessage(operation);
+    if (limitedMessage) {
+      req.context.messages.push(getResultsLimitedMessage(operation));
+    }
   } catch (e) {
     if (e instanceof RequestValidationError || e instanceof CmrError) {
       // Avoid giving confusing errors about GeoJSON due to upstream converted files

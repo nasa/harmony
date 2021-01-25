@@ -1,5 +1,5 @@
 import process from 'process';
-import express, { RequestHandler, NextFunction } from 'express';
+import express, { RequestHandler } from 'express';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'js-yaml';
@@ -16,7 +16,6 @@ import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
 import chooseService from '../middleware/service-selection';
-import setRequestId from '../middleware/request-id';
 import shapefileConverter from '../middleware/shapefile-converter';
 import { NotFoundError } from '../util/errors';
 import * as eoss from '../frontends/eoss';
@@ -25,7 +24,7 @@ import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import landingPage from '../frontends/landing-page';
 import getVersions from '../frontends/versions';
 import serviceInvoker from '../backends/service-invoker';
-import HarmonyRequest from '../models/harmony-request';
+import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
 
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
@@ -99,33 +98,11 @@ function service(fn: RequestHandler): RequestHandler {
  * Given a path, returns a regular expression for that path prefixed by one or more collections
  *
  * @param path - The URL path
- * @returns The path prefixed by one or more collection IDs
+ * @returns The path prefixed by one or more collection IDs or short names
  */
 function collectionPrefix(path: string): RegExp {
-  const result = new RegExp(cmrCollectionReader.collectionRegex.source + path);
+  const result = new RegExp(`.*/${path}`);
   return result;
-}
-
-// Regex for any routes that we expect to begin with a CMR collection identifier
-const collectionRoute = /^(\/(?!docs).*\/)(wms|eoss|ogc-api-coverages)/;
-
-/**
- * Validates that routes which require a collection identifier are using the correct
- * format for a collection identifier.
- * @param req - The request sent by the client
- * @param res - The response to send to the client
- * @param next - The next function in the call chain
- */
-function validateCollectionRoute(req, res, next: NextFunction): void {
-  const { path } = req;
-  const collectionRouteMatch = path.match(collectionRoute);
-  if (collectionRouteMatch) {
-    if (!collectionRouteMatch[1].match(cmrCollectionReader.collectionRegex)) {
-      const badId = collectionRouteMatch[1].substring(1, collectionRouteMatch[1].length - 1);
-      next(new NotFoundError(`Route must include a CMR collection identifier. ${badId} is not a valid collection identifier.`));
-    }
-  }
-  next();
 }
 
 const authorizedRoutes = [
@@ -175,7 +152,6 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   result.get('/service-results/:bucket/:key(*)', getServiceResult);
 
   // Routes and middleware for handling service requests
-  result.use(logged(validateCollectionRoute));
   result.use(logged(cmrCollectionReader));
 
   ogcCoverageApi.addOpenApiRoutes(result);
@@ -190,7 +166,7 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   result.use(logged(shapefileConverter));
   result.use(logged(chooseService));
   result.use(logged(cmrGranuleLocator));
-  result.use(logged(setRequestId));
+  result.use(logged(addRequestContextToOperation));
 
   result.get('/', landingPage);
   result.get('/versions', getVersions);

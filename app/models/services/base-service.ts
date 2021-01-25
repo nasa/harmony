@@ -71,8 +71,6 @@ export default abstract class BaseService<ServiceParamType> {
 
   invocation: Promise<boolean>;
 
-  message?: string;
-
   /**
    * Creates an instance of BaseService.
    * @param config - The service configuration from config/services.yml
@@ -89,7 +87,6 @@ export default abstract class BaseService<ServiceParamType> {
       const prefix = `public/${config.name || this.constructor.name}/${uuid()}/`;
       this.operation.stagingLocation = defaultObjectStore().getUrlString(env.stagingBucket, prefix);
     }
-    this.message = config.message;
   }
 
   /**
@@ -215,13 +212,9 @@ export default abstract class BaseService<ServiceParamType> {
       status: JobStatus.RUNNING,
       request: requestUrl,
       isAsync: !this.isSynchronous,
+      message: this.operation.message,
     });
     job.addStagingBucketLink(stagingLocation);
-    if (this.message) {
-      job.message = this.warningMessage ? `${this.message} ${this.warningMessage}` : this.message;
-    } else if (this.warningMessage) {
-      job.message = this.warningMessage;
-    }
     return job;
   }
 
@@ -255,39 +248,6 @@ export default abstract class BaseService<ServiceParamType> {
    */
   get maxSynchronousGranules(): number {
     return getMaxSynchronousGranules(this.config);
-  }
-
-  /**
-   * Returns a warning message if some part of the request can't be fulfilled
-   *
-   * @returns a warning message to display, or undefined if not applicable
-   * @readonly
-   */
-  get warningMessage(): string {
-    let granulesProcessed = this.operation.cmrHits;
-    if (this.operation.maxResults) {
-      granulesProcessed = Math.min(
-        granulesProcessed, this.operation.maxResults, env.maxGranuleLimit,
-      );
-    } else {
-      granulesProcessed = Math.min(granulesProcessed, env.maxGranuleLimit);
-    }
-
-    let message;
-    if (this.operation.cmrHits > granulesProcessed) {
-      message = `CMR query identified ${this.operation.cmrHits} granules, but the request has been limited `
-        + `to process only the first ${granulesProcessed} granules`;
-      if (this.operation.maxResults) {
-        if (this.operation.maxResults < env.maxGranuleLimit) {
-          message += ` because you requested ${this.operation.maxResults} maxResults.`;
-        } else {
-          message += ' because of system constraints.';
-        }
-      } else {
-        message += ' because of system constraints.';
-      }
-    }
-    return message;
   }
 
   /**
