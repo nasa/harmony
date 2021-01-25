@@ -655,7 +655,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about the multiple matching collections', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('There were 2 collections that matched the provided short name. C1234088182-EEDTEST was selected. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name.');
+          expect(job.message).to.equal('There were 2 collections that matched the provided short name harmony_example. See https://cmr.uat.earthdata.nasa.gov/concepts/C1234088182-EEDTEST for details on the selected collection. The version ID for the selected collection is 2. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name.');
         });
 
         it('includes all of the granules', function () {
@@ -678,7 +678,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message that includes both warnings', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('There were 2 collections that matched the provided short name. C1234088182-EEDTEST was selected. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name. CMR query identified 176 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
+          expect(job.message).to.equal('There were 2 collections that matched the provided short name harmony_example. See https://cmr.uat.earthdata.nasa.gov/concepts/C1234088182-EEDTEST for details on the selected collection. The version ID for the selected collection is 2. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name. CMR query identified 176 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
         });
 
         it('limits the input granules to the system limit', function () {
