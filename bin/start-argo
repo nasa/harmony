@@ -87,6 +87,8 @@ awslocal s3 mb s3://${STAGING_BUCKET}
 awslocal s3 mb s3://${ARTIFACT_BUCKET}
 awslocal s3 mb s3://${UPLOAD_BUCKET}"
 
+kubectl -n argo delete rolebinding default-admin
+kubectl -n argo create rolebinding default-admin --clusterrole=admin --serviceaccount=argo:default
 kubectl -n argo delete configmap localstack-config 2>/dev/null || true
 kubectl -n argo create configmap localstack-config --from-literal=startup.sh="${localstack_startup_script}"
 
