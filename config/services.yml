@@ -31,6 +31,7 @@ https://cmr.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: asf-gdal-subsetter
+        template_type: chaining
         image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${ASF_GDAL_SUBSETTER_PARALLELISM}
@@ -140,6 +141,7 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: asf-gdal-subsetter
+        template_type: chaining
         image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${ASF_GDAL_SUBSETTER_PARALLELISM}
@@ -410,7 +412,7 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: false
       output_formats:
         - application/x-zarr
-    
+
   # CHAINED SERVICES BELOW HERE
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
     data_operation_version: '0.9.0'
