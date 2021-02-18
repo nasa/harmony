@@ -3,8 +3,11 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
+import logger from '../../../app/util/log';
 import env from '../../../app/util/env';
+
 import { queryGranules } from './query';
+import { now } from 'lodash';
 
 interface HarmonyArgv {
   outputDir?: string;
@@ -14,6 +17,7 @@ interface HarmonyArgv {
   maxPages?: number;
   batchSize?: number;
 }
+
 /**
  * Builds and returns the CLI argument parser
  * @returns the CLI argument parser
@@ -63,10 +67,14 @@ export function parser(): yargs.Argv<HarmonyArgv> {
  * @param args - The command line arguments to parse, absent any program name
  */
 export default async function main(args: string[]): Promise<void> {
+  const startTime = new Date().getTime();
+  const appLogger = logger.child({ application: 'cmr-granule-locator' });
   const options = parser().parse(args);
   const encrypter = createEncrypter(env.sharedSecretKey);
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
+  const timingLogger = appLogger.child({ requestId: operation.requestId });
+  timingLogger.info(`Starting cmr-granule-locator`);
   await fs.mkdir(options.outputDir, { recursive: true });
   const catalogs = await queryGranules(
     operation,
@@ -91,6 +99,10 @@ export default async function main(args: string[]): Promise<void> {
 
   await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
   await fs.writeFile(catalogCountFilename, catalogFilenames.length);
+
+  const durationMs = new Date().getTime() - startTime;
+  logger.info(`cmr-granule-locator completed`, { durationMs })
+
 }
 
 if (require.main === module) {

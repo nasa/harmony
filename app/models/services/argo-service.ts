@@ -133,6 +133,7 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
     const body = templateType === 'chaining' ? this._chainedWorkflowBody(params) : this._legacyWorkflowBody(params);
 
     try {
+      logger.info('Sending workflow request to Argo');
       await axios.default.post(url, body);
     } catch (e) {
       logger.error(`Argo workflow creation failed: ${JSON.stringify(e.response?.data)}`);
