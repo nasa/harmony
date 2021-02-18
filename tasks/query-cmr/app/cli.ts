@@ -5,7 +5,6 @@ import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
 import logger from '../../../app/util/log';
 import env from '../../../app/util/env';
-
 import { queryGranules } from './query';
 
 interface HarmonyArgv {
