@@ -1,4 +1,5 @@
 import { NextFunction } from 'express';
+import { getHarmonyConfiguredCollections } from 'models/services';
 import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName, cmrApiConfig } from '../util/cmr';
 import { NotFoundError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
@@ -89,17 +90,26 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
       if (shortNameMatch) {
         const shortName = shortNameMatch[1].substr(1, shortNameMatch[1].length - 2);
         const collections = await getCollectionsByShortName(shortName, req.accessToken);
-        const firstCollection = collections[0];
-        if (firstCollection) {
-          req.collections = [firstCollection];
-          req.collectionIds = [firstCollection.id];
-          await loadVariablesForCollection(firstCollection, req.accessToken);
+        let pickedCollection = collections[0];
+        if (collections.length > 1) {
+          // If there are multiple collections matching prefer a collection that is configured
+          // for use in harmony
+          const harmonyColls = getHarmonyConfiguredCollections();
+          const matchingColls = collections.filter((c) => harmonyColls.includes(c.id));
+          if (matchingColls.length > 0) {
+            pickedCollection = matchingColls[0];
+          }
+        }
+        if (pickedCollection) {
+          req.collections = [pickedCollection];
+          req.collectionIds = [pickedCollection.id];
+          await loadVariablesForCollection(pickedCollection, req.accessToken);
           if (collections.length > 1) {
-            const collectionLandingPage = `${cmrApiConfig.baseURL}/concepts/${firstCollection.id}`;
+            const collectionLandingPage = `${cmrApiConfig.baseURL}/concepts/${pickedCollection.id}`;
             req.context.messages.push(`There were ${collections.length} collections that matched the`
             + ` provided short name ${shortName}. See ${collectionLandingPage} for details on the`
             + ' selected collection. The version ID for the selected collection is '
-            + `${firstCollection.version_id}. To use a different collection submit a new request`
+            + `${pickedCollection.version_id}. To use a different collection submit a new request`
             + ' specifying the desired CMR concept ID instead of the collection short name.');
           }
         } else {

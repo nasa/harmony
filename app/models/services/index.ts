@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import _, { get as getIn } from 'lodash';
+import _, { flatten, get as getIn } from 'lodash';
 
 import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
@@ -627,4 +627,15 @@ export function chooseServiceConfig(
     }
   }
   return serviceConfig;
+}
+
+/**
+ * Returns all of the CMR concept IDs for collections configured for use in harmony
+ * @param configs - The array of service configurations (default: the contents of services.yml)
+ * @returns the service configuration to use
+ */
+export function getHarmonyConfiguredCollections(
+  configs: ServiceConfig<unknown>[] = serviceConfigs,
+): string[] {
+  return flatten(configs.map((c) => c.collections));
 }
