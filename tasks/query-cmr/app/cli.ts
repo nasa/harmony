@@ -22,7 +22,7 @@ interface HarmonyArgv {
  */
 export function parser(): yargs.Argv<HarmonyArgv> {
   return yargs
-    .usage('Usage: --output-dir <dir> --harmony-input <message> --query <query1> <query2>')
+    .usage('Usage: --output-dir <dir> --harmony-i nput <message> --query <query1> <query2>')
     .option('output-dir', {
       alias: 'o',
       describe: 'the directory where output files should be placed',
@@ -72,7 +72,7 @@ export default async function main(args: string[]): Promise<void> {
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
   const timingLogger = appLogger.child({ requestId: operation.requestId });
-  timingLogger.info(`Starting cmr-granule-locator`);
+  timingLogger.info('timing.cmr-granule-locator.start');
   await fs.mkdir(options.outputDir, { recursive: true });
   const catalogs = await queryGranules(
     operation,
@@ -99,7 +99,7 @@ export default async function main(args: string[]): Promise<void> {
   await fs.writeFile(catalogCountFilename, catalogFilenames.length);
 
   const durationMs = new Date().getTime() - startTime;
-  logger.info(`cmr-granule-locator completed`, { durationMs })
+  timingLogger.info('timing.cmr-granule-locator.end', { durationMs })
 
 }
 

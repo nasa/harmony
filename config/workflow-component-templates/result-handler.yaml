@@ -31,6 +31,8 @@ spec:
         source: |
           #!/usr/bin/env bash
           # timing
+          timestamp=`date +%Y-%m-%dT%H:%M:%S.%3NZ`
+          echo "{\"level\": \"info\", \"timestamp\": \"$timestamp\", \"message\": \"timing.result-handler.start\"}"
           start_time_millis=`date +%s%3N`
           EXIT_CODE=0
           if [[ "${SHOULD_POST_RESULTS}" == "true" ]]; then
@@ -81,5 +83,5 @@ spec:
           end_time_millis=`date +%s%3N`
           duration_ms=$(($end_time_millis-$start_time_millis))
           timestamp=`date +%Y-%m-%dT%H:%M:%S.%3NZ`
-          echo "{\"level\": \"info\", \"timestamp\": \"$timestamp\", \"durationMs\": $duration_ms, \"message\": \"result-handler completed\"}"
+          echo "{\"level\": \"info\", \"timestamp\": \"$timestamp\", \"durationMs\": $duration_ms, \"message\": \"timing.result-handler.end\"}"
           exit $EXIT_CODE
