@@ -32,9 +32,6 @@ spec:
           #!/usr/bin/env bash
           # timing
           start_time_millis=`date +%s%3N`
-          # start_time_sec=$(echo "$start_time" | cut -d'.' -f1)
-          # start_time_nano=$(echo "$start_time" | cut -d'.' -f2)
-          # send the progress to Harmony along with links if needed
           EXIT_CODE=0
           if [[ "${SHOULD_POST_RESULTS}" == "true" ]]; then
           STAC_CATALOG_LINK="{{inputs.parameters.stac-catalog-link}}"
@@ -82,9 +79,6 @@ spec:
           timestamp=`date +%Y-%m-%dT%H:%M:%S.%3NZ`
           echo "{\"level\": \"info\", \"timestamp\": \"$timestamp\", \"message\": \"Progress callback completed with exit code ${EXIT_CODE}\"}"
           end_time_millis=`date +%s%3N`
-          # end_time_sec=$(echo "$end_time" | cut -d'.' -f1)
-          # end_time_nano=$(echo "$end_time" | cut -d'.' -f2)
-          # duration_ms=$(((((($end_time_sec-$start_time_sec))*1000))+(((($end_time_nano-$start_time_nano))/1000000))))
           duration_ms=$(($end_time_millis-$start_time_millis))
           timestamp=`date +%Y-%m-%dT%H:%M:%S.%3NZ`
           echo "{\"level\": \"info\", \"timestamp\": \"$timestamp\", \"durationMs\": $duration_ms, \"message\": \"result-handler completed\"}"
