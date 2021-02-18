@@ -7,7 +7,6 @@ import logger from '../../../app/util/log';
 import env from '../../../app/util/env';
 
 import { queryGranules } from './query';
-import { now } from 'lodash';
 
 interface HarmonyArgv {
   outputDir?: string;
