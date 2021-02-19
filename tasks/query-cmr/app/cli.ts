@@ -22,7 +22,7 @@ interface HarmonyArgv {
  */
 export function parser(): yargs.Argv<HarmonyArgv> {
   return yargs
-    .usage('Usage: --output-dir <dir> --harmony-i nput <message> --query <query1> <query2>')
+    .usage('Usage: --output-dir <dir> --harmony-input <message> --query <query1> <query2>')
     .option('output-dir', {
       alias: 'o',
       describe: 'the directory where output files should be placed',

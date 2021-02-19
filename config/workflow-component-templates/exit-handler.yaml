@@ -31,9 +31,9 @@ spec:
           fi
           if [ "{{inputs.parameters.status}}" = 'Succeeded' ]
           then
-          curl -XPOST --silent "{{inputs.parameters.callback}}/response?status=successful&argo=true" > /dev/null
+          curl -XPOST "{{inputs.parameters.callback}}/response?status=successful&argo=true" > /dev/null
           else
-          curl -XPOST --silent "{{inputs.parameters.callback}}/response?status=failed&argo=true&error=$error" > /dev/null
+          curl -XPOST "{{inputs.parameters.callback}}/response?status=failed&argo=true&error=$error" > /dev/null
           fi
           end_time_millis=`date +%s%3N`
           duration_ms=$(($end_time_millis-$start_time_millis))

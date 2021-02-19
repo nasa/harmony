@@ -63,7 +63,6 @@ spec:
           done
           LINKS_JSON="${LINKS_JSON}]"
           curl -f -XPOST \
-          --silent \
           --data-urlencode "batch_completed=true" \
           --data-urlencode "batch_count={{inputs.parameters.batch-count}}" \
           --data-urlencode "post_batch_step_count={{inputs.parameters.post-batch-step-count}}" \
@@ -71,7 +70,6 @@ spec:
           "{{inputs.parameters.callback}}/argo-response" > /dev/null
           else
           curl -f -XPOST \
-          --silent \
           --data-urlencode "batch_completed=true" \
           --data-urlencode "batch_count={{inputs.parameters.batch-count}}" \
           --data-urlencode "post_batch_step_count={{inputs.parameters.post-batch-step-count}}" \
