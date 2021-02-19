@@ -20,7 +20,8 @@ spec:
         source: |
           # timing
           timestamp=`date +%Y-%m-%dT%H:%M:%S.%3NZ`
-          echo "{\"level\": \"info\", \"timestamp\": \"$timestamp\", \"message\": \"timing.exit-handler.start\"}"
+          request_id=$(echo "{{inputs.parameters.callback}}" | cut -d "/" -f 5)
+          echo "{\"application\": \"exit-handler\", \"requestId\": \"$request_id\", \"level\": \"info\", \"timestamp\": \"$timestamp\", \"message\": \"timing.exit-handler.start\"}"
           start_time_millis=`date +%s%3N`
           echo '{{inputs.parameters.failures}}' > /tmp/failures
           error="{{inputs.parameters.status}}"
@@ -38,6 +39,6 @@ spec:
           end_time_millis=`date +%s%3N`
           duration_ms=$(($end_time_millis-$start_time_millis))
           timestamp=`date +%Y-%m-%dT%H:%M:%S.%3NZ`
-          echo "{\"level\": \"info\", \"timestamp\": \"$timestamp\", \"durationMs\": $duration_ms, \"message\": \"timing.exit-handler.end\"}"
+          echo "{\"application\": \"exit-handler\", \"requestId\": \"$request_id\", \"level\": \"info\", \"timestamp\": \"$timestamp\", \"durationMs\": $duration_ms, \"message\": \"timing.exit-handler.end\"}"
 
           
