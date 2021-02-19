@@ -131,7 +131,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
 
     const templateType = this.params.template_type || 'legacy';
     const body = templateType === 'chaining' ? this._chainedWorkflowBody(params) : this._legacyWorkflowBody(params);
-
+    const startTime = new Date().getTime();
+    logger.info('timing.workflow-submission.start');
     try {
       await axios.default.post(url, body);
     } catch (e) {
@@ -140,6 +141,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       logger.error(`Workflow body: ${JSON.stringify(body)}`);
       throw e;
     }
+    const durationMs = new Date().getTime() - startTime;
+    logger.info('timing.workflow-submission.end', { durationMs });
 
     return null;
   }

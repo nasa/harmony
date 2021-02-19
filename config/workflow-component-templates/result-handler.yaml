@@ -30,7 +30,10 @@ spec:
             value: "{{inputs.parameters.should-post-results}}"
         source: |
           #!/usr/bin/env bash
-          # send the progress to Harmony along with links if needed
+          # timing
+          timestamp=`date +%Y-%m-%dT%H:%M:%S.%3NZ`
+          echo "{\"level\": \"info\", \"timestamp\": \"$timestamp\", \"message\": \"timing.result-handler.start\"}"
+          start_time_millis=`date +%s%3N`
           EXIT_CODE=0
           if [[ "${SHOULD_POST_RESULTS}" == "true" ]]; then
           STAC_CATALOG_LINK="{{inputs.parameters.stac-catalog-link}}"
@@ -73,5 +76,10 @@ spec:
           "{{inputs.parameters.callback}}/argo-response" > /dev/null
           fi
           EXIT_CODE=$?
-          echo "Progress callback completed with exit code ${EXIT_CODE}"
+          timestamp=`date +%Y-%m-%dT%H:%M:%S.%3NZ`
+          echo "{\"level\": \"info\", \"timestamp\": \"$timestamp\", \"message\": \"Progress callback completed with exit code ${EXIT_CODE}\"}"
+          end_time_millis=`date +%s%3N`
+          duration_ms=$(($end_time_millis-$start_time_millis))
+          timestamp=`date +%Y-%m-%dT%H:%M:%S.%3NZ`
+          echo "{\"level\": \"info\", \"timestamp\": \"$timestamp\", \"durationMs\": $duration_ms, \"message\": \"timing.result-handler.end\"}"
           exit $EXIT_CODE
