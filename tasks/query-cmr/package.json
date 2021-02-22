@@ -6,6 +6,7 @@
   "scripts": {
     "test": "eslint --ext .ts . && nyc mocha && npm audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
+    "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
     "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp ${npm_package_name:1}:${VERSION:-$npm_package_version}",
     "build": "tsc && docker build -t harmony/query-cmr:${VERSION:-latest} ."
@@ -24,7 +25,7 @@
     "aws-sdk": "^2.711.0",
     "dotenv": "^8.1.0",
     "form-data": "^3.0.0",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "node-fetch": "^2.6.1",
     "tmp": "^0.2.1",
     "tweetnacl": "^1.0.3",
