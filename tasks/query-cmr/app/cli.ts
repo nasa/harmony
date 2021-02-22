@@ -99,8 +99,7 @@ export default async function main(args: string[]): Promise<void> {
   await fs.writeFile(catalogCountFilename, catalogFilenames.length);
 
   const durationMs = new Date().getTime() - startTime;
-  timingLogger.info('timing.cmr-granule-locator.end', { durationMs })
-
+  timingLogger.info('timing.cmr-granule-locator.end', { durationMs });
 }
 
 if (require.main === module) {
