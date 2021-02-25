@@ -145,9 +145,6 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 #
 # Environment    Pull Policy    Behavior
 # -----------------------------------------------------------------------
-# Local          Never          The image:tag will not be pulled and must
-#                               exist locally; this can be done by building
-#                               the image or pulling it manually.
 # Local          IfNotPresent   The image:tag will be pulled if it doesn't
 #                               exist locally. If it has been pulled
 #                               manually, it will always use that image.
@@ -170,43 +167,43 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 # The image pull policy to use for any images which do not have an explicit
 # pull policy configured. See the above table for the recommend value to use
 # for the given environment.
-DEFAULT_IMAGE_PULL_POLICY='Always'
+DEFAULT_IMAGE_PULL_POLICY='IfNotPresent'
 DEFAULT_PARALLELISM=2
 
 ASF_GDAL_SUBSETTER_IMAGE=asfdataservices/gdal-subsetter:latest
-ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY='Always'
+ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
 ASF_GDAL_SUBSETTER_PARALLELISM=2
 
 HARMONY_GDAL_IMAGE=harmony/gdal:latest
-HARMONY_GDAL_IMAGE_PULL_POLICY='Always'
+HARMONY_GDAL_IMAGE_PULL_POLICY='IfNotPresent'
 HARMONY_GDAL_PARALLELISM=2
 
 HARMONY_NETCDF_TO_ZARR_IMAGE=harmony/netcdf-to-zarr:latest
-HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY='Always'
+HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY='IfNotPresent'
 HARMONY_NETCDF_TO_ZARR_PARALLELISM=2
 
 SWOT_REPROJECT_IMAGE=sds/swot-reproject:latest
-SWOT_REPROJECT_IMAGE_PULL_POLICY='Always'
+SWOT_REPROJECT_IMAGE_PULL_POLICY='IfNotPresent'
 SWOT_REPROJECT_PARALLELISM=2
 
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
-VAR_SUBSETTER_IMAGE_PULL_POLICY='Always'
+VAR_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
 VAR_SUBSETTER_PARALLELISM=2
 
 PODAAC_L2_SUBSETTER_IMAGE=podaac/podaac-cloud/podaac-subsetter:latest
-PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY='Always'
+PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
 PODAAC_L2_SUBSETTER_PARALLELISM=2
 
 PODAAC_PS3_IMAGE=podaac/podaac-cloud/podaac-shapefile-subsetter:latest
-PODAAC_PS3_IMAGE_PULL_POLICY='Always'
+PODAAC_PS3_IMAGE_PULL_POLICY='IfNotPresent'
 PODAAC_PS3_PARALLELISM=2
 
 PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
-PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='Always'
+PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='IfNotPresent'
 PODAAC_NETCDF_CONVERTER_PARALLELISM=2
 
 CMR_GRANULE_LOCATOR_IMAGE=harmony/query-cmr:latest
-CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY='Always'
+CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY='IfNotPresent'
 
 # page size to use with CMR calls
 CMR_MAX_PAGE_SIZE=2000
