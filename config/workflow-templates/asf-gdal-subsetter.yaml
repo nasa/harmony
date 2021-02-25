@@ -89,4 +89,6 @@ spec:
         env:
           - name: STAGING_PATH
             value: "{{inputs.parameters.STAGING_PATH}}"
+          - name: APP_NAME
+            value: "asf-gdal-subsetter"
 

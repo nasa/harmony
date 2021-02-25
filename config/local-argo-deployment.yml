@@ -581,6 +581,10 @@ spec:
             - --executor-image
             - argoproj/argoexec:v2.11.5
             - --namespaced
+            - --loglevel
+            - debug
+            - --gloglevel
+            - "6"
           command:
             - workflow-controller
           image: argoproj/workflow-controller:v2.11.5
