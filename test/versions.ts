@@ -54,7 +54,7 @@ describe('Versions endpoint', function () {
         type: {
           name: 'argo',
           params: {
-            image: 'maven.earthdata.nasa.gov/nexus-service/foo:uat',
+            image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
             image_pull_policy: 'Whenever I feel like it',
           },
         },
@@ -99,8 +99,8 @@ describe('Versions endpoint', function () {
 
       hookVersions();
 
-      describe('when an image is in the nexus repo', function () {
-        it('removes maven.earthdata.nasa.gov from the image name', function () {
+      describe('when an image is in a private Earthdata repo', function () {
+        it('removes *.earthdata.nasa.gov from the image name', function () {
           const services = JSON.parse(this.res.text);
           const nexusService = services.find((s) => s.name === 'nexus-service');
           expect(nexusService.image).to.equal('nexus-service/foo');

@@ -18,7 +18,7 @@ interface ServiceVersion {
 }
 
 /**
- * Removes AWS account ECR information or maven.earthdata.nasa.gov from the image name
+ * Removes AWS account ECR information or *.earthdata.nasa.gov from the image name
  * since we may not want to expose that information.
  *
  * @param image - The image name to sanitize
