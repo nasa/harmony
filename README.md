@@ -73,7 +73,7 @@ Optional:
 ### Set up Environment
 If you have not yet cloned the Harmony repository, run
 ```
-$ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony.git
+$ git clone https://github.com/nasa/harmony.git
 ```
 
 Ensure node is available and is the correct version, 12.x.x
@@ -100,7 +100,7 @@ Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to r
 
 ### Set Up Environment Variables
 
-Read the `ENV_CHANGELOG.md` file to see what environment variables have been added, dropped, or changed. 
+Read the `ENV_CHANGELOG.md` file to see what environment variables have been added, dropped, or changed.
 Copy the file [example/dotenv](example/dotenv) to a file named `.env` in the root project directory.  Follow the instructions in that file to populate any blank variables.  Variables that have values in the example can be kept as-is, as they provide good defaults for local development.  To check environment differences between the example and local, run:
 
 ```
@@ -222,7 +222,7 @@ This should print out an IP address. Use this in your .env file to specify the `
 Clone the Harmony GDAL service repository into a peer directory of the main Harmony repo
 ```
 $ cd ..
-$ git clone https://git.earthdata.nasa.gov/scm/harmony/harmony-gdal.git
+$ git clone https://github.com/nasa/harmony-gdal.git
 ```
 
 (minikube only) From the harmony-gdal project root, run
@@ -461,5 +461,6 @@ PR will need to be declined and resubmitted.
 * [Adapting new services to Harmony](docs/adapting-new-services.md)
 * [Harmony message schemas](app/schemas/data-operation)
 * [EOSS protocol OpenAPI Specification](app/schemas/eoss)
-* [Harmony GDAL service repository](https://git.earthdata.nasa.gov/projects/HARMONY/repos/harmony-gdal/browse)
+* [Harmony NetCDF to Zarr service repository](https://github.com/nasa/harmony-netcdf-to-zarr)
+* [Harmony GDAL example service repository](https://github.com/nasa/harmony-service-example)
 * [Linux Container-based development with Harmony](docs/dev_container/README.md) (n.b. Windows users)

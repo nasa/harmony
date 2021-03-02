@@ -11,11 +11,11 @@ In order to connect a new service to Harmony:
 5. A new entry in [services.yml](../config/services.yml) must supply information about the service
 6. The service should follow Harmony's recommendations for service implementations
 
-A simple reference service, [harmony-gdal](https://git.earthdata.nasa.gov/projects/HARMONY/repos/harmony-gdal/browse), provides examples of each. The remainder of this document describes how to fulfill these requirements in more depth.
+A simple reference service, [harmony-gdal](https://github.com/nasa/harmony-service-example), provides examples of each. The remainder of this document describes how to fulfill these requirements in more depth.
 
 ## 1. Allowing Harmony to invoke services
 
-Harmony provides a Python library, [harmony-service-lib-py](https://git.earthdata.nasa.gov/projects/HARMONY/repos/harmony-service-lib-py/browse), to
+Harmony provides a Python library, [harmony-service-lib-py](https://github.com/nasa/harmony-service-lib-py), to
 ease the process of adapting Harmony messages to subsetter code.  It provides helpers for message parsing, command line interactions, data staging,
 and Harmony callbacks.  Full details as well as an example can be found in the project's README and code.
 
