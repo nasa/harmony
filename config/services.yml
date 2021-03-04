@@ -481,6 +481,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234208438-POCLOUD
       - C1234724470-POCLOUD
       - C1234724471-POCLOUD
+      - C1239379704-POCLOUD
     maximum_sync_granules: 0
     capabilities:
       subsetting:
