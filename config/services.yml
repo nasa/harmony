@@ -48,6 +48,7 @@ https://cmr.earthdata.nasa.gov:
         variable: true
         multiple_variable: true
       output_formats:
+        - application/x-netcdf4
         - image/tiff
         - image/png
         - image/gif
@@ -233,6 +234,7 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: true
         multiple_variable: true
       output_formats:
+        - application/x-netcdf4
         - image/tiff
         - image/png
         - image/gif
