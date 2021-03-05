@@ -355,6 +355,26 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
 
+  - name: sds/maskfill
+    data_operation_version: '0.9.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: sds-maskfill
+        template_type: chaining
+        image: !Env ${SDS_MASKFILL_IMAGE}
+        image_pull_policy: !Env ${SDS_MASKFILL_IMAGE_PULL_POLICY}
+        parallelism: !Env ${SDS_MASKFILL_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/sds/maskfill
+    collections:
+      - C1240150677-EEDTEST  # SPL4CMDL test collection
+    capabilities:
+      subsetting:
+        shape: true
+
   # This is an example service and backend from example/http-backend.js mounted by
   # the frontend callback server.
   # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
