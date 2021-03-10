@@ -830,6 +830,7 @@ components:
       name: format
       in: query
       description: the output mime type to return
+      required: false
       schema:
         type: string
         example:
