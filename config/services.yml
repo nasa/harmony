@@ -290,6 +290,9 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234724470-POCLOUD
       - C1234724471-POCLOUD
       - C1234071416-POCLOUD
+      - C1238543220-POCLOUD
+      - C1238543223-POCLOUD
+      - C1238538240-POCLOUD
     capabilities:
       subsetting:
         bbox: true
