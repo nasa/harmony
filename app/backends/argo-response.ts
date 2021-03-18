@@ -106,7 +106,7 @@ export default async function responseHandler(req: Request, res: Response): Prom
   });
 
   logger.info('CALLBACK REQUEST');
-  logger.info(JSON.stringify(req));
+  logger.info(JSON.stringify(req.query));
 
   const query = req.query as ArgoCallbackQuery;
 
