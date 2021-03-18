@@ -49,6 +49,10 @@ describe('OGC API Coverages - Utilities', function () {
       it('throws a parse error when the range maximum is greater than 90', function () {
         expect(parseSubsetParamsFn(['lat(-10:90.1)'])).to.throw(ParameterParseError, 'subset dimension "lat" values must be less than 90');
       });
+
+      it('throws a parse error when the lat parameter range cannot be parsed because of missing ending paren', function () {
+        expect(parseSubsetParamsFn(['lat(-10:10'])).to.throw(ParameterParseError, 'unable to parse subset dimension from value "lat(-10:10"');
+      });
     });
 
     describe('lon subsets', function () {
@@ -94,6 +98,10 @@ describe('OGC API Coverages - Utilities', function () {
 
       it('throws a parse error when the range maximum is higher than 180', function () {
         expect(parseSubsetParamsFn(['lon(-10:180.1)'])).to.throw(ParameterParseError, 'subset dimension "lon" values must be less than 180');
+      });
+
+      it('throws a parse error when the lon parameter range cannot be parsed because of missing beginning paren', function () {
+        expect(parseSubsetParamsFn(['lon-10:10)'])).to.throw(ParameterParseError, 'unable to parse subset dimension from value "lon-10:10)"');
       });
     });
 

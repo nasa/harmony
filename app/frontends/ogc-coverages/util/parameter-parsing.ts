@@ -136,9 +136,13 @@ const dimensionNameRegex = /^(\w+)\(.+\)$/;
  * @returns the dimension name
  */
 function _getDimensionName(value: string): string {
-  const match = value.match(dimensionNameRegex);
-  const [, dimName] = match;
-  return dimName;
+  try {
+    const match = value.match(dimensionNameRegex);
+    const [, dimName] = match;
+    return dimName;
+  } catch (e) {
+    throw new ParameterParseError(`unable to parse subset dimension from value "${value}"`);
+  }
 }
 
 /**
