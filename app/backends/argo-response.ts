@@ -105,9 +105,6 @@ export default async function responseHandler(req: Request, res: Response): Prom
     requestId,
   });
 
-  logger.info('CALLBACK REQUEST');
-  logger.info(JSON.stringify(req.query));
-
   const query = req.query as ArgoCallbackQuery;
 
   const trx = await db.transaction();
@@ -125,13 +122,12 @@ export default async function responseHandler(req: Request, res: Response): Prom
 
   try {
     const queryOverrides = {} as ArgoCallbackQuery;
-    const jsonBody = body;
 
     // progress update
-    if (jsonBody?.batch_completed?.toLowerCase() === 'true') {
-      const batchCount = parseInt(jsonBody.batch_count, 10);
+    if (body?.batch_completed?.toLowerCase() === 'true') {
+      const batchCount = parseInt(body.batch_count, 10);
       const batchProgress = job.batchesCompleted + 1;
-      const postBatchStepCount = parseInt(jsonBody.post_batch_step_count, 10) || 0;
+      const postBatchStepCount = parseInt(body.post_batch_step_count, 10) || 0;
       // always hold back 1% to reserve time for the exit handler
       let progress = Math.min(100 * (batchProgress / (batchCount + postBatchStepCount)), 99);
       // don't allow negative progress
@@ -143,8 +139,8 @@ export default async function responseHandler(req: Request, res: Response): Prom
     }
 
     // add links if provided
-    if (jsonBody.items) {
-      const { items } = jsonBody;
+    if (body.items) {
+      const { items } = body;
       queryOverrides.items = items.map((itemMap): ArgoCallbackQueryItem => {
         const newItem = {} as ArgoCallbackQueryItem;
         newItem.bbox = itemMap.bbox;
