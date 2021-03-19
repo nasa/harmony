@@ -59,7 +59,7 @@ export function hookArgoCallbackEach(
   fn: (req: request.Test) => request.Test, finish = false,
 ): void {
   beforeEach(async function () {
-    this.callbackRes = await fn(request(this.backend).post(this.argoCallback).type('form'));
+    this.callbackRes = await fn(request(this.backend).post(this.argoCallback).type('json'));
     if (finish) {
       this.userResp = await this.userPromise;
     }

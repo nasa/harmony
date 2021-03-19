@@ -67,7 +67,7 @@ describe('Argo Callbacks', function () {
 
       describe('and the items contain a temporal range', function () {
         it('rejects temporal params containing invalid dates', async function () {
-          const response = await request(this.backend).post(this.argoCallback).type('form')
+          const response = await request(this.backend).post(this.argoCallback).type('json')
             .send({
               batch_completed: 'true',
               batch_count: '4',
@@ -89,7 +89,7 @@ describe('Argo Callbacks', function () {
         });
 
         it('rejects temporal params containing an incorrect number of dates', async function () {
-          const response = await request(this.backend).post(this.argoCallback).type('form')
+          const response = await request(this.backend).post(this.argoCallback).type('json')
             .send({
               batch_completed: 'true',
               batch_count: '4',
@@ -111,7 +111,7 @@ describe('Argo Callbacks', function () {
         });
 
         it('accepts temporal params containing the correct number of dates', async function () {
-          const response = await request(this.backend).post(this.argoCallback).type('form')
+          const response = await request(this.backend).post(this.argoCallback).type('json')
             .send({
               batch_completed: 'true',
               batch_count: '4',
@@ -126,7 +126,7 @@ describe('Argo Callbacks', function () {
         });
 
         it('saves parsed temporal params to the database', async function () {
-          await request(this.backend).post(this.argoCallback).type('form')
+          await request(this.backend).post(this.argoCallback).type('json')
             .send({
               batch_completed: 'true',
               batch_count: '4',
@@ -149,7 +149,7 @@ describe('Argo Callbacks', function () {
       hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', {}); });
 
       it('rejects bbox params containing invalid numbers', async function () {
-        const response = await request(this.backend).post(this.argoCallback).type('form')
+        const response = await request(this.backend).post(this.argoCallback).type('json')
           .send({
             batch_completed: 'true',
             batch_count: '4',
@@ -171,7 +171,7 @@ describe('Argo Callbacks', function () {
       });
 
       it('rejects bbox params containing an incorrect number of values', async function () {
-        const response = await request(this.backend).post(this.argoCallback).type('form')
+        const response = await request(this.backend).post(this.argoCallback).type('json')
           .send({
             batch_completed: 'true',
             batch_count: '4',
@@ -193,7 +193,7 @@ describe('Argo Callbacks', function () {
       });
 
       it('accepts bbox params containing the correct number of values', async function () {
-        const response = await request(this.backend).post(this.argoCallback).type('form')
+        const response = await request(this.backend).post(this.argoCallback).type('json')
           .send({
             batch_completed: 'true',
             batch_count: '4',
@@ -241,7 +241,7 @@ describe('Argo Callbacks', function () {
 
   describe('for callbacks where a corresponding job cannot be found', function () {
     beforeEach(async function () {
-      this.res = await request(this.backend).post('/service/missing-thing/argo-response').type('form');
+      this.res = await request(this.backend).post('/service/missing-thing/argo-response').type('json');
     });
 
     it('replies with a 404 error to the backend service', function () {
