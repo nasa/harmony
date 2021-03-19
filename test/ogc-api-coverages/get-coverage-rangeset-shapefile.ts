@@ -69,7 +69,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       const shapeForm = { ...form, shapefile: { path: './test/resources/complex_multipoly.geojson', mimetype: 'application/geo+json' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       cmrResp.headers = new fetch.Headers(cmrResp.headers);
-      hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('passes the source collection to the backend', function () {
@@ -149,7 +148,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('and a valid ESRI shapefile', function () {
       const shapeForm = { ...form, shapefile: { path: './test/resources/complex_multipoly.zip', mimetype: 'application/shapefile+zip' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('correctly identifies the granules based on the shapefile', function () {
@@ -204,7 +202,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('and a valid KML shapefile', function () {
       const shapeForm = { ...form, shapefile: { path: './test/resources/complex_multipoly.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookCmr('fetchPost', cmrResp);
       hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
       it('correctly identifies the granules based on the shapefile', function () {
@@ -253,7 +250,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
 
   describe('When a user is already authenticated', async function () {
     cmrResp.headers = new fetch.Headers(cmrResp.headers);
-    hookCmr('fetchPost', cmrResp);
     StubService.hook({ params: { redirect: 'http://example.com' } });
 
     it('does not redirect to EDL', async function () {

@@ -105,7 +105,9 @@ export default async function cmrGranuleLocator(
     cmrQuery.bounding_box = operation.boundingRectangle.join(',');
   }
 
-  cmrQuery.concept_id = operation.granuleIds;
+  if (operation.granuleIds) {
+    cmrQuery.concept_id = operation.granuleIds;
+  }
 
   operation.cmrHits = 0;
   try {
@@ -120,20 +122,13 @@ export default async function cmrGranuleLocator(
 
       if (operation.geojson) {
         cmrQuery.geojson = operation.geojson;
-        cmrResponse = await cmr.queryGranulesForCollectionWithMultipartForm(
-          source.collection,
-          cmrQuery,
-          req.accessToken,
-          maxResults,
-        );
-      } else {
-        cmrResponse = await cmr.queryGranulesForCollection(
-          source.collection,
-          cmrQuery,
-          req.accessToken,
-          maxResults,
-        );
       }
+      cmrResponse = await cmr.queryGranulesForCollection(
+        source.collection,
+        cmrQuery,
+        req.accessToken,
+        maxResults,
+      );
 
       const indexStr = `${i}`.padStart(5, '0');
       const artifactUrl = `${artifactPrefix}query${indexStr}.json`;

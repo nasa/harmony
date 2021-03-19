@@ -2,7 +2,7 @@ import { before, after } from 'mocha';
 import * as sinon from 'sinon';
 import * as cmr from 'util/cmr';
 
-type CmrMethodName = 'cmrSearchBase' | 'fetchPost' | 'cmrPostSearchBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'queryGranulesForCollectionWithMultipartForm' | 'belongsToGroup' | 'cmrApiConfig';
+type CmrMethodName = 'cmrSearchBase' | 'fetchPost' | 'cmrPostSearchBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'belongsToGroup' | 'cmrApiConfig';
 
 /**
  * Replace a function in the `cmr` module with a given function. This is needed because

@@ -1,0 +1,29 @@
+GET /search/collections.json?short_name=BOGUS-EEDTEST&page_size=2000&sort_key=-revisionDate
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 223
+connection: close
+date: Fri, 19 Mar 2021 19:43:44 GMT
+set-cookie: AWSALB=UxtbivP7JInddsXdJoi9l3AuWjq/ISE+mXakzVC600bnalHPwbmrZf4Fvm83GKToJJvjoZZ/dIdnAEff6nbvLPgfU6n7xFersoIIR6Y+kaQD9ZmaNgENsBTxiZJW; Expires=Fri, 26 Mar 2021 19:43:44 GMT; Path=/
+set-cookie: AWSALBCORS=UxtbivP7JInddsXdJoi9l3AuWjq/ISE+mXakzVC600bnalHPwbmrZf4Fvm83GKToJJvjoZZ/dIdnAEff6nbvLPgfU6n7xFersoIIR6Y+kaQD9ZmaNgENsBTxiZJW; Expires=Fri, 26 Mar 2021 19:43:44 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: e7a132c4-9386-4b9d-a49f-38b9ab5701d4
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 6
+x-request-id: e7a132c4-9386-4b9d-a49f-38b9ab5701d4
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 ba636ce43f1cebcb0c172b8070a33b15.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR53-C2
+x-amz-cf-id: HH_SuhRS0LaL_TqRnJOyTmJ52b22zS3Zo-VsIZQjZ9T-VR0IMhl2kA==
+
+{"feed":{"updated":"2021-03-19T19:43:44.762Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?short_name=BOGUS-EEDTEST&page_size=2000&sort_key=-revisionDate","title":"ECHO dataset metadata","entry":[]}}
