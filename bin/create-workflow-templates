@@ -92,7 +92,8 @@ function inject_script_source {
 
 for f in ./config/workflow-component-templates/*; do
   component_file=$(inject_docker_image $f)
-  if [ "$f" = "./config/workflow-component-templates/result-handler.yaml" ]; then
+  if [ "$f" = "./config/workflow-component-templates/result-handler.yaml" ] ||
+      [ "$f" = "./config/workflow-component-templates/exit-handler.yaml" ]; then
     component_file=$(inject_script_source $component_file)
   fi
 

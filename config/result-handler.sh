@@ -43,7 +43,6 @@ fi
 JSON="${JSON}\n}"
 echo -e "${JSON}" >/tmp/resp.json
 echo -e "JSON\n"
-echo -e "${JSON}\n"
 cat /tmp/resp.json
 gzip /tmp/resp.json
 curl -f -XPOST \
