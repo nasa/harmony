@@ -42,8 +42,6 @@ if [[ "${SHOULD_POST_RESULTS}" == "true" ]]; then
 fi
 JSON="${JSON}\n}"
 echo -e "${JSON}" >/tmp/resp.json
-echo -e "JSON\n"
-cat /tmp/resp.json
 gzip /tmp/resp.json
 curl -f -XPOST \
   -H 'Content-Type: application/json' \
