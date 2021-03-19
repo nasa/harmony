@@ -227,20 +227,22 @@ export function hookPostRangesetRequest(
       return !parsed.shapefile;
     })[0];
 
-    const redirect = cookieValue(redirectHeader, 'redirect');
-    // HARMONY-290 Should be query parmams, not a string
-    const query = redirect.split('?')[1];
+    if (redirectHeader) {
+      const redirect = cookieValue(redirectHeader, 'redirect');
+      // HARMONY-290 Should be query parmams, not a string
+      const query = redirect.split('?')[1];
 
-    this.res = await rangesetRequest(
-      this.frontend,
-      version,
-      collection,
-      coverageId,
-      {
-        query: query as unknown as object, // Fix along with HARMONY-290 to parse query params
-        cookies,
-      },
-    ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+      this.res = await rangesetRequest(
+        this.frontend,
+        version,
+        collection,
+        coverageId,
+        {
+          query: query as unknown as object, // Fix along with HARMONY-290 to parse query params
+          cookies,
+        },
+      ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+    }
   });
   after(function () {
     delete this.res;
