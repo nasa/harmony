@@ -60,4 +60,9 @@ after(function () {
 
   const fetchPost = cmr.fetchPost as SinonStub;
   if (fetchPost.restore) fetchPost.restore();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const prototype = FormData.prototype as any;
+  const gcd = prototype._getContentDisposition;
+  if (gcd.restore) gcd.restore();
 });
