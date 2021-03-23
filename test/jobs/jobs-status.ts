@@ -524,7 +524,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about system limits', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 2 granules because of system constraints\.$/);
         });
 
         it('limits the input granules to the system limit', function () {
@@ -552,7 +552,7 @@ describe('Individual job status route', function () {
 
         it('includes all of the granules', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(118);
+          expect(job.numInputGranules).to.be.greaterThan(100);
         });
       });
 
@@ -570,7 +570,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about maxResults limiting the number of results', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 30 granules because you requested 30 maxResults.');
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 30 granules because you requested 30 maxResults\.$/);
         });
 
         it('limits the input granules to the maxResults value', function () {
@@ -593,7 +593,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about maxResults limiting the number of results', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 25 granules because of system constraints.');
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 25 granules because of system constraints\.$/);
         });
 
         it('limits the input granules to the system limit', function () {
@@ -616,7 +616,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about maxResults limiting the number of results', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 100 granules because of system constraints.');
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 100 granules because of system constraints\.$/);
         });
 
         it('limits the input granules to the system limit and maxResults limit', function () {
@@ -627,14 +627,14 @@ describe('Individual job status route', function () {
 
       describe('when maxResults, the granule limit, and the CMR hits are all equal', function () {
         before(function () {
-          this.glStub = stub(env, 'maxGranuleLimit').get(() => 118);
+          this.glStub = stub(env, 'maxGranuleLimit').get(() => 125);
         });
         after(function () {
           this.glStub.restore();
         });
 
         StubService.hook({ params: { status: 'successful' } });
-        hookRangesetRequest(version, collection, variableName, { username: 'jdoe3', query: { maxResults: 118 } });
+        hookRangesetRequest(version, collection, variableName, { username: 'jdoe3', query: { maxResults: 125 } });
         hookRedirect('jdoe3');
 
         it('does not return a warning message', function () {
@@ -644,7 +644,7 @@ describe('Individual job status route', function () {
 
         it('includes all of the granules', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(118);
+          expect(job.numInputGranules).to.equal(125);
         });
       });
 

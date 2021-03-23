@@ -1,0 +1,30 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1234088182-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n350\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"bounding_box\"\r\n\r\n-180,-90,180,90\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nG1234088196-EEDTEST\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 951
+connection: close
+date: Fri, 19 Mar 2021 19:43:20 GMT
+set-cookie: AWSALB=4G94eWDCiqLR0XUypDlmiewz9bSSQ1fcbUqN+LXatT5XhScEo3E2Mz9NiozhI2MfvgcWk661c9MjT1RfRg3lbY+ShHYPIPVgxJ29hztAn7wf4iRPcrMrVBmJrVdR; Expires=Fri, 26 Mar 2021 19:43:20 GMT; Path=/
+set-cookie: AWSALBCORS=4G94eWDCiqLR0XUypDlmiewz9bSSQ1fcbUqN+LXatT5XhScEo3E2Mz9NiozhI2MfvgcWk661c9MjT1RfRg3lbY+ShHYPIPVgxJ29hztAn7wf4iRPcrMrVBmJrVdR; Expires=Fri, 26 Mar 2021 19:43:20 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 839ceadb-f090-4c47-bcae-80e884d524a3
+strict-transport-security: max-age=31536000
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 24
+x-request-id: 839ceadb-f090-4c47-bcae-80e884d524a3
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 c5b9a0c64a4bfd127a52280a230003d2.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR53-C2
+x-amz-cf-id: ghEHr2eeN438CSJfUSuPwyVohbjIH2H_H7DXLVjfIFBB9BxOfjib8Q==
+
+{"feed":{"updated":"2021-03-19T19:43:20.959Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[{"producer_granule_id":"2020_01_01_7f00ff_global","boxes":["-89.95 -179.95 89.95 179.95"],"time_start":"2020-01-01T00:00:00.000Z","updated":"2020-03-21T01:32:21.000Z","dataset_id":"Harmony Example Data v2","data_center":"EEDTEST","title":"2020_01_01_7f00ff_global","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T23:59:59.000Z","id":"G1234088196-EEDTEST","original_format":"ECHO10","granule_size":"0.7383966445922852","browse_flag":false,"collection_concept_id":"C1234088182-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf4","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example_v2/nc/2020_01_01_7f00ff_global.nc"}]}]}}

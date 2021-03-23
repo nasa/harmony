@@ -1,0 +1,28 @@
+GET /search/collections.json?short_name=harmony_example&page_size=2000&sort_key=-revisionDate
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+connection: close
+date: Fri, 19 Mar 2021 19:43:20 GMT
+set-cookie: AWSALB=SD0a1mU+WFZDau+x0fDQvZMbayffh+efxAfyIVrtBsj1NtPmq3uZceWdyzfzUKqfJ5nQV4byPPOlP3LC+x4C7AM6zIgJFNoKuc3hr/h62gC974Lq4Z1Vu+XZP5Ed; Expires=Fri, 26 Mar 2021 19:43:20 GMT; Path=/
+set-cookie: AWSALBCORS=SD0a1mU+WFZDau+x0fDQvZMbayffh+efxAfyIVrtBsj1NtPmq3uZceWdyzfzUKqfJ5nQV4byPPOlP3LC+x4C7AM6zIgJFNoKuc3hr/h62gC974Lq4Z1Vu+XZP5Ed; Expires=Fri, 26 Mar 2021 19:43:20 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: b8ce3bb8-e5f6-47b0-ad38-9b57bda0998a
+strict-transport-security: max-age=31536000
+cmr-hits: 2
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 9
+x-request-id: b8ce3bb8-e5f6-47b0-ad38-9b57bda0998a
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 0a84c1b70b100e694edd23e638bf7fa9.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR53-C2
+x-amz-cf-id: YN2usvP8wQfKIqyH1X8DVlJMFMmZuVCoMgcTPh6T_zuq_7JorJ4kUg==
+
+{"feed":{"updated":"2021-03-19T19:43:20.801Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?short_name=harmony_example&page_size=2000&sort_key=-revisionDate","title":"ECHO dataset metadata","entry":[{"time_start":"1970-06-26T00:00:00.000Z","version_id":"2","updated":"2000-01-01T00:00:00.000Z","dataset_id":"Harmony Example Data v2","has_spatial_subsetting":true,"has_transforms":true,"associations":{"variables":["V1234088187-EEDTEST","V1234088188-EEDTEST","V1234088189-EEDTEST","V1234088190-EEDTEST"],"services":["S1237974301-EEDTEST","S1237980031-EEDTEST"]},"has_variables":true,"data_center":"EEDTEST","short_name":"harmony_example","title":"Harmony Example Data v2","summary":"    A collection to use in testing Harmony whose data have the following attributes, useful in testing current    and future Harmony work, ensuring that results come back correctly, and that metadata is preserved.    1. Granule data is very small, under 1MB, often well under 1MB    2. Data follows the outlines of the continents, making visual inspection easy    3. Data follows a consistent gradient, with hue differing slightly by granule in sequential temporal order from       blue/purple (oldest) to red (newest)    4. Files have color interpretation set, allowing for color output, if services preserve it    5. Files have 4 variables / bands    6. Data bands have descriptions set    Differences from v1:    1. Produced via the NetCDF4 API, with deliberate chunking of 16 chunks per variable    2. File custom metadata renamed to HarmonyHexColor, set to the central hex value of the file's gradient, and HarmonyHue, set to the numeric hue (0.0-1.0)    3. Each geographic area is separated to a different month with each sub-file as the same day of that month    4. File names are improved to have a year-month-day format  ","orbit_parameters":{},"id":"C1234088182-EEDTEST","has_formats":true,"original_format":"ECHO10","has_temporal_subsetting":false,"browse_flag":false,"online_access_flag":false},{"time_start":"1970-06-26T00:00:00.000Z","version_id":"1","updated":"2000-01-01T00:00:00.000Z","dataset_id":"Harmony Example Data","has_spatial_subsetting":true,"has_transforms":true,"associations":{"variables":["V1233801695-EEDTEST","V1233801696-EEDTEST","V1233801716-EEDTEST","V1233801717-EEDTEST"],"services":["S1237974227-EEDTEST","S1237980031-EEDTEST"]},"has_variables":true,"data_center":"EEDTEST","short_name":"harmony_example","title":"Harmony Example Data","summary":"    A collection to use in testing Harmony whose data have the following attributes, useful in testing current    and future Harmony work, ensuring that results come back correctly, and that metadata is preserved.    1. Granule data is very small, under 1MB, often well under 1MB    2. Data follows the outlines of the continents, making visual inspection easy    3. Data follows a consistent gradient, with hue differing slightly by granule in sequential temporal order from       blue/purple (oldest) to red (newest)    4. Files have color interpretation set, allowing for color output, if services preserve it    5. Files have 4 variables / bands    6. Data bands have descriptions set    7. Files have custom metadata, HARMONY_HEX_COLOR, set to the central hex value of the file's gradient, and HARMONY_HUE, set to the numeric hue (0.0-1.0)    8. File names contain useful information about their sequential order, color, and contents    9. Granules with global extents exist, as well as granules which cover each continent, with corresponding metadata    10. Granule temporal aligns to full days (UTC) starting with January 1, 2020, with each file name starting with the numeric        julian date  ","orbit_parameters":{},"id":"C1233800302-EEDTEST","has_formats":true,"original_format":"ECHO10","has_temporal_subsetting":false,"browse_flag":false,"online_access_flag":false}]}}

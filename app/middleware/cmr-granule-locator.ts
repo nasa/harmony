@@ -120,20 +120,13 @@ export default async function cmrGranuleLocator(
 
       if (operation.geojson) {
         cmrQuery.geojson = operation.geojson;
-        cmrResponse = await cmr.queryGranulesForCollectionWithMultipartForm(
-          source.collection,
-          cmrQuery,
-          req.accessToken,
-          maxResults,
-        );
-      } else {
-        cmrResponse = await cmr.queryGranulesForCollection(
-          source.collection,
-          cmrQuery,
-          req.accessToken,
-          maxResults,
-        );
       }
+      cmrResponse = await cmr.queryGranulesForCollection(
+        source.collection,
+        cmrQuery,
+        req.accessToken,
+        maxResults,
+      );
 
       const indexStr = `${i}`.padStart(5, '0');
       const artifactUrl = `${artifactPrefix}query${indexStr}.json`;
