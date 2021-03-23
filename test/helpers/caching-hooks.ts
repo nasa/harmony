@@ -55,9 +55,6 @@ after(function () {
   const getBoundary = FormData.prototype.getBoundary as SinonStub;
   if (getBoundary.restore) getBoundary.restore();
 
-  const append = FormData.prototype.append as SinonStub;
-  if (append.restore) append.restore();
-
   const fetchPost = cmr.fetchPost as SinonStub;
   if (fetchPost.restore) fetchPost.restore();
 
