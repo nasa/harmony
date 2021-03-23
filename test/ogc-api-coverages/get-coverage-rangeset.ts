@@ -182,7 +182,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('which is very large', function () {
       const largeGranuleList = [];
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 2000; i++) {
         largeGranuleList.push(query.granuleId);
       }
 

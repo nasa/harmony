@@ -11,16 +11,26 @@ require('replay');
 
 // Patch our requests so they work repeatably in node-replay with multipart form
 // data.
-// Two things need to happen:
+// Three things need to happen:
 //   1. The multipart boundary created by FormData needs to not be random,
 //      because node-replay fails to match random content
-//   2. `fetch` needs to be called with strings not FormData, because
+//   2. Filenames need to be consistent, not generated from tempfiles
+//   3. `fetch` needs to be called with strings not FormData, because
 //      node-replay cannot record streaming bodies
 const originalFetchPost = cmr.fetchPost;
+// Typescript doesn't see the _getContentDisposition method
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const originalDisposition = (FormData.prototype as any)._getContentDisposition;
 before(function () {
   // Stub getBoundary to return a consistent multipart form boundary
   sinon.stub(FormData.prototype, 'getBoundary').callsFake(function () {
     return '----------------------------012345678901234567890123';
+  });
+
+  // Stub append to use a consistent filename for shapefiles
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sinon.stub(FormData.prototype as any, '_getContentDisposition').callsFake(function (value, options) {
+    return originalDisposition(value, options) ? 'filename="shapefile"' : undefined;
   });
 
   // Stub fetchPost to provide a string body rather than a FormData stream
@@ -44,6 +54,9 @@ before(function () {
 after(function () {
   const getBoundary = FormData.prototype.getBoundary as SinonStub;
   if (getBoundary.restore) getBoundary.restore();
+
+  const append = FormData.prototype.append as SinonStub;
+  if (append.restore) append.restore();
 
   const fetchPost = cmr.fetchPost as SinonStub;
   if (fetchPost.restore) fetchPost.restore();
