@@ -105,9 +105,7 @@ export default async function cmrGranuleLocator(
     cmrQuery.bounding_box = operation.boundingRectangle.join(',');
   }
 
-  if (operation.granuleIds) {
-    cmrQuery.concept_id = operation.granuleIds;
-  }
+  cmrQuery.concept_id = operation.granuleIds;
 
   operation.cmrHits = 0;
   try {
