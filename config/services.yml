@@ -200,6 +200,8 @@ https://cmr.earthdata.nasa.gov:
       - C1940473819-POCLOUD
       - C1940475563-POCLOUD
       - C1940466008-POCLOUD
+      - C1968979997-POCLOUD
+      - C1968979762-POCLOUD
     capabilities:
       subsetting:
         bbox: true
