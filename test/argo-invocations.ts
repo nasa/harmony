@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
+import sinon, { SinonStub } from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import * as axios from 'axios';
 import fs from 'fs';
@@ -20,13 +20,15 @@ describe('Argo invocations', function () {
       let post;
       let stub;
       before(function () {
+        const postStub = axios.default.post as SinonStub;
+        if (postStub.restore) postStub.restore();
         post = sinon.stub(axios.default, 'post');
         stub = sinon.stub(env, 'cmrGranuleLocatorImagePullPolicy').get(() => 'FOO');
       });
 
       after(function () {
-        post.restore();
-        stub.restore();
+        if (post.restore) post.restore();
+        if (stub.restore) stub.restore();
       });
 
       hookRangesetRequest(version, collection, 'all');

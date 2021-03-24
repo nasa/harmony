@@ -174,11 +174,16 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   result.get(collectionPrefix('(wms|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
+  result.get('/jobs/:jobID', getJobStatus);
+  result.post('/jobs/:jobID/cancel', cancelJob);
   result.get('/admin/jobs', getJobsListing);
   result.get('/admin/jobs/:jobID', getJobStatus);
   result.post('/admin/jobs/:jobID/cancel', cancelJob);
-  result.get('/jobs/:jobID', getJobStatus);
-  result.post('/jobs/:jobID/cancel', cancelJob);
+
+  // Allow canceling with a GET in addition to POST to workaround issues with redirects using EDL
+  result.get('/jobs/:jobID/cancel', cancelJob);
+  result.get('/admin/jobs/:jobID/cancel', cancelJob);
+
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
   result.get('/stac/:jobId', getStacCatalog);

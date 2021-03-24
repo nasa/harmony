@@ -110,12 +110,34 @@ export function adminCancelJob(app: Express.Application, { jobID }: Job): Test {
   return request(app).post(`/admin/jobs/${jobID}/cancel`);
 }
 
+/**
+ * Submits a cancel job request as the given user using a GET instead of POST
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function cancelJobWithGET(app: Express.Application, { jobID }: Job): Test {
+  return request(app).get(`/jobs/${jobID}/cancel`);
+}
+
+/**
+ * Submits a cancel job request as the given user using a GET instead of POST
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function adminCancelJobWithGET(app: Express.Application, { jobID }: Job): Test {
+  return request(app).get(`/admin/jobs/${jobID}/cancel`);
+}
+
 export const hookJobListing = hookRequest.bind(this, jobListing);
 export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);
 export const hookJobStatus = hookRequest.bind(this, jobStatus);
 export const hookAdminJobStatus = hookRequest.bind(this, adminJobStatus);
 export const hookCancelJob = hookRequest.bind(this, cancelJob);
 export const hookAdminCancelJob = hookRequest.bind(this, adminCancelJob);
+export const hookCancelJobWithGET = hookRequest.bind(this, cancelJobWithGET);
+export const hookAdminCancelJobWithGET = hookRequest.bind(this, adminCancelJobWithGET);
 
 /**
  * Given a string returns a new string with all characters escaped such that the string

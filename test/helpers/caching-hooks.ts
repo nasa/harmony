@@ -55,9 +55,11 @@ after(function () {
   const getBoundary = FormData.prototype.getBoundary as SinonStub;
   if (getBoundary.restore) getBoundary.restore();
 
-  const append = FormData.prototype.append as SinonStub;
-  if (append.restore) append.restore();
-
   const fetchPost = cmr.fetchPost as SinonStub;
   if (fetchPost.restore) fetchPost.restore();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const prototype = FormData.prototype as any;
+  const gcd = prototype._getContentDisposition;
+  if (gcd.restore) gcd.restore();
 });
