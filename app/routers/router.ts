@@ -181,8 +181,8 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   result.post('/admin/jobs/:jobID/cancel', cancelJob);
 
   // Allow canceling with a GET in addition to POST to workaround issues with redirects using EDL
-  result.get('/admin/jobs/:jobID/cancel', cancelJob);
   result.get('/jobs/:jobID/cancel', cancelJob);
+  result.get('/admin/jobs/:jobID/cancel', cancelJob);
 
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
