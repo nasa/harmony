@@ -1,7 +1,9 @@
 import { Response, NextFunction } from 'express';
 import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
+import keysToLowerCase from 'util/object';
 import isUUID from 'util/uuid';
 import cancelAndSaveJob from 'util/job';
+import { listToText, Conjuction } from 'util/string';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink } from '../util/links';
@@ -29,6 +31,7 @@ function containsS3DirectAccessLink(job: Job): boolean {
  *
  * @param job - the serialized job
  * @param urlRoot - the root URL to be used when constructing links
+ * @param linkType - the type of data link to use (http|https|s3)
  * @returns a list of job links
  */
 function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
@@ -73,8 +76,8 @@ function getMessageForDisplay(job: Job, urlRoot: string): string {
  * @param urlRoot - the root URL to be used when constructing links
  * @returns the job for display
  */
-function getJobForDisplay(job: Job, urlRoot: string): Job {
-  const serializedJob = job.serialize(urlRoot);
+function getJobForDisplay(job: Job, urlRoot: string, linkType?: string): Job {
+  const serializedJob = job.serialize(urlRoot, linkType);
   serializedJob.links = getLinksForDisplay(serializedJob, urlRoot);
   serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
   delete serializedJob.isAsync;
@@ -135,6 +138,23 @@ function validateJobId(jobID: string): void {
 }
 
 /**
+ * The accepted values for the `link_type` parameter for job status requests
+ */
+const validLinkTypeValues = ['http', 'https', 's3'];
+
+/**
+ * Validate that the value provided for the `link_type` parameter is one of 'http', 'https', or 's3'
+ *
+ * @param linkType - The lowercase value of the `link_type` url parameter for job status queries
+ */
+function validateLinkTypeParameter(linkType: string): void {
+  if (!validLinkTypeValues.includes(linkType)) {
+    const listString = listToText(validLinkTypeValues, Conjuction.OR);
+    throw new RequestValidationError(`Invalid linkType '${linkType}' must be ${listString}`);
+  }
+}
+
+/**
  * Express.js handler that returns job status for a single job `(/jobs/{jobID})`
  *
  * @param req - The request sent by the client
@@ -146,9 +166,14 @@ export async function getJobStatus(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { jobID } = req.params;
+  const keys = keysToLowerCase(req.query);
+  const { linktype } = keys;
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   try {
     validateJobId(jobID);
+    if (linktype) {
+      validateLinkTypeParameter(linktype);
+    }
     const query: JobQuery = { requestId: jobID };
     if (!req.context.isAdminAccess) {
       query.username = req.user;
@@ -160,7 +185,7 @@ export async function getJobStatus(
     });
     if (job) {
       const urlRoot = getRequestRoot(req);
-      res.send(getJobForDisplay(job, urlRoot));
+      res.send(getJobForDisplay(job, urlRoot, linktype));
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
