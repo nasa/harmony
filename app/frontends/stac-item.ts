@@ -200,7 +200,7 @@ export class HarmonyItem {
 }
 
 /**
- * Function to create the STAC Catalog given a Harmony Job object
+ * Function to create a STAC item
  *
  * @param job - Harmony Job object
  * @param index - Index of the Link item in Job

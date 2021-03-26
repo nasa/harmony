@@ -2,45 +2,9 @@ import { it } from 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { Job } from 'models/job';
-import { hookRedirect, hookUrl } from './hooks';
-import { hookRangesetRequest } from './ogc-api-coverages';
-import StubService from './stub-service';
+import { hookUrl } from './hooks';
 import env from '../../app/util/env';
 import { S3ObjectStore } from '../../app/util/object-store';
-
-/**
- * Provides `it` statements asserting that the provided paging relations are available in `this.res`
- * and have the correct link values relative to the supplied current page.  If a page number is set
- * to null, asserts that the relation is not present.
- * @param pageCount - the total number of pages available
- * @param relations - a map of link relations to their expected page numbers
- * @param limit - the number of items on each page (default = 10)
- */
-// export default function itIncludesPagingRelations(
-//   pageCount: number,
-//   relations: PagingRelationInfo,
-//   limit = 10,
-// ): void {
-//   for (const rel of Object.keys(relations)) {
-//     const expectedPage = relations[rel];
-//     if (expectedPage === null || expectedPage === undefined) {
-//       it(`does not provide a "${rel}" link relation`, function () {
-//         const listing = JSON.parse(this.res.text);
-//         const actual = listing.links.find((link) => link.rel === rel);
-//         expect(actual).to.not.exist;
-//       });
-//     } else {
-//       it(`provides a "${rel}" link relation with correctly set page and limit parameters`, function () {
-//         const listing = JSON.parse(this.res.text);
-//         const actual = listing.links.find((link) => link.rel === rel);
-//         expect(actual).to.exist;
-//         expect(actual.href).to.include(`/jobs?page=${expectedPage}&limit=${limit}`);
-//         expect(actual.title).to.include(`(${expectedPage} of ${pageCount})`);
-//       });
-//     }
-//   }
-// }
-
 /**
  * Provides a parameterized `describe` blocks that tests expected format of data links.
  * @param version - the harmony API version
