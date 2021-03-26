@@ -112,7 +112,7 @@ export default async function cmrGranuleLocator(
     const artifactPrefix = `s3://${env.artifactBucket}/harmony-inputs/query/${req.context.id}/`;
     const { sources } = operation;
     const queries = sources.map(async (source, i) => {
-      logger.info(`Querying granules ${source.collection}, ${JSON.stringify(cmrQuery)}`);
+      logger.info(`Querying granules for ${source.collection}`, { cmrQuery, collection: source.collection });
       const startTime = new Date().getTime();
       const maxResults = getMaxGranules(req);
 
@@ -137,8 +137,7 @@ export default async function cmrGranuleLocator(
 
       operation.cmrHits += hits;
       const msTaken = new Date().getTime() - startTime;
-      logger.info('Completed granule query', { durationMs: msTaken });
-      logger.info(`Found ${hits} granules`);
+      logger.info('timing.cmr-granule-query.end', { durationMs: msTaken, hits });
       const granules = [];
       for (const granule of jsonGranules) {
         const links = granule.links.filter((g) => g.rel.endsWith('/data#') && !g.inherited);

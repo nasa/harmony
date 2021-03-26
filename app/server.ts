@@ -27,11 +27,22 @@ import JobReaper from './workers/job-reaper';
  */
 function buildServer(name, port, setupFn): Server {
   const appLogger = logger.child({ application: name });
-
   const addRequestId = (req, res, next): void => {
-    const id = uuid();
-    const context = new RequestContext(id);
-    context.logger = appLogger.child({ requestId: id });
+    // Backend service logs request IDs should match the request ID they are updating
+    const requestIdMatch = req.url.match(
+      /.*service\/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}).*/,
+    );
+
+    let requestId;
+    if (requestIdMatch) {
+      requestId = requestIdMatch[1];
+    } else {
+      requestId = uuid();
+    }
+
+    const context = new RequestContext(requestId);
+    context.logger = appLogger.child({ requestId });
+    context.logger.info(`timing.${name}-request.start`);
     req.context = context;
     next();
   };
