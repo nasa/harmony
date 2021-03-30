@@ -42,7 +42,7 @@ function addRequestId(appLogger: Logger, appName: string): RequestHandler {
     const requestId = req.context?.id || uuid();
     const context = new RequestContext(requestId);
     context.logger = appLogger.child({ requestId });
-    context.logger.info(`timing.${appName}.start`);
+    context.logger.info(`timing.${appName}-request.start`);
     req.context = context;
     next();
   };
