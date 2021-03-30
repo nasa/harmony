@@ -157,7 +157,7 @@ export default async function responseHandler(req: Request, res: Response): Prom
     delete fields.argo;
     delete fields.batch_count;
     delete fields.post_batch_step_count;
-    logger.info(`Updating job ${job.id} with fields: ${JSON.stringify(fields)}`);
+    logger.info(`Updating job ${job.id}`, { fields });
 
     updateJobFields(logger, job, fields);
     await job.save(trx);

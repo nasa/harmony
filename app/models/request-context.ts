@@ -28,6 +28,8 @@ export default class RequestContext {
 
   messages?: string[];
 
+  startTime?: Date;
+
   /**
    * Creates an instance of RequestContext.
    *
@@ -37,5 +39,6 @@ export default class RequestContext {
     this.id = id;
     this.isAdminAccess = false;
     this.messages = [];
+    this.startTime = new Date();
   }
 }

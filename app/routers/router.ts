@@ -29,6 +29,16 @@ import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
 
+export interface RouterConfig {
+  PORT?: string | number; // The port to run the frontend server on
+  BACKEND_PORT?: string | number; // The port to run the backend server on
+  CALLBACK_URL_ROOT?: string; // The base URL for callbacks to use
+  // True if we should run example services, false otherwise.  Should be false
+  // in production.  Defaults to true until we have real HTTP services.
+  EXAMPLE_SERVICES?: string;
+  skipEarthdataLogin?: string; // True if we should skip using EDL
+}
+
 /**
  * Given an Express.js middleware handler function, returns another
  * Express.js handler that wraps the input function with logging
@@ -120,7 +130,7 @@ const authorizedRoutes = [
  * @param skipEarthdataLogin - Opt to skip Earthdata Login
  * @returns A router which can respond to frontend service requests
  */
-export default function router({ skipEarthdataLogin = 'false' }): express.Router {
+export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): express.Router {
   const result = express.Router();
 
   const secret = process.env.COOKIE_SECRET;

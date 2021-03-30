@@ -112,10 +112,14 @@ export default abstract class BaseService<ServiceParamType> {
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
   ): Promise<InvocationResult> {
     let job: Job;
-    logger.info(`Invoking service for operation ${JSON.stringify(this.operation)}`);
+    logger.info('Invoking service for operation', { operation: this.operation });
     try {
+      const startTime = new Date().getTime();
+      logger.info('timing.save-job-to-database.start');
       job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
       await job.save(db);
+      const durationMs = new Date().getTime() - startTime;
+      logger.info('timing.save-job-to-database.end', { durationMs });
     } catch (e) {
       logger.error(e.stack);
       throw new ServerError('Failed to save job to database.');
