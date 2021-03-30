@@ -138,14 +138,14 @@ function validateJobId(jobID: string): void {
 }
 
 /**
- * The accepted values for the `link_type` parameter for job status requests
+ * The accepted values for the `linkType` parameter for job status requests
  */
 const validLinkTypeValues = ['http', 'https', 's3'];
 
 /**
- * Validate that the value provided for the `link_type` parameter is one of 'http', 'https', or 's3'
+ * Validate that the value provided for the `linkType` parameter is one of 'http', 'https', or 's3'
  *
- * @param linkType - The lowercase value of the `link_type` url parameter for job status queries
+ * @param linkType - The lowercase value of the `linkType` url parameter for job status queries
  */
 function validateLinkTypeParameter(linkType: string): void {
   if (!validLinkTypeValues.includes(linkType)) {
