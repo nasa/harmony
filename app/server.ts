@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response, NextFunction, RequestHandler } from 'express';
 import mustacheExpress from 'mustache-express';
 import { v4 as uuid } from 'uuid';
 import expressWinston from 'express-winston';
@@ -6,9 +6,11 @@ import * as path from 'path';
 import favicon from 'serve-favicon';
 import { promisify } from 'util';
 import errorHandler from 'middleware/error-handler';
-import router from 'routers/router';
+import router, { RouterConfig } from 'routers/router';
 import RequestContext from 'models/request-context';
 import { Server } from 'http';
+import HarmonyRequest from 'models/harmony-request';
+import { Logger } from 'winston';
 import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/service-response-router';
 import logger from './util/log';
@@ -17,44 +19,98 @@ import WorkflowTerminationListener from './workers/workflow-termination-listener
 import JobReaper from './workers/job-reaper';
 
 /**
- * Builds an express server with appropriate logging and default routing and starts the server
+ * Returns middleware to add a request specific logger
+ *
+ * @param appLogger - Request specific application logger
+ */
+function addRequestLogger(appLogger: Logger): RequestHandler {
+  return expressWinston.logger({
+    winstonInstance: appLogger,
+    dynamicMeta(req) { return { requestId: req.context.id }; },
+  });
+}
+
+/**
+ * Returns middleware to set a requestID for a request if the request does not already
+ * have one set.
+ *
+ * @param appLogger - Request specific application logger
+ * @param appName - The name of the listener - either frontend or backend
+ */
+function addRequestId(appLogger: Logger, appName: string): RequestHandler {
+  return (req: HarmonyRequest, res: Response, next: NextFunction): void => {
+    const requestId = req.context?.id || uuid();
+    const context = new RequestContext(requestId);
+    context.logger = appLogger.child({ requestId });
+    context.logger.info(`timing.${appName}-request.start`);
+    req.context = context;
+    next();
+  };
+}
+
+/**
+ * Builds an express server with appropriate logging and starts the backend server
  * listening on the provided port.
  *
- * @param name - The name of the server, as identified in logs
  * @param port - The port the server should listen on
- * @param setupFn - A function that takes an express app and adds non-default behavior
  * @returns The running express application
  */
-function buildServer(name, port, setupFn): Server {
-  const appLogger = logger.child({ application: name });
+function buildBackendServer(port: number): Server {
+  const appLogger = logger.child({ application: 'backend' });
+  const setRequestId = (req: HarmonyRequest, res: Response, next: NextFunction): void => {
+    const { requestId } = req.params;
 
-  const addRequestId = (req, res, next): void => {
-    const id = uuid();
-    const context = new RequestContext(id);
-    context.logger = appLogger.child({ requestId: id });
+    const context = new RequestContext(requestId);
     req.context = context;
     next();
   };
 
-  const addRequestLogger = expressWinston.logger({
-    winstonInstance: appLogger,
-    dynamicMeta(req) { return { requestId: req.context.id }; },
-  });
-
   const app = express();
 
-  app.use(addRequestId);
-  app.use(addRequestLogger);
+  app.use('/service/:requestId/*', setRequestId);
+  app.use(addRequestId(appLogger, 'backend'));
+  app.use(addRequestLogger(appLogger));
+
+  app.use(favicon(path.join(__dirname, '..', 'public', 'favicon.ico')));
+  app.use('/service', serviceResponseRouter());
+  app.get('/', ((req, res) => res.send('OK')));
+  app.use(errorHandler);
+
+  return app.listen(port, '0.0.0.0', () => appLogger.info(`Application backend listening on port ${port}`));
+}
+
+/**
+ * Builds an express server with appropriate logging and routing and starts the frontend server
+ * listening on the provided port.
+ *
+ * @param port - The port the server should listen on
+ * @param config - Config that controls whether certain middleware will be used
+ * @returns The running express application
+ */
+function buildFrontendServer(port: number, config: RouterConfig): Server {
+  const appLogger = logger.child({ application: 'frontend' });
+  const app = express();
+
+  app.use(addRequestId(appLogger, 'frontend'));
+  app.use(addRequestLogger(appLogger));
 
   app.use(favicon(path.join(__dirname, '..', 'public', 'favicon.ico')));
 
-  if (setupFn) {
-    setupFn(app);
-  }
+  // Setup mustache as a templating engine for HTML views
+  app.engine('mustache.html', mustacheExpress());
+  app.set('view engine', 'mustache.html');
+  app.set('views', path.join(__dirname, 'views'));
 
+  if (config.EXAMPLE_SERVICES !== 'false') {
+    app.use('/example', exampleBackend.router());
+  }
+  app.use('/', router(config));
+  // Error handlers that format errors outside of their routes / middleware need to be mounted
+  // at the top level, not on a child router, or they get skipped.
+  ogcCoveragesApi.handleOpenApiErrors(app);
   app.use(errorHandler);
 
-  return app.listen(port, '0.0.0.0', () => appLogger.info(`Application "${name}" listening on port ${port}`));
+  return app.listen(port, '0.0.0.0', () => appLogger.info(`Application frontend listening on port ${port}`));
 }
 
 /**
@@ -77,33 +133,17 @@ export function start(config: Record<string, string>): {
   workflowTerminationListener: WorkflowTerminationListener;
   jobReaper: JobReaper;
 } {
-  const appPort = config.PORT || 3000;
-  const backendPort = config.BACKEND_PORT || 3001;
+  const appPort = +config.PORT || 3000;
+  const backendPort = +config.BACKEND_PORT || 3001;
 
   // Setup the frontend server to handle client requests
-  const frontend = buildServer('frontend', appPort, (app: express.Application) => {
-    // Setup mustache as a templating engine for HTML views
-    app.engine('mustache.html', mustacheExpress());
-    app.set('view engine', 'mustache.html');
-    app.set('views', path.join(__dirname, 'views'));
-
-    if (config.EXAMPLE_SERVICES !== 'false') {
-      app.use('/example', exampleBackend.router());
-    }
-    app.use('/', router(config));
-    // Error handlers that format errors outside of their routes / middleware need to be mounted
-    // at the top level, not on a child router, or they get skipped.
-    ogcCoveragesApi.handleOpenApiErrors(app);
-  });
+  const frontend = buildFrontendServer(appPort, config);
 
   // Allow requests to take 20 minutes
   frontend.setTimeout(1200000);
 
   // Setup the backend server to accept callbacks from backend services
-  const backend = buildServer('backend', backendPort, (app) => {
-    app.use('/service', serviceResponseRouter());
-    app.get('/', ((req, res) => res.send('OK')));
-  });
+  const backend = buildBackendServer(backendPort);
 
   let listener;
   if (config.startWorkflowTerminationListener !== 'false') {

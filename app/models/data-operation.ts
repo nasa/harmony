@@ -197,6 +197,8 @@ export default class DataOperation {
 
   message: string;
 
+  requestStartTime: Date; // The time that the initial request to harmony was received
+
   /**
    * Creates an instance of DataOperation.
    *
