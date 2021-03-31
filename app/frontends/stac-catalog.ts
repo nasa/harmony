@@ -100,12 +100,13 @@ export default function create(job: Job, linkType?: string): SerializableCatalog
   const description = `Harmony output for ${job.request}`;
   const catalog = new HarmonyCatalog(job.jobID, title, description);
   // Add linkType to links if defined and not null
-  const url = linkType ? `.?linkType=${linkType}` : '.';
+  const linkTypeParam = linkType ? `?linkType=${linkType}` : '';
+  const url = linkType ? `./${linkTypeParam}` : '.';
   catalog.addLink(url, 'self', 'self');
   catalog.addLink(url, 'root', 'root');
   let index = 0;
   for (const link of linksWithStacData(job.links)) {
-    catalog.addLink(`./${index}`, 'item', link.title);
+    catalog.addLink(`./${index}${linkTypeParam}`, 'item', link.title);
     index++;
   }
   return catalog.toJSON();

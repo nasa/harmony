@@ -56,9 +56,10 @@ async function handleStacRequest(req, res, callback: Function, linkType?: string
  */
 export async function getStacCatalog(req, res): Promise<void> {
   const { jobId } = req.params;
-
+  const keys = keysToLowerCase(req.query);
+  const linkType = keys.linktype?.toLowerCase();
   try {
-    await handleStacRequest(req, res, (data) => stacCatalogCreate(data));
+    await handleStacRequest(req, res, (data) => stacCatalogCreate(data, linkType));
   } catch (e) {
     req.context.logger.error(e);
     res.status(500);
