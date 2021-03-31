@@ -1,9 +1,9 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
-import { ConflictError, RequestValidationError } from '../util/errors';
+import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
-import { Conjuction, listToText, truncateString } from '../util/string';
+import { truncateString } from '../util/string';
 import Record from './record';
 import { Transaction } from '../util/db';
 
@@ -78,23 +78,6 @@ export interface JobQuery {
   isAsync?: boolean;
   createdAt?: number;
   updatedAt?: number;
-}
-
-/**
- * The accepted values for the `linkType` parameter for job status requests
- */
-const validLinkTypeValues = ['http', 'https', 's3'];
-
-/**
- * Validate that the value provided for the `linkType` parameter is one of 'http', 'https', or 's3'
- *
- * @param linkType - The lowercase value of the `linkType` url parameter for job status queries
- */
-function validateLinkTypeParameter(linkType: string): void {
-  if (!validLinkTypeValues.includes(linkType)) {
-    const listString = listToText(validLinkTypeValues, Conjuction.OR);
-    throw new RequestValidationError(`Invalid linkType '${linkType}' must be ${listString}`);
-  }
 }
 
 /**
@@ -434,9 +417,6 @@ export class Job extends Record {
    * @returns an object with the serialized job fields.
    */
   serialize(urlRoot?: string, linkType?: string): Job {
-    if (linkType) {
-      validateLinkTypeParameter(linkType);
-    }
     const serializedJob = pick(this, serializedJobFields) as Job;
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
