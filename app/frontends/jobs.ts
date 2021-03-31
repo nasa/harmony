@@ -3,7 +3,6 @@ import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
 import keysToLowerCase from 'util/object';
 import isUUID from 'util/uuid';
 import cancelAndSaveJob from 'util/job';
-import { listToText, Conjuction } from 'util/string';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink } from '../util/links';
