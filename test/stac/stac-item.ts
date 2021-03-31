@@ -184,6 +184,7 @@ describe('STAC item route', function () {
           },
         };
 
+        // HARMONY-770 AC 2
         describe('when linkType is not set', function () {
           hookStacItem(completedJobId, 0, 'joe');
           itReturnsTheExpectedStacResponse(
@@ -192,6 +193,7 @@ describe('STAC item route', function () {
           );
         });
 
+        // HARMONY-770 AC 7
         describe('when linkType is s3', function () {
           hookStacItem(completedJobId, 0, 'joe', 's3');
           itReturnsTheExpectedStacResponse(
@@ -201,6 +203,7 @@ describe('STAC item route', function () {
           );
         });
 
+        // HARMONY-770 AC 6
         describe('when linkType is http', function () {
           hookStacItem(completedJobId, 0, 'joe', 'http');
           itReturnsTheExpectedStacResponse(
@@ -210,6 +213,7 @@ describe('STAC item route', function () {
           );
         });
 
+        // HARMONY-770 AC 6
         describe('when linkType is https', function () {
           hookStacItem(completedJobId, 0, 'joe', 'https');
           itReturnsTheExpectedStacResponse(
@@ -217,6 +221,16 @@ describe('STAC item route', function () {
             expectedItemWithoutAssetsOrLinks,
             'https',
           );
+        });
+      });
+
+      describe('when linkType is set to something other than http, https, or s3', function () {
+        const completedJobId = completedJob.requestId;
+        hookStacItem(completedJobId, 0, 'joe', 'foo');
+        // HARMONY-770 AC 8
+        it('returns an informative error', function () {
+          expect(this.res.error.status).to.equal(400);
+          expect(this.res.error.text).to.match(/^{"code":"harmony.RequestValidationError","description":"Error: Invalid linkType 'foo' must be http, https, or s3"}/);
         });
       });
 

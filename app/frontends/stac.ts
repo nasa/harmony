@@ -3,6 +3,7 @@ import keysToLowerCase from 'util/object';
 import { needsStacLink } from 'util/stac';
 import isUUID from 'util/uuid';
 import { getRequestRoot } from 'util/url';
+import { RequestValidationError } from 'util/errors';
 import stacItemCreate from './stac-item';
 import stacCatalogCreate from './stac-catalog';
 
@@ -94,6 +95,12 @@ export async function getStacItem(req, res): Promise<void> {
       res.json({
         code: 'harmony:RequestError',
         description: e.message });
+    } else if (e instanceof RequestValidationError) {
+      res.status(400);
+      res.json({
+        code: 'harmony:RequestValidationError',
+        description: `Error: ${e.message}`,
+      });
     } else {
       res.status(500);
       res.json({
