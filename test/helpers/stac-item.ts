@@ -9,8 +9,16 @@ import { it } from 'mocha';
  * @param assetsEntry - an `assets` entry from a STAC item
  * @param linkType - the expected link type - http|https|s3
  */
-function testAssets(assetsEntry: any, linkType: string): void {
-  const expectedType = linkType === 'https' ? 'http' : linkType;
+function expectAssets(assetsEntry: any, linkType?: string): void {
+  let expectedType: string;
+  switch (linkType) {
+    case 'https':
+    case 'http':
+      expectedType = 'http';
+      break;
+    default:
+      expectedType = 's3';
+  }
   const link = Object.keys(assetsEntry)[0];
   expect(link.toLowerCase().startsWith(expectedType)).to.be.true;
   expect(assetsEntry[link].href).to.equal(link);
@@ -21,10 +29,10 @@ function testAssets(assetsEntry: any, linkType: string): void {
  *
  * @param item - a STAC item
  */
-export default function stacItemAssetTest(
+export default function itReturnsTheExpectedStacResponse(
   completedJob: any,
   expectedItemWithoutAssets,
-  linkType: string,
+  linkType?: string,
 ): void {
   it('returns an HTTP OK response', function () {
     expect(this.res.statusCode).to.equal(200);
@@ -36,9 +44,14 @@ export default function stacItemAssetTest(
     delete itemWithoutAssets.assets;
     const { assets } = item;
     const tmpExpectedItemWithoutAssets = cloneDeep(expectedItemWithoutAssets);
+    const url = linkType ? `../?linkType=${linkType}` : '../';
+    tmpExpectedItemWithoutAssets.links = [
+      { href: url, rel: 'self', title: 'self' },
+      { href: url, rel: 'root', title: 'parent' },
+    ];
     tmpExpectedItemWithoutAssets.properties.created = itemWithoutAssets.properties.created;
     expect(itemWithoutAssets).to.eql(tmpExpectedItemWithoutAssets);
 
-    testAssets(assets, linkType);
+    expectAssets(assets, linkType);
   });
 }

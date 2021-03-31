@@ -78,13 +78,13 @@ export async function getStacCatalog(req, res): Promise<void> {
 export async function getStacItem(req, res): Promise<void> {
   const { jobId, itemIndex } = req.params;
   const keys = keysToLowerCase(req.query);
-  const { linktype } = keys;
+  const linkType = keys.linktype?.toLowerCase();
   try {
     await handleStacRequest(
       req,
       res,
-      (data) => stacItemCreate.apply(null, [data, itemIndex]),
-      linktype,
+      (data) => stacItemCreate.apply(null, [data, itemIndex, linkType]),
+      linkType,
     );
   } catch (e) {
     req.context.logger.error(e);

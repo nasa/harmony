@@ -4,7 +4,7 @@ import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
 import { Job, JobStatus, JobRecord } from 'models/job';
-import { itReturnsUnchangedDataLinksForZarr, testHttpDataLinks } from 'test/helpers/job-status';
+import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from 'test/helpers/job-status';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
 import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl } from '../helpers/jobs';
@@ -381,7 +381,7 @@ describe('Individual job status route', function () {
       // HARMONY-770 AC 1
       describe('when linkType is unset', function () {
         hookRedirect('jdoe1');
-        testHttpDataLinks('jdoe1');
+        itProvidesAWorkingHttpUrl('jdoe1');
       });
 
       describe('when linkType is set', function () {
@@ -406,7 +406,7 @@ describe('Individual job status route', function () {
             return location;
           }, 'jdoe1', { linkType: 'http' });
 
-          testHttpDataLinks('jdoe1');
+          itProvidesAWorkingHttpUrl('jdoe1');
         });
         /// HARMONY-770 AC 3
         describe('and the linkType is https', function () {
@@ -415,7 +415,21 @@ describe('Individual job status route', function () {
             return location;
           }, 'jdoe1', { linkType: 'https' });
 
-          testHttpDataLinks('jdoe1');
+          itProvidesAWorkingHttpUrl('jdoe1');
+        });
+
+        describe('and the linkType is capitalized', function () {
+          hookUrl(function () {
+            const { location } = this.res.headers;
+            return location;
+          }, 'jdoe1', { linkType: 'S3' });
+          // HARMONY-770 AC 4
+          it('linkType is case insensitive', function () {
+            const job = new Job(JSON.parse(this.res.text));
+            const jobOutputLinks = job.getRelatedLinks('data');
+            expect(jobOutputLinks[0].href).to.match(/^s3/);
+            expect(jobOutputLinks[0].href).to.have.string('s3://example-bucket/public/example/path.tif');
+          });
         });
       });
     });

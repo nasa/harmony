@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
-import stacItemAssetTest from 'test/helpers/stac-item';
+import itReturnsTheExpectedStacResponse from 'test/helpers/stac-item';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacItem, hookStacItem } from '../helpers/stac';
@@ -166,7 +166,7 @@ describe('STAC item route', function () {
 
       describe('when the service supplies the necessary fields', async function () {
         const completedJobId = completedJob.requestId;
-        const expectedItemWithoutAssets = {
+        const expectedItemWithoutAssetsOrLinks = {
           id: `${completedJob.requestId}_0`,
           stac_version: '0.9.0',
           title: `Harmony output #0 in job ${completedJob.requestId}`,
@@ -174,6 +174,7 @@ describe('STAC item route', function () {
           type: 'Feature',
           bbox: [-10, -10, 10, 10],
           geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
+          // `links` added later
           properties: {
             // `created` property added later,
             license: 'various',
@@ -181,44 +182,39 @@ describe('STAC item route', function () {
             end_datetime: '2020-01-01T01:00:00.000Z',
             datetime: '2020-01-01T00:00:00.000Z',
           },
-          links: [
-            { href: '../', rel: 'self', title: 'self' },
-            { href: '../', rel: 'root', title: 'parent' },
-          ],
         };
 
         describe('when linkType is not set', function () {
           hookStacItem(completedJobId, 0, 'joe');
-          stacItemAssetTest(
+          itReturnsTheExpectedStacResponse(
             completedJob,
-            expectedItemWithoutAssets,
-            's3',
+            expectedItemWithoutAssetsOrLinks,
           );
         });
 
         describe('when linkType is s3', function () {
           hookStacItem(completedJobId, 0, 'joe', 's3');
-          stacItemAssetTest(
+          itReturnsTheExpectedStacResponse(
             completedJob,
-            expectedItemWithoutAssets,
+            expectedItemWithoutAssetsOrLinks,
             's3',
           );
         });
 
         describe('when linkType is http', function () {
           hookStacItem(completedJobId, 0, 'joe', 'http');
-          stacItemAssetTest(
+          itReturnsTheExpectedStacResponse(
             completedJob,
-            expectedItemWithoutAssets,
+            expectedItemWithoutAssetsOrLinks,
             'http',
           );
         });
 
         describe('when linkType is https', function () {
           hookStacItem(completedJobId, 0, 'joe', 'https');
-          stacItemAssetTest(
+          itReturnsTheExpectedStacResponse(
             completedJob,
-            expectedItemWithoutAssets,
+            expectedItemWithoutAssetsOrLinks,
             'https',
           );
         });

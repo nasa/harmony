@@ -86,6 +86,7 @@ class HarmonyCatalog implements SerializableCatalog {
  * Function to create the STAC Catalog given a Harmony Job object
  *
  * @param job - Harmony Job object
+ * @param linkType - the type of data links that the stac-items should use
  *
  * @returns - STAC Catalog JSON
  *
@@ -94,12 +95,14 @@ class HarmonyCatalog implements SerializableCatalog {
  * let jsonObj = catalog.create(job);
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
-export default function create(job: Job): SerializableCatalog {
+export default function create(job: Job, linkType?: string): SerializableCatalog {
   const title = `Harmony output for ${job.jobID}`;
   const description = `Harmony output for ${job.request}`;
   const catalog = new HarmonyCatalog(job.jobID, title, description);
-  catalog.addLink('.', 'self', 'self');
-  catalog.addLink('.', 'root', 'root');
+  // Add linkType to links if defined and not null
+  const url = linkType ? `.?linkType=${linkType}` : '.';
+  catalog.addLink(url, 'self', 'self');
+  catalog.addLink(url, 'root', 'root');
   let index = 0;
   for (const link of linksWithStacData(job.links)) {
     catalog.addLink(`./${index}`, 'item', link.title);

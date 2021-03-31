@@ -59,7 +59,7 @@ export function itReturnsUnchangedDataLinksForZarr(
  *
  * @param user - the user id that created the job for which status is being tested
  */
-export function testHttpDataLinks(user: string): void {
+export function itProvidesAWorkingHttpUrl(user: string): void {
   it('provides a permanent link to a Harmony HTTP URL', function () {
     const job = new Job(JSON.parse(this.res.text));
     const jobOutputLinks = job.getRelatedLinks('data');

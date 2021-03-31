@@ -207,7 +207,7 @@ export class HarmonyItem {
  *
  * @returns STAC Item JSON
  */
-export default function create(job: Job, index: number): HarmonyItem {
+export default function create(job: Job, index: number, linkType?: string): HarmonyItem {
   const title = `Harmony output #${index} in job ${job.jobID}`;
   const description = `Harmony out for ${job.request}`;
   const item = new HarmonyItem(job.jobID, title, description, index);
@@ -232,8 +232,10 @@ export default function create(job: Job, index: number): HarmonyItem {
   item.addSpatialExtent(bbox);
   item.addTemporalExtent(temporal.start, temporal.end);
   item.addAsset(href, linkTitle, type);
+  // Add linkType to links if defined and not null
+  const url = linkType ? `../?linkType=${linkType}` : '../';
 
-  item.addLink('../', 'self', 'self');
-  item.addLink('../', 'root', 'parent');
+  item.addLink(url, 'self', 'self');
+  item.addLink(url, 'root', 'parent');
   return item;
 }

@@ -138,23 +138,6 @@ function validateJobId(jobID: string): void {
 }
 
 /**
- * The accepted values for the `linkType` parameter for job status requests
- */
-const validLinkTypeValues = ['http', 'https', 's3'];
-
-/**
- * Validate that the value provided for the `linkType` parameter is one of 'http', 'https', or 's3'
- *
- * @param linkType - The lowercase value of the `linkType` url parameter for job status queries
- */
-function validateLinkTypeParameter(linkType: string): void {
-  if (!validLinkTypeValues.includes(linkType)) {
-    const listString = listToText(validLinkTypeValues, Conjuction.OR);
-    throw new RequestValidationError(`Invalid linkType '${linkType}' must be ${listString}`);
-  }
-}
-
-/**
  * Express.js handler that returns job status for a single job `(/jobs/{jobID})`
  *
  * @param req - The request sent by the client
@@ -167,13 +150,11 @@ export async function getJobStatus(
 ): Promise<void> {
   const { jobID } = req.params;
   const keys = keysToLowerCase(req.query);
-  const { linktype } = keys;
+  const linkType = keys.linktype?.toLowerCase();
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   try {
     validateJobId(jobID);
-    if (linktype) {
-      validateLinkTypeParameter(linktype);
-    }
+
     const query: JobQuery = { requestId: jobID };
     if (!req.context.isAdminAccess) {
       query.username = req.user;
@@ -185,7 +166,7 @@ export async function getJobStatus(
     });
     if (job) {
       const urlRoot = getRequestRoot(req);
-      res.send(getJobForDisplay(job, urlRoot, linktype));
+      res.send(getJobForDisplay(job, urlRoot, linkType));
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
