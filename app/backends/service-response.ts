@@ -201,7 +201,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     if (job.isComplete()) {
       const durationMs = +job.updatedAt - +job.createdAt;
       const numOutputs = job.getRelatedLinks('data').length;
-      logger.info('Async job complete.', { durationMs, numOutputs, job: job.serialize() });
+      logger.info('timing.job-execution.end', { durationMs, numOutputs, job: job.serialize() });
     }
   }
 }
