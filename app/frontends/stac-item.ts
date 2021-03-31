@@ -233,9 +233,10 @@ export default function create(job: Job, index: number, linkType?: string): Harm
   item.addTemporalExtent(temporal.start, temporal.end);
   item.addAsset(href, linkTitle, type);
   // Add linkType to links if defined and not null
-  const url = linkType ? `../?linkType=${linkType}` : '../';
+  const selfUrl = linkType ? `./?linkType=${linkType}` : '.';
+  const parentUrl = linkType ? `../?linkType=${linkType}` : '../';
 
-  item.addLink(url, 'self', 'self');
-  item.addLink(url, 'root', 'parent');
+  item.addLink(selfUrl, 'self', 'self');
+  item.addLink(parentUrl, 'root', 'parent');
   return item;
 }

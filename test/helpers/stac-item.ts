@@ -44,10 +44,11 @@ export default function itReturnsTheExpectedStacResponse(
     delete itemWithoutAssets.assets;
     const { assets } = item;
     const tmpExpectedItemWithoutAssets = cloneDeep(expectedItemWithoutAssets);
-    const url = linkType ? `../?linkType=${linkType}` : '../';
+    const selfUrl = linkType ? `./?linkType=${linkType}` : '.';
+    const parentUrl = linkType ? `../?linkType=${linkType}` : '../';
     tmpExpectedItemWithoutAssets.links = [
-      { href: url, rel: 'self', title: 'self' },
-      { href: url, rel: 'root', title: 'parent' },
+      { href: selfUrl, rel: 'self', title: 'self' },
+      { href: parentUrl, rel: 'root', title: 'parent' },
     ];
     tmpExpectedItemWithoutAssets.properties.created = itemWithoutAssets.properties.created;
     expect(itemWithoutAssets).to.eql(tmpExpectedItemWithoutAssets);
