@@ -229,6 +229,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1233629671-ASF
       - C1207181535-ASF
       - C1208013295-ASF
+      - C1239927797-ASF
     capabilities:
       subsetting:
         bbox: true
