@@ -25,12 +25,13 @@ export function hookFunction<T>(fn: Function, returnValueName: string, ...params
  *
  * @param urlOrFn - the URL to follow
  * @param username - optional username to provide for auth
+ * @param query - Mapping of query param names to values
  */
-export function hookUrl(urlOrFn: Function | string, username = 'anonymous'): void {
+export function hookUrl(urlOrFn: Function | string, username = 'anonymous', query: object = {}): void {
   before(async function () {
     const url = typeof urlOrFn === 'string' ? urlOrFn : urlOrFn.call(this);
     this.urlRes = this.res;
-    let req = request(this.frontend).get(url);
+    let req = request(this.frontend).get(url).query(query);
     if (username) req = req.use(auth({ username }));
     this.res = await req;
   });

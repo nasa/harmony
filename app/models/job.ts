@@ -413,9 +413,10 @@ export class Job extends Record {
   /**
    * Serializes a Job to return from any of the jobs frontend endpoints
    * @param urlRoot - the root URL to be used when constructing links
+   * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3)
    * @returns an object with the serialized job fields.
    */
-  serialize(urlRoot?: string): Job {
+  serialize(urlRoot?: string, linkType?: string): Job {
     const serializedJob = pick(this, serializedJobFields) as Job;
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
@@ -426,7 +427,7 @@ export class Job extends Record {
         const { title, type, rel, bbox, temporal } = link;
         // Leave the S3 output staging location as an S3 link
         if (rel !== 's3-access') {
-          href = createPublicPermalink(href, urlRoot, type);
+          href = createPublicPermalink(href, urlRoot, type, linkType);
         }
         return { href, title, type, rel, bbox, temporal };
       });

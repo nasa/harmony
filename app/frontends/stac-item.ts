@@ -200,14 +200,14 @@ export class HarmonyItem {
 }
 
 /**
- * Function to create the STAC Catalog given a Harmony Job object
+ * Function to create a STAC item
  *
  * @param job - Harmony Job object
  * @param index - Index of the Link item in Job
  *
  * @returns STAC Item JSON
  */
-export default function create(job: Job, index: number): HarmonyItem {
+export default function create(job: Job, index: number, linkType?: string): HarmonyItem {
   const title = `Harmony output #${index} in job ${job.jobID}`;
   const description = `Harmony out for ${job.request}`;
   const item = new HarmonyItem(job.jobID, title, description, index);
@@ -232,8 +232,11 @@ export default function create(job: Job, index: number): HarmonyItem {
   item.addSpatialExtent(bbox);
   item.addTemporalExtent(temporal.start, temporal.end);
   item.addAsset(href, linkTitle, type);
+  // Add linkType to links if defined and not null
+  const selfUrl = linkType ? `./?linkType=${linkType}` : '.';
+  const parentUrl = linkType ? `../?linkType=${linkType}` : '../';
 
-  item.addLink('../', 'self', 'self');
-  item.addLink('../', 'root', 'parent');
+  item.addLink(selfUrl, 'self', 'self');
+  item.addLink(parentUrl, 'root', 'parent');
   return item;
 }

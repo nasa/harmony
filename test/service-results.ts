@@ -25,6 +25,11 @@ describe('service-results', function () {
       expect(result).to.equal('s3://some-bucket/some/key.txt');
     });
 
+    it('returns S3 links unaltered when the linkType is s3', function () {
+      const result = createPublicPermalink('s3://some-bucket/some/key.json', 'https://example.com', 'application/json', 's3');
+      expect(result).to.equal('s3://some-bucket/some/key.json');
+    });
+
     /**
      * Adds an `it` statement asserting createPublicPermalink does not alter links with
      * the given protocol

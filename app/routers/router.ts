@@ -15,6 +15,7 @@ import { getJobsListing, getJobStatus, cancelJob } from '../frontends/jobs';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
+import parameterValidation from '../middleware/parameter-validation';
 import chooseService from '../middleware/service-selection';
 import shapefileConverter from '../middleware/shapefile-converter';
 import { NotFoundError } from '../util/errors';
@@ -174,6 +175,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.use(express.static('public'));
   result.use(logged(shapefileConverter));
+  result.use(logged(parameterValidation));
   result.use(logged(chooseService));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(addRequestContextToOperation));

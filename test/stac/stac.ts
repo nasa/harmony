@@ -151,6 +151,17 @@ describe('STAC catalog route', function () {
           expect(catalog.title).to.include('Harmony output for ');
         });
       });
+      describe('when the linkType is invalid', function () {
+        const completedJobId = completedJob.requestId;
+        hookStacCatalog(completedJobId, 'joe', 'foo');
+        // HARMONY-770 AC 8
+        it('returns a 400 status', function () {
+          expect(this.res.statusCode).to.equal(400);
+        });
+        it('returns an informative error', function () {
+          expect(this.res.error.text).to.match(/^{"code":"harmony.RequestValidationError","description":"Error: Invalid linkType 'foo' must be http, https, or s3"}/);
+        });
+      });
     });
   });
 });

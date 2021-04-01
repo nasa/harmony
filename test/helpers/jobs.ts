@@ -75,9 +75,10 @@ export function adminJobListing(app: Application, query: object = {}): Test {
  *
  * @param app - The express application (typically this.frontend)
  * @param job - The job
+ * @param query - Mapping of query param names to values
  */
-export function jobStatus(app: Express.Application, { jobID }: Job): Test {
-  return request(app).get(`/jobs/${jobID}`);
+export function jobStatus(app: Express.Application, { jobID }: Job, query: object = {}): Test {
+  return request(app).get(`/jobs/${jobID}`).query(query);
 }
 
 /**
@@ -86,8 +87,8 @@ export function jobStatus(app: Express.Application, { jobID }: Job): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminJobStatus(app: Express.Application, { jobID }: Job): Test {
-  return request(app).get(`/admin/jobs/${jobID}`);
+export function adminJobStatus(app: Express.Application, { jobID }: Job, query: object = {}): Test {
+  return request(app).get(`/admin/jobs/${jobID}`).query(query);
 }
 
 /**
