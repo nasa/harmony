@@ -44,6 +44,7 @@ https://cmr.earthdata.nasa.gov:
       - C1808440897-ASF
     capabilities:
       subsetting:
+        shape: true
         bbox: true
         variable: true
         multiple_variable: true
@@ -235,6 +236,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1239927797-ASF
     capabilities:
       subsetting:
+        shape: true
         bbox: true
         variable: true
         multiple_variable: true
