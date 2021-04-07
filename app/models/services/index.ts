@@ -90,6 +90,7 @@ export function getServiceConfigs(): ServiceConfig<unknown>[] {
 // Load config at require-time to ensure presence / validity early
 loadServiceConfigs();
 serviceConfigs.map(validateServiceConfig);
+export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collections));
 
 const serviceTypesToServiceClasses = {
   http: HttpService,
@@ -627,15 +628,4 @@ export function chooseServiceConfig(
     }
   }
   return serviceConfig;
-}
-
-/**
- * Returns all of the CMR concept IDs for collections configured for use in harmony
- * @param configs - The array of service configurations (default: the contents of services.yml)
- * @returns the service configuration to use
- */
-export function getHarmonyConfiguredCollections(
-  configs: ServiceConfig<unknown>[] = serviceConfigs,
-): string[] {
-  return _.flatten(configs.map((c) => c.collections));
 }

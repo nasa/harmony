@@ -1,5 +1,5 @@
 import { NextFunction } from 'express';
-import { getHarmonyConfiguredCollections } from 'models/services';
+import { harmonyCollections } from 'models/services';
 import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName, cmrApiConfig } from '../util/cmr';
 import { NotFoundError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
@@ -94,11 +94,8 @@ async function cmrCollectionReader(req: HarmonyRequest, res, next: NextFunction)
         if (collections.length > 1) {
           // If there are multiple collections matching prefer a collection that is configured
           // for use in harmony
-          const harmonyColls = getHarmonyConfiguredCollections();
-          const matchingColls = collections.filter((c) => harmonyColls.includes(c.id));
-          if (matchingColls.length > 0) {
-            pickedCollection = matchingColls[0];
-          }
+          const harmonyCollection = collections.find((c) => harmonyCollections.includes(c.id));
+          pickedCollection = harmonyCollection || pickedCollection;
         }
         if (pickedCollection) {
           req.collections = [pickedCollection];
