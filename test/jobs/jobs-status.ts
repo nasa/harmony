@@ -687,17 +687,22 @@ describe('Individual job status route', function () {
 
       describe('when multiple collections share the same short name', function () {
         StubService.hook({ params: { status: 'successful' } });
-        hookRangesetRequest(version, 'harmony_example', variableName, { username: 'jdoe3' });
+        hookRangesetRequest(version, 'MODIS_T-JPL-L2P-v2019.0', 'all', { username: 'jdoe3' });
         hookRedirect('jdoe3');
 
         it('returns a warning message about the multiple matching collections', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('There were 2 collections that matched the provided short name harmony_example. See https://cmr.uat.earthdata.nasa.gov/concepts/C1234088182-EEDTEST for details on the selected collection. The version ID for the selected collection is 2. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name.');
+          expect(job.message).to.contain('There were 3 collections that matched the provided short name MODIS_T-JPL-L2P-v2019.0. See https://cmr.uat.earthdata.nasa.gov/concepts/C1234724471-POCLOUD for details on the selected collection. The version ID for the selected collection is 2019.0. To use a different collection submit a new request specifying the desired CMR concept ID instead of the collection short name.');
+        });
+
+        it('chooses the collection that is configured for harmony', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.contain('C1234724471-POCLOUD');
         });
 
         it('includes all of the granules', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(176);
+          expect(job.numInputGranules).to.equal(350);
         });
       });
 

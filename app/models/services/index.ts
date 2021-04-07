@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import _, { flatten, get as getIn } from 'lodash';
+import _, { get as getIn } from 'lodash';
 
 import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
@@ -637,5 +637,5 @@ export function chooseServiceConfig(
 export function getHarmonyConfiguredCollections(
   configs: ServiceConfig<unknown>[] = serviceConfigs,
 ): string[] {
-  return flatten(configs.map((c) => c.collections));
+  return _.flatten(configs.map((c) => c.collections));
 }
