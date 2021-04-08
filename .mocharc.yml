@@ -5,6 +5,7 @@ file: # Files that get loaded before suite execution.  Helpful when running a si
   - test/helpers/db.ts
   - test/helpers/logging-hooks.ts
   - test/helpers/caching-hooks.ts
+  - test/helpers/cmr.ts
 extension:
   - js
   - ts

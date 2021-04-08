@@ -5,7 +5,7 @@ import hookCmr from '../helpers/stub-cmr';
 import isUUID from '../../app/util/uuid';
 import { expectedNoOpJobKeys, itIncludesRequestUrl } from '../helpers/jobs';
 import { hookSignS3Object } from '../helpers/object-store';
-import { hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
+import { hookPostRangesetRequest, hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
 
@@ -177,6 +177,25 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('propagates the Content-Type header to the client', function () {
         expect(this.res.headers['content-type']).to.equal('text/plain; charset=utf-8');
+      });
+    });
+
+    describe('which is very large', function () {
+      const largeGranuleList = [];
+      for (let i = 0; i < 2000; i++) {
+        largeGranuleList.push(query.granuleId);
+      }
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookPostRangesetRequest(
+        version,
+        collection,
+        variableName,
+        { ...query, granuleId: largeGranuleList.join(',') },
+      );
+
+      it('successfully queries CMR and accepts the request', function () {
+        expect(this.res.status).to.be.lessThan(400);
       });
     });
   });

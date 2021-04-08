@@ -1,16 +1,16 @@
 import { expect } from 'chai';
-import sinon, { stub } from 'sinon';
+import { stub } from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
 import { Job, JobStatus, JobRecord } from 'models/job';
+import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from 'test/helpers/job-status';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
 import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl } from '../helpers/jobs';
 import StubService from '../helpers/stub-service';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
-import { S3ObjectStore } from '../../app/util/object-store';
 import env from '../../app/util/env';
 
 const aJob: JobRecord = {
@@ -377,36 +377,83 @@ describe('Individual job status route', function () {
       before(async function () {
         await this.service.sendResponse({ item: { href: s3Uri } });
       });
-      hookRedirect('jdoe1');
 
-      it('provides a permanent link to a Harmony HTTP URL', function () {
-        const job = new Job(JSON.parse(this.res.text));
-        const jobOutputLinks = job.getRelatedLinks('data');
-        expect(jobOutputLinks[0].href).to.match(/^http/);
-        expect(jobOutputLinks[0].href).to.have.string('/service-results/example-bucket/public/example/path.tif');
+      // HARMONY-770 AC 1
+      describe('when linkType is unset', function () {
+        hookRedirect('jdoe1');
+        itProvidesAWorkingHttpUrl('jdoe1');
       });
 
-      describe('loading the provided Harmony HTTP URL', function () {
-        before(function () {
-          sinon.stub(S3ObjectStore.prototype, 'signGetObject')
-            .callsFake(async (url, params) => `https://example.com/signed/${params['A-userid']}`);
-        });
-        after(function () {
-          (S3ObjectStore.prototype.signGetObject as sinon.SinonStub).restore();
+      describe('when linkType is set', function () {
+        describe('and the linkType is s3', function () {
+          hookUrl(function () {
+            const { location } = this.res.headers;
+            return location;
+          }, 'jdoe1', { linkType: 's3' });
+          // HARMONY-770 AC 4
+          it('provides s3 links for data', function () {
+            const job = new Job(JSON.parse(this.res.text));
+            const jobOutputLinks = job.getRelatedLinks('data');
+            expect(jobOutputLinks[0].href).to.match(/^s3/);
+            expect(jobOutputLinks[0].href).to.have.string('s3://example-bucket/public/example/path.tif');
+          });
         });
 
-        hookUrl(function () {
-          const job = new Job(JSON.parse(this.res.text));
-          return job.getRelatedLinks('data')[0].href.split(/:\d+/)[1];
-        }, 'jdoe1');
+        // HARMONY-770 AC 3
+        describe('and the linkType is http', function () {
+          hookUrl(function () {
+            const { location } = this.res.headers;
+            return location;
+          }, 'jdoe1', { linkType: 'http' });
 
-        it('temporarily redirects to a presigned URL for the data', function () {
-          expect(this.res.statusCode).to.equal(307);
-          expect(this.res.headers.location).to.equal('https://example.com/signed/jdoe1');
+          itProvidesAWorkingHttpUrl('jdoe1');
+        });
+        /// HARMONY-770 AC 3
+        describe('and the linkType is https', function () {
+          hookUrl(function () {
+            const { location } = this.res.headers;
+            return location;
+          }, 'jdoe1', { linkType: 'https' });
+
+          itProvidesAWorkingHttpUrl('jdoe1');
+        });
+
+        describe('and the linkType is capitalized', function () {
+          hookUrl(function () {
+            const { location } = this.res.headers;
+            return location;
+          }, 'jdoe1', { linkType: 'S3' });
+          // HARMONY-770 AC 4
+          it('linkType is case insensitive', function () {
+            const job = new Job(JSON.parse(this.res.text));
+            const jobOutputLinks = job.getRelatedLinks('data');
+            expect(jobOutputLinks[0].href).to.match(/^s3/);
+            expect(jobOutputLinks[0].href).to.have.string('s3://example-bucket/public/example/path.tif');
+          });
         });
       });
     });
 
+    describe('when linkType is set to something other than http, https, or s3', function () {
+      StubService.hook({ params: { status: 'successful' } });
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      before(async function () {
+        await this.service.sendResponse({});
+      });
+
+      hookUrl(function () {
+        const { location } = this.res.headers;
+        return location;
+      }, 'jdoe1', { linkType: 'foo' });
+
+      // HARMONY-770 AC 5
+      it('returns an informative error', function () {
+        expect(this.res.error.status).to.equal(400);
+        expect(this.res.error.text).to.match(/^{"code":"harmony.RequestValidationError","description":"Error: Invalid linkType 'foo' must be http, https, or s3"}/);
+      });
+    });
+
+    // HARMONY-770 AC 9
     describe('when a job has provided an S3 URL result with application/x-zarr mime type', function () {
       const s3Uri = 's3://example-bucket/public/example/path.tif';
       StubService.hook({ params: { status: 'successful' } });
@@ -414,44 +461,34 @@ describe('Individual job status route', function () {
       before(async function () {
         await this.service.sendResponse({ item: { href: s3Uri, type: 'application/x-zarr' } });
       });
-      hookRedirect('jdoe1');
 
-      it('returns the S3 URL', function () {
-        const job = new Job(JSON.parse(this.res.text));
-        const jobOutputLinks = job.getRelatedLinks('data');
-        expect(jobOutputLinks[0].href).to.equal(s3Uri);
+      describe('when linkType is unset', function () {
+        hookRedirect('jdoe1');
+        itReturnsUnchangedDataLinksForZarr(s3Uri);
       });
 
-      it('includes a link to the staging bucket', function () {
-        const job = new Job(JSON.parse(this.res.text));
-        const bucketLinks = job.getRelatedLinks('s3-access');
-        expect(bucketLinks.length).to.equal(1);
-        const urlRegex = new RegExp(`^s3://${env.stagingBucket}/public/harmony/stub/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/$`);
-        expect(bucketLinks[0].href).to.match(urlRegex);
-        expect(bucketLinks[0].title).to.equal('Results in AWS S3. Access from AWS us-west-2 with keys from /cloud-access.sh');
+      describe('when linkType is s3', function () {
+        hookUrl(function () {
+          const { location } = this.res.headers;
+          return location;
+        }, 'jdoe1', { linkType: 's3' });
+        itReturnsUnchangedDataLinksForZarr(s3Uri);
       });
 
-      it('includes a link to the /cloud-access json endpoint', function () {
-        const job = new Job(JSON.parse(this.res.text));
-        const cloudAccessJsonLinks = job.getRelatedLinks('cloud-access-json');
-        expect(cloudAccessJsonLinks.length).to.equal(1);
-        expect(cloudAccessJsonLinks[0].href).to.match(/^http.*\/cloud-access$/);
-        expect(cloudAccessJsonLinks[0].title).to.equal('Access keys for s3:// URLs, usable from AWS us-west-2 (JSON format)');
-        expect(cloudAccessJsonLinks[0].type).to.equal('application/json');
+      describe('when linkType is http', function () {
+        hookUrl(function () {
+          const { location } = this.res.headers;
+          return location;
+        }, 'jdoe1', { linkType: 'http' });
+        itReturnsUnchangedDataLinksForZarr(s3Uri);
       });
 
-      it('includes a link to the /cloud-access.sh endpoint', function () {
-        const job = new Job(JSON.parse(this.res.text));
-        const cloudAccessShLinks = job.getRelatedLinks('cloud-access-sh');
-        expect(cloudAccessShLinks.length).to.equal(1);
-        expect(cloudAccessShLinks[0].href).to.match(/^http.*\/cloud-access.sh$/);
-        expect(cloudAccessShLinks[0].title).to.equal('Access keys for s3:// URLs, usable from AWS us-west-2 (Shell format)');
-        expect(cloudAccessShLinks[0].type).to.equal('application/x-sh');
-      });
-
-      it('includes instructions in the message on how to access the S3 links', function () {
-        const job = new Job(JSON.parse(this.res.text));
-        expect(job.message).to.contain('Contains results in AWS S3. Access from AWS us-west-2 with keys from');
+      describe('when linkType is https', function () {
+        hookUrl(function () {
+          const { location } = this.res.headers;
+          return location;
+        }, 'jdoe1', { linkType: 'https' });
+        itReturnsUnchangedDataLinksForZarr(s3Uri);
       });
     });
 
@@ -524,7 +561,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about system limits', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 2 granules because of system constraints.');
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 2 granules because of system constraints\.$/);
         });
 
         it('limits the input granules to the system limit', function () {
@@ -552,7 +589,7 @@ describe('Individual job status route', function () {
 
         it('includes all of the granules', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(118);
+          expect(job.numInputGranules).to.be.greaterThan(100);
         });
       });
 
@@ -570,7 +607,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about maxResults limiting the number of results', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 30 granules because you requested 30 maxResults.');
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 30 granules because you requested 30 maxResults\.$/);
         });
 
         it('limits the input granules to the maxResults value', function () {
@@ -593,7 +630,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about maxResults limiting the number of results', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 25 granules because of system constraints.');
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 25 granules because of system constraints\.$/);
         });
 
         it('limits the input granules to the system limit', function () {
@@ -616,7 +653,7 @@ describe('Individual job status route', function () {
 
         it('returns a warning message about maxResults limiting the number of results', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('CMR query identified 118 granules, but the request has been limited to process only the first 100 granules because of system constraints.');
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 100 granules because of system constraints\.$/);
         });
 
         it('limits the input granules to the system limit and maxResults limit', function () {
@@ -627,14 +664,14 @@ describe('Individual job status route', function () {
 
       describe('when maxResults, the granule limit, and the CMR hits are all equal', function () {
         before(function () {
-          this.glStub = stub(env, 'maxGranuleLimit').get(() => 118);
+          this.glStub = stub(env, 'maxGranuleLimit').get(() => 125);
         });
         after(function () {
           this.glStub.restore();
         });
 
         StubService.hook({ params: { status: 'successful' } });
-        hookRangesetRequest(version, collection, variableName, { username: 'jdoe3', query: { maxResults: 118 } });
+        hookRangesetRequest(version, collection, variableName, { username: 'jdoe3', query: { maxResults: 125 } });
         hookRedirect('jdoe3');
 
         it('does not return a warning message', function () {
@@ -644,7 +681,7 @@ describe('Individual job status route', function () {
 
         it('includes all of the granules', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.numInputGranules).to.equal(118);
+          expect(job.numInputGranules).to.equal(125);
         });
       });
 

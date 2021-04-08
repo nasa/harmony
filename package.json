@@ -48,10 +48,10 @@
       "example/**/*.ts"
     ]
   },
-  "author": "Patrick Quinn",
-  "license": "UNLICENSED",
+  "author": "NASA EOSDIS Harmony team",
+  "license": "Apache-2.0",
   "dependencies": {
-    "@kubernetes/client-node": "^0.12.2",
+    "@kubernetes/client-node": "^0.12.3",
     "@mapbox/geojson-rewind": "^0.5.0",
     "@tmcw/togeojson": "^4.2.0",
     "@types/cookie": "^0.3.3",
@@ -82,7 +82,7 @@
     "express-openapi": "^4.6.5",
     "express-validator": "^6.6.0",
     "express-winston": "^3.2.1",
-    "form-data": "^3.0.0",
+    "form-data": "^3.0.1",
     "gdal": "^0.10.1",
     "js-yaml": "^3.14.0",
     "knex": "^0.20.15",
@@ -115,7 +115,7 @@
     "unzipper": "^0.10.11",
     "uuid": "^3.4.0",
     "winston": "^3.3.3",
-    "xmldom": "^0.3.0"
+    "xmldom": "^0.5.0"
   },
   "devDependencies": {
     "@pollyjs/adapter-node-http": "^4.3.0",

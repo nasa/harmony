@@ -9,8 +9,13 @@ import { auth } from './auth';
  * @param jobId - The job ID
  * @returns An awaitable object that resolves to the request response
  */
-export function stacCatalog(app: Express.Application, jobId: string): request.Test {
-  return request(app).get(`/stac/${jobId}`);
+export function stacCatalog(
+  app: Express.Application,
+  jobId: string,
+  linkType?: string,
+): request.Test {
+  const query = linkType ? { linkType } : {};
+  return request(app).get(`/stac/${jobId}`).query(query);
 }
 
 /**
@@ -21,8 +26,14 @@ export function stacCatalog(app: Express.Application, jobId: string): request.Te
  * @param index - The index of the stac item in the stac catalog
  * @returns An awaitable object that resolves to the request response
  */
-export function stacItem(app: Express.Application, jobId: string, index: number): request.Test {
-  return request(app).get(`/stac/${jobId}/${index}`);
+export function stacItem(
+  app: Express.Application,
+  jobId: string,
+  index: number,
+  linkType?: string,
+): request.Test {
+  const query = linkType ? { linkType } : {};
+  return request(app).get(`/stac/${jobId}/${index}`).query(query);
 }
 
 /**
@@ -31,12 +42,16 @@ export function stacItem(app: Express.Application, jobId: string, index: number)
  * @param jobId - The job ID
  * @param username - optional user to simulate logging in as
  */
-export function hookStacCatalog(jobId: string, username: string = undefined): void {
+export function hookStacCatalog(
+  jobId: string,
+  username?: string,
+  linkType?: string,
+): void {
   before(async function () {
     if (username) {
-      this.res = await stacCatalog(this.frontend, jobId).use(auth({ username }));
+      this.res = await stacCatalog(this.frontend, jobId, linkType).use(auth({ username }));
     } else {
-      this.res = await stacCatalog(this.frontend, jobId);
+      this.res = await stacCatalog(this.frontend, jobId, linkType);
     }
   });
   after(function () {
@@ -51,12 +66,17 @@ export function hookStacCatalog(jobId: string, username: string = undefined): vo
 * @param index - The item index
 * @param username - optional user to simulate logging in as
 */
-export function hookStacItem(jobId: string, index: number, username: string = undefined): void {
+export function hookStacItem(
+  jobId: string,
+  index: number,
+  username?: string,
+  linkType?: string,
+): void {
   before(async function () {
     if (username) {
-      this.res = await stacItem(this.frontend, jobId, index).use(auth({ username }));
+      this.res = await stacItem(this.frontend, jobId, index, linkType).use(auth({ username }));
     } else {
-      this.res = await stacItem(this.frontend, jobId, index);
+      this.res = await stacItem(this.frontend, jobId, index, linkType);
     }
   });
   after(function () {

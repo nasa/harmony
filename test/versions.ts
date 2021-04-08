@@ -29,6 +29,7 @@ describe('Versions endpoint', function () {
           'podaac/l2-subsetter',
           'ds/swot-reproject',
           'sds/variable-subsetter',
+          'sds/maskfill',
           'harmony/chaining-example',
           'podaac/ps3',
           'podaac/netcdf-converter',

@@ -141,9 +141,11 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
       logger.error(`Workflow body: ${JSON.stringify(body)}`);
       throw e;
     }
-    const durationMs = new Date().getTime() - startTime;
-    logger.info('timing.workflow-submission.end', { durationMs });
-
+    const endTime = new Date().getTime();
+    const workflowSubmitTime = endTime - startTime;
+    const frontendSubmitTime = endTime - this.operation.requestStartTime.getTime();
+    logger.info('timing.workflow-submission.end', { durationMs: workflowSubmitTime });
+    logger.info('timing.frontend-request.end', { durationMs: frontendSubmitTime });
     return null;
   }
 

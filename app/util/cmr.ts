@@ -203,12 +203,12 @@ async function _cmrSearch(
  * the necessary response.
  *
  * @param path - The URL path
- * @param formData - A FormData object to be POST'd
+ * @param formData - A FormData object or string body to be POST'd
  * @param headers - The headers to be sent with the POST
  * @returns A SuperAgent Response object
  */
 export async function fetchPost(
-  path: string, formData: FormData, headers: { [key: string]: string },
+  path: string, formData: FormData | string, headers: { [key: string]: string },
 ): Promise<CmrResponse> {
   const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}${path}`, {
     method: 'POST',
@@ -324,27 +324,6 @@ async function queryCollections(
 }
 
 /**
- * Performs a CMR granules.json search with the given query string
- *
- * @param query - The key/value pairs to search
- * @param token - Access token for user request
- * @returns The granule search results
- */
-async function queryGranules(
-  query: CmrQuery, token: string,
-): Promise<CmrGranuleHits> {
-  // TODO: Paging / hits
-  const downloadableQuery = query;
-  downloadableQuery.downloadable = true;
-  const granulesResponse = await _cmrSearch('/search/granules.json', downloadableQuery, token) as CmrGranulesResponse;
-  const cmrHits = parseInt(granulesResponse.headers.get('cmr-hits'), 10);
-  return {
-    hits: cmrHits,
-    granules: granulesResponse.data.feed.entry,
-  };
-}
-
-/**
  * Performs a CMR granules.json search with the given form data
  *
  * @param form - The key/value pairs to search including a `shapefile` parameter
@@ -353,7 +332,7 @@ async function queryGranules(
  * @returns The granule search results
  */
 async function queryGranuleUsingMultipartForm(
-  form: CmrQuery, // could not figure out how to use FormData here because
+  form: CmrQuery,
   token: string,
 ): Promise<CmrGranuleHits> {
   // TODO: Paging / hits
@@ -433,7 +412,8 @@ export async function getVariablesForCollection(
 }
 
 /**
- * Queries and returns the CMR JSON granules for the given collection ID with the given query params
+ * Queries and returns the CMR JSON granules for the given collection ID with the given query
+ * params.  Uses multipart/form-data POST to accommodate large queries and shapefiles.
  *
  * @param collectionId - The ID of the collection whose granules should be searched
  * @param query - The CMR granule query parameters to pass
@@ -448,30 +428,10 @@ export function queryGranulesForCollection(
     collection_concept_id: collectionId,
     page_size: limit,
   };
-  return queryGranules(Object.assign(baseQuery, query), token);
-}
-
-/**
- * Queries the CMR using a multipart/form-data POST for granules with the given collection ID
- * using the given form object
- *
- * @param collectionId - The ID of the collection whose granules should be searched
- * @param form - An object containing the parameters and values for the CMR query
- * @param token - Access token for user request
- * @param limit - The maximum number of granules to return
- * @returns The granules associated with the input collection
- */
-export function queryGranulesForCollectionWithMultipartForm(
-  collectionId: string, form: CmrQuery, token: string, limit = 10,
-): Promise<CmrGranuleHits> {
-  const baseQuery = {
-    collection_concept_id: collectionId,
-    page_size: limit,
-  };
 
   return queryGranuleUsingMultipartForm({
     ...baseQuery,
-    ...form,
+    ...query,
   }, token);
 }
 

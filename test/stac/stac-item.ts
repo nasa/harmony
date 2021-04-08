@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
+import itReturnsTheExpectedStacResponse from 'test/helpers/stac-item';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacItem, hookStacItem } from '../helpers/stac';
@@ -34,8 +35,8 @@ const completedJob = {
   progress: 100,
   numInputGranules: 5,
   links: [{
-    href: 'http://example.com',
-    type: 'application/octet-stream',
+    href: 's3://example-bucket/public/example/path.tif',
+    type: 'image/tiff',
     rel: 'data',
     bbox: [-10, -10, 10, 10],
     temporal: {
@@ -165,41 +166,73 @@ describe('STAC item route', function () {
 
       describe('when the service supplies the necessary fields', async function () {
         const completedJobId = completedJob.requestId;
-        hookStacItem(completedJobId, 0, 'joe');
+        const expectedItemWithoutAssetsOrLinks = {
+          id: `${completedJob.requestId}_0`,
+          stac_version: '0.9.0',
+          title: `Harmony output #0 in job ${completedJob.requestId}`,
+          description: 'Harmony out for http://example.com/harmony?job=completedJob',
+          type: 'Feature',
+          bbox: [-10, -10, 10, 10],
+          geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
+          // `links` added later
+          properties: {
+            // `created` property added later,
+            license: 'various',
+            start_datetime: '2020-01-01T00:00:00.000Z',
+            end_datetime: '2020-01-01T01:00:00.000Z',
+            datetime: '2020-01-01T00:00:00.000Z',
+          },
+        };
 
-        it('returns an HTTP OK response', function () {
-          expect(this.res.statusCode).to.equal(200);
+        // HARMONY-770 AC 2
+        describe('when linkType is not set', function () {
+          hookStacItem(completedJobId, 0, 'joe');
+          itReturnsTheExpectedStacResponse(
+            completedJob,
+            expectedItemWithoutAssetsOrLinks,
+          );
         });
 
-        it('returns a STAC catalog in JSON format', function () {
-          const item = JSON.parse(this.res.text);
-          expect(item).to.eql({
-            id: `${completedJob.requestId}_0`,
-            stac_version: '0.9.0',
-            title: `Harmony output #0 in job ${completedJob.requestId}`,
-            description: 'Harmony out for http://example.com/harmony?job=completedJob',
-            type: 'Feature',
-            bbox: [-10, -10, 10, 10],
-            geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
-            properties: {
-              created: item.properties.created,
-              license: 'various',
-              start_datetime: '2020-01-01T00:00:00.000Z',
-              end_datetime: '2020-01-01T01:00:00.000Z',
-              datetime: '2020-01-01T00:00:00.000Z',
-            },
-            assets: {
-              'http://example.com': {
-                href: 'http://example.com',
-                type: 'application/octet-stream',
-                roles: ['data'],
-              },
-            },
-            links: [
-              { href: '../', rel: 'self', title: 'self' },
-              { href: '../', rel: 'root', title: 'parent' },
-            ],
-          });
+        // HARMONY-770 AC 7
+        describe('when linkType is s3', function () {
+          hookStacItem(completedJobId, 0, 'joe', 's3');
+          itReturnsTheExpectedStacResponse(
+            completedJob,
+            expectedItemWithoutAssetsOrLinks,
+            's3',
+          );
+        });
+
+        // HARMONY-770 AC 6
+        describe('when linkType is http', function () {
+          hookStacItem(completedJobId, 0, 'joe', 'http');
+          itReturnsTheExpectedStacResponse(
+            completedJob,
+            expectedItemWithoutAssetsOrLinks,
+            'http',
+          );
+        });
+
+        // HARMONY-770 AC 6
+        describe('when linkType is https', function () {
+          hookStacItem(completedJobId, 0, 'joe', 'https');
+          itReturnsTheExpectedStacResponse(
+            completedJob,
+            expectedItemWithoutAssetsOrLinks,
+            'https',
+          );
+        });
+      });
+
+      describe('when the linkType is invalid', function () {
+        const completedJobId = completedJob.requestId;
+        hookStacItem(completedJobId, 0, 'joe', 'foo');
+        // HARMONY-770 AC 8
+        it('returns a 400 status', function () {
+          expect(this.res.error.status).to.equal(400);
+        });
+        it('returns an informative error', function () {
+          expect(this.res.error.text).to.match(/^{"code":"harmony.RequestValidationError","description":"Error: Invalid linkType 'foo' must be http, https, or s3"}/);
         });
       });
 

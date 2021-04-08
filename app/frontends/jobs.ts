@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
+import keysToLowerCase from 'util/object';
 import isUUID from 'util/uuid';
 import cancelAndSaveJob from 'util/job';
 import { needsStacLink } from '../util/stac';
@@ -29,6 +30,7 @@ function containsS3DirectAccessLink(job: Job): boolean {
  *
  * @param job - the serialized job
  * @param urlRoot - the root URL to be used when constructing links
+ * @param linkType - the type of data link to use (http|https|s3)
  * @returns a list of job links
  */
 function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
@@ -73,8 +75,8 @@ function getMessageForDisplay(job: Job, urlRoot: string): string {
  * @param urlRoot - the root URL to be used when constructing links
  * @returns the job for display
  */
-function getJobForDisplay(job: Job, urlRoot: string): Job {
-  const serializedJob = job.serialize(urlRoot);
+function getJobForDisplay(job: Job, urlRoot: string, linkType?: string): Job {
+  const serializedJob = job.serialize(urlRoot, linkType);
   serializedJob.links = getLinksForDisplay(serializedJob, urlRoot);
   serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
   delete serializedJob.isAsync;
@@ -146,9 +148,12 @@ export async function getJobStatus(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { jobID } = req.params;
+  const keys = keysToLowerCase(req.query);
+  const linkType = keys.linktype?.toLowerCase();
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   try {
     validateJobId(jobID);
+
     const query: JobQuery = { requestId: jobID };
     if (!req.context.isAdminAccess) {
       query.username = req.user;
@@ -160,7 +165,7 @@ export async function getJobStatus(
     });
     if (job) {
       const urlRoot = getRequestRoot(req);
-      res.send(getJobForDisplay(job, urlRoot));
+      res.send(getJobForDisplay(job, urlRoot, linkType));
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }

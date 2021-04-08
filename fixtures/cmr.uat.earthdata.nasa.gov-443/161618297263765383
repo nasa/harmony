@@ -1,0 +1,28 @@
+GET /search/collections.json?concept_id=C1104-PVC_TS2&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+connection: close
+date: Fri, 19 Mar 2021 19:42:53 GMT
+set-cookie: AWSALB=gaJ2sQ731Lp8cO/Joy3GaIXYV8Hm5ud+rnhl9awo9jfmHEvq9QldgeOhp8ZvffSllMQ+9UtZRfoF1VLWLNnRj6Oysck+KtU1wSaIW9n3+x+rWw1wyrnIaqS6wQco; Expires=Fri, 26 Mar 2021 19:42:53 GMT; Path=/
+set-cookie: AWSALBCORS=gaJ2sQ731Lp8cO/Joy3GaIXYV8Hm5ud+rnhl9awo9jfmHEvq9QldgeOhp8ZvffSllMQ+9UtZRfoF1VLWLNnRj6Oysck+KtU1wSaIW9n3+x+rWw1wyrnIaqS6wQco; Expires=Fri, 26 Mar 2021 19:42:53 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 891b3728-c81a-46af-b2fb-19615b17800a
+strict-transport-security: max-age=31536000
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 10
+x-request-id: 891b3728-c81a-46af-b2fb-19615b17800a
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 02f97f00ddc8019c5a1aecbfc33dfaf3.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR53-C2
+x-amz-cf-id: 0Bp83WNRKjVYFDa0p5YfyTpUvp7f4SKPfgFetwFRIx591lwwWPS6IQ==
+
+{"feed":{"updated":"2021-03-19T19:42:53.119Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1104-PVC_TS2&page_size=2000","title":"ECHO dataset metadata","entry":[{"processing_level_id":"2","boxes":["-90 -180 90 180"],"time_start":"2002-05-04T00:00:00.000Z","version_id":"86","updated":"2013-09-24T16:46:29.716Z","dataset_id":"AMSR-E/Aqua L2B Global Swath Ocean Products derived from Wentz Algorithm V086","has_spatial_subsetting":true,"has_transforms":true,"associations":{"services":["S1224343291-PVC_TS2","S1233603903-EEDTEST"]},"has_variables":true,"data_center":"PVC_TS2","short_name":"AE_Ocean","organizations":["PVC","National Snow and Ice Data Center","AMSR-E SIPS-GHCC"],"title":"AMSR-E/Aqua L2B Global Swath Ocean Products derived from Wentz Algorithm V086","coordinate_system":"CARTESIAN","summary":"AMSR-E/Aqua global swath ocean wind speed at 38 and 21 km res., water vapor over ocean at 21 km res., cloud liquid water at 12 km res., and sea surface temperature at 56 and 38 km res. are generated using the Wentz Algorithm and level 2A product.","orbit_parameters":{"swath_width":"1450.0","period":"98.88","inclination_angle":"98.15","number_of_orbits":"0.5","start_circular_latitude":"-90.0"},"id":"C1104-PVC_TS2","has_formats":true,"original_format":"ECHO10","archive_center":"PVC","has_temporal_subsetting":false,"browse_flag":false,"online_access_flag":false,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"http://wwwghcc.msfc.nasa.gov/AMSR/qa.html"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"http://nsidc.org/data/docs/daac/ae_ocean_products.gd.html"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"http://nsidc.org/data/amsre/"}]}]}}

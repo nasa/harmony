@@ -36,5 +36,6 @@ export function addRequestContextToOperation(
   if (req.context.messages.length > 0) {
     operation.message = req.context.messages.join(' ');
   }
+  operation.requestStartTime = context.startTime;
   return next();
 }

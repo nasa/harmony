@@ -8,6 +8,8 @@ import { NotFoundError } from '../util/errors';
  * which can be used to reference the data so long as it exists at the source location.
  *
  * Algorithmically:
+ *     - If the link is of the form "s3://<some-bucket>/public/<some-path>" AND `linkType` is 's3'
+ *       or `mimeType` is 'application/x-zarr' then the url is returned as is.
  *    - If the link is of the form "s3://<some-bucket>/public/<some-path>", it gets transformed
  *      into a "<frontend-root>/service-results/<some-bucket>/<some-path>", which `getServiceResult`
  *      will correctly interpret and pre-sign.
@@ -19,16 +21,17 @@ import { NotFoundError } from '../util/errors';
  * @param url - a URL to the data location
  * @param frontendRoot - The root URL to use when producing URLs relative to the Harmony root
  * @param mimeType - The mime type of the link
+ * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3)
  * @returns a URL which getServiceResult can route to when mounted to the site root
  * @throws TypeError - If the provided URL cannot be handled
  */
 export function createPublicPermalink(
-  url: string, frontendRoot: string, mimeType?: string,
+  url: string, frontendRoot: string, mimeType?: string, linkType?: string,
 ): string {
   const parsed = new URL(url);
   const protocol = parsed.protocol.toLowerCase().replace(/:$/, '');
   if (protocol === 's3') {
-    if (mimeType === 'application/x-zarr') {
+    if (mimeType === 'application/x-zarr' || linkType === 's3') {
       return url;
     }
 

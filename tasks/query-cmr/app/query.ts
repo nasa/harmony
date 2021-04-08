@@ -3,7 +3,7 @@ import assert from 'assert';
 import _ from 'lodash';
 import StacCatalog from './stac/catalog';
 import CmrStacCatalog from './stac/cmr-catalog';
-import { queryGranulesForCollectionWithMultipartForm as cmrQueryGranules } from '../../../app/util/cmr';
+import { queryGranulesForCollection as cmrQueryGranules } from '../../../app/util/cmr';
 import { objectStoreForProtocol } from '../../../app/util/object-store';
 import DataOperation from '../../../app/models/data-operation';
 import env from '../../../app/util/env';

@@ -1,0 +1,29 @@
+GET /search/collections.json?concept_id=C1234-MISSING&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 200
+connection: close
+date: Fri, 19 Mar 2021 19:43:44 GMT
+set-cookie: AWSALB=Do4Ua3EYzw028metNEvNx6n6jIQaZTxrAyGzvK3xFGqUJoOnqzxuheR++vwL5LJxfl7eIuA7X1g20H5mE5HGeCQf45AyecSksOaHceLoOz/d1nu7hbiDLaVdnw17; Expires=Fri, 26 Mar 2021 19:43:44 GMT; Path=/
+set-cookie: AWSALBCORS=Do4Ua3EYzw028metNEvNx6n6jIQaZTxrAyGzvK3xFGqUJoOnqzxuheR++vwL5LJxfl7eIuA7X1g20H5mE5HGeCQf45AyecSksOaHceLoOz/d1nu7hbiDLaVdnw17; Expires=Fri, 26 Mar 2021 19:43:44 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 37386401-22a6-4e4e-a06e-d07aca32a68e
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 7
+x-request-id: 37386401-22a6-4e4e-a06e-d07aca32a68e
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 b759e26bde22770788987f2078515d9b.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR53-C2
+x-amz-cf-id: qfM2F3jYFGEnxghEK83rqdnjJge48ZRIgaEK3RQElLJSQKddNC3lZQ==
+
+{"feed":{"updated":"2021-03-19T19:43:44.271Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1234-MISSING&page_size=2000","title":"ECHO dataset metadata","entry":[]}}

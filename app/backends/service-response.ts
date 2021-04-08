@@ -114,6 +114,7 @@ export function updateJobFields(
  * @param res - The response to send to the service
  */
 export async function responseHandler(req: Request, res: Response): Promise<void> {
+  const startTime = new Date().getTime();
   const { requestId } = req.params;
   const logger = log.child({
     component: 'callback',
@@ -173,7 +174,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
       delete fields.status;
     }
     delete fields.argo;
-    logger.info(`Updating job ${job.id} with fields: ${JSON.stringify(fields)}`);
+    logger.info(`Updating job ${job.id}`, { fields });
 
     if (!query.error && query.argo?.toLowerCase() === 'true') {
       // this is temporary until we decide how we want to use callbacks
@@ -183,6 +184,10 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     updateJobFields(logger, job, fields);
     await job.save(trx);
     await trx.commit();
+
+    const durationMs = new Date().getTime() - startTime;
+    logger.info('timing.backend-request.end', { durationMs });
+
     res.status(200);
     res.send('Ok');
   } catch (e) {
@@ -196,7 +201,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     if (job.isComplete()) {
       const durationMs = +job.updatedAt - +job.createdAt;
       const numOutputs = job.getRelatedLinks('data').length;
-      logger.info('Async job complete.', { durationMs, numOutputs, job: job.serialize() });
+      logger.info('timing.job-execution.end', { durationMs, numOutputs, job: job.serialize() });
     }
   }
 }

@@ -15,6 +15,7 @@ import { getJobsListing, getJobStatus, cancelJob } from '../frontends/jobs';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
+import parameterValidation from '../middleware/parameter-validation';
 import chooseService from '../middleware/service-selection';
 import shapefileConverter from '../middleware/shapefile-converter';
 import { NotFoundError } from '../util/errors';
@@ -28,6 +29,16 @@ import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-
 
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
+
+export interface RouterConfig {
+  PORT?: string | number; // The port to run the frontend server on
+  BACKEND_PORT?: string | number; // The port to run the backend server on
+  CALLBACK_URL_ROOT?: string; // The base URL for callbacks to use
+  // True if we should run example services, false otherwise.  Should be false
+  // in production.  Defaults to true until we have real HTTP services.
+  EXAMPLE_SERVICES?: string;
+  skipEarthdataLogin?: string; // True if we should skip using EDL
+}
 
 /**
  * Given an Express.js middleware handler function, returns another
@@ -120,7 +131,7 @@ const authorizedRoutes = [
  * @param skipEarthdataLogin - Opt to skip Earthdata Login
  * @returns A router which can respond to frontend service requests
  */
-export default function router({ skipEarthdataLogin = 'false' }): express.Router {
+export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): express.Router {
   const result = express.Router();
 
   const secret = process.env.COOKIE_SECRET;
@@ -164,6 +175,7 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
 
   result.use(express.static('public'));
   result.use(logged(shapefileConverter));
+  result.use(logged(parameterValidation));
   result.use(logged(chooseService));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(addRequestContextToOperation));
@@ -174,11 +186,16 @@ export default function router({ skipEarthdataLogin = 'false' }): express.Router
   result.get(collectionPrefix('(wms|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
+  result.get('/jobs/:jobID', getJobStatus);
+  result.post('/jobs/:jobID/cancel', cancelJob);
   result.get('/admin/jobs', getJobsListing);
   result.get('/admin/jobs/:jobID', getJobStatus);
   result.post('/admin/jobs/:jobID/cancel', cancelJob);
-  result.get('/jobs/:jobID', getJobStatus);
-  result.post('/jobs/:jobID/cancel', cancelJob);
+
+  // Allow canceling with a GET in addition to POST to workaround issues with redirects using EDL
+  result.get('/jobs/:jobID/cancel', cancelJob);
+  result.get('/admin/jobs/:jobID/cancel', cancelJob);
+
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
   result.get('/stac/:jobId', getStacCatalog);

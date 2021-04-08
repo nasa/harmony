@@ -1,0 +1,28 @@
+GET /search/collections.json?concept_id=C1096-PVC_TS2&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+connection: close
+date: Fri, 19 Mar 2021 19:42:59 GMT
+set-cookie: AWSALB=iMw4VPgMMWm7BXoFnnFQ/P5382KkoMnx7Llm1RVZIFfiGRMnrn6/1In4joCeUvh1z6ueS0m9YcYNRfrEYrTxKRfkTQaml2CzGBvubmzQTGOGC/bd7DFZ4E/Xd4h5; Expires=Fri, 26 Mar 2021 19:42:59 GMT; Path=/
+set-cookie: AWSALBCORS=iMw4VPgMMWm7BXoFnnFQ/P5382KkoMnx7Llm1RVZIFfiGRMnrn6/1In4joCeUvh1z6ueS0m9YcYNRfrEYrTxKRfkTQaml2CzGBvubmzQTGOGC/bd7DFZ4E/Xd4h5; Expires=Fri, 26 Mar 2021 19:42:59 GMT; Path=/; SameSite=None
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: a460a245-f6ec-4705-9462-9a7b0d5c6187
+strict-transport-security: max-age=31536000
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 10
+x-request-id: a460a245-f6ec-4705-9462-9a7b0d5c6187
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 2755a65ada03bcb40dcec9e77a7c9161.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR53-C2
+x-amz-cf-id: dukESeCcVXbXzIyX3bK_ygapvCKkT_wY73fhb8h_HHnkt6v87iiubA==
+
+{"feed":{"updated":"2021-03-19T19:42:59.701Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1096-PVC_TS2&page_size=2000","title":"ECHO dataset metadata","entry":[{"processing_level_id":"2","boxes":["-90 -180 90 180"],"time_start":"2002-05-04T00:00:00.000Z","version_id":"86","updated":"2013-09-24T16:46:29.754Z","dataset_id":"AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086","has_spatial_subsetting":true,"has_transforms":true,"associations":{"services":["S1224343290-PVC_TS2","S1224343291-PVC_TS2"]},"has_variables":true,"data_center":"PVC_TS2","short_name":"AE_L2A","organizations":["PVC","National Snow and Ice Data Center","AMSR-E SIPS-RSS"],"title":"AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086","coordinate_system":"CARTESIAN","summary":"AMSR-E/Aqua global swath brightness temperatures are resampled at resolutions of 56 km, 38 km, 21 km, 12 km, and 5.4 km.","orbit_parameters":{"swath_width":"1450.0","period":"98.88","inclination_angle":"98.15","number_of_orbits":"0.5","start_circular_latitude":"-90.0"},"id":"C1096-PVC_TS2","has_formats":false,"original_format":"ECHO10","archive_center":"PVC","has_temporal_subsetting":false,"browse_flag":false,"online_access_flag":false,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"http://wwwghcc.msfc.nasa.gov/AMSR/qa.html"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"http://nsidc.org/data/docs/daac/ae_l2a_tbs.gd.html"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"http://nsidc.org/data/amsre/"}]}]}}

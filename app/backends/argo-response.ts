@@ -22,11 +22,11 @@ interface ArgoCallbackQuery {
   argo?: string; // This is temporary until we decide what to do with callbacks
   redirect?: string;
   status?: string;
-  progress?: string;
-  batchesCompleted?: string;
-  batch_count?: string;
-  batch_completed?: string;
-  post_batch_step_count?: string;
+  progress?: string; // percentage of work completed
+  batchesCompleted?: string; // A number representing how many batches have been completed
+  batch_count?: string; // A number representing the total number of batches
+  batch_completed?: string; // "true" if the current batch completed
+  post_batch_step_count?: string; // A number representing the count of steps after batch processing
 }
 
 /**
@@ -140,7 +140,7 @@ export default async function responseHandler(req: Request, res: Response): Prom
 
     // add links if provided
     if (body.items) {
-      const items = _.isString(body.items) ? JSON.parse(body.items) : body.items;
+      const { items } = body;
       queryOverrides.items = items.map((itemMap): ArgoCallbackQueryItem => {
         const newItem = {} as ArgoCallbackQueryItem;
         newItem.bbox = itemMap.bbox;
@@ -157,7 +157,7 @@ export default async function responseHandler(req: Request, res: Response): Prom
     delete fields.argo;
     delete fields.batch_count;
     delete fields.post_batch_step_count;
-    logger.info(`Updating job ${job.id} with fields: ${JSON.stringify(fields)}`);
+    logger.info(`Updating job ${job.id}`, { fields });
 
     updateJobFields(logger, job, fields);
     await job.save(trx);
@@ -165,12 +165,13 @@ export default async function responseHandler(req: Request, res: Response): Prom
     res.status(200);
     res.send('Ok');
   } catch (e) {
+    logger.error('Failed to update job');
+    logger.error(e);
     await trx.rollback();
     const status = e.code || (e instanceof TypeError ? 400 : 500);
     res.status(status);
     const errorCode = (status >= 400 && status <= 499) ? 'harmony.RequestValidationError' : 'harmony.UnknownError';
     res.json({ code: errorCode, message: e.message });
-    logger.error(e);
   } finally {
     if (job.isComplete()) {
       const durationMs = +job.updatedAt - +job.createdAt;
