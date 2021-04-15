@@ -581,3 +581,34 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
         - application/x-zarr
       reprojection: true
+
+  - name: harmony/asf-gdal-subsetter-netcdf-to-zarr
+    data_operation_version: '0.9.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: asf-gdal-subsetter-netcdf-to-zarr
+        template_type: chaining
+        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/harmony/asf-gdal-subsetter-netcdf-to-zarr
+    maximum_sync_granules: 0
+    collections:
+      - C1225776654-ASF
+      - C1207038647-ASF
+      - C1233629671-ASF
+      - C1207181535-ASF
+      - C1208013295-ASF
+      - C1239927797-ASF
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+        multiple_variable: true
+      reprojection: true
+      output_formats:
+        - application/x-zarr
