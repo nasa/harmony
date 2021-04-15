@@ -39,12 +39,9 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
     collections:
-      - C1206487217-ASF
-      - C1206487504-ASF
-      - C1214354031-ASF
-      - C1595422627-ASF
-      - C1808440897-ASF
-      - C2011599335-ASF
+        - C1595422627-ASF
+        - C1214354031-ASF
+        - C1808440897-ASF
     capabilities:
       subsetting:
         bbox: true
