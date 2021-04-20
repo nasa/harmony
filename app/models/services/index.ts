@@ -90,6 +90,7 @@ export function getServiceConfigs(): ServiceConfig<unknown>[] {
 // Load config at require-time to ensure presence / validity early
 loadServiceConfigs();
 serviceConfigs.map(validateServiceConfig);
+export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collections));
 
 const serviceTypesToServiceClasses = {
   http: HttpService,
