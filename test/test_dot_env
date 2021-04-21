@@ -1,3 +1,5 @@
+# This file is needed to run tests in CI. Ideally we should not need a .env file to run tests.
+# This should be revisited in https://bugs.earthdata.nasa.gov/browse/HARMONY-118
 COOKIE_SECRET=720487f86cc9accee2cb0a1eda0e08e721010d0fe97842a9deb461587e6feac639041389efcffe739a465b7803c2b9a33983d66e0cc9383af2070aadb21f8a0650401c34f752cd45528598de6b2c0a7d50cfb7016f1d397ee13fe1736e8475f5d7ec09a6322a9577aec48daf08aaa6b40389429cdedc20ce2fe90b429a0dcd7b
 PORT=3000
 BACKEND_PORT=3001
