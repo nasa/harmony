@@ -78,7 +78,7 @@ describe('STAC catalog route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony:Foo',
         description: `Error: Unable to find job ${jobId}` });
     });
   });
