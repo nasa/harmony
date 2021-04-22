@@ -47,7 +47,7 @@ You must select "401" as the application type for Harmony to work correctly with
 
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
-* Node.js version 12.  We recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions
+* Node.js version 12.  We strongly recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions.
 * Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14 and Amazon Linux 2.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
 * [git](https://git-scm.com) - Used to clone this repository
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
@@ -76,20 +76,24 @@ If you have not yet cloned the Harmony repository, run
 $ git clone https://github.com/nasa/harmony.git
 ```
 
-Ensure node is available and is the correct version, 12.x.x
+Ensure node is available and is the correct version, 12.x.y, where "x" >= 14.
 
 ```
 $ node --version
-v12.15.0
+v12.22.1
 ```
 
 If it is not the correct version and you are using NVM, install it and ensure your `PATH` is up-to-date by running:
 
 ```
-$ nvm use && nvm install
+$ nvm install && nvm use && node --version
+...
+<NVM output>
+...
+v12.22.1
 ```
 
-Then verify the version again as above.
+Be sure to **verify the version on the final line** to make sure the NVM binary appears first in your `PATH`.
 
 From the harmony project root, install library dependencies:
 ```
