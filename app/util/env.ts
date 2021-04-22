@@ -2,6 +2,14 @@ import _ from 'lodash';
 import * as dotenv from 'dotenv';
 import * as winston from 'winston';
 
+if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
+  winston.warn('Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
+    + 'installation and can interfere with CRS parsing in Harmony, so we will ignore it. '
+    + 'If you need to override the GDAL_DATA location for Harmony, provide a GDAL_DATA key in '
+    + 'your .env file.');
+  delete process.env.GDAL_DATA;
+}
+
 if (dotenv.config().error) {
   winston.warn('Did not read a .env file');
 }
