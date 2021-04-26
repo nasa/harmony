@@ -88,26 +88,6 @@ function inject_script_source {
   echo "${new_template_path}"
 }
 
-# Testing things in parallel
-
-for f in ./config/workflow-component-templates/*; do
-  component_file=$(inject_docker_image $f)
-  if [ "$f" = "./config/workflow-component-templates/result-handler.yaml" ] ||
-      [ "$f" = "./config/workflow-component-templates/exit-handler.yaml" ]; then
-    component_file=$(inject_script_source $component_file)
-  fi
-
-  install_template $component_file &
-done
-
-wait
-
-for f in ./config/legacy-workflow-templates/*; do
-  install_template $f &
-done
-
-wait
-
 function install_full_templates {
   # TODO HARMONY-640 parse out template name instead of using file name
   f=$1
@@ -120,12 +100,51 @@ function install_full_templates {
   install_template $chain_file
 }
 
+# We install templates in parallel to significantly speed up deployment time.
+# We wait on each of the pids we fork so that we error out if the template
+# creation fails for any of the templates.
+function wait_for_pids {
+  pids=$1
+  for pid in "${pids[@]}"; do
+    wait "$pid"
+  done
+}
+
+pids=()
+
+for f in ./config/workflow-component-templates/*; do
+  component_file=$(inject_docker_image $f)
+  if [ "$f" = "./config/workflow-component-templates/result-handler.yaml" ] ||
+      [ "$f" = "./config/workflow-component-templates/exit-handler.yaml" ]; then
+    component_file=$(inject_script_source $component_file)
+  fi
+
+  install_template $component_file &
+  pids+=($!)
+done
+
+wait_for_pids $pids
+
+pids=()
+for f in ./config/legacy-workflow-templates/*; do
+  install_template $f &
+  pids+=($!)
+done
+
+wait_for_pids $pids
+
+pids=()
 for f in ./config/workflow-templates/*; do
   install_full_templates $f &
+  pids+=($!)
 done
-wait
 
+wait_for_pids $pids
+
+pids=()
 for f in ./config/chained-workflow-templates/*; do
   install_full_templates $f &
+  pids+=($!)
 done
-wait
+
+wait_for_pids $pids
