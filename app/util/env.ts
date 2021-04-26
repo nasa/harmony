@@ -14,7 +14,15 @@ if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
 }
 
 const envDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
-const envOverrides = dotenv.parse(fs.readFileSync('.env'));
+
+let envOverrides = {};
+try {
+  envOverrides = dotenv.parse(fs.readFileSync('.env'));
+} catch (e) {
+  winston.warn('Could not parse environment overrides from .env file');
+  winston.warn(e.message);
+}
+
 const envVars: HarmonyEnv = {} as HarmonyEnv;
 
 /**
@@ -35,16 +43,13 @@ function makeConfigVar(envName: string, defaultValue?: string): void {
   } else {
     envVars[_.camelCase(envName)] = stringValue;
   }
+  process.env[envName] = stringValue;
 }
 
 const envFromFiles = { ...envDefaults, ...envOverrides };
 
 for (const k in envFromFiles) {
   makeConfigVar(k, envFromFiles[k]);
-}
-
-if (dotenv.config().error) {
-  winston.warn('Did not read a .env file');
 }
 
 interface HarmonyEnv {
