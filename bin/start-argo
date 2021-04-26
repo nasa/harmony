@@ -41,6 +41,7 @@ DRIVER_DEFAULT=docker
 
 DRIVER=${DRIVER:-$DRIVER_DEFAULT}
 
+source "env-defaults"
 source ".env"
 [[ -n $KUBERNETES_URL ]] && alias kubectl="kubectl -s $KUBERNETES_URL"
 

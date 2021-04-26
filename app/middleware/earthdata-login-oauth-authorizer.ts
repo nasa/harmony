@@ -7,7 +7,7 @@ import { setCookiesForEdl } from '../util/cookies';
 import HarmonyRequest from '../models/harmony-request';
 import env from '../util/env';
 
-const vars = ['OAUTH_CLIENT_ID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
+const vars = ['OAUTH_CLIENT_ID', 'OAUTH_UID', 'OAUTH_PASSWORD', 'OAUTH_REDIRECT_URI', 'OAUTH_HOST', 'COOKIE_SECRET'];
 
 const missingVars = vars.filter((v) => !process.env[v]);
 if (missingVars.length > 0) {
