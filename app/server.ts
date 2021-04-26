@@ -133,8 +133,8 @@ export function start(config: Record<string, string>): {
   workflowTerminationListener: WorkflowTerminationListener;
   jobReaper: JobReaper;
 } {
-  const appPort = +config.PORT || 3000;
-  const backendPort = +config.BACKEND_PORT || 3001;
+  const appPort = +config.PORT;
+  const backendPort = +config.BACKEND_PORT;
 
   // Setup the frontend server to handle client requests
   const frontend = buildFrontendServer(appPort, config);
