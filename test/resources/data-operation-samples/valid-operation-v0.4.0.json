@@ -1,5 +1,5 @@
 {
-  "client": "harmony-test",
+  "client": "harmony/0.0.0 harmony-test",
   "callback": "http://example.com/callback",
   "sources": [
     {

@@ -99,7 +99,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       });
 
       it('passes the client parameter to the backend', function () {
-        expect(this.service.operation.client).to.equal('harmony-test');
+        expect(this.service.operation.client).to.equal('harmony/0.0.0 harmony-test');
       });
 
       it('passes the user parameter to the backend', function () {
