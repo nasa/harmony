@@ -13,7 +13,13 @@ if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
   delete process.env.GDAL_DATA;
 }
 
-const envDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
+let envDefaults = {};
+try {
+  envDefaults = dotenv.parse(fs.readFileSync('env-defaults'));
+} catch (e) {
+  winston.warn('Could not parse environment defaults from env-defaults file');
+  winston.warn(e.message);
+}
 
 let envOverrides = {};
 try {
