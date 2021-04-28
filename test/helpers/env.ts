@@ -2,15 +2,18 @@ import { before } from 'mocha';
 import { stub } from 'sinon';
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import env from '../../app/util/env';
 
-env.nodeEnv = 'test';
-
-// We do not use an EDL application in our tests
+// We do not use an EDL application or call backend services in our tests.
 process.env.COOKIE_SECRET = 'foo';
 process.env.OAUTH_CLIENT_ID = 'foo';
 process.env.OAUTH_UID = 'foo';
 process.env.OAUTH_PASSWORD = 'foo';
+process.env.SHARED_SECRET_KEY = 'foo';
+
+// eslint-disable-next-line import/first
+import env from '../../app/util/env'; // Must set required env before loading the env file
+
+env.nodeEnv = 'test';
 
 use(chaiAsPromised);
 

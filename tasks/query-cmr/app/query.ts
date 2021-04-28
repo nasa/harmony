@@ -6,7 +6,6 @@ import CmrStacCatalog from './stac/cmr-catalog';
 import { queryGranulesForCollection as cmrQueryGranules } from '../../../app/util/cmr';
 import { objectStoreForProtocol } from '../../../app/util/object-store';
 import DataOperation from '../../../app/models/data-operation';
-import env from '../../../app/util/env';
 
 export interface DataSource {
   collection: string;
@@ -54,7 +53,7 @@ export async function querySource(
       const result = new CmrStacCatalog({ description: `CMR Granules for ${source.collection} batch ${index + 1}` });
       result.links.push({
         rel: 'harmony_source',
-        href: `${env.cmrEndpoint}/search/concepts/${source.collection}`,
+        href: `${process.env.CMR_ENDPOINT}/search/concepts/${source.collection}`,
       });
       result.addCmrGranules(batch, `${filePrefix}_${index}_`);
       catalogs.push(result);

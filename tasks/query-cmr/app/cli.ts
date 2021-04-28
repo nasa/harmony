@@ -4,7 +4,6 @@ import path from 'path';
 import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
 import logger from '../../../app/util/log';
-import env from '../../../app/util/env';
 import { queryGranules } from './query';
 
 interface HarmonyArgv {
@@ -68,8 +67,8 @@ export default async function main(args: string[]): Promise<void> {
   const startTime = new Date().getTime();
   const appLogger = logger.child({ application: 'cmr-granule-locator' });
   const options = parser().parse(args);
-  const encrypter = createEncrypter(env.sharedSecretKey);
-  const decrypter = createDecrypter(env.sharedSecretKey);
+  const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
+  const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing.cmr-granule-locator.start');
