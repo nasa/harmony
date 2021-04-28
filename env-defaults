@@ -17,11 +17,11 @@ COOKIE_SECRET=
 
 # Random string used for encrypting and decrypting Earthdata login tokens
 # sent to backend services
-# `cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
+# `hexdump -n 32 -e '"%08x"' /dev/random`
 # to generate a 32 character random string
 SHARED_SECRET_KEY=
 
-# See OAuth 2 (Earthdata Login) section above for a description
+# See the "OAuth 2 (Earthdata Login)" section below for a description
 OAUTH_CLIENT_ID=
 OAUTH_UID=
 OAUTH_PASSWORD=
@@ -54,6 +54,9 @@ CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
 # For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
 USE_LOCALSTACK=true
 
+# Hostname for harmony to use to connect to Localstack
+LOCALSTACK_HOST=localhost
+
 # If set to true, only include EDL cookies if the request is made via https.
 USE_HTTPS=false
 
@@ -66,7 +69,7 @@ CLIENT_ID=harmony-local
 
 # When set to true log messages are logged as a text string instead of the default
 # JSON format. Useful when running harmony locally and viewing logs via a terminal.
-TEXT_LOGGER=false
+TEXT_LOGGER=true
 
 # When set to true log all database queries performed by knex
 DEBUG_KNEX=false
@@ -98,6 +101,11 @@ MAX_GRANULE_LIMIT=350
 # currently only used to determine which database connection to use in
 # db/knexfile.js
 NODE_ENV=development
+
+# Connection string to use to connect to the database.  Used for
+# NODE_ENV="production" databases.  For development and test, this is
+# ignored, using a sqlite3 file instead
+DATABASE_URL=
 
 # A bucket with brief lifecycle where temporary uploads (shapefiles) are stored while
 # requests are in flight
@@ -229,6 +237,12 @@ BUILT_IN_TASK_PREFIX=
 # Version to use for all built-in tasks.  "latest" (local / sandbox), "sit", "uat", or "prod"
 BUILT_IN_TASK_VERSION=latest
 
+# AWS region where harmony is deployed, irrelevant for local development
+AWS_DEFAULT_REGION=us-west-2
+
+# The object store used for storing shapefiles. Only S3 is supported currently.
+OBJECT_STORE_TYPE=s3
+
 # The bucket where final service output data will be staged
 # Default: A bucket created for use in localstack
 STAGING_BUCKET=local-staging-bucket
@@ -244,6 +258,15 @@ ARTIFACT_BUCKET=local-artifact-bucket
 BACKEND_HOST=host.docker.internal
 # Linux:
 # BACKEND_HOST=localhost
+
+# Maximum number of non-file fields to accept when providing a shapefile to harmony
+MAX_POST_FIELDS=100
+
+# Maximum size (in bytes) for shapefiles
+MAX_POST_FILE_SIZE=2000000000
+
+# Maximum number of multipart parts to accept when providing a shapefile
+MAX_POST_FILE_PARTS=100
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
@@ -323,20 +346,3 @@ REPLAY=record
 # True if server logs should be allowed to go to STDOUT.  When false
 # (default), they are routed to logs/test.log and suppressed in STDOUT
 LOG_STDOUT=false
-
-### TODO WHERE IS THIS COMING FROM? Add documentation to explain each
-OBJECT_STORE_TYPE=s3
-AWS_DEFAULT_REGION=us-west-2
-LOCALSTACK_HOST=localhost
-MAX_POST_FIELDS=100
-MAX_POST_FILE_SIZE=2000000000
-MAX_POST_FILE_PARTS=100
-
-###########################################################################
-# No value set by default, but could be overridden if desired.
-
-# Connection string to use to connect to the database.  Used for
-# NODE_ENV="production" databases.  For development and test, this is
-# ignored, using a sqlite3 file instead
-DATABASE_URL=
-

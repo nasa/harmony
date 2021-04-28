@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ -f .env ]; then
+  echo "Skipping generating .env file because it already exists."
+else
+  cat <<EOF > .env
+# Random string used to sign cookies.
+COOKIE_SECRET=$(hexdump -n 128 -e '"%08x"' /dev/random)
+
+# Random string used for encrypting and decrypting Earthdata login tokens
+# sent to backend services
+SHARED_SECRET_KEY=$(hexdump -n 32 -e '"%08x"' /dev/random)
+
+# See the "OAuth 2 (Earthdata Login)" section in the env-defaults file
+# Contact a harmony developer if unsure what values to use
+OAUTH_CLIENT_ID=
+OAUTH_UID=
+OAUTH_PASSWORD=
+EOF
+fi

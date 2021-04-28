@@ -61,7 +61,7 @@ Required:
 
 Highly Recommended:
 * An Amazon Web Services account - Used for testing Harmony against object stores and running Harmony in AWS
-* An editor with syntax awareness of modern Javascript.  If you do not have this or any preference, consider [Visual Studio Code](https://code.visualstudio.com)
+* An editor with syntax awareness of TypeScript.  If you do not have this or any preference, consider [Visual Studio Code](https://code.visualstudio.com)
 
 
 Optional:
@@ -104,14 +104,17 @@ Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to r
 
 ### Set Up Environment Variables
 
-Read the `ENV_CHANGELOG.md` file to see what environment variables have been added, dropped, or changed.
-Copy the file [example/dotenv](example/dotenv) to a file named `.env` in the root project directory.  Follow the instructions in that file to populate any blank variables.  Variables that have values in the example can be kept as-is, as they provide good defaults for local development.  To check environment differences between the example and local, run:
+Harmony uses environment variables for managing much of its configuration. Most of the variables can be defaulted, and harmony provides those defaults suitable for local development in the `env-defaults` file. In order to set up the remaining variables, run the following from the harmony project root:
 
 ```
-$ git diff --no-index .env example/dotenv
+$ bin/create-dotenv
 ```
 
-We recommend doing this any time you receive an example/dotenv update to ensure there are no new variables needed.
+The script will create a file named `.env` in the root project directory containing only those parameters that cannot be defaulted. Open the file and update the values for any of the variables that are currently blank. Detailed information for the environment variables can be found in the `env-defaults` file.
+
+Harmony reads both the `env-defaults` and `.env` files at startup to determine the configuration. To override any default values, set the desired value in the `.env` file. There is no need to duplicate parameters in the `.env` file if using the default value.
+
+Note: The defaults are suitable for running locally with Mac OS X. If running on Linux there are a couple of parameters that will also need to be overridden and are documented as such in the `env-defaults` file.
 
 ### Run Tests
 
@@ -223,13 +226,13 @@ This should print out an IP address. Use this in your .env file to specify the `
 
 ### Add A Service Backend
 
-Clone the Harmony GDAL service repository into a peer directory of the main Harmony repo
+Clone the Harmony service example repository into a peer directory of the main Harmony repo
 ```
 $ cd ..
-$ git clone https://github.com/nasa/harmony-gdal.git
+$ git clone https://github.com/nasa/harmony-service-example.git
 ```
 
-(minikube only) From the harmony-gdal project root, run
+(minikube only) From the harmony-service-example project root, run
 ```bash
 eval $(minikube docker-env)
 ```
