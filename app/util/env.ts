@@ -3,7 +3,7 @@ import _ from 'lodash';
 import * as dotenv from 'dotenv';
 import * as winston from 'winston';
 import * as fs from 'fs';
-import { isInteger } from './string';
+import { isInteger, listToText } from './string';
 
 if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
   winston.warn('Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
@@ -56,6 +56,13 @@ const envFromFiles = { ...envDefaults, ...envOverrides };
 
 for (const k in envFromFiles) {
   makeConfigVar(k, envFromFiles[k]);
+}
+
+const requiredVars = ['SHARED_SECRET_KEY'];
+
+const missingVars = requiredVars.filter((v) => !process.env[v]);
+if (missingVars.length > 0) {
+  throw new Error(`Configuration error: You must set ${listToText(missingVars)} in the environment`);
 }
 
 interface HarmonyEnv {
