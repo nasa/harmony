@@ -52,10 +52,10 @@ function makeConfigVar(envName: string, defaultValue?: string): void {
   process.env[envName] = stringValue;
 }
 
-const envFromFiles = { ...envDefaults, ...envOverrides };
+const allEnv = { ...envDefaults, ...envOverrides, ...process.env };
 
-for (const k in envFromFiles) {
-  makeConfigVar(k, envFromFiles[k]);
+for (const k in allEnv) {
+  makeConfigVar(k, allEnv[k]);
 }
 
 const requiredVars = ['SHARED_SECRET_KEY'];
