@@ -9,7 +9,7 @@ COOKIE_SECRET=$(hexdump -n 128 -e '"%08x"' /dev/random)
 
 # Random string used for encrypting and decrypting Earthdata login tokens
 # sent to backend services
-SHARED_SECRET_KEY=$(hexdump -n 32 -e '"%08x"' /dev/random)
+SHARED_SECRET_KEY=$(hexdump -n 16 -e '"%08x"' /dev/random)
 
 # See the "OAuth 2 (Earthdata Login)" section in the env-defaults file
 # Contact a harmony developer if unsure what values to use
