@@ -42,6 +42,7 @@ https://cmr.earthdata.nasa.gov:
       - C1595422627-ASF
       - C1214354031-ASF
       - C1808440897-ASF
+      - C2011599335-ASF
     capabilities:
       subsetting:
         shape: true
@@ -306,6 +307,13 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1238543223-POCLOUD
       - C1238538240-POCLOUD
       - C1238621102-POCLOUD
+      - C1238538225-POCLOUD
+      - C1238538224-POCLOUD
+      - C1238538231-POCLOUD
+      - C1238538230-POCLOUD
+      - C1238538233-POCLOUD
+      - C1238538232-POCLOUD
+      - C1238538241-POCLOUD
     capabilities:
       subsetting:
         bbox: true
