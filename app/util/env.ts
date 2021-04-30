@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import * as dotenv from 'dotenv';
 import * as winston from 'winston';
-import version from './version';
 
 if (Object.prototype.hasOwnProperty.call(process.env, 'GDAL_DATA')) {
   winston.warn('Found a GDAL_DATA environment variable.  This is usually from an external GDAL '
@@ -121,8 +120,7 @@ function makeConfigVar(envName: string, defaultValue?: string | number): void {
 
 // special cases
 
-const whichHarmony = process.env.CLIENT_ID || 'harmony-unknown'; // which harmony (harmony-sit, harmony-uat, etc.)
-envVars.harmonyClientId = `harmony/${version} ${whichHarmony}`;
+envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.isDevelopment = process.env.NODE_ENV === 'development';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
 envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
