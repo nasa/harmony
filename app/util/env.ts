@@ -1,4 +1,3 @@
-/* eslint-disable guard-for-in */
 import _ from 'lodash';
 import * as dotenv from 'dotenv';
 import * as winston from 'winston';
@@ -54,7 +53,7 @@ function makeConfigVar(envName: string, defaultValue?: string): void {
 
 const allEnv = { ...envDefaults, ...envOverrides, ...process.env };
 
-for (const k in allEnv) {
+for (const k of Object.keys(allEnv)) {
   makeConfigVar(k, allEnv[k]);
 }
 
