@@ -3,3 +3,4 @@ pysocks ~= 1.7.1
 pandas ~= 1.1.4
 plotly-express ~= 0.4.1
 jupyter ~= 1.0.0
+pygments ~= 2.7.4
