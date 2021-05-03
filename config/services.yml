@@ -204,6 +204,11 @@ https://cmr.earthdata.nasa.gov:
       - C1940466008-POCLOUD
       - C1968979997-POCLOUD
       - C1968979762-POCLOUD
+      - C1996880450-POCLOUD
+      - C1996881456-POCLOUD
+      - C1996881636-POCLOUD
+      - C1996880725-POCLOUD
+      - C1996881807-POCLOUD
     capabilities:
       subsetting:
         bbox: true
@@ -301,6 +306,14 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1238543220-POCLOUD
       - C1238543223-POCLOUD
       - C1238538240-POCLOUD
+      - C1238621102-POCLOUD
+      - C1238538225-POCLOUD
+      - C1238538224-POCLOUD
+      - C1238538231-POCLOUD
+      - C1238538230-POCLOUD
+      - C1238538233-POCLOUD
+      - C1238538232-POCLOUD
+      - C1238538241-POCLOUD
     capabilities:
       subsetting:
         bbox: true
