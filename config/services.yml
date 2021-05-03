@@ -71,6 +71,16 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
     collections:
+      - C2006849995-POCLOUD
+      - C2006849866-POCLOUD
+      - C2006849650-POCLOUD
+      - C2006849794-POCLOUD
+      - C2006849345-POCLOUD
+      - C2006849488-POCLOUD
+      - C2006849571-POCLOUD
+      - C2006849257-POCLOUD
+      - C2006849087-POCLOUD
+      - C2006849706-POCLOUD
       - C1940468263-POCLOUD
       - C1938032626-POCLOUD
       - C1940473819-POCLOUD
