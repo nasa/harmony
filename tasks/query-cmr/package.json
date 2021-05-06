@@ -35,7 +35,8 @@
     "yargs": "^16.1.0"
   },
   "engines": {
-    "node": "^12.14.1"
+    "node": "^12.14.1",
+    "npm": ">=7"
   },
   "devDependencies": {
     "@types/chai": "^4.2.11",

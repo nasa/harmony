@@ -83,14 +83,21 @@ $ node --version
 v12.22.1
 ```
 
-If it is not the correct version and you are using NVM, install it and ensure your `PATH` is up-to-date by running:
+Ensure npm is available and is version 7 or later.
+```
+$ npm --version
+7.11.2
 
 ```
-$ nvm install && nvm use && node --version
-...
-<NVM output>
-...
-v12.22.1
+If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
+
+```
+$ nvm install && nvm use && npm install -g npm@7
+```
+
+The output should include node 12 and npm 7.
+```
+Now using node v12.22.1 (npm v7.11.2)
 ```
 
 Be sure to **verify the version on the final line** to make sure the NVM binary appears first in your `PATH`.
