@@ -87,8 +87,8 @@ Ensure npm is available and is version 7 or later.
 ```
 $ npm --version
 7.11.2
-
 ```
+
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
 
 ```
