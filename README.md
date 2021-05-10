@@ -55,12 +55,21 @@ cd harmony/services && git clone https://github.com/nasa/harmony-service-example
 ```bash
 cd .. && ./bin/build-services
 ```
-5. Build Harmony
+5. Generate a `.env` file
+```bash
+./bin/create-dotenv
+```
+6. Fill in the generated `.env` file with your EDL OAUTH credentials from step 1
+```
+OAUTH_CLIENT_ID=
+OAUTH_UID=
+OAUTH_PASSWORD=
+```
+7. Build the Harmony Docker Image
 ```bash
 ./bin/build-harmony
 ```
-6. Fill in your EDL OAUTH credentials in the generated `.env` file
-7. Run Harmony
+8. Run Harmony
 ```bash
 ./bin/run-harmony
 ```
@@ -69,10 +78,10 @@ Harmony should now be running in your kubernetes cluster as the `harmony` servic
 the example harmony service you can test it with the following (requires a [.netrc](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html) file):
 
 ```bash
-curl -Ln -bj "http://localhost:3000/C1233860183-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?outputCrs=%2Bproj%3Dlcc%20%2Blat_1%3D43%20%2Blat_2%3D62%20%2Blat_0%3D30%20%2Blon_0%3D10%20%2Bx_0%3D0%20%2By_0%3D0%20%2Bellps%3Dintl%20%2Bunits%3Dm%20no_defs&interpolation=near&scaleExtent=-7000000,1000000,8000000,8000000
+curl -Ln -bj "http://localhost:3000/C1233860183-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?outputCrs=%2Bproj%3Dlcc%20%2Blat_1%3D43%20%2Blat_2%3D62%20%2Blat_0%3D30%20%2Blon_0%3D10%20%2Bx_0%3D0%20%2By_0%3D0%20%2Bellps%3Dintl%20%2Bunits%3Dm%20no_defs&interpolation=near&scaleExtent=-7000000,1000000,8000000,8000000"
 ```
 
-**WARNING** Occasionally Kubernetes will fail to forward the port 3000 for the `harmony` service to the local host. This will lead to a `Connection refused` error when attempting the above `curl` command. A workaround for this is to manually forward the port with the following
+**WARNING** Occasionally Kubernetes will fail to forward port 3000 for the `harmony` service to the local host. This will lead to a `Connection refused` error when attempting the above `curl` command. A workaround for this is to manually forward the port with the following
 `kubectl` command:
 
 ```bash

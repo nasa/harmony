@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# install dependencies
+npm install
+
+# build the cmr granule locator task image
+cd tasks/query-cmr
+npm install
+npm run build
+cd ../..
+
+# build the harmony-local docker image
+docker build --tag harmony-local:latest .
+
