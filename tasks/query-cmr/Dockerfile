@@ -1,8 +1,10 @@
-# FROM node:12-alpine
-FROM node:12-buster
+ARG BASE_IMAGE=node:12-buster
+FROM $BASE_IMAGE
+
+COPY app tsconnfig.json package.json package-lock.json ./
+RUN npm install
+RUN tsc
 
 WORKDIR /app
-COPY built package.json package-lock.json ./
-RUN npm install --production
 
 ENTRYPOINT [ "node", "tasks/query-cmr/app/cli" ]

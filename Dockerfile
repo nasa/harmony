@@ -3,7 +3,7 @@ FROM $BASE_IMAGE
 RUN mkdir -p /harmony
 COPY ./package.json /harmony
 WORKDIR /harmony
-RUN npm install
+RUN npm install --production
 COPY . /harmony
 USER node
 ENTRYPOINT [ "npm", "run", "start-dev-fast" ]
