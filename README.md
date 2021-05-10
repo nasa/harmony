@@ -53,7 +53,7 @@ cd harmony/services && git clone https://github.com/nasa/harmony-service-example
 ```
 4. Go to the `harmony` directory and build the service
 ```bash
-cd .. && ./bin/build-services
+cd .. && ./bin/build-service-images
 ```
 5. Generate a `.env` file
 ```bash
