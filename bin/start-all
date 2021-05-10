@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# start argo and harmony in the argo namespace in the local kubernetes cluster
+
+./bin/start-argo
+./bin/start-harmony

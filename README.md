@@ -36,7 +36,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 built-in kubernetes cluster which can be enabled in preferences.
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
 
-## Quick Start
+## Quick-ish Start
 
 If you are interested in using a local Harmony instance to develop services, but not interested in 
 developing the Harmony code itself, the following steps are enough to start a locally running Harmony instance.
@@ -69,9 +69,9 @@ OAUTH_PASSWORD=
 ```bash
 ./bin/build-harmony
 ```
-8. Run Harmony
+8. Run Harmony and Argo in the local kubernetes cluster
 ```bash
-./bin/run-harmony
+./bin/start-all
 ```
 
 Harmony should now be running in your kubernetes cluster as the `harmony` service in the `argo` namespace. If you installed

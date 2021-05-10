@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# This script builds and starts Harmomny in the local kubernetes cluster 
+# This script starts Harmomny in the local kubernetes cluster 
 
-# creeate the harmony Docker image
-docker build --tag harmony-local:latest .
-# create the argo namespace, start argo, and generate and install workflow templates
-./bin/start-argo
-# start the harmony service in kubernetes
-kubectl apply -f ./config/harmony-k8s.yaml -n Argo
+kubectl apply -f ./config/harmony-k8s.yaml -n argo
