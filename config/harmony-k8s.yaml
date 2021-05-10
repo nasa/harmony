@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: harmony-pod
+  labels:
+    name: harmony-pod
+spec:
+  containers:
+        - name: harmony
+          imagePullPolicy: IfNotPresent
+          image: harmony-local:latest
+          command:
+            - "/harmony/bin/start-harmony-in-container"
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          ports:
+            - containerPort: 3000
+            - containerPort: 3001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: harmony
+spec:
+  ports:
+    - name: frontend
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+    - name: backend
+      port: 3001
+      targetPort: 3001
+      protocol: TCP
+  selector:
+    name: harmony-pod
+  type: LoadBalancer
