@@ -11,6 +11,8 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 
 ## Table of Contents
 
+1. [Minimum System Requirements](#Minimum-System-Requirements)
+2. [Quick Start](#Quick-Start)
 1. [Development Prerequisites](#Development-Prerequisites)
     1. [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement)
     2. [Software Requirements](#Software-Requirements)
@@ -27,13 +29,65 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 5. [Contributing to Harmony](#Contributing-to-Harmony)
 6. [Additional Resources](#Additional-Resources)
 
+## Minimum System Requirements
+
+* A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
+* A running [kubernetes]() cluster. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
+built-in kubernetes cluster which can be enabled in preferences.
+* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
+
+## Quick Start
+
+If you are interested in using a local Harmony instance to develop services, but not interested in 
+developing the Harmony code itself, the following steps are enough to start a locally running Harmony instance.
+
+1. Follow the directions for creating an Earth Data Login application and credentials in the [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement) section below.
+
+2. Download this repository
+```bash
+git clone https://github.com/nasa/harmony.git
+```
+3. Clone the example service repository (or any other Harmony service) into the `services` sub-directory
+```bash
+cd harmony/services && git clone https://github.com/nasa/harmony-service-example
+```
+4. Go to the `harmony` directory and build the service
+```bash
+cd .. && ./bin/build-services
+```
+5. Build Harmony
+```bash
+./bin/build-harmony
+```
+6. Fill in your EDL OAUTH credentials in the generated `.env` file
+7. Run Harmony
+```bash
+./bin/run-harmony
+```
+
+Harmony should now be running in your kubernetes cluster as the `harmony` service in the `argo` namespace. If you installed
+the example harmony service you can test it with the following (requires a [.netrc](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html) file):
+
+```bash
+curl -Ln -bj "http://localhost:3000/C1233860183-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?outputCrs=%2Bproj%3Dlcc%20%2Blat_1%3D43%20%2Blat_2%3D62%20%2Blat_0%3D30%20%2Blon_0%3D10%20%2Bx_0%3D0%20%2By_0%3D0%20%2Bellps%3Dintl%20%2Bunits%3Dm%20no_defs&interpolation=near&scaleExtent=-7000000,1000000,8000000,8000000
+```
+
+**WARNING** Occasionally Kubernetes will fail to forward the port 3000 for the `harmony` service to the local host. This will lead to a `Connection refused` error when attempting the above `curl` command. A workaround for this is to manually forward the port with the following
+`kubectl` command:
+
+```bash
+kubectl port-forward service/harmony 3000:3000 -n argo
+```
+
+You can view the workflow running in [Argo](https://argoproj.github.io/projects/argo/#:~:text=Argo%20Workflows%20is%20an%20open,implemented%20as%20a%20Kubernetes%20CRD.&text=Model%20multi%2Dstep%20workflows%20as,using%20a%20graph%20(DAG).) by opening the Argo UI at [http://localhost:2746](http://localhost:2746).
+
 ## Development Prerequisites
 
 For developing Harmony on Windows follow this document as well as the information in [docs/dev_container/README.md](docs/dev_container/README.md).
 
 ### Earthdata Login Application Requirement
 
-To use Earthdata Login with a locally running Harmomy, you must first set up a new application in the Earthdata Login UAT environment using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  This is a four step process:
+To use Earthdata Login with a locally running Harmony, you must first set up a new application in the Earthdata Login UAT environment using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  This is a four step process:
 
 1. Request and receive permission to be an Application Creator
 2. Create a local/dev Harmony Application in the EDL web interface
