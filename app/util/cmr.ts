@@ -457,7 +457,7 @@ export async function belongsToGroup(
 }
 
 /**
- * Filter out any granule links that don't match a given regex.
+ * When given a regex, returns any granule links that match the given regex.
  * Return all non-inherited links with rel ending in /data# when no regex is provided.
  *
  * @param granule - The granule to obtain links from
