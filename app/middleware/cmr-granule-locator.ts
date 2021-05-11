@@ -140,14 +140,14 @@ export default async function cmrGranuleLocator(
       logger.info('timing.cmr-granule-query.end', { durationMs: msTaken, hits });
       const granules = [];
       for (const granule of jsonGranules) {
-        const links = granule.links.filter((g) => g.rel.endsWith('/data#') && !g.inherited);
+        const links = cmr.filterGranuleLinks(granule, req.context.serviceConfig.data_url_pattern);
         if (links.length > 0) {
           const collection = getCollectionFromRequest(req, source.collection);
           const box = getBbox(collection, granule);
           const gran: HarmonyGranule = {
             id: granule.id,
             name: granule.title,
-            urls: links.map((l) => l.href),
+            url: links[0].href,
             bbox: box,
             temporal: {
               start: granule.time_start,
