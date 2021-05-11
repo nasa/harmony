@@ -62,8 +62,12 @@ export default class CmrStacCatalog extends StacCatalog {
       const granule = granules[i];
       const bbox = computeMbr(granule) || [-180, -90, 180, 90];
       const geometry = bboxToGeometry(bbox);
-      const links = (granule.links || []).filter((g) => g.rel.endsWith('/data#') && !g.inherited);
-      const [opendapLinks, dataLinks] = _.partition(links, (l) => l.title && l.title.toLowerCase().indexOf('opendap') !== -1);
+      // NOTE - Also see cmr-granule-locator.ts for link filtering logic
+      // Can we add to isOpenDapLink: && (l.href.toLowerCase().indexOf('opendap') !== -1) ?
+      const isOpenDapLink = (l): boolean => (l.title && (l.title.toLowerCase().indexOf('opendap') !== -1)
+        && (l.rel.endsWith('/data#') || l.rel.endsWith('/service#')));
+      const links = (granule.links || []).filter((g) => (g.rel.endsWith('/data#') || isOpenDapLink(g)) && !g.inherited);
+      const [opendapLinks, dataLinks] = _.partition(links, (l) => isOpenDapLink(l));
       // Give the first data link the title 'data' and suffix subsequent ones with their index
       const dataAssets = dataLinks.map((link, j) => ([
         `data${j === 0 ? '' : j}`,
