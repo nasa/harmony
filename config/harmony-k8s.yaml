@@ -8,7 +8,7 @@ spec:
   containers:
         - name: harmony
           imagePullPolicy: IfNotPresent
-          image: harmony-local:latest
+          image: harmony/harmony-local:latest
           command:
             - "/harmony/bin/start-harmony-in-container"
           envFrom:
