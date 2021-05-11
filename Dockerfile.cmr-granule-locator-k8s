@@ -1,0 +1,11 @@
+FROM harmony-local
+
+# build the cmr-granule-locator
+WORKDIR /harmony/tasks/query-cmr
+RUN npm install
+RUN npx tsc
+RUN mkdir /app
+RUN mv built/* node_modules package.json package-lock.json /app
+WORKDIR /app
+
+ENTRYPOINT [ "node", "tasks/query-cmr/app/cli" ]

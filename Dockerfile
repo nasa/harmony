@@ -9,10 +9,5 @@ RUN npm install
 COPY . /harmony
 # build the sqlite dabase
 RUN ./bin/create-database development
-# build the cmr-granule-locator
-WORKDIR /harmony/tasks/query-cmr
-RUN npm install
-RUN npx tsc
-WORKDIR /harmony
 # USER node
 ENTRYPOINT [ "npm", "run", "start-dev-fast" ]

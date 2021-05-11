@@ -119,7 +119,7 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 ADMIN_GROUP_ID=AG1222736883-EEDTEST
 
 # The URL to use for interacting with Argo
-ARGO_URL=http://localhost:2746
+ARGO_URL=http://argo-server:2746
 
 # The time (in seconds) between invocations of the job reaper service
 JOB_REAPER_PERIOD_SEC=360

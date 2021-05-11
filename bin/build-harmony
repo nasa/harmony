@@ -8,3 +8,6 @@
 # build the harmony-local docker image
 docker build --tag harmony-local:latest .
 
+# build the cmr-granule-locator image
+docker build --tag query-cmr:lastest -f ./Dockerfile.cmr-granule-locator-k8s
+
