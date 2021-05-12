@@ -6,7 +6,6 @@ import tmp from 'tmp';
 import { URL } from 'url';
 import * as util from 'util';
 import { PromiseResult } from 'aws-sdk/lib/request';
-import { useLocalstack } from './env';
 
 import env = require('./env');
 
@@ -90,7 +89,7 @@ export class S3ObjectStore {
     let result = await (req as any).presign();
     // Needed as a work-around to allow access from outside the kubernetes cluster
     // for local development
-    if (useLocalstack) {
+    if (env.useLocalstack) {
       result = result.replace('localstack', 'localhost');
     }
     return result;
