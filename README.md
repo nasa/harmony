@@ -65,7 +65,7 @@ OAUTH_CLIENT_ID=
 OAUTH_UID=
 OAUTH_PASSWORD=
 ```
-7. Build the Harmony Docker Image
+7. Build the Harmony Docker Images
 ```bash
 ./bin/build-harmony
 ```
