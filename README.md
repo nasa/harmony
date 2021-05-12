@@ -78,17 +78,10 @@ Harmony should now be running in your Kubernetes cluster as the `harmony` servic
 the example harmony service you can test it with the following (requires a [.netrc](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html) file):
 
 ```bash
-curl -Ln -bj "http://localhost:3000/C1233860183-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?outputCrs=%2Bproj%3Dlcc%20%2Blat_1%3D43%20%2Blat_2%3D62%20%2Blat_0%3D30%20%2Blon_0%3D10%20%2Bx_0%3D0%20%2By_0%3D0%20%2Bellps%3Dintl%20%2Bunits%3Dm%20no_defs&interpolation=near&scaleExtent=-7000000,1000000,8000000,8000000"
+curl -Ln -bj "http://localhost:3000/service-results/local-staging-bucket/public/harmony/gdal/276b0e62-6df5-40aa-8270-497662efecfa/001_00_7f00ff_global.nc.png" -o file.png
 ```
-
-**WARNING** Occasionally Kubernetes will fail to forward port 3000 for the `harmony` service to the local host. This will lead to a `Connection refused` error when attempting the above `curl` command. A workaround for this is to manually forward the port with the following
-`kubectl` command:
-
-```bash
-kubectl port-forward service/harmony 3000:3000 -n argo
-```
-
 You can view the workflow running in [Argo](https://argoproj.github.io/projects/argo/#:~:text=Argo%20Workflows%20is%20an%20open,implemented%20as%20a%20Kubernetes%20CRD.&text=Model%20multi%2Dstep%20workflows%20as,using%20a%20graph%20(DAG).) by opening the Argo UI at [http://localhost:2746](http://localhost:2746).
+
 
 ## Development Prerequisites
 
