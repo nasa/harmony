@@ -12,7 +12,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 ## Table of Contents
 
 1. [Minimum System Requirements](#Minimum-System-Requirements)
-2. [Quick Start](#Quick-Start)
+2. [Quick-ish Start](#Quick-ish-Start)
 1. [Development Prerequisites](#Development-Prerequisites)
     1. [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement)
     2. [Software Requirements](#Software-Requirements)
@@ -32,8 +32,8 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 ## Minimum System Requirements
 
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
-* A running [kubernetes]() cluster. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
-built-in kubernetes cluster which can be enabled in preferences.
+* A running [Kubernetes]() cluster. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
+built-in Kubernetes cluster which can be enabled in preferences.
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
 
 ## Quick-ish Start
@@ -69,12 +69,12 @@ OAUTH_PASSWORD=
 ```bash
 ./bin/build-harmony
 ```
-8. Run Harmony and Argo in the local kubernetes cluster
+8. Run Harmony and Argo in the local Kubernetes cluster
 ```bash
 ./bin/start-all
 ```
 
-Harmony should now be running in your kubernetes cluster as the `harmony` service in the `argo` namespace. If you installed
+Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `argo` namespace. If you installed
 the example harmony service you can test it with the following (requires a [.netrc](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html) file):
 
 ```bash
@@ -241,8 +241,8 @@ Harmony uses [Argo Workflows](https://github.com/argoproj/argo) to manage job ex
   * Run Kubernetes in Docker Desktop by selecting Preferences -> Kubernetes -> Enable Kubernetes
   * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
 * Linux / Generic:
-  * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node kubernetes cluster useful for local development
-  * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to kubernetes.
+  * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node Kubernetes cluster useful for local development
+  * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to Kubernetes.
   * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
 
 #### Installing and running Argo and Localstack on Kubernetes
@@ -353,7 +353,7 @@ There are two components to local development. The first is mounting your local 
 
 ### Mounting a local directory to a pod running in a workflow
 
-This is accomplished in two steps. The first step is to mount a local directory to a node in your `kubernetes/minikube` cluster. On a mac using the `virtualbox` driver the `/Users` directory is automatically mounted as `/Uses` on the single node in `minikube`. On Linux using the `virtualbox`driver the `/home` directory is automatically mounted at `/hosthome`. Other options for mounting a local directory can be found [here](https://minikube.sigs.k8s.io/docs/handbook/mount/).
+This is accomplished in two steps. The first step is to mount a local directory to a node in your `Kubernetes/minikube` cluster. On a mac using the `virtualbox` driver the `/Users` directory is automatically mounted as `/Uses` on the single node in `minikube`. On Linux using the `virtualbox`driver the `/home` directory is automatically mounted at `/hosthome`. Other options for mounting a local directory can be found [here](https://minikube.sigs.k8s.io/docs/handbook/mount/).
 
 The second step is to mount the directory on the node to a directory on the pod in your workflow. This can be done using a [hostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath) volume defined in your workflow template. The following snippet creates a volume using the `/Users/username/project_folder` directory from the `node` on which the pod runs, _not directory from the local filesystem_. Again, on a mac using `virtualbox` the local `/Users` folder is conveniently mounted to the `/Users` folder on the node.
 
@@ -403,7 +403,7 @@ Now the pod will be able to access local code directly in the `/test-mount` dire
 
 ### Attaching a debugger to a running workflow
 
-Argo Workflow steps run as kubernetes [jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/), which means that the containers that run them are short-lived. This complicates the process of attaching a debugger to them somewhat. In order to attach the debugger to code running in a container in a workflow you have to start the code in a manner that will pause the code on the first line when it runs and wait for a debugger to attach.
+Argo Workflow steps run as Kubernetes [jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/), which means that the containers that run them are short-lived. This complicates the process of attaching a debugger to them somewhat. In order to attach the debugger to code running in a container in a workflow you have to start the code in a manner that will pause the code on the first line when it runs and wait for a debugger to attach.
 
 For NodeJS code this is easily done by passing the `--inspect-brk` option to the `node` command. workflow template building on our previous example is given here
 
@@ -440,9 +440,9 @@ In this example the starting point for the step is in the `index.js` file.
 
 Similar approaches are available for Python and Java, although they might require changes to the code.
 
-Once you launch your workflow it will pause at the step (wait for the icon in the UI to change from yellow to blue and spinning), and you can attach the debugger. For VS Code this is easily done using the `kubernetes` plugin.
+Once you launch your workflow it will pause at the step (wait for the icon in the UI to change from yellow to blue and spinning), and you can attach the debugger. For VS Code this is easily done using the `Kubernetes` plugin.
 
-Open the plugin by clicking on the `kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python).
+Open the plugin by clicking on the `Kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python).
 
 At this point the editor should open the file that is the starting point for your applications and it should be stopped on the first line of code to be run. You can then perform all the usual debugging operations such as stepping trough code and examining variables.
 

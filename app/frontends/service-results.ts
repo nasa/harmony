@@ -2,7 +2,6 @@ import { URL } from 'url';
 import { NextFunction } from 'express';
 import { objectStoreForProtocol } from '../util/object-store';
 import { NotFoundError } from '../util/errors';
-import { useLocalstack } from '../util/env';
 
 /**
  * Given a URL that is not necessarily public-facing, produces a URL to that data
@@ -67,12 +66,7 @@ export async function getServiceResult(req, res, next: NextFunction): Promise<vo
   if (objectStore) {
     try {
       req.context.logger.info(`Signing ${url}`);
-      let result = await objectStore.signGetObject(url, { 'A-userid': req.user });
-      // Needed as a work-around to allow access from outside the kubernetes cluster
-      // for local development
-      if (useLocalstack) {
-        result = result.replace('localstack', 'localhost');
-      }
+      const result = await objectStore.signGetObject(url, { 'A-userid': req.user });
       // Direct clients to reuse the redirect for 10 minutes before asking for a new one
       res.append('Cache-Control', 'private, max-age=600');
       res.redirect(307, result);
