@@ -4,6 +4,7 @@ RUN apt update && apt-get install sqlite3
 RUN mkdir -p /harmony
 COPY ./package.json /harmony
 WORKDIR /harmony
+RUN npm install -g npm@7
 RUN npm install
 COPY . /harmony
 # build the sqlite dabase
