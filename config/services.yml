@@ -374,6 +374,7 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: var-subsetter
+        template_type: chaining
         image: !Env ${VAR_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
