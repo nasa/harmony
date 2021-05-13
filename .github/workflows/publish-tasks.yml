@@ -9,10 +9,6 @@ on:
 
 env:
   DOCKER_USER: bilts
-  DOCKER_PREFIX: harmonyservices/
-  GIT_PREFIX: nasa/harmony-
-  # Or specify a full image name not derived from the repo
-  # IMAGE_NAME: custom-org/custom-image-name
 
 jobs:
   push:
@@ -30,6 +26,7 @@ jobs:
       - name: Setup Node
         run: |
           npm install -g npm@latest
+          npm install
           lerna exec -- npm install
       - name: Build and publish images
         run: |
