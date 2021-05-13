@@ -11,7 +11,7 @@ In order to connect a new service to Harmony:
 5. A new entry in [services.yml](../config/services.yml) must supply information about the service
 6. The service should follow Harmony's recommendations for service implementations
 
-A simple reference service, [harmony-gdal](https://github.com/nasa/harmony-service-example), provides examples of each. The remainder of this document describes how to fulfill these requirements in more depth.
+A simple reference service, [harmony-service-example](https://github.com/nasa/harmony-service-example), provides examples of each. The remainder of this document describes how to fulfill these requirements in more depth.
 
 ## 1. Allowing Harmony to invoke services
 
@@ -31,12 +31,9 @@ The service and all necessary code and dependencies to allow it to run can be pa
 
 `<sources-file>` is an optional file path that may contain a JSON document whose root-level keys should override keys in `<input>`.  The intent of this file is to allow Harmony to externalize the potentially very long list of input sources to avoid command line limits while retaining the remainder of the message on the command line for easier manipulation in workflow definitions.
 
-The `Dockerfile` in the harmony-gdal project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.
+The `Dockerfile` in the harmony-service-example project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.
 
 In addition to the defined command-line parameters, Harmony can provide the Docker container with environment variables as set in [services.yml](../config/services.yml) by setting `service.type.params.env` key/value pairs.  See the existing services.yml for examples.
-
-The [docker-compose.yml](../docker-compose.yml) should be updated to add an entry for running the container locally including an environment variables that need to be set. See the harmony-gdal service as an example.
-
 ### Synchronous HTTP
 
 The service can expose an HTTP(S) URL reachable by Harmony either over the public internet or a more trusted network.  When configured to do so (see #4 below), Harmony will POST JSON strings containing service requests and following the [Harmony data-operation schema](../app/schemas/) to the URL.  It will then convey the HTTP response to the user as detailed in "#3. Sending results to Harmony" below.  See [example/http-backend.js](../example/http-backend.js) in the Harmony root for a working test server example.

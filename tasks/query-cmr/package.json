@@ -8,8 +8,8 @@
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
-    "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp ${npm_package_name:1}:${VERSION:-$npm_package_version}",
-    "build": "tsc && docker build -t harmony/query-cmr:${VERSION:-latest} ."
+    "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp harmonyservices/query-cmr:${VERSION:-latest}",
+    "build": "tsc && docker build -t harmonyservices/query-cmr:${VERSION:-latest} ."
   },
   "keywords": [
     "NASA",
@@ -19,7 +19,7 @@
     "Cumulus"
   ],
   "author": "NASA EOSDIS",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "dependencies": {
     "ajv": "^6.12.3",
     "aws-sdk": "^2.814.0",

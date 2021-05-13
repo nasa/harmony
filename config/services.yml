@@ -167,20 +167,20 @@ https://cmr.earthdata.nasa.gov:
       output_formats:
         - application/x-zarr
 
-  - name: harmony/gdal
+  - name: harmony/service-example
     data_operation_version: '0.10.0'
     type:
       <<: *default-argo-config
       params:
         <<: *default-argo-params
-        template: harmony-gdal
+        template: harmony-service-example
         template_type: chaining
-        image: !Env ${HARMONY_GDAL_IMAGE}
-        image_pull_policy: !Env ${HARMONY_GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_GDAL_PARALLELISM}
+        image: !Env ${HARMONY_EXAMPLE_IMAGE}
+        image_pull_policy: !Env ${HARMONY_EXAMPLE_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_EXAMPLE_PARALLELISM}
         env:
           <<: *default-argo-env
-          STAGING_PATH: public/harmony/gdal
+          STAGING_PATH: public/harmony/service-example
     collections:
       - C1756916832-XYZ_PROV
     capabilities:
@@ -263,21 +263,21 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/gif
       reprojection: true
 
-  - name: harmony/gdal
+  - name: harmony/service-example
     data_operation_version: '0.10.0'
     batch_size: 10
     type:
       <<: *default-argo-config
       params:
         <<: *default-argo-params
-        template: harmony-gdal
+        template: harmony-service-example
         template_type: chaining
-        image: !Env ${HARMONY_GDAL_IMAGE}
-        image_pull_policy: !Env ${HARMONY_GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_GDAL_PARALLELISM}
+        image: !Env ${HARMONY_EXAMPLE_IMAGE}
+        image_pull_policy: !Env ${HARMONY_EXAMPLE_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_EXAMPLE_PARALLELISM}
         env:
           <<: *default-argo-env
-          STAGING_PATH: public/harmony/gdal
+          STAGING_PATH: public/harmony/service-example
     collections:
       - C1233800302-EEDTEST
       - C1234088182-EEDTEST

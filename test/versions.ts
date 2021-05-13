@@ -25,7 +25,7 @@ describe('Versions endpoint', function () {
         const services = JSON.parse(this.res.text);
         expect(services.map((s) => s.name)).to.eql([
           'asfdataservices/gdal-subsetter',
-          'harmony/gdal',
+          'harmony/service-example',
           'podaac/l2-subsetter',
           'ds/swot-reproject',
           'sds/variable-subsetter',
@@ -75,7 +75,7 @@ describe('Versions endpoint', function () {
         type: {
           name: 'argo',
           params: {
-            image: '1234567890.dkr.ecr.us-west-2.amazonaws.com/harmony/gdal:latest',
+            image: '1234567890.dkr.ecr.us-west-2.amazonaws.com/harmonyservices/example-service:latest',
           },
         },
       },
@@ -124,7 +124,7 @@ describe('Versions endpoint', function () {
         it('removes the AWS ECR account information from the image name', function () {
           const services = JSON.parse(this.res.text);
           const ecrService = services.find((s) => s.name === 'aws/ecr-service-no-pull-policy');
-          expect(ecrService.image).to.equal('harmony/gdal');
+          expect(ecrService.image).to.equal('harmonyservices/example-service');
         });
 
         it('correctly extracts the tag', function () {

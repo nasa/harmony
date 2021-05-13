@@ -1,11 +1,11 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: harmony-gdal
+  name: harmony-service-example
 spec:
-  entrypoint: harmony-gdal-steps
+  entrypoint: harmony-service-example-steps
   templates:
-    - name: harmony-gdal-steps
+    - name: harmony-service-example-steps
       inputs:
         artifacts:
         - name: metadata
@@ -17,7 +17,7 @@ spec:
           - name: STAGING_PATH
       steps:
       - - name: last-step
-          template: harmony-gdal-service
+          template: harmony-service-example-service
           arguments:
             artifacts:
             - name: metadata
@@ -41,7 +41,7 @@ spec:
           - name: stac-catalog-link
             valueFrom:
               parameter: "{{steps.last-step.outputs.parameters.stac-catalog-link}}"
-    - name: harmony-gdal-service
+    - name: harmony-service-example-service
       inputs:
         artifacts:
         - name: metadata
@@ -71,7 +71,7 @@ spec:
         args:
           [
             "-m",
-            "harmony_gdal",
+            "harmony_service_example",
             "--harmony-action",
             "invoke",
             "--harmony-input",
@@ -90,5 +90,5 @@ spec:
           - name: STAGING_PATH
             value: "{{inputs.parameters.STAGING_PATH}}"
           - name: APP_NAME
-            value: "harmony-gdal"
+            value: "harmony-service-example"
 
