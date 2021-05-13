@@ -3,7 +3,7 @@ name: Publish to DockerHub
 on:
   push:
     branches:
-      - harmony-817
+      - main
     tags:
       - v*
 
