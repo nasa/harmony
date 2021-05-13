@@ -140,7 +140,7 @@ export default async function cmrGranuleLocator(
       logger.info('timing.cmr-granule-query.end', { durationMs: msTaken, hits });
       const granules = [];
       for (const granule of jsonGranules) {
-        const links = cmr.filterGranuleLinks(granule, req.context.serviceConfig.data_url_pattern);
+        const links = cmr.filterGranuleLinks(granule);
         if (links.length > 0) {
           const collection = getCollectionFromRequest(req, source.collection);
           const box = getBbox(collection, granule);
