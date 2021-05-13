@@ -457,23 +457,14 @@ export async function belongsToGroup(
 }
 
 /**
- * When given a regex, returns any granule links that match the given regex.
  * Return all non-inherited links with rel ending in /data# when no regex is provided.
  *
  * @param granule - The granule to obtain links from
- * @param urlPattern - The optional pattern to match/test the link href with
  * @returns An array of granule links
  */
 export function filterGranuleLinks(
-  granule: CmrGranule, urlPattern: string = null,
+  granule: CmrGranule,
 ): CmrGranuleLink[] {
-  let links: CmrGranuleLink[] = [];
-  if (urlPattern) {
-    // Match the pattern required by the backend service
-    const urlRegex = new RegExp(urlPattern);
-    links = granule.links.filter((g) => g.href.match(urlRegex) && !g.inherited);
-  } else {
-    links = granule.links.filter((g) => g.rel.endsWith('/data#') && !g.inherited);
-  }
-  return links;
+  return granule.links.filter((g) => (g.rel.endsWith('/data#') || g.rel.endsWith('/service#'))
+    && !g.inherited);
 }

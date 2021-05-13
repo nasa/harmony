@@ -390,11 +390,11 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/variable-subsetter
-    data_url_pattern: 'opendap' # look for the string literal "opendap" in the data URL
     collections:
       - C1234714691-EEDTEST  # ATL03
       - C1234714698-EEDTEST  # ATL08
       - C1238392622-EEDTEST  # RSSMIF16
+      - C1225831960-ARCTEST  # Test OPeNDAP links
     capabilities:
       subsetting:
         variable: true
