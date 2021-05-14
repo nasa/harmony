@@ -1,5 +1,7 @@
+import { expect } from 'chai';
 import { describe } from 'mocha';
 
+import request from 'supertest';
 import { describeErrorCondition } from './helpers/errors';
 import hookServersStartStop from './helpers/servers';
 
@@ -62,5 +64,10 @@ describe('Routing', function () {
     condition: 'accessing an invalid top-level route',
     path: '/invalid-route',
     message: 'The requested page was not found.',
+  });
+
+  it('serves its schemas under /schemas', async function () {
+    const res = await request(this.frontend).get('/schemas/data-operation/0.10.0/data-operation-v0.10.0.json');
+    expect(res.body.$schema).to.equal('http://json-schema.org/draft-07/schema#');
   });
 });

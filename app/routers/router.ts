@@ -174,6 +174,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   });
 
   result.use(express.static('public'));
+  result.use('/schemas', express.static('app/schemas'));
   result.use(logged(shapefileConverter));
   result.use(logged(parameterValidation));
   result.use(logged(chooseService));
