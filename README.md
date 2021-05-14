@@ -177,7 +177,24 @@ The script will create a file named `.env` in the root project directory contain
 
 Harmony reads both the `env-defaults` and `.env` files at startup to determine the configuration. To override any default values, set the desired value in the `.env` file. There is no need to duplicate parameters in the `.env` file if using the default value.
 
-Note: The defaults are suitable for running locally with Mac OS X. If running on Linux there are a couple of parameters that will also need to be overridden and are documented as such in the `env-defaults` file.
+#### Advanced Configuration
+
+Note: The defaults are suitable for running locally with Harmony running in a container in Kubernetes (see [Quick-ish Start](#Quick-ish-Start)) on Mac OS X. If running on Linux or if you don't want to run the Harmony frontend/backend API in Kubernetes there are a few parameters that will also need to be overridden and are documented as such in the `env-defaults` file.
+
+Specifically, if you want to run the Harmony frontend/backend API in standalone (not in Kubernetes) mode, you will need to add the following to your .env file:
+Mac OS X
+```
+LOCALSTACK_HOST=localhost
+BACKEND_HOST=host.docker.internal
+ARGO_URL=http://localhost:2746
+```
+
+Linux
+```
+LOCALSTACK_HOST=localhost
+BACKEND_HOST=localhost
+ARGO_URL=http://localhost:2746
+```
 
 ### Run Tests
 

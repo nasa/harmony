@@ -57,6 +57,9 @@ USE_LOCALSTACK=true
 # Hostname for harmony to use to connect to Localstack
 LOCALSTACK_HOST=localstack
 
+# Hostname for K8S pods to connect to Localstack
+LOCALSTACK_K8S_HOST=localstack
+
 # If set to true, only include EDL cookies if the request is made via https.
 USE_HTTPS=false
 
