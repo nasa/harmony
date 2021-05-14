@@ -66,8 +66,20 @@ describe('Routing', function () {
     message: 'The requested page was not found.',
   });
 
-  it('serves its schemas under /schemas', async function () {
-    const res = await request(this.frontend).get('/schemas/data-operation/0.10.0/data-operation-v0.10.0.json');
-    expect(res.body.$schema).to.equal('http://json-schema.org/draft-07/schema#');
+  describe('/schemas', function () {
+    it('serves files from app/schemas', async function () {
+      const res = await request(this.frontend).get('/schemas/data-operation/0.10.0/data-operation-v0.10.0.json');
+      expect(res.body.$schema).to.equal('http://json-schema.org/draft-07/schema#');
+    });
+
+    it('serves API schemas without interpreting them as similarly-named service calls', async function () {
+      const res = await request(this.frontend).get('/schemas/ogc-api-coverages/1.0.0/ogc-api-coverages-v1.0.0.yml');
+      expect(res.text).to.contain('openapi:');
+    });
+
+    it('does not interpret missing files as service calls', async function () {
+      const res = await request(this.frontend).get('/schemas/ogc-api-coverages/1.0.0/ogc-api-coverages-missing.yml');
+      expect(res.body.description).to.equal('Error: The requested resource could not be found');
+    });
   });
 });
