@@ -385,7 +385,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234714691-EEDTEST  # ATL03
       - C1234714698-EEDTEST  # ATL08
       - C1238392622-EEDTEST  # RSSMIF16
-      - C1225831960-ARCTEST  # Test OPeNDAP links
     capabilities:
       subsetting:
         variable: true
