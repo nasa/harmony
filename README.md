@@ -36,7 +36,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 built-in Kubernetes cluster which can be enabled in preferences.
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
 
-## Quick-ish Start
+## Quick-ish Start (Mac OS X / Linux)
 
 If you are interested in using a local Harmony instance to develop services, but not interested in 
 developing the Harmony code itself, the following steps are enough to start a locally running Harmony instance.
