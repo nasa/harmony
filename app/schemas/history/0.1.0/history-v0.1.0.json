@@ -1,6 +1,6 @@
 {
    "$schema": "https://json-schema.org/draft/2020-12/schema",
-   "$id": "https://harmony.earthdata.nasa.gov/schemas/history/0.1.0/history-0.1.0.json",
+   "$id": "https://harmony.earthdata.nasa.gov/schemas/history/0.1.0/history-v0.1.0.json",
    "title": "Data Processing History",
    "description": "A history record of processing that produced a given data file. For more information, see: https://wiki.earthdata.nasa.gov/display/TRT/In-File+Provenance+Metadata+-+TRT-42",
    "type": [ "array", "object" ],
