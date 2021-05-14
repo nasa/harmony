@@ -457,7 +457,7 @@ export async function belongsToGroup(
 }
 
 /**
- * Return all non-inherited links with rel ending in /data# when no regex is provided.
+ * Return all non-inherited links with rel ending in /data# or /service#.
  *
  * @param granule - The granule to obtain links from
  * @returns An array of granule links
