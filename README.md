@@ -12,7 +12,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 ## Table of Contents
 
 1. [Minimum System Requirements](#Minimum-System-Requirements)
-2. [Quick-ish Start](#Quick-ish-Start)
+2. [Quick Start](#Quick-Start)
 3. [Development Prerequisites](#Development-Prerequisites)
     1. [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement)
     2. [Software Requirements](#Software-Requirements)
@@ -36,7 +36,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 built-in Kubernetes cluster which can be enabled in preferences.
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
 
-## Quick-ish Start
+## Quick Start
 (Mac OS X / Linux)
 
 If you are interested in using a local Harmony instance to develop services, but not interested in 
@@ -48,27 +48,9 @@ developing the Harmony code itself, the following steps are enough to start a lo
 ```bash
 git clone https://github.com/nasa/harmony.git
 ```
-3. Clone the example service repository (or any other Harmony service) into the `services` sub-directory
+3. Run the bootstrap script and answer the prompts with your EDL application credentials
 ```bash
-cd harmony/services && git clone https://github.com/nasa/harmony-service-example
-```
-4. Go to the `harmony` directory and build the service
-```bash
-cd .. && ./bin/build-service-images
-```
-5. Generate a `.env` file
-```bash
-./bin/create-dotenv
-```
-6. Fill in the generated `.env` file with your EDL OAUTH credentials from step 1
-```
-OAUTH_CLIENT_ID=
-OAUTH_UID=
-OAUTH_PASSWORD=
-```
-7. Run Harmony and Argo in the local Kubernetes cluster
-```bash
-./bin/start-all
+./bin/bootstrap-harmony
 ```
 
 Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `argo` namespace. If you installed
