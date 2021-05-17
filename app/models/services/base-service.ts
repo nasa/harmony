@@ -27,7 +27,6 @@ export interface ServiceConfig<ServiceParamType> {
     name: string;
     params?: ServiceParamType;
   };
-  data_url_pattern?: string;
   collections?: string[];
   capabilities?: ServiceCapabilities;
   concurrency?: number;
@@ -54,7 +53,7 @@ export function functionalSerializeOperation(
   op: DataOperation,
   config: ServiceConfig<unknown>,
 ): string {
-  return op.serialize(config.data_operation_version, config.data_url_pattern);
+  return op.serialize(config.data_operation_version);
 }
 
 /**

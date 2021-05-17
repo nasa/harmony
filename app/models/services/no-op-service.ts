@@ -47,7 +47,7 @@ export default class NoOpService extends BaseService<void> {
     const now = new Date();
     const granuleLists = this.operation.sources.map((source) => source.granules);
     const granules = granuleLists.reduce((acc, val) => acc.concat(val), []);
-    const links = granules.map((granule) => ({ title: granule.id, href: granule.urls[0], rel: 'data' }));
+    const links = granules.map((granule) => ({ title: granule.id, href: granule.url, rel: 'data' }));
     let job = new Job({
       username: this.operation.user,
       requestId: this.operation.requestId,

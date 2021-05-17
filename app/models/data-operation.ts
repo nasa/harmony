@@ -153,7 +153,7 @@ export interface TemporalStringRange {
 export interface HarmonyGranule {
   id: string;
   name: string;
-  urls: string[];
+  url: string;
   temporal: TemporalStringRange;
   bbox?: number[];
 }
@@ -657,30 +657,16 @@ export default class DataOperation {
    * to the provided JSON schema version ID (default: highest available)
    *
    * @param version - The version to serialize
-   * @param urlPattern - A pattern to look for when matching data URLs.
    * @returns The serialized data operation in the requested version
    * @throws TypeError - If validate is `true` and validation fails, or if version is not provided
    * @throws RangeError - If the provided version cannot be serialized
    */
-  serialize(version: string, urlPattern: string = null): string {
+  serialize(version: string): string {
     if (!version) {
       throw new TypeError('Schema version is required to serialize DataOperation objects');
     }
 
     let toWrite = _.cloneDeep(this.model);
-
-    const urlRegex = urlPattern ? new RegExp(urlPattern) : /.*/;
-    // Fetch the first data link matching the pattern required by the backend
-    for (const source of toWrite.sources) {
-      for (const granule of source.granules) {
-        const link = granule.urls.find((u) => u.match(urlRegex));
-        if (!link) {
-          throw new TypeError(`No URL available matching ${urlRegex} as required by the backend service`);
-        }
-        granule.url = link;
-        delete granule.urls;
-      }
-    }
 
     // To be fixed by HARMONY-203 to not default to TIFF
     toWrite.format.mime = toWrite.format.mime || 'image/tiff';
