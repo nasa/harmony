@@ -46,34 +46,6 @@ describe('DataOperation', () => {
       });
     });
 
-    describe('specifying a URL pattern', () => {
-      describe('when URLs match the provided pattern', () => {
-        const call = (): string => validOperation.serialize(CURRENT_SCHEMA_VERSION, 'opendap\\..*\\.example');
-
-        it('returns the first data URL matching the provided regex pattern', function () {
-          const result = JSON.parse(call());
-          expect(result.sources[0].granules[0].url).to.equal('http://opendap.one.example.com');
-        });
-      });
-
-      describe('when no URLs match the provided pattern', () => {
-        const call = (): string => validOperation.serialize(CURRENT_SCHEMA_VERSION, 'closedap');
-
-        it('throws an error', () => {
-          expect(call).to.throw(TypeError);
-        });
-      });
-    });
-
-    describe('specifying no URL pattern', () => {
-      const call = (): string => validOperation.serialize(CURRENT_SCHEMA_VERSION, null);
-
-      it('returns the first data URL', function () {
-        const result = JSON.parse(call());
-        expect(result.sources[0].granules[0].url).to.equal('http://example.com');
-      });
-    });
-
     describe('serializing to older schema versions', () => {
       const describeOldSchemaOutput = function (version, outputFile): void {
         const output = parseSchemaFile(outputFile);

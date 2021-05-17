@@ -141,6 +141,12 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.use(cookieParser(secret));
 
+  result.use(express.static('public'));
+  // JSON and YAML files under /schemas
+  result.use('/schemas', express.static('app/schemas'));
+  // Missing files under schemas not interpreted as service calls
+  result.use('/schemas', (req, res, next) => next(new NotFoundError()));
+
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
   // a bucket.
   result.post(collectionPrefix('(ogc-api-coverages)'), shapefileUpload());
@@ -172,8 +178,6 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.use(/^\/(wms|eoss|ogc-api-coverages)/, (req, res, next) => {
     next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
-
-  result.use(express.static('public'));
   result.use(logged(shapefileConverter));
   result.use(logged(parameterValidation));
   result.use(logged(chooseService));
