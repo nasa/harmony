@@ -9,10 +9,7 @@
       "granules": [{
           "id": "G1233800343-EEDTEST",
           "name": "001_00_7f00ff_global",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_7f00ff_global.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/001_00_7f00ff_global.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_7f00ff_global.nc",
           "bbox": [
             -180,
             -90,
@@ -27,10 +24,7 @@
         {
           "id": "G1233800344-EEDTEST",
           "name": "001_01_7f00ff_africa",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_01_7f00ff_africa.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/001_01_7f00ff_africa.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_01_7f00ff_africa.nc",
           "bbox": [
             -180,
             -90,
@@ -45,10 +39,7 @@
         {
           "id": "G1233800352-EEDTEST",
           "name": "002_00_3200ff_global",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/002_00_3200ff_global.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/002_00_3200ff_global.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/002_00_3200ff_global.nc",
           "bbox": [
             -180,
             -90,
@@ -63,10 +54,7 @@
         {
           "id": "G1233800353-EEDTEST",
           "name": "002_01_3200ff_africa",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/002_01_3200ff_africa.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/002_01_3200ff_africa.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/002_01_3200ff_africa.tif",
           "bbox": [
             -180,
             -90,
@@ -81,10 +69,7 @@
         {
           "id": "G1233800357-EEDTEST",
           "name": "002_07_3200ff_north_america",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/002_07_3200ff_north_america.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/002_07_3200ff_north_america.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/002_00_3200ff_global.nc",
           "bbox": [
             -180,
             -90,
@@ -99,10 +84,7 @@
         {
           "id": "G1233800361-EEDTEST",
           "name": "003_00_0019ff_global",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/003_00_0019ff_global.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/003_00_0019ff_global.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/003_00_0019ff_global.tif",
           "bbox": [
             -180,
             -90,
@@ -117,10 +99,7 @@
         {
           "id": "G1233800362-EEDTEST",
           "name": "003_01_0019ff_africa",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/003_01_0019ff_africa.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/003_01_0019ff_africa.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/003_01_0019ff_africa.tif",
           "bbox": [
             -180,
             -90,
@@ -135,10 +114,7 @@
         {
           "id": "G1233800366-EEDTEST",
           "name": "003_07_0019ff_north_america",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/003_07_0019ff_north_america.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/003_07_0019ff_north_america.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/003_07_0019ff_north_america.tif",
           "bbox": [
             -180,
             -90,
@@ -153,10 +129,7 @@
         {
           "id": "G1233800370-EEDTEST",
           "name": "004_00_0065ff_global",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/004_00_0065ff_global.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/004_00_0065ff_global.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/004_00_0065ff_global.nc",
           "bbox": [
             -180,
             -90,
@@ -171,10 +144,7 @@
         {
           "id": "G1233800371-EEDTEST",
           "name": "004_01_0065ff_africa",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/004_01_0065ff_africa.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/004_01_0065ff_africa.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/004_01_0065ff_africa.tif",
           "bbox": [
             -180,
             -90,
@@ -189,10 +159,7 @@
         {
           "id": "G1233800375-EEDTEST",
           "name": "004_07_0065ff_north_america",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/004_07_0065ff_north_america.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/004_07_0065ff_north_america.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/004_07_0065ff_north_america.nc",
           "bbox": [
             -180,
             -90,
@@ -216,10 +183,7 @@
       "granules": [{
           "id": "G1233800379-EEDTEST",
           "name": "005_00_00b2ff_global",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/005_00_00b2ff_global.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/005_00_00b2ff_global.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/005_00_00b2ff_global.tif",
           "bbox": [
             -180,
             -90,
@@ -234,10 +198,7 @@
         {
           "id": "G1233800380-EEDTEST",
           "name": "005_01_00b2ff_africa",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/005_01_00b2ff_africa.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/005_01_00b2ff_africa.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/005_01_00b2ff_africa.tif",
           "bbox": [
             -180,
             -90,
@@ -252,10 +213,7 @@
         {
           "id": "G1233800384-EEDTEST",
           "name": "005_07_00b2ff_north_america",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/005_07_00b2ff_north_america.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/005_07_00b2ff_north_america.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/005_07_00b2ff_north_america.tif",
           "bbox": [
             -180,
             -90,
@@ -270,10 +228,7 @@
         {
           "id": "G1233800388-EEDTEST",
           "name": "006_00_00feff_global",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/006_00_00feff_global.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/006_00_00feff_global.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/006_00_00feff_global.nc",
           "bbox": [
             -180,
             -90,
@@ -288,10 +243,7 @@
         {
           "id": "G1233800389-EEDTEST",
           "name": "006_01_00feff_africa",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/006_01_00feff_africa.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/006_01_00feff_africa.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/006_01_00feff_africa.nc",
           "bbox": [
             -180,
             -90,
@@ -306,10 +258,7 @@
         {
           "id": "G1233800393-EEDTEST",
           "name": "006_07_00feff_north_america",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/006_07_00feff_north_america.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/006_07_00feff_north_america.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/006_07_00feff_north_america.tif",
           "bbox": [
             -180,
             -90,
@@ -324,10 +273,7 @@
         {
           "id": "G1233800397-EEDTEST",
           "name": "007_00_00ffb2_global",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/007_00_00ffb2_global.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/007_00_00ffb2_global.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/007_00_00ffb2_global.tif",
           "bbox": [
             -180,
             -90,
@@ -342,10 +288,7 @@
         {
           "id": "G1233800398-EEDTEST",
           "name": "007_01_00ffb2_africa",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/007_01_00ffb2_africa.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/007_01_00ffb2_africa.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/007_01_00ffb2_africa.tif",
           "bbox": [
             -180,
             -90,
@@ -360,10 +303,7 @@
         {
           "id": "G1233800402-EEDTEST",
           "name": "007_07_00ffb2_north_america",
-          "urls": [
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/007_07_00ffb2_north_america.nc",
-            "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/007_07_00ffb2_north_america.tif"
-          ],
+          "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/007_07_00ffb2_north_america.nc",
           "bbox": [
             -180,
             -90,

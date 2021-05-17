@@ -71,6 +71,7 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
     collections:
+      - C1996881146-POCLOUD
       - C2006849995-POCLOUD
       - C2006849866-POCLOUD
       - C2006849650-POCLOUD
@@ -219,6 +220,14 @@ https://cmr.earthdata.nasa.gov:
       - C1996881636-POCLOUD
       - C1996880725-POCLOUD
       - C1996881807-POCLOUD
+      - C1968980549-POCLOUD
+      - C1968979566-POCLOUD
+      - C1968979550-POCLOUD
+      - C1968980583-POCLOUD
+      - C1968980576-POCLOUD
+      - C1968979597-POCLOUD
+      - C1968979561-POCLOUD
+      - C1968980609-POCLOUD
     capabilities:
       subsetting:
         bbox: true
@@ -374,13 +383,13 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: var-subsetter
+        template_type: chaining
         image: !Env ${VAR_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/variable-subsetter
-    data_url_pattern: 'opendap' # look for the string literal "opendap" in the data URL
     collections:
       - C1234714691-EEDTEST  # ATL03
       - C1234714698-EEDTEST  # ATL08

@@ -73,6 +73,24 @@ describe('addCmrGranules to catalog', function () {
             href: './g0_5.nc4',
             title: 'OPeNDAP Data 5',
           },
+          {
+            rel: 'http://esipfed.org/ns/fedsearch/1.1/service#',
+            title: 'OPeNDAP request URL (GET DATA : OPENDAP DATA)',
+            href: 'https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/AIRS.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
+            type: 'application/x-hdf',
+          },
+          {
+            rel: 'http://esipfed.org/ns/fedsearch/1.1/service#',
+            title: 'OPeNTRAP request URL',
+            href: 'https://gesdisc.nasa.gov/opentrap/Aqua_AIRS_Level3/AIR222P5.006/2002/abcd.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
+            type: 'application/x-hdf',
+          },
+          {
+            rel: 'http://esipfed.org/ns/fedsearch/1.1/data#',
+            title: 'OPeNDAP request URL (GET DATA : OPENDAP DATA)',
+            href: 'https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/123.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
+            type: 'application/x-hdf',
+          },
         ],
       }, {
         id: 'G1_TEST',
@@ -128,11 +146,33 @@ describe('addCmrGranules to catalog', function () {
         type: 'application/x-netcdf4',
         roles: ['data', 'opendap'],
       });
+      expect(assets.opendap2).to.eql({
+        href: 'https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/AIRS.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
+        title: 'AIRS.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
+        description: 'OPeNDAP request URL (GET DATA : OPENDAP DATA)',
+        type: 'application/x-hdf',
+        roles: ['data', 'opendap'],
+      });
+      expect(assets.opendap3).to.eql({
+        href: 'https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/123.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
+        title: '123.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf',
+        description: 'OPeNDAP request URL (GET DATA : OPENDAP DATA)',
+        type: 'application/x-hdf',
+        roles: ['data', 'opendap'],
+      });
       expect(assets.data2).to.be.undefined;
     });
 
-    it('ignores non-data links', function () {
+    it('includes OPeNDAP links with rel ending in both service# and data#', function () {
+      expect(_.map(_.values(assets), 'href'))
+        .to.include('https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/123.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf');
+      expect(_.map(_.values(assets), 'href'))
+        .to.include('https://gesdisc.nasa.gov/opendap/Aqua_AIRS_Level3/AIR222P5.006/2002/AIRS.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf');
+    });
+
+    it('ignores non-OPeNDAP non-data links', function () {
       expect(_.map(_.values(assets), 'href')).to.not.include('./g0_3.json');
+      expect(_.map(_.values(assets), 'href')).to.not.include('./abcd.2222.09.01.L3.RetQuant_IR005.v6.0.9.0.G111160515.hdf');
     });
 
     it('does not catalog granules with no valid data links', function () {
