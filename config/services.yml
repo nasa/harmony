@@ -220,6 +220,14 @@ https://cmr.earthdata.nasa.gov:
       - C1996881636-POCLOUD
       - C1996880725-POCLOUD
       - C1996881807-POCLOUD
+      - C1968980549-POCLOUD
+      - C1968979566-POCLOUD
+      - C1968979550-POCLOUD
+      - C1968980583-POCLOUD
+      - C1968980576-POCLOUD
+      - C1968979597-POCLOUD
+      - C1968979561-POCLOUD
+      - C1968980609-POCLOUD
     capabilities:
       subsetting:
         bbox: true
