@@ -4,9 +4,9 @@ from harmony.common import BaseHarmonyUser
 
 
 class ProdHarmonyUser(BaseHarmonyUser):
-    @tag('harmony-gdal', 'sync', 'bbox', 'reproject', 'png')
+    @tag('harmony-service-example', 'sync', 'bbox', 'reproject', 'png')
     @task(2)
-    def harmony_gdal_bbox_variable_reformat(self):
+    def harmony_service_example_bbox_variable_reformat(self):
         collection = 'C1756916832-XYZ_PROV'
         variable = 'all'
         params = {
@@ -24,7 +24,7 @@ class ProdHarmonyUser(BaseHarmonyUser):
                 collection=collection,
                 variable=variable),
             params=params,
-            name='Harmony GDAL: Bbox, reproject, and reformat')
+            name='Harmony Service Example: Bbox, reproject, and reformat')
 
     @tag('podaac-l2ss', 'bbox', 'sync', 'netcdf4')
     @task(5)
