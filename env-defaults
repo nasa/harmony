@@ -228,7 +228,7 @@ PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
 PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='IfNotPresent'
 PODAAC_NETCDF_CONVERTER_PARALLELISM=2
 
-CMR_GRANULE_LOCATOR_IMAGE=harmony/query-cmr:latest
+CMR_GRANULE_LOCATOR_IMAGE=harmonyservices/query-cmr:latest
 CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY='IfNotPresent'
 
 # page size to use with CMR calls

@@ -13,10 +13,10 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 
 1. [Minimum System Requirements](#Minimum-System-Requirements)
 2. [Quick-ish Start](#Quick-ish-Start)
-1. [Development Prerequisites](#Development-Prerequisites)
+3. [Development Prerequisites](#Development-Prerequisites)
     1. [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement)
     2. [Software Requirements](#Software-Requirements)
-2. [Running Harmony](#Running-Harmony)
+4. [Running Harmony](#Running-Harmony)
     1. [Set Up Environment Variables](#Set-Up-Environment-Variables)
     2. [Run Tests](#Run-Tests)
     3. [Set Up A Database](#Set-Up-A-Database)
@@ -24,26 +24,27 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
     5. [Add A Service Backend](#Add-A-Service-Backend)
     6. [Run Harmony](#Run-Harmony)
     7. [Connect A Client](#Connect-A-Client)
-3. [Local Development Of Workflows Using Visual Studio Code](#Local-Development-Of-Workflows-Using-Visual-Studio-Code)
-4. [Running in AWS](#Running-in-AWS)
-5. [Contributing to Harmony](#Contributing-to-Harmony)
-6. [Additional Resources](#Additional-Resources)
+5. [Local Development Of Workflows Using Visual Studio Code](#Local-Development-Of-Workflows-Using-Visual-Studio-Code)
+6. [Running in AWS](#Running-in-AWS)
+7. [Contributing to Harmony](#Contributing-to-Harmony)
+8. [Additional Resources](#Additional-Resources)
 
 ## Minimum System Requirements
 
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
-* A running [Kubernetes]() cluster. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
+* A running [Kubernetes](https://kubernetes.io/) cluster. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
 built-in Kubernetes cluster which can be enabled in preferences.
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
 
-## Quick-ish Start (Mac OS X / Linux)
+## Quick-ish Start
+(Mac OS X / Linux)
 
 If you are interested in using a local Harmony instance to develop services, but not interested in 
 developing the Harmony code itself, the following steps are enough to start a locally running Harmony instance.
 
 1. Follow the directions for creating an Earth Data Login application and credentials in the [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement) section below.
 
-2. Download this repository
+2. Download this repository (or download the zip file from GitHub)
 ```bash
 git clone https://github.com/nasa/harmony.git
 ```
@@ -65,11 +66,7 @@ OAUTH_CLIENT_ID=
 OAUTH_UID=
 OAUTH_PASSWORD=
 ```
-7. Build the Harmony Docker Images
-```bash
-./bin/build-harmony
-```
-8. Run Harmony and Argo in the local Kubernetes cluster
+7. Run Harmony and Argo in the local Kubernetes cluster
 ```bash
 ./bin/start-all
 ```
@@ -351,6 +348,15 @@ PNG from the test server.
 
 You can also use the Argo dashboard at http://localhost:2746 to visualize the workflows that were kicked off from your Harmony transformation requests.
 
+## Building and Publishing the Harmony Docker Image
+The Harmony Docker image can be built with the following command:
+```bash
+./bin/build-harmony
+```
+
+The image can be deployed to DockerHub using the following commands:
+
+**PUT SOMETHING HERE**
 
 ## Local Development Of Workflows Using Visual Studio Code
 
