@@ -57,7 +57,7 @@ Harmony should now be running in your Kubernetes cluster as the `harmony` servic
 the example harmony service you can test it with the following (requires a [.netrc](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html) file):
 
 ```bash
-curl -Ln -bj "http://localhost:3000/service-results/local-staging-bucket/public/harmony/gdal/276b0e62-6df5-40aa-8270-497662efecfa/001_00_7f00ff_global.nc.png" -o file.png
+curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST" -o file.tif
 ```
 You can view the workflow running in [Argo](https://argoproj.github.io/projects/argo/#:~:text=Argo%20Workflows%20is%20an%20open,implemented%20as%20a%20Kubernetes%20CRD.&text=Model%20multi%2Dstep%20workflows%20as,using%20a%20graph%20(DAG).) by opening the Argo UI at [http://localhost:2746](http://localhost:2746).
 
