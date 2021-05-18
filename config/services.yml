@@ -71,6 +71,7 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
     collections:
+      - C1996881146-POCLOUD
       - C2006849995-POCLOUD
       - C2006849866-POCLOUD
       - C2006849650-POCLOUD
@@ -167,20 +168,20 @@ https://cmr.earthdata.nasa.gov:
       output_formats:
         - application/x-zarr
 
-  - name: harmony/gdal
+  - name: harmony/service-example
     data_operation_version: '0.10.0'
     type:
       <<: *default-argo-config
       params:
         <<: *default-argo-params
-        template: harmony-gdal
+        template: harmony-service-example
         template_type: chaining
-        image: !Env ${HARMONY_GDAL_IMAGE}
-        image_pull_policy: !Env ${HARMONY_GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_GDAL_PARALLELISM}
+        image: !Env ${HARMONY_EXAMPLE_IMAGE}
+        image_pull_policy: !Env ${HARMONY_EXAMPLE_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_EXAMPLE_PARALLELISM}
         env:
           <<: *default-argo-env
-          STAGING_PATH: public/harmony/gdal
+          STAGING_PATH: public/harmony/service-example
     collections:
       - C1756916832-XYZ_PROV
     capabilities:
@@ -219,6 +220,14 @@ https://cmr.earthdata.nasa.gov:
       - C1996881636-POCLOUD
       - C1996880725-POCLOUD
       - C1996881807-POCLOUD
+      - C1968980549-POCLOUD
+      - C1968979566-POCLOUD
+      - C1968979550-POCLOUD
+      - C1968980583-POCLOUD
+      - C1968980576-POCLOUD
+      - C1968979597-POCLOUD
+      - C1968979561-POCLOUD
+      - C1968980609-POCLOUD
     capabilities:
       subsetting:
         bbox: true
@@ -263,21 +272,21 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/gif
       reprojection: true
 
-  - name: harmony/gdal
+  - name: harmony/service-example
     data_operation_version: '0.10.0'
     batch_size: 10
     type:
       <<: *default-argo-config
       params:
         <<: *default-argo-params
-        template: harmony-gdal
+        template: harmony-service-example
         template_type: chaining
-        image: !Env ${HARMONY_GDAL_IMAGE}
-        image_pull_policy: !Env ${HARMONY_GDAL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_GDAL_PARALLELISM}
+        image: !Env ${HARMONY_EXAMPLE_IMAGE}
+        image_pull_policy: !Env ${HARMONY_EXAMPLE_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_EXAMPLE_PARALLELISM}
         env:
           <<: *default-argo-env
-          STAGING_PATH: public/harmony/gdal
+          STAGING_PATH: public/harmony/service-example
     collections:
       - C1233800302-EEDTEST
       - C1234088182-EEDTEST
@@ -374,13 +383,13 @@ https://cmr.uat.earthdata.nasa.gov:
       params:
         <<: *default-argo-params
         template: var-subsetter
+        template_type: chaining
         image: !Env ${VAR_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/variable-subsetter
-    data_url_pattern: 'opendap' # look for the string literal "opendap" in the data URL
     collections:
       - C1234714691-EEDTEST  # ATL03
       - C1234714698-EEDTEST  # ATL08
@@ -539,6 +548,8 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234724470-POCLOUD
       - C1234724471-POCLOUD
       - C1239379704-POCLOUD
+      - C1238621141-POCLOUD
+      - C1238618570-POCUMULUS
     maximum_sync_granules: 0
     capabilities:
       subsetting:

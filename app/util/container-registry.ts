@@ -45,7 +45,7 @@ export class ECR {
 
   /**
    * Returns image information from ECR for the given image repository and tag
-   * @param repository - the image repository (e.g. harmony/gdal)
+   * @param repository - the image repository (e.g. harmonyservices/service-example)
    * @param tag - the image tag
    */
   async describeImage(repository: string, tag: string): Promise<ImageDetails> {

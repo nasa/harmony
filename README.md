@@ -302,7 +302,7 @@ This will set up the proper environment for building the image so that it may be
 ./bin/build-image
 ```
 
-This may take some time, but ultimately it will produce a local docker image tagged `harmony/gdal:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
+This may take some time, but ultimately it will produce a local docker image tagged `harmonyservices/service-example:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
 
 ### Run Harmony
 
@@ -319,7 +319,7 @@ You should see messages about the two applications listening on two ports, "fron
 ### Connect A Client
 
 You should now be able to view the outputs of performing a simple transformation request.  Harmony has its own test collection
-set up for sanity checking harmony with the harmony-gdal backend.  This will fetch a granule from that collection converted to GeoTIFF:
+set up for sanity checking harmony with the harmony-service-example backend.  This will fetch a granule from that collection converted to GeoTIFF:
 [http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST](http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST)
 
 You can also set up a WMS connection in [QGIS](https://qgis.org/en/site/about/index.html), for example, by placing the
@@ -455,7 +455,7 @@ it done manually.
 
 #### Prerequisites
 * Once per account, run `$ bin/account-setup` to create a service linked role for ECS.
-* Upload the harmony/gdal Docker image somewhere accessible to an EC2 deployment.  This should be done any time the image changes.  The easiest way is to create an ECR in your account and push the image there.  Running `$ bin/build-image && bin/push-image` from the harmony-gdal repository will perform this step..
+* Upload the harmonyservices/service-example Docker image somewhere accessible to an EC2 deployment.  This should be done any time the image changes.  The easiest way is to create an ECR in your account and push the image there.  Running `$ bin/build-image && bin/push-image` from the harmony-service-example repository will perform this step..
 
 ### Stop here and set up CI/CD
 
@@ -470,12 +470,10 @@ running the **harmony-ci-cd** `bin/deploy` script from your **harmony** codebase
 
 1. `scp` the Harmony codebase to the remote instance
 2. `ssh` into the remote instance
-3. Run `$ $(aws ecr get-login --region=$AWS_DEFAULT_REGION --no-include-email)` where `AWS_DEFAULT_REGION` is the region containing your harmony-gdal ECR instance.
-Skip this step if harmony-gdal is not in an ECR.
+3. Run `$ $(aws ecr get-login --region=$AWS_DEFAULT_REGION --no-include-email)` where `AWS_DEFAULT_REGION` is the region containing your harmony-service-example ECR instance.
+Skip this step if harmony-service-example is not in an ECR.
 4. Run `$ if pgrep node; then pkill node; fi` to stop any existing server that may be running
 5. Run `$ nohup npm start >> ../server.log 2>&1 &` to start harmony
-6. Run `$ docker pull $GDAL_IMAGE` to fetch harmony-gdal changes, where `GDAL_IMAGE` is the EC2-accessible location of your harmony-gdal Docker image. Repeat for any other docker images you want to use.
-
 ### Connecting a client to an AWS instance
 
 This process is identical to "Connect a client" above, except instead of `http://localhost:3000`, the protocol and host should be that of your
@@ -537,5 +535,5 @@ PR will need to be declined and resubmitted.
 * [Harmony message schemas](app/schemas/data-operation)
 * [EOSS protocol OpenAPI Specification](app/schemas/eoss)
 * [Harmony NetCDF to Zarr service repository](https://github.com/nasa/harmony-netcdf-to-zarr)
-* [Harmony GDAL example service repository](https://github.com/nasa/harmony-service-example)
+* [Harmony GDAL-based example service repository](https://github.com/nasa/harmony-service-example)
 * [Linux Container-based development with Harmony](docs/dev_container/README.md) (n.b. Windows users)

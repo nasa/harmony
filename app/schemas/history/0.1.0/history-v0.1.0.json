@@ -1,0 +1,53 @@
+{
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "$id": "https://harmony.earthdata.nasa.gov/schemas/history/0.1.0/history-v0.1.0.json",
+   "title": "Data Processing History",
+   "description": "A history record of processing that produced a given data file. For more information, see: https://wiki.earthdata.nasa.gov/display/TRT/In-File+Provenance+Metadata+-+TRT-42",
+   "type": [ "array", "object" ],
+   "items": { "$ref": "#/definitions/history_record" },
+   "definitions": {
+      "history_record": {
+         "type": "object",
+         "properties": {
+            "date_time": {
+               "description": "The date and time at which the processing occurred. Note date-time format which is RFC3339, subset of ISO-8601",
+               "type": "string",
+               "format": "date-time"
+            },
+            "derived_from": {
+               "description": "List of source data files used in the creation of this data file",
+               "type": [ "array", "string" ],
+               "items": { "type": "string" }
+            },
+            "cf_history": {
+               "description": "The value of any CF :history attribute not addressed in :history_json records",
+               "type": [ "array", "string" ],
+               "items": { "type": "string" }
+            },
+            "program": {
+               "description": "The name of the program which generated this data file",
+               "type": "string"
+            },
+            "version": {
+               "description": "The version identification of the program which generated this data file",
+               "type": "string"
+            },
+            "parameters": {
+               "description": "The list of parameters to the program when generating this data file",
+               "type": [ "array", "string" ],
+               "items": { "type": "string" }
+            },
+            "program_ref": {
+               "description": "A URL reference that defines the program, e.g., a UMM-S reference URL",
+               "type": "string"
+            },
+            "$schema": {
+               "description": "The URL to this schema",
+               "type": "string"
+            }
+         },
+         "required": [ "date_time", "program" ],
+         "additionalProperties": false
+      }
+   }
+}

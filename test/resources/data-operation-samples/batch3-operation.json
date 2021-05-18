@@ -9,10 +9,7 @@
     "granules": [{
       "id": "G1233800375-EEDTEST",
       "name": "004_07_0065ff_north_america",
-      "urls": [
-        "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/004_07_0065ff_north_america.nc",
-        "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/004_07_0065ff_north_america.tif"
-      ],
+      "url": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/004_07_0065ff_north_america.nc",
       "bbox": [
         -180,
         -90,

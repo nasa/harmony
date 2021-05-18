@@ -50,17 +50,19 @@ export interface CmrGranule {
   points?: string[];
   lines?: string[];
   polygons?: string[][];
-  links?: {
-    rel: string;
-    href: string;
-    type?: string;
-    title?: string;
-    hreflang?: string;
-    inherited?: boolean;
-  }[];
+  links?: CmrGranuleLink[];
   title: string;
   time_start: string;
   time_end: string;
+}
+
+export interface CmrGranuleLink {
+  rel: string;
+  href: string;
+  type?: string;
+  title?: string;
+  hreflang?: string;
+  inherited?: boolean;
 }
 
 export interface CmrGranuleHits {
@@ -452,4 +454,17 @@ export async function belongsToGroup(
   const path = `/access-control/groups/${groupId}/members`;
   const response = await cmrSearchBase(path, null, token, { 'X-Harmony-User': username });
   return response.status === 200 && (response.data as string[]).indexOf(username) !== -1;
+}
+
+/**
+ * Return all non-inherited links with rel ending in /data# or /service#.
+ *
+ * @param granule - The granule to obtain links from
+ * @returns An array of granule links
+ */
+export function filterGranuleLinks(
+  granule: CmrGranule,
+): CmrGranuleLink[] {
+  return granule.links.filter((g) => (g.rel.endsWith('/data#') || g.rel.endsWith('/service#'))
+    && !g.inherited);
 }

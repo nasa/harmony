@@ -196,11 +196,11 @@ ASF_GDAL_SUBSETTER_IMAGE=asfdataservices/gdal-subsetter:latest
 ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
 ASF_GDAL_SUBSETTER_PARALLELISM=2
 
-HARMONY_GDAL_IMAGE=harmony/gdal:latest
-HARMONY_GDAL_IMAGE_PULL_POLICY='IfNotPresent'
-HARMONY_GDAL_PARALLELISM=2
+HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
+HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY='IfNotPresent'
+HARMONY_SERVICE_EXAMPLE_PARALLELISM=2
 
-HARMONY_NETCDF_TO_ZARR_IMAGE=harmony/netcdf-to-zarr:latest
+HARMONY_NETCDF_TO_ZARR_IMAGE=harmonyservices/netcdf-to-zarr:latest
 HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY='IfNotPresent'
 HARMONY_NETCDF_TO_ZARR_PARALLELISM=2
 
@@ -234,7 +234,7 @@ CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY='IfNotPresent'
 # page size to use with CMR calls
 CMR_MAX_PAGE_SIZE=2000
 
-# Prefix before "harmony/task-name" for built-in tasks like query-cmr, e.g. an ECR location
+# Prefix before "harmonyservices/task-name" for built-in tasks like query-cmr, e.g. an ECR location
 # If not blank, it should end in a slash if there is a slash before "harmony"
 BUILT_IN_TASK_PREFIX=
 # Version to use for all built-in tasks.  "latest" (local / sandbox), "sit", "uat", or "prod"
