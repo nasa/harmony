@@ -36,5 +36,10 @@ jobs:
           # For the main branch, use "latest" as the version
           [ "${VERSION}" == "main" ] && VERSION=latest
 
+          # build and publish harmony
+          VERSION="${VERSION}" npm run build
+          VERSION="${VERSION}" npm run publish
+          # build and publish query-cmr (cmr granule locator)
           VERSION="${VERSION}" lerna run build
           VERSION="${VERSION}" lerna run publish
+          

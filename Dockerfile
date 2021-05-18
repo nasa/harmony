@@ -12,4 +12,4 @@ RUN rm -f config/services.yml
 RUN ./bin/create-database development
 RUN chown -R node /harmony
 USER node
-ENTRYPOINT [ "npm", "run", "start-dev-fast" ]
+ENTRYPOINT [ "npm", "run", "start" ]

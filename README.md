@@ -333,12 +333,13 @@ You can also use the Argo dashboard at http://localhost:2746 to visualize the wo
 ## Building and Publishing the Harmony Docker Image
 The Harmony Docker image can be built with the following command:
 ```bash
-./bin/build-harmony
+npm run build
 ```
 
 The image can be deployed to DockerHub using the following commands:
-
-**PUT SOMETHING HERE**
+```bash
+npm run publish
+```
 
 ## Local Development Of Workflows Using Visual Studio Code
 
