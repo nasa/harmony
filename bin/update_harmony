@@ -1,0 +1,71 @@
+#!/bin/bash
+
+source "env-defaults"
+source ".env"
+
+set -e
+
+SELF=$(basename $0)
+
+function usage
+{
+  echo "Usage: $SELF [-h|--help] [-s|--services]"
+}
+
+RELOAD_SERVICES=false
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+  -s|--services)
+  RELOAD_SERVICES=true
+  shift
+  ;;
+  -h|--help)
+  usage && exit 0
+  ;;
+  *)
+  usage && exit 1
+  ;;
+esac
+done
+
+# always reload the harmony image and the query-cmr image
+docker pull harmonyservices/harmony:latest
+docker pull harmonyservices/query-cmr:latest
+
+# read all the image env vars from services.yml
+if [ "$RELOAD_SERVICES" = true ]; then
+  image_vars=()
+  while read -r line; do
+    if [[ $line =~ ^.*image:[[:space:]]+!Env[[:space:]]+\$\{(.*)\} ]]; then
+      image_var=${BASH_REMATCH[1]}
+      if [[ ! " ${image_vars[@]} " =~ " ${image_var} " ]]; then
+        image_vars+=( "$image_var" )
+      fi
+    fi
+  done < ./config/services.yml
+
+  referenced_images=()
+  for img_var in ${image_vars[@]}; do
+    referenced_images+=( "${!img_var}" )
+  done
+
+  pulled_images=()
+  IFS=$'\n' lines=(`docker images --format "{{.Repository}}:{{.Tag}}"`)
+  for line in ${lines[@]}; do
+    if [[ $line =~ ^(.+):(.+) ]]; then
+      image_tag="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+      if [[ ! " ${pulled_images[@]} " =~ " ${image_tag} " ]]; then
+        pulled_images+=( "$image_tag" )
+      fi
+    fi
+  done
+
+  while read -r line; do
+    docker pull "${line}"
+  done < <(sort <(echo "${referenced_images[*]}") <(echo "${pulled_images[*]}") | uniq -d)
+
+fi

@@ -55,7 +55,7 @@ function parameterize_template {
 }
 
 # Fill in the docker image for a workflow template or template componenent using the image
-# specified by an environment variable like `CMR_GRANIULE_LOCATOR_IMAGE`.
+# specified by an environment variable like `CMR_GRANULE_LOCATOR_IMAGE`.
 function inject_docker_image {
   f=$1
   workflow=$(basename $f .yaml)

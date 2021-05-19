@@ -2,22 +2,40 @@
 
 # run harmony from scratch
 
+# check for docker
+if ! command -v "docker" &> /dev/null; then
+  echo "'docker' command not found. Harmony requires a running Docker environment."
+  exit 1;
+fi
+
+# check for kubectl command
+if ! command -v "kubectly" &> /dev/null; then
+  echo "'kubectl' command not found. Harmony requires a running Kubernetes cluster with the 'kubectl' command in your path."
+  exit 1;
+fi
+
 # read EDL credentials from .env file if it exists, otherwise prompt for them
 
 if [[ -f ".env" ]]; then
-  source .env.new
+  source .env
 else
   ./bin/create-dotenv
 
   # remove the empty OUATH env vars already in the file
   awk -v n=3 'NR==FNR{total=NR;next} FNR==total-n+1{exit} 1' .env .env > env.tmp && mv env.tmp .env
 
+echo << PROMPT
+Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions 
+for this or do not understand what this means, please contact the Harmony team for help.
+Once you have your EDL application created, please enter the credentials as prompted.
+PROMPT
+
   # prompt for the users EDL app credentials
-  read -s -p "OAUTH CLIENT ID: " OAUTH_CLIENT_ID
+  read -s -p "EDL Application Client ID: " OAUTH_CLIENT_ID
   echo ""
-  read -s -p "OAUTH UID: " OAUTH_UID
+  read -s -p "EDL Application UID: " OAUTH_UID
   echo ""
-  read -s -p "OAUTH PASSWORD: " OAUTH_PASSWORD
+  read -s -p "EDL Application Password: " OAUTH_PASSWORD
 
 cat << EOF >> .env
 OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
