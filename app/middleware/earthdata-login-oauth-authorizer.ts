@@ -1,6 +1,8 @@
 import axios from 'axios';
 import simpleOAuth2, { OAuthClient, Token } from 'simple-oauth2';
 import { RequestHandler, NextFunction } from 'express';
+
+import { cookieOptions } from 'util/cookies';
 import { listToText } from '../util/string';
 import { ForbiddenError } from '../util/errors';
 import { setCookiesForEdl } from '../util/cookies';
@@ -14,7 +16,6 @@ if (missingVars.length > 0) {
   throw new Error(`Earthdata Login configuration error: You must set ${listToText(missingVars)} in the environment`);
 }
 
-const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === 'true' };
 const oauthOptions = {
   client: {
     id: process.env.OAUTH_CLIENT_ID,
