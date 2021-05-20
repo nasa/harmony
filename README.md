@@ -19,15 +19,14 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 4. [Running Harmony](#Running-Harmony)
     1. [Set Up Environment Variables](#Set-Up-Environment-Variables)
     2. [Run Tests](#Run-Tests)
-    3. [Set Up A Database](#Set-Up-A-Database)  
+    3. [Set Up A Database](#Set-Up-A-Database)
     4. [Set Up and Run Argo, Localstack](#Set-Up-and-Run-Argo,-Localstack)
     5. [Add A Service Backend](#Add-A-Service-Backend)
     6. [Run Harmony](#Run-Harmony)
     7. [Connect A Client](#Connect-A-Client)
 5. [Local Development Of Workflows Using Visual Studio Code](#Local-Development-Of-Workflows-Using-Visual-Studio-Code)
-6. [Running in AWS](#Running-in-AWS)
-7. [Contributing to Harmony](#Contributing-to-Harmony)
-8. [Additional Resources](#Additional-Resources)
+6. [Contributing to Harmony](#Contributing-to-Harmony)
+7. [Additional Resources](#Additional-Resources)
 
 ## Minimum System Requirements
 
@@ -39,7 +38,7 @@ built-in Kubernetes cluster (including `kubectl`) which can be enabled in prefer
 ## Quick Start
 (Mac OS X / Linux)
 
-If you are interested in using a local Harmony instance to develop services, but not interested in 
+If you are interested in using a local Harmony instance to develop services, but not interested in
 developing the Harmony code itself, the following steps are enough to start a locally running Harmony instance.
 
 1. Follow the directions for creating an Earth Data Login application and credentials in the [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement) section below.
@@ -63,7 +62,7 @@ kubectl port-forward service/harmony 3000:3000 -n argo
 kubectl port-forward service/argo-server 2746:2746 -n argo
 ```
 
-**NOTE** The workflow listener will fail repeatedly (restarts every 30 seconds) when Harmony is run 
+**NOTE** The workflow listener will fail repeatedly (restarts every 30 seconds) when Harmony is run
 in Kubernetes on Linux. This is a known bug and is to addressed in Jira ticket HARMONY-849.
 
 Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `argo` namespace. If you installed
@@ -83,7 +82,7 @@ restart Harmony.
 
 **NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
 
-You can include the `-s` flag to update service images as well, e.g., 
+You can include the `-s` flag to update service images as well, e.g.,
 
 ```bash
 ./bin/update-harmony -s
@@ -480,42 +479,6 @@ Once you launch your workflow it will pause at the step (wait for the icon in th
 Open the plugin by clicking on the `Kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python).
 
 At this point the editor should open the file that is the starting point for your applications and it should be stopped on the first line of code to be run. You can then perform all the usual debugging operations such as stepping trough code and examining variables.
-
-## Running in AWS
-
-Note: It is currently easiest to allow the CI/CD service to deploy the service remotely; it is deployed to the sandbox after each merge to `master`.
-As the deployment simply uploads the code, sets environment variables, kills the old server and runs `$ npm run start`, at present, there is not
-typically much to be gained by running remotely during development.
-
-When setting up a new environment, the first two steps need to be performed, but the CI environment should be set up to run the deployment rather than having
-it done manually.
-
-#### Prerequisites
-* Once per account, run `$ bin/account-setup` to create a service linked role for ECS.
-* Upload the harmonyservices/service-example Docker image somewhere accessible to an EC2 deployment.  This should be done any time the image changes.  The easiest way is to create an ECR in your account and push the image there.  Running `$ bin/build-image && bin/push-image` from the harmony-service-example repository will perform this step..
-
-### Stop here and set up CI/CD
-
-Deploying the code should be done using the harmony-ci-cd project from Bamboo rather than manually.  Apart from that project and CI/CD setup,
-we do not yet have automation scripts for (re)deploying to AWS manually, as it is typically not needed during development.
-
-### Deploy the code to AWS
-
-Note: The harmony-ci-cd repository contains automation code to do the following, usable from Bamboo.  You may use it locally by setting all
-relevant environment variables in a `.env` file, running `$ bin/build-image` in the root directory of the harmony-ci-cd project, and then
-running the **harmony-ci-cd** `bin/deploy` script from your **harmony** codebase's root directory.
-
-1. `scp` the Harmony codebase to the remote instance
-2. `ssh` into the remote instance
-3. Run `$ $(aws ecr get-login --region=$AWS_DEFAULT_REGION --no-include-email)` where `AWS_DEFAULT_REGION` is the region containing your harmony-service-example ECR instance.
-Skip this step if harmony-service-example is not in an ECR.
-4. Run `$ if pgrep node; then pkill node; fi` to stop any existing server that may be running
-5. Run `$ nohup npm start >> ../server.log 2>&1 &` to start harmony
-### Connecting a client to an AWS instance
-
-This process is identical to "Connect a client" above, except instead of `http://localhost:3000`, the protocol and host should be that of your
-load balancer, e.g. `https://your-load-balancer-name.us-west-2.elb.amazonaws.com`.  Retrieve the precise load balancer details from the
-AWS console.
 
 ### Updating development resources after pulling new code
 
