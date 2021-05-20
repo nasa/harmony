@@ -373,7 +373,7 @@ There are two components to local development. The first is mounting your local 
 
 ### Mounting a local directory to a pod running in a workflow
 
-This is accomplished in two steps. The first step is to mount a local directory to a node in your `Kubernetes/minikube` cluster. On a mac using the `virtualbox` driver the `/Users` directory is automatically mounted as `/Uses` on the single node in `minikube`. On Linux using the `virtualbox`driver the `/home` directory is automatically mounted at `/hosthome`. Other options for mounting a local directory can be found [here](https://minikube.sigs.k8s.io/docs/handbook/mount/).
+This is accomplished in two steps. The first step is to mount a local directory to a node in your `kubernetes/minikube` cluster. On a mac using the `virtualbox` driver the `/Users` directory is automatically mounted as `/Uses` on the single node in `minikube`. On Linux using the `virtualbox`driver the `/home` directory is automatically mounted at `/hosthome`. Other options for mounting a local directory can be found [here](https://minikube.sigs.k8s.io/docs/handbook/mount/).
 
 The second step is to mount the directory on the node to a directory on the pod in your workflow. This can be done using a [hostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath) volume defined in your workflow template. The following snippet creates a volume using the `/Users/username/project_folder` directory from the `node` on which the pod runs, _not directory from the local filesystem_. Again, on a mac using `virtualbox` the local `/Users` folder is conveniently mounted to the `/Users` folder on the node.
 
