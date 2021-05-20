@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# Update the harmonyservices/harmony and harmonyservices/query-cmr images and optionally
+# update service images
+
+source "env-defaults"
+source ".env"
+
+# set -e
+
+SELF=$(basename $0)
+
+function usage
+{
+  echo -e "\033[1mUSAGE\033[0m"
+  echo -e "\033[1m$SELF\033[0m [-h|--help] [-s|--services]"
+  echo "  -s|--services     Upate service images in addition to harmony images."
+  echo "  -h|--help         Print this message."
+  echo -e "\033[1mDESCRIPTION\033[0m"
+  echo "This script updates the Docker images used internally by Harmony then restars Harmony."
+  echo "Optionally it can also update the service images."
+}
+
+RELOAD_SERVICES=false
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+  -s|--services)
+  RELOAD_SERVICES=true
+  shift
+  ;;
+  -h|--help)
+  usage && exit 0
+  ;;
+  *)
+  usage && exit 1
+  ;;
+esac
+done
+
+if [ "$RELOAD_SERVICES" = true ]; then
+  # read all the image env vars from services.yml
+  image_vars=()
+  while read -r line; do
+    if [[ $line =~ ^.*image:[[:space:]]+!Env[[:space:]]+\$\{(.*)\} ]]; then
+      image_var=${BASH_REMATCH[1]}
+      if [[ ! " ${image_vars[@]} " =~ " ${image_var} " ]]; then
+        image_vars+=( "$image_var" )
+      fi
+    fi
+  done < ./config/services.yml
+
+  referenced_images=()
+  for img_var in ${image_vars[@]}; do
+    referenced_images+=( "${!img_var}" )
+  done
+
+  # read all the images that are in the local Docker cache
+  pulled_images=()
+  IFS=$'\n' lines=(`docker images --format "{{.Repository}}:{{.Tag}}"`)
+  for line in ${lines[@]}; do
+    if [[ $line =~ ^(.+):(.+) ]]; then
+      image_tag="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+      if [[ ! " ${pulled_images[@]} " =~ " ${image_tag} " ]]; then
+        pulled_images+=( "$image_tag" )
+      fi
+    fi
+  done
+fi
+
+# create a list of images that are in both of the previous lists
+all_images=()
+while read -r line; do
+  all_images+=( "$line" )
+done < <(sort <(echo "${referenced_images[*]}") <(echo "${pulled_images[*]}") | uniq -d)
+
+# always reload the harmony image and the query-cmr image
+all_images+=( "harmonyservices/harmony:latest" "harmonyservices/query-cmr:latest" )
+
+for image in ${all_images[@]}; do
+  echo "${image}"
+  docker pull "${image}" > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    echo "${image} successfully updated"
+  else
+    echo "WARNING: ${image} could not be updated"
+  fi
+done
+
+# restart harmony
+./bin/reload-services-config

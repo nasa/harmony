@@ -61,6 +61,27 @@ curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/
 ```
 You can view the workflow running in [Argo](https://argoproj.github.io/projects/argo/#:~:text=Argo%20Workflows%20is%20an%20open,implemented%20as%20a%20Kubernetes%20CRD.&text=Model%20multi%2Dstep%20workflows%20as,using%20a%20graph%20(DAG).) by opening the Argo UI at [http://localhost:2746](http://localhost:2746).
 
+### Updating the Local Harmony Instance
+
+You can update Harmony by running the `bin/update-harmony` script. This will pull the latest Harmony Docker images from DockerHub and
+restart Harmony.
+
+**NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
+
+You can include the `-s` flag to update service images as well, e.g., 
+
+```bash
+./bin/update-harmony -s
+```
+
+### Reloading the Services Configuration
+
+If you modify the `services.yml` file Harmony will need to be restarted. You can do this with the following command:
+
+```bash
+./bin/reload-services-config
+```
+**NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
 
 ## Development Prerequisites
 

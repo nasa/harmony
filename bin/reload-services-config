@@ -5,4 +5,5 @@
 source "env-defaults"
 source ".env"
 
-./bin/create-k8s-config-maps-and-secrets
+. ./bin/create-k8s-config-maps-and-secrets
+kubectl rollout restart deployment harmony -n argo

@@ -9,7 +9,7 @@ if ! command -v "docker" &> /dev/null; then
 fi
 
 # check for kubectl command
-if ! command -v "kubectly" &> /dev/null; then
+if ! command -v "kubectl" &> /dev/null; then
   echo "'kubectl' command not found. Harmony requires a running Kubernetes cluster with the 'kubectl' command in your path."
   exit 1;
 fi
