@@ -59,7 +59,7 @@ the example harmony service you can test it with the following (requires a [.net
 ```bash
 curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST" -o file.tif
 ```
-You can view the workflow running in [Argo](https://argoproj.github.io/projects/argo/#:~:text=Argo%20Workflows%20is%20an%20open,implemented%20as%20a%20Kubernetes%20CRD.&text=Model%20multi%2Dstep%20workflows%20as,using%20a%20graph%20(DAG).) by opening the Argo UI at [http://localhost:2746](http://localhost:2746).
+You can view the workflow running in [Argo](https://argoproj.github.io/projects/argo) by opening the Argo UI at [http://localhost:2746](http://localhost:2746).
 
 ### Updating the Local Harmony Instance
 
