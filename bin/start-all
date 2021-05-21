@@ -4,3 +4,7 @@
 
 ./bin/start-argo
 ./bin/start-harmony
+echo ''
+echo 'Run bin/start-argo to re-deploy Argo and Localstack.'
+echo 'Run `bin/reload-service-configs` to restart harmony.'
+echo 'Run `kubectl delete namespaces argo` to remove all local resources'

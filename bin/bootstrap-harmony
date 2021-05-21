@@ -46,3 +46,4 @@ fi
 
 # run argo, localstack, and harmony in kubernetes
 ./bin/start-all
+

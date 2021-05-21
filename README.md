@@ -60,6 +60,8 @@ curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/
 ```
 You can view the workflow running in [Argo](https://argoproj.github.io/projects/argo) by opening the Argo UI at [http://localhost:2746](http://localhost:2746).
 
+We recommend using [harmony-py](https://github.com/nasa/harmony-py) and its example notebook when working with Harmony.
+
 ### Updating the Local Harmony Instance
 
 You can update Harmony by running the `bin/update-harmony` script. This will pull the latest Harmony Docker images from DockerHub and

@@ -134,8 +134,5 @@ if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
 fi
 
 echo ''
-echo 'Complete!'
-echo ''
 echo 'Localstack has started at http://localhost:4566/'
 echo 'Argo has started at http://localhost:2746/'
-echo 'Run `kubectl delete namespaces argo` to remove all local resources or run this script again to re-deploy'
