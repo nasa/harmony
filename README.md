@@ -34,6 +34,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
 * A running [Kubernetes](https://kubernetes.io/) cluster with the [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
 built-in Kubernetes cluster (including `kubectl`) which can be enabled in preferences.
+* The [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5)
 
 ## Quick Start
 (Mac OS X / Linux)
