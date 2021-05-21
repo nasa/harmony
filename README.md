@@ -32,9 +32,8 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 ## Minimum System Requirements
 
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
-* A running [Kubernetes](https://kubernetes.io/) cluster. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
-built-in Kubernetes cluster which can be enabled in preferences.
-* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
+* A running [Kubernetes](https://kubernetes.io/) cluster with the [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
+built-in Kubernetes cluster (including `kubectl`) which can be enabled in preferences.
 
 ## Quick Start
 (Mac OS X / Linux)

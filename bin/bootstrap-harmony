@@ -30,11 +30,12 @@ Running Harmony requires creating an Earthdata Login (EDL) application. If you n
 PROMPT
 
   # prompt for the users EDL app credentials
-  read -s -p "EDL Application Client ID: " OAUTH_CLIENT_ID
+  read -p "EDL Application Client ID: " OAUTH_CLIENT_ID
   echo ""
-  read -s -p "EDL Application UID: " OAUTH_UID
+  read -p "EDL Application UID: " OAUTH_UID
   echo ""
   read -s -p "EDL Application Password: " OAUTH_PASSWORD
+  echo ""
 
 cat << EOF >> .env
 OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
