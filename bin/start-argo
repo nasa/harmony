@@ -130,7 +130,7 @@ while [[ $(kubectl -n argo get pods -l app=argo-server -o 'jsonpath={..status.co
 
 if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
   # Allow LoadBalancer services to be reached in minikube
-  minikube tunnel &
+  minikube tunnel > /dev/null &
 fi
 
 echo ''
