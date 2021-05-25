@@ -32,7 +32,7 @@ PROMPT
   # prompt for the users EDL app credentials
   read -p "EDL Application Client ID: " OAUTH_CLIENT_ID
   echo ""
-  read -p "EDL Application UID: " OAUTH_UID
+  read -s -p "EDL Application UID: " OAUTH_UID
   echo ""
   read -s -p "EDL Application Password: " OAUTH_PASSWORD
   echo ""
@@ -42,10 +42,10 @@ OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
 OAUTH_UID=$OAUTH_UID
 OAUTH_PASSWORD=$OAUTH_PASSWORD
 EOF
-fi
 
-if [[ $(uname) -eq 'Linux' ]]; then
-  echo "KUBE_CONTEXT=minikube" >> .env
+  if [[ $(uname) -eq 'Linux' ]]; then
+    echo "KUBE_CONTEXT=minikube" >> .env
+  fi
 fi
 
 # run argo, localstack, and harmony in kubernetes

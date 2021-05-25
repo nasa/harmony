@@ -19,7 +19,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 4. [Running Harmony](#Running-Harmony)
     1. [Set Up Environment Variables](#Set-Up-Environment-Variables)
     2. [Run Tests](#Run-Tests)
-    3. [Set Up A Database](#Set-Up-A-Database)
+    3. [Set Up A Database](#Set-Up-A-Database)  
     4. [Set Up and Run Argo, Localstack](#Set-Up-and-Run-Argo,-Localstack)
     5. [Add A Service Backend](#Add-A-Service-Backend)
     6. [Run Harmony](#Run-Harmony)
@@ -52,6 +52,19 @@ git clone https://github.com/nasa/harmony.git
 ```bash
 ./bin/bootstrap-harmony
 ```
+
+Linux Only (Handled automatically by Docker Desktop)
+
+4. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
+```bash
+kubectl port-forward service/harmony 3000:3000 -n argo
+```
+```bash
+kubectl port-forward service/argo-server 2746:2746 -n argo
+```
+
+**NOTE** The workflow listener will fail repeatedly (restarts every 30 seconds) when Harmony is run 
+in Kubernetes on Linux. This is a known bug and is to addressed in Jira ticket HARMONY-849.
 
 Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `argo` namespace. If you installed
 the example harmony service you can test it with the following (requires a [.netrc](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html) file):

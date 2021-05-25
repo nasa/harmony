@@ -145,7 +145,7 @@ export abstract class WorkflowListener implements Worker {
       (err) => {
         this.logger.error('Workflow listener has terminated');
         this.logger.error(err);
-        setTimeout(() => { this.start(); }, 2000);
+        setTimeout(() => { this.start(); }, 30000);
       });
   }
 

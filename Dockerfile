@@ -6,7 +6,7 @@ COPY ./package.json package-lock.json lerna.json /harmony/
 RUN npm install -g npm@7
 WORKDIR /harmony
 RUN npm install
-COPY . /harmony
+COPY . /harmony/
 RUN rm -f config/services.yml
 # build the sqlite dabase
 RUN ./bin/create-database development
