@@ -15,7 +15,7 @@ interface FileParams {
  * containing the cookie name, value, and options.
  */
 
-export const cookieOptions = { signed: true, secure: process.env.USE_HTTPS === 'true' };
+export const cookieOptions = { signed: true, sameSite: true };
 
 /**
  * Recipe for a cookie to support handling shapefiles

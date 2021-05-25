@@ -8,12 +8,12 @@ import * as shpjs from 'shpjs';
 import * as tmp from 'tmp-promise';
 import * as util from 'util';
 
-import { cookieOptions } from 'util/cookies';
 import { RequestValidationError, HttpError, ServerError } from 'util/errors';
 import { defaultObjectStore } from 'util/object-store';
 import { listToText } from 'util/string';
 import { Logger } from 'winston';
 import { NextFunction } from 'express';
+import { cookieOptions } from 'util/cookies';
 
 const unlink = util.promisify(fs.unlink);
 const readFile = util.promisify(fs.readFile);
