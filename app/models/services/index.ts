@@ -49,8 +49,10 @@ function loadServiceConfigs(): void {
     construct: (data): string | number => parseEnvironmentDirective(data),
   });
 
-  // Load the config
-  const buffer = fs.readFileSync(path.join(__dirname, '../../../config/services.yml'));
+  // Load the config - either from an env var or failing that from the services.yml file.
+  // This allows us to use a configmap in k8s instead of reading the file system.
+  const buffer = env.servicesYml ? Buffer.from(env.servicesYml, 'base64')
+    : fs.readFileSync(path.join(__dirname, '../../../config/services.yml'));
   const schema = yaml.Schema.create([EnvType]);
   const envConfigs = yaml.load(buffer.toString(), { schema });
   serviceConfigs = envConfigs[env.cmrEndpoint]

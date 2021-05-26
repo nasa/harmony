@@ -176,9 +176,9 @@ https://cmr.earthdata.nasa.gov:
         <<: *default-argo-params
         template: harmony-service-example
         template_type: chaining
-        image: !Env ${HARMONY_EXAMPLE_IMAGE}
-        image_pull_policy: !Env ${HARMONY_EXAMPLE_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_EXAMPLE_PARALLELISM}
+        image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
+        image_pull_policy: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_SERVICE_EXAMPLE_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/service-example
@@ -316,9 +316,9 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-argo-params
         template: harmony-service-example
         template_type: chaining
-        image: !Env ${HARMONY_EXAMPLE_IMAGE}
-        image_pull_policy: !Env ${HARMONY_EXAMPLE_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_EXAMPLE_PARALLELISM}
+        image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
+        image_pull_policy: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY}
+        parallelism: !Env ${HARMONY_SERVICE_EXAMPLE_PARALLELISM}
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/service-example

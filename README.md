@@ -11,21 +11,92 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 
 ## Table of Contents
 
-1. [Development Prerequisites](#Development-Prerequisites)
+1. [Minimum System Requirements](#Minimum-System-Requirements)
+2. [Quick Start](#Quick-Start)
+3. [Development Prerequisites](#Development-Prerequisites)
     1. [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement)
     2. [Software Requirements](#Software-Requirements)
-2. [Running Harmony](#Running-Harmony)
+4. [Running Harmony](#Running-Harmony)
     1. [Set Up Environment Variables](#Set-Up-Environment-Variables)
     2. [Run Tests](#Run-Tests)
-    3. [Set Up A Database](#Set-Up-A-Database)
+    3. [Set Up A Database](#Set-Up-A-Database)  
     4. [Set Up and Run Argo, Localstack](#Set-Up-and-Run-Argo,-Localstack)
     5. [Add A Service Backend](#Add-A-Service-Backend)
     6. [Run Harmony](#Run-Harmony)
     7. [Connect A Client](#Connect-A-Client)
-3. [Local Development Of Workflows Using Visual Studio Code](#Local-Development-Of-Workflows-Using-Visual-Studio-Code)
-4. [Running in AWS](#Running-in-AWS)
-5. [Contributing to Harmony](#Contributing-to-Harmony)
-6. [Additional Resources](#Additional-Resources)
+5. [Local Development Of Workflows Using Visual Studio Code](#Local-Development-Of-Workflows-Using-Visual-Studio-Code)
+6. [Running in AWS](#Running-in-AWS)
+7. [Contributing to Harmony](#Contributing-to-Harmony)
+8. [Additional Resources](#Additional-Resources)
+
+## Minimum System Requirements
+
+* A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
+* A running [Kubernetes](https://kubernetes.io/) cluster with the [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
+built-in Kubernetes cluster (including `kubectl`) which can be enabled in preferences.
+* The [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5)
+
+## Quick Start
+(Mac OS X / Linux)
+
+If you are interested in using a local Harmony instance to develop services, but not interested in 
+developing the Harmony code itself, the following steps are enough to start a locally running Harmony instance.
+
+1. Follow the directions for creating an Earth Data Login application and credentials in the [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement) section below.
+
+2. Download this repository (or download the zip file from GitHub)
+```bash
+git clone https://github.com/nasa/harmony.git
+```
+3. Run the bootstrap script and answer the prompts with your EDL application credentials
+```bash
+./bin/bootstrap-harmony
+```
+
+Linux Only (Handled automatically by Docker Desktop)
+
+4. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
+```bash
+kubectl port-forward service/harmony 3000:3000 -n argo
+```
+```bash
+kubectl port-forward service/argo-server 2746:2746 -n argo
+```
+
+**NOTE** The workflow listener will fail repeatedly (restarts every 30 seconds) when Harmony is run 
+in Kubernetes on Linux. This is a known bug and is to addressed in Jira ticket HARMONY-849.
+
+Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `argo` namespace. If you installed
+the example harmony service you can test it with the following (requires a [.netrc](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html) file):
+
+```bash
+curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST" -o file.tif
+```
+You can view the workflow running in [Argo](https://argoproj.github.io/projects/argo) by opening the Argo UI at [http://localhost:2746](http://localhost:2746).
+
+We recommend using [harmony-py](https://github.com/nasa/harmony-py) and its example notebook when working with Harmony.
+
+### Updating the Local Harmony Instance
+
+You can update Harmony by running the `bin/update-harmony` script. This will pull the latest Harmony Docker images from DockerHub and
+restart Harmony.
+
+**NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
+
+You can include the `-s` flag to update service images as well, e.g., 
+
+```bash
+./bin/update-harmony -s
+```
+
+### Reloading the Services Configuration
+
+If you modify the `services.yml` file Harmony will need to be restarted. You can do this with the following command:
+
+```bash
+./bin/reload-services-config
+```
+**NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
 
 ## Development Prerequisites
 
@@ -33,7 +104,7 @@ For developing Harmony on Windows follow this document as well as the informatio
 
 ### Earthdata Login Application Requirement
 
-To use Earthdata Login with a locally running Harmomy, you must first set up a new application in the Earthdata Login UAT environment using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  This is a four step process:
+To use Earthdata Login with a locally running Harmony, you must first set up a new application in the Earthdata Login UAT environment using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  This is a four step process:
 
 1. Request and receive permission to be an Application Creator
 2. Create a local/dev Harmony Application in the EDL web interface
@@ -121,7 +192,24 @@ The script will create a file named `.env` in the root project directory contain
 
 Harmony reads both the `env-defaults` and `.env` files at startup to determine the configuration. To override any default values, set the desired value in the `.env` file. There is no need to duplicate parameters in the `.env` file if using the default value.
 
-Note: The defaults are suitable for running locally with Mac OS X. If running on Linux there are a couple of parameters that will also need to be overridden and are documented as such in the `env-defaults` file.
+#### Advanced Configuration
+
+Note: The defaults are suitable for running locally with Harmony running in a container in Kubernetes (see [Quick-ish Start](#Quick-ish-Start)) on Mac OS X. If running on Linux or if you don't want to run the Harmony frontend/backend API in Kubernetes there are a few parameters that will also need to be overridden and are documented as such in the `env-defaults` file.
+
+Specifically, if you want to run the Harmony frontend/backend API in standalone (not in Kubernetes) mode, you will need to add the following to your .env file:
+Mac OS X
+```
+LOCALSTACK_HOST=localhost
+BACKEND_HOST=host.docker.internal
+ARGO_URL=http://localhost:2746
+```
+
+Linux
+```
+LOCALSTACK_HOST=localhost
+BACKEND_HOST=localhost
+ARGO_URL=http://localhost:2746
+```
 
 ### Run Tests
 
@@ -178,8 +266,8 @@ Harmony uses [Argo Workflows](https://github.com/argoproj/argo) to manage job ex
   * Run Kubernetes in Docker Desktop by selecting Preferences -> Kubernetes -> Enable Kubernetes
   * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
 * Linux / Generic:
-  * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node kubernetes cluster useful for local development
-  * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to kubernetes.
+  * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node Kubernetes cluster useful for local development
+  * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to Kubernetes.
   * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
 
 #### Installing and running Argo and Localstack on Kubernetes
@@ -278,6 +366,16 @@ PNG from the test server.
 
 You can also use the Argo dashboard at http://localhost:2746 to visualize the workflows that were kicked off from your Harmony transformation requests.
 
+## Building and Publishing the Harmony Docker Image
+The Harmony Docker image can be built with the following command:
+```bash
+npm run build
+```
+
+The image can be deployed to DockerHub using the following commands:
+```bash
+npm run publish
+```
 
 ## Local Development Of Workflows Using Visual Studio Code
 
@@ -340,7 +438,7 @@ Now the pod will be able to access local code directly in the `/test-mount` dire
 
 ### Attaching a debugger to a running workflow
 
-Argo Workflow steps run as kubernetes [jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/), which means that the containers that run them are short-lived. This complicates the process of attaching a debugger to them somewhat. In order to attach the debugger to code running in a container in a workflow you have to start the code in a manner that will pause the code on the first line when it runs and wait for a debugger to attach.
+Argo Workflow steps run as Kubernetes [jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/), which means that the containers that run them are short-lived. This complicates the process of attaching a debugger to them somewhat. In order to attach the debugger to code running in a container in a workflow you have to start the code in a manner that will pause the code on the first line when it runs and wait for a debugger to attach.
 
 For NodeJS code this is easily done by passing the `--inspect-brk` option to the `node` command. workflow template building on our previous example is given here
 
@@ -377,9 +475,9 @@ In this example the starting point for the step is in the `index.js` file.
 
 Similar approaches are available for Python and Java, although they might require changes to the code.
 
-Once you launch your workflow it will pause at the step (wait for the icon in the UI to change from yellow to blue and spinning), and you can attach the debugger. For VS Code this is easily done using the `kubernetes` plugin.
+Once you launch your workflow it will pause at the step (wait for the icon in the UI to change from yellow to blue and spinning), and you can attach the debugger. For VS Code this is easily done using the `Kubernetes` plugin.
 
-Open the plugin by clicking on the `kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python).
+Open the plugin by clicking on the `Kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python).
 
 At this point the editor should open the file that is the starting point for your applications and it should be stopped on the first line of code to be run. You can then perform all the usual debugging operations such as stepping trough code and examining variables.
 

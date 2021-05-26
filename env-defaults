@@ -41,10 +41,12 @@ BACKEND_PORT=3001
 
 # The base URL for the service callbacks. This needs to be accessible from
 # wherever the service is run. The Harmony CI/CD scripts sets this to the
-# backend load balancer when running on AWS. When running locally on a Mac
-# or Linux, use the appropriate value below.
+# backend load balancer when running on AWS. The default is set for 
+# running Harmony in Kubernetes.
+CALLBACK_URL_ROOT=http://harmony:3001
+# When running locally on a Mac or Linux (not in Kubernetes), use the appropriate value below.
 # Mac OS X:
-CALLBACK_URL_ROOT=http://host.docker.internal:3001
+# CALLBACK_URL_ROOT=http://host.docker.internal:3001
 # Linux:
 # CALLBACK_URL_ROOT=http://localhost:3001
 
@@ -55,7 +57,10 @@ CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
 USE_LOCALSTACK=true
 
 # Hostname for harmony to use to connect to Localstack
-LOCALSTACK_HOST=localhost
+LOCALSTACK_HOST=localstack
+
+# Hostname for K8S pods to connect to Localstack
+LOCALSTACK_K8S_HOST=localstack
 
 # If set to true, only include EDL cookies if the request is made via https.
 USE_HTTPS=false
@@ -119,7 +124,7 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 ADMIN_GROUP_ID=AG1222736883-EEDTEST
 
 # The URL to use for interacting with Argo
-ARGO_URL=http://localhost:2746
+ARGO_URL=http://argo-server:2746
 
 # The time (in seconds) between invocations of the job reaper service
 JOB_REAPER_PERIOD_SEC=360
@@ -251,11 +256,12 @@ STAGING_BUCKET=local-staging-bucket
 # Default: A bucket created for use in localstack
 ARTIFACT_BUCKET=local-artifact-bucket
 
-# Development only: hostname to be used to connect to the host OS, used in
-# configuring localstack.  Once services fully use docker-compose, we can
-# remove this config and just use "localstack"
+# The DNS entry to use for the host exposing the Harmony back end API for callbacks. This
+# default is appropriate for when Harmony is running in Kubernetes.
+BACKEND_HOST=harmony
+#  For local development outside of Kubernetes:
 # Mac OS X:
-BACKEND_HOST=host.docker.internal
+# BACKEND_HOST=host.docker.internal
 # Linux:
 # BACKEND_HOST=localhost
 

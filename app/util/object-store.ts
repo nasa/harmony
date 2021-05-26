@@ -86,7 +86,12 @@ export class S3ObjectStore {
     }
     // TypeScript doesn't recognize that req has a presign method.  It does.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (req as any).presign();
+    let result = await (req as any).presign();
+    // Needed as a work-around to allow access from outside the kubernetes cluster
+    // for local development
+    if (env.useLocalstack) {
+      result = result.replace('localstack', 'localhost');
+    }
     return result;
   }
 
