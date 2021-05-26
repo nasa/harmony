@@ -15,7 +15,7 @@ interface FileParams {
  * containing the cookie name, value, and options.
  */
 
-export const cookieOptions = { signed: true, sameSite: true };
+export const cookieOptions = { signed: true, sameSite: 'Lax' };
 
 /**
  * Recipe for a cookie to support handling shapefiles
