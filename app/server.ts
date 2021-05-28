@@ -24,9 +24,16 @@ import JobReaper from './workers/job-reaper';
  * @param appLogger - Request specific application logger
  */
 function addRequestLogger(appLogger: Logger): RequestHandler {
+  const requestFilter = (req, propName): unknown => {
+    if (propName === 'headers') {
+      return { ...req[propName], cookie: '<redacted>' };
+    }
+    return req[propName];
+  };
   return expressWinston.logger({
     winstonInstance: appLogger,
-    dynamicMeta(req) { return { requestId: req.context.id }; },
+    requestFilter,
+    dynamicMeta(req: HarmonyRequest) { return { requestId: req.context.id }; },
   });
 }
 
