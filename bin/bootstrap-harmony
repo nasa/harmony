@@ -43,7 +43,7 @@ OAUTH_UID=$OAUTH_UID
 OAUTH_PASSWORD=$OAUTH_PASSWORD
 EOF
 
-  if [[ $(uname) -eq 'Linux' ]]; then
+  if [[ $(uname) == 'Linux' ]]; then
     echo "KUBE_CONTEXT=minikube" >> .env
   fi
 fi

@@ -49,7 +49,7 @@ git clone https://github.com/nasa/harmony.git
 ```
 3. Run the bootstrap script and answer the prompts with your EDL application credentials
 ```bash
-./bin/bootstrap-harmony
+cd harmony && ./bin/bootstrap-harmony
 ```
 
 Linux Only (Handled automatically by Docker Desktop)
