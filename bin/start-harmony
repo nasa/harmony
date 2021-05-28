@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# This script starts Harmomny in the local kubernetes cluster - it is called from the start-all
+# script. The environment variables for Harmony are read from k8s configmaps and secrets.
+
+kubectl apply -f ./config/harmony-k8s.yaml -n argo > /dev/null
+echo 'Harmony has started at http://localhost:3000/'

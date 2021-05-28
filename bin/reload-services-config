@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# reload the k8s environment variable config maps - needs to be run if services.yml changes
+
+source "env-defaults"
+source ".env"
+
+. ./bin/create-k8s-config-maps-and-secrets
+kubectl rollout restart deployment harmony -n argo

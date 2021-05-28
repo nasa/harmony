@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - harmony-412
     tags:
       - v*
 
@@ -35,6 +36,12 @@ jobs:
 
           # For the main branch, use "latest" as the version
           [ "${VERSION}" == "main" ] && VERSION=latest
+          [ "${VERSION}" == "harmony-412" ] && VERSION=latest
 
+          # build and publish harmony
+          VERSION="${VERSION}" npm run build
+          VERSION="${VERSION}" npm run publish
+          # build and publish query-cmr (cmr granule locator)
           VERSION="${VERSION}" lerna run build
           VERSION="${VERSION}" lerna run publish
+          

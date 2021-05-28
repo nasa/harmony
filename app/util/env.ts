@@ -95,6 +95,7 @@ interface HarmonyEnv {
   objectStoreType: string;
   reapableJobAgeMinutes: number;
   sameRegionAccessRole: string;
+  servicesYml: string;
   sharedSecretKey: string;
   stagingBucket: string;
   syncRequestPollIntervalMs: number;
