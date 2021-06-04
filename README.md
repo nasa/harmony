@@ -201,6 +201,7 @@ Mac OS X
 LOCALSTACK_HOST=localhost
 BACKEND_HOST=host.docker.internal
 ARGO_URL=http://localhost:2746
+CALLBACK_URL_ROOT=http://host.docker.internal:3001
 ```
 
 Linux
@@ -208,6 +209,7 @@ Linux
 LOCALSTACK_HOST=localhost
 BACKEND_HOST=localhost
 ARGO_URL=http://localhost:2746
+CALLBACK_URL_ROOT=http://localhost:3001
 ```
 
 ### Run Tests
