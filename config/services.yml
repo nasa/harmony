@@ -384,6 +384,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1225808903-GES_DISC
       - C1232995291-GES_DISC
       - C1232998567-GES_DISC
+      - C1238658049-POCLOUD
     capabilities:
       subsetting:
         bbox: true
