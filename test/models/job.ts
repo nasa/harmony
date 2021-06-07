@@ -3,48 +3,35 @@ import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
 import { Job, JobRecord, JobStatus, JobLink } from 'models/job';
 import MockDate from 'mockdate';
+import { buildJob } from 'test/helpers/jobs';
 import { hookTransactionEach } from '../helpers/db';
 
-const exampleProps = {
-  username: 'joe',
+const exampleProps: JobRecord = {
   requestId: uuid().toString(),
-  status: 'running',
+  jobID: uuid().toString(),
+  username: 'joe',
+  status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
-  links: [{ href: 'http://example.com' }],
+  links: [{ href: 'http://example.com', rel: 'data' }],
   request: 'http://example.com/harmony?foo=bar',
   numInputGranules: 100,
-} as JobRecord;
-
-/**
- * Creates a Job object for the provided username
- *
- * @param username - The user that requested the job
- * @returns An example job for the user
- */
-function createJob(username): Job {
-  return new Job({
-    username,
-    requestId: uuid().toString(),
-    request: `http://example.com/${username}`,
-    numInputGranules: 2,
-  });
-}
+};
 
 describe('Job', function () {
   describe('retrieval methods', function () {
     hookTransactionEach();
     beforeEach(async function () {
       // Add records to the job table that should not be returned
-      await createJob('dummy').save(this.trx);
-      await createJob('dummy').save(this.trx);
+      await buildJob({ username: 'dummy' }).save(this.trx);
+      await buildJob({ username: 'dummy' }).save(this.trx);
     });
 
     describe('.forUser', function () {
       describe('when a user has jobs', function () {
         let jobs;
         beforeEach(async function () {
-          jobs = [createJob('jdoe'), createJob('jdoe')];
+          jobs = [buildJob({ username: 'jdoe' }), buildJob({ username: 'jdoe' })];
           await Promise.all([jobs[0].save(this.trx), jobs[1].save(this.trx)]);
         });
 
@@ -73,12 +60,7 @@ describe('Job', function () {
     describe('.byUsernameAndRequestId', function () {
       let job;
       beforeEach(async function () {
-        job = new Job({
-          username: 'jdoe',
-          requestId: uuid().toString(),
-          request: 'http://example.com/jdoe',
-          numInputGranules: 5,
-        });
+        job = buildJob({ username: 'jdoe' });
         await job.save(this.trx);
       });
 
@@ -114,7 +96,7 @@ describe('Job', function () {
     describe('.byRequestId', function () {
       let job;
       beforeEach(async function () {
-        job = createJob('jdoe');
+        job = buildJob({ username: 'jdoe' });
         await job.save(this.trx);
       });
 
@@ -136,7 +118,7 @@ describe('Job', function () {
     describe('.byId', function () {
       let job;
       beforeEach(async function () {
-        job = createJob('jdoe');
+        job = buildJob({ username: 'jdoe' });
         await job.save(this.trx);
       });
 
@@ -163,14 +145,14 @@ describe('Job', function () {
 
       beforeEach(async function () {
         MockDate.set('1/30/2000');
-        oldFinishedJob = createJob('bob');
+        oldFinishedJob = buildJob({ username: 'bob' });
         oldFinishedJob.updateStatus(JobStatus.SUCCESSFUL);
         await oldFinishedJob.save(this.trx);
-        oldRunningJob = createJob('jdoe');
+        oldRunningJob = buildJob({ username: 'jdoe' });
         oldRunningJob.updateStatus(JobStatus.RUNNING);
         await oldRunningJob.save(this.trx);
         MockDate.reset();
-        newRunningJob = createJob('mary');
+        newRunningJob = buildJob({ username: 'mary' });
         newRunningJob.updateStatus(JobStatus.RUNNING);
         await newRunningJob.save(this.trx);
         result = await Job.notUpdatedForMinutes(this.trx, 60);

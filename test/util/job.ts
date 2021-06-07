@@ -1,60 +1,20 @@
-import { v4 as uuid } from 'uuid';
 import { expect } from 'chai';
 import _ from 'lodash';
+import { buildJob } from 'test/helpers/jobs';
 import { hookTransaction } from '../helpers/db';
-import { JobRecord, JobStatus, Job } from '../../app/models/job';
 import { stubTerminateWorkflows } from '../helpers/workflows';
 import cancelAndSaveJob from '../../app/util/job';
 import log from '../../app/util/log';
 
-const aJob: JobRecord = {
-  username: 'joe',
-  requestId: uuid().toString(),
-  status: JobStatus.RUNNING,
-  message: 'it is running',
-  progress: 42,
-  links: [
-    {
-      href: 'http://example.com',
-      rel: 'link',
-      type: 'text/plain',
-      bbox: [-100, -30, -80, 20],
-      temporal: {
-        start: '1996-10-15T00:05:32.000Z',
-        end: '1996-11-15T00:05:32.000Z',
-      },
-    }],
-  request: 'http://example.com/harmony?job=aJob',
-  numInputGranules: 100,
-};
-
-const anotherJob: JobRecord = {
-  username: 'joe',
-  requestId: uuid().toString(),
-  status: JobStatus.RUNNING,
-  message: 'it is running',
-  progress: 42,
-  links: [
-    {
-      href: 'http://example.com',
-      rel: 'link',
-      type: 'text/plain',
-      bbox: [-100, -30, -80, 20],
-      temporal: {
-        start: '1996-10-15T00:05:32.000Z',
-        end: '1996-11-15T00:05:32.000Z',
-      },
-    }],
-  request: 'http://example.com/harmony?job=aJob',
-  numInputGranules: 200,
-};
+const aJob = buildJob({ username: 'joe' });
+const anotherJob = buildJob({ username: 'joe' });
 
 describe('Canceling a job', async function () {
   hookTransaction();
   let terminateWorkflowsStub: sinon.SinonStub;
   before(async function () {
-    await new Job(aJob).save(this.trx);
-    await new Job(anotherJob).save(this.trx);
+    await aJob.save(this.trx);
+    await anotherJob.save(this.trx);
     this.trx.commit();
     this.trx = null;
   });

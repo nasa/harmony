@@ -2,14 +2,14 @@ import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import itReturnsTheExpectedStacResponse from 'test/helpers/stac-item';
+import { buildJob } from 'test/helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacItem, hookStacItem } from '../helpers/stac';
-import { Job, JobStatus } from '../../app/models/job';
+import { JobStatus } from '../../app/models/job';
 
-const runningJob = {
+const runningJob = buildJob({
   username: 'joe',
-  requestId: uuid().toString(),
   status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
@@ -25,11 +25,10 @@ const runningJob = {
     },
   }],
   request: 'http://example.com/harmony?job=runningJob',
-};
+});
 
-const completedJob = {
+const completedJob = buildJob({
   username: 'joe',
-  requestId: uuid().toString(),
   status: JobStatus.SUCCESSFUL,
   message: 'it is done',
   progress: 100,
@@ -45,11 +44,10 @@ const completedJob = {
     },
   }],
   request: 'http://example.com/harmony?job=completedJob',
-};
+});
 
-const completedNonStacJob = {
+const completedNonStacJob = buildJob({
   username: 'joe',
-  requestId: uuid().toString(),
   status: JobStatus.SUCCESSFUL,
   message: 'it is done',
   progress: 100,
@@ -60,15 +58,15 @@ const completedNonStacJob = {
     rel: 'data',
   }],
   request: 'http://example.com/harmony?job=completedJob',
-};
+});
 
 describe('STAC item route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
   before(async function () {
-    await new Job(runningJob).save(this.trx);
-    await new Job(completedJob).save(this.trx);
-    await new Job(completedNonStacJob).save(this.trx);
+    await runningJob.save(this.trx);
+    await completedJob.save(this.trx);
+    await completedNonStacJob.save(this.trx);
     this.trx.commit();
   });
   const jobId = runningJob.requestId;

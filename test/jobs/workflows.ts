@@ -13,9 +13,11 @@ import { Workflow, getWorkflowsForJob, terminateWorkflows } from '../../app/util
 import * as uworkflows from '../../app/util/workflows';
 import log from '../../app/util/log';
 
+const requestId = uuid().toString();
 const singleWorkflowJobRecord: JobRecord = {
   username: 'joe',
-  requestId: uuid().toString(),
+  requestId,
+  jobID: requestId,
   status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
@@ -36,7 +38,8 @@ const singleWorkflowJobRecord: JobRecord = {
 
 const multipleWorkflowJobRecord: JobRecord = {
   username: 'joe',
-  requestId: uuid().toString(),
+  requestId,
+  jobID: requestId,
   status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,

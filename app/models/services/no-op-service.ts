@@ -51,6 +51,7 @@ export default class NoOpService extends BaseService<void> {
     let job = new Job({
       username: this.operation.user,
       requestId: this.operation.requestId,
+      jobID: this.operation.requestId,
       status: JobStatus.SUCCESSFUL,
       progress: 100,
       createdAt: now,
