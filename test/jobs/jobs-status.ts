@@ -3,42 +3,23 @@ import { stub } from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
-import { Job, JobStatus, JobRecord } from 'models/job';
+import { Job } from 'models/job';
 import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from 'test/helpers/job-status';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
-import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl } from '../helpers/jobs';
+import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob } from '../helpers/jobs';
 import StubService from '../helpers/stub-service';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import env from '../../app/util/env';
 
-const aJob: JobRecord = {
-  username: 'joe',
-  requestId: uuid().toString(),
-  status: JobStatus.RUNNING,
-  message: 'it is running',
-  progress: 42,
-  links: [
-    {
-      href: 'http://example.com',
-      rel: 'link',
-      type: 'text/plain',
-      bbox: [-100, -30, -80, 20],
-      temporal: {
-        start: '1996-10-15T00:05:32.000Z',
-        end: '1996-11-15T00:05:32.000Z',
-      },
-    }],
-  request: 'http://example.com/harmony?job=aJob',
-  numInputGranules: 58,
-};
+const aJob = buildJob({ username: 'joe' });
 
 describe('Individual job status route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
   before(async function () {
-    await new Job(aJob).save(this.trx);
+    await aJob.save(this.trx);
     this.trx.commit();
   });
   const jobID = aJob.requestId;

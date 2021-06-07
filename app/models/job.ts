@@ -22,7 +22,7 @@ const statesToDefaultMessages = {
 const defaultMessages = Object.values(statesToDefaultMessages);
 
 const serializedJobFields = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules',
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -51,6 +51,7 @@ export interface JobLink {
 
 export interface JobRecord {
   id?: number;
+  jobID: string;
   username: string;
   requestId: string;
   status?: JobStatus;
@@ -68,6 +69,7 @@ export interface JobRecord {
 
 export interface JobQuery {
   id?: number;
+  jobID?: string;
   username?: string;
   requestId?: string;
   status?: JobStatus;
@@ -86,6 +88,7 @@ export interface JobQuery {
  *
  * Fields:
  *   - id: (integer) auto-number primary key
+ *   - jobID: (uuid) ID for the job, currently the same as the requestId, but may change
  *   - username: (string) Earthdata Login username
  *   - requestId: (uuid) ID of the originating user request that produced the job
  *   - status: (enum string) job status ['accepted', 'running', 'successful', 'failed']
@@ -101,8 +104,6 @@ export class Job extends Record {
   static table = 'jobs';
 
   static statuses: JobStatus;
-
-  static record: JobRecord;
 
   links: JobLink[];
 
@@ -157,8 +158,9 @@ export class Job extends Record {
   }
 
   /**
-   *  Returns and array of all the the jobs that are still in the RUNNING state, but have not
+   * Returns and array of all the the jobs that are still in the RUNNING state, but have not
    * been updated in the given number of minutes
+   *
    * @param transaction - the transaction to use for querying
    * @param minutes - any jobs still running and not updated in this many minutes will be returned
    * @param currentPage - the index of the page to show
@@ -420,7 +422,6 @@ export class Job extends Record {
     const serializedJob = pick(this, serializedJobFields) as Job;
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
-    serializedJob.jobID = this.requestId;
     if (urlRoot) {
       serializedJob.links = serializedJob.links.map((link) => {
         let { href } = link;

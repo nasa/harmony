@@ -80,7 +80,6 @@ interface HarmonyEnv {
   defaultImagePullPolicy: string;
   defaultParallelism: number;
   harmonyClientId: string;
-  isDevelopment: boolean;
   jobReaperPeriodSec: number;
   localstackHost: string;
   logLevel: string;
@@ -106,7 +105,6 @@ interface HarmonyEnv {
 // special cases
 
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
-envVars.isDevelopment = process.env.NODE_ENV === 'development';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
 envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
 

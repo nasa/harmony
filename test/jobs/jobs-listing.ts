@@ -1,15 +1,13 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
-import { v4 as uuid } from 'uuid';
-import { Job, JobStatus, JobRecord } from 'models/job';
+import { Job, JobStatus } from 'models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure, truncateAll } from '../helpers/db';
-import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations, hookAdminJobListing } from '../helpers/jobs';
+import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations, hookAdminJobListing, buildJob } from '../helpers/jobs';
 
 // Example jobs to use in tests
-const woodyJob1: JobRecord = {
+const woodyJob1 = buildJob({
   username: 'woody',
-  requestId: uuid().toString(),
   status: JobStatus.SUCCESSFUL,
   message: 'Completed successfully',
   progress: 100,
@@ -17,11 +15,10 @@ const woodyJob1: JobRecord = {
   request: 'http://example.com/harmony?request=woody1',
   isAsync: true,
   numInputGranules: 3,
-};
+});
 
-const woodyJob2: JobRecord = {
+const woodyJob2 = buildJob({
   username: 'woody',
-  requestId: uuid().toString(),
   status: JobStatus.RUNNING,
   message: 'In progress',
   progress: 60,
@@ -29,11 +26,10 @@ const woodyJob2: JobRecord = {
   request: 'http://example.com/harmony?request=woody2',
   isAsync: true,
   numInputGranules: 5,
-};
+});
 
-const woodySyncJob: JobRecord = {
+const woodySyncJob = buildJob({
   username: 'woody',
-  requestId: uuid().toString(),
   status: JobStatus.RUNNING,
   message: 'In progress',
   progress: 0,
@@ -41,11 +37,10 @@ const woodySyncJob: JobRecord = {
   request: 'http://example.com/harmony?request=woody2',
   isAsync: false,
   numInputGranules: 1,
-};
+});
 
-const buzzJob1: JobRecord = {
+const buzzJob1 = buildJob({
   username: 'buzz',
-  requestId: uuid().toString(),
   status: JobStatus.RUNNING,
   message: 'In progress',
   progress: 30,
@@ -53,7 +48,7 @@ const buzzJob1: JobRecord = {
   request: 'http://example.com/harmony?request=buzz1',
   isAsync: true,
   numInputGranules: 10,
-};
+});
 
 describe('Jobs listing route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -76,10 +71,10 @@ describe('Jobs listing route', function () {
     hookTransaction();
     before(async function () {
       // Add all jobs to the database
-      await new Job(woodyJob1).save(this.trx);
-      await new Job(woodyJob2).save(this.trx);
-      await new Job(woodySyncJob).save(this.trx);
-      await new Job(buzzJob1).save(this.trx);
+      await woodyJob1.save(this.trx);
+      await woodyJob2.save(this.trx);
+      await woodySyncJob.save(this.trx);
+      await buzzJob1.save(this.trx);
       this.trx.commit();
     });
 

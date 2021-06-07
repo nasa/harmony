@@ -15,31 +15,13 @@ import {
   expectedJobKeys,
   hookCancelJobWithGET,
   hookAdminCancelJobWithGET,
+  buildJob,
 } from '../helpers/jobs';
 import { hookRedirect } from '../helpers/hooks';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
 import { stubTerminateWorkflows, hookTerminateWorkflowError } from '../helpers/workflows';
 
-const aJob: JobRecord = {
-  username: 'joe',
-  requestId: uuid().toString(),
-  status: JobStatus.RUNNING,
-  message: 'it is running',
-  progress: 42,
-  links: [
-    {
-      href: 'http://example.com',
-      rel: 'link',
-      type: 'text/plain',
-      bbox: [-100, -30, -80, 20],
-      temporal: {
-        start: '1996-10-15T00:05:32.000Z',
-        end: '1996-11-15T00:05:32.000Z',
-      },
-    }],
-  request: 'http://example.com/harmony?job=aJob',
-  numInputGranules: 33,
-};
+const joeJob1 = buildJob({ username: 'joe' });
 
 describe('Canceling a job - user endpoint', function () {
   const cancelEndpointHooks = {
@@ -53,14 +35,14 @@ describe('Canceling a job - user endpoint', function () {
       let terminateWorkflowsStub;
       before(async function () {
         terminateWorkflowsStub = stubTerminateWorkflows();
-        await new Job(aJob).save(this.trx);
+        await joeJob1.save(this.trx);
         this.trx.commit();
         this.trx = null;
       });
       after(function () {
         terminateWorkflowsStub.restore();
       });
-      const jobID = aJob.requestId;
+      const { jobID } = joeJob1;
       describe('For a user who is not logged in', function () {
         before(async function () {
           terminateWorkflowsStub.resetHistory();
@@ -118,7 +100,7 @@ describe('Canceling a job - user endpoint', function () {
 
           it('does not modify any of the other job fields', function () {
             const actualJob = new Job(JSON.parse(this.res.text));
-            const expectedJob: JobRecord = _.cloneDeep(aJob);
+            const expectedJob: JobRecord = _.cloneDeep(joeJob1);
             expectedJob.message = 'foo';
             actualJob.message = 'foo';
             actualJob.status = JobStatus.CANCELED;
@@ -129,7 +111,7 @@ describe('Canceling a job - user endpoint', function () {
       });
 
       describe('For a logged-in admin who does not own the job', function () {
-        const joeJob2 = _.cloneDeep(aJob);
+        const joeJob2 = _.cloneDeep(joeJob1);
         joeJob2.requestId = uuid().toString();
         hookTransaction();
         before(async function () {
@@ -180,11 +162,11 @@ describe('Canceling a job - user endpoint', function () {
       });
 
       describe('when the jobID is in an invalid format', function () {
-        const notAJobID = 'foo';
+        const invalidJobID = 'foo';
         before(function () {
           terminateWorkflowsStub.resetHistory();
         });
-        cancelEndpointHook({ jobID: notAJobID, username: 'joe' });
+        cancelEndpointHook({ jobID: invalidJobID, username: 'joe' });
         it('returns a 400 HTTP bad request', function () {
           expect(this.res.statusCode).to.equal(400);
         });
@@ -193,7 +175,7 @@ describe('Canceling a job - user endpoint', function () {
           const response = JSON.parse(this.res.text);
           expect(response).to.eql({
             code: 'harmony.RequestValidationError',
-            description: `Error: Invalid format for Job ID '${notAJobID}'. Job ID must be a UUID.`,
+            description: `Error: Invalid format for Job ID '${invalidJobID}'. Job ID must be a UUID.`,
           });
         });
 
@@ -203,7 +185,7 @@ describe('Canceling a job - user endpoint', function () {
       });
 
       describe('when canceling a successful job', function () {
-        const successfulJob = _.cloneDeep(aJob);
+        const successfulJob = _.cloneDeep(joeJob1);
         successfulJob.requestId = uuid().toString();
         successfulJob.status = JobStatus.SUCCESSFUL;
         hookTransaction();
@@ -233,7 +215,7 @@ describe('Canceling a job - user endpoint', function () {
       });
 
       describe('when canceling a failed job', function () {
-        const failedJob = _.cloneDeep(aJob);
+        const failedJob = _.cloneDeep(joeJob1);
         failedJob.requestId = uuid().toString();
         failedJob.status = JobStatus.FAILED;
         hookTransaction();
@@ -262,7 +244,7 @@ describe('Canceling a job - user endpoint', function () {
       });
 
       describe('when canceling an already canceled job', function () {
-        const canceledJob = _.cloneDeep(aJob);
+        const canceledJob = _.cloneDeep(joeJob1);
         canceledJob.requestId = uuid().toString();
         canceledJob.status = JobStatus.CANCELED;
         hookTransaction();
@@ -306,14 +288,14 @@ describe('Canceling a job - admin endpoint', function () {
       let terminateWorkflowsStub;
       before(async function () {
         terminateWorkflowsStub = stubTerminateWorkflows();
-        await new Job(aJob).save(this.trx);
+        await new Job(joeJob1).save(this.trx);
         this.trx.commit();
         this.trx = null;
       });
       after(function () {
         terminateWorkflowsStub.restore();
       });
-      const jobID = aJob.requestId;
+      const jobID = joeJob1.requestId;
       describe('For a user who is not logged in', function () {
         before(async function () {
           terminateWorkflowsStub.resetHistory();
@@ -389,7 +371,7 @@ describe('Canceling a job - admin endpoint', function () {
           });
           it('does not modify any of the other job fields', function () {
             const actualJob = new Job(JSON.parse(this.res.text));
-            const expectedJob: JobRecord = _.cloneDeep(aJob);
+            const expectedJob: JobRecord = _.cloneDeep(joeJob1);
             expectedJob.message = 'foo';
             actualJob.message = 'foo';
             actualJob.status = JobStatus.CANCELED;
@@ -423,11 +405,11 @@ describe('Canceling a job - admin endpoint', function () {
       });
 
       describe('when the jobID is in an invalid format', function () {
-        const notAJobID = 'foo';
+        const notjoeJob1ID = 'foo';
         before(function () {
           terminateWorkflowsStub.resetHistory();
         });
-        cancelEndpointHook({ jobID: notAJobID, username: adminUsername });
+        cancelEndpointHook({ jobID: notjoeJob1ID, username: adminUsername });
         it('returns a 409 HTTP conflict', function () {
           expect(this.res.statusCode).to.equal(400);
         });
@@ -436,7 +418,7 @@ describe('Canceling a job - admin endpoint', function () {
           const response = JSON.parse(this.res.text);
           expect(response).to.eql({
             code: 'harmony.RequestValidationError',
-            description: `Error: Invalid format for Job ID '${notAJobID}'. Job ID must be a UUID.`,
+            description: `Error: Invalid format for Job ID '${notjoeJob1ID}'. Job ID must be a UUID.`,
           });
         });
 
@@ -446,7 +428,7 @@ describe('Canceling a job - admin endpoint', function () {
       });
 
       describe('when canceling a successful job', function () {
-        const successfulJob = _.cloneDeep(aJob);
+        const successfulJob = _.cloneDeep(joeJob1);
         successfulJob.requestId = uuid().toString();
         successfulJob.status = JobStatus.SUCCESSFUL;
         hookTransaction();
@@ -475,7 +457,7 @@ describe('Canceling a job - admin endpoint', function () {
       });
 
       describe('when canceling a failed job', function () {
-        const failedJob = _.cloneDeep(aJob);
+        const failedJob = _.cloneDeep(joeJob1);
         failedJob.requestId = uuid().toString();
         failedJob.status = JobStatus.FAILED;
         hookTransaction();
@@ -505,7 +487,7 @@ describe('Canceling a job - admin endpoint', function () {
       });
 
       describe('when canceling an already canceled job', function () {
-        const canceledJob = _.cloneDeep(aJob);
+        const canceledJob = _.cloneDeep(joeJob1);
         canceledJob.requestId = uuid().toString();
         canceledJob.status = JobStatus.CANCELED;
         hookTransaction();
@@ -542,12 +524,12 @@ describe('When canceling a job fails to terminate the argo workflow', function (
   hookTransaction();
   hookTerminateWorkflowError();
   before(async function () {
-    await new Job(aJob).save(this.trx);
+    await new Job(joeJob1).save(this.trx);
     this.trx.commit();
     this.trx = null;
   });
 
-  const jobID = aJob.requestId;
+  const jobID = joeJob1.requestId;
   describe('For a logged-in user who owns the job', function () {
     hookCancelJob({ jobID, username: 'joe' });
     it('returns an internal server error', function () {

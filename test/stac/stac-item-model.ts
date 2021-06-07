@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { Job } from 'models/job';
 import create, { HarmonyItem } from 'frontends/stac-item';
+import { buildJob } from 'test/helpers/jobs';
 
 // Prop for testing
 const jobProps = {
@@ -64,7 +64,7 @@ const jobProps = {
     },
   ],
 };
-const job = new Job(jobProps);
+const job = buildJob(jobProps);
 
 describe('stac-item', function () {
   describe('STAC Item creation with a Harmony Job object: case of anti-meridian crossing', function () {
