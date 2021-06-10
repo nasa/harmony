@@ -19,7 +19,16 @@ CREATE TABLE `jobs` (
 CREATE TABLE `job_links` (
   `id` integer not null primary key autoincrement,
   `jobID` char(36) not null,
-  `_json_link` varchar(255) not null,
+  -- `_json_link` json not null,
+  `href` varchar(4096) not null,
+  `type` varchar(255),
+  `title` varchar(255),
+  `rel` varchar(255),
+  `temporalStart` datetime,
+  `temporalEnd` datetime,
+  `bbox` varchar(255),
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID));
 
 CREATE INDEX job_links_jobID_idx ON job_links(jobID);
