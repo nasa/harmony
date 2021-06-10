@@ -6,6 +6,7 @@ import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
 import { Transaction } from '../util/db';
+import JobLink, { getLinksForJob } from './job-link';
 
 import env = require('../util/env');
 
@@ -36,18 +37,6 @@ export enum JobStatus {
 }
 
 const terminalStates = [JobStatus.SUCCESSFUL, JobStatus.FAILED, JobStatus.CANCELED];
-
-export interface JobLink {
-  href: string;
-  type?: string;
-  title?: string;
-  rel: string;
-  temporal?: {
-    start: string;
-    end: string;
-  };
-  bbox?: number[];
-}
 
 export interface JobRecord {
   id?: number;
@@ -151,8 +140,14 @@ export class Job extends Record {
       .where(constraints)
       .orderBy('createdAt', 'desc')
       .paginate({ currentPage, perPage, isLengthAware: true });
+
+    const jobs = items.data.map((j) => new Job(j));
+    for (const job of jobs) {
+      job.links = await getLinksForJob(transaction, job.jobID);
+    }
+
     return {
-      data: items.data.map((j) => new Job(j)),
+      data: jobs,
       pagination: items.pagination,
     };
   }
@@ -183,24 +178,15 @@ export class Job extends Record {
       .where('updatedAt', '<', pastDate)
       .orderBy('createdAt', 'desc')
       .paginate({ currentPage, perPage, isLengthAware: true });
+
+    const jobs = items.data.map((j) => new Job(j));
+    for (const job of jobs) {
+      job.links = await getLinksForJob(transaction, job.jobID);
+    }
     return {
-      data: items.data.map((j) => new Job(j)),
+      data: jobs,
       pagination: items.pagination,
     };
-  }
-
-  /**
-   * Returns an array of all jobs for the given username using the given transaction
-   *
-   * @param transaction - the transaction to use for querying
-   * @param username - the user whose jobs should be retrieved
-   * @param currentPage - the index of the page to show
-   * @param perPage - the number of results per page
-   * @returns a list of all of the user's jobs
-   */
-  static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
-  Promise<IWithPagination<Job[]>> {
-    return this.queryAll(transaction, { username }, currentPage, perPage);
   }
 
   /**
@@ -214,7 +200,11 @@ export class Job extends Record {
    */
   static async byUsernameAndRequestId(transaction, username, requestId): Promise<Job> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
-    return result.length === 0 ? null : new Job(result[0]);
+    const job = result.length === 0 ? null : new Job(result[0]);
+    if (job) {
+      job.links = await getLinksForJob(transaction, job.jobID);
+    }
+    return job;
   }
 
   /**
@@ -226,19 +216,11 @@ export class Job extends Record {
    */
   static async byRequestId(transaction, requestId): Promise<Job> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
-    return result.length === 0 ? null : new Job(result[0]);
-  }
-
-  /**
-   * Returns the job matching the given primary key id, or null if no such job exists
-   *
-   * @param transaction - the transaction to use for querying
-   * @param id - the primary key of the job record
-   * @returns the matching job, or null if none exists
-   */
-  static async byId(transaction: Transaction, id: number): Promise<Job> {
-    const result = await transaction('jobs').select().where({ id }).forUpdate();
-    return result.length === 0 ? null : new Job(result[0]);
+    const job = result.length === 0 ? null : new Job(result[0]);
+    if (job) {
+      job.links = await getLinksForJob(transaction, job.jobID);
+    }
+    return job;
   }
 
   /**
@@ -298,6 +280,8 @@ export class Job extends Record {
    * @param link - Adds a link to the list of links for the object.
    */
   addLink(link: JobLink): void {
+    // eslint-disable-next-line no-param-reassign
+    link.jobID = this.jobID;
     this.links.push(link);
   }
 
@@ -309,12 +293,12 @@ export class Job extends Record {
    */
   addStagingBucketLink(stagingLocation): void {
     if (stagingLocation) {
-      const stagingLocationLink = {
+      const stagingLocationLink = new JobLink({
         href: stagingLocation,
         title: stagingBucketTitle,
         rel: 's3-access',
-      };
-      this.links.push(stagingLocationLink);
+      });
+      this.addLink(stagingLocationLink as JobLink);
     }
   }
 
@@ -407,6 +391,13 @@ export class Job extends Record {
     delete this.originalStatus;
     this._json_links = JSON.stringify(links);
     await super.save(transaction);
+    const promises = [];
+    for (const link of links) {
+      // Don't allow updates of existing links - only insert new links?
+      // if (!link.id)
+      promises.push(link.save(transaction));
+    }
+    await Promise.all(promises);
     this.links = links;
     delete this._json_links;
     this.originalStatus = originalStatus;
@@ -425,12 +416,12 @@ export class Job extends Record {
     if (urlRoot) {
       serializedJob.links = serializedJob.links.map((link) => {
         let { href } = link;
-        const { title, type, rel, bbox, temporal } = link;
+        const { title, type, rel, bbox, temporalStart, temporalEnd } = link;
         // Leave the S3 output staging location as an S3 link
         if (rel !== 's3-access') {
           href = createPublicPermalink(href, urlRoot, type, linkType);
         }
-        return { href, title, type, rel, bbox, temporal };
+        return { href, title, type, rel, bbox, temporalStart, temporalEnd } as JobLink;
       });
     }
     const job = new Job(serializedJob as JobRecord); // We need to clean this up

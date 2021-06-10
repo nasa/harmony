@@ -1,14 +1,15 @@
 import { Response, Request } from 'express';
 import _ from 'lodash';
 import { Logger } from 'winston';
+import JobLink from 'models/job-link';
 import log from '../util/log';
 import { ServerError, RequestValidationError } from '../util/errors';
 import db from '../util/db';
-import { Job, JobLink, JobStatus } from '../models/job';
+import { Job, JobStatus } from '../models/job';
 import { validateBbox, validateTemporal } from './service-response';
 
 interface ArgoCallbackQueryItem {
-  href?: string;
+  href: string;
   type?: string; // Mime type
   rel: string;
   title?: string;
@@ -49,7 +50,7 @@ function updateJobFields(
   try {
     if (items && items.length > 0) {
       items.forEach((item, _index) => {
-        const link = _.pick(item, ['href', 'type', 'rel', 'title']) as JobLink;
+        const link = new JobLink(_.pick(item, ['href', 'type', 'rel', 'title']));
         const { bbox, temporal } = item;
         if (bbox) {
           validateBbox(bbox);
@@ -58,8 +59,9 @@ function updateJobFields(
         if (temporal) {
           const temporalArray = item.temporal.split(',').map((t) => Date.parse(t));
           validateTemporal(temporalArray);
-          const [start, end] = temporalArray.map((t) => new Date(t).toISOString());
-          link.temporal = { start, end };
+          // const [start, end] = temporalArray.map((t) => new Date(t).toISOString());
+          link.temporalStart = temporalArray[0];
+          link.temporalEnd = temporalArray[1];
         }
         link.rel = link.rel || 'data';
         job.addLink(link);
@@ -81,7 +83,7 @@ function updateJobFields(
     } else if (status) {
       job.updateStatus(status as JobStatus);
     } else if (redirect) {
-      job.addLink({ href: redirect, rel: 'data' });
+      job.addLink({ href: redirect, rel: 'data' } as JobLink);
     }
   } catch (e) {
     const ErrorClass = (e instanceof TypeError) ? RequestValidationError : ServerError;
