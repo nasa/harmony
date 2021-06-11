@@ -1,11 +1,12 @@
 import { Response, NextFunction } from 'express';
-import { Job, JobStatus, JobQuery, JobLink } from 'models/job';
-import keysToLowerCase from 'util/object';
+import { Job, JobStatus, JobQuery } from 'models/job';
+import { keysToLowerCase } from 'util/object';
 import isUUID from 'util/uuid';
 import cancelAndSaveJob from 'util/job';
+import JobLink from 'models/job-link';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
-import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink } from '../util/links';
+import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink, Link } from '../util/links';
 import { RequestValidationError, NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
@@ -37,16 +38,16 @@ function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
   let { links } = job;
   const dataLinks = job.getRelatedLinks('data');
   if (containsS3DirectAccessLink(job)) {
-    links.unshift(getCloudAccessJsonLink(urlRoot));
-    links.unshift(getCloudAccessShLink(urlRoot));
+    links.unshift(new JobLink(getCloudAccessJsonLink(urlRoot)));
+    links.unshift(new JobLink(getCloudAccessShLink(urlRoot)));
   } else {
     // Remove the S3 bucket and prefix link
     links = links.filter((link) => link.rel !== 's3-access');
   }
   if (job.status === JobStatus.SUCCESSFUL && needsStacLink(dataLinks)) {
-    links.unshift(getStacCatalogLink(urlRoot, job.jobID));
+    links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
   }
-  links.unshift(getStatusLink(urlRoot, job.jobID));
+  links.unshift(new JobLink(getStatusLink(urlRoot, job.jobID)));
   return links;
 }
 
@@ -87,7 +88,7 @@ function getJobForDisplay(job: Job, urlRoot: string, linkType?: string): Job {
 export interface JobListing {
   count: number;
   jobs: Job[];
-  links: JobLink[];
+  links: Link[];
 }
 /**
  * Express.js handler that handles the jobs listing endpoint (/jobs)

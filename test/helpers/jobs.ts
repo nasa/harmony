@@ -40,6 +40,21 @@ export function buildJob(fields: Partial<JobRecord> = {}): Job {
   const job = new Job({ requestId, jobID: requestId, ...exampleProps, ...fields });
   // Make sure the jobID and the requestId always match
   job.jobID = job.requestId;
+
+  const jobLinks = job.links;
+  if (jobLinks) {
+    for (const jobLink of jobLinks) {
+      jobLink.jobID = requestId;
+      if (jobLink.temporal) {
+        if (jobLink.temporal.start && typeof jobLink.temporal.start === 'string') {
+          jobLink.temporal.start = new Date(jobLink.temporal.start);
+        }
+        if (jobLink.temporal.end && typeof jobLink.temporal.end === 'string') {
+          jobLink.temporal.end = new Date(jobLink.temporal.end);
+        }
+      }
+    }
+  }
   return job;
 }
 

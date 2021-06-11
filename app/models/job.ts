@@ -1,12 +1,13 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
+import { removeEmptyProperties } from 'util/object';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
 import { Transaction } from '../util/db';
-import JobLink, { getLinksForJob } from './job-link';
+import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 
 import env = require('../util/env');
 
@@ -47,8 +48,7 @@ export interface JobRecord {
   message?: string;
   progress?: number;
   batchesCompleted?: number;
-  _json_links?: string | JobLink[];
-  links?: string | JobLink[];
+  links?: JobLinkOrRecord[];
   request: string;
   isAsync?: boolean;
   createdAt?: Date | number;
@@ -109,8 +109,6 @@ export class Job extends Record {
   request: string;
 
   isAsync: boolean;
-
-  _json_links?: string | JobLink[];
 
   status: JobStatus;
 
@@ -190,6 +188,20 @@ export class Job extends Record {
   }
 
   /**
+   * Returns an array of all jobs for the given username using the given transaction
+   *
+   * @param transaction - the transaction to use for querying
+   * @param username - the user whose jobs should be retrieved
+   * @param currentPage - the index of the page to show
+   * @param perPage - the number of results per page
+   * @returns a list of all of the user's jobs
+   */
+  static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
+  Promise<IWithPagination<Job[]>> {
+    return this.queryAll(transaction, { username }, currentPage, perPage);
+  }
+
+  /**
    * Returns the job matching the given username and request ID, or null if
    * no such job exists.
    *
@@ -233,10 +245,8 @@ export class Job extends Record {
     this.updateStatus(fields.status || JobStatus.ACCEPTED, fields.message);
     this.progress = fields.progress || 0;
     this.batchesCompleted = fields.batchesCompleted || 0;
-    // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
-    this.links = fields.links
-      || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : fields._json_links)
-      || [];
+    this.links = fields.links ? fields.links.map((l) => new JobLink(l)) : [];
+
     // Job already exists in the database
     if (fields.createdAt) {
       this.originalStatus = this.status;
@@ -385,21 +395,19 @@ export class Job extends Record {
     this.validateStatus();
     this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
-    // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     const { links, originalStatus } = this;
     delete this.links;
     delete this.originalStatus;
-    this._json_links = JSON.stringify(links);
     await super.save(transaction);
     const promises = [];
     for (const link of links) {
-      // Don't allow updates of existing links - only insert new links?
-      // if (!link.id)
-      promises.push(link.save(transaction));
+      // Note we will not update existing links in the database - only add new ones
+      if (!link.id) {
+        promises.push(link.save(transaction));
+      }
     }
     await Promise.all(promises);
     this.links = links;
-    delete this._json_links;
     this.originalStatus = originalStatus;
   }
 
@@ -415,14 +423,16 @@ export class Job extends Record {
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     if (urlRoot) {
       serializedJob.links = serializedJob.links.map((link) => {
-        let { href } = link;
-        const { title, type, rel, bbox, temporalStart, temporalEnd } = link;
+        const serializedLink = link.serialize();
+        let { href } = serializedLink;
+        const { title, type, rel, bbox, temporal } = serializedLink;
         // Leave the S3 output staging location as an S3 link
         if (rel !== 's3-access') {
           href = createPublicPermalink(href, urlRoot, type, linkType);
         }
-        return { href, title, type, rel, bbox, temporalStart, temporalEnd } as JobLink;
-      });
+        // return { href, title, type, rel, bbox, temporal };
+        return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
+      }) as unknown as JobLink[];
     }
     const job = new Job(serializedJob as JobRecord); // We need to clean this up
     delete job.originalStatus;

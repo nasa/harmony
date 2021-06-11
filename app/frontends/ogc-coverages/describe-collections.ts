@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { CmrCollection, CmrUmmVariable } from '../../util/cmr';
 import HarmonyRequest from '../../models/harmony-request';
 import { RequestValidationError } from '../../util/errors';
-import keysToLowerCase from '../../util/object';
+import { keysToLowerCase } from '../../util/object';
 import { getSanitizedRequestUrl } from '../../util/url';
 import parseVariables, { fullPath } from './util/variable-parsing';
 

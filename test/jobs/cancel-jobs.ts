@@ -1,5 +1,4 @@
 /* eslint-disable no-loop-func */
-import { v4 as uuid } from 'uuid';
 import { expect } from 'chai';
 import _ from 'lodash';
 import hookServersStartStop from '../helpers/servers';
@@ -21,8 +20,6 @@ import { hookRedirect } from '../helpers/hooks';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
 import { stubTerminateWorkflows, hookTerminateWorkflowError } from '../helpers/workflows';
 
-const joeJob1 = buildJob({ username: 'joe' });
-
 describe('Canceling a job - user endpoint', function () {
   const cancelEndpointHooks = {
     POST: hookCancelJob,
@@ -33,6 +30,7 @@ describe('Canceling a job - user endpoint', function () {
       hookServersStartStop({ skipEarthdataLogin: false });
       hookTransaction();
       let terminateWorkflowsStub;
+      const joeJob1 = buildJob({ username: 'joe' });
       before(async function () {
         terminateWorkflowsStub = stubTerminateWorkflows();
         await joeJob1.save(this.trx);
@@ -111,8 +109,7 @@ describe('Canceling a job - user endpoint', function () {
       });
 
       describe('For a logged-in admin who does not own the job', function () {
-        const joeJob2 = _.cloneDeep(joeJob1);
-        joeJob2.requestId = uuid().toString();
+        const joeJob2 = buildJob({ username: 'joe' });
         hookTransaction();
         before(async function () {
           terminateWorkflowsStub.resetHistory();
@@ -185,8 +182,7 @@ describe('Canceling a job - user endpoint', function () {
       });
 
       describe('when canceling a successful job', function () {
-        const successfulJob = _.cloneDeep(joeJob1);
-        successfulJob.requestId = uuid().toString();
+        const successfulJob = buildJob({ username: 'joe' });
         successfulJob.status = JobStatus.SUCCESSFUL;
         hookTransaction();
         before(async function () {
@@ -215,8 +211,7 @@ describe('Canceling a job - user endpoint', function () {
       });
 
       describe('when canceling a failed job', function () {
-        const failedJob = _.cloneDeep(joeJob1);
-        failedJob.requestId = uuid().toString();
+        const failedJob = buildJob({ username: 'joe' });
         failedJob.status = JobStatus.FAILED;
         hookTransaction();
         before(async function () {
@@ -244,8 +239,7 @@ describe('Canceling a job - user endpoint', function () {
       });
 
       describe('when canceling an already canceled job', function () {
-        const canceledJob = _.cloneDeep(joeJob1);
-        canceledJob.requestId = uuid().toString();
+        const canceledJob = buildJob({ username: 'joe' });
         canceledJob.status = JobStatus.CANCELED;
         hookTransaction();
         before(async function () {
@@ -285,10 +279,11 @@ describe('Canceling a job - admin endpoint', function () {
     describe(`Canceling using ${httpMethod}`, function () {
       hookServersStartStop({ skipEarthdataLogin: false });
       hookTransaction();
+      const joeJob1 = buildJob({ username: 'joe' });
       let terminateWorkflowsStub;
       before(async function () {
         terminateWorkflowsStub = stubTerminateWorkflows();
-        await new Job(joeJob1).save(this.trx);
+        await joeJob1.save(this.trx);
         this.trx.commit();
         this.trx = null;
       });
@@ -428,8 +423,7 @@ describe('Canceling a job - admin endpoint', function () {
       });
 
       describe('when canceling a successful job', function () {
-        const successfulJob = _.cloneDeep(joeJob1);
-        successfulJob.requestId = uuid().toString();
+        const successfulJob = buildJob({ username: 'joe' });
         successfulJob.status = JobStatus.SUCCESSFUL;
         hookTransaction();
         before(async function () {
@@ -457,8 +451,7 @@ describe('Canceling a job - admin endpoint', function () {
       });
 
       describe('when canceling a failed job', function () {
-        const failedJob = _.cloneDeep(joeJob1);
-        failedJob.requestId = uuid().toString();
+        const failedJob = buildJob({ username: 'joe' });
         failedJob.status = JobStatus.FAILED;
         hookTransaction();
         before(async function () {
@@ -487,8 +480,7 @@ describe('Canceling a job - admin endpoint', function () {
       });
 
       describe('when canceling an already canceled job', function () {
-        const canceledJob = _.cloneDeep(joeJob1);
-        canceledJob.requestId = uuid().toString();
+        const canceledJob = buildJob({ username: 'joe' });
         canceledJob.status = JobStatus.CANCELED;
         hookTransaction();
         before(async function () {
@@ -523,6 +515,7 @@ describe('When canceling a job fails to terminate the argo workflow', function (
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
   hookTerminateWorkflowError();
+  const joeJob1 = buildJob({ username: 'joe' });
   before(async function () {
     await new Job(joeJob1).save(this.trx);
     this.trx.commit();
