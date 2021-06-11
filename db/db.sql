@@ -9,7 +9,6 @@ CREATE TABLE `jobs` (
   `message` varchar(4096) not null,
   `progress` integer not null,
   `batchesCompleted` integer not null,
-  `_json_links` json not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   `request` varchar(4096) not null default 'unknown',
@@ -19,7 +18,6 @@ CREATE TABLE `jobs` (
 CREATE TABLE `job_links` (
   `id` integer not null primary key autoincrement,
   `jobID` char(36) not null,
-  -- `_json_link` json not null,
   `href` varchar(4096) not null,
   `type` varchar(255),
   `title` varchar(255),

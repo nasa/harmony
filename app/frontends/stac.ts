@@ -1,5 +1,5 @@
 import { Job } from 'models/job';
-import keysToLowerCase from 'util/object';
+import { keysToLowerCase } from 'util/object';
 import { needsStacLink } from 'util/stac';
 import isUUID from 'util/uuid';
 import { getRequestRoot } from 'util/url';

@@ -76,10 +76,7 @@ export function updateJobFields(
       if (item.temporal) {
         const temporal = item.temporal.split(',').map((t) => Date.parse(t));
         validateTemporal(temporal);
-        link.temporalStart = temporal[0];
-        link.temporalEnd = temporal[1];
-        // const [start, end] = temporal.map((t) => new Date(t).toISOString());
-        // link.temporal = { start, end };
+        link.temporal = { start: new Date(temporal[0]), end: new Date(temporal[1]) };
       }
       link.rel = link.rel || 'data';
       job.addLink(link);

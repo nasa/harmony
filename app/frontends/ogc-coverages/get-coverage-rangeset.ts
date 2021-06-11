@@ -1,6 +1,6 @@
 import DataOperation from 'models/data-operation';
 import { Response, NextFunction } from 'express';
-import keysToLowerCase from '../../util/object';
+import { keysToLowerCase } from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import wrap from '../../util/array';
 import parseVariables from './util/variable-parsing';

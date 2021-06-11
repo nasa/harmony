@@ -59,9 +59,8 @@ function updateJobFields(
         if (temporal) {
           const temporalArray = item.temporal.split(',').map((t) => Date.parse(t));
           validateTemporal(temporalArray);
+          link.temporal = { start: new Date(temporalArray[0]), end: new Date(temporalArray[1]) };
           // const [start, end] = temporalArray.map((t) => new Date(t).toISOString());
-          link.temporalStart = temporalArray[0];
-          link.temporalEnd = temporalArray[1];
         }
         link.rel = link.rel || 'data';
         job.addLink(link);

@@ -64,7 +64,8 @@ const jobProps = {
     },
   ],
 };
-const job = buildJob(jobProps);
+
+const job = buildJob(jobProps as unknown);
 
 describe('stac-item', function () {
   describe('STAC Item creation with a Harmony Job object: case of anti-meridian crossing', function () {
