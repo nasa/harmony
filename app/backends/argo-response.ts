@@ -60,7 +60,6 @@ function updateJobFields(
           const temporalArray = item.temporal.split(',').map((t) => Date.parse(t));
           validateTemporal(temporalArray);
           link.temporal = { start: new Date(temporalArray[0]), end: new Date(temporalArray[1]) };
-          // const [start, end] = temporalArray.map((t) => new Date(t).toISOString());
         }
         link.rel = link.rel || 'data';
         job.addLink(link);
@@ -68,7 +67,7 @@ function updateJobFields(
     }
     if (progress) {
       if (Number.isNaN(+progress)) {
-        throw new TypeError('Job record is invalid: ["Job progress must be between 0 and 100"]');
+        throw new TypeError('Record is invalid: ["Job progress must be between 0 and 100"]');
       }
       job.progress = parseInt(progress, 10);
     }

@@ -1,4 +1,5 @@
 /* eslint-disable no-param-reassign */
+import logger from 'util/log';
 import db, { Transaction } from '../util/db';
 
 interface RecordConstructor extends Function {
@@ -68,7 +69,11 @@ export default abstract class Record {
       if (db.client.config.client === 'pg') {
         stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
       }
-      [this.id] = await stmt;
+      try {
+        [this.id] = await stmt;
+      } catch (e) {
+        logger.error(e);
+      }
     } else {
       await transaction((this.constructor as RecordConstructor).table)
         .where({ id: this.id })
