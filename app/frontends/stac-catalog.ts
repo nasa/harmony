@@ -1,5 +1,6 @@
 import { pick } from 'lodash';
-import { Job, JobLink } from 'models/job';
+import { Job } from 'models/job';
+import JobLink from 'models/job-link';
 import { linksWithStacData } from 'util/stac';
 
 export interface SerializableCatalog {
@@ -64,11 +65,13 @@ class HarmonyCatalog implements SerializableCatalog {
    *
    */
   addLink(url: string, relType: string, title: string): void {
-    this.links.push({
-      href: url,
-      rel: relType,
-      title,
-    });
+    this.links.push(
+      new JobLink({
+        href: url,
+        rel: relType,
+        title,
+      }),
+    );
   }
 
   /**

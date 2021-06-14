@@ -430,7 +430,6 @@ export class Job extends Record {
         if (rel !== 's3-access') {
           href = createPublicPermalink(href, urlRoot, type, linkType);
         }
-        // return { href, title, type, rel, bbox, temporal };
         return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
       }) as unknown as JobLink[];
     }
@@ -441,12 +440,13 @@ export class Job extends Record {
   }
 
   /**
-   * Returns only the links with a rel that matches the passed in value
+   * Returns only the links with a rel that matches the passed in value.
    *
    * @param rel - the relation to return links for
    * @returns the job output links with the given rel
    */
   getRelatedLinks(rel: string): JobLink[] {
-    return this.links.filter((link) => link.rel === rel);
+    const links = this.links.filter((link) => link.rel === rel);
+    return links.map(removeEmptyProperties) as JobLink[];
   }
 }

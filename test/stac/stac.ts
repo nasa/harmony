@@ -7,9 +7,8 @@ import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacCatalog, hookStacCatalog } from '../helpers/stac';
 
-const runningJob = {
+const runningJobProps = {
   username: 'joe',
-  requestId: uuid().toString(),
   status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
@@ -19,17 +18,16 @@ const runningJob = {
     rel: 'data',
     bbox: [-10, -10, 10, 10],
     temporal: {
-      start: '2020-01-01T00:00:00.000Z',
-      end: '2020-01-01T01:00:00.000Z',
+      start: new Date('2020-01-01T00:00:00.000Z'),
+      end: new Date('2020-01-01T01:00:00.000Z'),
     },
   }],
   request: 'http://example.com/harmony?job=runningJob',
   numInputGranules: 100,
 };
 
-const completedJob = {
+const completedJobProps = {
   username: 'joe',
-  requestId: uuid().toString(),
   status: JobStatus.SUCCESSFUL,
   message: 'it is done',
   progress: 100,
@@ -39,8 +37,8 @@ const completedJob = {
     rel: 'data',
     bbox: [-10, -10, 10, 10],
     temporal: {
-      start: '2020-01-01T00:00:00.000Z',
-      end: '2020-01-01T01:00:00.000Z',
+      start: new Date('2020-01-01T00:00:00.000Z'),
+      end: new Date('2020-01-01T01:00:00.000Z'),
     },
   }],
   request: 'http://example.com/harmony?job=completedJob',
@@ -50,9 +48,11 @@ const completedJob = {
 describe('STAC catalog route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
+  const runningJob = buildJob(runningJobProps);
+  const completedJob = buildJob(completedJobProps);
   before(async function () {
-    await buildJob(runningJob).save(this.trx);
-    await buildJob(completedJob).save(this.trx);
+    await runningJob.save(this.trx);
+    await completedJob.save(this.trx);
     this.trx.commit();
   });
   const jobId = runningJob.requestId;

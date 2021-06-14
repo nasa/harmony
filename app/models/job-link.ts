@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import toISODateTime from 'util/date';
 import { Transaction } from 'util/db';
+import { removeEmptyProperties } from 'util/object';
 import Record from './record';
 
 interface BaseJobLink {
@@ -109,13 +109,13 @@ export default class JobLink extends Record {
     if (this.temporal) {
       serializedLink.temporal = {};
       if (this.temporal.start) {
-        serializedLink.temporal.start = toISODateTime(this.temporal.start);
+        serializedLink.temporal.start = this.temporal.start.toISOString();
       }
       if (this.temporal.end) {
-        serializedLink.temporal.end = toISODateTime(this.temporal.end);
+        serializedLink.temporal.end = this.temporal.end.toISOString();
       }
     }
-    return serializedLink;
+    return removeEmptyProperties(serializedLink) as SerializedJobLink;
   }
 
   /**
@@ -131,9 +131,23 @@ export default class JobLink extends Record {
     }
     if (temporal) {
       record.temporalStart = temporal.start;
-      record.temporalStart = temporal.end;
+      record.temporalEnd = temporal.end;
     }
     await super.save(transaction, record);
+  }
+
+  /**
+   * Validates the job link. Returns null if the link is valid. Returns a list of errors
+   * if it is invalid.
+   *
+   * @returns a list of validation errors or null if the link is valid
+   */
+  validate(): string[] {
+    const errors = [];
+    if (!this.href) {
+      errors.push('Job link must include an href');
+    }
+    return errors.length === 0 ? null : errors;
   }
 }
 

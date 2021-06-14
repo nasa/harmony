@@ -4,7 +4,6 @@ import { linksWithStacData } from 'util/stac';
 
 import { Job } from 'models/job';
 import JobLink from 'models/job-link';
-import toISODateTime from 'util/date';
 
 export class HarmonyItem {
   id: string;
@@ -133,11 +132,11 @@ export class HarmonyItem {
   addTemporalExtent(start: Date | string, end: Date | string): void {
     let startString = start as string;
     if (startString && typeof start !== 'string') {
-      startString = toISODateTime(start);
+      startString = start.toISOString();
     }
     let endString = end as string;
     if (endString && typeof end !== 'string') {
-      endString = toISODateTime(end);
+      endString = end.toISOString();
     }
 
     this.setProperty('start_datetime', startString);

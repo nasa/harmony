@@ -1,4 +1,3 @@
-import { v4 as uuid } from 'uuid';
 import { expect } from 'chai';
 import _ from 'lodash';
 import axios from 'axios';
@@ -7,17 +6,15 @@ import { EventType } from 'app/workers/workflow-listener';
 import WorkflowTerminationListener from 'app/workers/workflow-termination-listener';
 import * as job from 'util/job';
 import * as sinon from 'sinon';
+import { buildJob } from 'test/helpers/jobs';
 import { hookTransaction } from '../helpers/db';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
 import { Workflow, getWorkflowsForJob, terminateWorkflows } from '../../app/util/workflows';
 import * as uworkflows from '../../app/util/workflows';
 import log from '../../app/util/log';
 
-const requestId = uuid().toString();
-const singleWorkflowJobRecord: JobRecord = {
+const singleWorkflowJobRecord: Partial<JobRecord> = {
   username: 'joe',
-  requestId,
-  jobID: requestId,
   status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
@@ -28,18 +25,16 @@ const singleWorkflowJobRecord: JobRecord = {
       type: 'text/plain',
       bbox: [-100, -30, -80, 20],
       temporal: {
-        start: '1996-10-15T00:05:32.000Z',
-        end: '1996-11-15T00:05:32.000Z',
+        start: new Date('1996-10-15T00:05:32.000Z'),
+        end: new Date('1996-11-15T00:05:32.000Z'),
       },
     }],
   request: 'http://example.com/harmony?job=singleWorkflowJob',
   numInputGranules: 15,
 };
 
-const multipleWorkflowJobRecord: JobRecord = {
+const multipleWorkflowJobRecord: Partial<JobRecord> = {
   username: 'joe',
-  requestId,
-  jobID: requestId,
   status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
@@ -50,8 +45,8 @@ const multipleWorkflowJobRecord: JobRecord = {
       type: 'text/plain',
       bbox: [-100, -30, -80, 20],
       temporal: {
-        start: '1996-10-15T00:05:32.000Z',
-        end: '1996-11-15T00:05:32.000Z',
+        start: new Date('1996-10-15T00:05:32.000Z'),
+        end: new Date('1996-11-15T00:05:32.000Z'),
       },
     }],
   request: 'http://example.com/harmony?job=multipleWorkflowJob',
@@ -91,9 +86,9 @@ describe('Terminating job workflow(s)', async function () {
   let multipleWorkflowJob: Job;
 
   before(async function () {
-    singleWorkflowJob = new Job(singleWorkflowJobRecord);
+    singleWorkflowJob = buildJob(singleWorkflowJobRecord);
     await singleWorkflowJob.save(this.trx);
-    multipleWorkflowJob = new Job(multipleWorkflowJobRecord);
+    multipleWorkflowJob = buildJob(multipleWorkflowJobRecord);
     await multipleWorkflowJob.save(this.trx);
     this.trx.commit();
     this.trx = null;
@@ -135,9 +130,9 @@ describe('Getting job workflows', async function () {
   let multipleWorkflowJob: Job;
 
   before(async function () {
-    singleWorkflowJob = new Job(singleWorkflowJobRecord);
+    singleWorkflowJob = buildJob(singleWorkflowJobRecord);
     await singleWorkflowJob.save(this.trx);
-    multipleWorkflowJob = new Job(multipleWorkflowJobRecord);
+    multipleWorkflowJob = buildJob(multipleWorkflowJobRecord);
     await multipleWorkflowJob.save(this.trx);
     this.trx.commit();
     this.trx = null;
