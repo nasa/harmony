@@ -21,8 +21,8 @@ const jobProps = {
       type: 'application/nc',
       bbox: [-80, -30, -100, 20],
       temporal: {
-        start: '1996-10-15T00:05:32.000Z',
-        end: '1996-11-15T00:05:32.000Z',
+        start: new Date('1996-10-15T00:05:32.000Z'),
+        end: new Date('1996-11-15T00:05:32.000Z'),
       },
     },
     {
@@ -32,8 +32,8 @@ const jobProps = {
       type: 'image/png',
       bbox: [-100, -30, -80, 20],
       temporal: {
-        start: '1996-10-15T00:05:32.000Z',
-        end: '1996-11-15T00:05:32.000Z',
+        start: new Date('1996-10-15T00:05:32.000Z'),
+        end: new Date('1996-11-15T00:05:32.000Z'),
       },
     },
     {
