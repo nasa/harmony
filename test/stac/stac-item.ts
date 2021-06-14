@@ -20,8 +20,8 @@ const runningJob = buildJob({
     rel: 'data',
     bbox: [-10, -10, 10, 10],
     temporal: {
-      start: '2020-01-01T00:00:00.000Z',
-      end: '2020-01-01T01:00:00.000Z',
+      start: new Date('2020-01-01T00:00:00.000Z'),
+      end: new Date('2020-01-01T01:00:00.000Z'),
     },
   }],
   request: 'http://example.com/harmony?job=runningJob',
@@ -39,8 +39,8 @@ const completedJob = buildJob({
     rel: 'data',
     bbox: [-10, -10, 10, 10],
     temporal: {
-      start: '2020-01-01T00:00:00.000Z',
-      end: '2020-01-01T01:00:00.000Z',
+      start: new Date('2020-01-01T00:00:00.000Z'),
+      end: new Date('2020-01-01T01:00:00.000Z'),
     },
   }],
   request: 'http://example.com/harmony?job=completedJob',
