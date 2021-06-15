@@ -59,15 +59,12 @@ exports.up = function(knex) {
       if (links && links.length > 0) {
         links.forEach(async (link) => {
           const { href, type, title, rel, temporal, bbox } = link;
-          const temporalStart = temporal ? temporal.start : undefined;
-          const temporalEnd = temporal ? temporal.end : undefined;
-          // const temporalStart = temporal?.start;
-          // const temporalEnd = temporal?.end;
-          const now = Date.now();
+          const temporalStart = temporal && temporal.start ? new Date(temporal.start) : undefined;
+          const temporalEnd = temporal && temporal.end ? new Date(temporal.end) : undefined;
+          const now = new Date();
           const createdAt = now;
           const updatedAt = now;
-          // const bboxString = bbox?.join('');
-          const bboxString = bbox ? bbox.join('') : '';
+          const bboxString = bbox ? bbox.join(',') : '';
           const jobLink = {
             jobID: job.jobID,
             bbox: bboxString,
@@ -79,13 +76,6 @@ exports.up = function(knex) {
       }
     });
   })
-  // .then(() => {
-  //   // Drop the json_links field from the jobs table
-  //   return knex.schema
-  //   .alterTable('jobs', (t) => {
-  //     t.dropColumn('_json_links');
-  //   });
-  // });
 };
 
 exports.down = function(knex) {
