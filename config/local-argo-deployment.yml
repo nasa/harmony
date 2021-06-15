@@ -655,3 +655,67 @@ data:
   # Fake credentials for localstack that Argo uses so it avoids looking up IAM
   accessKey: c2hoaGhoaGg=
   secretKey: aXRzYXNlY3JldA==
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app: postgres
+  name: argo-postgres-config
+stringData:
+  password: password
+  username: postgres
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: postgres
+  name: postgres
+spec:
+  ports:
+  - port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    app: postgres
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: postgres
+  name: postgres
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+      name: postgres
+    spec:
+      containers:
+      - env:
+        - name: POSTGRES_PASSWORD
+          value: password
+        image: postgres:12-alpine
+        name: main
+        ports:
+        - containerPort: 5432
+        readinessProbe:
+          exec:
+            command:
+            - psql
+            - -U
+            - postgres
+            - -c
+            - SELECT 1
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+      nodeSelector:
+        kubernetes.io/os: linux
+---

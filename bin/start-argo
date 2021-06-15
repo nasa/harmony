@@ -136,3 +136,4 @@ fi
 echo ''
 echo 'Localstack has started at http://localhost:4566/'
 echo 'Argo has started at http://localhost:2746/'
+echo 'Postgres has started at localhost:5432'
