@@ -64,7 +64,7 @@ exports.up = function(knex) {
           const now = new Date();
           const createdAt = now;
           const updatedAt = now;
-          const bboxString = bbox ? bbox.join(',') : '';
+          const bboxString = bbox ? bbox.join(',') : undefined;
           const jobLink = {
             jobID: job.jobID,
             bbox: bboxString,
