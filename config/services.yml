@@ -384,6 +384,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1225808903-GES_DISC
       - C1232995291-GES_DISC
       - C1232998567-GES_DISC
+      - C1238658049-POCLOUD
     capabilities:
       subsetting:
         bbox: true
@@ -442,9 +443,10 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/sds/variable-subsetter
     collections:
-      - C1234714691-EEDTEST  # ATL03
-      - C1234714698-EEDTEST  # ATL08
-      - C1238392622-EEDTEST  # RSSMIF16
+      - C1234714691-EEDTEST  # ATL03 UAT
+      - C1234714698-EEDTEST  # ATL08 UAT
+      - C1238392622-EEDTEST  # RSSMIF16D test collection UAT
+      - C1222931739-GHRC_CLOUD  # RSSMIF16D UAT
     capabilities:
       subsetting:
         variable: true
