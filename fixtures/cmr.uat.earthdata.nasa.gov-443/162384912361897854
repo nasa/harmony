@@ -1,0 +1,26 @@
+GET /search/collections.json?concept_id=C1233800302-EEDTEST&concept_id=C1234-MISSING&concept_id=C4568-MISSING&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+connection: close
+date: Wed, 16 Jun 2021 13:12:03 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 28d4b728-cd5a-4655-9732-7f432ebe9f7b
+strict-transport-security: max-age=31536000
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 11
+x-request-id: 28d4b728-cd5a-4655-9732-7f432ebe9f7b
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 e004b21574888e2383bc40e183527f93.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: 7iIwLP1jKUBOqyYFLqNXqYTOgnqowhefWPYShwqL_1am1EJI-geL8Q==
+
+{"feed":{"updated":"2021-06-16T13:12:03.587Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1233800302-EEDTEST&concept_id=C1234-MISSING&concept_id=C4568-MISSING&page_size=2000","title":"ECHO dataset metadata","entry":[{"time_start":"1970-06-26T00:00:00.000Z","version_id":"1","updated":"2000-01-01T00:00:00.000Z","dataset_id":"Harmony Example Data","has_spatial_subsetting":true,"has_transforms":true,"associations":{"variables":["V1233801695-EEDTEST","V1233801696-EEDTEST","V1233801716-EEDTEST","V1233801717-EEDTEST"],"services":["S1237974227-EEDTEST","S1237980031-EEDTEST"]},"has_variables":true,"data_center":"EEDTEST","short_name":"harmony_example","title":"Harmony Example Data","summary":"    A collection to use in testing Harmony whose data have the following attributes, useful in testing current    and future Harmony work, ensuring that results come back correctly, and that metadata is preserved.    1. Granule data is very small, under 1MB, often well under 1MB    2. Data follows the outlines of the continents, making visual inspection easy    3. Data follows a consistent gradient, with hue differing slightly by granule in sequential temporal order from       blue/purple (oldest) to red (newest)    4. Files have color interpretation set, allowing for color output, if services preserve it    5. Files have 4 variables / bands    6. Data bands have descriptions set    7. Files have custom metadata, HARMONY_HEX_COLOR, set to the central hex value of the file's gradient, and HARMONY_HUE, set to the numeric hue (0.0-1.0)    8. File names contain useful information about their sequential order, color, and contents    9. Granules with global extents exist, as well as granules which cover each continent, with corresponding metadata    10. Granule temporal aligns to full days (UTC) starting with January 1, 2020, with each file name starting with the numeric        julian date  ","service_features":{"harmony":{"has_formats":true,"has_variables":true,"has_transforms":true,"has_spatial_subsetting":true,"has_temporal_subsetting":false},"opendap":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false},"esi":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false}},"orbit_parameters":{},"id":"C1233800302-EEDTEST","has_formats":true,"original_format":"ECHO10","has_temporal_subsetting":false,"browse_flag":false,"platforms":[],"online_access_flag":false}]}}

@@ -4,16 +4,25 @@ import * as cmr from 'util/cmr';
 
 type CmrMethodName = 'cmrSearchBase' | 'fetchPost' | 'cmrPostSearchBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'belongsToGroup' | 'cmrApiConfig';
 
+function stubCmr(functionName: CmrMethodName, response: object): void;
+
+function stubCmr(functionName: CmrMethodName, response: Function): void;
+
 /**
  * Replace a function in the `cmr` module with a given function. This is needed because
  * `replay` does not handle POSTs to the CMR correctly.
  *
  * @param functionName - The name of the function to be stubbed
- * @param response - The response the function should return
+ * @param response - The function that should run, or object that should be returned
  */
-function stubCmr(functionName: CmrMethodName, response: object): void {
+function stubCmr(functionName: CmrMethodName, response: Function | object): void {
   sinon.stub(cmr, functionName)
-    .callsFake(async () => response);
+    .callsFake(async function () {
+      if (typeof response === 'object') {
+        return response;
+      }
+      return response();
+    });
 }
 
 /**
@@ -39,7 +48,7 @@ function unStubCmr(functionName: string): void {
  * @param functionName - The name of the function to stub
  * @param response - The desired response
  */
-export default function hookCmr(functionName: CmrMethodName, response: object): void {
+export default function hookCmr(functionName: CmrMethodName, response: Function | object): void {
   before(async function () {
     stubCmr(functionName, response);
   });

@@ -7,6 +7,7 @@ import { Response, Test } from 'supertest';
 import * as fs from 'fs';
 import isUUID from 'util/uuid';
 import { Application } from 'express';
+import { CmrError } from 'util/errors';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
 import { auth } from '../helpers/auth';
@@ -277,7 +278,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     describe('when the CMR returns a 4xx', function () {
       const cmrErrorMessage = 'Corrupt GeoJSON';
       const cmrStatus = 400;
-      hookCmr('cmrPostSearchBase', { status: cmrStatus, data: { errors: [cmrErrorMessage] } });
+      hookCmr('queryGranulesForCollection', () => { throw new CmrError(cmrStatus, cmrErrorMessage); });
       it('returns an HTTP 400 "Bad Request" error with message reflecting the original shapefile type',
         async function () {
           let res = await postRangesetRequest(
