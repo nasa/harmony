@@ -67,7 +67,7 @@ function updateJobFields(
     }
     if (progress) {
       if (Number.isNaN(+progress)) {
-        throw new TypeError('Record is invalid: ["Job progress must be between 0 and 100"]');
+        throw new TypeError('Job is invalid: ["Job progress must be between 0 and 100"]');
       }
       job.progress = parseInt(progress, 10);
     }

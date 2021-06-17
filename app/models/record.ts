@@ -55,7 +55,7 @@ export default abstract class Record {
   async save(transaction: Transaction, fields: Partial<Record> = this): Promise<void> {
     const errors = this.validate();
     if (errors) {
-      throw new TypeError(`Record is invalid: ${JSON.stringify(errors)}`);
+      throw new TypeError(`${this.constructor.name} is invalid: ${JSON.stringify(errors)}`);
     }
     const updatedAt = new Date();
     this.updatedAt = updatedAt;
