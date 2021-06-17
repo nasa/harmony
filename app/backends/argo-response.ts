@@ -81,7 +81,7 @@ function updateJobFields(
     } else if (status) {
       job.updateStatus(status as JobStatus);
     } else if (redirect) {
-      job.addLink({ href: redirect, rel: 'data' } as JobLink);
+      job.addLink(new JobLink({ href: redirect, rel: 'data' }));
     }
   } catch (e) {
     const ErrorClass = (e instanceof TypeError) ? RequestValidationError : ServerError;
