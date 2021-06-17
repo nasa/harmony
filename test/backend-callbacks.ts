@@ -353,6 +353,20 @@ describe('Backend Callbacks', function () {
       });
     });
 
+    describe('href validation', function () {
+      it('rejects links that do not include an href property', async function () {
+        const response = await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z,2020-01-02T00:00:00Z' } });
+        const error = JSON.parse((response.error as HTTPError).text);
+        expect(response.status).to.equal(400);
+        expect(error).to.eql({
+          code: 'harmony.RequestValidationError',
+          message: 'JobLink is invalid: ["Job link must include an href"]',
+        });
+        const job = (await Job.forUser(db, 'anonymous')).data[0];
+        expect(job.getRelatedLinks('data')).to.eql([]);
+      });
+    });
+
     describe('temporal validation', function () {
       it('rejects temporal params containing invalid dates', async function () {
         const response = await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z,broken' } });
