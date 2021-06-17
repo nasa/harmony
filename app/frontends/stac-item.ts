@@ -130,14 +130,8 @@ export class HarmonyItem {
    *
    */
   addTemporalExtent(start: Date | string, end: Date | string): void {
-    let startString = start as string;
-    if (startString && typeof start !== 'string') {
-      startString = start.toISOString();
-    }
-    let endString = end as string;
-    if (endString && typeof end !== 'string') {
-      endString = end.toISOString();
-    }
+    const startString = typeof start === 'string' ? start : start.toISOString();
+    const endString = typeof end === 'string' ? end : end.toISOString();
 
     this.setProperty('start_datetime', startString);
     this.setProperty('end_datetime', endString);
