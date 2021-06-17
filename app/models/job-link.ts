@@ -3,6 +3,9 @@ import { Transaction } from 'util/db';
 import { removeEmptyProperties } from 'util/object';
 import Record from './record';
 
+/**
+ * Fields that both JobLink and JobLinkRecords have in common
+ */
 interface BaseJobLink {
   id?: number;
   jobID?: string;
@@ -14,6 +17,10 @@ interface BaseJobLink {
   updatedAt?: Date;
 }
 
+/**
+ * Fields that will be in a JobLink when saving or retrieving from
+ * the database.
+ */
 interface JobLinkRecord extends BaseJobLink {
   bbox?: string;
   temporalStart?: Date;
@@ -28,7 +35,6 @@ interface JobLinkRecord extends BaseJobLink {
  * Specifying JobLink | JobLinkRecord as the type causes many Typescript
  * errors so we use this interface to avoid that.
  */
-
 export interface JobLinkOrRecord extends BaseJobLink {
   bbox?: string | number[];
   temporalStart?: Date;
@@ -39,6 +45,11 @@ export interface JobLinkOrRecord extends BaseJobLink {
   };
 }
 
+/**
+ * The format of a JobLink when returned to an end user. Serialized in
+ * the sense of displaying to an end user, not in the sense of serializing
+ * to the database.
+ */
 export interface SerializedJobLink {
   href: string;
   type?: string;
