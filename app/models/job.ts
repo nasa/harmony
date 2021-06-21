@@ -208,13 +208,22 @@ export class Job extends Record {
    * @param transaction - the transaction to use for querying
    * @param username - the username associated with the job
    * @param requestId - the UUID of the request associated with the job
+   * @param currentPage - the index of the page of links to show
+   * @param perPage - the number of link results per page
    * @returns the matching job, or null if none exists
    */
-  static async byUsernameAndRequestId(transaction, username, requestId): Promise<Job> {
+  static async byUsernameAndRequestId(
+    transaction,
+    username,
+    requestId,
+    includeLinks = true,
+    currentPage = 0,
+    perPage = 10,
+  ): Promise<Job> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
-    if (job) {
-      job.links = await getLinksForJob(transaction, job.jobID);
+    if (job && includeLinks) {
+      job.links = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
     }
     return job;
   }
@@ -224,13 +233,20 @@ export class Job extends Record {
    *
    * @param transaction - the transaction to use for querying
    * @param requestId - the UUID of the request associated with the job
+   * @param currentPage - the index of the page of links to show
+   * @param perPage - the number of link results per page
    * @returns the matching job, or null if none exists
    */
-  static async byRequestId(transaction, requestId): Promise<Job> {
+  static async byRequestId(
+    transaction,
+    requestId,
+    currentPage = 0,
+    perPage = 10,
+  ): Promise<Job> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     if (job) {
-      job.links = await getLinksForJob(transaction, job.jobID);
+      job.links = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
     }
     return job;
   }

@@ -1,6 +1,6 @@
 import { Logger } from 'winston';
 import db from './db';
-import { Job, JobQuery, JobStatus } from '../models/job';
+import { Job, JobStatus } from '../models/job';
 import { NotFoundError } from './errors';
 import { terminateWorkflows } from './workflows';
 
@@ -23,12 +23,12 @@ export default async function cancelAndSaveJob(
   shouldIgnoreRepeats = false,
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    const query: JobQuery = { requestId: jobID };
+    let job;
     if (username) {
-      query.username = username;
+      job = await Job.byUsernameAndRequestId(tx, username, jobID);
+    } else {
+      job = await Job.byRequestId(tx, jobID);
     }
-    const jobs = await Job.queryAll(tx, query);
-    const job = jobs?.data[0];
     if (job) {
       if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
         job.status = JobStatus.CANCELED;
