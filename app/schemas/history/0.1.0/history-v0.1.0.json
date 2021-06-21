@@ -15,7 +15,7 @@
                "format": "date-time"
             },
             "derived_from": {
-               "description": "List of source data files used in the creation of this data file",
+               "description": "List of source data files used in the creation of this data file. E.g., pystac.Item.asset.href where asset role == data from the Harmony processing request. Preferably including science data filename information vs. an obscure temporary file link.",
                "type": [ "array", "string" ],
                "items": { "type": "string" }
             },
