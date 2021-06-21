@@ -9,8 +9,6 @@ CREATE TABLE `jobs` (
   `message` varchar(4096) not null,
   `progress` integer not null,
   `batchesCompleted` integer not null,
-  -- Remove _json_links in a later migration once we've confirmed links are populated
-  `_json_links` json not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   `request` varchar(4096) not null default 'unknown',
