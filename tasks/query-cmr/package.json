@@ -4,7 +4,7 @@
   "description": "Harmony Argo task that queries the CMR for an incoming message and produces a sources file as output",
   "main": "app/query-granules.ts",
   "scripts": {
-    "test": "eslint --ext .ts . && nyc mocha && npm audit",
+    "test": "eslint --ext .ts . && nyc mocha && npm audit --production",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
@@ -61,7 +61,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "eslint": "^6.8.0",
-    "mocha": "^7.2.0",
+    "mocha": "^9.0.0",
     "nyc": "^15.1.0",
     "sinon": "^7.5.0",
     "ts-node": "^9.0.0",

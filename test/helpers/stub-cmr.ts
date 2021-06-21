@@ -4,10 +4,6 @@ import * as cmr from 'util/cmr';
 
 type CmrMethodName = 'cmrSearchBase' | 'fetchPost' | 'cmrPostSearchBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'belongsToGroup' | 'cmrApiConfig';
 
-function stubCmr(functionName: CmrMethodName, response: object): void;
-
-function stubCmr(functionName: CmrMethodName, response: Function): void;
-
 /**
  * Replace a function in the `cmr` module with a given function. This is needed because
  * `replay` does not handle POSTs to the CMR correctly.
