@@ -446,8 +446,7 @@ export class Job extends Record {
     const { links, originalStatus } = this;
     delete this.links;
     delete this.originalStatus;
-    // Remove the _json_links field once we've dropped the column
-    await super.save(transaction, { ...this, _json_links: [] });
+    await super.save(transaction);
     const promises = [];
     for (const link of links) {
       // Note we will not update existing links in the database - only add new ones
