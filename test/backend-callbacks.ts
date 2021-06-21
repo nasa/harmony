@@ -4,6 +4,7 @@ import request from 'supertest';
 import Sinon, { SinonStub } from 'sinon';
 import { Job, JobStatus } from 'models/job';
 import { HTTPError } from 'superagent';
+import JobLink from 'models/job-link';
 import { truncateAll } from './helpers/db';
 import hookServersStartStop from './helpers/servers';
 import { rangesetRequest } from './helpers/ogc-api-coverages';
@@ -15,7 +16,9 @@ import { objectStoreForProtocol, S3ObjectStore } from '../app/util/object-store'
 import { hookCallbackEach, hookHttpBackendEach, loadJobForCallback } from './helpers/callbacks';
 
 describe('Backend Callbacks', function () {
+  this.timeout(30000);
   const collection = 'C1104-PVC_TS2';
+  const href = 'https://example.com/foo';
 
   hookServersStartStop();
 
@@ -116,7 +119,7 @@ describe('Backend Callbacks', function () {
     describe('when the backend receives a success callback on another host', function () {
       beforeEach(async function () {
         const job = await loadJobForCallback(this.callback);
-        job.addLink({ href: 'https://example.com/another-host', rel: 'data' });
+        job.addLink(new JobLink({ href: 'https://example.com/another-host', rel: 'data', jobID: job.jobID }));
         job.succeed('It worked!');
         await job.save(db);
         this.userResp = await this.userPromise;
@@ -350,6 +353,20 @@ describe('Backend Callbacks', function () {
       });
     });
 
+    describe('href validation', function () {
+      it('rejects links that do not include an href property', async function () {
+        const response = await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z,2020-01-02T00:00:00Z' } });
+        const error = JSON.parse((response.error as HTTPError).text);
+        expect(response.status).to.equal(400);
+        expect(error).to.eql({
+          code: 'harmony.RequestValidationError',
+          message: 'JobLink is invalid: ["Job link must include an href"]',
+        });
+        const job = (await Job.forUser(db, 'anonymous')).data[0];
+        expect(job.getRelatedLinks('data')).to.eql([]);
+      });
+    });
+
     describe('temporal validation', function () {
       it('rejects temporal params containing invalid dates', async function () {
         const response = await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z,broken' } });
@@ -376,15 +393,19 @@ describe('Backend Callbacks', function () {
       });
 
       it('accepts temporal params containing the correct number of dates', async function () {
-        const response = await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z,2020-01-02T00:00:00Z' } });
+        const response = await request(this.backend).post(this.callback).query({
+          item: { href, temporal: '2020-01-01T00:00:00Z,2020-01-02T00:00:00Z' },
+        });
         expect(response.status).to.equal(200);
       });
 
       it('saves parsed temporal params to the database', async function () {
-        await request(this.backend).post(this.callback).query({ item: { temporal: '2020-01-01T00:00:00Z,2020-01-02T00:00:00Z' } });
+        await request(this.backend).post(this.callback).query({
+          item: { href, temporal: '2020-01-01T00:00:00Z,2020-01-02T00:00:00Z' },
+        });
         const job = (await Job.forUser(db, 'anonymous')).data[0];
         expect(job.getRelatedLinks('data').length).to.equal(1);
-        expect(job.getRelatedLinks('data')[0].temporal).to.eql({ start: '2020-01-01T00:00:00.000Z', end: '2020-01-02T00:00:00.000Z' });
+        expect(job.getRelatedLinks('data')[0].temporal).to.eql({ start: new Date('2020-01-01T00:00:00.000Z'), end: new Date('2020-01-02T00:00:00.000Z') });
       });
     });
 
@@ -392,7 +413,9 @@ describe('Backend Callbacks', function () {
       hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', {}); });
 
       it('rejects bbox params containing invalid numbers', async function () {
-        const response = await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,broken,3.3' } });
+        const response = await request(this.backend).post(this.callback).query({
+          item: { href, bbox: '0.0,1.1,broken,3.3' },
+        });
         const error = JSON.parse((response.error as HTTPError).text);
         expect(response.status).to.equal(400);
         expect(error).to.eql({
@@ -404,7 +427,9 @@ describe('Backend Callbacks', function () {
       });
 
       it('rejects bbox params containing an incorrect number of dates', async function () {
-        const response = await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,2.2' } });
+        const response = await request(this.backend).post(this.callback).query({
+          item: { href, bbox: '0.0,1.1,2.2' },
+        });
         const error = JSON.parse((response.error as HTTPError).text);
         expect(response.status).to.equal(400);
         expect(error).to.eql({
@@ -415,13 +440,17 @@ describe('Backend Callbacks', function () {
         expect(job.getRelatedLinks('data')).to.eql([]);
       });
 
-      it('accepts bbox params containing the correct number of dates', async function () {
-        const response = await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,2.2,3.3' } });
+      it('accepts bbox params containing the correct number of bounding box coordinates', async function () {
+        const response = await request(this.backend).post(this.callback).query({
+          item: { href, bbox: '0.0,1.1,2.2,3.3' },
+        });
         expect(response.status).to.equal(200);
       });
 
       it('saves parsed bbox params to the database', async function () {
-        await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,2.2,3.3' } });
+        await request(this.backend).post(this.callback).query({
+          item: { href, bbox: '0.0,1.1,2.2,3.3' },
+        });
         const job = (await Job.forUser(db, 'anonymous')).data[0];
         expect(job.getRelatedLinks('data').length).to.equal(1);
         expect(job.getRelatedLinks('data')[0].bbox).to.eql([0.0, 1.1, 2.2, 3.3]);

@@ -16,6 +16,7 @@ describe('Argo Callbacks', function () {
   // Seeing frequent timeouts in CI environment for this test with the default 2 second timeout
   this.timeout(10000);
   const collection = 'C1104-PVC_TS2';
+  const href = 'https://example.com/foo';
 
   hookServersStartStop();
 
@@ -140,7 +141,7 @@ describe('Argo Callbacks', function () {
 
           const job = (await Job.forUser(db, 'anonymous')).data[0];
           expect(job.getRelatedLinks('data').length).to.equal(1);
-          expect(job.getRelatedLinks('data')[0].temporal).to.eql({ start: '2020-01-01T00:00:00.000Z', end: '2020-01-02T00:00:00.000Z' });
+          expect(job.getRelatedLinks('data')[0].temporal).to.eql({ start: new Date('2020-01-01T00:00:00.000Z'), end: new Date('2020-01-02T00:00:00.000Z') });
         });
       });
     });
@@ -208,7 +209,9 @@ describe('Argo Callbacks', function () {
       });
 
       it('saves parsed bbox params to the database', async function () {
-        await request(this.backend).post(this.callback).query({ item: { bbox: '0.0,1.1,2.2,3.3' } });
+        await request(this.backend).post(this.callback).query({
+          item: { href, bbox: '0.0,1.1,2.2,3.3' },
+        });
         const job = (await Job.forUser(db, 'anonymous')).data[0];
         expect(job.getRelatedLinks('data').length).to.equal(1);
         expect(job.getRelatedLinks('data')[0].bbox).to.eql([0.0, 1.1, 2.2, 3.3]);

@@ -2,7 +2,8 @@ import { v4 as uuid } from 'uuid';
 import { pick } from 'lodash';
 import { linksWithStacData } from 'util/stac';
 
-import { Job, JobLink } from 'models/job';
+import { Job } from 'models/job';
+import JobLink from 'models/job-link';
 
 export class HarmonyItem {
   id: string;
@@ -112,11 +113,13 @@ export class HarmonyItem {
    *
    */
   addLink(url: string, relType: string, title: string): void {
-    this.links.push({
-      href: url,
-      rel: relType,
-      title,
-    });
+    this.links.push(
+      new JobLink({
+        href: url,
+        rel: relType,
+        title,
+      }),
+    );
   }
 
   /**
@@ -126,11 +129,13 @@ export class HarmonyItem {
    * @param end - Data end datetime
    *
    */
-  addTemporalExtent(start: string, end: string): void {
-    // Validate
-    this.setProperty('start_datetime', start);
-    this.setProperty('end_datetime', end);
-    this.setProperty('datetime', start);
+  addTemporalExtent(start: Date | string, end: Date | string): void {
+    const startString = typeof start === 'string' ? start : start.toISOString();
+    const endString = typeof end === 'string' ? end : end.toISOString();
+
+    this.setProperty('start_datetime', startString);
+    this.setProperty('end_datetime', endString);
+    this.setProperty('datetime', startString);
   }
 
   /**

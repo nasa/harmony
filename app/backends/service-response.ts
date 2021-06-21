@@ -1,14 +1,15 @@
 import { Response, Request } from 'express';
 import _ from 'lodash';
 import { Logger } from 'winston';
+import JobLink from 'models/job-link';
 import log from '../util/log';
 import { ServerError, RequestValidationError } from '../util/errors';
 import db from '../util/db';
-import { Job, JobLink, JobStatus } from '../models/job';
+import { Job, JobStatus } from '../models/job';
 import { objectStoreForProtocol } from '../util/object-store';
 
 export interface CallbackQueryItem {
-  href?: string;
+  href: string;
   type?: string; // Mime type
   rel: string;
   title?: string;
@@ -66,7 +67,7 @@ export function updateJobFields(
   const { error, item, status, redirect, progress } = query;
   try {
     if (item) {
-      const link = _.pick(item, ['href', 'type', 'rel', 'title']) as JobLink;
+      const link = new JobLink(_.pick(item, ['href', 'type', 'rel', 'title']));
       if (item.bbox) {
         const bbox = item.bbox.split(',').map(parseFloat);
         validateBbox(bbox);
@@ -75,15 +76,14 @@ export function updateJobFields(
       if (item.temporal) {
         const temporal = item.temporal.split(',').map((t) => Date.parse(t));
         validateTemporal(temporal);
-        const [start, end] = temporal.map((t) => new Date(t).toISOString());
-        link.temporal = { start, end };
+        link.temporal = { start: new Date(temporal[0]), end: new Date(temporal[1]) };
       }
       link.rel = link.rel || 'data';
       job.addLink(link);
     }
     if (progress) {
       if (Number.isNaN(+progress)) {
-        throw new TypeError('Job record is invalid: ["Job progress must be between 0 and 100"]');
+        throw new TypeError('Job is invalid: ["Job progress must be between 0 and 100"]');
       }
       job.progress = parseInt(progress, 10);
     }
@@ -93,7 +93,7 @@ export function updateJobFields(
     } else if (status) {
       job.updateStatus(status as JobStatus);
     } else if (redirect) {
-      job.addLink({ href: redirect, rel: 'data' });
+      job.addLink(new JobLink({ href: redirect, rel: 'data' }));
     }
   } catch (e) {
     const ErrorClass = (e instanceof TypeError) ? RequestValidationError : ServerError;

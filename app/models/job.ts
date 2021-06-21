@@ -1,11 +1,13 @@
 import { pick } from 'lodash';
 import { IWithPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
+import { removeEmptyProperties } from 'util/object';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
 import { Transaction } from '../util/db';
+import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 
 import env = require('../util/env');
 
@@ -22,7 +24,7 @@ const statesToDefaultMessages = {
 const defaultMessages = Object.values(statesToDefaultMessages);
 
 const serializedJobFields = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules',
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -37,28 +39,16 @@ export enum JobStatus {
 
 const terminalStates = [JobStatus.SUCCESSFUL, JobStatus.FAILED, JobStatus.CANCELED];
 
-export interface JobLink {
-  href: string;
-  type?: string;
-  title?: string;
-  rel: string;
-  temporal?: {
-    start: string;
-    end: string;
-  };
-  bbox?: number[];
-}
-
 export interface JobRecord {
   id?: number;
+  jobID: string;
   username: string;
   requestId: string;
   status?: JobStatus;
   message?: string;
   progress?: number;
   batchesCompleted?: number;
-  _json_links?: string | JobLink[];
-  links?: string | JobLink[];
+  links?: JobLinkOrRecord[];
   request: string;
   isAsync?: boolean;
   createdAt?: Date | number;
@@ -68,6 +58,7 @@ export interface JobRecord {
 
 export interface JobQuery {
   id?: number;
+  jobID?: string;
   username?: string;
   requestId?: string;
   status?: JobStatus;
@@ -86,6 +77,7 @@ export interface JobQuery {
  *
  * Fields:
  *   - id: (integer) auto-number primary key
+ *   - jobID: (uuid) ID for the job, currently the same as the requestId, but may change
  *   - username: (string) Earthdata Login username
  *   - requestId: (uuid) ID of the originating user request that produced the job
  *   - status: (enum string) job status ['accepted', 'running', 'successful', 'failed']
@@ -102,8 +94,6 @@ export class Job extends Record {
 
   static statuses: JobStatus;
 
-  static record: JobRecord;
-
   links: JobLink[];
 
   message: string;
@@ -119,8 +109,6 @@ export class Job extends Record {
   request: string;
 
   isAsync: boolean;
-
-  _json_links?: string | JobLink[];
 
   status: JobStatus;
 
@@ -150,15 +138,22 @@ export class Job extends Record {
       .where(constraints)
       .orderBy('createdAt', 'desc')
       .paginate({ currentPage, perPage, isLengthAware: true });
+
+    const jobs = items.data.map((j) => new Job(j));
+    for (const job of jobs) {
+      job.links = await getLinksForJob(transaction, job.jobID);
+    }
+
     return {
-      data: items.data.map((j) => new Job(j)),
+      data: jobs,
       pagination: items.pagination,
     };
   }
 
   /**
-   *  Returns and array of all the the jobs that are still in the RUNNING state, but have not
+   * Returns and array of all the the jobs that are still in the RUNNING state, but have not
    * been updated in the given number of minutes
+   *
    * @param transaction - the transaction to use for querying
    * @param minutes - any jobs still running and not updated in this many minutes will be returned
    * @param currentPage - the index of the page to show
@@ -181,8 +176,13 @@ export class Job extends Record {
       .where('updatedAt', '<', pastDate)
       .orderBy('createdAt', 'desc')
       .paginate({ currentPage, perPage, isLengthAware: true });
+
+    const jobs = items.data.map((j) => new Job(j));
+    for (const job of jobs) {
+      job.links = await getLinksForJob(transaction, job.jobID);
+    }
     return {
-      data: items.data.map((j) => new Job(j)),
+      data: jobs,
       pagination: items.pagination,
     };
   }
@@ -212,7 +212,11 @@ export class Job extends Record {
    */
   static async byUsernameAndRequestId(transaction, username, requestId): Promise<Job> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
-    return result.length === 0 ? null : new Job(result[0]);
+    const job = result.length === 0 ? null : new Job(result[0]);
+    if (job) {
+      job.links = await getLinksForJob(transaction, job.jobID);
+    }
+    return job;
   }
 
   /**
@@ -224,19 +228,11 @@ export class Job extends Record {
    */
   static async byRequestId(transaction, requestId): Promise<Job> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
-    return result.length === 0 ? null : new Job(result[0]);
-  }
-
-  /**
-   * Returns the job matching the given primary key id, or null if no such job exists
-   *
-   * @param transaction - the transaction to use for querying
-   * @param id - the primary key of the job record
-   * @returns the matching job, or null if none exists
-   */
-  static async byId(transaction: Transaction, id: number): Promise<Job> {
-    const result = await transaction('jobs').select().where({ id }).forUpdate();
-    return result.length === 0 ? null : new Job(result[0]);
+    const job = result.length === 0 ? null : new Job(result[0]);
+    if (job) {
+      job.links = await getLinksForJob(transaction, job.jobID);
+    }
+    return job;
   }
 
   /**
@@ -249,10 +245,8 @@ export class Job extends Record {
     this.updateStatus(fields.status || JobStatus.ACCEPTED, fields.message);
     this.progress = fields.progress || 0;
     this.batchesCompleted = fields.batchesCompleted || 0;
-    // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
-    this.links = fields.links
-      || (typeof fields._json_links === 'string' ? JSON.parse(fields._json_links) : fields._json_links)
-      || [];
+    this.links = fields.links ? fields.links.map((l) => new JobLink(l)) : [];
+
     // Job already exists in the database
     if (fields.createdAt) {
       this.originalStatus = this.status;
@@ -296,6 +290,8 @@ export class Job extends Record {
    * @param link - Adds a link to the list of links for the object.
    */
   addLink(link: JobLink): void {
+    // eslint-disable-next-line no-param-reassign
+    link.jobID = this.jobID;
     this.links.push(link);
   }
 
@@ -307,12 +303,12 @@ export class Job extends Record {
    */
   addStagingBucketLink(stagingLocation): void {
     if (stagingLocation) {
-      const stagingLocationLink = {
+      const stagingLocationLink = new JobLink({
         href: stagingLocation,
         title: stagingBucketTitle,
         rel: 's3-access',
-      };
-      this.links.push(stagingLocationLink);
+      });
+      this.addLink(stagingLocationLink as JobLink);
     }
   }
 
@@ -399,14 +395,20 @@ export class Job extends Record {
     this.validateStatus();
     this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
-    // Need to jump through serialization hoops due array caveat here: http://knexjs.org/#Schema-json
     const { links, originalStatus } = this;
     delete this.links;
     delete this.originalStatus;
-    this._json_links = JSON.stringify(links);
-    await super.save(transaction);
+    // Remove the _json_links field once we've dropped the column
+    await super.save(transaction, { ...this, _json_links: [] });
+    const promises = [];
+    for (const link of links) {
+      // Note we will not update existing links in the database - only add new ones
+      if (!link.id) {
+        promises.push(link.save(transaction));
+      }
+    }
+    await Promise.all(promises);
     this.links = links;
-    delete this._json_links;
     this.originalStatus = originalStatus;
   }
 
@@ -420,17 +422,17 @@ export class Job extends Record {
     const serializedJob = pick(this, serializedJobFields) as Job;
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
-    serializedJob.jobID = this.requestId;
     if (urlRoot) {
       serializedJob.links = serializedJob.links.map((link) => {
-        let { href } = link;
-        const { title, type, rel, bbox, temporal } = link;
+        const serializedLink = link.serialize();
+        let { href } = serializedLink;
+        const { title, type, rel, bbox, temporal } = serializedLink;
         // Leave the S3 output staging location as an S3 link
         if (rel !== 's3-access') {
           href = createPublicPermalink(href, urlRoot, type, linkType);
         }
-        return { href, title, type, rel, bbox, temporal };
-      });
+        return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
+      }) as unknown as JobLink[];
     }
     const job = new Job(serializedJob as JobRecord); // We need to clean this up
     delete job.originalStatus;
@@ -439,12 +441,13 @@ export class Job extends Record {
   }
 
   /**
-   * Returns only the links with a rel that matches the passed in value
+   * Returns only the links with a rel that matches the passed in value.
    *
    * @param rel - the relation to return links for
    * @returns the job output links with the given rel
    */
   getRelatedLinks(rel: string): JobLink[] {
-    return this.links.filter((link) => link.rel === rel);
+    const links = this.links.filter((link) => link.rel === rel);
+    return links.map(removeEmptyProperties) as JobLink[];
   }
 }

@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign */
+import logger from 'util/log';
 import db, { Transaction } from '../util/db';
 
 interface RecordConstructor extends Function {
@@ -47,27 +49,35 @@ export default abstract class Record {
    * field set.
    *
    * @param transaction - The transaction to use for saving the record
+   * @param fields - The fields to save to the database, defaults to this
    * @throws Error - if the record is invalid
    */
-  async save(transaction: Transaction): Promise<void> {
+  async save(transaction: Transaction, fields: Partial<Record> = this): Promise<void> {
     const errors = this.validate();
     if (errors) {
-      throw new TypeError(`Job record is invalid: ${JSON.stringify(errors)}`);
+      throw new TypeError(`${this.constructor.name} is invalid: ${JSON.stringify(errors)}`);
     }
-    this.updatedAt = new Date();
+    const updatedAt = new Date();
+    this.updatedAt = updatedAt;
+    fields.updatedAt = updatedAt;
     const newRecord = !this.createdAt;
     if (newRecord) {
       this.createdAt = this.updatedAt;
+      fields.createdAt = this.createdAt;
       let stmt = transaction((this.constructor as RecordConstructor).table)
-        .insert(this);
+        .insert(fields);
       if (db.client.config.client === 'pg') {
         stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
       }
-      [this.id] = await stmt;
+      try {
+        [this.id] = await stmt;
+      } catch (e) {
+        logger.error(e);
+      }
     } else {
       await transaction((this.constructor as RecordConstructor).table)
         .where({ id: this.id })
-        .update(this);
+        .update(fields);
     }
   }
 }

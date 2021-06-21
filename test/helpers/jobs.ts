@@ -18,6 +18,46 @@ export const expectedJobKeys = [
 
 export const expectedNoOpJobKeys = expectedJobKeys.filter((k) => k !== 'jobID');
 
+const exampleProps = {
+  username: 'anonymous',
+  status: JobStatus.RUNNING,
+  message: 'it is running',
+  progress: 42,
+  links: [{ href: 'http://example.com' }],
+  request: 'http://example.com/harmony?foo=bar',
+  numInputGranules: 100,
+  isAsync: true,
+} as JobRecord;
+
+/**
+ * Creates a job with default values for fields that are not passed in
+ *
+ * @param fields - fields to use for the job record
+ * @returns a job
+ */
+export function buildJob(fields: Partial<JobRecord> = {}): Job {
+  const requestId = uuid().toString();
+  const job = new Job({ requestId, jobID: requestId, ...exampleProps, ...fields });
+  // Make sure the jobID and the requestId always match
+  job.jobID = job.requestId;
+
+  const jobLinks = job.links;
+  if (jobLinks) {
+    for (const jobLink of jobLinks) {
+      jobLink.jobID = requestId;
+      if (jobLink.temporal) {
+        if (jobLink.temporal.start && typeof jobLink.temporal.start === 'string') {
+          jobLink.temporal.start = new Date(jobLink.temporal.start);
+        }
+        if (jobLink.temporal.end && typeof jobLink.temporal.end === 'string') {
+          jobLink.temporal.end = new Date(jobLink.temporal.end);
+        }
+      }
+    }
+  }
+  return job;
+}
+
 /**
  * Returns true if the passed in job record matches the serialized Job for all fields
  * and all links with rel === data
@@ -183,17 +223,7 @@ export async function createIndexedJobs(
   const result = [];
   let created = +new Date() - 100;
   for (let progress = count - 1; progress >= 0; progress--) {
-    const job = new Job({
-      username,
-      requestId: uuid().toString(),
-      status: JobStatus.RUNNING,
-      message: 'In progress',
-      progress,
-      links: [],
-      request: `http://example.com/${progress}`,
-      isAsync: true,
-      numInputGranules: count,
-    });
+    const job = buildJob({ username, request: `http://example.com/${progress}`, numInputGranules: count, progress });
     await job.save(trx);
     // Explicitly set created dates to ensure they are sequential (must be done in an update)
     job.createdAt = new Date(created++);
@@ -260,13 +290,7 @@ export function hookJobCreation(
   afterFn = after,
 ): void {
   beforeFn(async function () {
-    this.job = new Job({
-      username: 'anonymous',
-      requestId: uuid().toString(),
-      request: 'http://example.com/',
-      numInputGranules: 1,
-      ...props,
-    });
+    this.job = buildJob(props);
     this.job.save(db);
   });
 

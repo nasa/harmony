@@ -212,6 +212,7 @@ export default abstract class BaseService<ServiceParamType> {
     const job = new Job({
       username: user,
       requestId,
+      jobID: requestId,
       status: JobStatus.RUNNING,
       request: requestUrl,
       isAsync: !this.isSynchronous,

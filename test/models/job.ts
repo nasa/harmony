@@ -1,50 +1,43 @@
 import { describe, it, beforeEach } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { Job, JobRecord, JobStatus, JobLink } from 'models/job';
+import { Job, JobRecord, JobStatus } from 'models/job';
 import MockDate from 'mockdate';
+import { buildJob } from 'test/helpers/jobs';
+import JobLink from 'models/job-link';
 import { hookTransactionEach } from '../helpers/db';
 
 const exampleProps = {
   username: 'joe',
-  requestId: uuid().toString(),
-  status: 'running',
+  status: JobStatus.RUNNING,
   message: 'it is running',
   progress: 42,
-  links: [{ href: 'http://example.com' }],
+  links: [{ href: 'http://example.com', rel: 'data' }],
   request: 'http://example.com/harmony?foo=bar',
   numInputGranules: 100,
-} as JobRecord;
+};
 
-/**
- * Creates a Job object for the provided username
- *
- * @param username - The user that requested the job
- * @returns An example job for the user
- */
-function createJob(username): Job {
-  return new Job({
-    username,
-    requestId: uuid().toString(),
-    request: `http://example.com/${username}`,
-    numInputGranules: 2,
-  });
-}
+const requestId = uuid().toString();
+const examplePropsWithIds: JobRecord = {
+  ...exampleProps,
+  requestId,
+  jobID: requestId,
+};
 
 describe('Job', function () {
   describe('retrieval methods', function () {
     hookTransactionEach();
     beforeEach(async function () {
       // Add records to the job table that should not be returned
-      await createJob('dummy').save(this.trx);
-      await createJob('dummy').save(this.trx);
+      await buildJob({ username: 'dummy' }).save(this.trx);
+      await buildJob({ username: 'dummy' }).save(this.trx);
     });
 
     describe('.forUser', function () {
       describe('when a user has jobs', function () {
         let jobs;
         beforeEach(async function () {
-          jobs = [createJob('jdoe'), createJob('jdoe')];
+          jobs = [buildJob({ username: 'jdoe' }), buildJob({ username: 'jdoe' })];
           await Promise.all([jobs[0].save(this.trx), jobs[1].save(this.trx)]);
         });
 
@@ -73,12 +66,7 @@ describe('Job', function () {
     describe('.byUsernameAndRequestId', function () {
       let job;
       beforeEach(async function () {
-        job = new Job({
-          username: 'jdoe',
-          requestId: uuid().toString(),
-          request: 'http://example.com/jdoe',
-          numInputGranules: 5,
-        });
+        job = buildJob({ username: 'jdoe' });
         await job.save(this.trx);
       });
 
@@ -114,7 +102,7 @@ describe('Job', function () {
     describe('.byRequestId', function () {
       let job;
       beforeEach(async function () {
-        job = createJob('jdoe');
+        job = buildJob({ username: 'jdoe' });
         await job.save(this.trx);
       });
 
@@ -133,28 +121,6 @@ describe('Job', function () {
       });
     });
 
-    describe('.byId', function () {
-      let job;
-      beforeEach(async function () {
-        job = createJob('jdoe');
-        await job.save(this.trx);
-      });
-
-      describe('when a job matches the id', function () {
-        it('returns the matching job', async function () {
-          const result = await Job.byId(this.trx, job.id);
-          expect(result.id).to.eql(job.id);
-        });
-      });
-
-      describe('when no job matches the id', function () {
-        it('returns null', async function () {
-          const result = await Job.byId(this.trx, 12345);
-          expect(result).to.eql(null);
-        });
-      });
-    });
-
     describe('.notUpdatedForMinutes', function () {
       let oldFinishedJob: Job;
       let oldRunningJob: Job;
@@ -163,14 +129,14 @@ describe('Job', function () {
 
       beforeEach(async function () {
         MockDate.set('1/30/2000');
-        oldFinishedJob = createJob('bob');
+        oldFinishedJob = buildJob({ username: 'bob' });
         oldFinishedJob.updateStatus(JobStatus.SUCCESSFUL);
         await oldFinishedJob.save(this.trx);
-        oldRunningJob = createJob('jdoe');
+        oldRunningJob = buildJob({ username: 'jdoe' });
         oldRunningJob.updateStatus(JobStatus.RUNNING);
         await oldRunningJob.save(this.trx);
         MockDate.reset();
-        newRunningJob = createJob('mary');
+        newRunningJob = buildJob({ username: 'mary' });
         newRunningJob.updateStatus(JobStatus.RUNNING);
         await newRunningJob.save(this.trx);
         result = await Job.notUpdatedForMinutes(this.trx, 60);
@@ -202,7 +168,7 @@ describe('Job', function () {
 
   describe('#constructor', function () {
     it('copies passed fields to the job object', function () {
-      const props = { id: 1234, ...exampleProps };
+      const props = { id: 1234, ...examplePropsWithIds };
       const job = new Job(props);
       for (const key of Object.keys(props)) {
         expect(job[key]).to.eql(props[key]);
@@ -229,28 +195,34 @@ describe('Job', function () {
     it('defaults links to an empty array', function () {
       expect(new Job({} as JobRecord).links).to.eql([]);
     });
-
-    it('parses _json_links into the .links property', function () {
-      expect(new Job({ _json_links: '[{"href":"https://example.com"}]' } as JobRecord).links)
-        .to.eql([{ href: 'https://example.com' }]);
-    });
   });
 
   describe('#save', function () {
     hookTransactionEach();
 
     it('inserts new records', async function () {
-      const job = new Job(exampleProps);
+      const job = buildJob(exampleProps);
       await job.save(this.trx);
       const result = await Job.byRequestId(this.trx, job.requestId);
       for (const key of Object.keys(exampleProps)) {
-        expect(job[key]).to.eql(exampleProps[key]);
+        if (key === 'links') {
+          expect(job[key].map((l) => l.serialize())).to.eql(job.links.map((l) => l.serialize()));
+          for (const link of job[key]) {
+            const keys = Object.keys(link);
+            expect(keys).to.include('id');
+            expect(keys).to.include('jobID');
+            expect(keys).to.include('createdAt');
+            expect(keys).to.include('updatedAt');
+          }
+        } else {
+          expect(job[key]).to.eql(exampleProps[key]);
+        }
       }
       expect(result.id).to.eql(job.id);
     });
 
     it('updates existing records', async function () {
-      const job = new Job(exampleProps);
+      const job = buildJob(exampleProps);
       await job.save(this.trx);
       job.username = 'notjdoe';
       await job.save(this.trx);
@@ -259,24 +231,24 @@ describe('Job', function () {
     });
 
     it('sets the id field of new records', async function () {
-      const job = new Job(exampleProps);
+      const job = buildJob(exampleProps);
       await job.save(this.trx);
       expect(job.id).to.be;
     });
 
     it('saves changes to the links array', async function () {
-      let job = new Job(exampleProps);
+      let job = buildJob(exampleProps);
       await job.save(this.trx);
       job = await Job.byRequestId(this.trx, job.requestId);
-      job.links.push({ href: 'http://example.com/2' } as JobLink);
+      job.links.push(new JobLink({ href: 'http://example.com/2', jobID: job.jobID }));
       await job.save(this.trx);
       const result = await Job.byRequestId(this.trx, job.requestId);
-      expect(result.links).to.eql(job.links);
+      expect(result.links.map((l) => l.serialize())).to.eql(job.links.map((l) => l.serialize()));
     });
 
     it('throws an error when progress is outside of the allowable range', async function () {
       const { trx } = this;
-      const job = new Job({ username: 'jdoe', requestId: uuid().toString(), progress: 101 } as JobRecord);
+      const job = buildJob({ username: 'jdoe', requestId: uuid().toString(), progress: 101 } as JobRecord);
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
 
@@ -294,7 +266,7 @@ describe('Job', function () {
 
     it('throws an error when the request field is not a URL', async function () {
       const { trx } = this;
-      const job = new Job({ requestId: uuid().toString(), username: 'jdoe', request: 'foo:not//a-url' } as JobRecord);
+      const job = buildJob({ requestId: uuid().toString(), username: 'jdoe', request: 'foo:not//a-url' } as JobRecord);
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
   });
