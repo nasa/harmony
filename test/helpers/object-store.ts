@@ -24,7 +24,7 @@ export function hookMockS3(_buckets?: string[]): void {
   let dir;
   let stub;
   before(function () {
-    dir = tmp.dirSync();
+    dir = tmp.dirSync({ unsafeCleanup: true });
     mockAws.config.basePath = dir.name;
     stub = sinon.stub(S3ObjectStore.prototype, '_getS3')
       .callsFake(() => new mockAws.S3());
