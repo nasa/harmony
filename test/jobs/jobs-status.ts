@@ -12,41 +12,10 @@ import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob, ar
 import StubService from '../helpers/stub-service';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
+import db from '../../app/util/db';
 import env from '../../app/util/env';
 
-const links = [
-  {
-    href: 'http://example.com/1',
-    title: 'Example 1',
-    type: 'text/plain',
-    rel: 'data',
-  },
-  {
-    href: 'http://example.com/2',
-    title: 'Example 2',
-    type: 'text/ornate',
-    rel: 'data',
-  },
-  {
-    href: 'http://example.com/3',
-    title: 'Example 3',
-    type: 'text/plain',
-    rel: 'data',
-  },
-  {
-    href: 'http://example.com/4',
-    title: 'Example 4',
-    type: 'text/ornate',
-    rel: 'data',
-  },
-  {
-    href: 'http://example.com/5',
-    title: 'Example 5',
-    type: 'text/plain',
-    rel: 'data',
-  },
-] as JobLink[];
-const aJob = buildJob({ username: 'joe', links });
+const aJob = buildJob({ username: 'joe' });
 
 describe('Individual job status route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -748,18 +717,61 @@ describe('Individual job status route', function () {
   });
 
   describe('pagination', function () {
+    let newJobId;
+    // Generate some links for the job
+    const links: JobLink[] = [] as JobLink[];
+    before(async function () {
+      const newJob = buildJob({ username: 'joe2', links });
+      const jTrx = await db.transaction();
+      newJob.save(jTrx);
+      jTrx.commit();
+      newJobId = newJob.requestId;
+      for (let i = 1; i < 21; i++) {
+        links.push(
+          {
+            href: `http://example.com/${i}`,
+            title: `Example ${i}`,
+            type: i % 2 === 0 ? 'text/plain' : 'text/ornate',
+            rel: 'data',
+          } as JobLink,
+        );
+      }
+      for (let i = 1; i < 21; i++) {
+        const trx = await db.transaction();
+        newJob.addLink(
+          links[i],
+        );
+        newJob.save(trx);
+        trx.commit();
+      }
+    });
     describe('when `page` parameter is set', function () {
       describe('and the page is a valid page', function () {
-        hookJobStatus({ jobID, username: 'joe', query: { page: 1 } });
+        hookJobStatus({ newJobId, username: 'joe2', query: { page: 1 } });
         it('shows the corresponding page of results', function () {
           const job = new Job(JSON.parse(this.res.text));
           const outputLinks = job.getRelatedLinks('data');
-          expect(areJobLinksEqual(links, outputLinks)).to.equal(true);
+          expect(areJobLinksEqual(links.slice(0, 10), outputLinks)).to.equal(true);
         });
       });
 
       describe('and the page is a not a valid page', function () {
-        hookJobStatus({ jobID, username: 'joe', query: { page: 0 } });
+        hookJobStatus({ newJobId, username: 'joe2', query: { page: 0 } });
+        it('returns a 400 HTTP Bad request response', function () {
+          expect(this.res.statusCode).to.equal(400);
+        });
+
+        it('returns a JSON error response', function () {
+          const response = JSON.parse(this.res.text);
+          expect(response).to.eql({
+            code: 'harmony.RequestValidationError',
+            description: 'Error: Parameter "page" is invalid. Must be an integer greater than or equal to 1.',
+          });
+        });
+      });
+
+      describe('and the page is not an integer', function () {
+        hookJobStatus({ newJobId, username: 'joe', query: { page: 0 } });
         it('returns a 400 HTTP Bad request response', function () {
           expect(this.res.statusCode).to.equal(400);
         });

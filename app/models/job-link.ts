@@ -179,6 +179,7 @@ export async function getLinksForJob(
 ): Promise<JobLink[]> {
   const links = await transaction('job_links').select()
     .where({ jobID })
+    .orderBy(['id'])
     .forUpdate()
     .paginate({ currentPage, perPage, isLengthAware: true });
   return links.data.map((j) => new JobLink(j));

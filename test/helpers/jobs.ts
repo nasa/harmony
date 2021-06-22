@@ -145,7 +145,7 @@ export function jobStatus(app: Express.Application, options): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminJobStatus(app: Express.Application, { jobID }: Job, query: object = {}): Test {
+export function adminJobStatus(app: Express.Application, options): Test {
   return request(app).get(`/admin/jobs/${jobID}`).query(query);
 }
 
