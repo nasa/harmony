@@ -166,8 +166,20 @@ export default class JobLink extends Record {
  * Returns the links for a given job
  * @param transaction - the transaction to use for querying
  * @param jobID - the UUID associated with the job
+ * @param currentPage - the index of the page to show
+ * @param perPage - the number of results per page
+ *
+ * @returns A promise that resolves to a an array of links
  */
-export async function getLinksForJob(transaction, jobID): Promise<JobLink[]> {
-  const links = await transaction('job_links').select().where({ jobID }).forUpdate();
-  return links.map((j) => new JobLink(j));
+export async function getLinksForJob(
+  transaction: Transaction,
+  jobID: string,
+  currentPage = 0,
+  perPage = 10,
+): Promise<JobLink[]> {
+  const links = await transaction('job_links').select()
+    .where({ jobID })
+    .forUpdate()
+    .paginate({ currentPage, perPage, isLengthAware: true });
+  return links.data.map((j) => new JobLink(j));
 }

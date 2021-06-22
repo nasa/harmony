@@ -148,12 +148,14 @@ function validateJobId(jobID: string): void {
 export async function getJobStatus(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
+  // console.log(req);
   const { jobID } = req.params;
   const keys = keysToLowerCase(req.query);
   const linkType = keys.linktype?.toLowerCase();
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   try {
     validateJobId(jobID);
+    const { page, limit } = getPagingParams(req);
 
     const query: JobQuery = { requestId: jobID };
     if (!req.context.isAdminAccess) {
@@ -161,8 +163,11 @@ export async function getJobStatus(
     }
     let job: Job;
     await db.transaction(async (tx) => {
-      const jobs = await Job.queryAll(tx, query);
-      job = jobs.data[0];
+      if (!req.context.isAdminAccess) {
+        job = await Job.byUsernameAndRequestId(tx, req.user, jobID, true, page, limit);
+      } else {
+        job = await Job.byRequestId(tx, jobID);
+      }
     });
     if (job) {
       const urlRoot = getRequestRoot(req);
