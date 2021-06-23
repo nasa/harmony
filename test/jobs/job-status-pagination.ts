@@ -186,7 +186,7 @@ describe('Individual job status route - pagination', function () {
       itIncludesPagingRelations(5, `jobs/${jobID}`, { first: 1, prev: 4, self: 5, next: null, last: null });
     });
 
-    describe('on the only page', function () {
+    describe('on a page that is both first and last (the only page)', function () {
       hookJobStatus({ jobID, username: 'joe', query: { limit: 100 } });
       it('includes only the relation to self, with no paging info', function () {
         const pageLinks = JSON.parse(this.res.text).links;

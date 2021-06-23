@@ -438,7 +438,7 @@ export class Job extends Record {
   /**
    * Serializes a Job to return from any of the jobs frontend endpoints
    * @param urlRoot - the root URL to be used when constructing links
-   * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3)
+   * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3 | none)
    * @returns an object with the serialized job fields.
    */
   serialize(urlRoot?: string, linkType?: string): Job {
@@ -446,16 +446,18 @@ export class Job extends Record {
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     if (urlRoot) {
-      serializedJob.links = serializedJob.links.map((link) => {
-        const serializedLink = link.serialize();
-        let { href } = serializedLink;
-        const { title, type, rel, bbox, temporal } = serializedLink;
-        // Leave the S3 output staging location as an S3 link
-        if (rel !== 's3-access') {
-          href = createPublicPermalink(href, urlRoot, type, linkType);
-        }
-        return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
-      }) as unknown as JobLink[];
+      if (linkType !== 'none') {
+        serializedJob.links = serializedJob.links.map((link) => {
+          const serializedLink = link.serialize();
+          let { href } = serializedLink;
+          const { title, type, rel, bbox, temporal } = serializedLink;
+          // Leave the S3 output staging location as an S3 link
+          if (rel !== 's3-access') {
+            href = createPublicPermalink(href, urlRoot, type, linkType);
+          }
+          return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
+        }) as unknown as JobLink[];
+      }
     }
     const job = new Job(serializedJob as JobRecord); // We need to clean this up
     delete job.originalStatus;

@@ -31,10 +31,10 @@ function containsS3DirectAccessLink(job: Job): boolean {
  *
  * @param job - the serialized job
  * @param urlRoot - the root URL to be used when constructing links
- * @param linkType - the type of data link to use (http|https|s3)
+ * @param statusLinkRel - the type of relation (self|item) for the status link
  * @returns a list of job links
  */
-function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
+function getLinksForDisplay(job: Job, urlRoot: string, statusLinkRel: string): JobLink[] {
   let { links } = job;
   const dataLinks = job.getRelatedLinks('data');
   if (containsS3DirectAccessLink(job)) {
@@ -47,9 +47,10 @@ function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
   if (job.status === JobStatus.SUCCESSFUL && needsStacLink(dataLinks)) {
     links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
   }
-  // add a 'self' link if it does not already exist
+  // add a 'self' or 'item' link if it does not already exist
+  // 'item' is for use in jobs listings, 'self' for job status
   if (links.filter((link) => link.rel === 'self').length === 0) {
-    links.unshift(new JobLink(getStatusLink(urlRoot, job.jobID)));
+    links.unshift(new JobLink(getStatusLink(urlRoot, job.jobID, statusLinkRel)));
   }
 
   return links;
@@ -78,11 +79,13 @@ function getMessageForDisplay(job: Job, urlRoot: string): string {
  *
  * @param job - the serialized job
  * @param urlRoot - the root URL to be used when constructing links
+ * @param linkType - the type to use for data links (http|https|s3|none)
  * @returns the job for display
  */
 function getJobForDisplay(job: Job, urlRoot: string, linkType?: string): Job {
   const serializedJob = job.serialize(urlRoot, linkType);
-  serializedJob.links = getLinksForDisplay(serializedJob, urlRoot);
+  const statusLinkRel = linkType === 'none' ? 'item' : 'self';
+  serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel);
   serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
   delete serializedJob.isAsync;
   delete serializedJob.batchesCompleted;
@@ -117,7 +120,7 @@ export async function getJobsListing(
     await db.transaction(async (tx) => {
       listing = await Job.queryAll(tx, query, page, limit);
     });
-    const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root));
+    const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root, 'none'));
     const response: JobListing = {
       count: listing.pagination.total,
       jobs: serializedJobs,

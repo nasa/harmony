@@ -116,9 +116,16 @@ describe('Jobs listing route', function () {
 
       it("includes a link to the job's status in each job's list of links", function () {
         const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
-        const selfLinks = jobs.map((j) => j.getRelatedLinks('self')[0] || null);
-        expect(selfLinks).to.not.include(null);
-        expect(selfLinks[0].href).to.match(new RegExp(`/jobs/${jobs[0].jobID}$`));
+        const itemLinks = jobs.map((j) => j.getRelatedLinks('item')[0] || null);
+        expect(itemLinks).to.not.include(null);
+        expect(itemLinks[0].href).to.match(new RegExp(`/jobs/${jobs[0].jobID}$`));
+      });
+
+      it("does not include data links any job's list of links", function () {
+        const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
+        for (const job of jobs) {
+          expect(job.getRelatedLinks('data').length).to.equal(0);
+        }
       });
     });
   });

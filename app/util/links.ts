@@ -60,13 +60,14 @@ export function getStacCatalogLink(urlRoot: string, jobID: string): Link {
  *
  * @param urlRoot - The harmony root URL
  * @param jobID - The UUID of the job
+ * @param rel - The type of relation (self|item)
  * @returns the link to the STAC catalog
  */
-export function getStatusLink(urlRoot: string, jobID: string): Link {
+export function getStatusLink(urlRoot: string, jobID: string, rel: string): Link {
   return {
     title: 'Job Status',
     href: `${urlRoot}/jobs/${jobID}`,
-    rel: 'self',
+    rel,
     type: 'application/json',
   };
 }
