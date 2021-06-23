@@ -146,7 +146,9 @@ export function jobStatus(app: Express.Application, options): Test {
  * @param job - The job
  */
 export function adminJobStatus(app: Express.Application, options): Test {
-  return request(app).get(`/admin/jobs/${jobID}`).query(query);
+  const { jobID, query } = options;
+  const actualQuery = query || {};
+  return request(app).get(`/admin/jobs/${jobID}`).query(actualQuery);
 }
 
 /**

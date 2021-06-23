@@ -717,37 +717,37 @@ describe('Individual job status route', function () {
   });
 
   describe('pagination', function () {
-    let newJobId;
     // Generate some links for the job
     const links: JobLink[] = [] as JobLink[];
+    const newJob = buildJob({ username: 'joe2', links });
     before(async function () {
-      const newJob = buildJob({ username: 'joe2', links });
       const jTrx = await db.transaction();
-      newJob.save(jTrx);
+      await newJob.save(jTrx);
       jTrx.commit();
-      newJobId = newJob.requestId;
       for (let i = 1; i < 21; i++) {
         links.push(
-          {
+          new JobLink({
             href: `http://example.com/${i}`,
             title: `Example ${i}`,
             type: i % 2 === 0 ? 'text/plain' : 'text/ornate',
             rel: 'data',
-          } as JobLink,
+          }),
         );
       }
-      for (let i = 1; i < 21; i++) {
+
+      for (const link of links) {
         const trx = await db.transaction();
         newJob.addLink(
-          links[i],
+          link,
         );
-        newJob.save(trx);
+        await newJob.save(trx);
         trx.commit();
       }
     });
+    const newJobId = newJob.requestId;
     describe('when `page` parameter is set', function () {
       describe('and the page is a valid page', function () {
-        hookJobStatus({ newJobId, username: 'joe2', query: { page: 1 } });
+        hookJobStatus({ jobID: newJobId, username: 'joe2', query: { page: 1 } });
         it('shows the corresponding page of results', function () {
           const job = new Job(JSON.parse(this.res.text));
           const outputLinks = job.getRelatedLinks('data');
@@ -756,7 +756,7 @@ describe('Individual job status route', function () {
       });
 
       describe('and the page is a not a valid page', function () {
-        hookJobStatus({ newJobId, username: 'joe2', query: { page: 0 } });
+        hookJobStatus({ jobID: newJobId, username: 'joe2', query: { page: 0 } });
         it('returns a 400 HTTP Bad request response', function () {
           expect(this.res.statusCode).to.equal(400);
         });
@@ -771,7 +771,7 @@ describe('Individual job status route', function () {
       });
 
       describe('and the page is not an integer', function () {
-        hookJobStatus({ newJobId, username: 'joe', query: { page: 0 } });
+        hookJobStatus({ jobID: newJobId, username: 'joe2', query: { page: 1.5 } });
         it('returns a 400 HTTP Bad request response', function () {
           expect(this.res.statusCode).to.equal(400);
         });
