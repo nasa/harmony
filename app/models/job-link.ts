@@ -1,3 +1,4 @@
+import { IWithPagination } from 'knex-paginate'; // For types only
 import _ from 'lodash';
 import { Transaction } from 'util/db';
 import { removeEmptyProperties } from 'util/object';
@@ -169,18 +170,20 @@ export default class JobLink extends Record {
  * @param currentPage - the index of the page to show
  * @param perPage - the number of results per page
  *
- * @returns A promise that resolves to a an array of links
+ * @returns A promise that resolves to a map containing
+ * pagination information and an array of links
  */
 export async function getLinksForJob(
   transaction: Transaction,
   jobID: string,
   currentPage = 0,
   perPage = 10,
-): Promise<JobLink[]> {
-  const links = await transaction('job_links').select()
+): Promise<IWithPagination<JobLink[]>> {
+  const result = await transaction('job_links').select()
     .where({ jobID })
     .orderBy(['id'])
     .forUpdate()
     .paginate({ currentPage, perPage, isLengthAware: true });
-  return links.data.map((j) => new JobLink(j));
+  const links = result.data.map((j) => new JobLink(j));
+  return { data: links, pagination: result.pagination };
 }

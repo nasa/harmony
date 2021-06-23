@@ -5,14 +5,12 @@ import { v4 as uuid } from 'uuid';
 import request from 'supertest';
 import { Job } from 'models/job';
 import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from 'test/helpers/job-status';
-import JobLink from 'models/job-link';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
-import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob, areJobLinksEqual } from '../helpers/jobs';
+import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob } from '../helpers/jobs';
 import StubService from '../helpers/stub-service';
 import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
-import db from '../../app/util/db';
 import env from '../../app/util/env';
 
 const aJob = buildJob({ username: 'joe' });
@@ -54,7 +52,7 @@ describe('Individual job status route', function () {
       const job = new Job(JSON.parse(this.res.text));
       const selves = job.getRelatedLinks('self');
       expect(selves.length).to.equal(1);
-      expect(selves[0].href).to.match(new RegExp(`${this.res.req.path}$`));
+      expect(selves[0].href).to.match(new RegExp(`.*?${this.res.req.path}\\?page=1&limit=2000$`));
     });
   });
 
@@ -711,77 +709,6 @@ describe('Individual job status route', function () {
         it('limits the input granules to the system limit', function () {
           const job = JSON.parse(this.res.text);
           expect(job.numInputGranules).to.equal(2);
-        });
-      });
-    });
-  });
-
-  describe('pagination', function () {
-    // Generate some links for the job
-    const links: JobLink[] = [] as JobLink[];
-    const newJob = buildJob({ username: 'joe2', links });
-    before(async function () {
-      const jTrx = await db.transaction();
-      await newJob.save(jTrx);
-      jTrx.commit();
-      for (let i = 1; i < 21; i++) {
-        links.push(
-          new JobLink({
-            href: `http://example.com/${i}`,
-            title: `Example ${i}`,
-            type: i % 2 === 0 ? 'text/plain' : 'text/ornate',
-            rel: 'data',
-          }),
-        );
-      }
-
-      for (const link of links) {
-        const trx = await db.transaction();
-        newJob.addLink(
-          link,
-        );
-        await newJob.save(trx);
-        trx.commit();
-      }
-    });
-    const newJobId = newJob.requestId;
-    describe('when `page` parameter is set', function () {
-      describe('and the page is a valid page', function () {
-        hookJobStatus({ jobID: newJobId, username: 'joe2', query: { page: 1 } });
-        it('shows the corresponding page of results', function () {
-          const job = new Job(JSON.parse(this.res.text));
-          const outputLinks = job.getRelatedLinks('data');
-          expect(areJobLinksEqual(links.slice(0, 10), outputLinks)).to.equal(true);
-        });
-      });
-
-      describe('and the page is a not a valid page', function () {
-        hookJobStatus({ jobID: newJobId, username: 'joe2', query: { page: 0 } });
-        it('returns a 400 HTTP Bad request response', function () {
-          expect(this.res.statusCode).to.equal(400);
-        });
-
-        it('returns a JSON error response', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.RequestValidationError',
-            description: 'Error: Parameter "page" is invalid. Must be an integer greater than or equal to 1.',
-          });
-        });
-      });
-
-      describe('and the page is not an integer', function () {
-        hookJobStatus({ jobID: newJobId, username: 'joe2', query: { page: 1.5 } });
-        it('returns a 400 HTTP Bad request response', function () {
-          expect(this.res.statusCode).to.equal(400);
-        });
-
-        it('returns a JSON error response', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.RequestValidationError',
-            description: 'Error: Parameter "page" is invalid. Must be an integer greater than or equal to 1.',
-          });
         });
       });
     });

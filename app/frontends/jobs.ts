@@ -47,7 +47,11 @@ function getLinksForDisplay(job: Job, urlRoot: string): JobLink[] {
   if (job.status === JobStatus.SUCCESSFUL && needsStacLink(dataLinks)) {
     links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
   }
-  links.unshift(new JobLink(getStatusLink(urlRoot, job.jobID)));
+  // add a 'self' link if it does not already exist
+  if (links.filter((link) => link.rel === 'self').length === 0) {
+    links.unshift(new JobLink(getStatusLink(urlRoot, job.jobID)));
+  }
+
   return links;
 }
 
@@ -162,15 +166,23 @@ export async function getJobStatus(
       query.username = req.user;
     }
     let job: Job;
+    let pagination;
     await db.transaction(async (tx) => {
       if (!req.context.isAdminAccess) {
-        job = await Job.byUsernameAndRequestId(tx, req.user, jobID, true, page, limit);
+        ({
+          job,
+          pagination,
+        } = await Job.byUsernameAndRequestId(tx, req.user, jobID, true, page, limit));
       } else {
-        job = await Job.byRequestId(tx, jobID);
+        ({ job, pagination } = await Job.byRequestId(tx, jobID, page, limit));
       }
     });
     if (job) {
+      // remove the existing `self` link
+
       const urlRoot = getRequestRoot(req);
+      const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
+      job.links = job.links.concat(pagingLinks);
       res.send(getJobForDisplay(job, urlRoot, linkType));
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);

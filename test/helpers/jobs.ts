@@ -274,6 +274,7 @@ export interface PagingRelationInfo {
  */
 export function itIncludesPagingRelations(
   pageCount: number,
+  path: string,
   relations: PagingRelationInfo,
   limit = 10,
 ): void {
@@ -290,7 +291,7 @@ export function itIncludesPagingRelations(
         const listing = JSON.parse(this.res.text);
         const actual = listing.links.find((link) => link.rel === rel);
         expect(actual).to.exist;
-        expect(actual.href).to.include(`/jobs?page=${expectedPage}&limit=${limit}`);
+        expect(actual.href).to.include(`${path}?page=${expectedPage}&limit=${limit}`);
         expect(actual.title).to.include(`(${expectedPage} of ${pageCount})`);
       });
     }

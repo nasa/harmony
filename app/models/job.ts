@@ -141,7 +141,7 @@ export class Job extends Record {
 
     const jobs = items.data.map((j) => new Job(j));
     for (const job of jobs) {
-      job.links = await getLinksForJob(transaction, job.jobID);
+      job.links = (await getLinksForJob(transaction, job.jobID)).data;
     }
 
     return {
@@ -179,7 +179,7 @@ export class Job extends Record {
 
     const jobs = items.data.map((j) => new Job(j));
     for (const job of jobs) {
-      job.links = await getLinksForJob(transaction, job.jobID);
+      job.links = (await getLinksForJob(transaction, job.jobID)).data;
     }
     return {
       data: jobs,
@@ -210,7 +210,8 @@ export class Job extends Record {
    * @param requestId - the UUID of the request associated with the job
    * @param currentPage - the index of the page of links to show
    * @param perPage - the number of link results per page
-   * @returns the matching job, or null if none exists
+   * @returns the matching job, or null if none exists, along with pagination information
+   * for the job links
    */
   static async byUsernameAndRequestId(
     transaction,
@@ -218,14 +219,17 @@ export class Job extends Record {
     requestId,
     includeLinks = true,
     currentPage = 0,
-    perPage = 10,
-  ): Promise<Job> {
+    perPage = env.defaultPageSize,
+  ): Promise<{ job: Job; pagination: IWithPagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
+    let paginationInfo;
     if (job && includeLinks) {
-      job.links = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      job.links = linkData.data;
+      paginationInfo = linkData.pagination;
     }
-    return job;
+    return { job, pagination: paginationInfo };
   }
 
   /**
@@ -241,14 +245,17 @@ export class Job extends Record {
     transaction,
     requestId,
     currentPage = 0,
-    perPage = 10,
-  ): Promise<Job> {
+    perPage = env.defaultPageSize,
+  ): Promise<{ job: Job; pagination: IWithPagination }> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
+    let paginationInfo;
     if (job) {
-      job.links = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      job.links = linkData.data;
+      paginationInfo = linkData.pagination;
     }
-    return job;
+    return { job, pagination: paginationInfo };
   }
 
   /**

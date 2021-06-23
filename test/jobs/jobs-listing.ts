@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { Job, JobStatus } from 'models/job';
+import env from 'util/env';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure, truncateAll } from '../helpers/db';
 import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations, hookAdminJobListing, buildJob } from '../helpers/jobs';
@@ -49,6 +50,8 @@ const buzzJob1 = buildJob({
   isAsync: true,
   numInputGranules: 10,
 });
+
+let defaultPageSize;
 
 describe('Jobs listing route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -141,8 +144,14 @@ describe('Jobs listing route', function () {
   describe('pagination', function () {
     hookTransaction();
     before(async function () {
+      ({ defaultPageSize } = env);
+      env.defaultPageSize = 10;
       this.jobs = await createIndexedJobs(this.trx, 'paige', 51);
       this.trx.commit();
+    });
+
+    after(function () {
+      env.defaultPageSize = defaultPageSize;
     });
 
     describe('paging headers', function () {
@@ -163,7 +172,7 @@ describe('Jobs listing route', function () {
     describe('`limit` parameter', function () {
       describe('when `limit` is not set', function () {
         hookJobListing({ username: 'paige' });
-        it('returns the default number of jobs (10)', function () {
+        it('returns the default number of jobs', function () {
           const { jobs } = JSON.parse(this.res.text);
           expect(jobs.length).to.equal(10);
         });
@@ -192,19 +201,19 @@ describe('Jobs listing route', function () {
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
             code: 'harmony.RequestValidationError',
-            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
+            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 10000.',
           });
         });
       });
 
       describe('when `limit` is set to a value greater than the maximum allowable', function () {
-        hookJobListing({ username: 'paige', limit: 2001 });
+        hookJobListing({ username: 'paige', limit: 10001 });
         it('returns a validation error explaining limit parameter constraints', function () {
           const error = JSON.parse(this.res.text);
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
             code: 'harmony.RequestValidationError',
-            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
+            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 10000.',
           });
         });
       });
@@ -216,7 +225,7 @@ describe('Jobs listing route', function () {
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
             code: 'harmony.RequestValidationError',
-            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
+            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 10000.',
           });
         });
       });
@@ -288,27 +297,27 @@ describe('Jobs listing route', function () {
     describe('link relations', function () {
       describe('on the first page', function () {
         hookJobListing({ username: 'paige', page: 1 });
-        itIncludesPagingRelations(6, { first: null, prev: null, self: 1, next: 2, last: 6 });
+        itIncludesPagingRelations(6, 'jobs', { first: null, prev: null, self: 1, next: 2, last: 6 });
       });
 
       describe('on the second page', function () {
         hookJobListing({ username: 'paige', page: 2 });
-        itIncludesPagingRelations(6, { first: null, prev: 1, self: 2, next: 3, last: 6 });
+        itIncludesPagingRelations(6, 'jobs', { first: null, prev: 1, self: 2, next: 3, last: 6 });
       });
 
       describe('on a middle page', function () {
         hookJobListing({ username: 'paige', page: 3 });
-        itIncludesPagingRelations(6, { first: 1, prev: 2, self: 3, next: 4, last: 6 });
+        itIncludesPagingRelations(6, 'jobs', { first: 1, prev: 2, self: 3, next: 4, last: 6 });
       });
 
       describe('on the penultimate page', function () {
         hookJobListing({ username: 'paige', page: 5 });
-        itIncludesPagingRelations(6, { first: 1, prev: 4, self: 5, next: 6, last: null });
+        itIncludesPagingRelations(6, 'jobs', { first: 1, prev: 4, self: 5, next: 6, last: null });
       });
 
       describe('on the last page', function () {
         hookJobListing({ username: 'paige', page: 6 });
-        itIncludesPagingRelations(6, { first: 1, prev: 5, self: 6, next: null, last: null });
+        itIncludesPagingRelations(6, 'jobs', { first: 1, prev: 5, self: 6, next: null, last: null });
       });
 
       describe('on the only page', function () {

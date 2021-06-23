@@ -25,9 +25,9 @@ export default async function cancelAndSaveJob(
   await db.transaction(async (tx) => {
     let job;
     if (username) {
-      job = await Job.byUsernameAndRequestId(tx, username, jobID);
+      ({ job } = await Job.byUsernameAndRequestId(tx, username, jobID));
     } else {
-      job = await Job.byRequestId(tx, jobID);
+      ({ job } = await Job.byRequestId(tx, jobID));
     }
     if (job) {
       if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {

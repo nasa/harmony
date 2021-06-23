@@ -26,7 +26,7 @@ async function handleStacRequest(req, res, callback: Function, linkType?: string
       description: `Error: jobId ${jobId} is in invalid format.` });
   } else {
     await db.transaction(async (tx) => {
-      const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
+      const { job } = await Job.byUsernameAndRequestId(tx, req.user, jobId);
       if (!job) {
         res.status(404);
         res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });

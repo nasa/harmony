@@ -82,6 +82,12 @@ DEBUG_KNEX=false
 # Log level (error, warn, info, debug)
 LOG_LEVEL=debug
 
+# Default number of results in a page
+DEFAULT_PAGE_SIZE=2000
+
+# Maximum number of results in a page
+MAX_PAGE_SIZE=10000
+
 # Number of granules allowed for a synchronous request. When the request exceeds
 # this number it will be processed asynchronously. If a service provides a
 # value in services.yml for maximum_sync_granules it will override this value.
