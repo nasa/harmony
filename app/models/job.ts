@@ -466,4 +466,23 @@ export class Job extends Record {
     const links = this.links.filter((link) => link.rel === rel);
     return links.map(removeEmptyProperties) as JobLink[];
   }
+
+  // change to count
+  async hasStacLinks(
+    transaction,
+    jobID
+  ): Promise<boolean> {
+    const links = await transaction('job_links').select()
+      .where({ jobID, 'rel': 'data' })
+      .whereNotNull("bbox")
+      .whereNotNull("temporalStart")
+      .whereNotNull("temporalEnd")
+      .limit(1);
+    return links.length !== 0;
+  }
+
+  // getStacLinks (paginated)
+
+  // getStacLinkByIndex
+  // should use pagination too
 }

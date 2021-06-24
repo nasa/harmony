@@ -98,7 +98,7 @@ class HarmonyCatalog implements SerializableCatalog {
  * let jsonObj = catalog.create(job);
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
-export default function create(job: Job, linkType?: string): SerializableCatalog {
+export default function create(job: Job, linkType?: string, page: number, pageSize: number): SerializableCatalog {
   const title = `Harmony output for ${job.jobID}`;
   const description = `Harmony output for ${job.request}`;
   const catalog = new HarmonyCatalog(job.jobID, title, description);

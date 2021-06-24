@@ -1,12 +1,11 @@
 import { Job } from 'models/job';
 import { keysToLowerCase } from 'util/object';
-import { needsStacLink } from 'util/stac';
 import isUUID from 'util/uuid';
 import { getRequestRoot } from 'util/url';
 import { RequestValidationError } from 'util/errors';
 import stacItemCreate from './stac-item';
 import stacCatalogCreate from './stac-catalog';
-
+import envVars from 'util/env';
 import db from '../util/db';
 
 /**
@@ -23,7 +22,7 @@ async function handleStacRequest(req, res, callback: Function, linkType?: string
     res.status(400);
     res.json({
       code: 'harmony:BadRequestError',
-      description: `Error: jobId ${jobId} is in invalid format.` });
+      description: `Error: jobId ${jobId} is in invalid format. It should be a UUID.`});
   } else {
     await db.transaction(async (tx) => {
       const job = await Job.byUsernameAndRequestId(tx, req.user, jobId);
@@ -31,11 +30,13 @@ async function handleStacRequest(req, res, callback: Function, linkType?: string
         res.status(404);
         res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
       } else if (job.status === 'successful') {
-        if (needsStacLink(job.getRelatedLinks('data'))) {
+        const hasStacDataLinks = await job.hasStacLinks(tx, jobId);
+        if (hasStacDataLinks) {
           const urlRoot = getRequestRoot(req);
           // default to s3 links
           const lType = linkType || 's3';
-          res.json(callback(job.serialize(urlRoot, lType)));
+          const serializedJob = job.serialize(urlRoot, lType);
+          res.json(callback(serializedJob));
         } else {
           res.status(501);
           res.json({ code: 'harmony:ServiceError', description: `Error: Service did not provide STAC items for job ${jobId}` });
