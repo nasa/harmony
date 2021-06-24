@@ -155,7 +155,6 @@ function validateJobId(jobID: string): void {
 export async function getJobStatus(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  // console.log(req);
   const { jobID } = req.params;
   const keys = keysToLowerCase(req.query);
   const linkType = keys.linktype?.toLowerCase();
@@ -181,8 +180,6 @@ export async function getJobStatus(
       }
     });
     if (job) {
-      // remove the existing `self` link
-
       const urlRoot = getRequestRoot(req);
       const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
       job.links = job.links.concat(pagingLinks);

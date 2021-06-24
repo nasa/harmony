@@ -6,7 +6,6 @@ import { Transaction } from 'knex';
 import { Application } from 'express';
 import JobLink from 'models/job-link';
 import _ from 'lodash';
-import { jobReaperPeriodSec } from 'util/env';
 import { Job, JobStatus, JobRecord } from '../../app/models/job';
 import { JobListing } from '../../app/frontends/jobs';
 import db from '../../app/util/db';
