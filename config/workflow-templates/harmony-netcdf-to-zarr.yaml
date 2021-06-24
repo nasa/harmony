@@ -81,6 +81,13 @@ spec:
             "--harmony-metadata-dir",
             "{{outputs.artifacts.metadata.path}}"
           ]
+        resources:
+          limits:
+            memory: 2048Mi
+            cpu: 1000m
+          requests:
+            cpu: 100m
+            memory: 1024Mi
         envFrom:
           - configMapRef:
               name: harmony-env
