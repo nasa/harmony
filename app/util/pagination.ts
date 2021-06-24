@@ -3,6 +3,7 @@ import { IPagination as Pagination } from 'knex-paginate';
 import { Link } from './links';
 import { RequestValidationError } from './errors';
 import { getRequestUrl } from './url';
+import env from './env';
 
 export { Pagination };
 
@@ -55,7 +56,7 @@ function parseIntegerParam(
 export function getPagingParams(req: Request): PagingParams {
   return {
     page: parseIntegerParam(req, 'page', 1, 1),
-    limit: parseIntegerParam(req, 'limit', 10, 0, 2000),
+    limit: parseIntegerParam(req, 'limit', env.defaultPageSize, 0, env.maxPageSize),
   };
 }
 

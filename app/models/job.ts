@@ -141,7 +141,7 @@ export class Job extends Record {
 
     const jobs = items.data.map((j) => new Job(j));
     for (const job of jobs) {
-      job.links = await getLinksForJob(transaction, job.jobID);
+      job.links = (await getLinksForJob(transaction, job.jobID)).data;
     }
 
     return {
@@ -179,7 +179,7 @@ export class Job extends Record {
 
     const jobs = items.data.map((j) => new Job(j));
     for (const job of jobs) {
-      job.links = await getLinksForJob(transaction, job.jobID);
+      job.links = (await getLinksForJob(transaction, job.jobID)).data;
     }
     return {
       data: jobs,
@@ -210,7 +210,8 @@ export class Job extends Record {
    * @param requestId - the UUID of the request associated with the job
    * @param currentPage - the index of the page of links to show
    * @param perPage - the number of link results per page
-   * @returns the matching job, or null if none exists
+   * @returns the matching job, or null if none exists, along with pagination information
+   * for the job links
    */
   static async byUsernameAndRequestId(
     transaction,
@@ -218,14 +219,17 @@ export class Job extends Record {
     requestId,
     includeLinks = true,
     currentPage = 0,
-    perPage = 10,
-  ): Promise<Job> {
+    perPage = env.defaultPageSize,
+  ): Promise<{ job: Job; pagination: IWithPagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
+    let paginationInfo;
     if (job && includeLinks) {
-      job.links = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      job.links = linkData.data;
+      paginationInfo = linkData.pagination;
     }
-    return job;
+    return { job, pagination: paginationInfo };
   }
 
   /**
@@ -241,14 +245,17 @@ export class Job extends Record {
     transaction,
     requestId,
     currentPage = 0,
-    perPage = 10,
-  ): Promise<Job> {
+    perPage = env.defaultPageSize,
+  ): Promise<{ job: Job; pagination: IWithPagination }> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
+    let paginationInfo;
     if (job) {
-      job.links = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      job.links = linkData.data;
+      paginationInfo = linkData.pagination;
     }
-    return job;
+    return { job, pagination: paginationInfo };
   }
 
   /**
@@ -431,7 +438,7 @@ export class Job extends Record {
   /**
    * Serializes a Job to return from any of the jobs frontend endpoints
    * @param urlRoot - the root URL to be used when constructing links
-   * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3)
+   * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3 | none)
    * @returns an object with the serialized job fields.
    */
   serialize(urlRoot?: string, linkType?: string): Job {
@@ -439,16 +446,18 @@ export class Job extends Record {
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
     if (urlRoot) {
-      serializedJob.links = serializedJob.links.map((link) => {
-        const serializedLink = link.serialize();
-        let { href } = serializedLink;
-        const { title, type, rel, bbox, temporal } = serializedLink;
-        // Leave the S3 output staging location as an S3 link
-        if (rel !== 's3-access') {
-          href = createPublicPermalink(href, urlRoot, type, linkType);
-        }
-        return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
-      }) as unknown as JobLink[];
+      if (linkType !== 'none') {
+        serializedJob.links = serializedJob.links.map((link) => {
+          const serializedLink = link.serialize();
+          let { href } = serializedLink;
+          const { title, type, rel, bbox, temporal } = serializedLink;
+          // Leave the S3 output staging location as an S3 link
+          if (rel !== 's3-access') {
+            href = createPublicPermalink(href, urlRoot, type, linkType);
+          }
+          return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
+        }) as unknown as JobLink[];
+      }
     }
     const job = new Job(serializedJob as JobRecord); // We need to clean this up
     delete job.originalStatus;

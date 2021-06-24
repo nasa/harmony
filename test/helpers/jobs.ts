@@ -6,7 +6,6 @@ import { Transaction } from 'knex';
 import { Application } from 'express';
 import JobLink from 'models/job-link';
 import _ from 'lodash';
-import { jobReaperPeriodSec } from 'util/env';
 import { Job, JobStatus, JobRecord } from '../../app/models/job';
 import { JobListing } from '../../app/frontends/jobs';
 import db from '../../app/util/db';
@@ -145,8 +144,10 @@ export function jobStatus(app: Express.Application, options): Test {
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminJobStatus(app: Express.Application, { jobID }: Job, query: object = {}): Test {
-  return request(app).get(`/admin/jobs/${jobID}`).query(query);
+export function adminJobStatus(app: Express.Application, options): Test {
+  const { jobID, query } = options;
+  const actualQuery = query || {};
+  return request(app).get(`/admin/jobs/${jobID}`).query(actualQuery);
 }
 
 /**
@@ -272,6 +273,7 @@ export interface PagingRelationInfo {
  */
 export function itIncludesPagingRelations(
   pageCount: number,
+  path: string,
   relations: PagingRelationInfo,
   limit = 10,
 ): void {
@@ -288,7 +290,7 @@ export function itIncludesPagingRelations(
         const listing = JSON.parse(this.res.text);
         const actual = listing.links.find((link) => link.rel === rel);
         expect(actual).to.exist;
-        expect(actual.href).to.include(`/jobs?page=${expectedPage}&limit=${limit}`);
+        expect(actual.href).to.include(`${path}?page=${expectedPage}&limit=${limit}`);
         expect(actual.title).to.include(`(${expectedPage} of ${pageCount})`);
       });
     }

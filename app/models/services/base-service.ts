@@ -160,7 +160,7 @@ export default abstract class BaseService<ServiceParamType> {
       do {
         // Sleep and poll for completion.  We could also use SNS or similar for a faster response
         await new Promise((resolve) => setTimeout(resolve, env.syncRequestPollIntervalMs));
-        job = await Job.byRequestId(db, requestId);
+        ({ job } = await Job.byRequestId(db, requestId));
       } while (!job.isComplete());
 
       if (job.status === JobStatus.FAILED) {
@@ -189,7 +189,7 @@ export default abstract class BaseService<ServiceParamType> {
    * received.
    * @param _logger - the logger associated with the request
    */
-  protected abstract async _run(_logger: Logger): Promise<InvocationResult>;
+  protected abstract _run(_logger: Logger): Promise<InvocationResult>;
 
   /**
    * Creates a new job for this service's operation, with appropriate logging, errors,

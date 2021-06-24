@@ -78,12 +78,14 @@ interface HarmonyEnv {
   defaultArgoPodTimeoutSecs: number;
   defaultBatchSize: number;
   defaultImagePullPolicy: string;
+  defaultPageSize: number;
   defaultParallelism: number;
   harmonyClientId: string;
   jobReaperPeriodSec: number;
   localstackHost: string;
   logLevel: string;
   maxGranuleLimit: number;
+  maxPageSize: number;
   maxPostFields: number;
   maxPostFileParts: number;
   maxPostFileSize: number;
