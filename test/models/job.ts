@@ -243,7 +243,8 @@ describe('Job', function () {
       job.links.push(new JobLink({ href: 'http://example.com/2', jobID: job.jobID }));
       await job.save(this.trx);
       const result = await Job.byRequestId(this.trx, job.requestId);
-      expect(result.job.links.map((l) => l.serialize())).to.eql(job.links.map((l) => l.serialize()));
+      expect(result.job.links.map((l) => l.serialize()))
+        .to.eql(job.links.map((l) => l.serialize()));
     });
 
     it('throws an error when progress is outside of the allowable range', async function () {
