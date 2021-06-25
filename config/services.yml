@@ -229,6 +229,7 @@ https://cmr.earthdata.nasa.gov:
       - C1968979597-POCLOUD
       - C1968979561-POCLOUD
       - C1968980609-POCLOUD
+      - C1996881752-POCLOUD
     capabilities:
       subsetting:
         bbox: true
@@ -386,6 +387,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1232995291-GES_DISC
       - C1232998567-GES_DISC
       - C1238658049-POCLOUD
+      - C1238570311-POCLOUD
     capabilities:
       subsetting:
         bbox: true
