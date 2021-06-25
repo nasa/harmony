@@ -109,7 +109,7 @@ export default async function responseHandler(req: Request, res: Response): Prom
 
   const trx = await db.transaction();
 
-  const job = await Job.byRequestId(trx, requestId);
+  const { job } = await Job.byRequestId(trx, requestId);
   if (!job) {
     trx.rollback();
     res.status(404);

@@ -3,6 +3,7 @@ import { IPagination as Pagination } from 'knex-paginate';
 import { Link } from './links';
 import { RequestValidationError } from './errors';
 import { getRequestUrl } from './url';
+import env from './env';
 
 export { Pagination };
 
@@ -49,13 +50,14 @@ function parseIntegerParam(
 /**
  * Gets the paging parameters from the given request
  * @param req - The Express request possibly containing paging params
+ * @param defaultPageSize - The page size to use if no `limit` parameter is in the query
  * @returns The paging parameters
  * @throws {@link RequestValidationError} If invalid paging parameters are provided
  */
-export function getPagingParams(req: Request): PagingParams {
+export function getPagingParams(req: Request, defaultPageSize: number): PagingParams {
   return {
     page: parseIntegerParam(req, 'page', 1, 1),
-    limit: parseIntegerParam(req, 'limit', 10, 0, 2000),
+    limit: parseIntegerParam(req, 'limit', defaultPageSize, 0, env.maxPageSize),
   };
 }
 

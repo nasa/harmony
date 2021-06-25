@@ -72,5 +72,5 @@ export function hookArgoCallbackEach(
  */
 export async function loadJobForCallback(callback: string): Promise<Job> {
   const requestId = callback.replace('/response', '').split('/').pop();
-  return Job.byRequestId(db, requestId);
+  return (await Job.byRequestId(db, requestId)).job;
 }

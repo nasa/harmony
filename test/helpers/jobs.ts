@@ -4,6 +4,8 @@ import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
 import { Transaction } from 'knex';
 import { Application } from 'express';
+import JobLink from 'models/job-link';
+import _ from 'lodash';
 import { Job, JobStatus, JobRecord } from '../../app/models/job';
 import { JobListing } from '../../app/frontends/jobs';
 import db from '../../app/util/db';
@@ -59,6 +61,19 @@ export function buildJob(fields: Partial<JobRecord> = {}): Job {
 }
 
 /**
+ * Compare links from a saved Job to those of a serialized job
+ * @param jobLinks - links from a saved job
+ * @param serializedJobLinks - links from a serialized job
+ * @returns true if the links are the same, false otherwise
+ */
+export function areJobLinksEqual(jobLinks: JobLink[], serializedJobLinks: JobLink[]): boolean {
+  const cleanedLinks = jobLinks.map((link) => _.pick(link, ['href', 'title', 'type', 'rel']));
+  const cleanedLinksSet = new Set<JobLink>(cleanedLinks);
+  const serializedLinksSet = new Set<JobLink>(serializedJobLinks);
+  return _.isEqual(cleanedLinksSet, serializedLinksSet);
+}
+
+/**
  * Returns true if the passed in job record matches the serialized Job for all fields
  * and all links with rel === data
  *
@@ -76,7 +91,7 @@ export function jobsEqual(jobRecord: JobRecord, serializedJob: Job): boolean {
     && jobRecord.progress && serializedJob.progress
     && jobRecord.status === serializedJob.status
     && jobRecord.request === serializedJob.request
-    && JSON.stringify(recordLinks) === JSON.stringify(serializedLinks));
+    && areJobLinksEqual(recordLinks, serializedLinks));
 }
 
 /**
@@ -117,8 +132,10 @@ export function adminJobListing(app: Application, query: object = {}): Test {
  * @param job - The job
  * @param query - Mapping of query param names to values
  */
-export function jobStatus(app: Express.Application, { jobID }: Job, query: object = {}): Test {
-  return request(app).get(`/jobs/${jobID}`).query(query);
+export function jobStatus(app: Express.Application, options): Test {
+  const { jobID, query } = options;
+  const actualQuery = query || {};
+  return request(app).get(`/jobs/${jobID}`).query(actualQuery);
 }
 
 /**
@@ -127,8 +144,10 @@ export function jobStatus(app: Express.Application, { jobID }: Job, query: objec
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
-export function adminJobStatus(app: Express.Application, { jobID }: Job, query: object = {}): Test {
-  return request(app).get(`/admin/jobs/${jobID}`).query(query);
+export function adminJobStatus(app: Express.Application, options): Test {
+  const { jobID, query } = options;
+  const actualQuery = query || {};
+  return request(app).get(`/admin/jobs/${jobID}`).query(actualQuery);
 }
 
 /**
@@ -254,6 +273,7 @@ export interface PagingRelationInfo {
  */
 export function itIncludesPagingRelations(
   pageCount: number,
+  path: string,
   relations: PagingRelationInfo,
   limit = 10,
 ): void {
@@ -270,7 +290,7 @@ export function itIncludesPagingRelations(
         const listing = JSON.parse(this.res.text);
         const actual = listing.links.find((link) => link.rel === rel);
         expect(actual).to.exist;
-        expect(actual.href).to.include(`/jobs?page=${expectedPage}&limit=${limit}`);
+        expect(actual.href).to.include(`${path}?page=${expectedPage}&limit=${limit}`);
         expect(actual.title).to.include(`(${expectedPage} of ${pageCount})`);
       });
     }

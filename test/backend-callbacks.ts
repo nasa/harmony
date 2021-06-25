@@ -92,7 +92,7 @@ describe('Backend Callbacks', function () {
     });
 
     it('updates the corresponding job record', async function () {
-      const job = await Job.byRequestId(db, this.job.requestId);
+      const { job } = await Job.byRequestId(db, this.job.requestId);
       expect(job.status).to.equal(JobStatus.SUCCESSFUL);
     });
   });
