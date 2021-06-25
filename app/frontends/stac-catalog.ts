@@ -89,6 +89,7 @@ class HarmonyCatalog implements SerializableCatalog {
  * Function to create the STAC Catalog given a Harmony Job object
  *
  * @param job - Harmony Job object
+ * @param pagingLinks links pointing to the next, previous, and current page
  * @param linkType - the type of data links that the stac-items should use
  *
  * @returns - STAC Catalog JSON
@@ -98,7 +99,7 @@ class HarmonyCatalog implements SerializableCatalog {
  * let jsonObj = catalog.create(job);
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
-export default function create(job: Job, linkType?: string, page: number, pageSize: number): SerializableCatalog {
+export default function create(job: Job, pagingLinks: JobLink[], linkType?: string): SerializableCatalog {
   const title = `Harmony output for ${job.jobID}`;
   const description = `Harmony output for ${job.request}`;
   const catalog = new HarmonyCatalog(job.jobID, title, description);
@@ -108,9 +109,10 @@ export default function create(job: Job, linkType?: string, page: number, pageSi
   catalog.addLink(url, 'self', 'self');
   catalog.addLink(url, 'root', 'root');
   let index = 0;
-  for (const link of linksWithStacData(job.links)) {
+  for (const link of job.links) {
     catalog.addLink(`./${index}${linkTypeParam}`, 'item', link.title);
     index++;
   }
+  catalog.links.push(...pagingLinks);
   return catalog.toJSON();
 }

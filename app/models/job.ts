@@ -208,6 +208,7 @@ export class Job extends Record {
    * @param transaction - the transaction to use for querying
    * @param username - the username associated with the job
    * @param requestId - the UUID of the request associated with the job
+   * @param stacOnly - if true, only load STAC data links in job.links
    * @param currentPage - the index of the page of links to show
    * @param perPage - the number of link results per page
    * @returns the matching job, or null if none exists, along with pagination information
@@ -217,15 +218,15 @@ export class Job extends Record {
     transaction,
     username,
     requestId,
-    includeLinks = true,
+    stacOnly = false,
     currentPage = 0,
     perPage = env.defaultPageSize,
   ): Promise<{ job: Job; pagination: IWithPagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
-    if (job && includeLinks) {
-      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+    if (job) {
+      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage, stacOnly);
       job.links = linkData.data;
       paginationInfo = linkData.pagination;
     }
@@ -475,23 +476,4 @@ export class Job extends Record {
     const links = this.links.filter((link) => link.rel === rel);
     return links.map(removeEmptyProperties) as JobLink[];
   }
-
-  // change to count
-  async hasStacLinks(
-    transaction,
-    jobID
-  ): Promise<boolean> {
-    const links = await transaction('job_links').select()
-      .where({ jobID, 'rel': 'data' })
-      .whereNotNull("bbox")
-      .whereNotNull("temporalStart")
-      .whereNotNull("temporalEnd")
-      .limit(1);
-    return links.length !== 0;
-  }
-
-  // getStacLinks (paginated)
-
-  // getStacLinkByIndex
-  // should use pagination too
 }

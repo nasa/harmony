@@ -223,8 +223,8 @@ export default function create(job: Job, index: number, linkType?: string): Harm
   // TBD: may be it should be a metadata for a Harmony service
   item.setProperty('license', 'various');
   // Add assets
-  const stacLinks = linksWithStacData(job.links);
-  if (index < 0 || index >= stacLinks.length) {
+  if (!job.links.length) {
+    // job should have been loaded with the single requested link
     throw new RangeError('Error: STAC item index is out of bounds');
   }
   const {
@@ -233,7 +233,7 @@ export default function create(job: Job, index: number, linkType?: string): Harm
     href,
     title: linkTitle,
     type,
-  } = stacLinks[index];
+  } = job.links[0];
   item.addSpatialExtent(bbox);
   item.addTemporalExtent(temporal.start, temporal.end);
   item.addAsset(href, linkTitle, type);

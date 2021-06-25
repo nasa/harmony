@@ -169,6 +169,7 @@ export default class JobLink extends Record {
  * @param jobID - the UUID associated with the job
  * @param currentPage - the index of the page to show
  * @param perPage - the number of results per page
+ * @param stacOnly - if true, only return STAC data links
  *
  * @returns A promise that resolves to a map containing
  * pagination information and an array of links
@@ -178,10 +179,20 @@ export async function getLinksForJob(
   jobID: string,
   currentPage = 0,
   perPage = 10,
+  stacOnly = false,
 ): Promise<IWithPagination<JobLink[]>> {
   const result = await transaction('job_links').select()
     .where({ jobID })
     .orderBy(['id'])
+    .modify(function(queryBuilder) {
+      if (stacOnly) {
+        queryBuilder
+        .where({ 'rel': 'data' })
+        .whereNotNull("bbox")
+        .whereNotNull("temporalStart")
+        .whereNotNull("temporalEnd");
+      }
+    })  
     .forUpdate()
     .paginate({ currentPage, perPage, isLengthAware: true });
   const links = result.data.map((j) => new JobLink(j));
