@@ -8,6 +8,7 @@ import JobLink from 'models/job-link';
 import stacItemCreate from './stac-item';
 import stacCatalogCreate from './stac-catalog';
 import db from '../util/db';
+import env from '../util/env';
 
 /**
  * Generic handler for STAC requests
@@ -78,7 +79,7 @@ export async function getStacCatalog(req, res): Promise<void> {
   const keys = keysToLowerCase(req.query);
   const linkType = keys.linktype?.toLowerCase();
   try {
-    const pagingParams = getPagingParams(req);
+    const pagingParams = getPagingParams(req, env.defaultResultPageSize);
     await handleStacRequest(
       req, res,
       (data, pagingLinks) => stacCatalogCreate(

@@ -221,7 +221,7 @@ export class Job extends Record {
     stacOnly = false,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: IWithPagination }> {
+  ): Promise<{ job: Job; pagination: IPagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
