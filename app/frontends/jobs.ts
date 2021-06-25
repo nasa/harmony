@@ -110,7 +110,7 @@ export async function getJobsListing(
 ): Promise<void> {
   try {
     const root = getRequestRoot(req);
-    const { page, limit } = getPagingParams(req);
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const query: JobQuery = {};
     if (!req.context.isAdminAccess) {
       query.username = req.user;
@@ -161,7 +161,7 @@ export async function getJobStatus(
   req.context.logger.info(`Get job status for job ${jobID} and user ${req.user}`);
   try {
     validateJobId(jobID);
-    const { page, limit } = getPagingParams(req);
+    const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
 
     const query: JobQuery = { requestId: jobID };
     if (!req.context.isAdminAccess) {

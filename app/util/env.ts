@@ -78,7 +78,8 @@ interface HarmonyEnv {
   defaultArgoPodTimeoutSecs: number;
   defaultBatchSize: number;
   defaultImagePullPolicy: string;
-  defaultPageSize: number;
+  defaultJobListPageSize: number;
+  defaultResultPageSize: number;
   defaultParallelism: number;
   harmonyClientId: string;
   jobReaperPeriodSec: number;

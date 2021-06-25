@@ -12,12 +12,12 @@ describe('Individual job status route - pagination', function () {
 
   const links: JobLink[] = [] as JobLink[];
   const aJob = buildJob({ username: 'joe', links });
-  let defaultPageSize;
+  let defaultResultPageSize;
 
   before(async function () {
-    // use a DEFAULT_PAGE size of 10 for these tests
-    ({ defaultPageSize } = env);
-    env.defaultPageSize = 10;
+    // use a DEFAULT_RESULT_PAGE size of 10 for these tests
+    ({ defaultResultPageSize } = env);
+    env.defaultResultPageSize = 10;
 
     // Generate some links for the job - need to save the job after each link is added to
     // circumvent ordering problems with sqlite
@@ -46,7 +46,7 @@ describe('Individual job status route - pagination', function () {
   });
 
   after(function () {
-    env.defaultPageSize = defaultPageSize;
+    env.defaultResultPageSize = defaultResultPageSize;
   });
 
   const jobID = aJob.requestId;
@@ -184,6 +184,15 @@ describe('Individual job status route - pagination', function () {
     describe('on the last page', function () {
       hookJobStatus({ jobID, username: 'joe', query: { page: 5 } });
       itIncludesPagingRelations(5, `jobs/${jobID}`, { first: 1, prev: 4, self: 5, next: null, last: null });
+    });
+
+    describe('for a page beyond the last page', function () {
+      hookJobStatus({ jobID, username: 'joe', query: { page: 6 } });
+      it('includes no data links', function () {
+        const dataLinks = JSON.parse(this.res.text).links.filter((link) => link.rel === 'data');
+        expect(dataLinks.length).to.equal(0);
+      });
+      itIncludesPagingRelations(5, `jobs/${jobID}`, { first: 1, prev: 5, self: 6, next: null, last: null });
     });
 
     describe('on a page that is both first and last (the only page)', function () {

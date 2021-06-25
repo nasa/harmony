@@ -220,8 +220,8 @@ export class Job extends Record {
     requestId,
     stacOnly = false,
     currentPage = 0,
-    perPage = env.defaultPageSize,
-  ): Promise<{ job: Job; pagination: IPagination }> {
+    perPage = env.defaultResultPageSize,
+  ): Promise<{ job: Job; pagination: IWithPagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
@@ -246,7 +246,7 @@ export class Job extends Record {
     transaction,
     requestId,
     currentPage = 0,
-    perPage = env.defaultPageSize,
+    perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: IWithPagination }> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
@@ -446,19 +446,17 @@ export class Job extends Record {
     const serializedJob = pick(this, serializedJobFields) as Job;
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
-    if (urlRoot) {
-      if (linkType !== 'none') {
-        serializedJob.links = serializedJob.links.map((link) => {
-          const serializedLink = link.serialize();
-          let { href } = serializedLink;
-          const { title, type, rel, bbox, temporal } = serializedLink;
-          // Leave the S3 output staging location as an S3 link
-          if (rel !== 's3-access') {
-            href = createPublicPermalink(href, urlRoot, type, linkType);
-          }
-          return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
-        }) as unknown as JobLink[];
-      }
+    if (urlRoot && linkType !== 'none') {
+      serializedJob.links = serializedJob.links.map((link) => {
+        const serializedLink = link.serialize();
+        let { href } = serializedLink;
+        const { title, type, rel, bbox, temporal } = serializedLink;
+        // Leave the S3 output staging location as an S3 link
+        if (rel !== 's3-access') {
+          href = createPublicPermalink(href, urlRoot, type, linkType);
+        }
+        return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
+      }) as unknown as JobLink[];
     }
     const job = new Job(serializedJob as JobRecord); // We need to clean this up
     delete job.originalStatus;

@@ -51,7 +51,7 @@ const buzzJob1 = buildJob({
   numInputGranules: 10,
 });
 
-let defaultPageSize;
+let defaultJobListPageSize;
 
 describe('Jobs listing route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -121,7 +121,7 @@ describe('Jobs listing route', function () {
         expect(itemLinks[0].href).to.match(new RegExp(`/jobs/${jobs[0].jobID}$`));
       });
 
-      it("does not include data links any job's list of links", function () {
+      it("does not include data links in any job's list of links", function () {
         const jobs = JSON.parse(this.res.text).jobs.map((j) => new Job(j)) as Job[];
         for (const job of jobs) {
           expect(job.getRelatedLinks('data').length).to.equal(0);
@@ -151,14 +151,14 @@ describe('Jobs listing route', function () {
   describe('pagination', function () {
     hookTransaction();
     before(async function () {
-      ({ defaultPageSize } = env);
-      env.defaultPageSize = 10;
+      ({ defaultJobListPageSize } = env);
+      env.defaultJobListPageSize = 10;
       this.jobs = await createIndexedJobs(this.trx, 'paige', 51);
       this.trx.commit();
     });
 
     after(function () {
-      env.defaultPageSize = defaultPageSize;
+      env.defaultJobListPageSize = defaultJobListPageSize;
     });
 
     describe('paging headers', function () {
@@ -181,7 +181,7 @@ describe('Jobs listing route', function () {
         hookJobListing({ username: 'paige' });
         it('returns the default number of jobs', function () {
           const { jobs } = JSON.parse(this.res.text);
-          expect(jobs.length).to.equal(10);
+          expect(jobs.length).to.equal(env.defaultJobListPageSize);
         });
       });
 
