@@ -476,4 +476,16 @@ export class Job extends Record {
     const links = this.links.filter((link) => link.rel === rel);
     return links.map(removeEmptyProperties) as JobLink[];
   }
+
+  async hasStacLinks(
+    transaction,
+  ): Promise<boolean> {
+    const links = await transaction('job_links').select()
+      .where({ jobID: this.jobID, rel: 'data' })
+      .whereNotNull('bbox')
+      .whereNotNull('temporalStart')
+      .whereNotNull('temporalEnd')
+      .limit(1);
+    return links.length !== 0;
+  }
 }

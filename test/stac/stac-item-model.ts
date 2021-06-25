@@ -69,7 +69,7 @@ const job = buildJob(jobProps as unknown);
 
 describe('stac-item', function () {
   describe('STAC Item creation with a Harmony Job object: case of anti-meridian crossing', function () {
-    const jsonObj = create(job.serialize(), 0);
+    const jsonObj = create(job.serialize(), job.links[0], 0);
     it('Item has correct ID', function () {
       expect(jsonObj.id).to.equal(`${jobProps.requestId}_0`);
     });
@@ -92,7 +92,7 @@ describe('stac-item', function () {
   });
 
   describe('STAC Item creation with a Harmony Job object: case without anti-meridian crossing', function () {
-    const jsonObj: HarmonyItem = create(job, 1);
+    const jsonObj: HarmonyItem = create(job, job.links[1], 1);
     it('has a bounding box that doesn\'t anti-meridian', function () {
       expect(jsonObj.geometry.type).to.equal('Polygon');
     });
@@ -103,14 +103,14 @@ describe('stac-item', function () {
 
   describe('STAC Item creation with a Harmony Job object: case of metadata assets', function () {
     it('has an asset with metadata role', function () {
-      const jsonObj = create(job, 2);
+      const jsonObj = create(job, job.links[2], 2);
       expect(jsonObj.assets['file_3.json'].roles[0]).to.equal('metadata');
     });
   });
 
   describe('STAC Item creation with a Harmony Job object: case of textual data', function () {
     it('has an text asset with data role', function () {
-      const jsonObj = create(job, 3);
+      const jsonObj = create(job, job.links[3], 3);
       expect(jsonObj.assets['file_4.csv'].roles[0]).to.equal('data');
     });
   });

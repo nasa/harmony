@@ -26,9 +26,11 @@ async function handleStacRequest(
     res.status(400);
     res.json({
       code: 'harmony:BadRequestError',
-      description: `Error: jobId ${jobId} is in invalid format. It should be a UUID.` });
+      description: `Error: jobId ${jobId} is in invalid format.` });
   } else {
     await db.transaction(async (tx) => {
+      // load the job with only the requested STAC data links
+      // (using paging parameters)
       const {
         job,
         pagination,
@@ -46,6 +48,12 @@ async function handleStacRequest(
           const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
           const serializedJob = job.serialize(urlRoot, lType);
           res.json(callback(serializedJob, pagingLinks));
+        } else if ((await job.hasStacLinks(tx))) {
+          if (req.params.itemIndex) {
+            throw new RangeError('Error: STAC item index is out of bounds');
+          } else {
+            throw new RangeError('Error: The requested paging parameters were out of bounds');
+          }
         } else {
           res.status(501);
           res.json({ code: 'harmony:ServiceError', description: `Error: Service did not provide STAC items for job ${jobId}` });
@@ -69,17 +77,34 @@ export async function getStacCatalog(req, res): Promise<void> {
   const { jobId } = req.params;
   const keys = keysToLowerCase(req.query);
   const linkType = keys.linktype?.toLowerCase();
-  const pagingParams = getPagingParams(req);
   try {
+    const pagingParams = getPagingParams(req);
     await handleStacRequest(
-      req, res, (data, pagingLinks) => stacCatalogCreate(data, pagingLinks, linkType), pagingParams,
+      req, res,
+      (data, pagingLinks) => stacCatalogCreate(
+        data, data.links, pagingLinks, linkType,
+      ), pagingParams,
     );
   } catch (e) {
     req.context.logger.error(e);
-    res.status(500);
-    res.json({
-      code: 'harmony:ServerError',
-      description: `Error: Internal server error trying to retrieve STAC catalog for job ${jobId}` });
+    if (e instanceof RangeError) {
+      res.status(400);
+      res.json({
+        code: 'harmony:RequestError',
+        description: `Error: ${e.message}`,
+      });
+    } else if (e instanceof RequestValidationError) {
+      res.status(400);
+      res.json({
+        code: 'harmony:RequestValidationError',
+        description: `Error: ${e.message}`,
+      });
+    } else {
+      res.status(500);
+      res.json({
+        code: 'harmony:ServerError',
+        description: `Error: Internal server error trying to retrieve STAC catalog for job ${jobId}` });
+    }
   }
 }
 
@@ -94,12 +119,12 @@ export async function getStacItem(req, res): Promise<void> {
   const { jobId, itemIndex } = req.params;
   const keys = keysToLowerCase(req.query);
   const linkType = keys.linktype?.toLowerCase();
-  const pagingParams: PagingParams = { page: itemIndex + 1, limit: 1 };
   try {
+    const pagingParams: PagingParams = { page: itemIndex + 1, limit: 1 };
     await handleStacRequest(
       req,
       res,
-      (data) => stacItemCreate.apply(null, [data, itemIndex, linkType]),
+      (data) => stacItemCreate.apply(null, [data, data.links[0], itemIndex, linkType]),
       pagingParams,
       linkType,
     );

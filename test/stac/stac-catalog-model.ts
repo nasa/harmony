@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { JobStatus } from 'models/job';
 import create, { SerializableCatalog } from 'frontends/stac-catalog';
 import { buildJob } from 'test/helpers/jobs';
+import { linksWithStacData } from 'util/stac';
 
 // Prop for testing
 const jobProps = {
@@ -50,7 +51,9 @@ describe('stac-catalog', function () {
     const job = buildJob(jobProps);
     let jsonObj: SerializableCatalog;
     it('created Harmony STAC Catalog', function () {
-      expect(function () { jsonObj = create(job.serialize()); }).to.not.throw();
+      expect(function () {
+        jsonObj = create(job.serialize(), linksWithStacData(job.links), []);
+      }).to.not.throw();
     });
     it('catalog ID matches Job ID', function () {
       expect(jsonObj.id).to.equal(jobProps.requestId);

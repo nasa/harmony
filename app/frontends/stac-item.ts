@@ -206,12 +206,15 @@ export class HarmonyItem {
 /**
  * Function to create a STAC item
  *
- * @param job - Harmony Job object
- * @param index - Index of the Link item in Job
+ * @param job - Harmony Job object (loaded with single STAC data link)
+ * @param stacDataLink - JobLink to convert into a STAC item
+ * @param index - Index of the link item being requested
  *
  * @returns STAC Item JSON
  */
-export default function create(job: Job, index: number, linkType?: string): HarmonyItem {
+export default function create(
+  job: Job, stacDataLink: JobLink, index: number, linkType?: string,
+): HarmonyItem {
   const title = `Harmony output #${index} in job ${job.jobID}`;
   const description = `Harmony out for ${job.request}`;
   const item = new HarmonyItem(job.jobID, title, description, index);
@@ -222,17 +225,13 @@ export default function create(job: Job, index: number, linkType?: string): Harm
   // TBD: may be it should be a metadata for a Harmony service
   item.setProperty('license', 'various');
   // Add assets
-  if (!job.links.length) {
-    // job should have been loaded with the single requested link
-    throw new RangeError('Error: STAC item index is out of bounds');
-  }
   const {
     bbox,
     temporal,
     href,
     title: linkTitle,
     type,
-  } = job.links[0];
+  } = stacDataLink;
   item.addSpatialExtent(bbox);
   item.addTemporalExtent(temporal.start, temporal.end);
   item.addAsset(href, linkTitle, type);

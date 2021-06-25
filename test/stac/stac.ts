@@ -6,6 +6,7 @@ import { buildJob } from 'test/helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacCatalog, hookStacCatalog } from '../helpers/stac';
+import env from '../../app/util/env';
 
 const runningJobProps = {
   username: 'joe',
@@ -147,6 +148,12 @@ describe('STAC catalog route', function () {
             { href: '.', rel: 'self', title: 'self' },
             { href: '.', rel: 'root', title: 'root' },
             { href: './0', rel: 'item' },
+            {
+              href: `http://127.0.0.1:4000/stac/${completedJob.requestId}?page=1&limit=${env.defaultPageSize}`,
+              rel: 'self',
+              title: 'The current page',
+              type: 'application/json',
+            },
           ]);
           expect(catalog.stac_version).to.equal('0.9.0');
           expect(catalog.title).to.include('Harmony output for ');
