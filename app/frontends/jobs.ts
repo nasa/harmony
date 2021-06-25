@@ -118,7 +118,7 @@ export async function getJobsListing(
     }
     let listing;
     await db.transaction(async (tx) => {
-      listing = await Job.queryAll(tx, query, page, limit);
+      listing = await Job.queryAll(tx, query, false, page, limit);
     });
     const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root, 'none'));
     const response: JobListing = {
