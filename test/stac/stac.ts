@@ -149,7 +149,7 @@ describe('STAC catalog route', function () {
             { href: '.', rel: 'root', title: 'root' },
             { href: './0', rel: 'item' },
             {
-              href: `http://127.0.0.1:4000/stac/${completedJob.requestId}?page=1&limit=${env.defaultPageSize}`,
+              href: `http://127.0.0.1:4000/stac/${completedJob.requestId}?page=1&limit=${env.defaultResultPageSize}`,
               rel: 'self',
               title: 'The current page',
               type: 'application/json',
