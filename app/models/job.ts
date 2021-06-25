@@ -141,7 +141,7 @@ export class Job extends Record {
 
     const jobs = items.data.map((j) => new Job(j));
     for (const job of jobs) {
-      job.links = await getLinksForJob(transaction, job.jobID);
+      job.links = (await getLinksForJob(transaction, job.jobID)).data;
     }
 
     return {
@@ -179,7 +179,7 @@ export class Job extends Record {
 
     const jobs = items.data.map((j) => new Job(j));
     for (const job of jobs) {
-      job.links = await getLinksForJob(transaction, job.jobID);
+      job.links = (await getLinksForJob(transaction, job.jobID)).data;
     }
     return {
       data: jobs,
@@ -208,15 +208,28 @@ export class Job extends Record {
    * @param transaction - the transaction to use for querying
    * @param username - the username associated with the job
    * @param requestId - the UUID of the request associated with the job
-   * @returns the matching job, or null if none exists
+   * @param currentPage - the index of the page of links to show
+   * @param perPage - the number of link results per page
+   * @returns the matching job, or null if none exists, along with pagination information
+   * for the job links
    */
-  static async byUsernameAndRequestId(transaction, username, requestId): Promise<Job> {
+  static async byUsernameAndRequestId(
+    transaction,
+    username,
+    requestId,
+    includeLinks = true,
+    currentPage = 0,
+    perPage = env.defaultResultPageSize,
+  ): Promise<{ job: Job; pagination: IWithPagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
-    if (job) {
-      job.links = await getLinksForJob(transaction, job.jobID);
+    let paginationInfo;
+    if (job && includeLinks) {
+      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      job.links = linkData.data;
+      paginationInfo = linkData.pagination;
     }
-    return job;
+    return { job, pagination: paginationInfo };
   }
 
   /**
@@ -224,15 +237,25 @@ export class Job extends Record {
    *
    * @param transaction - the transaction to use for querying
    * @param requestId - the UUID of the request associated with the job
+   * @param currentPage - the index of the page of links to show
+   * @param perPage - the number of link results per page
    * @returns the matching job, or null if none exists
    */
-  static async byRequestId(transaction, requestId): Promise<Job> {
+  static async byRequestId(
+    transaction,
+    requestId,
+    currentPage = 0,
+    perPage = env.defaultResultPageSize,
+  ): Promise<{ job: Job; pagination: IWithPagination }> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
+    let paginationInfo;
     if (job) {
-      job.links = await getLinksForJob(transaction, job.jobID);
+      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      job.links = linkData.data;
+      paginationInfo = linkData.pagination;
     }
-    return job;
+    return { job, pagination: paginationInfo };
   }
 
   /**
@@ -415,14 +438,14 @@ export class Job extends Record {
   /**
    * Serializes a Job to return from any of the jobs frontend endpoints
    * @param urlRoot - the root URL to be used when constructing links
-   * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3)
+   * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3 | none)
    * @returns an object with the serialized job fields.
    */
   serialize(urlRoot?: string, linkType?: string): Job {
     const serializedJob = pick(this, serializedJobFields) as Job;
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
-    if (urlRoot) {
+    if (urlRoot && linkType !== 'none') {
       serializedJob.links = serializedJob.links.map((link) => {
         const serializedLink = link.serialize();
         let { href } = serializedLink;

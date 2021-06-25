@@ -25,7 +25,7 @@ describe('Individual job status route', function () {
   const jobID = aJob.requestId;
   describe('For a user who is not logged in', function () {
     before(async function () {
-      this.res = await jobStatus(this.frontend, { jobID } as Job).redirects(0);
+      this.res = await jobStatus(this.frontend, { jobID }).redirects(0);
     });
     it('redirects to Earthdata Login', function () {
       expect(this.res.statusCode).to.equal(303);
@@ -52,7 +52,7 @@ describe('Individual job status route', function () {
       const job = new Job(JSON.parse(this.res.text));
       const selves = job.getRelatedLinks('self');
       expect(selves.length).to.equal(1);
-      expect(selves[0].href).to.match(new RegExp(`${this.res.req.path}$`));
+      expect(selves[0].href).to.match(new RegExp(`.*?${this.res.req.path}\\?page=1&limit=2000$`));
     });
   });
 
@@ -269,7 +269,7 @@ describe('Individual job status route', function () {
     });
 
     describe('when an incomplete job has provided links as a partial status updates', function () {
-      const links = [
+      const shortLinks = [
         {
           href: 'http://example.com/1',
           title: 'Example 1',
@@ -287,15 +287,15 @@ describe('Individual job status route', function () {
       StubService.hook({ params: { status: 'successful' } });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
       before(async function () {
-        await this.service.sendResponse({ item: links[0] });
-        await this.service.sendResponse({ item: links[1] });
+        await this.service.sendResponse({ item: shortLinks[0] });
+        await this.service.sendResponse({ item: shortLinks[1] });
       });
       hookRedirect('jdoe1');
 
       it('returns the links in its response', function () {
         const job = new Job(JSON.parse(this.res.text));
         const outputLinks = job.getRelatedLinks('data');
-        expect(outputLinks).to.eql(links);
+        expect(outputLinks).to.eql(shortLinks);
       });
 
       it('maintains a status of "running"', function () {

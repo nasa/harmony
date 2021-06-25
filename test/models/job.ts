@@ -73,28 +73,28 @@ describe('Job', function () {
       describe('when a job matches the username and request id', function () {
         it('returns the matching job', async function () {
           const result = await Job.byUsernameAndRequestId(this.trx, 'jdoe', job.requestId);
-          expect(result.id).to.eql(job.id);
+          expect(result.job.id).to.eql(job.id);
         });
       });
 
       describe('when the username has a job but the request id does not', function () {
         it('returns null', async function () {
           const result = await Job.byUsernameAndRequestId(this.trx, 'jdoe', uuid());
-          expect(result).to.eql(null);
+          expect(result.job).to.eql(null);
         });
       });
 
       describe('when the request id has a job but the username does not', function () {
         it('returns null', async function () {
           const result = await Job.byUsernameAndRequestId(this.trx, 'notjdoe', job.requestId);
-          expect(result).to.eql(null);
+          expect(result.job).to.eql(null);
         });
       });
 
       describe('when neither the request id nor the username has a job', function () {
         it('returns null', async function () {
           const result = await Job.byUsernameAndRequestId(this.trx, 'notjdoe', uuid());
-          expect(result).to.eql(null);
+          expect(result.job).to.eql(null);
         });
       });
     });
@@ -109,14 +109,14 @@ describe('Job', function () {
       describe('when a job matches the request id', function () {
         it('returns the matching job', async function () {
           const result = await Job.byRequestId(this.trx, job.requestId);
-          expect(result.id).to.eql(job.id);
+          expect(result.job.id).to.eql(job.id);
         });
       });
 
       describe('when no job matches the request id', function () {
         it('returns null', async function () {
           const result = await Job.byRequestId(this.trx, uuid());
-          expect(result).to.eql(null);
+          expect(result.job).to.eql(null);
         });
       });
     });
@@ -218,7 +218,7 @@ describe('Job', function () {
           expect(job[key]).to.eql(exampleProps[key]);
         }
       }
-      expect(result.id).to.eql(job.id);
+      expect(result.job.id).to.eql(job.id);
     });
 
     it('updates existing records', async function () {
@@ -227,7 +227,7 @@ describe('Job', function () {
       job.username = 'notjdoe';
       await job.save(this.trx);
       const result = await Job.byRequestId(this.trx, job.requestId);
-      expect(result.username).to.eql('notjdoe');
+      expect(result.job.username).to.eql('notjdoe');
     });
 
     it('sets the id field of new records', async function () {
@@ -239,11 +239,12 @@ describe('Job', function () {
     it('saves changes to the links array', async function () {
       let job = buildJob(exampleProps);
       await job.save(this.trx);
-      job = await Job.byRequestId(this.trx, job.requestId);
+      ({ job } = await Job.byRequestId(this.trx, job.requestId));
       job.links.push(new JobLink({ href: 'http://example.com/2', jobID: job.jobID }));
       await job.save(this.trx);
       const result = await Job.byRequestId(this.trx, job.requestId);
-      expect(result.links.map((l) => l.serialize())).to.eql(job.links.map((l) => l.serialize()));
+      expect(result.job.links.map((l) => l.serialize()))
+        .to.eql(job.links.map((l) => l.serialize()));
     });
 
     it('throws an error when progress is outside of the allowable range', async function () {
