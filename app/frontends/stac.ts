@@ -3,12 +3,11 @@ import { keysToLowerCase } from 'util/object';
 import isUUID from 'util/uuid';
 import { getRequestRoot } from 'util/url';
 import { RequestValidationError } from 'util/errors';
-import stacItemCreate from './stac-item';
-import stacCatalogCreate from './stac-catalog';
-import envVars from 'util/env';
-import db from '../util/db';
 import { getPagingLinks, getPagingParams, PagingParams } from 'util/pagination';
 import JobLink from 'models/job-link';
+import stacItemCreate from './stac-item';
+import stacCatalogCreate from './stac-catalog';
+import db from '../util/db';
 
 /**
  * Generic handler for STAC requests
@@ -19,21 +18,23 @@ import JobLink from 'models/job-link';
  * @param pagingParams - Used to page the STAC links or retrieve the nth link
  * @returns Resolves when the request is complete
  */
-async function handleStacRequest(req, res, callback: Function, pagingParams: PagingParams, linkType?: string): Promise<void> {
+async function handleStacRequest(
+  req, res, callback: Function, pagingParams: PagingParams, linkType?: string,
+): Promise<void> {
   const { jobId } = req.params;
   if (!isUUID(jobId)) {
     res.status(400);
     res.json({
       code: 'harmony:BadRequestError',
-      description: `Error: jobId ${jobId} is in invalid format. It should be a UUID.`});
+      description: `Error: jobId ${jobId} is in invalid format. It should be a UUID.` });
   } else {
     await db.transaction(async (tx) => {
-      let job: Job;
-      let pagination;
-      ({
+      const {
         job,
         pagination,
-      } = await Job.byUsernameAndRequestId(tx, req.user, jobId, true, pagingParams.page, pagingParams.limit));
+      } = await Job.byUsernameAndRequestId(
+        tx, req.user, jobId, true, pagingParams.page, pagingParams.limit,
+      );
       if (!job) {
         res.status(404);
         res.json({ code: 'harmony:NotFoundError', description: `Error: Unable to find job ${jobId}` });
@@ -70,7 +71,9 @@ export async function getStacCatalog(req, res): Promise<void> {
   const linkType = keys.linktype?.toLowerCase();
   const pagingParams = getPagingParams(req);
   try {
-    await handleStacRequest(req, res, (data, pagingLinks) => stacCatalogCreate(data, linkType, pagingLinks), pagingParams);
+    await handleStacRequest(
+      req, res, (data, pagingLinks) => stacCatalogCreate(data, pagingLinks, linkType), pagingParams,
+    );
   } catch (e) {
     req.context.logger.error(e);
     res.status(500);
@@ -91,7 +94,7 @@ export async function getStacItem(req, res): Promise<void> {
   const { jobId, itemIndex } = req.params;
   const keys = keysToLowerCase(req.query);
   const linkType = keys.linktype?.toLowerCase();
-  const pagingParams: PagingParams = {page: itemIndex + 1, limit: 1};
+  const pagingParams: PagingParams = { page: itemIndex + 1, limit: 1 };
   try {
     await handleStacRequest(
       req,

@@ -1,7 +1,6 @@
 import { pick } from 'lodash';
 import { Job } from 'models/job';
 import JobLink from 'models/job-link';
-import { linksWithStacData } from 'util/stac';
 
 export interface SerializableCatalog {
   id: string;
@@ -89,7 +88,7 @@ class HarmonyCatalog implements SerializableCatalog {
  * Function to create the STAC Catalog given a Harmony Job object
  *
  * @param job - Harmony Job object
- * @param pagingLinks links pointing to the next, previous, and current page
+ * @param pagingLinks - links pointing to the next, previous, and current page
  * @param linkType - the type of data links that the stac-items should use
  *
  * @returns - STAC Catalog JSON
@@ -99,7 +98,9 @@ class HarmonyCatalog implements SerializableCatalog {
  * let jsonObj = catalog.create(job);
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
-export default function create(job: Job, pagingLinks: JobLink[], linkType?: string): SerializableCatalog {
+export default function create(
+  job: Job, pagingLinks: JobLink[], linkType?: string,
+): SerializableCatalog {
   const title = `Harmony output for ${job.jobID}`;
   const description = `Harmony output for ${job.request}`;
   const catalog = new HarmonyCatalog(job.jobID, title, description);

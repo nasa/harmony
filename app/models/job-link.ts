@@ -184,15 +184,15 @@ export async function getLinksForJob(
   const result = await transaction('job_links').select()
     .where({ jobID })
     .orderBy(['id'])
-    .modify(function(queryBuilder) {
+    .modify((queryBuilder) => {
       if (stacOnly) {
         queryBuilder
-        .where({ 'rel': 'data' })
-        .whereNotNull("bbox")
-        .whereNotNull("temporalStart")
-        .whereNotNull("temporalEnd");
+          .where({ rel: 'data' })
+          .whereNotNull('bbox')
+          .whereNotNull('temporalStart')
+          .whereNotNull('temporalEnd');
       }
-    })  
+    })
     .forUpdate()
     .paginate({ currentPage, perPage, isLengthAware: true });
   const links = result.data.map((j) => new JobLink(j));

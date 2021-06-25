@@ -1,5 +1,5 @@
 import { pick } from 'lodash';
-import { IWithPagination } from 'knex-paginate'; // For types only
+import { IPagination, IWithPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
 import { ConflictError } from '../util/errors';
@@ -221,7 +221,7 @@ export class Job extends Record {
     stacOnly = false,
     currentPage = 0,
     perPage = env.defaultPageSize,
-  ): Promise<{ job: Job; pagination: IWithPagination }> {
+  ): Promise<{ job: Job; pagination: IPagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
