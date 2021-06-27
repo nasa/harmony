@@ -107,7 +107,7 @@ export default abstract class BaseService<ServiceParamType> {
    *
    * @returns A promise resolving to the result of the callback.
    */
-  async invoke(
+  async invokeOrAttach(
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
   ): Promise<InvocationResult> {
     let job: Job;
@@ -116,6 +116,12 @@ export default abstract class BaseService<ServiceParamType> {
       const startTime = new Date().getTime();
       logger.info('timing.save-job-to-database.start');
       job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
+      await job.maybeAttach(db);
+      if (job.attachedStatus.didAttach) {
+        const { oldId, newId } = job.attachedStatus;
+        logger.info(`This job attached to a previous job: ${oldId} is now ${newId}.`);
+        this.operation.requestId = newId;
+      }
       await job.save(db);
       const durationMs = new Date().getTime() - startTime;
       logger.info('timing.save-job-to-database.end', { durationMs });
@@ -126,8 +132,12 @@ export default abstract class BaseService<ServiceParamType> {
 
     const { isAsync, requestId } = job;
     this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
+    // If the current job attached to a running job then skip execution in the backend
+    this['maybeRun'] = job.attachedStatus.didAttach
+      ? async (): Promise<InvocationResult> => Promise.resolve(null) // eslint-disable-line
+      : this._run;
     return new Promise((resolve, reject) => {
-      this._run(logger)
+      this['maybeRun'](logger)
         .then((result) => {
           if (result) {
             // If running produces a result, use that rather than waiting for a callback
