@@ -23,7 +23,7 @@ const woodyJob2 = buildJob({
   status: JobStatus.RUNNING,
   message: 'In progress',
   progress: 60,
-  links: [],
+  links: [{ href: 's3://somebucket/mydata', rel: 'data', type: 'image/tiff' }],
   request: 'http://example.com/harmony?request=woody2',
   isAsync: true,
   numInputGranules: 5,
