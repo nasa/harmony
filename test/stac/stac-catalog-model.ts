@@ -62,13 +62,13 @@ describe('stac-catalog', function () {
       expect(jsonObj.id).to.equal(jobProps.requestId);
     });
     it('has links', function () {
-      expect(jsonObj.links.length).to.equal(4);
+      expect(jsonObj.links.length).to.equal(3);
     });
     it('has link with an item', function () {
-      expect(jsonObj.links[3].rel).to.equal('item');
+      expect(jsonObj.links[2].rel).to.equal('item');
     });
     it('has link with href to item index', function () {
-      expect(jsonObj.links[3].href).to.equal('./1');
+      expect(jsonObj.links[2].href).to.equal('./1');
     });
   });
 });

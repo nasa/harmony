@@ -12,9 +12,8 @@ import { auth } from './auth';
 export function stacCatalog(
   app: Express.Application,
   jobId: string,
-  linkType?: string,
+  query: object = {},
 ): request.Test {
-  const query = linkType ? { linkType } : {};
   return request(app).get(`/stac/${jobId}`).query(query);
 }
 
@@ -45,13 +44,13 @@ export function stacItem(
 export function hookStacCatalog(
   jobId: string,
   username?: string,
-  linkType?: string,
+  query: object = {},
 ): void {
   before(async function () {
     if (username) {
-      this.res = await stacCatalog(this.frontend, jobId, linkType).use(auth({ username }));
+      this.res = await stacCatalog(this.frontend, jobId, query).use(auth({ username }));
     } else {
-      this.res = await stacCatalog(this.frontend, jobId, linkType);
+      this.res = await stacCatalog(this.frontend, jobId, query);
     }
   });
   after(function () {

@@ -74,6 +74,20 @@ export function areJobLinksEqual(jobLinks: JobLink[], serializedJobLinks: JobLin
 }
 
 /**
+ * Compare link titles from a saved Job to those of the STAC catalog output
+ * @param jobLinks - links from a saved job
+ * @param stacLinks - links from STAC catalog
+ * @returns true if the links are the same, false otherwise
+ */
+export function areStacJobLinksEqual(jobLinks: JobLink[], stacLinks: JobLink[]): boolean {
+  const cleanedStacLinks = stacLinks.map((link) => _.pick(link, ['title']));
+  const cleanedJobLinks = jobLinks.map((link) => _.pick(link, ['title']));
+  const cleanedStacLinksSet = new Set<JobLink>(cleanedStacLinks);
+  const cleanedJobLinksSet = new Set<JobLink>(cleanedJobLinks);
+  return _.isEqual(cleanedStacLinksSet, cleanedJobLinksSet);
+}
+
+/**
  * Returns true if the passed in job record matches the serialized Job for all fields
  * and all links with rel === data
  *

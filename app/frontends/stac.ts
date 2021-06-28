@@ -51,9 +51,9 @@ async function handleStacRequest(
           res.json(callback(serializedJob, pagingLinks));
         } else if ((await job.hasStacLinks(tx))) {
           if (req.params.itemIndex) {
-            throw new RangeError('Error: STAC item index is out of bounds');
+            throw new RangeError('STAC item index is out of bounds');
           } else {
-            throw new RangeError('Error: The requested paging parameters were out of bounds');
+            throw new RangeError('The requested paging parameters were out of bounds');
           }
         } else {
           res.status(501);
@@ -137,7 +137,7 @@ export async function getStacItem(req, res): Promise<void> {
       res.status(400);
       res.json({
         code: 'harmony:RequestError',
-        description: e.message });
+        description: `Error: ${e.message}` });
     } else if (e instanceof RequestValidationError) {
       res.status(400);
       res.json({

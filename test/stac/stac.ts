@@ -145,7 +145,6 @@ describe('STAC catalog route', function () {
           expect(catalog.description).to.equal('Harmony output for http://example.com/harmony?job=completedJob');
           expect(catalog.id).to.equal(completedJob.requestId);
           expect(catalog.links).to.eql([
-            { href: '.', rel: 'self', title: 'self' },
             { href: '.', rel: 'root', title: 'root' },
             { href: './0', rel: 'item' },
             {
@@ -161,7 +160,7 @@ describe('STAC catalog route', function () {
       });
       describe('when the linkType is invalid', function () {
         const completedJobId = completedJob.requestId;
-        hookStacCatalog(completedJobId, 'joe', 'foo');
+        hookStacCatalog(completedJobId, 'joe', { linkType: 'foo' });
         // HARMONY-770 AC 8
         it('returns a 400 status', function () {
           expect(this.res.statusCode).to.equal(400);

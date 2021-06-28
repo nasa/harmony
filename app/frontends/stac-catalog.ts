@@ -109,7 +109,6 @@ export default function create(
   // Add linkType to links if defined and not null
   const linkTypeParam = linkType ? `?linkType=${linkType}` : '';
   const url = linkType ? `./${linkTypeParam}` : '.';
-  catalog.addLink(url, 'self', 'self');
   catalog.addLink(url, 'root', 'root');
   let index = 0;
   for (const link of stacDataLinks) {
