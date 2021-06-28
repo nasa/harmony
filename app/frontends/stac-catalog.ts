@@ -1,5 +1,4 @@
 import { pick } from 'lodash';
-import { Job } from 'models/job';
 import JobLink from 'models/job-link';
 
 export interface SerializableCatalog {
@@ -87,7 +86,8 @@ class HarmonyCatalog implements SerializableCatalog {
 /**
  * Function to create the STAC Catalog given a Harmony Job object
  *
- * @param job - Harmony Job object
+ * @param jobID - Harmony job jobID string
+ * @param jobRequest - Harmony job, job request string
  * @param stacDataLinks - JobLink's to add to catalog
  * @param pagingLinks - links pointing to the next, previous, and current page
  * @param linkType - the type of data links that the stac-items should use
@@ -96,15 +96,16 @@ class HarmonyCatalog implements SerializableCatalog {
  *
  * @example
  * const catalog = require('HarmonyCatalog');
- * let jsonObj = catalog.create(job, stacDataLinks, pagingLinks);
+ * let jsonObj = catalog.create(job.jobID, job.request, stacDataLinks, pagingLinks);
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
 export default function create(
-  job: Job, stacDataLinks: JobLink[], pagingLinks: JobLink[], linkType?: string,
+  jobID: string, jobRequest: string, stacDataLinks: JobLink[],
+  pagingLinks: JobLink[], linkType?: string,
 ): SerializableCatalog {
-  const title = `Harmony output for ${job.jobID}`;
-  const description = `Harmony output for ${job.request}`;
-  const catalog = new HarmonyCatalog(job.jobID, title, description);
+  const title = `Harmony output for ${jobID}`;
+  const description = `Harmony output for ${jobRequest}`;
+  const catalog = new HarmonyCatalog(jobID, title, description);
   // Add linkType to links if defined and not null
   const linkTypeParam = linkType ? `?linkType=${linkType}` : '';
   const url = linkType ? `./${linkTypeParam}` : '.';

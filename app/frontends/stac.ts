@@ -82,8 +82,8 @@ export async function getStacCatalog(req, res): Promise<void> {
     const pagingParams = getPagingParams(req, env.defaultResultPageSize);
     await handleStacRequest(
       req, res,
-      (data, pagingLinks) => stacCatalogCreate(
-        data, data.links, pagingLinks, linkType,
+      (job: Job, pagingLinks: JobLink[]) => stacCatalogCreate(
+        job.jobID, job.request, job.links, pagingLinks, linkType,
       ), pagingParams,
     );
   } catch (e) {
@@ -125,7 +125,9 @@ export async function getStacItem(req, res): Promise<void> {
     await handleStacRequest(
       req,
       res,
-      (data) => stacItemCreate.apply(null, [data, data.links[0], itemIndex, linkType]),
+      (job: Job) => stacItemCreate.apply(
+        null, [job.jobID, job.request, job.links[0], itemIndex, linkType, job.createdAt],
+      ),
       pagingParams,
       linkType,
     );

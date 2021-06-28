@@ -52,7 +52,10 @@ describe('stac-catalog', function () {
     let jsonObj: SerializableCatalog;
     it('created Harmony STAC Catalog', function () {
       expect(function () {
-        jsonObj = create(job.serialize(), linksWithStacData(job.links), []);
+        const serializedJob = job.serialize();
+        jsonObj = create(
+          serializedJob.jobID, serializedJob.request, linksWithStacData(job.links), [],
+        );
       }).to.not.throw();
     });
     it('catalog ID matches Job ID', function () {
