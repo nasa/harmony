@@ -123,6 +123,7 @@ export class Job extends Record {
    *
    * @param transaction - the transaction to use for querying
    * @param constraints - field / value pairs that must be matched for a record to be returned
+   * @param getLinks - whether or not to get job links
    * @param currentPage - the index of the page to show
    * @param perPage - the number of results per page
    * @returns a list of all of the user's jobs
@@ -130,6 +131,7 @@ export class Job extends Record {
   static async queryAll(
     transaction: Transaction,
     constraints: JobQuery = {},
+    getLinks = true,
     currentPage = 0,
     perPage = 10,
   ): Promise<IWithPagination<Job[]>> {
@@ -140,8 +142,10 @@ export class Job extends Record {
       .paginate({ currentPage, perPage, isLengthAware: true });
 
     const jobs = items.data.map((j) => new Job(j));
-    for (const job of jobs) {
-      job.links = (await getLinksForJob(transaction, job.jobID)).data;
+    if (getLinks) {
+      for (const job of jobs) {
+        job.links = (await getLinksForJob(transaction, job.jobID)).data;
+      }
     }
 
     return {
@@ -198,7 +202,7 @@ export class Job extends Record {
    */
   static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
   Promise<IWithPagination<Job[]>> {
-    return this.queryAll(transaction, { username }, currentPage, perPage);
+    return this.queryAll(transaction, { username }, true, currentPage, perPage);
   }
 
   /**
