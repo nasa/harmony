@@ -216,6 +216,7 @@ describe('STAC - pagination', function () {
       hookStacCatalog(jobID, 'joe', { limit: 100 });
       it('includes only the relation to self, with no paging info', function () {
         const pageLinks = JSON.parse(this.res.text).links;
+        expect(pageLinks[0].rel).to.equal('root');
         expect(pageLinks.length).to.equal(52);
         expect(pageLinks[51].rel).to.equal('self');
         expect(pageLinks[51].title).to.equal('The current page');
