@@ -13,7 +13,15 @@ describe('STAC - pagination', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
 
   const links: JobLink[] = [] as JobLink[];
-  const aJob = buildJob({ username: 'joe', status: JobStatus.SUCCESSFUL, links });
+  const aJob = buildJob(
+    {
+      username: 'joe',
+      status: JobStatus.SUCCESSFUL,
+      message: 'it is done',
+      progress: 100,
+      links,
+    },
+  );
   let defaultResultPageSize;
 
   before(async function () {

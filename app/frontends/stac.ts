@@ -120,13 +120,17 @@ export async function getStacItem(req, res): Promise<void> {
   const { jobId, itemIndex } = req.params;
   const keys = keysToLowerCase(req.query);
   const linkType = keys.linktype?.toLowerCase();
+  const itemIndexInt = parseInt(itemIndex, 10);
   try {
-    const pagingParams: PagingParams = { page: itemIndex + 1, limit: 1 };
+    if (itemIndexInt === undefined) {
+      throw new RequestValidationError('STAC item index should be a valid integer');
+    }
+    const pagingParams: PagingParams = { page: itemIndexInt + 1, limit: 1 };
     await handleStacRequest(
       req,
       res,
       (job: Job) => stacItemCreate.apply(
-        null, [job.jobID, job.request, job.links[0], itemIndex, linkType, job.createdAt],
+        null, [job.jobID, job.request, job.links[0], itemIndexInt, linkType, job.createdAt],
       ),
       pagingParams,
       linkType,

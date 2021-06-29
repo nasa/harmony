@@ -34,13 +34,23 @@ const completedJob = buildJob({
   progress: 100,
   numInputGranules: 5,
   links: [{
-    href: 's3://example-bucket/public/example/path.tif',
+    href: 's3://example-bucket/public/example/path1.tif',
     type: 'image/tiff',
     rel: 'data',
     bbox: [-10, -10, 10, 10],
     temporal: {
       start: new Date('2020-01-01T00:00:00.000Z'),
       end: new Date('2020-01-01T01:00:00.000Z'),
+    },
+  },
+  {
+    href: 's3://example-bucket/public/example/path2.tif',
+    type: 'image/tiff',
+    rel: 'data',
+    bbox: [-10, -10, 10, 10],
+    temporal: {
+      start: new Date('2021-01-01T00:00:00.000Z'),
+      end: new Date('2021-01-01T01:00:00.000Z'),
     },
   }],
   request: 'http://example.com/harmony?job=completedJob',
@@ -162,7 +172,7 @@ describe('STAC item route', function () {
         });
       });
 
-      describe('when the service supplies the necessary fields', async function () {
+      describe('when the service supplies the necessary fields for the 0th item', async function () {
         const completedJobId = completedJob.requestId;
         const expectedItemWithoutAssetsOrLinks = {
           id: `${completedJob.requestId}_0`,
@@ -218,6 +228,35 @@ describe('STAC item route', function () {
             completedJob,
             expectedItemWithoutAssetsOrLinks,
             'https',
+          );
+        });
+      });
+
+      describe('when the service supplies the necessary fields for the nth item', async function () {
+        const completedJobId = completedJob.requestId;
+        const expectedItemWithoutAssetsOrLinks = {
+          id: `${completedJob.requestId}_1`,
+          stac_version: '0.9.0',
+          title: `Harmony output #1 in job ${completedJob.requestId}`,
+          description: 'Harmony out for http://example.com/harmony?job=completedJob',
+          type: 'Feature',
+          bbox: [-10, -10, 10, 10],
+          geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
+          // `links` added later
+          properties: {
+            // `created` property added later,
+            license: 'various',
+            start_datetime: '2021-01-01T00:00:00.000Z',
+            end_datetime: '2021-01-01T01:00:00.000Z',
+            datetime: '2021-01-01T00:00:00.000Z',
+          },
+        };
+
+        describe('when the nth item is requested', function () {
+          hookStacItem(completedJobId, 1, 'joe');
+          itReturnsTheExpectedStacResponse(
+            completedJob,
+            expectedItemWithoutAssetsOrLinks,
           );
         });
       });
