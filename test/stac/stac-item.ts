@@ -203,7 +203,7 @@ describe('STAC item route', function () {
 
         // HARMONY-770 AC 7
         describe('when linkType is s3', function () {
-          hookStacItem(completedJobId, 0, 'joe', 's3');
+          hookStacItem(completedJobId, 0, 'joe', { linkType: 's3' });
           itReturnsTheExpectedStacResponse(
             completedJob,
             expectedItemWithoutAssetsOrLinks,
@@ -213,7 +213,7 @@ describe('STAC item route', function () {
 
         // HARMONY-770 AC 6
         describe('when linkType is http', function () {
-          hookStacItem(completedJobId, 0, 'joe', 'http');
+          hookStacItem(completedJobId, 0, 'joe', { linkType: 'http' });
           itReturnsTheExpectedStacResponse(
             completedJob,
             expectedItemWithoutAssetsOrLinks,
@@ -223,7 +223,7 @@ describe('STAC item route', function () {
 
         // HARMONY-770 AC 6
         describe('when linkType is https', function () {
-          hookStacItem(completedJobId, 0, 'joe', 'https');
+          hookStacItem(completedJobId, 0, 'joe', { linkType: 'https' });
           itReturnsTheExpectedStacResponse(
             completedJob,
             expectedItemWithoutAssetsOrLinks,
@@ -263,7 +263,7 @@ describe('STAC item route', function () {
 
       describe('when the linkType is invalid', function () {
         const completedJobId = completedJob.requestId;
-        hookStacItem(completedJobId, 0, 'joe', 'foo');
+        hookStacItem(completedJobId, 0, 'joe', { linkType: 'foo' });
         // HARMONY-770 AC 8
         it('returns a 400 status', function () {
           expect(this.res.error.status).to.equal(400);

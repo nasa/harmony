@@ -7,6 +7,7 @@ import { auth } from './auth';
  *
  * @param app - The express application (typically this.frontend)
  * @param jobId - The job ID
+ * @param query - Query parameters object for the GET request
  * @returns An awaitable object that resolves to the request response
  */
 export function stacCatalog(
@@ -23,15 +24,15 @@ export function stacCatalog(
  * @param app - The express application (typically this.frontend)
  * @param jobId - The job ID
  * @param index - The index of the stac item in the stac catalog
+ * @param query - Query parameters object for the GET request
  * @returns An awaitable object that resolves to the request response
  */
 export function stacItem(
   app: Express.Application,
   jobId: string,
   index: number,
-  linkType?: string,
+  query: object = {},
 ): request.Test {
-  const query = linkType ? { linkType } : {};
   return request(app).get(`/stac/${jobId}/${index}`).query(query);
 }
 
@@ -40,6 +41,7 @@ export function stacItem(
  *
  * @param jobId - The job ID
  * @param username - optional user to simulate logging in as
+ * @param query - Query parameters object for the GET request
  */
 export function hookStacCatalog(
   jobId: string,
@@ -64,18 +66,19 @@ export function hookStacCatalog(
 * @param jobId - The job ID
 * @param index - The item index
 * @param username - optional user to simulate logging in as
+* @param query - Query parameters object for the GET request
 */
 export function hookStacItem(
   jobId: string,
   index: number,
   username?: string,
-  linkType?: string,
+  query: object = {},
 ): void {
   before(async function () {
     if (username) {
-      this.res = await stacItem(this.frontend, jobId, index, linkType).use(auth({ username }));
+      this.res = await stacItem(this.frontend, jobId, index, query).use(auth({ username }));
     } else {
-      this.res = await stacItem(this.frontend, jobId, index, linkType);
+      this.res = await stacItem(this.frontend, jobId, index, query);
     }
   });
   after(function () {
