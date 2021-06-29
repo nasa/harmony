@@ -409,6 +409,24 @@ export class Job extends Record {
   }
 
   /**
+   * Check if the job has any STAC data links
+   *
+   * @param transaction - transaction to use for the query
+   * @returns true or false
+   */
+  async hasStacLinks(
+    transaction,
+  ): Promise<boolean> {
+    const links = await transaction('job_links').select()
+      .where({ jobID: this.jobID, rel: 'data' })
+      .whereNotNull('bbox')
+      .whereNotNull('temporalStart')
+      .whereNotNull('temporalEnd')
+      .limit(1);
+    return links.length !== 0;
+  }
+
+  /**
    * Validates and saves the job using the given transaction.  Throws an error if the
    * job is not valid.  New jobs will be inserted and have their id, createdAt, and
    * updatedAt fields set.  Existing jobs will be updated and have their updatedAt
@@ -477,17 +495,5 @@ export class Job extends Record {
   getRelatedLinks(rel: string): JobLink[] {
     const links = this.links.filter((link) => link.rel === rel);
     return links.map(removeEmptyProperties) as JobLink[];
-  }
-
-  async hasStacLinks(
-    transaction,
-  ): Promise<boolean> {
-    const links = await transaction('job_links').select()
-      .where({ jobID: this.jobID, rel: 'data' })
-      .whereNotNull('bbox')
-      .whereNotNull('temporalStart')
-      .whereNotNull('temporalEnd')
-      .limit(1);
-    return links.length !== 0;
   }
 }
