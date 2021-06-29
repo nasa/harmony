@@ -1,5 +1,5 @@
 import { pick } from 'lodash';
-import { IPagination, IWithPagination } from 'knex-paginate'; // For types only
+import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
 import { ConflictError } from '../util/errors';
@@ -134,7 +134,7 @@ export class Job extends Record {
     getLinks = true,
     currentPage = 0,
     perPage = 10,
-  ): Promise<IWithPagination<Job[]>> {
+  ): Promise<{ data: Job[]; pagination: IPagination }> {
     const items = await transaction('jobs')
       .select()
       .where(constraints)
@@ -170,7 +170,7 @@ export class Job extends Record {
     currentPage = 0,
     perPage = 10,
   ):
-    Promise<IWithPagination<Job[]>> {
+    Promise<{ data: Job[]; pagination: IPagination }> {
     const pastDate = subMinutes(new Date(), minutes);
     const items = await transaction('jobs')
       .select()
@@ -201,7 +201,7 @@ export class Job extends Record {
    * @returns a list of all of the user's jobs
    */
   static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
-  Promise<IWithPagination<Job[]>> {
+  Promise<{ data: Job[]; pagination: IPagination }> {
     return this.queryAll(transaction, { username }, true, currentPage, perPage);
   }
 
@@ -251,7 +251,7 @@ export class Job extends Record {
     requestId,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: IWithPagination }> {
+  ): Promise<{ job: Job; pagination: IPagination }> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
