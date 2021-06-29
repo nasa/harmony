@@ -3,6 +3,7 @@ import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import { JobStatus } from 'models/job';
 import { buildJob } from 'test/helpers/jobs';
+import url from 'url';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacCatalog, hookStacCatalog } from '../helpers/stac';
@@ -141,6 +142,7 @@ describe('STAC catalog route', function () {
         });
 
         it('returns a STAC catalog in JSON format', function () {
+          const reqUrl = new url.URL(this.res.request.url);
           const catalog = JSON.parse(this.res.text);
           expect(catalog.description).to.equal('Harmony output for http://example.com/harmony?job=completedJob');
           expect(catalog.id).to.equal(completedJob.requestId);
@@ -148,7 +150,7 @@ describe('STAC catalog route', function () {
             { href: '.', rel: 'root', title: 'root' },
             { href: './0', rel: 'item' },
             {
-              href: `http://127.0.0.1:4000/stac/${completedJob.requestId}?page=1&limit=${env.defaultResultPageSize}`,
+              href: `${reqUrl.origin}/stac/${completedJob.requestId}?page=1&limit=${env.defaultResultPageSize}`,
               rel: 'self',
               title: 'The current page',
               type: 'application/json',
