@@ -43,8 +43,8 @@ describe('STAC - pagination', function () {
           rel: 'data',
           bbox: '-180,-90,180,90',
           temporal: {
-            start: new Date(1577836800000),
-            end: new Date(1577836800000),
+            start: new Date('2020-01-01T00:00:00.000Z'),
+            end: new Date('2020-01-02T00:00:00.000Z'),
           },
         }),
       );
