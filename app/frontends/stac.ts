@@ -46,9 +46,8 @@ async function handleStacRequest(
           const urlRoot = getRequestRoot(req);
           // default to s3 links
           const lType = linkType || 's3';
-          const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
           const serializedJob = job.serialize(urlRoot, lType);
-          res.json(callback(serializedJob, pagingLinks));
+          res.json(callback(serializedJob, pagination));
         } else if ((await job.hasStacLinks(tx))) {
           if (req.params.itemIndex) {
             throw new RangeError('STAC item index is out of bounds');
@@ -82,9 +81,12 @@ export async function getStacCatalog(req, res): Promise<void> {
     const pagingParams = getPagingParams(req, env.defaultResultPageSize);
     await handleStacRequest(
       req, res,
-      (job: Job, pagingLinks: JobLink[]) => stacCatalogCreate(
-        job.jobID, job.request, job.links, pagingLinks, linkType,
-      ), pagingParams,
+      (job: Job, pagination) => {
+        const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
+        return stacCatalogCreate(
+          job.jobID, job.request, job.links, pagingLinks, linkType,
+        );
+      }, pagingParams,
     );
   } catch (e) {
     req.context.logger.error(e);
