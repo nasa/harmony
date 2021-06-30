@@ -212,7 +212,7 @@ export class Job extends Record {
    * @param transaction - the transaction to use for querying
    * @param username - the username associated with the job
    * @param requestId - the UUID of the request associated with the job
-   * @param stacOnly - if true, only load STAC data links in job.links
+   * @param includeLinks - if true, load all JobLinks into job.links
    * @param currentPage - the index of the page of links to show
    * @param perPage - the number of link results per page
    * @returns the matching job, or null if none exists, along with pagination information
@@ -222,15 +222,15 @@ export class Job extends Record {
     transaction,
     username,
     requestId,
-    stacOnly = false,
+    includeLinks = true,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: IPagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
-    if (job) {
-      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage, stacOnly);
+    if (job && includeLinks) {
+      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
       job.links = linkData.data;
       paginationInfo = linkData.pagination;
     }
@@ -417,13 +417,10 @@ export class Job extends Record {
   async hasStacLinks(
     transaction,
   ): Promise<boolean> {
-    const links = await transaction('job_links').select()
-      .where({ jobID: this.jobID, rel: 'data' })
-      .whereNotNull('bbox')
-      .whereNotNull('temporalStart')
-      .whereNotNull('temporalEnd')
-      .limit(1);
-    return links.length !== 0;
+    const { data } = await getLinksForJob(
+      transaction, this.jobID, 1, 1, 'data', true,
+    );
+    return data.length !== 0;
   }
 
   /**

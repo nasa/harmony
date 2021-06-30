@@ -84,7 +84,7 @@ describe('STAC - pagination', function () {
       it('returns a JSON error response', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:RequestValidationError',
+          code: 'harmony.RequestValidationError',
           description: 'Error: Parameter "page" is invalid. Must be an integer greater than or equal to 1.',
         });
       });
@@ -99,7 +99,7 @@ describe('STAC - pagination', function () {
       it('returns a JSON error response', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:RequestValidationError',
+          code: 'harmony.RequestValidationError',
           description: 'Error: Parameter "page" is invalid. Must be an integer greater than or equal to 1.',
         });
       });
@@ -134,7 +134,7 @@ describe('STAC - pagination', function () {
       it('returns a JSON error response', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:RequestValidationError',
+          code: 'harmony.RequestValidationError',
           description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 10000.',
         });
       });
@@ -149,7 +149,7 @@ describe('STAC - pagination', function () {
       it('returns a JSON error response', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:RequestValidationError',
+          code: 'harmony.RequestValidationError',
           description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 10000.',
         });
       });
@@ -206,7 +206,7 @@ describe('STAC - pagination', function () {
       it('returns a JSON error response', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:RequestError',
+          code: 'harmony.RequestValidationError',
           description: 'Error: The requested paging parameters were out of bounds',
         });
       });
@@ -228,7 +228,7 @@ describe('STAC - pagination', function () {
       it('returns a JSON error response', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:RequestError',
+          code: 'harmony.RequestValidationError',
           description: 'Error: The requested paging parameters were out of bounds',
         });
       });

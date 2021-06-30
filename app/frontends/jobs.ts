@@ -174,7 +174,7 @@ export async function getJobStatus(
         ({
           job,
           pagination,
-        } = await Job.byUsernameAndRequestId(tx, req.user, jobID, false, page, limit));
+        } = await Job.byUsernameAndRequestId(tx, req.user, jobID, true, page, limit));
       } else {
         ({ job, pagination } = await Job.byRequestId(tx, jobID, page, limit));
       }

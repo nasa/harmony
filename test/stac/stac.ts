@@ -81,7 +81,7 @@ describe('STAC catalog route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${jobId}` });
     });
   });
@@ -96,7 +96,7 @@ describe('STAC catalog route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${unknownRequest}` });
     });
   });
@@ -110,7 +110,7 @@ describe('STAC catalog route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:BadRequestError',
+        code: 'harmony.RequestValidationError',
         description: 'Error: jobId not-a-uuid is in invalid format.',
       });
     });
@@ -126,7 +126,7 @@ describe('STAC catalog route', function () {
       it('returns a JSON error response', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:BadRequestError',
+          code: 'harmony.ConflictError',
           description: `Error: Job ${jobId} is not complete`,
         });
       });

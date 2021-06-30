@@ -103,7 +103,7 @@ describe('STAC item route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${jobId}` });
     });
   });
@@ -118,7 +118,7 @@ describe('STAC item route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${unknownRequest}` });
     });
   });
@@ -132,7 +132,7 @@ describe('STAC item route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:BadRequestError',
+        code: 'harmony.RequestValidationError',
         description: 'Error: jobId not-a-uuid is in invalid format.',
       });
     });
@@ -148,7 +148,7 @@ describe('STAC item route', function () {
       it('returns a JSON error response', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:BadRequestError',
+          code: 'harmony.ConflictError',
           description: `Error: Job ${jobId} is not complete`,
         });
       });
@@ -159,14 +159,14 @@ describe('STAC item route', function () {
         const completedJobId = completedNonStacJob.requestId;
         hookStacItem(completedJobId, 0, 'joe');
 
-        it('returns an HTTP not implemented response', function () {
-          expect(this.res.statusCode).to.equal(501);
+        it('returns an HTTP not found response', function () {
+          expect(this.res.statusCode).to.equal(404);
         });
 
         it('returns a JSON error response', function () {
           const response = JSON.parse(this.res.text);
           expect(response).to.eql({
-            code: 'harmony:ServiceError',
+            code: 'harmony.NotFoundError',
             description: `Error: Service did not provide STAC items for job ${completedJobId}`,
           });
         });
@@ -283,7 +283,7 @@ describe('STAC item route', function () {
         it('returns a JSON error response', function () {
           const response = JSON.parse(this.res.text);
           expect(response).to.eql({
-            code: 'harmony:RequestError',
+            code: 'harmony.RequestValidationError',
             description: 'Error: STAC item index is out of bounds',
           });
         });

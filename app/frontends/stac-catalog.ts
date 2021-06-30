@@ -88,7 +88,7 @@ class HarmonyCatalog implements SerializableCatalog {
  *
  * @param jobID - Harmony job jobID string
  * @param jobRequest - Harmony job, job request string
- * @param stacDataLinks - JobLink's to add to catalog
+ * @param stacDataLinks - JobLinks to add to catalog
  * @param pagingLinks - links pointing to the next, previous, and current page
  * @param linkType - the type of data links that the stac-items should use
  *
