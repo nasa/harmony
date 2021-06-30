@@ -169,8 +169,8 @@ export default class JobLink extends Record {
  * @param jobID - the UUID associated with the job
  * @param currentPage - the index of the page to show
  * @param perPage - the number of results per page
- * @param rel - if set, only return data links with this rel type
- * @param requireSpatioTemporal - if true, only return data links
+ * @param rel - if set, only return job links with this rel type
+ * @param requireSpatioTemporal - if true, only return job links
  *  with spatial and temporal constraints
  *
  * @returns A promise that resolves to a map containing

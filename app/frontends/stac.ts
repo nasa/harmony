@@ -51,7 +51,7 @@ async function handleStacRequest(
           const lType = linkType || 's3';
           const serializedJob = job.serialize(urlRoot, lType);
           res.json(callback(serializedJob, pagination));
-        } else if ((await job.hasStacLinks(tx))) {
+        } else if ((await job.hasLinks(tx, 'data', true))) {
           if (req.params.itemIndex) {
             throw new RequestValidationError('STAC item index is out of bounds');
           } else {

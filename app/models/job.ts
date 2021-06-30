@@ -409,16 +409,21 @@ export class Job extends Record {
   }
 
   /**
-   * Check if the job has any STAC data links
+   * Check if the job has any links
    *
    * @param transaction - transaction to use for the query
+   * @param rel - if set, only check for job links with this rel type
+   * @param requireSpatioTemporal - if true, only check for job links
+   *  with spatial and temporal constraints
    * @returns true or false
    */
-  async hasStacLinks(
+  async hasLinks(
     transaction,
+    rel?: string,
+    requireSpatioTemporal = false,
   ): Promise<boolean> {
     const { data } = await getLinksForJob(
-      transaction, this.jobID, 1, 1, 'data', true,
+      transaction, this.jobID, 1, 1, rel, requireSpatioTemporal,
     );
     return data.length !== 0;
   }
