@@ -79,9 +79,10 @@ export function areJobLinksEqual(jobLinks: JobLink[], serializedJobLinks: JobLin
  *
  * @param jobRecord - a job record
  * @param serializedJob - a job record serialized
+ * @param skipLinks - if true links are not used in the comparison
  * @returns true if the jobs are the same
  */
-export function jobsEqual(jobRecord: JobRecord, serializedJob: Job): boolean {
+export function jobsEqual(jobRecord: JobRecord, serializedJob: Job, skipLinks = false): boolean {
   const recordLinks = new Job(jobRecord).getRelatedLinks('data');
   const serializedLinks = serializedJob.getRelatedLinks('data');
 
@@ -91,18 +92,19 @@ export function jobsEqual(jobRecord: JobRecord, serializedJob: Job): boolean {
     && jobRecord.progress && serializedJob.progress
     && jobRecord.status === serializedJob.status
     && jobRecord.request === serializedJob.request
-    && areJobLinksEqual(recordLinks, serializedLinks));
+    && (skipLinks || areJobLinksEqual(recordLinks, serializedLinks)));
 }
 
 /**
- * Returns true if the job is found in the passed in job list
+ * Returns true if the job is found in the passed in job list. Job links are not used in the
+ * comparisons.
  *
  * @param job - The job to search for
  * @param jobList - An array of jobs
  * @returns true if the object is found
  */
 export function containsJob(job: JobRecord, jobList: JobListing): boolean {
-  return !!jobList.jobs.find((j) => jobsEqual(job, new Job(j)));
+  return !!jobList.jobs.find((j) => jobsEqual(job, new Job(j), true));
 }
 
 /**
