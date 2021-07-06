@@ -72,6 +72,7 @@ async function handleStacRequest(
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
+ * @param next - The next middleware function in the stack
  * @returns Resolves when the request is complete
  */
 export async function getStacCatalog(req, res, next): Promise<void> {
@@ -99,6 +100,7 @@ export async function getStacCatalog(req, res, next): Promise<void> {
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
+ * @param next - The next middleware function in the stack
  * @returns Resolves when the request is complete
  */
 export async function getStacItem(req, res, next): Promise<void> {
