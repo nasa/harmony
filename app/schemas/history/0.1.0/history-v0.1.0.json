@@ -34,7 +34,7 @@
             },
             "parameters": {
                "description": "The list of parameters to the program when generating this data file",
-               "type": [ "array", "string" ],
+               "type": [ "array", "string", "object" ],
                "items": { "type": "string" }
             },
             "program_ref": {
