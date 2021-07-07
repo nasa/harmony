@@ -2,6 +2,7 @@ import { pick } from 'lodash';
 import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
+import { defaultObjectStore, objectStoreChecksum } from 'util/object-store';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
@@ -54,6 +55,7 @@ export interface JobRecord {
   createdAt?: Date | number;
   updatedAt?: Date | number;
   numInputGranules: number;
+  shapeFileUrl: string;
 }
 
 export interface JobQuery {
@@ -73,8 +75,8 @@ export interface JobQuery {
 
 export interface AttachedStatus {
   didAttach: boolean;
-  oldId?: string;
-  newId?: string;
+  originalId?: string;
+  assumedId?: string;
 }
 
 /**
@@ -125,6 +127,8 @@ export class Job extends Record {
   numInputGranules: number;
 
   attachedStatus: AttachedStatus;
+
+  shapeFileUrl: string;
 
   /**
    * Returns an array of all jobs that match the given constraints
@@ -288,6 +292,7 @@ export class Job extends Record {
       this.originalStatus = this.status;
     }
     this.attachedStatus = { didAttach: false };
+    this.shapeFileUrl = fields.shapeFileUrl || '';
   }
 
   /**
@@ -418,7 +423,6 @@ export class Job extends Record {
   }
 
   /**
-<<<<<<< HEAD
    * Check if the job has any links
    *
    * @param transaction - transaction to use for the query
@@ -436,7 +440,9 @@ export class Job extends Record {
       transaction, this.jobID, 1, 1, rel, requireSpatioTemporal,
     );
     return data.length !== 0;
-=======
+  }
+
+  /**
    * Determine if the current job is the same as an already running job. If so, replace the
    * current job's requestId with that of the running job's. Add an attachedStatus property for
    * later referencing.
@@ -446,20 +452,39 @@ export class Job extends Record {
    */
   async maybeAttach(transaction: Transaction): Promise<void> {
     const rows = await transaction('jobs')
-      .select('requestId')
+      .select('requestId', 'shapeFileUrl')
       .where({ username: this.username, request: this.request })
       .andWhere('status', JobStatus.ACCEPTED)
-      .orWhere('status', JobStatus.RUNNING)
-      .limit(1);
-    if (rows.length > 0) {
-      const oldId = this.requestId;
-      const newId = rows.shift()['requestId'];
-      this.requestId = newId;
-      this.attachedStatus = { didAttach: true, oldId, newId };
+      .orWhere('status', JobStatus.RUNNING);
+    if (Array.isArray(rows) && rows.length > 0) {
+      const originalId = this.requestId;
+      // if a shapefile is not present then database query returned all matching running requests
+      if (this.shapeFileUrl === '') {
+        const assumedId = rows.shift()['requestId'];
+        this.attachedStatus = { didAttach: true, originalId, assumedId };
+      // otherwise, compare checksum of current shapefile to other matching requests shapefile
+      } else {
+        const store = defaultObjectStore();
+        const thisSum = await objectStoreChecksum(store, this.shapeFileUrl);
+        let otherSum = '';
+        let otherId = '';
+        for (const row of rows) {
+          otherSum = await objectStoreChecksum(store, row.shapeFileUrl);
+          if (thisSum === otherSum) {
+            otherId = row.requestId;
+            break;
+          }
+        }
+        if (otherId) {
+          const assumedId = otherId;
+          this.attachedStatus = { didAttach: true, originalId, assumedId };
+        } else {
+          this.attachedStatus = { didAttach: false };
+        }
+      }
     } else {
       this.attachedStatus = { didAttach: false };
     }
->>>>>>> HARMONY-843: Initial support for Attached Jobs; does not include shapefile support.
   }
 
   /**
