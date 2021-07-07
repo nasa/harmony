@@ -450,6 +450,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234714698-EEDTEST  # ATL08 UAT
       - C1238392622-EEDTEST  # RSSMIF16D test collection UAT
       - C1222931739-GHRC_CLOUD  # RSSMIF16D UAT
+      - C1238621141-POCLOUD # GHRSST Level 4 MUR Global Foundation Sea Surface Temperature Analysis (v4.1)
     capabilities:
       subsetting:
         variable: true
