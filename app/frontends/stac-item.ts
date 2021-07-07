@@ -1,8 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import { pick } from 'lodash';
-import { linksWithStacData } from 'util/stac';
 
-import { Job } from 'models/job';
 import JobLink from 'models/job-link';
 
 export class HarmonyItem {
@@ -207,33 +205,36 @@ export class HarmonyItem {
 /**
  * Function to create a STAC item
  *
- * @param job - Harmony Job object
- * @param index - Index of the Link item in Job
+ * @param jobID - Harmony job jobID string
+ * @param jobRequest - Harmony job, job request string
+ * @param stacDataLink - JobLink to convert into a STAC item
+ * @param index - Index of the link item
+ * @param linkType - the type of data links that the stac-items should use
+ * @param createdAt - Date when the job was created
  *
  * @returns STAC Item JSON
  */
-export default function create(job: Job, index: number, linkType?: string): HarmonyItem {
-  const title = `Harmony output #${index} in job ${job.jobID}`;
-  const description = `Harmony out for ${job.request}`;
-  const item = new HarmonyItem(job.jobID, title, description, index);
+export default function create(
+  jobID: string, jobRequest: string, stacDataLink: JobLink,
+  index: number, linkType?: string, createdAt?: Date,
+): HarmonyItem {
+  const title = `Harmony output #${index} in job ${jobID}`;
+  const description = `Harmony out for ${jobRequest}`;
+  const item = new HarmonyItem(jobID, title, description, index);
 
   // Set creation time
-  const creationTime = Object.hasOwnProperty.call(job, 'createdAt') ? new Date(job.createdAt) : new Date();
+  const creationTime = createdAt || new Date();
   item.setProperty('created', creationTime.toISOString());
   // TBD: may be it should be a metadata for a Harmony service
   item.setProperty('license', 'various');
   // Add assets
-  const stacLinks = linksWithStacData(job.links);
-  if (index < 0 || index >= stacLinks.length) {
-    throw new RangeError('Error: STAC item index is out of bounds');
-  }
   const {
     bbox,
     temporal,
     href,
     title: linkTitle,
     type,
-  } = stacLinks[index];
+  } = stacDataLink;
   item.addSpatialExtent(bbox);
   item.addTemporalExtent(temporal.start, temporal.end);
   item.addAsset(href, linkTitle, type);

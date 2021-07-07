@@ -1,4 +1,4 @@
-import { IWithPagination } from 'knex-paginate'; // For types only
+import { IPagination } from 'knex-paginate'; // For types only
 import _ from 'lodash';
 import { Transaction } from 'util/db';
 import { removeEmptyProperties } from 'util/object';
@@ -169,6 +169,9 @@ export default class JobLink extends Record {
  * @param jobID - the UUID associated with the job
  * @param currentPage - the index of the page to show
  * @param perPage - the number of results per page
+ * @param rel - if set, only return job links with this rel type
+ * @param requireSpatioTemporal - if true, only return job links
+ *  with spatial and temporal constraints
  *
  * @returns A promise that resolves to a map containing
  * pagination information and an array of links
@@ -178,10 +181,24 @@ export async function getLinksForJob(
   jobID: string,
   currentPage = 0,
   perPage = 10,
-): Promise<IWithPagination<JobLink[]>> {
+  rel?: string,
+  requireSpatioTemporal = false,
+): Promise<{ data: JobLink[]; pagination: IPagination }> {
   const result = await transaction('job_links').select()
     .where({ jobID })
     .orderBy(['id'])
+    .modify((queryBuilder) => {
+      if (rel) {
+        queryBuilder
+          .where({ rel });
+      }
+      if (requireSpatioTemporal) {
+        queryBuilder
+          .whereNotNull('bbox')
+          .whereNotNull('temporalStart')
+          .whereNotNull('temporalEnd');
+      }
+    })
     .forUpdate()
     .paginate({ currentPage, perPage, isLengthAware: true });
   const links = result.data.map((j) => new JobLink(j));

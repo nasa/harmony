@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { JobStatus } from 'models/job';
 import create, { SerializableCatalog } from 'frontends/stac-catalog';
 import { buildJob } from 'test/helpers/jobs';
+import { linksWithStacData } from 'util/stac';
 
 // Prop for testing
 const jobProps = {
@@ -50,19 +51,25 @@ describe('stac-catalog', function () {
     const job = buildJob(jobProps);
     let jsonObj: SerializableCatalog;
     it('created Harmony STAC Catalog', function () {
-      expect(function () { jsonObj = create(job.serialize()); }).to.not.throw();
+      expect(function () {
+        const serializedJob = job.serialize();
+        jsonObj = create(
+          serializedJob.jobID, serializedJob.request, linksWithStacData(job.links), [],
+        );
+      }).to.not.throw();
     });
     it('catalog ID matches Job ID', function () {
       expect(jsonObj.id).to.equal(jobProps.requestId);
     });
-    it('has links', function () {
-      expect(jsonObj.links.length).to.equal(4);
+    it('includes the expected links', function () {
+      expect(jsonObj.links).to.eql([
+        { href: '.', rel: 'root', title: 'root' },
+        { href: './0', rel: 'item', title: 'Item #1' },
+        { href: './1', rel: 'item', title: 'Item #2' },
+      ]);
     });
-    it('has link with an item', function () {
-      expect(jsonObj.links[3].rel).to.equal('item');
-    });
-    it('has link with href to item index', function () {
-      expect(jsonObj.links[3].href).to.equal('./1');
+    it('has the proper description', function () {
+      expect(jsonObj.description).to.equal('Harmony output for example.com');
     });
   });
 });

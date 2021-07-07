@@ -1,5 +1,5 @@
 import { pick } from 'lodash';
-import { IWithPagination } from 'knex-paginate'; // For types only
+import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
 import { ConflictError } from '../util/errors';
@@ -134,7 +134,7 @@ export class Job extends Record {
     getLinks = true,
     currentPage = 0,
     perPage = 10,
-  ): Promise<IWithPagination<Job[]>> {
+  ): Promise<{ data: Job[]; pagination: IPagination }> {
     const items = await transaction('jobs')
       .select()
       .where(constraints)
@@ -170,7 +170,7 @@ export class Job extends Record {
     currentPage = 0,
     perPage = 10,
   ):
-    Promise<IWithPagination<Job[]>> {
+    Promise<{ data: Job[]; pagination: IPagination }> {
     const pastDate = subMinutes(new Date(), minutes);
     const items = await transaction('jobs')
       .select()
@@ -201,7 +201,7 @@ export class Job extends Record {
    * @returns a list of all of the user's jobs
    */
   static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
-  Promise<IWithPagination<Job[]>> {
+  Promise<{ data: Job[]; pagination: IPagination }> {
     return this.queryAll(transaction, { username }, true, currentPage, perPage);
   }
 
@@ -212,6 +212,7 @@ export class Job extends Record {
    * @param transaction - the transaction to use for querying
    * @param username - the username associated with the job
    * @param requestId - the UUID of the request associated with the job
+   * @param includeLinks - if true, load all JobLinks into job.links
    * @param currentPage - the index of the page of links to show
    * @param perPage - the number of link results per page
    * @returns the matching job, or null if none exists, along with pagination information
@@ -224,7 +225,7 @@ export class Job extends Record {
     includeLinks = true,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: IWithPagination }> {
+  ): Promise<{ job: Job; pagination: IPagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
@@ -250,7 +251,7 @@ export class Job extends Record {
     requestId,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: IWithPagination }> {
+  ): Promise<{ job: Job; pagination: IPagination }> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
@@ -405,6 +406,26 @@ export class Job extends Record {
    */
   isComplete(): boolean {
     return terminalStates.includes(this.status);
+  }
+
+  /**
+   * Check if the job has any links
+   *
+   * @param transaction - transaction to use for the query
+   * @param rel - if set, only check for job links with this rel type
+   * @param requireSpatioTemporal - if true, only check for job links
+   *  with spatial and temporal constraints
+   * @returns true or false
+   */
+  async hasLinks(
+    transaction,
+    rel?: string,
+    requireSpatioTemporal = false,
+  ): Promise<boolean> {
+    const { data } = await getLinksForJob(
+      transaction, this.jobID, 1, 1, rel, requireSpatioTemporal,
+    );
+    return data.length !== 0;
   }
 
   /**

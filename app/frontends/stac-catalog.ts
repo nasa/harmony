@@ -1,7 +1,5 @@
 import { pick } from 'lodash';
-import { Job } from 'models/job';
 import JobLink from 'models/job-link';
-import { linksWithStacData } from 'util/stac';
 
 export interface SerializableCatalog {
   id: string;
@@ -88,29 +86,35 @@ class HarmonyCatalog implements SerializableCatalog {
 /**
  * Function to create the STAC Catalog given a Harmony Job object
  *
- * @param job - Harmony Job object
+ * @param jobID - Harmony job jobID string
+ * @param jobRequest - Harmony job, job request string
+ * @param stacDataLinks - JobLinks to add to catalog
+ * @param pagingLinks - links pointing to the next, previous, and current page
  * @param linkType - the type of data links that the stac-items should use
  *
  * @returns - STAC Catalog JSON
  *
  * @example
  * const catalog = require('HarmonyCatalog');
- * let jsonObj = catalog.create(job);
+ * let jsonObj = catalog.create(job.jobID, job.request, stacDataLinks, pagingLinks);
  * let jsonStr = JSON.stringify(jsonObj, null, 2);
  */
-export default function create(job: Job, linkType?: string): SerializableCatalog {
-  const title = `Harmony output for ${job.jobID}`;
-  const description = `Harmony output for ${job.request}`;
-  const catalog = new HarmonyCatalog(job.jobID, title, description);
+export default function create(
+  jobID: string, jobRequest: string, stacDataLinks: JobLink[],
+  pagingLinks: JobLink[], linkType?: string,
+): SerializableCatalog {
+  const title = `Harmony output for ${jobID}`;
+  const description = `Harmony output for ${jobRequest}`;
+  const catalog = new HarmonyCatalog(jobID, title, description);
   // Add linkType to links if defined and not null
   const linkTypeParam = linkType ? `?linkType=${linkType}` : '';
   const url = linkType ? `./${linkTypeParam}` : '.';
-  catalog.addLink(url, 'self', 'self');
   catalog.addLink(url, 'root', 'root');
   let index = 0;
-  for (const link of linksWithStacData(job.links)) {
+  for (const link of stacDataLinks) {
     catalog.addLink(`./${index}${linkTypeParam}`, 'item', link.title);
     index++;
   }
+  catalog.links.push(...pagingLinks);
   return catalog.toJSON();
 }

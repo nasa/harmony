@@ -3,9 +3,11 @@ import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import { JobStatus } from 'models/job';
 import { buildJob } from 'test/helpers/jobs';
+import url from 'url';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacCatalog, hookStacCatalog } from '../helpers/stac';
+import env from '../../app/util/env';
 
 const runningJobProps = {
   username: 'joe',
@@ -79,7 +81,7 @@ describe('STAC catalog route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${jobId}` });
     });
   });
@@ -94,7 +96,7 @@ describe('STAC catalog route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${unknownRequest}` });
     });
   });
@@ -108,7 +110,7 @@ describe('STAC catalog route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:BadRequestError',
+        code: 'harmony.RequestValidationError',
         description: 'Error: jobId not-a-uuid is in invalid format.',
       });
     });
@@ -124,7 +126,7 @@ describe('STAC catalog route', function () {
       it('returns a JSON error response', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:BadRequestError',
+          code: 'harmony.ConflictError',
           description: `Error: Job ${jobId} is not complete`,
         });
       });
@@ -140,13 +142,19 @@ describe('STAC catalog route', function () {
         });
 
         it('returns a STAC catalog in JSON format', function () {
+          const reqUrl = new url.URL(this.res.request.url);
           const catalog = JSON.parse(this.res.text);
           expect(catalog.description).to.equal('Harmony output for http://example.com/harmony?job=completedJob');
           expect(catalog.id).to.equal(completedJob.requestId);
           expect(catalog.links).to.eql([
-            { href: '.', rel: 'self', title: 'self' },
             { href: '.', rel: 'root', title: 'root' },
             { href: './0', rel: 'item' },
+            {
+              href: `${reqUrl.origin}/stac/${completedJob.requestId}?page=1&limit=${env.defaultResultPageSize}`,
+              rel: 'self',
+              title: 'The current page',
+              type: 'application/json',
+            },
           ]);
           expect(catalog.stac_version).to.equal('0.9.0');
           expect(catalog.title).to.include('Harmony output for ');
@@ -154,7 +162,7 @@ describe('STAC catalog route', function () {
       });
       describe('when the linkType is invalid', function () {
         const completedJobId = completedJob.requestId;
-        hookStacCatalog(completedJobId, 'joe', 'foo');
+        hookStacCatalog(completedJobId, 'joe', { linkType: 'foo' });
         // HARMONY-770 AC 8
         it('returns a 400 status', function () {
           expect(this.res.statusCode).to.equal(400);

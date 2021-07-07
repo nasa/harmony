@@ -34,13 +34,23 @@ const completedJob = buildJob({
   progress: 100,
   numInputGranules: 5,
   links: [{
-    href: 's3://example-bucket/public/example/path.tif',
+    href: 's3://example-bucket/public/example/path1.tif',
     type: 'image/tiff',
     rel: 'data',
     bbox: [-10, -10, 10, 10],
     temporal: {
       start: new Date('2020-01-01T00:00:00.000Z'),
       end: new Date('2020-01-01T01:00:00.000Z'),
+    },
+  },
+  {
+    href: 's3://example-bucket/public/example/path2.tif',
+    type: 'image/tiff',
+    rel: 'data',
+    bbox: [-10, -10, 10, 10],
+    temporal: {
+      start: new Date('2021-01-01T00:00:00.000Z'),
+      end: new Date('2021-01-01T01:00:00.000Z'),
     },
   }],
   request: 'http://example.com/harmony?job=completedJob',
@@ -93,7 +103,7 @@ describe('STAC item route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${jobId}` });
     });
   });
@@ -108,7 +118,7 @@ describe('STAC item route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:NotFoundError',
+        code: 'harmony.NotFoundError',
         description: `Error: Unable to find job ${unknownRequest}` });
     });
   });
@@ -122,7 +132,7 @@ describe('STAC item route', function () {
     it('returns a JSON error response', function () {
       const response = JSON.parse(this.res.text);
       expect(response).to.eql({
-        code: 'harmony:BadRequestError',
+        code: 'harmony.RequestValidationError',
         description: 'Error: jobId not-a-uuid is in invalid format.',
       });
     });
@@ -138,7 +148,7 @@ describe('STAC item route', function () {
       it('returns a JSON error response', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
-          code: 'harmony:BadRequestError',
+          code: 'harmony.ConflictError',
           description: `Error: Job ${jobId} is not complete`,
         });
       });
@@ -149,20 +159,20 @@ describe('STAC item route', function () {
         const completedJobId = completedNonStacJob.requestId;
         hookStacItem(completedJobId, 0, 'joe');
 
-        it('returns an HTTP not implemented response', function () {
-          expect(this.res.statusCode).to.equal(501);
+        it('returns an HTTP not found response', function () {
+          expect(this.res.statusCode).to.equal(404);
         });
 
         it('returns a JSON error response', function () {
           const response = JSON.parse(this.res.text);
           expect(response).to.eql({
-            code: 'harmony:ServiceError',
+            code: 'harmony.NotFoundError',
             description: `Error: Service did not provide STAC items for job ${completedJobId}`,
           });
         });
       });
 
-      describe('when the service supplies the necessary fields', async function () {
+      describe('when the service supplies the necessary fields for the 0th item', async function () {
         const completedJobId = completedJob.requestId;
         const expectedItemWithoutAssetsOrLinks = {
           id: `${completedJob.requestId}_0`,
@@ -193,7 +203,7 @@ describe('STAC item route', function () {
 
         // HARMONY-770 AC 7
         describe('when linkType is s3', function () {
-          hookStacItem(completedJobId, 0, 'joe', 's3');
+          hookStacItem(completedJobId, 0, 'joe', { linkType: 's3' });
           itReturnsTheExpectedStacResponse(
             completedJob,
             expectedItemWithoutAssetsOrLinks,
@@ -203,7 +213,7 @@ describe('STAC item route', function () {
 
         // HARMONY-770 AC 6
         describe('when linkType is http', function () {
-          hookStacItem(completedJobId, 0, 'joe', 'http');
+          hookStacItem(completedJobId, 0, 'joe', { linkType: 'http' });
           itReturnsTheExpectedStacResponse(
             completedJob,
             expectedItemWithoutAssetsOrLinks,
@@ -213,7 +223,7 @@ describe('STAC item route', function () {
 
         // HARMONY-770 AC 6
         describe('when linkType is https', function () {
-          hookStacItem(completedJobId, 0, 'joe', 'https');
+          hookStacItem(completedJobId, 0, 'joe', { linkType: 'https' });
           itReturnsTheExpectedStacResponse(
             completedJob,
             expectedItemWithoutAssetsOrLinks,
@@ -222,9 +232,38 @@ describe('STAC item route', function () {
         });
       });
 
+      describe('when the service supplies the necessary fields for the nth item', async function () {
+        const completedJobId = completedJob.requestId;
+        const expectedItemWithoutAssetsOrLinks = {
+          id: `${completedJob.requestId}_1`,
+          stac_version: '0.9.0',
+          title: `Harmony output #1 in job ${completedJob.requestId}`,
+          description: 'Harmony out for http://example.com/harmony?job=completedJob',
+          type: 'Feature',
+          bbox: [-10, -10, 10, 10],
+          geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
+          // `links` added later
+          properties: {
+            // `created` property added later,
+            license: 'various',
+            start_datetime: '2021-01-01T00:00:00.000Z',
+            end_datetime: '2021-01-01T01:00:00.000Z',
+            datetime: '2021-01-01T00:00:00.000Z',
+          },
+        };
+
+        describe('when the nth item is requested', function () {
+          hookStacItem(completedJobId, 1, 'joe');
+          itReturnsTheExpectedStacResponse(
+            completedJob,
+            expectedItemWithoutAssetsOrLinks,
+          );
+        });
+      });
+
       describe('when the linkType is invalid', function () {
         const completedJobId = completedJob.requestId;
-        hookStacItem(completedJobId, 0, 'joe', 'foo');
+        hookStacItem(completedJobId, 0, 'joe', { linkType: 'foo' });
         // HARMONY-770 AC 8
         it('returns a 400 status', function () {
           expect(this.res.error.status).to.equal(400);
@@ -244,7 +283,7 @@ describe('STAC item route', function () {
         it('returns a JSON error response', function () {
           const response = JSON.parse(this.res.text);
           expect(response).to.eql({
-            code: 'harmony:RequestError',
+            code: 'harmony.RequestValidationError',
             description: 'Error: STAC item index is out of bounds',
           });
         });
