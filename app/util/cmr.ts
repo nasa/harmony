@@ -77,9 +77,6 @@ export interface CmrUmmVariable {
   umm: {
     Name: string;
     LongName?: string;
-    Characteristics?: {
-      GroupPath?: string;
-    };
   };
 }
 

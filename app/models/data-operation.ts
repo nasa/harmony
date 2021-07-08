@@ -259,7 +259,7 @@ export default class DataOperation {
     const variables = vars ? vars.map(({ umm, meta }) => ({
       id: meta['concept-id'],
       name: umm.Name,
-      fullPath: _.compact([_.get(umm, 'Characteristics.GroupPath'), umm.Name]).join('/'),
+      fullPath: umm.Name,
     })) : undefined;
     this.model.sources.push({ collection, variables, granules });
   }
