@@ -72,4 +72,43 @@ describe('DataOperation', () => {
       });
     });
   });
+
+  describe('#addSource', () => {
+    const collection = 'Foo';
+    const granules = [{
+      id: 'G123-BAR',
+      name: 'Gran',
+      url: 'https://example.com/foo',
+      temporal: {},
+    }];
+    const variables = [{
+      meta: { 'concept-id': 'V123-BAR' },
+      umm: { Name: 'the/nested/name', LongName: 'A long name' },
+    }];
+
+    describe('when adding a source', () => {
+      const operation = new DataOperation();
+      operation.addSource(collection, variables, granules);
+
+      it('sets the collection correctly', () => {
+        expect(operation.model.sources[0].collection).to.equal('Foo');
+      });
+
+      it('sets the granules correctly', () => {
+        expect(operation.model.sources[0].granules).to.equal(granules);
+      });
+
+      it('uses the variable concept ID as the id', () => {
+        expect(operation.model.sources[0].variables[0].id).to.equal('V123-BAR');
+      });
+
+      it('uses the variable name as the name', () => {
+        expect(operation.model.sources[0].variables[0].name).to.equal('the/nested/name');
+      });
+
+      it('uses the variable name as the fullPath', () => {
+        expect(operation.model.sources[0].variables[0].fullPath).to.equal('the/nested/name');
+      });
+    });
+  });
 });
