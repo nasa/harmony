@@ -1,0 +1,22 @@
+GET /access-control/groups/AG1222736883-EEDTEST/members?
+accept: application/json
+x-harmony-user: eve
+accept-encoding: gzip,deflate
+
+HTTP/1.1 401 Unauthorized
+content-type: application/json
+content-length: 123
+connection: close
+date: Thu, 08 Jul 2021 17:07:49 GMT
+access-control-allow-origin: *
+server: ServerTokens ProductOnly
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+strict-transport-security: max-age=31536000
+x-cache: Error from cloudfront
+via: 1.1 3072c658bb2e308b174aea92028efcd7.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: m4o1wL1HTM9-KxwzG-6Emw6kLEOmdCppsPl7Q-aBZpT-AzCGvPx1nw==
+
+{"errors":["You do not have permission to read access control group [EEDTEST Administrator Group] in provider [EEDTEST]."]}

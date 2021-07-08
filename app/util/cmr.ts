@@ -307,7 +307,7 @@ async function _cmrPostSearch(path: string, form: CmrQuery, token: string): Prom
 async function queryVariables(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVariable>> {
-  const variablesResponse = await _cmrPostSearch('/search/variables.umm_json_v1_6', query, token) as CmrVariablesResponse;
+  const variablesResponse = await _cmrPostSearch('/search/variables.umm_json_v1_7', query, token) as CmrVariablesResponse;
   return variablesResponse.data.items;
 }
 

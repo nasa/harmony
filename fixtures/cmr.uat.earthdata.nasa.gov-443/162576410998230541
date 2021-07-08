@@ -1,0 +1,28 @@
+POST /search/variables.umm_json_v1_7
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801695-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801696-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801716-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801717-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2000\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.7; charset=utf-8
+content-length: 3164
+connection: close
+date: Thu, 08 Jul 2021 17:08:29 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: d2170eb2-5943-4a6f-b580-00a7bdbb45f5
+strict-transport-security: max-age=31536000
+cmr-hits: 4
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 925
+x-request-id: d2170eb2-5943-4a6f-b580-00a7bdbb45f5
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 8a5f92c3f2254c853b1d4d6f0bb340ad.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: 0VKDvDa_AXgVWLVj7eZiNf8p9W0xl3MR6OeR2KYWYtEqx2QAgLlniQ==
+
+{"hits":4,"took":924,"items":[{"meta":{"revision-id":3,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"pquinn","native-id":"mmt_variable_3972","concept-id":"V1233801717-EEDTEST","revision-date":"2020-05-11T21:29:29.646Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":4.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Alpha channel value","Name":"alpha_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"LongName":"Alpha channel "},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"scantrell8277","native-id":"mmt_variable_3971","concept-id":"V1233801716-EEDTEST","revision-date":"2020-02-25T20:19:42.497Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":3.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Blue channel value","Name":"blue_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"LongName":"Blue channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"scantrell8277","native-id":"mmt_variable_3970","concept-id":"V1233801696-EEDTEST","revision-date":"2020-02-25T20:17:27.645Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":2.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Green channel value","Name":"green_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"LongName":"Green channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}},{"meta":{"revision-id":3,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"dshum","native-id":"mmt_variable_3969","concept-id":"V1233801695-EEDTEST","revision-date":"2020-05-14T17:42:24.950Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":1.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Red channel value","Name":"red_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"LongName":"Red Channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}}]}
