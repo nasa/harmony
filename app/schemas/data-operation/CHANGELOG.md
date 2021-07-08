@@ -1,3 +1,7 @@
+## [0.11.0] - UNMERGED
+### Added
+- Subset.shape.hash - An MD5 hash of shape data, if present.
+
 ## [0.10.0] - UNMERGED
 ### Added
 - DataOperation.srs - An object with keys 'proj4', 'wkt', and 'epsg'. 'epsg' may be an empty string if unknown.

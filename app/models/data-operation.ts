@@ -5,6 +5,7 @@ import _ from 'lodash';
 import logger from '../util/log';
 import { CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
+import { isThisMinute } from 'date-fns';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -36,6 +37,18 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.11.0',
+      schema: readSchema('0.11.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        if (_.has(revertedModel, 'subset.shape.hash')) {
+          delete revertedModel.subset.shape.hash; // eslint-disable-line no-param-reassign
+        }
+
+        return revertedModel;
+      },
+    },
     {
       version: '0.10.0',
       schema: readSchema('0.10.0'),
@@ -425,7 +438,11 @@ export default class DataOperation {
    * @param geojsonUri - A URI to the geojson shape
    */
   set geojson(geojsonUri: string) {
-    this.model.subset.shape = { type: 'application/geo+json', href: geojsonUri };
+    if (this.model.subset.shape) {
+      this.model.subset.shape.href = geojsonUri;
+    } else {
+      this.model.subset.shape = { type: 'application/geo+json', href: geojsonUri };
+    }
   }
 
   /**
@@ -435,6 +452,28 @@ export default class DataOperation {
    */
   get geojson(): string {
     return this.model.subset.shape && this.model.subset.shape.href;
+  }
+
+  /**
+   * Sets the hash of the geojson shape used for spatial subsetting
+   *
+   * @param hash -  A hash of the geojson shape
+   */
+  set geojsonHash(hash: string) {
+    if (this.model.subset.shape) {
+      this.model.subset.shape.hash = hash;
+    } else {
+      this.model.subset.shape = { type: 'application/geo+json', hash: hash };
+    }
+  }
+
+  /**
+   * Gets the hash of the geojson shape used for spatial subsetting
+   *
+   * @returns The hash of the geojson shape
+   */
+  get geojsonHash(): string {
+    return this.model.subset.shape && this.model.subset.shape.hash;
   }
 
   /**

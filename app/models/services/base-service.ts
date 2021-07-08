@@ -118,9 +118,9 @@ export default abstract class BaseService<ServiceParamType> {
       job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
       await job.maybeAttach(db);
       if (job.attachedStatus.didAttach) {
-        const { oldId, newId } = job.attachedStatus;
-        logger.info(`This job attached to a previous job: ${oldId} is now ${newId}.`);
-        this.operation.requestId = newId;
+        const { originalId, assumedId } = job.attachedStatus;
+        job.requestId = assumedId;
+        logger.info(`This job attached to a previous job: ${originalId} is now ${assumedId}.`);
       }
       await job.save(db);
       const durationMs = new Date().getTime() - startTime;
@@ -217,8 +217,9 @@ export default abstract class BaseService<ServiceParamType> {
     requestUrl: string,
     stagingLocation: string,
   ): Promise<Job> {
-    const { geojson, requestId, user } = this.operation;
+    const { geojson, geojsonHash, requestId, user } = this.operation;
     const shapeFileUrl = geojson || '';
+    const shapeFileHash = geojsonHash || '';
     logger.info(`Creating job for ${requestId}`);
     const job = new Job({
       username: user,
@@ -230,6 +231,7 @@ export default abstract class BaseService<ServiceParamType> {
       numInputGranules: this.numInputGranules,
       message: this.operation.message,
       shapeFileUrl,
+      shapeFileHash,
     });
     job.addStagingBucketLink(stagingLocation);
     return job;

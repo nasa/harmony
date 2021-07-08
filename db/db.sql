@@ -16,7 +16,8 @@ CREATE TABLE `jobs` (
   `request` varchar(4096) not null default 'unknown',
   `isAsync` boolean,
   `numInputGranules` integer not null default 0,
-  `shapeFileUrl` varchar(4096) not null);
+  `shapeFileUrl` varchar(4096) not null,
+  `shapeFileHash` varchar(255) not null);
 
 CREATE TABLE `job_links` (
   `id` integer not null primary key autoincrement,

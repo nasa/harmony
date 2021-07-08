@@ -2,7 +2,7 @@ import { pick } from 'lodash';
 import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
-import { defaultObjectStore, objectStoreChecksum } from 'util/object-store';
+import { defaultObjectStore } from 'util/object-store';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
@@ -11,6 +11,7 @@ import { Transaction } from '../util/db';
 import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 
 import env = require('../util/env');
+import { logger } from 'express-winston';
 
 const { awsDefaultRegion } = env;
 
@@ -56,6 +57,7 @@ export interface JobRecord {
   updatedAt?: Date | number;
   numInputGranules: number;
   shapeFileUrl: string;
+  shapeFileHash: string;
 }
 
 export interface JobQuery {
@@ -129,6 +131,8 @@ export class Job extends Record {
   attachedStatus: AttachedStatus;
 
   shapeFileUrl: string;
+
+  shapeFileHash: string;
 
   /**
    * Returns an array of all jobs that match the given constraints
@@ -293,6 +297,7 @@ export class Job extends Record {
     }
     this.attachedStatus = { didAttach: false };
     this.shapeFileUrl = fields.shapeFileUrl || '';
+    this.shapeFileHash = fields.shapeFileHash || '';
   }
 
   /**
@@ -452,39 +457,35 @@ export class Job extends Record {
    */
   async maybeAttach(transaction: Transaction): Promise<void> {
     const rows = await transaction('jobs')
-      .select('requestId', 'shapeFileUrl')
+      .select('requestId', 'shapeFileUrl', 'shapeFileHash')
       .where({ username: this.username, request: this.request })
-      .andWhere('status', JobStatus.ACCEPTED)
-      .orWhere('status', JobStatus.RUNNING);
+      .andWhere( (builder) => {
+        builder.where('status', JobStatus.ACCEPTED).orWhere('status', JobStatus.RUNNING)
+      });
     if (Array.isArray(rows) && rows.length > 0) {
       const originalId = this.requestId;
       // if a shapefile is not present then database query returned all matching running requests
-      if (this.shapeFileUrl === '') {
+      if (this.shapeFileUrl === '' || this.shapeFileHash === '') {
         const assumedId = rows.shift()['requestId'];
         this.attachedStatus = { didAttach: true, originalId, assumedId };
+        return
       // otherwise, compare checksum of current shapefile to other matching requests shapefile
       } else {
-        const store = defaultObjectStore();
-        const thisSum = await objectStoreChecksum(store, this.shapeFileUrl);
-        let otherSum = '';
-        let otherId = '';
+        const thisSum = this.shapeFileHash;
+        let assumedId = '';
         for (const row of rows) {
-          otherSum = await objectStoreChecksum(store, row.shapeFileUrl);
-          if (thisSum === otherSum) {
-            otherId = row.requestId;
+          if (this.shapeFileHash == row.shapeFileHash) {
+            assumedId = row.requestId;
             break;
           }
         }
-        if (otherId) {
-          const assumedId = otherId;
+        if (assumedId) {
           this.attachedStatus = { didAttach: true, originalId, assumedId };
-        } else {
-          this.attachedStatus = { didAttach: false };
+          return
         }
       }
-    } else {
-      this.attachedStatus = { didAttach: false };
     }
+    this.attachedStatus = { didAttach: false };
   }
 
   /**

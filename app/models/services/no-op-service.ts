@@ -61,6 +61,7 @@ export default class NoOpService extends BaseService<void> {
       request: requestUrl,
       numInputGranules: this.operation.cmrHits,
       shapeFileUrl: '',
+      shapeFileHash: '',
     });
     job = job.serialize(harmonyRoot);
     // No-op service response should look like a job, but doesn't actually create one

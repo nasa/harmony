@@ -14,6 +14,8 @@ import { listToText } from 'util/string';
 import { Logger } from 'winston';
 import { NextFunction } from 'express';
 import { cookieOptions } from 'util/cookies';
+import { fileCheckSum } from '../util/file';
+import db from '../util/db';
 
 const unlink = util.promisify(fs.unlink);
 const readFile = util.promisify(fs.readFile);
@@ -116,21 +118,23 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
     }
     shapefile.typeName = converter.name;
     const url = store.getUrlString(bucket, key);
+    const originalFile = await store.downloadFile(url);
     if (converter.geoJsonConverter) {
-      const originalFile = await store.downloadFile(url);
       let convertedFile;
       try {
         convertedFile = await converter.geoJsonConverter(originalFile, req.context.logger);
         operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
+        operation.geojsonHash = fileCheckSum(convertedFile);
       } finally {
-        unlink(originalFile);
         if (convertedFile) {
           unlink(convertedFile);
         }
       }
     } else {
       operation.geojson = url;
+      operation.geojsonHash = fileCheckSum(originalFile);
     }
+    unlink(originalFile);
   } catch (e) {
     if (e instanceof HttpError) {
       next(e);

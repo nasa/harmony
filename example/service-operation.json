@@ -1,6 +1,6 @@
 {
   "$schema": "../app/schemas/data-operation/0.10.0/data-operation-v0.10.0.json",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "callback": "http://localhost/some-path",
   "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
   "user": "jdoe",
@@ -64,7 +64,8 @@
     ],
     "shape": {
       "href": "s3://example-bucket/some/path/resource.json",
-      "type": "application/geo+json"
+      "type": "application/geo+json",
+      "hash": "beb35b7502fa7bb8f1e3ee6da0945d34"
     }
   },
   "isSynchronous": false,
