@@ -2,6 +2,7 @@ import { pick } from 'lodash';
 import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
+import { defaultObjectStore, objectStoreChecksum } from 'util/object-store';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
@@ -54,6 +55,7 @@ export interface JobRecord {
   createdAt?: Date | number;
   updatedAt?: Date | number;
   numInputGranules: number;
+  shapeFileUrl: string;
 }
 
 export interface JobQuery {
@@ -69,6 +71,12 @@ export interface JobQuery {
   isAsync?: boolean;
   createdAt?: number;
   updatedAt?: number;
+}
+
+export interface AttachedStatus {
+  didAttach: boolean;
+  originalId?: string;
+  assumedId?: string;
 }
 
 /**
@@ -117,6 +125,10 @@ export class Job extends Record {
   originalStatus: JobStatus;
 
   numInputGranules: number;
+
+  attachedStatus: AttachedStatus;
+
+  shapeFileUrl: string;
 
   /**
    * Returns an array of all jobs that match the given constraints
@@ -279,6 +291,8 @@ export class Job extends Record {
     if (fields.createdAt) {
       this.originalStatus = this.status;
     }
+    this.attachedStatus = { didAttach: false };
+    this.shapeFileUrl = fields.shapeFileUrl || '';
   }
 
   /**
@@ -429,6 +443,51 @@ export class Job extends Record {
   }
 
   /**
+   * Determine if the current job is the same as an already running job. If so, replace the
+   * current job's requestId with that of the running job's. Add an attachedStatus property for
+   * later referencing.
+   *
+   * @param transaction - The transaction to use for saving the job
+   * @throws {@link Error} if the job is invalid
+   */
+  async maybeAttach(transaction: Transaction): Promise<void> {
+    const rows = await transaction('jobs')
+      .select('requestId', 'shapeFileUrl')
+      .where({ username: this.username, request: this.request })
+      .andWhere('status', JobStatus.ACCEPTED)
+      .orWhere('status', JobStatus.RUNNING);
+    if (Array.isArray(rows) && rows.length > 0) {
+      const originalId = this.requestId;
+      // if a shapefile is not present then database query returned all matching running requests
+      if (this.shapeFileUrl === '') {
+        const assumedId = rows.shift()['requestId'];
+        this.attachedStatus = { didAttach: true, originalId, assumedId };
+      // otherwise, compare checksum of current shapefile to other matching requests shapefile
+      } else {
+        const store = defaultObjectStore();
+        const thisSum = await objectStoreChecksum(store, this.shapeFileUrl);
+        let otherSum = '';
+        let otherId = '';
+        for (const row of rows) {
+          otherSum = await objectStoreChecksum(store, row.shapeFileUrl);
+          if (thisSum === otherSum) {
+            otherId = row.requestId;
+            break;
+          }
+        }
+        if (otherId) {
+          const assumedId = otherId;
+          this.attachedStatus = { didAttach: true, originalId, assumedId };
+        } else {
+          this.attachedStatus = { didAttach: false };
+        }
+      }
+    } else {
+      this.attachedStatus = { didAttach: false };
+    }
+  }
+
+  /**
    * Validates and saves the job using the given transaction.  Throws an error if the
    * job is not valid.  New jobs will be inserted and have their id, createdAt, and
    * updatedAt fields set.  Existing jobs will be updated and have their updatedAt
@@ -438,12 +497,18 @@ export class Job extends Record {
    * @throws {@link Error} if the job is invalid
    */
   async save(transaction: Transaction): Promise<void> {
+    // Attached jobs rely on already running jobs for saving and reading persisted state.
+    if (this.attachedStatus.didAttach === true) {
+      return;
+    }
     // Need to validate the original status before removing it as part of saving to the database
     // May want to change in the future to have a way to have non-database fields on a record.
     this.validateStatus();
     this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
-    const { links, originalStatus } = this;
+
+    const { attachedStatus, links, originalStatus } = this;
+    delete this.attachedStatus;
     delete this.links;
     delete this.originalStatus;
     await super.save(transaction);
@@ -455,6 +520,7 @@ export class Job extends Record {
       }
     }
     await Promise.all(promises);
+    this.attachedStatus = attachedStatus;
     this.links = links;
     this.originalStatus = originalStatus;
   }

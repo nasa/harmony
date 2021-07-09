@@ -79,7 +79,9 @@ export default async function serviceInvoker(
     component: `${service.constructor.name}`,
   });
   try {
-    serviceResult = await service.invoke(serviceLogger, getRequestRoot(req), getRequestUrl(req));
+    serviceResult = await service.invokeOrAttach(
+      serviceLogger, getRequestRoot(req), getRequestUrl(req),
+    );
     await translateServiceResult(serviceResult, req.operation.user, res);
   } finally {
     if (serviceResult && serviceResult.onComplete) {

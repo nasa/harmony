@@ -40,6 +40,7 @@ rules:
   no-await-in-loop: ["off"]
   object-curly-newline: ["off"]
   no-plusplus: ["off"]
+  dot-notation: ["off"]
   prefer-destructuring:
     - error
     - array: false

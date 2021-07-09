@@ -6,6 +6,7 @@ import tmp from 'tmp';
 import { URL } from 'url';
 import * as util from 'util';
 import { PromiseResult } from 'aws-sdk/lib/request';
+import * as crypto from 'crypto';
 
 import env = require('./env');
 
@@ -14,6 +15,7 @@ const { awsDefaultRegion } = env;
 const pipeline = util.promisify(stream.pipeline);
 const createTmpFileName = util.promisify(tmp.tmpName);
 const readFile = util.promisify(fs.readFile);
+const unlink = util.promisify(fs.unlink);
 
 interface BucketParams {
   Bucket: string;
@@ -292,4 +294,33 @@ export function objectStoreForProtocol(protocol?: string): S3ObjectStore {
  */
 export function defaultObjectStore(): S3ObjectStore {
   return new S3ObjectStore({});
+}
+
+/**
+ * Returns the MD5 checksum of an object store object. File contents are streamed and not held in
+ * memory. Deletes the local file when done.
+ *
+ * @param store - an object store for interacting with the given protocol.
+ * @param url - a URL specifying the location of an object in an object store.
+ * @returns an MD5 checksum of an object store object as a string.
+ */
+export async function objectStoreChecksum(store: S3ObjectStore, url: string): Promise<string> {
+  const md5sum = crypto.createHash('md5');
+  const file = await store.downloadFile(url);
+  const reader = fs.createReadStream(file);
+
+  return new Promise((resolve, reject) => {
+    let sum = '';
+
+    reader.on('data', (data) => md5sum.update(data));
+    reader.on('end', () => {
+      sum = md5sum.digest('hex');
+      unlink(file);
+      resolve(sum);
+    });
+    reader.on('error', (error) => {
+      unlink(file);
+      reject(error);
+    });
+  });
 }
