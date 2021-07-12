@@ -1,7 +1,30 @@
 import { NextFunction, Response } from 'express';
 import { ServiceConfig } from '../models/services/base-service';
 import HarmonyRequest from '../models/harmony-request';
-import { chooseServiceConfig } from '../models/services';
+import { chooseServiceConfig, getServiceConfigs } from '../models/services';
+
+/**
+ * Add collections to service configs
+ * @param req - The client request
+ * @returns An array of service configurations
+ */
+function addCollectionsToServicesByAssociation(req: HarmonyRequest): ServiceConfig<unknown>[] {
+  const configs = getServiceConfigs();
+  const { collections } = req;
+  for (const coll of collections) {
+    for (const serviceId of coll.associations?.services) {
+      for (const config of configs) {
+        if (config.umm_s?.includes(serviceId)
+          && config.collections
+          && !config.collections.includes(coll.id)) {
+          // add the collection to the service config
+          config.collections.push(coll.id);
+        }
+      }
+    }
+  }
+  return configs;
+}
 
 /**
  * Middleware to set the service that should be used for the given request
@@ -18,8 +41,9 @@ export default function chooseService(
   }
 
   let serviceConfig: ServiceConfig<unknown>;
+  const configs = addCollectionsToServicesByAssociation(req);
   try {
-    serviceConfig = chooseServiceConfig(operation, context);
+    serviceConfig = chooseServiceConfig(operation, context, configs);
   } catch (e) {
     return next(e);
   }

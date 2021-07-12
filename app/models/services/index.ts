@@ -7,7 +7,7 @@ import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
-import { listToText, Conjuction, isInteger } from '../../util/string';
+import { listToText, Conjunction, isInteger } from '../../util/string';
 import ArgoService from './argo-service';
 import HttpService from './http-service';
 import NoOpService from './no-op-service';
@@ -374,7 +374,7 @@ function filterOutputFormatMatches(
   let services = [];
   if (requiresReformatting(operation, context)) {
     const fmts = operation.outputFormat ? [operation.outputFormat] : context.requestedMimeTypes;
-    requestedOperations.push(`reformatting to ${listToText(fmts, Conjuction.OR)}`);
+    requestedOperations.push(`reformatting to ${listToText(fmts, Conjunction.OR)}`);
     const outputFormat = selectFormat(operation, context, configs);
     if (outputFormat) {
       services = selectServicesForFormat(outputFormat, configs);

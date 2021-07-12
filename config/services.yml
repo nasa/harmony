@@ -393,7 +393,7 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
         variable: true
       output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/ fcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
 
   - name: ds/swot-reproject
@@ -411,6 +411,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/swot-reproject
+    umm-s:
+      - 
     collections:
       - C1233860183-EEDTEST
       - C1233800302-EEDTEST
@@ -595,9 +597,13 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
+    umm_s:
+      - S1237980031-EEDTEST
     collections:
       - C1234088182-EEDTEST
-      - C1233800302-EEDTEST
+      # Do not uncomment the following line - this collection is added via UMM-S and is left here
+      # to 
+      # - C1233800302-EEDTEST
       - C1233860183-EEDTEST
       - C1234410736-POCLOUD
       - C1234082763-POCLOUD
