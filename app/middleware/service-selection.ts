@@ -10,18 +10,24 @@ import { chooseServiceConfig, getServiceConfigs } from '../models/services';
  */
 function addCollectionsToServicesByAssociation(req: HarmonyRequest): ServiceConfig<unknown>[] {
   const configs = getServiceConfigs();
-  const { collections } = req;
-  if (collections) {
-    for (const coll of collections) {
-      if (coll.associations?.services) {
-        for (const serviceId of coll.associations?.services) {
-          for (const config of configs) {
-            if (config.umm_s?.includes(serviceId)
-              && config.collections
-              && !config.collections.includes(coll.id)) {
-              // add the collection to the service config
+  const collections = req.collections || [];
+  // for every collection in the request...
+  for (const coll of collections) {
+    const services = coll.associations?.services || [];
+    // for every service associated with the current collection...
+    for (const serviceId of services) {
+      for (const config of configs) {
+        // if the service config contains a 'umm_s' entry that includes the current service id
+        if (config.umm_s?.includes(serviceId)) {
+          if (config.collections) {
+            if (!config.collections.includes(coll.id)) {
+              // add the collection to the service config if it isn't there already
               config.collections.push(coll.id);
             }
+          } else {
+            // create the collections array using the collection id - this is for the case
+            // where no collections are declared for a service in services.yml
+            config.collections = [coll.id];
           }
         }
       }
