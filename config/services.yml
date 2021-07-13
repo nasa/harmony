@@ -393,7 +393,7 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: true
         variable: true
       output_formats:
-        - application/ fcdf # Incorrect mime-type, remove when no longer needed
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
 
   - name: ds/swot-reproject
@@ -412,9 +412,11 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/sds/swot-reproject
     umm-s:
-      - 
+      - S1237974711-EEDTEST
     collections:
-      - C1233860183-EEDTEST
+      # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
+      # to prevent re-adding. This is needed for tests related to HARMONY-875
+      # - C1233860183-EEDTEST
       - C1233800302-EEDTEST
       - C1221286860-NSIDC_TS1
       - C1226288788-EDF_DEV07
@@ -601,8 +603,8 @@ https://cmr.uat.earthdata.nasa.gov:
       - S1237980031-EEDTEST
     collections:
       - C1234088182-EEDTEST
-      # Do not uncomment the following line - this collection is added via UMM-S and is left here
-      # to 
+      # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
+      # to prevent re-adding. This is needed for tests related to HARMONY-875
       # - C1233800302-EEDTEST
       - C1233860183-EEDTEST
       - C1234410736-POCLOUD
