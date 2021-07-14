@@ -16,7 +16,7 @@ import BaseService, { ServiceConfig } from './base-service';
 import RequestContext from '../request-context';
 import env from '../../util/env';
 
-let serviceConfigs = null;
+let serviceConfigs: ServiceConfig<unknown>[] = null;
 
 /**
  * Converts the !Env directive in services.yml to either a string or a number

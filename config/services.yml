@@ -411,7 +411,7 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/swot-reproject
-    umm-s:
+    umm_s:
       - S1237974711-EEDTEST
     collections:
       # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
