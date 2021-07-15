@@ -1,7 +1,7 @@
 import { NextFunction, Response } from 'express';
 import HarmonyRequest from 'models/harmony-request';
 import { RequestValidationError } from 'util/errors';
-import { Conjuction, listToText } from 'util/string';
+import { Conjunction, listToText } from 'util/string';
 import { keysToLowerCase } from 'util/object';
 
 /**
@@ -22,7 +22,7 @@ function validateLinkTypeParameter(req: HarmonyRequest): void {
   const keys = keysToLowerCase(req.query);
   const linkType = keys.linktype?.toLowerCase();
   if (linkType && !validLinkTypeValues.includes(linkType)) {
-    const listString = listToText(validLinkTypeValues, Conjuction.OR);
+    const listString = listToText(validLinkTypeValues, Conjunction.OR);
     throw new RequestValidationError(`Invalid linkType '${linkType}' must be ${listString}`);
   }
 }
