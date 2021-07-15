@@ -54,6 +54,7 @@ export interface JobRecord {
   createdAt?: Date | number;
   updatedAt?: Date | number;
   numInputGranules: number;
+  collectionIds?: string[];
 }
 
 export interface JobQuery {
@@ -117,6 +118,8 @@ export class Job extends Record {
   originalStatus: JobStatus;
 
   numInputGranules: number;
+
+  collectionIds?: string[];
 
   /**
    * Returns an array of all jobs that match the given constraints
@@ -274,6 +277,10 @@ export class Job extends Record {
     this.progress = fields.progress || 0;
     this.batchesCompleted = fields.batchesCompleted || 0;
     this.links = fields.links ? fields.links.map((l) => new JobLink(l)) : [];
+    // collectionIds is stringified json when returned from db
+    this.collectionIds = (typeof fields.collectionIds === 'string'
+      ? JSON.parse(fields.collectionIds) : fields.collectionIds)
+      || [];
 
     // Job already exists in the database
     if (fields.createdAt) {
@@ -443,7 +450,10 @@ export class Job extends Record {
     this.validateStatus();
     this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
-    const { links, originalStatus } = this;
+    const { links, originalStatus, collectionIds } = this;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+    // @ts-ignore so that we can store stringified json
+    this.collectionIds = JSON.stringify(this.collectionIds || []);
     delete this.links;
     delete this.originalStatus;
     await super.save(transaction);
@@ -457,6 +467,7 @@ export class Job extends Record {
     await Promise.all(promises);
     this.links = links;
     this.originalStatus = originalStatus;
+    this.collectionIds = collectionIds;
   }
 
   /**
@@ -484,6 +495,7 @@ export class Job extends Record {
     const job = new Job(serializedJob as JobRecord); // We need to clean this up
     delete job.originalStatus;
     delete job.batchesCompleted;
+    delete job.collectionIds;
     return job;
   }
 

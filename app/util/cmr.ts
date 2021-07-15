@@ -138,7 +138,7 @@ function _makeTokenHeader(token: string): object {
 function _handleCmrErrors(response: Response): void {
   const { status } = response;
   if (status >= 500) {
-    logger.error(`CMR call failed with statue '${status}'`);
+    logger.error(`CMR call failed with status '${status}'`);
     throw new CmrError(503, 'Service unavailable');
   } else if (status >= 400) {
     // pass on errors from the CMR

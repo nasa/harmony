@@ -57,6 +57,7 @@ export default class NoOpService extends BaseService<void> {
       createdAt: now,
       updatedAt: now,
       message: this.message,
+      collectionIds: this.operation.collectionIds,
       links,
       request: requestUrl,
       numInputGranules: this.operation.cmrHits,
