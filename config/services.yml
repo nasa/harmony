@@ -396,7 +396,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
 
-  - name: ds/swot-reproject
+  - name: sds/swot-reproject
     data_operation_version: '0.9.0'
     batch_size: 1
     type:
@@ -432,6 +432,7 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: true
 
   - name: sds/variable-subsetter
+    # The Variable Subsetter provides _only_ variable subsetting
     data_operation_version: '0.9.0'
     type:
       <<: *default-argo-config
@@ -448,11 +449,37 @@ https://cmr.uat.earthdata.nasa.gov:
     collections:
       - C1234714691-EEDTEST  # ATL03 UAT
       - C1234714698-EEDTEST  # ATL08 UAT
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+
+  - name: sds/HOSS
+    # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
+    data_operation_version: '0.9.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: var-subsetter
+        template_type: chaining
+        image: !Env ${VAR_SUBSETTER_IMAGE}
+        image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/sds/HOSS
+    collections:
       - C1238392622-EEDTEST  # RSSMIF16D test collection UAT
       - C1222931739-GHRC_CLOUD  # RSSMIF16D UAT
       - C1238621141-POCLOUD # GHRSST Level 4 MUR Global Foundation Sea Surface Temperature Analysis (v4.1)
+
     capabilities:
       subsetting:
+        bbox: true
         variable: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
