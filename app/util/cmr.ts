@@ -477,10 +477,10 @@ export async function getPermissions(
   if (!ids.length) {
     return {};
   }
-  const basQuery: CmrQuery = { concept_id: ids };
+  const baseQuery: CmrQuery = { concept_id: ids };
   const query: CmrQuery = username
-    ? { user_id: username, ...basQuery }
-    : { user_type: 'guest', ...basQuery };
+    ? { user_id: username, ...baseQuery }
+    : { user_type: 'guest', ...baseQuery };
   const collectionsResponse = await _cmrGet('/access-control/permissions', query, token) as CmrPermissionsResponse;
   return collectionsResponse.data;
 }
