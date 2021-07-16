@@ -424,7 +424,7 @@ export class Job extends Record {
    * @param accessToken - the token to make the request with
    * @returns true or false
    */
-  async hasEulaRestriction(accessToken: string): Promise<boolean> {
+  async collectionsHaveEulaRestriction(accessToken: string): Promise<boolean> {
     const cmrCollections = await getCollectionsByIds(this.collectionIds, accessToken, true);
     return !cmrCollections.every((collection) => (collection.tags['harmony.has-eula'] === false));
   }
@@ -434,7 +434,7 @@ export class Job extends Record {
    * @param accessToken - the token to make the request with
    * @returns true or false
    */
-  async hasGuestReadRestriction(accessToken: string): Promise<boolean> {
+  async collectionsHaveGuestReadRestriction(accessToken: string): Promise<boolean> {
     const permissionsMap: CmrPermissionsMap = await getPermissions(this.collectionIds, accessToken);
     return this.collectionIds.some((collectionId) => (
       !permissionsMap[collectionId]
@@ -457,11 +457,11 @@ export class Job extends Record {
     if (isAdminAccess || (this.username === requestingUserName)) {
       return true;
     }
-    const hasEulaRestriction = await this.hasEulaRestriction(accessToken);
+    const hasEulaRestriction = await this.collectionsHaveEulaRestriction(accessToken);
     if (hasEulaRestriction) {
       return false;
     }
-    const hasGuestReadRestriction = await this.hasGuestReadRestriction(accessToken);
+    const hasGuestReadRestriction = await this.collectionsHaveGuestReadRestriction(accessToken);
     if (hasGuestReadRestriction) {
       return false;
     }
