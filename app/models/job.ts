@@ -2,6 +2,7 @@ import { pick } from 'lodash';
 import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
+import { CmrPermission, CmrPermissionsMap, getPermissions } from 'util/cmr';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
@@ -416,17 +417,35 @@ export class Job extends Record {
   }
 
   /**
+   * Checks whether this job should not be shared with anyone other
+   * than the job's owner (due to CMR permissions on the collection(s) used in the job).
+   * @param accessToken - the token to make the request with
+   * @returns true or false
+   */
+  async hasCmrsharingRestriction(accessToken: string): Promise<boolean> {
+    const permissionsMap: CmrPermissionsMap = await getPermissions(this.collectionIds, accessToken);
+    return this.collectionIds.some((collectionId) => (
+      !permissionsMap[collectionId]
+        || !(permissionsMap[collectionId].indexOf(CmrPermission.Read) > -1)));
+  }
+
+  /**
    * Return whether a user can access this job's results and STAC results
    * (Called whenever a request is made to frontend jobs or STAC endpoints)
    * @param requestingUserName - the person we're checking permissions for
    * @param isAdminAccess - whether the requesting user has admin access
+   * * @param accessToken - the token to make permission check requests with
    * @returns ture or false
    */
-  canShareWith(requestingUserName: string, isAdminAccess: boolean): boolean {
+  async canShareWith(
+    requestingUserName: string,
+    isAdminAccess: boolean,
+    accessToken: string,
+  ): Promise<boolean> {
     if (isAdminAccess || (this.username === requestingUserName)) {
       return true;
     }
-    return false;
+    return !this.hasCmrsharingRestriction(accessToken);
   }
 
   /**

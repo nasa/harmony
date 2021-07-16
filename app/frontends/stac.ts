@@ -44,7 +44,7 @@ async function handleStacRequest(
       if (!job) {
         throw new NotFoundError(`Unable to find job ${jobId}`);
       }
-      if (!job.canShareWith(req.user, req.context.isAdminAccess)) {
+      if (!job.canShareWith(req.user, req.context.isAdminAccess, req.accessToken)) {
         throw new NotFoundError(`Cannot share job ${job.id} with user ${req.user}`);
       }
       if (job.status === 'successful') {

@@ -121,7 +121,7 @@ export async function getJobsListing(
       listing = await Job.queryAll(tx, query, false, page, limit);
     });
     for (const job of listing.data) {
-      if (!job.canShareWith(req.user, req.context.isAdminAccess)) {
+      if (!job.canShareWith(req.user, req.context.isAdminAccess, req.accessToken)) {
         throw new NotFoundError(`Cannot share job ${job.id} with user ${req.user}`);
       }
     }
@@ -185,7 +185,7 @@ export async function getJobStatus(
       }
     });
     if (job) {
-      if (!job.canShareWith(req.user, req.context.isAdminAccess)) {
+      if (!job.canShareWith(req.user, req.context.isAdminAccess, req.accessToken)) {
         throw new NotFoundError(`Cannot share job ${jobID} with user ${req.user}`);
       }
       const urlRoot = getRequestRoot(req);
