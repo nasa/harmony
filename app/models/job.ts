@@ -416,6 +416,20 @@ export class Job extends Record {
   }
 
   /**
+   * Return whether a user can access this job's results and STAC results
+   * (Called whenever a request is made to frontend jobs or STAC endpoints)
+   * @param requestingUserName - the person we're checking permissions for
+   * @param isAdminAccess - whether the requesting user has admin access
+   * @returns ture or false
+   */
+  canShareWith(requestingUserName: string, isAdminAccess: boolean): boolean {
+    if (isAdminAccess || (this.username === requestingUserName)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Check if the job has any links
    *
    * @param transaction - transaction to use for the query

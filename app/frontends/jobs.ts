@@ -120,6 +120,11 @@ export async function getJobsListing(
     await db.transaction(async (tx) => {
       listing = await Job.queryAll(tx, query, false, page, limit);
     });
+    for (const job of listing.data) {
+      if (!job.canShareWith(req.user, req.context.isAdminAccess)) {
+        throw new NotFoundError(`Cannot share job ${job.id} with user ${req.user}`);
+      }
+    }
     const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root, 'none'));
     const response: JobListing = {
       count: listing.pagination.total,
@@ -180,6 +185,9 @@ export async function getJobStatus(
       }
     });
     if (job) {
+      if (!job.canShareWith(req.user, req.context.isAdminAccess)) {
+        throw new NotFoundError(`Cannot share job ${jobID} with user ${req.user}`);
+      }
       const urlRoot = getRequestRoot(req);
       const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
       job.links = job.links.concat(pagingLinks);
