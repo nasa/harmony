@@ -43,7 +43,11 @@ async function handleStacRequest(
       );
       if (!job) {
         throw new NotFoundError(`Unable to find job ${jobId}`);
-      } else if (job.status === 'successful') {
+      }
+      if (!job.canShareWith(req.user, req.context.isAdminAccess)) {
+        throw new NotFoundError(`Cannot share job ${job.id} with user ${req.user}`);
+      }
+      if (job.status === 'successful') {
         if (stacDataLinks.length) {
           job.links = stacDataLinks;
           const urlRoot = getRequestRoot(req);
