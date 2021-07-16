@@ -2,7 +2,7 @@ import { pick } from 'lodash';
 import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
-import { CmrPermission, CmrPermissionsMap, getPermissions } from 'util/cmr';
+import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions } from 'util/cmr';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
@@ -417,12 +417,24 @@ export class Job extends Record {
   }
 
   /**
-   * Checks whether this job should not be shared with anyone other
-   * than the job's owner (due to CMR permissions on the collection(s) used in the job).
+   * Checks whether sharing of this job is restricted by any EULAs for
+   * any collection used by this job.
+   * Defaults to true if any collection does not have the harmony.has-eula tag
+   * associated with it.
    * @param accessToken - the token to make the request with
    * @returns true or false
    */
-  async hasCmrsharingRestriction(accessToken: string): Promise<boolean> {
+  async hasEulaRestriction(accessToken: string): Promise<boolean> {
+    const cmrCollections = await getCollectionsByIds(this.collectionIds, accessToken, true);
+    return !cmrCollections.every((collection) => (collection.tags['harmony.has-eula'] === false));
+  }
+
+  /**
+   * Checks whether CMR guests are restricted from reading any of the collections used in the job.
+   * @param accessToken - the token to make the request with
+   * @returns true or false
+   */
+  async hasGuestReadRestriction(accessToken: string): Promise<boolean> {
     const permissionsMap: CmrPermissionsMap = await getPermissions(this.collectionIds, accessToken);
     return this.collectionIds.some((collectionId) => (
       !permissionsMap[collectionId]
@@ -434,10 +446,10 @@ export class Job extends Record {
    * (Called whenever a request is made to frontend jobs or STAC endpoints)
    * @param requestingUserName - the person we're checking permissions for
    * @param isAdminAccess - whether the requesting user has admin access
-   * * @param accessToken - the token to make permission check requests with
+   * @param accessToken - the token to make permission check requests with
    * @returns ture or false
    */
-  async canShareWith(
+  async canShareResultsWith(
     requestingUserName: string,
     isAdminAccess: boolean,
     accessToken: string,
@@ -445,7 +457,15 @@ export class Job extends Record {
     if (isAdminAccess || (this.username === requestingUserName)) {
       return true;
     }
-    return !this.hasCmrsharingRestriction(accessToken);
+    const hasEulaRestriction = await this.hasEulaRestriction(accessToken);
+    if (hasEulaRestriction) {
+      return false;
+    }
+    const hasGuestReadRestriction = await this.hasGuestReadRestriction(accessToken);
+    if (hasGuestReadRestriction) {
+      return false;
+    }
+    return true;
   }
 
   /**

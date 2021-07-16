@@ -37,6 +37,10 @@ export interface CmrPermissionsMap {
   [key: string]: CmrPermission[];
 }
 
+export interface CmrTags {
+  [key: string]: string | boolean | number | object;
+}
+
 export interface CmrCollection {
   id: string;
   short_name: string;
@@ -53,6 +57,7 @@ export interface CmrCollection {
     variables?: string[];
   };
   variables?: CmrUmmVariable[];
+  tags?: CmrTags;
 }
 
 export interface CmrGranule {
@@ -365,14 +370,18 @@ async function queryGranuleUsingMultipartForm(
  *
  * @param ids - The collection IDs to find
  * @param token - Access token for user request
+ * @param includeTags - Whether to include tags with each collection result
  * @returns The collections with the given ids
  */
 export function getCollectionsByIds(
-  ids: Array<string>, token: string,
+  ids: Array<string>,
+  token: string,
+  includeTags = false,
 ): Promise<Array<CmrCollection>> {
   return queryCollections({
     concept_id: ids,
     page_size: 2000,
+    include_tags: includeTags,
   }, token);
 }
 
