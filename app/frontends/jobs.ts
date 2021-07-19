@@ -120,11 +120,6 @@ export async function getJobsListing(
     await db.transaction(async (tx) => {
       listing = await Job.queryAll(tx, query, false, page, limit);
     });
-    for (const job of listing.data) {
-      if (!job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken)) {
-        throw new NotFoundError(`Cannot share job ${job.id} with user ${req.user}`);
-      }
-    }
     const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root, 'none'));
     const response: JobListing = {
       count: listing.pagination.total,
@@ -175,18 +170,11 @@ export async function getJobStatus(
     let job: Job;
     let pagination;
     await db.transaction(async (tx) => {
-      if (!req.context.isAdminAccess) {
-        ({
-          job,
-          pagination,
-        } = await Job.byUsernameAndRequestId(tx, req.user, jobID, true, page, limit));
-      } else {
-        ({ job, pagination } = await Job.byRequestId(tx, jobID, page, limit));
-      }
+      ({ job, pagination } = await Job.byRequestId(tx, jobID, page, limit));
     });
     if (job) {
-      if (!job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken)) {
-        throw new NotFoundError(`Cannot share job ${jobID} with user ${req.user}`);
+      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+        throw new NotFoundError();
       }
       const urlRoot = getRequestRoot(req);
       const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));

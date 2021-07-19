@@ -120,7 +120,7 @@ export class Job extends Record {
 
   numInputGranules: number;
 
-  collectionIds?: string[];
+  collectionIds: string[];
 
   /**
    * Returns an array of all jobs that match the given constraints
@@ -425,8 +425,12 @@ export class Job extends Record {
    * @returns true or false
    */
   async collectionsHaveEulaRestriction(accessToken: string): Promise<boolean> {
-    const cmrCollections = await getCollectionsByIds(this.collectionIds, accessToken, true);
-    return !cmrCollections.every((collection) => (collection.tags['harmony.has-eula'] === false));
+    const cmrCollections = await getCollectionsByIds(this.collectionIds, accessToken, 'harmony.has-eula');
+    if (cmrCollections.length !== this.collectionIds.length) {
+      return true;
+    }
+    return !cmrCollections.every((collection) => (collection.tags
+      && collection.tags['harmony.has-eula'].data === false));
   }
 
   /**
@@ -454,7 +458,7 @@ export class Job extends Record {
     isAdminAccess: boolean,
     accessToken: string,
   ): Promise<boolean> {
-    if (isAdminAccess || (this.username === requestingUserName)) {
+    if (isAdminAccess || (this.username === requestingUserName) || !this.collectionIds.length) {
       return true;
     }
     const hasEulaRestriction = await this.collectionsHaveEulaRestriction(accessToken);

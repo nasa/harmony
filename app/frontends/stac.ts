@@ -32,8 +32,8 @@ async function handleStacRequest(
       // (using paging parameters)
       const {
         job,
-      } = await Job.byUsernameAndRequestId(
-        tx, req.user, jobId, false,
+      } = await Job.byRequestId(
+        tx, jobId,
       );
       const {
         data: stacDataLinks,
@@ -44,8 +44,8 @@ async function handleStacRequest(
       if (!job) {
         throw new NotFoundError(`Unable to find job ${jobId}`);
       }
-      if (!job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken)) {
-        throw new NotFoundError(`Cannot share job ${job.id} with user ${req.user}`);
+      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+        throw new NotFoundError();
       }
       if (job.status === 'successful') {
         if (stacDataLinks.length) {

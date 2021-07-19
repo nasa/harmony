@@ -1,0 +1,27 @@
+GET /search/collections.json?concept_id=C1233147317-EEDTESTT&page_size=2000&include_tags=true
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 225
+connection: close
+date: Mon, 19 Jul 2021 15:51:32 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: a2bc59a6-a7a5-4c6e-baa4-9bff03762bae
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 11
+x-request-id: a2bc59a6-a7a5-4c6e-baa4-9bff03762bae
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 7fc7dfaa5550fcad03b89e168c0bc0c5.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: SfaB2w8vbuPi5TnwnBvDn8S90HlMzNpObZ6_9VVkG5_sF9A5aL7o2A==
+
+{"feed":{"updated":"2021-07-19T15:51:32.527Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1233147317-EEDTESTT&page_size=2000&include_tags=true","title":"ECHO dataset metadata","entry":[]}}

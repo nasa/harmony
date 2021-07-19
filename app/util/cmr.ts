@@ -38,7 +38,7 @@ export interface CmrPermissionsMap {
 }
 
 export interface CmrTags {
-  [key: string]: string | boolean | number | object;
+  [tagKey: string]: { data: object | boolean | string | number };
 }
 
 export interface CmrCollection {
@@ -370,19 +370,22 @@ async function queryGranuleUsingMultipartForm(
  *
  * @param ids - The collection IDs to find
  * @param token - Access token for user request
- * @param includeTags - Whether to include tags with each collection result
+ * @param includeTags - Include tags with tag_key matching this value
  * @returns The collections with the given ids
  */
 export function getCollectionsByIds(
   ids: Array<string>,
   token: string,
-  includeTags = false,
+  includeTags?: string,
 ): Promise<Array<CmrCollection>> {
-  return queryCollections({
-    concept_id: ids,
-    page_size: 2000,
-    include_tags: includeTags,
-  }, token);
+  const query = {
+    ...(includeTags && { include_tags: includeTags }),
+    ...{
+      concept_id: ids,
+      page_size: 2000,
+    },
+  };
+  return queryCollections(query, token);
 }
 
 /**
@@ -481,8 +484,8 @@ export async function getPermissions(
   const query: CmrQuery = username
     ? { user_id: username, ...baseQuery }
     : { user_type: 'guest', ...baseQuery };
-  const collectionsResponse = await _cmrGet('/access-control/permissions', query, token) as CmrPermissionsResponse;
-  return collectionsResponse.data;
+  const permissionsResponse = await _cmrGet('/access-control/permissions', query, token) as CmrPermissionsResponse;
+  return permissionsResponse.data;
 }
 
 /**
