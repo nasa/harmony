@@ -55,7 +55,7 @@ export interface JobRecord {
   createdAt?: Date | number;
   updatedAt?: Date | number;
   numInputGranules: number;
-  collectionIds?: string[];
+  collectionIds: string[];
 }
 
 export interface JobQuery {

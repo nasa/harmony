@@ -1,15 +1,17 @@
-exports.up = function up(knex) {
-    const result = knex.schema
-      .alterTable('jobs', (t) => {
-        t.text('collectionIds');
-      });
-  
-    return result;
-  };
-  
-  exports.down = function down(knex) {
-    return knex.schema
-      .alterTable('jobs', (t) => {
-        t.dropColumn('collectionIds');
-      });
-  };
+exports.up = async function(knex) {
+  await knex.schema.alterTable("jobs", async (t) => {
+    t.text("collectionIds").nullable();
+  });
+
+  await knex.raw(`UPDATE "jobs" SET "collectionIds" = "${JSON.stringify([])}"`);
+
+  await knex.schema.alterTable("jobs", async (t) => {
+    t.text("collectionIds").notNullable();
+  });
+}
+
+exports.down = async function(knex) {
+  await knex.schema.alterTable("jobs", async (t) => {
+    t.dropColumn("collectionIds");
+  });
+}
