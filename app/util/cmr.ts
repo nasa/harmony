@@ -107,6 +107,9 @@ export interface CmrQuery
   concept_id?: string | string[];
   page_size?: number;
   downloadable?: boolean;
+}
+
+export interface CmrAclQuery extends CmrQuery {
   user_id?: string;
   user_type?: string;
 }
@@ -481,7 +484,7 @@ export async function getPermissions(
     return {};
   }
   const baseQuery: CmrQuery = { concept_id: ids };
-  const query: CmrQuery = username
+  const query: CmrAclQuery = username
     ? { user_id: username, ...baseQuery }
     : { user_type: 'guest', ...baseQuery };
   const permissionsResponse = await _cmrGet('/access-control/permissions', query, token) as CmrPermissionsResponse;
