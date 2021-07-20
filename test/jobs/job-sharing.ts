@@ -181,20 +181,20 @@ describe('Sharing job results with someone other than its owner', function () {
     describe('No collections are used in job', function () {
       describe('Accessing the job status page', function () {
         hookJobStatus({ jobID: jobIDWithNoCollections, username: 'jill' });
-        it('returns a 200 response', function () {
-          expect(this.res.statusCode).to.equal(200);
+        it('returns a 404 response', function () {
+          expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Catalog page', function () {
         hookStacCatalog(jobIDWithNoCollections, 'jill');
-        it('returns a 200 response', function () {
-          expect(this.res.statusCode).to.equal(200);
+        it('returns a 404 response', function () {
+          expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Item page', function () {
         hookStacItem(jobIDWithNoCollections, 0, 'jill');
-        it('returns a 200 response', function () {
-          expect(this.res.statusCode).to.equal(200);
+        it('returns a 404 response', function () {
+          expect(this.res.statusCode).to.equal(404);
         });
       });
     });

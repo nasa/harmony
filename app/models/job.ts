@@ -282,7 +282,6 @@ export class Job extends Record {
     this.collectionIds = (typeof fields.collectionIds === 'string'
       ? JSON.parse(fields.collectionIds) : fields.collectionIds)
       || [];
-
     // Job already exists in the database
     if (fields.createdAt) {
       this.originalStatus = this.status;
@@ -458,15 +457,16 @@ export class Job extends Record {
     isAdminAccess: boolean,
     accessToken: string,
   ): Promise<boolean> {
-    if (isAdminAccess || (this.username === requestingUserName) || !this.collectionIds.length) {
+    if (isAdminAccess || (this.username === requestingUserName)) {
       return true;
     }
-    const hasEulaRestriction = await this.collectionsHaveEulaRestriction(accessToken);
-    if (hasEulaRestriction) {
+    if (!this.collectionIds.length) {
       return false;
     }
-    const hasGuestReadRestriction = await this.collectionsHaveGuestReadRestriction(accessToken);
-    if (hasGuestReadRestriction) {
+    if (await this.collectionsHaveEulaRestriction(accessToken)) {
+      return false;
+    }
+    if (await this.collectionsHaveGuestReadRestriction(accessToken)) {
       return false;
     }
     return true;
