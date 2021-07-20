@@ -37,6 +37,10 @@ export interface CmrPermissionsMap {
   [key: string]: CmrPermission[];
 }
 
+export enum CmrTagKeys {
+  HasEula = 'harmony.has-eula',
+}
+
 export interface CmrTags {
   [tagKey: string]: { data: object | boolean | string | number };
 }

@@ -2,7 +2,7 @@ import { pick } from 'lodash';
 import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
-import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions } from 'util/cmr';
+import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from 'util/cmr';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
@@ -424,12 +424,16 @@ export class Job extends Record {
    * @returns true or false
    */
   async collectionsHaveEulaRestriction(accessToken: string): Promise<boolean> {
-    const cmrCollections = await getCollectionsByIds(this.collectionIds, accessToken, 'harmony.has-eula');
+    const cmrCollections = await getCollectionsByIds(
+      this.collectionIds,
+      accessToken,
+      CmrTagKeys.HasEula,
+    );
     if (cmrCollections.length !== this.collectionIds.length) {
       return true;
     }
     return !cmrCollections.every((collection) => (collection.tags
-      && collection.tags['harmony.has-eula'].data === false));
+      && collection.tags[CmrTagKeys.HasEula].data === false));
   }
 
   /**
