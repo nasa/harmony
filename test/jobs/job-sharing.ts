@@ -6,6 +6,9 @@ import { hookStacCatalog, hookStacItem } from '../helpers/stac';
 import { hookTransaction } from '../helpers/db';
 import { hookJobStatus, buildJob } from '../helpers/jobs';
 
+const jobOwner = 'joe';
+const notJobOwner = 'jill'; // jill wants to access the results of joe's jobs
+
 const collectionWithEULAFalseAndGuestReadTrue = 'C1233800302-EEDTEST';
 const collectionWithEULATrueAndGuestsReadTrue = 'C1233860183-EEDTEST';
 const collectionWithEULAFalseAndGuestReadFalse = 'C1233147317-EEDTEST';
@@ -38,42 +41,42 @@ const baseJobProperties = {
 };
 
 const jobWithNoCollections = buildJob({
-  username: 'joe',
+  username: jobOwner,
   collectionIds: [],
   ...baseJobProperties,
 });
 const jobIDWithNoCollections = jobWithNoCollections.requestId;
 
 const jobWithEULAFalseAndGuestReadTrue = buildJob({
-  username: 'joe',
+  username: jobOwner,
   collectionIds: [collectionWithEULAFalseAndGuestReadTrue],
   ...baseJobProperties,
 });
 const jobIDWithEULAFalseAndGuestReadTrue = jobWithEULAFalseAndGuestReadTrue.requestId;
 
 const jobWithEULATrueAndGuestReadTrue = buildJob({
-  username: 'joe',
+  username: jobOwner,
   collectionIds: [collectionWithEULATrueAndGuestsReadTrue],
   ...baseJobProperties,
 });
 const jobIDWithEULATrueAndGuestReadTrue = jobWithEULATrueAndGuestReadTrue.requestId;
 
 const jobWithEULAFalseAndGuestReadFalse = buildJob({
-  username: 'joe',
+  username: jobOwner,
   collectionIds: [collectionWithEULAFalseAndGuestReadFalse],
   ...baseJobProperties,
 });
 const jobIDWithEULAFalseAndGuestReadFalse = jobWithEULAFalseAndGuestReadFalse.requestId;
 
 const jobWithEULANonexistent = buildJob({
-  username: 'joe',
+  username: jobOwner,
   collectionIds: [collectionWithEULANonexistent],
   ...baseJobProperties,
 });
 const jobIDWithEULANonexistent = jobWithEULANonexistent.requestId;
 
 const jobWithMultipleCollections = buildJob({
-  username: 'joe',
+  username: jobOwner,
   collectionIds: [collectionWithEULATrueAndGuestsReadTrue, collectionWithEULAFalseAndGuestReadTrue],
   ...baseJobProperties,
 });
@@ -96,19 +99,19 @@ describe('Sharing job results with someone other than its owner', function () {
   describe('For a job (with a single collection)', function () {
     describe('Collection harmony.has-eula tag = false and guest users have CMR read permissions for the collection', function () {
       describe('Accessing the job status page', function () {
-        hookJobStatus({ jobID: jobIDWithEULAFalseAndGuestReadTrue, username: 'jill' });
+        hookJobStatus({ jobID: jobIDWithEULAFalseAndGuestReadTrue, username: notJobOwner });
         it('returns a 200 response', function () {
           expect(this.res.statusCode).to.equal(200);
         });
       });
       describe('Accessing the STAC Catalog page', function () {
-        hookStacCatalog(jobIDWithEULAFalseAndGuestReadTrue, 'jill');
+        hookStacCatalog(jobIDWithEULAFalseAndGuestReadTrue, notJobOwner);
         it('returns a 200 response', function () {
           expect(this.res.statusCode).to.equal(200);
         });
       });
       describe('Accessing the STAC Item page', function () {
-        hookStacItem(jobIDWithEULAFalseAndGuestReadTrue, 0, 'jill');
+        hookStacItem(jobIDWithEULAFalseAndGuestReadTrue, 0, notJobOwner);
         it('returns a 200 response', function () {
           expect(this.res.statusCode).to.equal(200);
         });
@@ -117,19 +120,19 @@ describe('Sharing job results with someone other than its owner', function () {
 
     describe('Collection harmony.has-eula tag = true, but guests users have CMR read permissions for the collection', function () {
       describe('Accessing the job status page', function () {
-        hookJobStatus({ jobID: jobIDWithEULATrueAndGuestReadTrue, username: 'jill' });
+        hookJobStatus({ jobID: jobIDWithEULATrueAndGuestReadTrue, username: notJobOwner });
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Catalog page', function () {
-        hookStacCatalog(jobIDWithEULATrueAndGuestReadTrue, 'jill');
+        hookStacCatalog(jobIDWithEULATrueAndGuestReadTrue, notJobOwner);
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Item page', function () {
-        hookStacItem(jobIDWithEULATrueAndGuestReadTrue, 0, 'jill');
+        hookStacItem(jobIDWithEULATrueAndGuestReadTrue, 0, notJobOwner);
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
@@ -138,19 +141,19 @@ describe('Sharing job results with someone other than its owner', function () {
 
     describe('Collection harmony.has-eula tag = false, but guest users do not have CMR read permissions', function () {
       describe('Accessing the job status page', function () {
-        hookJobStatus({ jobID: jobIDWithEULAFalseAndGuestReadFalse, username: 'jill' });
+        hookJobStatus({ jobID: jobIDWithEULAFalseAndGuestReadFalse, username: notJobOwner });
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Catalog page', function () {
-        hookStacCatalog(jobIDWithEULAFalseAndGuestReadFalse, 'jill');
+        hookStacCatalog(jobIDWithEULAFalseAndGuestReadFalse, notJobOwner);
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Item page', function () {
-        hookStacItem(jobIDWithEULAFalseAndGuestReadFalse, 0, 'jill');
+        hookStacItem(jobIDWithEULAFalseAndGuestReadFalse, 0, notJobOwner);
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
@@ -159,19 +162,19 @@ describe('Sharing job results with someone other than its owner', function () {
 
     describe('Collection has no harmony.has-eula tag set', function () {
       describe('Accessing the job status page', function () {
-        hookJobStatus({ jobID: jobIDWithEULANonexistent, username: 'jill' });
+        hookJobStatus({ jobID: jobIDWithEULANonexistent, username: notJobOwner });
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Catalog page', function () {
-        hookStacCatalog(jobIDWithEULANonexistent, 'jill');
+        hookStacCatalog(jobIDWithEULANonexistent, notJobOwner);
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Item page', function () {
-        hookStacItem(jobIDWithEULANonexistent, 0, 'jill');
+        hookStacItem(jobIDWithEULANonexistent, 0, notJobOwner);
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
@@ -180,19 +183,19 @@ describe('Sharing job results with someone other than its owner', function () {
 
     describe('No collections are used in job', function () {
       describe('Accessing the job status page', function () {
-        hookJobStatus({ jobID: jobIDWithNoCollections, username: 'jill' });
+        hookJobStatus({ jobID: jobIDWithNoCollections, username: notJobOwner });
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Catalog page', function () {
-        hookStacCatalog(jobIDWithNoCollections, 'jill');
+        hookStacCatalog(jobIDWithNoCollections, notJobOwner);
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Item page', function () {
-        hookStacItem(jobIDWithNoCollections, 0, 'jill');
+        hookStacItem(jobIDWithNoCollections, 0, notJobOwner);
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
@@ -203,19 +206,19 @@ describe('Sharing job results with someone other than its owner', function () {
   describe('For a job (with multiple collections) that the owner wants to share', function () {
     describe('For a job with multiple collections (with at least one collection restricted via EULA or CMR permissions)', function () {
       describe('Accessing the job status page', function () {
-        hookJobStatus({ jobID: jobIDWithMultipleCollections, username: 'jill' });
+        hookJobStatus({ jobID: jobIDWithMultipleCollections, username: notJobOwner });
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Catalog page', function () {
-        hookStacCatalog(jobIDWithMultipleCollections, 'jill');
+        hookStacCatalog(jobIDWithMultipleCollections, notJobOwner);
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
       });
       describe('Accessing the STAC Item page', function () {
-        hookStacItem(jobIDWithMultipleCollections, 0, 'jill');
+        hookStacItem(jobIDWithMultipleCollections, 0, notJobOwner);
         it('returns a 404 response', function () {
           expect(this.res.statusCode).to.equal(404);
         });
