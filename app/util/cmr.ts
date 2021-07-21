@@ -59,6 +59,7 @@ export interface CmrCollection {
   time_end?: string;
   associations?: {
     variables?: string[];
+    services?: string[];
   };
   variables?: CmrUmmVariable[];
   tags?: CmrTags;

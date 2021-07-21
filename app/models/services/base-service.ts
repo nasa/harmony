@@ -27,6 +27,7 @@ export interface ServiceConfig<ServiceParamType> {
     name: string;
     params?: ServiceParamType;
   };
+  umm_s?: string[];
   collections?: string[];
   capabilities?: ServiceCapabilities;
   concurrency?: number;
