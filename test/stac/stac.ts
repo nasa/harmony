@@ -72,20 +72,6 @@ describe('STAC catalog route', function () {
     });
   });
 
-  describe('For a logged-in user who does not own the job', function () {
-    hookStacCatalog(jobId, 'jill');
-    it('returns a 404 HTTP Not found response', function () {
-      expect(this.res.statusCode).to.equal(404);
-    });
-
-    it('returns a JSON error response', function () {
-      const response = JSON.parse(this.res.text);
-      expect(response).to.eql({
-        code: 'harmony.NotFoundError',
-        description: `Error: Unable to find job ${jobId}` });
-    });
-  });
-
   describe('For a non-existent job ID', function () {
     const unknownRequest = uuid();
     hookStacCatalog(unknownRequest, 'joe');

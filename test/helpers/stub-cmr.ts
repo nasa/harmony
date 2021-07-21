@@ -2,7 +2,7 @@ import { before, after } from 'mocha';
 import * as sinon from 'sinon';
 import * as cmr from 'util/cmr';
 
-type CmrMethodName = 'cmrSearchBase' | 'fetchPost' | 'cmrPostSearchBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'belongsToGroup' | 'cmrApiConfig';
+type CmrMethodName = 'cmrGetBase' | 'fetchPost' | 'cmrPostBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'belongsToGroup' | 'cmrApiConfig';
 
 /**
  * Replace a function in the `cmr` module with a given function. This is needed because
@@ -34,9 +34,9 @@ function unStubCmr(functionName: string): void {
  * Adds before / after hooks in mocha to replace a function in the
  * `cmr` module with a function that generates the given response
  *
- * Example: (`cmrPostSearchBase` returns a 400 status with error message)
+ * Example: (`cmrPostBase` returns a 400 status with error message)
  * ```
-* hookCmr('cmrPostSearchBase',
+* hookCmr('cmrPostBase',
   { status: 400,
     data: { errors: ['Corrupt zip file'] }
   });

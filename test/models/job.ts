@@ -15,6 +15,7 @@ const exampleProps = {
   links: [{ href: 'http://example.com', rel: 'data' }],
   request: 'http://example.com/harmony?foo=bar',
   numInputGranules: 100,
+  collectionIds: [],
 };
 
 const requestId = uuid().toString();

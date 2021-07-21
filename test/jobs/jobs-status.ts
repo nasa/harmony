@@ -56,21 +56,6 @@ describe('Individual job status route', function () {
     });
   });
 
-  describe('For a logged-in user who does not own the job', function () {
-    hookJobStatus({ jobID, username: 'jill' });
-    it('returns a 404 HTTP Not found response', function () {
-      expect(this.res.statusCode).to.equal(404);
-    });
-
-    it('returns a JSON error response', function () {
-      const response = JSON.parse(this.res.text);
-      expect(response).to.eql({
-        code: 'harmony.NotFoundError',
-        description: `Error: Unable to find job ${jobID}`,
-      });
-    });
-  });
-
   describe('For a non-existent job ID', function () {
     const unknownRequest = uuid();
     hookJobStatus({ jobID: unknownRequest, username: 'joe' });

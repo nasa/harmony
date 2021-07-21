@@ -218,6 +218,7 @@ export default abstract class BaseService<ServiceParamType> {
       isAsync: !this.isSynchronous,
       numInputGranules: this.numInputGranules,
       message: this.operation.message,
+      collectionIds: this.operation.collectionIds,
     });
     job.addStagingBucketLink(stagingLocation);
     return job;
