@@ -170,16 +170,12 @@ export async function getJobStatus(
     let job: Job;
     let pagination;
     await db.transaction(async (tx) => {
-      if (!req.context.isAdminAccess) {
-        ({
-          job,
-          pagination,
-        } = await Job.byUsernameAndRequestId(tx, req.user, jobID, true, page, limit));
-      } else {
-        ({ job, pagination } = await Job.byRequestId(tx, jobID, page, limit));
-      }
+      ({ job, pagination } = await Job.byRequestId(tx, jobID, page, limit));
     });
     if (job) {
+      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+        throw new NotFoundError();
+      }
       const urlRoot = getRequestRoot(req);
       const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
       job.links = job.links.concat(pagingLinks);

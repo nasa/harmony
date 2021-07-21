@@ -13,7 +13,8 @@ CREATE TABLE `jobs` (
   `updatedAt` datetime not null,
   `request` varchar(4096) not null default 'unknown',
   `isAsync` boolean,
-  `numInputGranules` integer not null default 0);
+  `numInputGranules` integer not null default 0,
+  `collectionIds` text not null);
 
 CREATE TABLE `job_links` (
   `id` integer not null primary key autoincrement,
