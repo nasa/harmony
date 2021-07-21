@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harmony-service-example
+  labels:
+    name: harmony-service-example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: harmony-service-example
+  template:
+    metadata:
+      labels:
+        name: harmony-service-example
+    spec:
+      containers:
+        - name: harmony-service-example
+          imagePullPolicy: IfNotPresent
+          image: harmonyservices/service-example-sync:latest
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+      volumes:
+      - name: test-volume
+        hostPath:
+          # directory location on host
+          path: /Users/jnorton1/metadata
+          # this field is optional
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: harmony-service-example
+spec:
+  ports:
+    - name: frontend
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    name: harmony-service-example
+  type: LoadBalancer

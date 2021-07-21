@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asf-gdal-service
+  labels:
+    name: asf-gdal-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: asf-gdal-service
+  template:
+    metadata:
+      labels:
+        name: asf-gdal-service
+    spec:
+      containers:
+        - name: asf-gdal-service
+          imagePullPolicy: IfNotPresent
+          image: harmonyservices/asf-gdal-sync:latest
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+      volumes:
+      - name: test-volume
+        hostPath:
+          # directory location on host
+          path: /Users/jnorton1/metadata
+          # this field is optional
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: asf-gdal-service
+spec:
+  ports:
+    - name: frontend
+      port: 5001
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    name: asf-gdal-service
+  type: LoadBalancer

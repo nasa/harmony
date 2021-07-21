@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "baseUrl": ".",
+    "moduleResolution": "node",
+    "target": "ES2018",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "noImplicitAny": false,
+    "sourceMap": true,
+    "outDir": "built"
+  },
+  "include": ["./**/*"]
+}
