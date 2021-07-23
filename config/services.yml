@@ -735,7 +735,6 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/swot-repr-netcdf-to-zarr
     collections:
-      - C1233860183-EEDTEST
       - C1233800302-EEDTEST
       - C1234724470-POCLOUD
     maximum_sync_granules: 0
