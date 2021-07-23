@@ -396,6 +396,29 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
 
+  - name: podaac/concise
+    data_operation_version: '0.10.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: podaac-concise
+        template_type: chaining
+        image: !Env ${PODAAC_CONCISE_IMAGE}
+        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
+        parallelism: !Env ${PODAAC_CONCISE_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/podaac/concise
+    collections:
+      - C1234088182-EEDTEST
+      - C1233800302-EEDTEST
+      - C1233860183-EEDTEST
+    capabilities:
+      output_formats:
+        # Workaround for many-to-one support
+        - application/x-netcdf4.merge
+
   - name: ds/swot-reproject
     data_operation_version: '0.9.0'
     batch_size: 1
