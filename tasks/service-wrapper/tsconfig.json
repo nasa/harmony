@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "baseUrl": ".",
-    "moduleResolution": "node",
-    "target": "ES2018",
-    "esModuleInterop": true,
-    "allowJs": true,
-    "noImplicitAny": false,
-    "sourceMap": true,
-    "outDir": "built"
+      "module": "commonjs",
+      "baseUrl": ".",
+      "moduleResolution": "node",
+      "target": "ES2018",
+      "esModuleInterop": true,
+      "allowJs": true,
+      "noImplicitAny": false,
+      "sourceMap": true,
+      "outDir": "built"
   },
-  "include": ["./**/*"]
+  "typeRoots": ["./node_modules/@types"],
+  "include": ["./app/**/*", "./test/**/*"]
 }

@@ -2,7 +2,7 @@ import camelCase from 'lodash.camelcase';
 import * as dotenv from 'dotenv';
 import * as winston from 'winston';
 import * as fs from 'fs';
-import { isInteger, listToText } from './string';
+import { isInteger } from './string';
 
 let envDefaults = {};
 try {
@@ -49,18 +49,12 @@ for (const k of Object.keys(allEnv)) {
   makeConfigVar(k, allEnv[k]);
 }
 
-// const requiredVars = ['SHARED_SECRET_KEY'];
-
-// const missingVars = requiredVars.filter((v) => !process.env[v]);
-// if (missingVars.length > 0) {
-//   throw new Error(`Configuration error: You must set ${listToText(missingVars)} in the environment`);
-// }
-
 interface HarmonyEnv {
   harmonyClientId: string;
   harmonyService: string;
   logLevel: string;
   port: number;
+  pullUrl: string;
   scriptFile: string;
   scriptDir: string;
   uploadBucket: string;
@@ -72,5 +66,6 @@ interface HarmonyEnv {
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
 envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
+envVars.port = 1234;
 
 export = envVars;
