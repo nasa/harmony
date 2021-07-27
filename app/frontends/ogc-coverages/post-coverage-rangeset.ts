@@ -20,7 +20,7 @@ export default function postCoverageRangeset(
   res: Response,
   next: NextFunction,
 ): void {
-  // copy form parameters into the query
+  // merge form parameters into the query
   req.query = { ...req.query, ...req.body };
 
   getCoverageRangeset(req, res, next);
