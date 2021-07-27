@@ -12,7 +12,7 @@ import log from '../util/log';
 async function getWork(req: Request, res: Response): Promise<void> {
   // just hard-code the work here for development testing
   // TODO - get work for real from dB
-  const { serviceId } = req.query;
+  const serviceId = req.query.service_id;
   log.info(`Getting work for service [${serviceId}]`);
   setTimeout(() => {
     res.send({ work: 'got work' });
