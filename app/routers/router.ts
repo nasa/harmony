@@ -1,5 +1,5 @@
 import process from 'process';
-import express, { NextFunction, RequestHandler, Response } from 'express';
+import express, { RequestHandler } from 'express';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'js-yaml';
@@ -106,24 +106,6 @@ function service(fn: RequestHandler): RequestHandler {
 }
 
 /**
- * Return a work item for the given service
- * @param req - The request sent by the client
- * @param res - The response to send to the client
- * @param next - The next function in the call chain
- * @returns Resolves when the request is complete
- */
-async function getWork(req: HarmonyRequest, res: Response, _next: NextFunction): Promise<void> {
-  // just hard-code the work here for development testing
-  // TODO - get work for real from dB
-  const { serviceId } = req.params;
-  const { logger } = req.context;
-  logger.info(`Getting work for service [${serviceId}]`);
-  setTimeout(() => {
-    res.send({ work: 'got work' });
-  }, 5_000);
-}
-
-/**
  * Given a path, returns a regular expression for that path prefixed by one or more collections
  *
  * @param path - The URL path
@@ -217,8 +199,6 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   // Allow canceling with a GET in addition to POST to workaround issues with redirects using EDL
   result.get('/jobs/:jobID/cancel', cancelJob);
   result.get('/admin/jobs/:jobID/cancel', cancelJob);
-
-  result.get('/work/:serviceId', getWork);
 
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
