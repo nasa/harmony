@@ -21,7 +21,7 @@ export default function postCoverageRangeset(
   next: NextFunction,
 ): void {
   // copy form parameters into the query
-  req.query = req.body;
+  req.query = {...req.query, ...req.body};
 
   getCoverageRangeset(req, res, next);
 }
