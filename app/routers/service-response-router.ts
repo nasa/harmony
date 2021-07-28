@@ -57,11 +57,12 @@ async function createWorkItem(req: Request, res: Response): Promise<void> {
  * @returns Resolves when the request is complete
  */
 async function updateWorkItem(req: Request, res: Response): Promise<void> {
-  const { id, status } = req.params;
+  const { id } = req.params;
+  const { status } = req.body;
   log.info(`Updating work item for ${id} to ${status}`);
   let workItem;
   await db.transaction(async (tx) => {
-    workItem = await getWorkItemById(tx, id);
+    workItem = await getWorkItemById(tx, parseInt(id, 10));
     workItem.status = status as WorkItemStatus;
     await workItem.save(tx);
   });

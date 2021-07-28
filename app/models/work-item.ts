@@ -62,12 +62,12 @@ export async function getNextWorkItem(
  */
 export async function getWorkItemById(
   transaction: Transaction,
-  id: string,
+  id: number,
 ): Promise<WorkItem> {
   const workItem = await transaction('work_items')
     .select()
     .where({ id })
     .first();
 
-  return workItem;
+  return new WorkItem(workItem);
 }
