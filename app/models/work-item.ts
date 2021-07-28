@@ -10,8 +10,6 @@ export enum WorkItemStatus {
   CANCELED = 'canceled',
 }
 
-const WORK_ITEM_TABLE_NAME = 'work_items';
-
 /**
  *
  * Wrapper object for persisted work items
@@ -40,7 +38,7 @@ export async function getNextWorkItem(
   tx: Transaction,
   serviceID: string,
 ): Promise<WorkItem> {
-  const workItem = await tx(WORK_ITEM_TABLE_NAME)
+  const workItem = await tx(WorkItem.table)
     .forUpdate()
     .select()
     .where({ serviceID, status: WorkItemStatus.READY })
@@ -48,7 +46,7 @@ export async function getNextWorkItem(
     .first() as WorkItem;
 
   if (workItem) {
-    await tx(WORK_ITEM_TABLE_NAME)
+    await tx(WorkItem.table)
       .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
       .where({ id: workItem.id });
   }
@@ -67,18 +65,18 @@ export async function updateWorkItemStatus(
   id: string,
   status: WorkItemStatus,
 ): Promise<void> {
-  const workItem = await tx(WORK_ITEM_TABLE_NAME)
+  const workItem = await tx(WorkItem.table)
     .forUpdate()
     .select()
     .where({ id })
     .first() as WorkItem;
 
   if (workItem) {
-    await tx('work_items')
+    await tx(WorkItem.table)
       .update({ status, updatedAt: new Date() })
       .where({ id: workItem.id });
   } else {
-    throw new Error(`id [${id}] does not exist in table ${WORK_ITEM_TABLE_NAME}`);
+    throw new Error(`id [${id}] does not exist in table ${WorkItem.table}`);
   }
 }
 
@@ -93,7 +91,7 @@ export async function getWorkItemById(
   tx: Transaction,
   id: number,
 ): Promise<WorkItem> {
-  const workItem = await tx(WORK_ITEM_TABLE_NAME)
+  const workItem = await tx(WorkItem.table)
     .select()
     .where({ id })
     .first() as WorkItem;
