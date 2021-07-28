@@ -1,6 +1,6 @@
 import { Request, Response, Router, json, NextFunction } from 'express';
 import HarmonyRequest from 'models/harmony-request';
-import WorkItem, { getNextWorkItem, getWorkItemById, WorkItemStatus } from 'models/work-item';
+import WorkItem, { getNextWorkItem, updateWorkItemStatus, WorkItemStatus } from 'models/work-item';
 import db from 'util/db';
 import { responseHandler } from '../backends/service-response';
 import argoResponsehandler from '../backends/argo-response';
@@ -62,9 +62,10 @@ async function updateWorkItem(req: Request, res: Response): Promise<void> {
   log.info(`Updating work item for ${id} to ${status}`);
   let workItem;
   await db.transaction(async (tx) => {
-    workItem = await getWorkItemById(tx, parseInt(id, 10));
-    workItem.status = status as WorkItemStatus;
-    await workItem.save(tx);
+    // workItem = await getWorkItemById(tx, parseInt(id, 10));
+    // workItem.status = status as WorkItemStatus;
+    // await workItem.save(tx);
+    await updateWorkItemStatus(tx, id, status as WorkItemStatus);
   });
   res.send(workItem);
 }

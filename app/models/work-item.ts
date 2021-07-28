@@ -10,6 +10,8 @@ export enum WorkItemStatus {
   CANCELED = 'canceled',
 }
 
+const WORK_ITEM_TABLE_NAME = 'work_items';
+
 /**
  *
  * Wrapper object for persisted work items
@@ -29,45 +31,72 @@ export default class WorkItem extends Record {
 
 /**
  * Returns the next work item to process for a service
- * @param transaction - the transaction to use for querying
+ * @param tx - the transaction to use for querying
  * @param serviceID - the service ID looking for the next item to work
  *
  * @returns A promise with the work item to process or null if none
  */
 export async function getNextWorkItem(
-  transaction: Transaction,
+  tx: Transaction,
   serviceID: string,
 ): Promise<WorkItem> {
-  const workItem = await transaction('work_items')
+  const workItem = await tx(WORK_ITEM_TABLE_NAME)
+    .forUpdate()
     .select()
-    .where({ serviceID, status: 'ready' })
+    .where({ serviceID, status: WorkItemStatus.READY })
     .orderBy(['id'])
-    .first();
+    .first() as WorkItem;
 
   if (workItem) {
-    await transaction('work_items')
-      .update({ status: 'running', updatedAt: new Date() })
+    await tx(WORK_ITEM_TABLE_NAME)
+      .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
       .where({ id: workItem.id });
   }
 
-  return workItem as unknown as WorkItem;
+  return workItem;
+}
+
+/**
+ * Update the status in the database for a WorkItem
+ * @param tx - the transaction to use for querying
+ * @param id - the id of the WorkItem
+ * @param status - the status to set for the WorkItem
+ */
+export async function updateWorkItemStatus(
+  tx: Transaction,
+  id: string,
+  status: WorkItemStatus,
+): Promise<void> {
+  const workItem = await tx(WORK_ITEM_TABLE_NAME)
+    .forUpdate()
+    .select()
+    .where({ id })
+    .first() as WorkItem;
+
+  if (workItem) {
+    await tx('work_items')
+      .update({ status, updatedAt: new Date() })
+      .where({ id: workItem.id });
+  } else {
+    throw new Error(`id [${id}] does not exist in table ${WORK_ITEM_TABLE_NAME}`);
+  }
 }
 
 /**
  * Returns the next work item to process for a service
- * @param transaction - the transaction to use for querying
+ * @param tx - the transaction to use for querying
  * @param id - the work item ID
  *
  * @returns A promise with the work item or null if none
  */
 export async function getWorkItemById(
-  transaction: Transaction,
+  tx: Transaction,
   id: number,
 ): Promise<WorkItem> {
-  const workItem = await transaction('work_items')
+  const workItem = await tx(WORK_ITEM_TABLE_NAME)
     .select()
     .where({ id })
-    .first();
+    .first() as WorkItem;
 
-  return new WorkItem(workItem);
+  return workItem;
 }
