@@ -1,4 +1,7 @@
-import { Request, Response, Router, json } from 'express';
+import { Request, Response, Router, json, NextFunction } from 'express';
+import HarmonyRequest from 'models/harmony-request';
+import WorkItem, { getNextWorkItem, getWorkItemById, WorkItemStatus } from 'models/work-item';
+import db from 'util/db';
 import { responseHandler } from '../backends/service-response';
 import argoResponsehandler from '../backends/argo-response';
 import log from '../util/log';
@@ -7,16 +10,44 @@ import log from '../util/log';
  * Return a work item for the given service
  * @param req - The request sent by the client
  * @param res - The response to send to the client
+ * @param next - The next function in the call chain
  * @returns Resolves when the request is complete
  */
-async function getWork(req: Request, res: Response): Promise<void> {
-  // just hard-code the work here for development testing
-  // TODO - get work for real from dB
-  const { service } = req.query;
-  log.info(`Getting work for service [${service}]`);
-  setTimeout(() => {
-    res.send({ work: 'got work' });
-  }, 5_000);
+async function getWork(req: HarmonyRequest, res: Response, _next: NextFunction): Promise<void> {
+  const { serviceID } = req.query;
+  const { logger } = req.context;
+  logger.info(`Getting work for service [${serviceID}]`);
+  let workItem;
+  await db.transaction(async (tx) => {
+    workItem = await getNextWorkItem(tx, serviceID as string);
+  });
+  if (workItem) {
+    res.send(workItem);
+  } else {
+    res.status(404).send();
+  }
+}
+
+/**
+ * Update a work item from a service response
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @returns Resolves when the request is complete
+ */
+async function createWorkItem(req: Request, res: Response): Promise<void> {
+  const { serviceID, stacItemLocation, jobID } = req.body;
+  log.info(`Creating work item for jobID ${jobID}, service ${serviceID}, ${stacItemLocation}`);
+  let workItem;
+  await db.transaction(async (tx) => {
+    workItem = new WorkItem({
+      jobID,
+      serviceID,
+      stacItemLocation,
+      status: WorkItemStatus.READY,
+    });
+    await workItem.save(tx);
+  });
+  res.send(workItem);
 }
 
 /**
@@ -26,10 +57,15 @@ async function getWork(req: Request, res: Response): Promise<void> {
  * @returns Resolves when the request is complete
  */
 async function updateWorkItem(req: Request, res: Response): Promise<void> {
-  // TODO - do something useful
-  const { id } = req.params;
-  log.info(`Updating work item ${id}`);
-  res.send('OK');
+  const { id, status } = req.params;
+  log.info(`Updating work item for ${id} to ${status}`);
+  let workItem;
+  await db.transaction(async (tx) => {
+    workItem = await getWorkItemById(tx, id);
+    workItem.status = status as WorkItemStatus;
+    await workItem.save(tx);
+  });
+  res.send(workItem);
 }
 
 /**
@@ -45,6 +81,7 @@ export default function router(): Router {
   }));
   result.post('/:requestId/response', responseHandler);
   result.post('/:requestId/argo-response', argoResponsehandler);
+  result.post('/work', createWorkItem);
   result.get('/work', getWork);
   result.put('/work/:id', updateWorkItem);
 
