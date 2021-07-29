@@ -4,7 +4,7 @@ import path from 'path';
 import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
 import logger from '../../../app/util/log';
-import { queryGranules } from './query';
+import { queryGranules, queryGranulesScrolling } from './query';
 
 interface HarmonyArgv {
   outputDir?: string;
@@ -13,6 +13,7 @@ interface HarmonyArgv {
   pageSize?: number;
   maxPages?: number;
   batchSize?: number;
+  scrollId?: string;
 }
 
 /**
@@ -56,6 +57,13 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       describe: 'number of granules to include in a single batch; create one catalog file per batch',
       type: 'number',
       default: 2000,
+    })
+    // if present, we are using a non-Argo workflow, and will ignore params like page-size,
+    // batch-size, max-pages, query
+    .option('scroll-id', {
+      alias: 's',
+      describe: 'scroll session id used in the CMR-Scroll-Id header to perform a granule search using scrolling',
+      type: 'string',
     });
 }
 
@@ -73,13 +81,16 @@ export default async function main(args: string[]): Promise<void> {
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing.cmr-granule-locator.start');
   await fs.mkdir(options.outputDir, { recursive: true });
-  const catalogs = await queryGranules(
-    operation,
-    options.query as string[],
-    options.pageSize,
-    options.maxPages,
-    options.batchSize,
-  );
+
+  const catalogs = options.scrollId
+    ? await queryGranulesScrolling(operation, options.scrollId)
+    : await queryGranules(
+      operation,
+      options.query as string[],
+      options.pageSize,
+      options.maxPages,
+      options.batchSize,
+    );
 
   const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {
