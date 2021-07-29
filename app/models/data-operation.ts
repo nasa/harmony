@@ -189,6 +189,8 @@ export default class DataOperation {
 
   cmrHits?: number;
 
+  scrollIDs?: string[];
+
   cmrQueryLocations: string[] = [];
 
   encrypter?: Encrypter;

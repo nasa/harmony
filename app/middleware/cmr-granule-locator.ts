@@ -75,6 +75,7 @@ function getResultsLimitedMessage(operation: DataOperation): string {
   }
   return message;
 }
+
 /**
  * Express.js middleware which extracts parameters from the Harmony operation
  * and performs a granule query on them, determining which files are applicable
@@ -84,7 +85,81 @@ function getResultsLimitedMessage(operation: DataOperation): string {
  * @param res - The client response
  * @param next - The next function in the middleware chain
  */
-export default async function cmrGranuleLocator(
+async function cmrGranuleLocatorNew(
+  req: HarmonyRequest, res: ServerResponse, next: NextFunction,
+): Promise<void> {
+  // Same boilerplate as before
+  const { operation } = req;
+  const { logger } = req.context;
+
+  if (!operation) return next();
+
+  const cmrQuery: cmr.CmrQuery = {};
+
+  const start = operation.temporal?.start;
+  const end = operation.temporal?.end;
+  if (start || end) {
+    cmrQuery.temporal = `${start || ''},${end || ''}`;
+  }
+  if (operation.boundingRectangle) {
+    cmrQuery.bounding_box = operation.boundingRectangle.join(',');
+  }
+
+  cmrQuery.concept_id = operation.granuleIds;
+
+  operation.cmrHits = 0;
+  operation.scrollIDs = [];
+
+  try {
+    const { sources } = operation;
+    const queries = sources.map(async (source) => {
+      logger.info(`Querying granules for ${source.collection}`, { cmrQuery, collection: source.collection });
+      const startTime = new Date().getTime();
+      const maxResults = getMaxGranules(req);
+
+      operation.maxResults = maxResults;
+
+      if (operation.geojson) {
+        cmrQuery.geojson = operation.geojson;
+      }
+
+      const { hits, scrollID } = await cmr.initateGranuleScroll(
+        source.collection,
+        cmrQuery,
+        req.accessToken,
+        maxResults,
+      );
+      const msTaken = new Date().getTime() - startTime;
+      logger.info('timing.cmr-initiate-granule-scroll.end', { durationMs: msTaken, hits });
+
+      operation.cmrHits += hits;
+      operation.scrollIDs.push(scrollID);
+    });
+    await Promise.all(queries);
+  } catch (e) {
+    if (e instanceof RequestValidationError || e instanceof CmrError) {
+      // Avoid giving confusing errors about GeoJSON due to upstream converted files
+      if (e.message.indexOf('GeoJSON') !== -1 && req.context.shapefile) {
+        e.message = e.message.replace('GeoJSON', `GeoJSON (converted from the provided ${req.context.shapefile.typeName})`);
+      }
+      return next(e);
+    }
+    logger.error(e);
+    next(new ServerError('Failed to query the CMR'));
+  }
+  return next();
+}
+
+/**
+ * Express.js middleware which extracts parameters from the Harmony operation
+ * and performs a granule query on them, determining which files are applicable
+ * to the given operation.
+ *
+ * @param req - The client request, containing an operation
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
+ */
+async function cmrGranuleLocatorArgo(
   req: HarmonyRequest, res: ServerResponse, next: NextFunction,
 ): Promise<void> {
   const { operation } = req;
@@ -181,4 +256,23 @@ export default async function cmrGranuleLocator(
     next(new ServerError('Failed to query the CMR'));
   }
   return next();
+}
+
+/**
+ * Express.js middleware which extracts parameters from the Harmony operation
+ * and performs a granule query on them, determining which files are applicable
+ * to the given operation.
+ *
+ * @param req - The client request, containing an operation
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
+ */
+export default async function cmrGranuleLocator(
+  req: HarmonyRequest, res: ServerResponse, next: NextFunction,
+): Promise<void> {
+  if (req.query.turbo === 'true') {
+    await cmrGranuleLocatorNew(req, res, next);
+  } else {
+    await cmrGranuleLocatorArgo(req, res, next);
+  }
 }

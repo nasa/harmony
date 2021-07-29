@@ -1,6 +1,6 @@
 import FormData from 'form-data';
 import fs from 'fs';
-import { get } from 'lodash';
+import { defer, get } from 'lodash';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import * as util from 'util';
@@ -90,6 +90,7 @@ export interface CmrGranuleLink {
 export interface CmrGranuleHits {
   hits: number;
   granules: CmrGranule[];
+  scrollID?: string;
 }
 
 export interface CmrUmmVariable {
@@ -113,6 +114,7 @@ export interface CmrQuery
   concept_id?: string | string[];
   page_size?: number;
   downloadable?: boolean;
+  scroll?: string;
 }
 
 export interface CmrAclQuery extends CmrQuery {
@@ -381,9 +383,11 @@ async function queryGranuleUsingMultipartForm(
   // TODO: Paging / hits
   const granuleResponse = await _cmrPost('/search/granules.json', form, token, extraHeaders) as CmrGranulesResponse;
   const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
+  const scrollID = granuleResponse.headers.get('cmr-scroll-id');
   return {
     hits: cmrHits,
     granules: granuleResponse.data.feed.entry,
+    scrollID,
   };
 }
 
@@ -486,6 +490,31 @@ export function queryGranulesForCollection(
 }
 
 /**
+ * Queries and returns the CMR JSON granules for the given collection ID with the given query
+ * params.  Uses multipart/form-data POST to accommodate large queries and shapefiles.
+ *
+ * @param collectionId - The ID of the collection whose granules should be searched
+ * @param query - The CMR granule query parameters to pass
+ * @param token - Access token for user request
+ * @param limit - The maximum number of granules to return
+ * @returns The granules associated with the input collection
+ */
+export function initateGranuleScroll(
+  collectionId: string, query: CmrQuery, token: string, limit = 10,
+): Promise<CmrGranuleHits> {
+  const baseQuery = {
+    collection_concept_id: collectionId,
+    page_size: limit,
+    scroll: 'defer',
+  };
+
+  return queryGranuleUsingMultipartForm({
+    ...baseQuery,
+    ...query,
+  }, token);
+}
+
+/**
  * Queries and returns the CMR JSON granules for the given scrollId.
  *
  * @param scrollId - Scroll session id used in the CMR-Scroll-Id header
@@ -498,6 +527,7 @@ export function queryGranulesForScrollId(
 ): Promise<CmrGranuleHits> {
   const cmrQuery = {
     page_size: limit,
+    scroll: 'true',
   };
 
   return queryGranuleUsingMultipartForm(
