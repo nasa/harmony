@@ -2,6 +2,7 @@ import { pick } from 'lodash';
 import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
+import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from 'util/cmr';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
@@ -54,6 +55,7 @@ export interface JobRecord {
   createdAt?: Date | number;
   updatedAt?: Date | number;
   numInputGranules: number;
+  collectionIds: string[];
   shapeFileUrl: string;
   shapeFileHash: string;
 }
@@ -125,6 +127,8 @@ export class Job extends Record {
   originalStatus: JobStatus;
 
   numInputGranules: number;
+
+  collectionIds: string[];
 
   attachedStatus: AttachedStatus;
 
@@ -288,7 +292,10 @@ export class Job extends Record {
     this.progress = fields.progress || 0;
     this.batchesCompleted = fields.batchesCompleted || 0;
     this.links = fields.links ? fields.links.map((l) => new JobLink(l)) : [];
-
+    // collectionIds is stringified json when returned from db
+    this.collectionIds = (typeof fields.collectionIds === 'string'
+      ? JSON.parse(fields.collectionIds) : fields.collectionIds)
+      || [];
     // Job already exists in the database
     if (fields.createdAt) {
       this.originalStatus = this.status;
@@ -426,6 +433,67 @@ export class Job extends Record {
   }
 
   /**
+   * Checks whether sharing of this job is restricted by any EULAs for
+   * any collection used by this job.
+   * Defaults to true if any collection does not have the harmony.has-eula tag
+   * associated with it.
+   * @param accessToken - the token to make the request with
+   * @returns true or false
+   */
+  async collectionsHaveEulaRestriction(accessToken: string): Promise<boolean> {
+    const cmrCollections = await getCollectionsByIds(
+      this.collectionIds,
+      accessToken,
+      CmrTagKeys.HasEula,
+    );
+    if (cmrCollections.length !== this.collectionIds.length) {
+      return true;
+    }
+    return !cmrCollections.every((collection) => (collection.tags
+      && collection.tags[CmrTagKeys.HasEula].data === false));
+  }
+
+  /**
+   * Checks whether CMR guests are restricted from reading any of the collections used in the job.
+   * @param accessToken - the token to make the request with
+   * @returns true or false
+   */
+  async collectionsHaveGuestReadRestriction(accessToken: string): Promise<boolean> {
+    const permissionsMap: CmrPermissionsMap = await getPermissions(this.collectionIds, accessToken);
+    return this.collectionIds.some((collectionId) => (
+      !permissionsMap[collectionId]
+        || !(permissionsMap[collectionId].indexOf(CmrPermission.Read) > -1)));
+  }
+
+  /**
+   * Return whether a user can access this job's results and STAC results
+   * (Called whenever a request is made to frontend jobs or STAC endpoints)
+   * @param requestingUserName - the person we're checking permissions for
+   * @param isAdminAccess - whether the requesting user has admin access
+   * @param accessToken - the token to make permission check requests with
+   * @returns ture or false
+   */
+  async canShareResultsWith(
+    requestingUserName: string,
+    isAdminAccess: boolean,
+    accessToken: string,
+  ): Promise<boolean> {
+    if (isAdminAccess || (this.username === requestingUserName)) {
+      return true;
+    }
+    if (!this.collectionIds.length) {
+      return false;
+    }
+    if (await this.collectionsHaveEulaRestriction(accessToken)) {
+      return false;
+    }
+    if (await this.collectionsHaveGuestReadRestriction(accessToken)) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
    * Check if the job has any links
    *
    * @param transaction - transaction to use for the query
@@ -488,13 +556,14 @@ export class Job extends Record {
     this.validateStatus();
     this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
-
-    const { attachedStatus, links, originalStatus } = this;
+    const { attachedStatus, links, originalStatus, collectionIds } = this;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+    // @ts-ignore so that we can store stringified json
+    this.collectionIds = JSON.stringify(this.collectionIds || []);
     delete this.attachedStatus;
     delete this.links;
     delete this.originalStatus;
-    // Remove the _json_links field once we've dropped the column
-    await super.save(transaction, { ...this, _json_links: [] });
+    await super.save(transaction);
     const promises = [];
     for (const link of links) {
       // Note we will not update existing links in the database - only add new ones
@@ -506,6 +575,7 @@ export class Job extends Record {
     this.attachedStatus = attachedStatus;
     this.links = links;
     this.originalStatus = originalStatus;
+    this.collectionIds = collectionIds;
   }
 
   /**
@@ -533,6 +603,7 @@ export class Job extends Record {
     const job = new Job(serializedJob as JobRecord); // We need to clean this up
     delete job.originalStatus;
     delete job.batchesCompleted;
+    delete job.collectionIds;
     return job;
   }
 

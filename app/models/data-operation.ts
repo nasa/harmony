@@ -245,6 +245,16 @@ export default class DataOperation {
   }
 
   /**
+   * Returns the collections used in the data operation as
+   * a list of strings
+   *
+   * @returns string[] of collections
+   */
+  get collectionIds(): string[] {
+    return this.model.sources.map((s: DataSource) => s.collection);
+  }
+
+  /**
    * Adds a new service data source to the list of those to operate on
    *
    * @param collection - The CMR ID of the collection being operated on
@@ -259,7 +269,7 @@ export default class DataOperation {
     const variables = vars ? vars.map(({ umm, meta }) => ({
       id: meta['concept-id'],
       name: umm.Name,
-      fullPath: _.compact([_.get(umm, 'Characteristics.GroupPath'), umm.Name]).join('/'),
+      fullPath: umm.Name,
     })) : undefined;
     this.model.sources.push({ collection, variables, granules });
   }

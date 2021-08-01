@@ -303,7 +303,7 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
     });
 
     describe('when the CMR returns a 5xx', function () {
-      hookCmr('cmrPostSearchBase', { status: 500 });
+      hookCmr('cmrPostBase', { status: 500 });
       it('returns an HTTP 503 "Service unavailable" error', async function () {
         let res = await postRangesetRequest(
           this.frontend,
