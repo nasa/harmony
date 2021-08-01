@@ -15,6 +15,7 @@ export default interface HarmonyRequest extends Request {
   user: string;
   accessToken: string;
   authorized: boolean;
+  geojsonHash?: string;
 }
 
 /**

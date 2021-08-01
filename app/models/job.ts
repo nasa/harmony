@@ -2,7 +2,6 @@ import { pick } from 'lodash';
 import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { removeEmptyProperties } from 'util/object';
-import { defaultObjectStore } from 'util/object-store';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
@@ -11,7 +10,6 @@ import { Transaction } from '../util/db';
 import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 
 import env = require('../util/env');
-import { logger } from 'express-winston';
 
 const { awsDefaultRegion } = env;
 
@@ -458,34 +456,17 @@ export class Job extends Record {
   async maybeAttach(transaction: Transaction): Promise<void> {
     const rows = await transaction('jobs')
       .select('requestId', 'shapeFileUrl', 'shapeFileHash')
-      .where({ username: this.username, request: this.request })
-      .andWhere( (builder) => {
-        builder.where('status', JobStatus.ACCEPTED).orWhere('status', JobStatus.RUNNING)
+      .where({ username: this.username, request: this.request, shapefileHash: this.shapeFileHash })
+      .andWhere((builder) => {
+        builder.where('status', JobStatus.ACCEPTED).orWhere('status', JobStatus.RUNNING);
       });
     if (Array.isArray(rows) && rows.length > 0) {
       const originalId = this.requestId;
-      // if a shapefile is not present then database query returned all matching running requests
-      if (this.shapeFileUrl === '' || this.shapeFileHash === '') {
-        const assumedId = rows.shift()['requestId'];
-        this.attachedStatus = { didAttach: true, originalId, assumedId };
-        return
-      // otherwise, compare checksum of current shapefile to other matching requests shapefile
-      } else {
-        const thisSum = this.shapeFileHash;
-        let assumedId = '';
-        for (const row of rows) {
-          if (this.shapeFileHash == row.shapeFileHash) {
-            assumedId = row.requestId;
-            break;
-          }
-        }
-        if (assumedId) {
-          this.attachedStatus = { didAttach: true, originalId, assumedId };
-          return
-        }
-      }
+      const assumedId = rows.shift()['requestId'];
+      this.attachedStatus = { didAttach: true, originalId, assumedId };
+    } else {
+      this.attachedStatus = { didAttach: false };
     }
-    this.attachedStatus = { didAttach: false };
   }
 
   /**

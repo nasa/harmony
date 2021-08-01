@@ -108,14 +108,14 @@ export default abstract class BaseService<ServiceParamType> {
    * @returns A promise resolving to the result of the callback.
    */
   async invokeOrAttach(
-    logger?: Logger, harmonyRoot?: string, requestUrl?: string,
+    logger?: Logger, harmonyRoot?: string, requestUrl?: string, geojsonHash?: string,
   ): Promise<InvocationResult> {
     let job: Job;
     logger.info('Invoking service for operation', { operation: this.operation });
     try {
       const startTime = new Date().getTime();
       logger.info('timing.save-job-to-database.start');
-      job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
+      job = await this._createJob(logger, requestUrl, this.operation.stagingLocation, geojsonHash);
       await job.maybeAttach(db);
       if (job.attachedStatus.didAttach) {
         const { originalId, assumedId } = job.attachedStatus;
@@ -216,8 +216,9 @@ export default abstract class BaseService<ServiceParamType> {
     logger: Logger,
     requestUrl: string,
     stagingLocation: string,
+    geojsonHash?: string,
   ): Promise<Job> {
-    const { geojson, geojsonHash, requestId, user } = this.operation;
+    const { geojson, requestId, user } = this.operation;
     const shapeFileUrl = geojson || '';
     const shapeFileHash = geojsonHash || '';
     logger.info(`Creating job for ${requestId}`);

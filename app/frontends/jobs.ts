@@ -89,6 +89,7 @@ function getJobForDisplay(job: Job, urlRoot: string, linkType?: string): Job {
   serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
   delete serializedJob.isAsync;
   delete serializedJob.batchesCompleted;
+  delete serializedJob.attachedStatus;
   return serializedJob;
 }
 
