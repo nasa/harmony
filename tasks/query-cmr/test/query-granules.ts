@@ -6,7 +6,7 @@ import * as sinon from 'sinon';
 import tmp from 'tmp';
 import * as fetch from 'node-fetch';
 import { Stream } from 'form-data';
-import { queryGranules } from '../app/query';
+import { queryGranules, queryGranulesScrolling } from '../app/query';
 
 import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
@@ -58,6 +58,36 @@ async function fetchPostArgsToFields(
     result[name.replace(/"/g, '').split(';')[0]] = rest.join('\r\n\r\n');
   }
   return result;
+}
+
+/**
+ * Sets up before and after hooks to run queryGranulesScrolling with three granules as
+ * the response to queryGranulesForScrollId
+ */
+function hookQueryGranulesScrolling(): void {
+  const output = {
+    headers: new fetch.Headers({}),
+    ...JSON.parse(fs.readFileSync(path.resolve(__dirname, 'resources/atom-granules.json'), 'UTF-8')),
+  };
+
+  let fetchPost: sinon.SinonStub;
+  before(async function () {
+    // Stub cmr fetch post to return the contents of queries
+    fetchPost = sinon.stub(cmr, 'fetchPost');
+    fetchPost.returns(Promise.resolve(output));
+
+    // Actually call it
+    this.result = await queryGranulesScrolling(operation, 'scrollId');
+
+    // Map the call arguments into something we can actually assert against
+    this.queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
+    this.queryFields = this.queryFields.sort((a, b) => a._index - b._index);
+  });
+  after(function () {
+    fetchPost.restore();
+    delete this.result;
+    delete this.queryFields;
+  });
 }
 
 /**
@@ -315,6 +345,59 @@ describe('query#queryGranules', function () {
     it('produces valid STAC output for the granule items', function () {
       const validate = buildStacSchemaValidator('item');
       expect(validate(this.result[0].children[0])).to.equal(false);
+    });
+  });
+});
+
+describe('query#queryGranulesScrolling', function () {
+  describe('when called with valid input sources and queries', async function () {
+    hookQueryGranulesScrolling();
+
+    it('returns a STAC catalog for each granule, each with a single item link and STAC item', function () {
+      expect(this.result[0].links).to.eql([{
+        href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
+        rel: 'harmony_source',
+      }, {
+        href: './granule_scrollId_G1233800343-EEDTEST_0000000.json',
+        rel: 'item',
+        title: '001_00_7f00ff_global',
+        type: 'application/json',
+      }]);
+      expect(this.result[1].links).to.eql([{
+        href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
+        rel: 'harmony_source',
+      }, {
+        href: './granule_scrollId_G1233800344-EEDTEST_0000000.json',
+        rel: 'item',
+        title: '001_01_7f00ff_africa',
+        type: 'application/json',
+      }]);
+      expect(this.result[2].links).to.eql([{
+        href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
+        rel: 'harmony_source',
+      }, {
+        href: './granule_scrollId_G1234866411-EEDTEST_0000000.json',
+        rel: 'item',
+        title: '001_01_7f00ff_africa_poly',
+        type: 'application/json',
+      }]);
+      expect(this.result.length).to.equal(3);
+
+      for (const catalog of this.result) {
+        expect(catalog.links.filter((l) => l.rel === 'item').length).to.equal(1);
+      }
+
+      for (const catalog of this.result) {
+        expect(catalog.children.length).to.equal(1);
+      }
+    });
+
+    it('uses a scrolling CMR search', function () {
+      expect(this.queryFields[0].scroll).to.equal('true');
+    });
+
+    it('limits the page size to 2000', function () {
+      expect(this.queryFields[0].page_size).to.equal('2000');
     });
   });
 });
