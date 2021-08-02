@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { Transaction } from '../util/db';
 import DataOperation from './data-operation';
 import Record from './record';
+import WorkflowStep from './workflow-steps';
 
 export enum WorkItemStatus {
   READY = 'ready',
@@ -71,19 +72,23 @@ export async function getNextWorkItem(
   tx: Transaction,
   serviceID: string,
 ): Promise<WorkItem> {
+  const tableFields = serializedFields.map((field) => `${WorkItem.table}.${field}`);
   const workItem = await tx(WorkItem.table)
     .forUpdate()
-    .select()
-    .where({ serviceID, status: WorkItemStatus.READY })
-    .orderBy(['id'])
+    .select(...tableFields, `${WorkflowStep.table}.operation`)
+    .join(WorkflowStep.table, `${WorkflowStep.table}.id`, `${WorkItem.table}.workflowStepId`)
+    .where({ 'work_items.serviceID': serviceID, status: WorkItemStatus.READY })
+    .orderBy([`${WorkItem.table}.id`])
     .first();
 
   if (workItem) {
+    workItem.operation = JSON.parse(workItem.operation);
     await tx(WorkItem.table)
       .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
       .where({ id: workItem.id });
   }
 
+  // TODO - what does this do if `workItem` is null?
   return new WorkItem(workItem);
 }
 
@@ -129,5 +134,6 @@ export async function getWorkItemById(
     .where({ id })
     .first();
 
+  // TODO - what does this do if `workItem` is null?
   return new WorkItem(workItem);
 }
