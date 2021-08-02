@@ -35,15 +35,16 @@ async function getWork(req: HarmonyRequest, res: Response, _next: NextFunction):
  * @returns Resolves when the request is complete
  */
 async function createWorkItem(req: Request, res: Response): Promise<void> {
-  const { serviceID, stacItemLocation, jobID, scrollID } = req.body;
-  log.info(`Creating work item for jobID ${jobID}, service ${serviceID}, ${stacItemLocation}`);
+  const { serviceID, stacCatalogLocation, jobID, scrollID, workflowStepId } = req.body;
+  log.info(`Creating work item for jobID ${jobID}, service ${serviceID}, ${stacCatalogLocation}`);
   let workItem;
   await db.transaction(async (tx) => {
     workItem = new WorkItem({
       jobID,
+      workflowStepId,
       scrollID,
       serviceID,
-      stacItemLocation,
+      stacCatalogLocation,
       status: WorkItemStatus.READY,
     });
     await workItem.save(tx);
