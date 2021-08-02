@@ -35,10 +35,24 @@ CREATE TABLE `job_links` (
 CREATE TABLE `work_items` (
   `id` integer not null primary key autoincrement,
   `jobID` char(36) not null,
+  `workflowStepId` integer not null,
   `scrollID` varchar(32),
   `serviceID` varchar(255) not null,
   `status` text check (`status` in ('ready', 'running', 'successful', 'failed', 'canceled')) not null,
-  `stacItemLocation` varchar(255),
+  `stacCatalogLocation` varchar(255),
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  FOREIGN KEY(jobID) REFERENCES jobs(jobID)
+  FOREIGN KEY(workflowStepId) REFERENCES woerkflow_steps(id)
+);
+
+CREATE TABLE `workflow_steps` (
+  `id` integer not null primary key autoincrement,
+  `jobID` char(36) not null,
+  `serviceID` varchar(255) not null,
+  `stepIndex` integer not null,
+  `workItemCount` integer not null,
+  `operation` text,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID)
