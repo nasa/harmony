@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import { v4 as uuid } from 'uuid';
+import WorkItem, { WorkItemStatus } from 'models/work-item';
+import WorkflowStep from 'models/workflow-steps';
 import InvocationResult from './invocation-result';
 import { Job, JobStatus } from '../job';
 import DataOperation from '../data-operation';
@@ -116,8 +118,23 @@ export default abstract class BaseService<ServiceParamType> {
     try {
       const startTime = new Date().getTime();
       logger.info('timing.save-job-to-database.start');
-      job = await this._createJob(logger, requestUrl, this.operation.stagingLocation);
-      await job.save(db);
+      job = this._createJob(requestUrl, this.operation.stagingLocation);
+      const queryCmrWorkItems = this._createQueryCmrWorkItems();
+      const workflowSteps = this._createWorkflowSteps();
+
+      await db.transaction(async (tx) => {
+        await job.save(tx);
+        if (this.operation.scrollIDs.length > 0) {
+          // New workflow style bypassing Argo
+          for await (const workItem of queryCmrWorkItems) {
+            await workItem.save(tx);
+          }
+          for await (const step of workflowSteps) {
+            await step.save(tx);
+          }
+        }
+      });
+
       const durationMs = new Date().getTime() - startTime;
       logger.info('timing.save-job-to-database.end', { durationMs });
     } catch (e) {
@@ -193,23 +210,18 @@ export default abstract class BaseService<ServiceParamType> {
   protected abstract _run(_logger: Logger): Promise<InvocationResult>;
 
   /**
-   * Creates a new job for this service's operation, with appropriate logging, errors,
-   * and warnings.
+   * Creates a new job object for this service's operation
    *
-   * @param transaction - The transaction to use when creating the job
-   * @param logger - The logger associated with this request
    * @param requestUrl - The URL the end user invoked
    * @param stagingLocation - The staging location for this job
    * @returns The created job
    * @throws ServerError - if the job cannot be created
    */
-  protected async _createJob(
-    logger: Logger,
+  protected _createJob(
     requestUrl: string,
     stagingLocation: string,
-  ): Promise<Job> {
+  ): Job {
     const { requestId, user } = this.operation;
-    logger.info(`Creating job for ${requestId}`);
     const job = new Job({
       username: user,
       requestId,
@@ -223,6 +235,51 @@ export default abstract class BaseService<ServiceParamType> {
     });
     job.addStagingBucketLink(stagingLocation);
     return job;
+  }
+
+  /**
+   * Creates a new work item object which will kick off the query cmr task for this request
+   *
+   * @returns The created WorkItem for the query CMR job
+   * @throws ServerError - if the work item cannot be created
+   */
+  protected _createQueryCmrWorkItems(): WorkItem[] {
+    const workItems = [];
+    for (const scrollID of this.operation.scrollIDs) {
+      workItems.push(new WorkItem({
+        jobID: this.operation.requestId,
+        scrollID,
+        // TODO we should use docker image tag & version
+        serviceID: this.config.name,
+        status: WorkItemStatus.READY,
+        workflowStepId: 0,
+      }));
+    }
+
+    return workItems;
+  }
+
+  /**
+   * Creates the workflow steps objects for this request
+   *
+   * @returns The created WorkItem for the query CMR job
+   * @throws ServerError - if the work item cannot be created
+   */
+  protected _createWorkflowSteps(
+  ): WorkflowStep[] {
+    const workflowSteps = [
+      new WorkflowStep({
+        jobID: this.operation.requestId,
+        // TODO we should use docker image tag & version
+        serviceID: this.config.name,
+        stepIndex: 0,
+        workItemCount: this.numInputGranules,
+        // operation: this.operation.serialize(this.config.data_operation_version),
+        // New version that doesn't require granules in the sources
+        operation: this.operation.serialize('0.11.0'),
+      }),
+    ];
+    return workflowSteps;
   }
 
   /**

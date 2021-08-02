@@ -37,6 +37,11 @@ function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
     {
+      version: '0.11.0',
+      schema: readSchema('0.11.0'),
+      down: (model): unknown => model,
+    },
+    {
       version: '0.10.0',
       schema: readSchema('0.10.0'),
       down: (model): unknown => {
@@ -189,7 +194,7 @@ export default class DataOperation {
 
   cmrHits?: number;
 
-  scrollIDs?: string[];
+  scrollIDs?: string[] = [];
 
   cmrQueryLocations: string[] = [];
 

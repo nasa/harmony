@@ -71,6 +71,11 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
    *  @returns A promise resolving to null
    */
   async _run(logger: Logger): Promise<InvocationResult> {
+    if (this.operation.scrollIDs.length > 0) {
+      // Do not send to Argo
+      return null;
+    }
+
     const url = `${this.params.argo_url}/api/v1/workflows/${this.params.namespace}`;
 
     const goodVars = _.reject(Object.keys(this.params.env),

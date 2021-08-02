@@ -11,6 +11,12 @@ export enum WorkItemStatus {
   CANCELED = 'canceled',
 }
 
+// The fields to save to the database
+const serializedFields = [
+  'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
+  'stacCatalogLocation', 'workflowStepId',
+];
+
 /**
  *
  * Wrapper object for persisted work items
@@ -21,9 +27,6 @@ export default class WorkItem extends Record {
 
   // The ID of the job that created this work item
   jobID: string;
-
-  // The operation to be performed by the service (not serialized)
-  operation?: DataOperation;
 
   // The ID of the scroll session (only used for the query cmr service)
   scrollID?: string;
@@ -37,8 +40,24 @@ export default class WorkItem extends Record {
   // The location of the STAC catalog for the item(s) to process
   stacCatalogLocation?: string;
 
+  // The corresponding workflow step ID for the work item - used to look up the operation
+  workflowStepId: number;
+
+  // The operation to be performed by the service (not serialized)
+  operation?: DataOperation;
+
   // The location of the resulting STAC catalog(s) (not serialized)
   results?: string[];
+
+  /**
+   * Saves the work item to the database using the given transaction.
+   *
+   * @param transaction - The transaction to use for saving the job link
+   */
+  async save(transaction: Transaction): Promise<void> {
+    const record = _.pick(this, serializedFields);
+    await super.save(transaction, record);
+  }
 }
 
 /**
@@ -57,7 +76,7 @@ export async function getNextWorkItem(
     .select()
     .where({ serviceID, status: WorkItemStatus.READY })
     .orderBy(['id'])
-    .first() as WorkItem;
+    .first();
 
   if (workItem) {
     await tx(WorkItem.table)
@@ -65,7 +84,7 @@ export async function getNextWorkItem(
       .where({ id: workItem.id });
   }
 
-  return workItem;
+  return new WorkItem(workItem);
 }
 
 /**
@@ -108,7 +127,7 @@ export async function getWorkItemById(
   const workItem = await tx(WorkItem.table)
     .select()
     .where({ id })
-    .first() as WorkItem;
+    .first();
 
-  return workItem;
+  return new WorkItem(workItem);
 }
