@@ -1,5 +1,6 @@
 import _ from 'lodash';
-import { Transaction } from 'util/db';
+import { Transaction } from '../util/db';
+import DataOperation from './data-operation';
 import Record from './record';
 
 export enum WorkItemStatus {
@@ -18,13 +19,26 @@ export enum WorkItemStatus {
 export default class WorkItem extends Record {
   static table = 'work_items';
 
+  // The ID of the job that created this work item
   jobID: string;
 
+  // The operation to be performed by the service (not serialized)
+  operation?: DataOperation;
+
+  // The ID of the scroll session (only used for the query cmr service)
+  scrollID?: string;
+
+  // unique identifier for the service - this should be the docker image tag (with version)
   serviceID: string;
 
+  // The status of the operation - see WorkItemStatus
   status?: WorkItemStatus;
 
-  stacItemLocation?: string;
+  // The location of the STAC catalog for the item(s) to process
+  stacCatalogLocation?: string;
+
+  // The location of the resulting STAC catalog(s) (not serialized)
+  results?: string[];
 }
 
 /**

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+      "types": ["node"],
       "module": "commonjs",
       "baseUrl": ".",
       "moduleResolution": "node",
@@ -11,5 +12,5 @@
       "outDir": "built"
   },
   "typeRoots": ["./node_modules/@types"],
-  "include": ["./app/**/*", "./test/**/*"]
+  "include": ["./**/*"]
 }

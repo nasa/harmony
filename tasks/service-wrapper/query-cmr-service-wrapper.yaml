@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: query-cmr
+  labels:
+    name: query-cmr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: query-cmr
+  template:
+    metadata:
+      labels:
+        name: query-cmr
+    spec:
+      containers:
+        - name: query-cmr
+          imagePullPolicy: IfNotPresent
+          image: harmonyservices/query-cmr-wrap:latest
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+      volumes:
+      - name: test-volume
+        hostPath:
+          # directory location on host
+          path: /Users/jnorton1/metadata
+          # this field is optional
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: query-cmr
+spec:
+  ports:
+    - name: frontend
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    name: query-cmr
+  type: LoadBalancer

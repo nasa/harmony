@@ -35,6 +35,7 @@ CREATE TABLE `job_links` (
 CREATE TABLE `work_items` (
   `id` integer not null primary key autoincrement,
   `jobID` char(36) not null,
+  `scrollID` varchar(32),
   `serviceID` varchar(255) not null,
   `status` text check (`status` in ('ready', 'running', 'successful', 'failed', 'canceled')) not null,
   `stacItemLocation` varchar(255),

@@ -55,6 +55,7 @@ interface HarmonyEnv {
   logLevel: string;
   port: number;
   pullUrl: string;
+  responseUrl: string;
   scriptFile: string;
   scriptDir: string;
   uploadBucket: string;

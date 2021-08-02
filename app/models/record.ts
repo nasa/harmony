@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import logger from 'util/log';
+import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 
 interface RecordConstructor extends Function {

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "start": "ts-node app/server.ts",
+    "start": "pwd && ls && ts-node app/server.ts",
     "test": "echo \"No test specified\" && exit 0"
   },
   "author": "",
