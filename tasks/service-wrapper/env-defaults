@@ -1,5 +1,8 @@
 // port on which the express server listens
 PORT=5000
-HARMONY_SERVICE="gdal_subsetter"
+HARMONY_SERVICE="query-cmr:latest"
 SCRIPT_FILE=__main__.py
 SCRIPT_DIR=/home
+NODE_ENV=development
+PULL_URL="http://localhost:3001/service/work"
+RESPONSE_URL="http://localhost:3001/service/work"

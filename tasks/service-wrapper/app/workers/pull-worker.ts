@@ -14,6 +14,7 @@ async function pullWork(): Promise<{ item?: WorkItem; error?: string }> {
   try {
     const response = await request
       .get(env.pullUrl)
+      .query(`serviceID=${env.harmonyService}`)
       .accept(JSON_TYPE)
       .timeout({
         response: 30_000, // Wait up to 30 seconds for the server to start sending
