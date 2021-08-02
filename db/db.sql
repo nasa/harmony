@@ -43,7 +43,7 @@ CREATE TABLE `work_items` (
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID)
-  FOREIGN KEY(workflowStepId) REFERENCES woerkflow_steps(id)
+  FOREIGN KEY(workflowStepId) REFERENCES workflow_steps(id)
 );
 
 CREATE TABLE `workflow_steps` (
@@ -61,3 +61,6 @@ CREATE TABLE `workflow_steps` (
 CREATE INDEX job_links_jobID_idx ON job_links(jobID);
 CREATE INDEX work_items_jobID_idx ON work_items(jobID);
 CREATE INDEX work_items_serviceID_idx ON work_items(serviceID);
+CREATE INDEX workflow_steps_jobID_idx ON workflow_steps(jobID);
+CREATE INDEX workflow_steps_sericeID_idx ON workflow_steps(serviceID);
+
