@@ -36,6 +36,8 @@ async function pullAndDoWork(): Promise<void> {
   const work = await pullWork();
   if (!work.error) {
     if (work.item) {
+      logger.info('WORK ITEM:');
+      logger.info(JSON.stringify(work.item));
       const workItem = work.item;
       if (workItem.scrollID) {
         runQueryCmrFromPull(work.item).then(async (queryResponse: ServiceResponse) => {

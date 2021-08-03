@@ -74,6 +74,12 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
   return new Promise<{}>((resolve) => {
     log.info(`Calling service ${env.harmonyService}`);
     const process = spawn('node', args, opts);
+    process.stdout.on('data', (data) => {
+      log.info(data.toString());
+    });
+    process.stderr.on('data', (data) => {
+      log.error(data.toString());
+    });
     process.on('exit', (code) => {
       if (code !== 0) {
         resolve({ error: `Process exited with code ${code}` });

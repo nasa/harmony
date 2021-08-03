@@ -4,5 +4,5 @@ HARMONY_SERVICE="query-cmr:latest"
 SCRIPT_FILE=__main__.py
 SCRIPT_DIR=/home
 NODE_ENV=development
-PULL_URL="http://localhost:3001/service/work"
-RESPONSE_URL="http://localhost:3001/service/work"
+PULL_URL="http://host.docker.internal:3001/service/work"
+RESPONSE_URL="http://host.docker.internal:3001/service/work"
