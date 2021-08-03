@@ -40,7 +40,7 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       alias: 'q',
       describe: 'file locations containing the CMR query to be performed, one per message source',
       type: 'array',
-      demandOption: true,
+      demandOption: false,
     })
     .option('page-size', {
       describe: 'the size of each page of results provided',
