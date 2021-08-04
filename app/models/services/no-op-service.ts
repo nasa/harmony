@@ -61,7 +61,6 @@ export default class NoOpService extends BaseService<void> {
       links,
       request: requestUrl,
       numInputGranules: this.operation.cmrHits,
-      shapeFileUrl: '',
       shapeFileHash: '',
     });
     job = job.serialize(harmonyRoot);

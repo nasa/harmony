@@ -56,8 +56,7 @@ export interface JobRecord {
   updatedAt?: Date | number;
   numInputGranules: number;
   collectionIds: string[];
-  shapeFileUrl: string;
-  shapeFileHash: string;
+  shapeFileHash?: string;
 }
 
 export interface JobQuery {
@@ -131,8 +130,6 @@ export class Job extends Record {
   collectionIds: string[];
 
   attachedStatus: AttachedStatus;
-
-  shapeFileUrl: string;
 
   shapeFileHash: string;
 
@@ -301,7 +298,6 @@ export class Job extends Record {
       this.originalStatus = this.status;
     }
     this.attachedStatus = { didAttach: false };
-    this.shapeFileUrl = fields.shapeFileUrl || '';
     this.shapeFileHash = fields.shapeFileHash || '';
   }
 
@@ -523,7 +519,7 @@ export class Job extends Record {
    */
   async maybeAttach(transaction: Transaction): Promise<void> {
     const rows = await transaction('jobs')
-      .select('requestId', 'shapeFileUrl', 'shapeFileHash')
+      .select('requestId', 'shapeFileHash')
       .where({ username: this.username, request: this.request, shapefileHash: this.shapeFileHash })
       .andWhere((builder) => {
         builder.where('status', JobStatus.ACCEPTED).orWhere('status', JobStatus.RUNNING);

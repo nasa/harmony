@@ -219,8 +219,7 @@ export default abstract class BaseService<ServiceParamType> {
     stagingLocation: string,
     geojsonHash?: string,
   ): Promise<Job> {
-    const { geojson, requestId, user } = this.operation;
-    const shapeFileUrl = geojson || '';
+    const { requestId, user } = this.operation;
     const shapeFileHash = geojsonHash || '';
     logger.info(`Creating job for ${requestId}`);
     const job = new Job({
@@ -233,7 +232,6 @@ export default abstract class BaseService<ServiceParamType> {
       numInputGranules: this.numInputGranules,
       message: this.operation.message,
       collectionIds: this.operation.collectionIds,
-      shapeFileUrl,
       shapeFileHash,
     });
     job.addStagingBucketLink(stagingLocation);
