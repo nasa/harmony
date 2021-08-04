@@ -47,7 +47,16 @@ developing the Harmony code itself, the following steps are enough to start a lo
 ```bash
 git clone https://github.com/nasa/harmony.git
 ```
-3. Run the bootstrap script and answer the prompts with your EDL application credentials
+
+3. Install the Argo CLI
+```bash
+curl -f -sSL -o argo https://github.com/argoproj/argo-workflows/releases/download/v2.9.5/argo-darwin-amd64
+chmod +x argo
+mv ./argo /usr/local/bin/argo
+argo version
+```
+
+4. Run the bootstrap script and answer the prompts with your EDL application credentials
 ```bash
 cd harmony && ./bin/bootstrap-harmony
 ```
