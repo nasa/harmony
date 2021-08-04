@@ -16,6 +16,7 @@ const exampleProps = {
   request: 'http://example.com/harmony?foo=bar',
   numInputGranules: 100,
   collectionIds: [],
+  shapeFileHash: '',
 };
 
 const requestId = uuid().toString();

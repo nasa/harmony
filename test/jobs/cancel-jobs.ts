@@ -83,6 +83,7 @@ describe('Canceling a job - user endpoint', function () {
 
           it('returns a single job record in JSON format', function () {
             const actualJob = JSON.parse(this.res.text);
+            //console.log(Object.keys(actualJob));
             expect(Object.keys(actualJob)).to.eql(expectedJobKeys);
           });
 

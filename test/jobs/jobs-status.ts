@@ -202,7 +202,7 @@ describe('Individual job status route', function () {
     const variableName = 'all';
     const version = '1.0.0';
 
-    describe('when the job has started but not completed', function () {
+    describe.only('when the job has started but not completed', function () {
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
 
       describe('retrieving its job status', function () {
@@ -253,7 +253,7 @@ describe('Individual job status route', function () {
       });
     });
 
-    describe('when an incomplete job has provided links as a partial status updates', function () {
+    describe.only('when an incomplete job has provided links as a partial status updates', function () {
       const shortLinks = [
         {
           href: 'http://example.com/1',
@@ -336,7 +336,7 @@ describe('Individual job status route', function () {
       });
     });
 
-    describe('when a job has provided an S3 URL as a result', function () {
+    describe.only('when a job has provided an S3 URL as a result', function () {
       const s3Uri = 's3://example-bucket/public/example/path.tif';
       StubService.hook({ params: { status: 'successful' } });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
@@ -346,6 +346,13 @@ describe('Individual job status route', function () {
 
       // HARMONY-770 AC 1
       describe('when linkType is unset', function () {
+        // console.log('*************************************************************');
+        // console.log('*************************************************************');
+        // console.log('');
+        // console.log(this.res.text);
+        // console.log('');
+        // console.log('*************************************************************');
+        // console.log('*************************************************************');
         hookRedirect('jdoe1');
         itProvidesAWorkingHttpUrl('jdoe1');
       });
