@@ -279,6 +279,15 @@ export default abstract class BaseService<ServiceParamType> {
         // New version that doesn't require granules in the sources
         operation: this.operation.serialize('0.11.0'),
       }),
+      new WorkflowStep({
+        jobID: this.operation.requestId,
+        serviceID: 'harmonyservices/service-example:latest',
+        stepIndex: 1,
+        workItemCount: this.numInputGranules,
+        // operation: this.operation.serialize(this.config.data_operation_version),
+        // New version that doesn't require granules in the sources
+        operation: this.operation.serialize('0.11.0'),
+      }),
     ];
     return workflowSteps;
   }

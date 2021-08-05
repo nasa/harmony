@@ -157,7 +157,8 @@ export async function workItemCountForStep(
   const count = await tx(WorkItem.table)
     .select()
     .count('id')
-    .where({ jobID, stepIndex });
+    .where({ jobID, workflowStepIndex: stepIndex });
 
-  return Number(count);
+  // TODO not sure if this works with postgres
+  return Number(count[0]['count(`id`)']);
 }

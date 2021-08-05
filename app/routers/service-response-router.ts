@@ -89,16 +89,16 @@ async function updateWorkItem(req: Request, res: Response): Promise<void> {
 
       if (nextStep) {
         // Create a new work item for each result using the next step
-        for (const result of results) {
+        for await (const result of results) {
           const newWorkItem = new WorkItem({
-            jobId: workItem.jobID,
-            serviceID: workItem.serviceID,
+            jobID: workItem.jobID,
+            serviceID: nextStep.serviceID,
             status: WorkItemStatus.READY,
             stacCatalogLocation: result,
             workflowStepIndex: nextStep.stepIndex,
           });
 
-          newWorkItem.save(tx);
+          await newWorkItem.save(tx);
         }
 
         // If the current step is the query-cmr service and the number of work items for the next
@@ -107,7 +107,7 @@ async function updateWorkItem(req: Request, res: Response): Promise<void> {
         const workItemCount = await workItemCountForStep(tx, workItem.jobID, nextStep.stepIndex);
         if (workItem.scrollID && workItemCount < nextStep.workItemCount) {
           const newWorkItem = new WorkItem({
-            jobId: workItem.jobID,
+            jobID: workItem.jobID,
             scrollID: workItem.scrollID,
             serviceID: workItem.serviceID,
             status: WorkItemStatus.READY,
@@ -115,7 +115,7 @@ async function updateWorkItem(req: Request, res: Response): Promise<void> {
             workflowStepIndex: workItem.workflowStepIndex,
           });
 
-          newWorkItem.save(tx);
+          await newWorkItem.save(tx);
         }
       } else {
         // 1. add job links for the results
