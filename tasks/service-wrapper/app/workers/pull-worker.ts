@@ -37,20 +37,21 @@ async function pullAndDoWork(): Promise<void> {
   const work = await pullWork();
   if (!work.error) {
     if (work.item) {
-      logger.info('WORK ITEM:');
-      logger.info(JSON.stringify(work.item));
+      logger.debug('WORK ITEM:');
+      logger.debug(JSON.stringify(work.item));
       const workItem = work.item;
-      if (workItem.scrollID) {
-        // only query-cmr WorkItems have a srollID
-        runQueryCmrFromPull(work.item).then(async (queryResponse: ServiceResponse) => {
-          logger.info('Finished work');
-          if (queryResponse.batchCatalogs) {
-            workItem.status = WorkItemStatus.SUCCESSFUL;
-            workItem.results = queryResponse.batchCatalogs;
-          } else {
-            workItem.status = WorkItemStatus.FAILED;
-          }
-          // call back to Harmony to mark the work unit as complete or failed
+      const workFunc = workItem.scrollID ? runQueryCmrFromPull : runPythonServiceFromPull;
+
+      workFunc(work.item).then(async (queryResponse: ServiceResponse) => {
+        logger.info('Finished work');
+        if (queryResponse.batchCatalogs) {
+          workItem.status = WorkItemStatus.SUCCESSFUL;
+          workItem.results = queryResponse.batchCatalogs;
+        } else {
+          workItem.status = WorkItemStatus.FAILED;
+        }
+        // call back to Harmony to mark the work unit as complete or failed
+        try {
           const response = await request
             .put(`${env.responseUrl}/${workItem.id}`)
             .type(JSON_TYPE)
@@ -62,14 +63,13 @@ async function pullAndDoWork(): Promise<void> {
             logger.error(`Error: received status [${response.status}] when updating WorkItem ${workItem.id}`);
             logger.error(`Error: ${response.error.message}`);
           }
+        } catch (e) {
+          logger.error(e);
+        }
 
-          // wait a short time before polling again (100 ms)
-          setTimeout(pullAndDoWork, 10000);
-        });
-      } else {
         // wait a short time before polling again (100 ms)
         setTimeout(pullAndDoWork, 10000);
-      }
+      });
     }
   } else if (work.error === 'Timemout') {
     // timeouts are expected - just try again after a short delay (100 ms)

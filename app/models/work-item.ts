@@ -73,10 +73,10 @@ export async function getNextWorkItem(
   serviceID: string,
 ): Promise<WorkItem> {
   const tableFields = serializedFields.map((field) => `${WorkItem.table}.${field}`);
-  const workItem = await tx(WorkItem.table)
+  const workItemData = await tx(WorkItem.table)
     .forUpdate()
     .select(...tableFields, `${WorkflowStep.table}.operation`)
-    // .join(WorkflowStep.table, `${WorkflowStep.table}.id`, `${WorkItem.table}.workflowStepIndex`)
+    // eslint-disable-next-line func-names
     .join(WorkflowStep.table, function () {
       this
         .on(`${WorkflowStep.table}.stepIndex`, `${WorkItem.table}.workflowStepIndex`)
@@ -86,15 +86,14 @@ export async function getNextWorkItem(
     .orderBy([`${WorkItem.table}.id`])
     .first();
 
-  if (workItem) {
-    workItem.operation = JSON.parse(workItem.operation);
+  if (workItemData) {
+    workItemData.operation = JSON.parse(workItemData.operation);
     await tx(WorkItem.table)
       .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
-      .where({ id: workItem.id });
+      .where({ id: workItemData.id });
   }
 
-  // TODO - what does this do if `workItem` is null?
-  return new WorkItem(workItem);
+  return workItemData && new WorkItem(workItemData);
 }
 
 /**
@@ -134,13 +133,12 @@ export async function getWorkItemById(
   tx: Transaction,
   id: number,
 ): Promise<WorkItem> {
-  const workItem = await tx(WorkItem.table)
+  const workItemData = await tx(WorkItem.table)
     .select()
     .where({ id })
     .first();
 
-  // TODO - what does this do if `workItem` is null?
-  return new WorkItem(workItem);
+  return workItemData && new WorkItem(workItemData);
 }
 
 /**
