@@ -103,7 +103,7 @@
     "shpjs": "^3.5.0",
     "simple-oauth2": "git+https://github.com/bilts/simple-oauth2.git#fix-encoding",
     "source-map-support": "^0.5.19",
-    "sqlite3": "^5.0.2",
+    "sqlite3": "^4.2.0",
     "swagger-ui-express": "^4.1.4",
     "tmp": "^0.2.1",
     "tmp-promise": "^3.0.2",
@@ -115,7 +115,7 @@
     "unzipper": "^0.10.11",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
-    "xmldom": "^0.6.0",
+    "xmldom": "github:xmldom/xmldom#0.7.0",
     "xregexp": "^5.0.2"
   },
   "devDependencies": {
