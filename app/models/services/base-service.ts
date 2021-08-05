@@ -119,18 +119,20 @@ export default abstract class BaseService<ServiceParamType> {
       const startTime = new Date().getTime();
       logger.info('timing.save-job-to-database.start');
       job = this._createJob(requestUrl, this.operation.stagingLocation);
-      const queryCmrWorkItems = this._createQueryCmrWorkItems();
       const workflowSteps = this._createWorkflowSteps();
+      const queryCmrWorkItems = this._createQueryCmrWorkItems();
 
       await db.transaction(async (tx) => {
         await job.save(tx);
         if (this.operation.scrollIDs.length > 0) {
           // New workflow style bypassing Argo
-          for await (const workItem of queryCmrWorkItems) {
-            await workItem.save(tx);
-          }
           for await (const step of workflowSteps) {
             await step.save(tx);
+          }
+          for await (const workItem of queryCmrWorkItems) {
+            // use first step as the workflow step associated with each work item
+            workItem.workflowStepIndex = workflowSteps[0].stepIndex;
+            await workItem.save(tx);
           }
         }
       });
@@ -239,7 +241,7 @@ export default abstract class BaseService<ServiceParamType> {
 
   /**
    * Creates a new work item object which will kick off the query cmr task for this request
-   *
+   * @param stepId - The
    * @returns The created WorkItem for the query CMR job
    * @throws ServerError - if the work item cannot be created
    */
@@ -250,9 +252,8 @@ export default abstract class BaseService<ServiceParamType> {
         jobID: this.operation.requestId,
         scrollID,
         // TODO we should use docker image tag & version
-        serviceID: this.config.name,
+        serviceID: 'query-cmr:latest',
         status: WorkItemStatus.READY,
-        workflowStepId: 0,
       }));
     }
 
@@ -271,7 +272,7 @@ export default abstract class BaseService<ServiceParamType> {
       new WorkflowStep({
         jobID: this.operation.requestId,
         // TODO we should use docker image tag & version
-        serviceID: this.config.name,
+        serviceID: 'query-cmr:latest',
         stepIndex: 0,
         workItemCount: this.numInputGranules,
         // operation: this.operation.serialize(this.config.data_operation_version),

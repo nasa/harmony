@@ -1,5 +1,6 @@
 import { PythonShell } from 'python-shell';
 import { Response } from 'express';
+import { readdir, readdirSync } from 'fs';
 import { spawn } from 'child_process';
 import env from '../util/env';
 import log from '../util/log';
@@ -51,6 +52,18 @@ export function runServiceForRequest(operation: any, res: Response): void {
 }
 
 /**
+ * Get a list of STAC catalog in a directory
+ * @param dir - the directory containing the catalogs
+ */
+function _getStacCatalogs(dir: string): string[] {
+  // readdirync should be ok since a service only ever handles one WorkItem at a time and may
+  // actually be necessary to ensure read after write consistency on EFS
+  return readdirSync(dir)
+    .filter((fileName) => fileName.match(/catalog\d+.json/))
+    .map((fileName) => `${dir}/${fileName}`);
+}
+
+/**
  * Run the query cmr service for a work item pulled from Harmony
   * @param operation - The requested operation
   * @param callback - Function to call with result
@@ -61,12 +74,10 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
     'tasks/query-cmr/app/cli',
     '--harmony-input',
     `${JSON.stringify(operation)}`,
-    '--query',
-    '[]',
     '--scroll-id',
     scrollID,
     '--output-dir',
-    `/tmp/metadata/${operation.requestId}/outputs`,
+    `/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`,
   ];
 
   const opts = {
@@ -86,7 +97,9 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
       if (code !== 0) {
         resolve({ error: `Process exited with code ${code}` });
       } else {
-        resolve({ 'batch-catalogs': '/tmp/outputs/batch-catalogs.json' });
+        resolve({
+          batchCatalogs: _getStacCatalogs(`/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`),
+        });
       }
     });
     process.on('error', (error: Error) => {

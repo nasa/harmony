@@ -15,7 +15,7 @@ export enum WorkItemStatus {
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
-  'stacCatalogLocation', 'workflowStepId',
+  'stacCatalogLocation', 'workflowStepIndex',
 ];
 
 /**
@@ -42,7 +42,7 @@ export default class WorkItem extends Record {
   stacCatalogLocation?: string;
 
   // The corresponding workflow step ID for the work item - used to look up the operation
-  workflowStepId: number;
+  workflowStepIndex: number;
 
   // The operation to be performed by the service (not serialized)
   operation?: DataOperation;
@@ -76,7 +76,12 @@ export async function getNextWorkItem(
   const workItem = await tx(WorkItem.table)
     .forUpdate()
     .select(...tableFields, `${WorkflowStep.table}.operation`)
-    .join(WorkflowStep.table, `${WorkflowStep.table}.id`, `${WorkItem.table}.workflowStepId`)
+    // .join(WorkflowStep.table, `${WorkflowStep.table}.id`, `${WorkItem.table}.workflowStepIndex`)
+    .join(WorkflowStep.table, function () {
+      this
+        .on(`${WorkflowStep.table}.stepIndex`, `${WorkItem.table}.workflowStepIndex`)
+        .on(`${WorkflowStep.table}.jobID`, `${WorkItem.table}.jobID`);
+    })
     .where({ 'work_items.serviceID': serviceID, status: WorkItemStatus.READY })
     .orderBy([`${WorkItem.table}.id`])
     .first();
@@ -136,4 +141,23 @@ export async function getWorkItemById(
 
   // TODO - what does this do if `workItem` is null?
   return new WorkItem(workItem);
+}
+
+/**
+ *  Returns the number of existing work items for a specific workflow step
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the job that created this work item
+ * @param stepIndex - the index of the step in the workflow
+ */
+export async function workItemCountForStep(
+  tx: Transaction,
+  jobID: string,
+  stepIndex: number,
+): Promise<number> {
+  const count = await tx(WorkItem.table)
+    .select()
+    .count('id')
+    .where({ jobID, stepIndex });
+
+  return Number(count);
 }

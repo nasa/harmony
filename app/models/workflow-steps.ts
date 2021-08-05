@@ -32,16 +32,36 @@ export default class WorkflowStep extends Record {
  * @param tx - the transaction to use for querying
  * @param id - the work item ID
  *
- * @returns A promise with the work item or null if none
+ * @returns A promise with the workflow step or null if none
  */
 export async function getWorkflowStepById(
   tx: Transaction,
   id: number,
-): Promise<WorkflowStep> {
-  const workflowStep = await tx(WorkflowStep.table)
+): Promise<WorkflowStep | null> {
+  const workflowStepData = await tx(WorkflowStep.table)
     .select()
     .where({ id })
     .first();
 
-  return new WorkflowStep(workflowStep);
+  return workflowStepData && new WorkflowStep(workflowStepData);
+}
+
+/**
+ *
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the Job for the step
+ * @param stepIndex - the index of the step within the workflow
+ * @returns A promise with the workflow step or null if none
+ */
+export async function getWorkflowStepByJobIdStepIndex(
+  tx: Transaction,
+  jobID: string,
+  stepIndex: number,
+): Promise<WorkflowStep | null> {
+  const workflowStepData = await tx(WorkflowStep.table)
+    .select()
+    .where({ jobID, stepIndex })
+    .first();
+
+  return workflowStepData && new WorkflowStep(workflowStepData);
 }

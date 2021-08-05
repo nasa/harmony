@@ -1,4 +1,5 @@
 import request from 'superagent';
+import fs from 'fs';
 import { Worker } from '../../../../app/workers/worker';
 import env from '../util/env';
 import WorkItem, { WorkItemStatus } from '../../../../app/models/work-item';
@@ -40,6 +41,7 @@ async function pullAndDoWork(): Promise<void> {
       logger.info(JSON.stringify(work.item));
       const workItem = work.item;
       if (workItem.scrollID) {
+        // only query-cmr WorkItems have a srollID
         runQueryCmrFromPull(work.item).then(async (queryResponse: ServiceResponse) => {
           logger.info('Finished work');
           if (queryResponse.batchCatalogs) {
@@ -62,16 +64,20 @@ async function pullAndDoWork(): Promise<void> {
           }
 
           // wait a short time before polling again (100 ms)
-          setTimeout(pullAndDoWork, 100);
+          setTimeout(pullAndDoWork, 10000);
         });
+      } else {
+        // wait a short time before polling again (100 ms)
+        setTimeout(pullAndDoWork, 10000);
       }
     }
   } else if (work.error === 'Timemout') {
     // timeouts are expected - just try again after a short delay (100 ms)
-    setTimeout(pullAndDoWork, 100);
+    setTimeout(pullAndDoWork, 10000);
   } else {
     // something bad happened
     logger.error(`Unexpected error while pulling work: ${work.error}`);
+    setTimeout(pullAndDoWork, 10000);
   }
 }
 

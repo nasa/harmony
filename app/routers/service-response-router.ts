@@ -1,10 +1,12 @@
 import { Request, Response, Router, json, NextFunction } from 'express';
 import HarmonyRequest from 'models/harmony-request';
-import WorkItem, { getNextWorkItem, getWorkItemById, updateWorkItemStatus, WorkItemStatus } from 'models/work-item';
+import WorkItem, { getNextWorkItem, getWorkItemById, updateWorkItemStatus, WorkItemStatus, workItemCountForStep } from 'models/work-item';
 import db from 'util/db';
 import { responseHandler } from '../backends/service-response';
 import argoResponsehandler from '../backends/argo-response';
 import log from '../util/log';
+import { Job, JobStatus } from '../models/job';
+import { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 
 /**
  * Return a work item for the given service
@@ -35,13 +37,13 @@ async function getWork(req: HarmonyRequest, res: Response, _next: NextFunction):
  * @returns Resolves when the request is complete
  */
 async function createWorkItem(req: Request, res: Response): Promise<void> {
-  const { serviceID, stacCatalogLocation, jobID, scrollID, workflowStepId } = req.body;
+  const { serviceID, stacCatalogLocation, jobID, scrollID, workflowStepIndex } = req.body;
   log.info(`Creating work item for jobID ${jobID}, service ${serviceID}, ${stacCatalogLocation}`);
   let workItem;
   await db.transaction(async (tx) => {
     workItem = new WorkItem({
       jobID,
-      workflowStepId,
+      workflowStepIndex,
       scrollID,
       serviceID,
       stacCatalogLocation,
@@ -52,6 +54,12 @@ async function createWorkItem(req: Request, res: Response): Promise<void> {
   res.send(workItem);
 }
 
+async function _handleWorkItemResults(workItem: WorkItem, results: string[]) {
+  for (const result of results) {
+
+  }
+}
+
 /**
  * Update a work item from a service response
  * @param req - The request sent by the client
@@ -60,15 +68,63 @@ async function createWorkItem(req: Request, res: Response): Promise<void> {
  */
 async function updateWorkItem(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, results } = req.body;
   log.info(`Updating work item for ${id} to ${status}`);
-  let workItem;
+  let workItem: WorkItem;
   await db.transaction(async (tx) => {
     await updateWorkItemStatus(tx, id, status as WorkItemStatus);
-    workItem = getWorkItemById(tx, parseInt(id, 10));
-    // update the job status
+    workItem = await getWorkItemById(tx, parseInt(id, 10));
+    log.debug('Got work item');
+    const job: Job = await Job.byJobID(tx, workItem.jobID);
+    // If the response is an error then set the job status to 'failed'
+    if (workItem.status === WorkItemStatus.FAILED) {
+      job.status = JobStatus.FAILED;
+      job.save(tx);
+    } else if (results) {
+      const nextStep = await getWorkflowStepByJobIdStepIndex(
+        tx,
+        workItem.jobID,
+        workItem.workflowStepIndex + 1,
+      );
+
+      if (nextStep) {
+        // Create a new work item for each result using the next step
+        for (const result of results) {
+          const newWorkItem = new WorkItem({
+            jobId: workItem.jobID,
+            serviceID: workItem.serviceID,
+            status: WorkItemStatus.READY,
+            stacCatalogLocation: result,
+            workflowStepIndex: nextStep.stepIndex,
+          });
+
+          newWorkItem.save(tx);
+        }
+
+        // If the current step is the query-cmr service and the number of work items for the next
+        // step is less than 'workItemCount' for the next step then create a new work item for
+        // the current step
+        const workItemCount = await workItemCountForStep(tx, workItem.jobID, nextStep.stepIndex);
+        if (workItem.scrollID && workItemCount < nextStep.workItemCount) {
+          const newWorkItem = new WorkItem({
+            jobId: workItem.jobID,
+            scrollID: workItem.scrollID,
+            serviceID: workItem.serviceID,
+            status: WorkItemStatus.READY,
+            stacCatalogLocation: workItem.stacCatalogLocation,
+            workflowStepIndex: workItem.workflowStepIndex,
+          });
+
+          newWorkItem.save(tx);
+        }
+      } else {
+        // 1. add job links for the results
+        // 2. If the number of work items with status 'successful' equals 'workItemCount'
+        //    for the current step then set the job status to 'complete'.
+      }
+    }
   });
-  res.send(workItem);
+  res.status(204).send();
 }
 
 /**

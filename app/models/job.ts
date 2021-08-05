@@ -210,6 +210,18 @@ export class Job extends Record {
   }
 
   /**
+  * Returns a Job with the given jobID using the given transaction
+  *
+  * @param transaction - the transaction to use for querying
+  * @param jobID - the jobID for the job that should be retrieved
+  * @returns the Job with the given JobID or null if not found
+  */
+  static async byJobID(transaction: Transaction, jobID: string): Promise<Job | null> {
+    const jobList = await this.queryAll(transaction, { jobID }, true, 0, 1);
+    return jobList.data.shift();
+  }
+
+  /**
    * Returns the job matching the given username and request ID, or null if
    * no such job exists.
    *

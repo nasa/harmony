@@ -6,6 +6,7 @@ import CmrStacCatalog from './stac/cmr-catalog';
 import { queryGranulesForScrollId, queryGranulesForCollection as cmrQueryGranules } from '../../../app/util/cmr';
 import { objectStoreForProtocol } from '../../../app/util/object-store';
 import DataOperation from '../../../app/models/data-operation';
+import logger from '../../../app/util/log';
 
 export interface DataSource {
   collection: string;
@@ -91,6 +92,9 @@ export async function queryScrollId(
     token,
     pageSize,
   );
+  const { hits } = cmrResponse;
+  logger.info(`HITS: ${hits}`);
+  logger.info(`GOT ${cmrResponse.granules.length} granules in page`);
   const catalogs = cmrResponse.granules.map((granule) => {
     const result = new CmrStacCatalog({ description: `CMR collection ${granule.collection_concept_id}, granule ${granule.id}` });
     result.links.push({

@@ -83,13 +83,13 @@ DEBUG_KNEX=false
 LOG_LEVEL=debug
 
 # Default number of results in a page
-DEFAULT_RESULT_PAGE_SIZE=2000
+DEFAULT_RESULT_PAGE_SIZE=1
 
 # Default number of jobs listed in a page
 DEFAULT_JOB_LIST_PAGE_SIZE=10
 
 # Maximum number of results in a page
-MAX_PAGE_SIZE=10000
+MAX_PAGE_SIZE=1
 
 # Number of granules allowed for a synchronous request. When the request exceeds
 # this number it will be processed asynchronously. If a service provides a
