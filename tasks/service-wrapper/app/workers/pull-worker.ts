@@ -39,7 +39,7 @@ async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: s
  * Pull work and execute it
  */
 async function pullAndDoWork(): Promise<void> {
-  logger.info('Getting work..');
+  logger.debug('Getting work..');
   const work = await pullWork();
   if (!work.error) {
     if (work.item) {
@@ -58,6 +58,7 @@ async function pullAndDoWork(): Promise<void> {
           workItem.errorMessage = `${serviceResponse.error}`;
         }
         // call back to Harmony to mark the work unit as complete or failed
+        logger.debug('Sending response to Harmony');
         try {
           const response = await request
             .put(`${env.responseUrl}/${workItem.id}`)
@@ -77,7 +78,7 @@ async function pullAndDoWork(): Promise<void> {
     }
   } else if (work.error === 'Timemout') {
     // timeouts are expected - just try again after a short delay (100 ms)
-    logger.debug('Polling timeout out - retrying');
+    logger.debug('Polling timeout - retrying');
   } else if (work.status !== 404) {
     // something bad happened
     logger.error(`Unexpected error while pulling work: ${work.error}`);

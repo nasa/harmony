@@ -6,7 +6,9 @@
   "scripts": {
     "start": "ts-node app/server.ts",
     "test": "echo \"No test specified\" && exit 0",
-    "build": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/query-cmr -t harmonyservices/query-cmr-wrap:${VERSION:-latest} -f Dockerfile.queryCmr ."
+    "build-query-cmr-wrapper": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/query-cmr -t harmonyservices/query-cmr-wrap:${VERSION:-latest} -f Dockerfile.queryCmr .",
+    "build-harmony-services-wrapper": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/service-example --tag harmonyservices/service-example-wrap:${VERSION:-latest} -f Dockerfile.harmony-service-example .",
+    "build": "npm run build-query-cmr-wrapper && npm run build-harmony-services-wrapper"
   },
   "author": "",
   "license": "ISC",
