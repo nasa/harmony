@@ -24,7 +24,7 @@ export default function postCoverageRangeset(
   let queryKeys = Object.keys(req.query);
   let bodyKeys = Object.keys(req.body);
   if (queryKeys.filter(x => bodyKeys.includes(x)).length) {
-    console.log("Duplicate keys found from request body and query string. We Will use that from request body.");
+    req.context.logger.warn("Duplicate keys found from request body and query string. We Will use that from request body.");
   }
   req.query = { ...req.query, ...req.body };
 
