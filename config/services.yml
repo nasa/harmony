@@ -266,12 +266,10 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1215802948-GES_DISC
       - C1225808241-GES_DISC
       - C1221131370-GES_DISC
-      - C1225808238-GES_DISC
       - C1225808237-GES_DISC
       - C1216382991-GES_DISC
       - C1224264723-GES_DISC
       - C1236380582-GES_DISC
-      - C1215802944-GES_DISC
       - C1215726323-GES_DISC
       - C1215802935-GES_DISC
       - C1215802938-GES_DISC
@@ -449,6 +447,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/variable-subsetter
+    umm_s:
+      - S1237976118-EEDTEST
     collections:
       - C1234714691-EEDTEST  # ATL03 UAT
       - C1234714698-EEDTEST  # ATL08 UAT
@@ -475,6 +475,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/HOSS
+    umm_s:
+      - S1240682712-EEDTEST
     collections:
       - C1238392622-EEDTEST  # RSSMIF16D test collection UAT
       - C1222931739-GHRC_CLOUD  # RSSMIF16D UAT
@@ -502,6 +504,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/maskfill
+    umm_s:
+      - S1240151795-EEDTEST
     collections:
       - C1240150677-EEDTEST  # SPL4CMDL test collection
     capabilities:
@@ -735,7 +739,6 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/swot-repr-netcdf-to-zarr
     collections:
-      - C1233860183-EEDTEST
       - C1233800302-EEDTEST
       - C1234724470-POCLOUD
     maximum_sync_granules: 0
