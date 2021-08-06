@@ -21,6 +21,11 @@ export interface ServiceCapabilities {
   reprojection?: boolean;
 }
 
+export interface ServiceStep {
+  service?: string;
+  image?: string;
+}
+
 export interface ServiceConfig<ServiceParamType> {
   batch_size?: number;
   name?: string;
@@ -35,6 +40,7 @@ export interface ServiceConfig<ServiceParamType> {
   concurrency?: number;
   message?: string;
   maximum_sync_granules?: number;
+  steps?: ServiceStep[];
 }
 
 /**
@@ -57,6 +63,16 @@ export function functionalSerializeOperation(
   config: ServiceConfig<unknown>,
 ): string {
   return op.serialize(config.data_operation_version);
+}
+
+/**
+ * Takes a docker image name for a service and returns the service ID for that image.
+ *
+ * @param image - the docker image for the service
+ * @returns the service ID for that image.
+ */
+function serviceImageToId(image: string): string {
+  return image;
 }
 
 /**
@@ -113,36 +129,9 @@ export default abstract class BaseService<ServiceParamType> {
   async invoke(
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
   ): Promise<InvocationResult> {
-    let job: Job;
     logger.info('Invoking service for operation', { operation: this.operation });
-    try {
-      const startTime = new Date().getTime();
-      logger.info('timing.save-job-to-database.start');
-      job = this._createJob(requestUrl, this.operation.stagingLocation);
-      const workflowSteps = this._createWorkflowSteps();
-      const queryCmrWorkItems = this._createQueryCmrWorkItems();
-
-      await db.transaction(async (tx) => {
-        await job.save(tx);
-        if (this.operation.scrollIDs.length > 0) {
-          // New workflow style bypassing Argo
-          for await (const step of workflowSteps) {
-            await step.save(tx);
-          }
-          for await (const workItem of queryCmrWorkItems) {
-            // use first step as the workflow step associated with each work item
-            workItem.workflowStepIndex = workflowSteps[0].stepIndex;
-            await workItem.save(tx);
-          }
-        }
-      });
-
-      const durationMs = new Date().getTime() - startTime;
-      logger.info('timing.save-job-to-database.end', { durationMs });
-    } catch (e) {
-      logger.error(e.stack);
-      throw new ServerError('Failed to save job to database.');
-    }
+    const job = this._createJob(requestUrl);
+    await this._createAndSaveWorkflow(logger, job);
 
     const { isAsync, requestId } = job;
     this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
@@ -221,7 +210,6 @@ export default abstract class BaseService<ServiceParamType> {
    */
   protected _createJob(
     requestUrl: string,
-    stagingLocation: string,
   ): Job {
     const { requestId, user } = this.operation;
     const job = new Job({
@@ -235,24 +223,23 @@ export default abstract class BaseService<ServiceParamType> {
       message: this.operation.message,
       collectionIds: this.operation.collectionIds,
     });
-    job.addStagingBucketLink(stagingLocation);
+    job.addStagingBucketLink(this.operation.stagingLocation);
     return job;
   }
 
   /**
-   * Creates a new work item object which will kick off the query cmr task for this request
+   * Creates a new work item object which will kick off the first task for this request
    * @param stepId - The
    * @returns The created WorkItem for the query CMR job
    * @throws ServerError - if the work item cannot be created
    */
-  protected _createQueryCmrWorkItems(): WorkItem[] {
+  protected _createFirstStepWorkItems(workflowStep: WorkflowStep): WorkItem[] {
     const workItems = [];
     for (const scrollID of this.operation.scrollIDs) {
       workItems.push(new WorkItem({
         jobID: this.operation.requestId,
         scrollID,
-        // TODO we should use docker image tag & version
-        serviceID: 'query-cmr:latest',
+        serviceID: workflowStep.serviceID,
         status: WorkItemStatus.READY,
       }));
     }
@@ -266,30 +253,60 @@ export default abstract class BaseService<ServiceParamType> {
    * @returns The created WorkItem for the query CMR job
    * @throws ServerError - if the work item cannot be created
    */
-  protected _createWorkflowSteps(
-  ): WorkflowStep[] {
-    const workflowSteps = [
-      new WorkflowStep({
+  protected _createWorkflowSteps(): WorkflowStep[] {
+    const workflowSteps = [];
+    this.config.steps.forEach(((step, i) => {
+      workflowSteps.push(new WorkflowStep({
         jobID: this.operation.requestId,
-        // TODO we should use docker image tag & version
-        serviceID: 'query-cmr:latest',
-        stepIndex: 0,
+        serviceID: serviceImageToId(step.image),
+        stepIndex: i,
         workItemCount: this.numInputGranules,
         // operation: this.operation.serialize(this.config.data_operation_version),
         // New version that doesn't require granules in the sources
         operation: this.operation.serialize('0.11.0'),
-      }),
-      new WorkflowStep({
-        jobID: this.operation.requestId,
-        serviceID: 'harmonyservices/service-example:latest',
-        stepIndex: 1,
-        workItemCount: this.numInputGranules,
-        // operation: this.operation.serialize(this.config.data_operation_version),
-        // New version that doesn't require granules in the sources
-        operation: this.operation.serialize('0.11.0'),
-      }),
-    ];
+      }));
+    }));
     return workflowSteps;
+  }
+
+  /**
+   * Creates all of the database entries associated with starting a workflow
+   *
+   * @param service - The instantiation of a service for this operation
+   * @param configuration - The service configuration
+   * @param requestUrl - the request the end user sent
+   */
+  protected async _createAndSaveWorkflow(
+    logger: Logger,
+    job: Job,
+  ): Promise<void> {
+    try {
+      const startTime = new Date().getTime();
+      const workflowSteps = this._createWorkflowSteps();
+      const firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+
+      logger.info('timing.save-job-to-database.start');
+      await db.transaction(async (tx) => {
+        await job.save(tx);
+        if (this.operation.scrollIDs.length > 0) {
+          // New workflow style bypassing Argo
+          for await (const step of workflowSteps) {
+            await step.save(tx);
+          }
+          for await (const workItem of firstStepWorkItems) {
+            // use first step as the workflow step associated with each work item
+            workItem.workflowStepIndex = workflowSteps[0].stepIndex;
+            await workItem.save(tx);
+          }
+        }
+      });
+
+      const durationMs = new Date().getTime() - startTime;
+      logger.info('timing.save-job-to-database.end', { durationMs });
+    } catch (e) {
+      logger.error(e.stack);
+      throw new ServerError('Failed to save job to database.');
+    }
   }
 
   /**

@@ -308,7 +308,7 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: true
 
   - name: harmony/service-example
-    data_operation_version: '0.10.0'
+    data_operation_version: '0.11.0'
     batch_size: 10
     type:
       <<: *default-argo-config
@@ -335,6 +335,9 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/png
         - image/gif
       reprojection: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
     data_operation_version: '0.9.0'
