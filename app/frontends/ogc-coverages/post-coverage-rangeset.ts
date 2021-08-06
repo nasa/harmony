@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
+import { RequestValidationError } from 'util/errors';
 import getCoverageRangeset from './get-coverage-rangeset';
 import HarmonyRequest from '../../models/harmony-request';
-import { RequestValidationError, NotFoundError } from 'util/errors';
 
 /**
  * Express middleware that responds to OGC API - Coverages coverage
@@ -24,7 +24,7 @@ export default function postCoverageRangeset(
   // merge form parameters into the query
   const queryKeys = Object.keys(req.query);
   const bodyKeys = Object.keys(req.body);
-  const duplicateKeys = queryKeys.filter(x => bodyKeys.includes(x));
+  const duplicateKeys = queryKeys.filter((x) => bodyKeys.includes(x));
   if (duplicateKeys.length) {
     throw new RequestValidationError(`Duplicate keys "${duplicateKeys}" found from request body and query string!`);
   }
