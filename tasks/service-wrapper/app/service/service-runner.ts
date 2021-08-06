@@ -115,11 +115,12 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
   */
 export function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
   const { operation, stacCatalogLocation } = workItem;
+  const commandLine = env.invocationArgs.split('\n');
   const options = {
-    pythonOptions: ['-u'], // get print results in real-time
+    // pythonOptions: ['-u'], // get print results in real-time
     cwd: '/home',
     args: [
-      `${env.harmonyService}`,
+      ...commandLine,
       '--harmony-action',
       'invoke',
       '--harmony-input',
@@ -132,17 +133,18 @@ export function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
   };
   return new Promise<{}>((resolve) => {
     log.info(`Calling service ${env.harmonyService}`);
-    PythonShell.run('-m', options, (err, results) => {
+    PythonShell.run('-u', options, (err, results) => {
       if (err) {
-        // sem.leave();
         log.error('ERROR');
         log.error(err);
         resolve({ error: err });
+      } else {
+        // results is an array consisting of messages collected during execution
+        log.debug(`results: ${results}`);
+        resolve({
+          batchCatalogs: _getStacCatalogs(`/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`),
+        });
       }
-      // results is an array consisting of messages collected during execution
-      log.info(`results: ${results}`);
-      // sem.leave();
-      resolve({ results });
     });
   });
 }

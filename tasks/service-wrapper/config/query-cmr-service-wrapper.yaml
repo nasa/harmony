@@ -23,6 +23,9 @@ spec:
               name: harmony-env
           - secretRef:
               name: harmony-secrets
+          env:
+          - name: HARMONY_SERVICE
+            value: "harmonyservices/query-cmr:latest"
           ports:
             - containerPort: 5000
           volumeMounts:
@@ -32,7 +35,7 @@ spec:
       - name: test-volume
         hostPath:
           # directory location on host
-          path: /Users/jnorton1/metadata
+          path: $HOST_VOLUME_PATH
           # this field is optional
           type: DirectoryOrCreate
 ---

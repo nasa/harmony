@@ -17,12 +17,19 @@ spec:
       containers:
         - name: harmony-service-example
           imagePullPolicy: IfNotPresent
-          image: harmonyservices/service-example-sync:latest
+          image: harmonyservices/service-example-wrap:latest
           envFrom:
           - configMapRef:
               name: harmony-env
           - secretRef:
               name: harmony-secrets
+          env:
+          - name: HARMONY_SERVICE
+            value: "harmonyservices/service-example:latest"
+          - name: INVOCATION_ARGS
+            value: |-
+              -m
+              harmony_service_example
           ports:
             - containerPort: 5000
           volumeMounts:
@@ -32,7 +39,7 @@ spec:
       - name: test-volume
         hostPath:
           # directory location on host
-          path: /Users/jnorton1/metadata
+          path: $HOST_VOLUME_PATH
           # this field is optional
           type: DirectoryOrCreate
 ---

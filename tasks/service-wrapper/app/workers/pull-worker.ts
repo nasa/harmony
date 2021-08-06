@@ -1,5 +1,4 @@
 import request from 'superagent';
-import fs from 'fs';
 import { Worker } from '../../../../app/workers/worker';
 import env from '../util/env';
 import WorkItem, { WorkItemStatus } from '../../../../app/models/work-item';
@@ -11,7 +10,7 @@ const JSON_TYPE = 'application/json';
 /**
  * Requests work items from Harmony
  */
-async function pullWork(): Promise<{ item?: WorkItem; error?: string }> {
+async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: string }> {
   try {
     const response = await request
       .get(env.pullUrl)
@@ -21,12 +20,18 @@ async function pullWork(): Promise<{ item?: WorkItem; error?: string }> {
         response: 30_000, // Wait up to 30 seconds for the server to start sending
         deadline: 60_000, // but allow up to 60 seconds for the server to complete the response;
       });
-
-    logger.info(response.text);
+    if (response.status >= 400) {
+      const errMsg = response.error ? response.error.message : 'Unknown error';
+      return { error: errMsg, status: response.status };
+    }
     return { item: response.body };
   } catch (err) {
-    logger.error(`Request failed with error: ${err.message}`);
-    return { error: err.message };
+    if (err.status !== 404) {
+      logger.error(`Request failed with error: ${err.message}`);
+      return { error: err.message };
+    }
+    // 404s are expected when no work is available
+    return {};
   }
 }
 
@@ -34,21 +39,23 @@ async function pullWork(): Promise<{ item?: WorkItem; error?: string }> {
  * Pull work and execute it
  */
 async function pullAndDoWork(): Promise<void> {
+  logger.info('Getting work..');
   const work = await pullWork();
   if (!work.error) {
     if (work.item) {
-      logger.debug('WORK ITEM:');
-      logger.debug(JSON.stringify(work.item));
       const workItem = work.item;
+      // work items with a scrollID are only for the query-cmr service
       const workFunc = workItem.scrollID ? runQueryCmrFromPull : runPythonServiceFromPull;
 
-      workFunc(work.item).then(async (queryResponse: ServiceResponse) => {
-        logger.info('Finished work');
-        if (queryResponse.batchCatalogs) {
+      workFunc(work.item).then(async (serviceResponse: ServiceResponse) => {
+        logger.debug('Finished work');
+        if (serviceResponse.batchCatalogs) {
           workItem.status = WorkItemStatus.SUCCESSFUL;
-          workItem.results = queryResponse.batchCatalogs;
+          workItem.results = serviceResponse.batchCatalogs;
         } else {
+          logger.error(`Service failed with error: ${serviceResponse.error}`);
           workItem.status = WorkItemStatus.FAILED;
+          workItem.errorMessage = `${serviceResponse.error}`;
         }
         // call back to Harmony to mark the work unit as complete or failed
         try {
@@ -66,19 +73,16 @@ async function pullAndDoWork(): Promise<void> {
         } catch (e) {
           logger.error(e);
         }
-
-        // wait a short time before polling again (100 ms)
-        setTimeout(pullAndDoWork, 10000);
       });
     }
   } else if (work.error === 'Timemout') {
     // timeouts are expected - just try again after a short delay (100 ms)
-    setTimeout(pullAndDoWork, 10000);
-  } else {
+    logger.debug('Polling timeout out - retrying');
+  } else if (work.status !== 404) {
     // something bad happened
     logger.error(`Unexpected error while pulling work: ${work.error}`);
-    setTimeout(pullAndDoWork, 10000);
   }
+  setTimeout(pullAndDoWork, 10000);
 }
 
 export default class PullWorker implements Worker {

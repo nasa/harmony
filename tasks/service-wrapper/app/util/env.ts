@@ -52,6 +52,7 @@ for (const k of Object.keys(allEnv)) {
 interface HarmonyEnv {
   harmonyClientId: string;
   harmonyService: string;
+  invocationArgs: string;
   logLevel: string;
   port: number;
   pullUrl: string;

@@ -1,7 +1,7 @@
 import { Request, Response, Router, json, NextFunction } from 'express';
 import HarmonyRequest from 'models/harmony-request';
 import WorkItem, { getNextWorkItem, getWorkItemById, updateWorkItemStatus, WorkItemStatus, workItemCountForStep } from 'models/work-item';
-import db from 'util/db';
+import db, { Transaction } from 'util/db';
 import { responseHandler } from '../backends/service-response';
 import argoResponsehandler from '../backends/argo-response';
 import log from '../util/log';
@@ -54,9 +54,20 @@ async function createWorkItem(req: Request, res: Response): Promise<void> {
   res.send(workItem);
 }
 
-async function _handleWorkItemResults(workItem: WorkItem, results: string[]) {
+/**
+ * Add links to the Job for the WorkItem
+ *
+ * @param workItem - The work item associated with the results
+ * @param results  - an array of paths to STAC catalogs
+ */
+async function _handleWorkItemResults(
+  tx: Transaction,
+  job: Job,
+  results: string[],
+): Promise<void> {
   for (const result of results) {
-
+    log.debug(`Adding link for STAC catalog ${result}`);
+    // TODO - save the link
   }
 }
 
@@ -68,7 +79,7 @@ async function _handleWorkItemResults(workItem: WorkItem, results: string[]) {
  */
 async function updateWorkItem(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status, results } = req.body;
+  const { status, results, errorMessage } = req.body;
   log.info(`Updating work item for ${id} to ${status}`);
   let workItem: WorkItem;
   await db.transaction(async (tx) => {
@@ -78,8 +89,17 @@ async function updateWorkItem(req: Request, res: Response): Promise<void> {
     const job: Job = await Job.byJobID(tx, workItem.jobID);
     // If the response is an error then set the job status to 'failed'
     if (workItem.status === WorkItemStatus.FAILED) {
-      job.status = JobStatus.FAILED;
-      job.save(tx);
+      if (job.status !== JobStatus.FAILED) {
+        job.status = JobStatus.FAILED;
+        let message: string;
+        if (errorMessage) {
+          message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
+        } else {
+          message = 'Unknown error';
+        }
+        job.message = message;
+        await job.save(tx);
+      }
     } else if (results) {
       const nextStep = await getWorkflowStepByJobIdStepIndex(
         tx,
@@ -119,8 +139,26 @@ async function updateWorkItem(req: Request, res: Response): Promise<void> {
         }
       } else {
         // 1. add job links for the results
+        await _handleWorkItemResults(tx, job, results);
         // 2. If the number of work items with status 'successful' equals 'workItemCount'
-        //    for the current step then set the job status to 'complete'.
+        //    for the current step (which is the last) then set the job status to 'complete'.
+        const successWorkItemCount = await workItemCountForStep(
+          tx,
+          workItem.jobID,
+          workItem.workflowStepIndex,
+          WorkItemStatus.SUCCESSFUL,
+        );
+        const thisStep = await getWorkflowStepByJobIdStepIndex(
+          tx,
+          workItem.jobID,
+          workItem.workflowStepIndex,
+        );
+
+        if (successWorkItemCount === thisStep.workItemCount) {
+          job.status = JobStatus.SUCCESSFUL;
+          job.message = 'Job completed successfully';
+          await job.save(tx);
+        }
       }
     }
   });

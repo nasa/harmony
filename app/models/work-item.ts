@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { hookTransaction } from 'test/helpers/db';
 import { Transaction } from '../util/db';
 import DataOperation from './data-operation';
 import Record from './record';
@@ -37,6 +38,9 @@ export default class WorkItem extends Record {
 
   // The status of the operation - see WorkItemStatus
   status?: WorkItemStatus;
+
+  // error message if status === FAILED
+  errorMessage?: string;
 
   // The location of the STAC catalog for the item(s) to process
   stacCatalogLocation?: string;
@@ -146,16 +150,22 @@ export async function getWorkItemById(
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the job that created this work item
  * @param stepIndex - the index of the step in the workflow
+ * @param status - if provided only work items with this status will be counted
  */
 export async function workItemCountForStep(
   tx: Transaction,
   jobID: string,
   stepIndex: number,
+  status?: WorkItemStatus,
 ): Promise<number> {
+  let whereClause: {} = {
+    jobID, workflowStepIndex: stepIndex,
+  };
+  whereClause = status ? { ...whereClause, status } : whereClause;
   const count = await tx(WorkItem.table)
     .select()
     .count('id')
-    .where({ jobID, workflowStepIndex: stepIndex });
+    .where(whereClause);
 
   // TODO not sure if this works with postgres
   return Number(count[0]['count(`id`)']);

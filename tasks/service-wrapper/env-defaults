@@ -1,6 +1,6 @@
 // port on which the express server listens
 PORT=5000
-HARMONY_SERVICE="query-cmr:latest"
+HARMONY_SERVICE="harmonyservices/query-cmr:latest"
 SCRIPT_FILE=__main__.py
 SCRIPT_DIR=/home
 NODE_ENV=development

@@ -1,0 +1,13 @@
+#!/bin/bash
+# create back end services for Harmony
+
+if [[ -z "${HOST_VOLUME_PATH}" ]]; then
+  echo "HOST_VOLUME_PATH must be set before running this scrip"
+  exit 1
+fi
+
+for file in tasks/service-wrapper/config/*.yaml
+do
+  echo "Deploying with $file"
+  envsubst < $file | kubectl apply -f - -n argo
+done

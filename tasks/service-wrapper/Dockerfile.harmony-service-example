@@ -7,11 +7,10 @@ RUN npm install -g npm@7
 
 RUN mkdir -p /service-wrapper
 RUN mkdir -p /tmp/metadata
-COPY package.json package-lock.json /service-wrapper/
+COPY built env-defaults package.json package-lock.json /service-wrapper/
 WORKDIR /service-wrapper
 RUN npm ci
-COPY . /service-wrapper/
 RUN chown -R node /service-wrapper
 USER node
 
-ENTRYPOINT [ "npm", "run", "start" ]
+ENTRYPOINT [ "node", "tasks/service-wrapper/app/server.js"]
