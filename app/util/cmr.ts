@@ -1,6 +1,6 @@
 import FormData from 'form-data';
 import fs from 'fs';
-import { defer, get } from 'lodash';
+import { get } from 'lodash';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import * as util from 'util';
@@ -500,7 +500,10 @@ export function queryGranulesForCollection(
  * @returns The granules associated with the input collection
  */
 export function initateGranuleScroll(
-  collectionId: string, query: CmrQuery, token: string, limit = 10,
+  collectionId: string,
+  query: CmrQuery,
+  token: string,
+  _limit = 10,
 ): Promise<CmrGranuleHits> {
   const baseQuery = {
     collection_concept_id: collectionId,

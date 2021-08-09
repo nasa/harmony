@@ -32,7 +32,7 @@ spec:
       - name: test-volume
         hostPath:
           # directory location on host
-          path: /Users/jnorton1/metadata
+          path: $HOST_VOLUME_PATH
           # this field is optional
           type: DirectoryOrCreate
 ---
