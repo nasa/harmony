@@ -11,6 +11,8 @@ if [[ -z "${HOST_VOLUME_PATH}" ]]; then
   exit 1
 fi
 
+. ./bin/create-k8s-config-maps-and-secrets
+
 for file in tasks/service-wrapper/config/*.yaml
 do
   echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
