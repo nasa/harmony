@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import * as fs from 'fs';
 import { strict as assert } from 'assert';
 import path from 'path';
 import { v4 as uuid } from 'uuid';
@@ -63,7 +63,7 @@ export default class Catalog implements StacCatalog {
       return item.write(itemFilename, pretty);
     });
     const json = pretty ? JSON.stringify(this, null, 2) : JSON.stringify(this);
-    promises.push(fs.writeFile(filename, json));
+    promises.push(fs.promises.writeFile(filename, json));
     await Promise.all(promises);
   }
 }

@@ -1,9 +1,14 @@
 import { NextFunction, Response } from 'express';
+import * as fs from 'fs';
 import HarmonyRequest from 'models/harmony-request';
 import { Job, JobStatus } from 'models/job';
+import JobLink from 'models/job-link';
 import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from 'models/work-item';
 import { getWorkflowStepByJobIdStepIndex } from 'models/workflow-steps';
+import path from 'path';
+import { title } from 'process';
 import db, { Transaction } from 'util/db';
+import env from 'util/env';
 import log from '../util/log';
 
 /**
@@ -56,6 +61,44 @@ export async function createWorkItem(req: HarmonyRequest, res: Response): Promis
   res.send(workItem);
 }
 
+interface StacItem {
+  assets: {
+    data: {
+      href: string;
+      type: string;
+      title: string;
+    };
+  };
+
+  properties: {
+    start_datetime: string;
+    end_datetime: string;
+  };
+
+  bbox: [number, number, number, number];
+}
+
+/**
+ * Reads the content of the catalog and returns the catalog items
+ * @param filename - the catalog filename
+ */
+function readCatalogItems(filename: string): StacItem[] {
+  const dirname = path.dirname(filename);
+  const catalog = JSON.parse(fs.readFileSync(filename, 'utf-8'));
+  const childLinks = catalog.links
+    .filter((l) => l.rel === 'item')
+    .map((l) => l.href);
+
+  const items: StacItem[] = [];
+  for (const link of childLinks) {
+    const location = `${dirname}/${link.replace('./', '/')}`;
+    const item = JSON.parse(fs.readFileSync(location, 'utf-8')) as unknown as StacItem;
+    items.push(item);
+  }
+
+  return items;
+}
+
 /**
  * Add links to the Job for the WorkItem
  *
@@ -67,10 +110,27 @@ async function _handleWorkItemResults(
   job: Job,
   results: string[],
 ): Promise<void> {
-  for (const result of results) {
-    log.debug(`Adding link for STAC catalog ${result}`);
-    // Find the STAC catalog
-    // TODO - save the link
+  for (const catalogLocation of results) {
+    const localLocation = catalogLocation.replace('/tmp/metadata', env.hostVolumePath);
+    log.debug(`Adding link for STAC catalog ${localLocation}`);
+
+    const items = readCatalogItems(localLocation);
+
+    for await (const item of items) {
+      const link = new JobLink({
+        href: item.assets.data.href,
+        jobID: job.jobID,
+        type: item.assets.data.type,
+        title: item.assets.data.title,
+        rel: 'data',
+        temporal: {
+          start: new Date(item.properties.start_datetime),
+          end: new Date(item.properties.end_datetime),
+        },
+        bbox: item.bbox,
+      });
+      await link.save(tx);
+    }
   }
 }
 

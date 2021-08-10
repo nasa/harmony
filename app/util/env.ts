@@ -103,6 +103,7 @@ interface HarmonyEnv {
   syncRequestPollIntervalMs: number;
   uploadBucket: string;
   useLocalstack: boolean;
+  hostVolumePath: string;
 }
 
 // special cases

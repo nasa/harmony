@@ -41,7 +41,7 @@ BACKEND_PORT=3001
 
 # The base URL for the service callbacks. This needs to be accessible from
 # wherever the service is run. The Harmony CI/CD scripts sets this to the
-# backend load balancer when running on AWS. The default is set for 
+# backend load balancer when running on AWS. The default is set for
 # running Harmony in Kubernetes.
 CALLBACK_URL_ROOT=http://harmony:3001
 # When running locally on a Mac or Linux (not in Kubernetes), use the appropriate value below.
@@ -282,6 +282,10 @@ MAX_POST_FILE_SIZE=2000000000
 
 # Maximum number of multipart parts to accept when providing a shapefile
 MAX_POST_FILE_PARTS=100
+
+# The location on the file system to save the work items that will be mounted into the
+# containers for any services to read and save STAC catalogs.
+HOST_VOLUME_PATH=
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
