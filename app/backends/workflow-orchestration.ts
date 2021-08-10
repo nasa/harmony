@@ -31,7 +31,9 @@ export async function getWork(
 }
 
 /**
- * Update a work item from a service response
+ * Update a work item from a service response - TODO route just for test purposes can
+ * delete before merging in HARMONY-804 branch
+ *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @returns Resolves when the request is complete
@@ -67,6 +69,7 @@ async function _handleWorkItemResults(
 ): Promise<void> {
   for (const result of results) {
     log.debug(`Adding link for STAC catalog ${result}`);
+    // Find the STAC catalog
     // TODO - save the link
   }
 }

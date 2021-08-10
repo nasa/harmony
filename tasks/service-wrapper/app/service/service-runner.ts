@@ -1,6 +1,6 @@
 import { PythonShell } from 'python-shell';
 import { Response } from 'express';
-import { readdir, readdirSync } from 'fs';
+import { readdirSync } from 'fs';
 import { spawn } from 'child_process';
 import env from '../util/env';
 import log from '../util/log';
@@ -13,11 +13,12 @@ export interface ServiceResponse {
 }
 
 /**
+ * Runs a service request
  *
  * @param operation - The requested operation
  * @param res - The Response to use to reply
  */
-export function runServiceForRequest(operation: any, res: Response): void {
+export function runServiceForRequest(operation, res: Response): void {
   const options = {
     pythonOptions: ['-u'], // get print results in real-time
     cwd: '/home',
@@ -64,7 +65,7 @@ function _getStacCatalogs(dir: string): string[] {
   // readdirync should be ok since a service only ever handles one WorkItem at a time and may
   // actually be necessary to ensure read after write consistency on EFS
   return readdirSync(dir)
-    .filter((fileName) => fileName.match(/catalog\d+.json/))
+    .filter((fileName) => fileName.match(/catalog\d*.json/))
     .map((fileName) => `${dir}/${fileName}`);
 }
 
@@ -146,8 +147,10 @@ export function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
       } else {
         // results is an array consisting of messages collected during execution
         log.debug(`results: ${results}`);
+        const catalogs = _getStacCatalogs(`/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`);
+        log.info(`catalogs: ${catalogs}`);
         resolve({
-          batchCatalogs: _getStacCatalogs(`/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`),
+          batchCatalogs: catalogs,
         });
       }
     });

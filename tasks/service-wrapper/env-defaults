@@ -6,3 +6,4 @@ SCRIPT_DIR=/home
 NODE_ENV=development
 PULL_URL="http://host.docker.internal:3001/service/work"
 RESPONSE_URL="http://host.docker.internal:3001/service/work"
+LOG_LEVEL=debug

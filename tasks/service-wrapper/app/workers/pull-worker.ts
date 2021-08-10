@@ -6,7 +6,7 @@ import logger from '../util/log';
 import { runPythonServiceFromPull, runQueryCmrFromPull, ServiceResponse } from '../service/service-runner';
 
 const JSON_TYPE = 'application/json';
-
+const timeout = 30_000; // Wait up to 30 seconds for the server to start sending
 /**
  * Requests work items from Harmony
  */
@@ -17,7 +17,7 @@ async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: s
       .query(`serviceID=${env.harmonyService}`)
       .accept(JSON_TYPE)
       .timeout({
-        response: 30_000, // Wait up to 30 seconds for the server to start sending
+        response: timeout,
         deadline: 60_000, // but allow up to 60 seconds for the server to complete the response;
       });
     if (response.status >= 400) {
@@ -26,7 +26,7 @@ async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: s
     }
     return { item: response.body };
   } catch (err) {
-    if (err.status !== 404) {
+    if (err.status !== 404 && err.message !== `Response timeout of ${timeout}ms exceeded`) {
       logger.error(`Request failed with error: ${err.message}`);
       return { error: err.message };
     }
@@ -39,7 +39,7 @@ async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: s
  * Pull work and execute it
  */
 async function pullAndDoWork(): Promise<void> {
-  logger.debug('Getting work..');
+  // logger.debug('Getting work..');
   const work = await pullWork();
   if (!work.error) {
     if (work.item) {
@@ -48,7 +48,7 @@ async function pullAndDoWork(): Promise<void> {
       const workFunc = workItem.scrollID ? runQueryCmrFromPull : runPythonServiceFromPull;
 
       workFunc(work.item).then(async (serviceResponse: ServiceResponse) => {
-        logger.debug('Finished work');
+        logger.info('Finished work');
         if (serviceResponse.batchCatalogs) {
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = serviceResponse.batchCatalogs;
@@ -58,7 +58,7 @@ async function pullAndDoWork(): Promise<void> {
           workItem.errorMessage = `${serviceResponse.error}`;
         }
         // call back to Harmony to mark the work unit as complete or failed
-        logger.debug('Sending response to Harmony');
+        logger.info(`Sending response to Harmony for results ${JSON.stringify(work)}`);
         try {
           const response = await request
             .put(`${env.responseUrl}/${workItem.id}`)
@@ -76,14 +76,15 @@ async function pullAndDoWork(): Promise<void> {
         }
       });
     }
-  } else if (work.error === 'Timemout') {
+  } else if (work.error === `Response timeout of ${timeout}ms exceeded`) {
     // timeouts are expected - just try again after a short delay (100 ms)
     logger.debug('Polling timeout - retrying');
   } else if (work.status !== 404) {
     // something bad happened
+    logger.error(`Full details: ${JSON.stringify(work)}`);
     logger.error(`Unexpected error while pulling work: ${work.error}`);
   }
-  setTimeout(pullAndDoWork, 10000);
+  setTimeout(pullAndDoWork, 5000);
 }
 
 export default class PullWorker implements Worker {
