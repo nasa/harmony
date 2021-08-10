@@ -21,7 +21,7 @@
     "lodash": "^4.17.21",
     "python-shell": "^3.0.0",
     "semaphore": "^1.1.0",
-    "sqlite3": "^5.0.2",
+    "sqlite3": "^4.2.0",
     "superagent": "^6.1.0",
     "winston": "^3.3.3"
   },
