@@ -202,9 +202,10 @@ export function hookSyncRangesetRequest(
  * @param collection - The CMR Collection ID to perform a service on
  * @param coverageId - The coverage ID(s) / variable name(s), or "all"
  * @param form - The form data to be POST'd
+ * @param queryString - The query string parameters to pass to the request
  */
 export function hookPostRangesetRequest(
-  version: string, collection: string, coverageId: string, form: object,
+  version: string, collection: string, coverageId: string, form: object, queryString = '',
 ): void {
   before(async function () {
     this.res = await postRangesetRequest(
@@ -213,6 +214,7 @@ export function hookPostRangesetRequest(
       collection,
       coverageId,
       form,
+      queryString,
     );
 
     const shapefileHeader = this.res.headers['set-cookie'].filter((cookie) => {
