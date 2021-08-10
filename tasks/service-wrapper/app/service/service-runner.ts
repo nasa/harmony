@@ -35,7 +35,7 @@ export function runServiceForRequest(operation: any, res: Response): void {
   };
 
   log.info(`Calling service ${env.harmonyService}`);
-  PythonShell.run('-m', options, (err, results) => {
+  const shell = PythonShell.run('-m', options, (err, results) => {
     if (err) {
       sem.leave();
       log.error('ERROR');
@@ -48,6 +48,11 @@ export function runServiceForRequest(operation: any, res: Response): void {
     log.info(`results: ${results}`);
     sem.leave();
     res.send(JSON.stringify(results));
+  });
+
+  shell.on('stderr', function (stderr) {
+    // handle stderr (a line of text from stderr)
+    log.info(`[PythonShell stderr event] ${stderr}`);
   });
 }
 
@@ -133,7 +138,7 @@ export function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
   };
   return new Promise<{}>((resolve) => {
     log.info(`Calling service ${env.harmonyService}`);
-    PythonShell.run('-u', options, (err, results) => {
+    const shell = PythonShell.run('-u', options, (err, results) => {
       if (err) {
         log.error('ERROR');
         log.error(err);
@@ -145,6 +150,11 @@ export function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
           batchCatalogs: _getStacCatalogs(`/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`),
         });
       }
+    });
+
+    shell.on('stderr', function (stderr) {
+      // handle stderr (a line of text from stderr)
+      log.info(`[PythonShell stderr event] ${stderr}`);
     });
   });
 }
