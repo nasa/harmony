@@ -107,6 +107,7 @@ export function rangesetRequest(
  * @param collection - The CMR Collection ID to perform a service on
  * @param coverageId - The coverage ID(s) / variable name(s), or "all"
  * @param form - The form parameters to pass to the request
+ * @param queryString - The query string parameters to pass to the request
  * @returns An 'awaitable' object that resolves to a Response
  */
 export function postRangesetRequest(
