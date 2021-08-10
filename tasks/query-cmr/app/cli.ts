@@ -40,7 +40,6 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       alias: 'q',
       describe: 'file locations containing the CMR query to be performed, one per message source',
       type: 'array',
-      demandOption: false,
     })
     .option('page-size', {
       describe: 'the size of each page of results provided',
@@ -64,6 +63,15 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       alias: 's',
       describe: 'scroll session id used in the CMR-Scroll-Id header to perform a granule search using scrolling',
       type: 'string',
+    })
+    .check((argv) => {
+      const scrollId = argv['scroll-id'];
+      const { query } = argv;
+      if (!scrollId && !query) {
+        throw new Error('Missing required argument: query');
+      } else {
+        return true; // tell Yargs that the arguments passed the check
+      }
     });
 }
 
