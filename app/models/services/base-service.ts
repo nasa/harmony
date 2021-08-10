@@ -255,17 +255,19 @@ export default abstract class BaseService<ServiceParamType> {
    */
   protected _createWorkflowSteps(): WorkflowStep[] {
     const workflowSteps = [];
-    this.config.steps.forEach(((step, i) => {
-      workflowSteps.push(new WorkflowStep({
-        jobID: this.operation.requestId,
-        serviceID: serviceImageToId(step.image),
-        stepIndex: i,
-        workItemCount: this.numInputGranules,
-        // operation: this.operation.serialize(this.config.data_operation_version),
-        // New version that doesn't require granules in the sources
-        operation: this.operation.serialize('0.11.0'),
+    if (this.config.steps) {
+      this.config.steps.forEach(((step, i) => {
+        workflowSteps.push(new WorkflowStep({
+          jobID: this.operation.requestId,
+          serviceID: serviceImageToId(step.image),
+          stepIndex: i,
+          workItemCount: this.numInputGranules,
+          // operation: this.operation.serialize(this.config.data_operation_version),
+          // New version that doesn't require granules in the sources
+          operation: this.operation.serialize('0.11.0'),
+        }));
       }));
-    }));
+    }
     return workflowSteps;
   }
 
