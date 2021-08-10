@@ -111,12 +111,12 @@ export function rangesetRequest(
  * @returns An 'awaitable' object that resolves to a Response
  */
 export function postRangesetRequest(
-  app: Express.Application, version: string, collection: string, coverageId: string, form: object, queryString=""
+  app: Express.Application, version: string, collection: string, coverageId: string, form: object, queryString = '',
 ): request.Test {
-  let url = `/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`;
-  if (queryString) url += `?${queryString}`;
+  let urlPathAndParam = `/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`;
+  if (queryString) urlPathAndParam += `?${queryString}`;
   const req = request(app)
-    .post(url);
+    .post(urlPathAndParam);
 
   Object.keys(form).forEach((key) => {
     if (key === 'shapefile') {
