@@ -198,6 +198,30 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(this.res.status).to.be.lessThan(400);
       });
     });
+
+    describe('which has the same key from form and query parameter', function () {
+      const smallGranuleList = [];
+      for (let i = 0; i < 2; i++) {
+        smallGranuleList.push(query.granuleId);
+      }
+
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookPostRangesetRequest(
+        version,
+        collection,
+        variableName,
+        { ...query, granuleId: smallGranuleList.join(',') },
+        'subset=time%28%222020-02-16T00%3A00%3A00Z%22%3A%222020-03-02T00%3A00%3A00Z%22%29',
+      );
+
+      it('propagates the error message into the response', function () {
+        expect(this.res.text).to.include('Duplicate keys');
+      });
+
+      it('responds with an HTTP 400 "Bad Request" status code', function () {
+        expect(this.res.status).to.equal(400);
+      });
+    });
   });
 
   describe('when passed a blank outputCrs', function () {

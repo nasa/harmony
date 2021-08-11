@@ -217,36 +217,38 @@ export function hookPostRangesetRequest(
       queryString,
     );
 
-    const shapefileHeader = this.res.headers['set-cookie'].filter((cookie) => {
-      const decoded = decodeURIComponent(cookie);
-      const parsed = parse(decoded);
-      return parsed.shapefile;
-    })[0];
+    if (this.res.headers['set-cookie']) {
+        const shapefileHeader = this.res.headers['set-cookie'].filter((cookie) => {
+          const decoded = decodeURIComponent(cookie);
+          const parsed = parse(decoded);
+          return parsed.shapefile;
+        })[0];
 
-    const value = cookieValue(shapefileHeader, 'shapefile');
-    const cookies = { shapefile: value };
+        const value = cookieValue(shapefileHeader, 'shapefile');
+        const cookies = { shapefile: value };
 
-    const redirectHeader = this.res.headers['set-cookie'].filter((cookie) => {
-      const decoded = decodeURIComponent(cookie);
-      const parsed = parse(decoded);
-      return !parsed.shapefile;
-    })[0];
+        const redirectHeader = this.res.headers['set-cookie'].filter((cookie) => {
+          const decoded = decodeURIComponent(cookie);
+          const parsed = parse(decoded);
+          return !parsed.shapefile;
+        })[0];
 
-    if (redirectHeader) {
-      const redirect = cookieValue(redirectHeader, 'redirect');
-      // HARMONY-290 Should be query parmams, not a string
-      const query = redirect.split('?')[1];
+        if (redirectHeader) {
+          const redirect = cookieValue(redirectHeader, 'redirect');
+          // HARMONY-290 Should be query parmams, not a string
+          const query = redirect.split('?')[1];
 
-      this.res = await rangesetRequest(
-        this.frontend,
-        version,
-        collection,
-        coverageId,
-        {
-          query: query as unknown as object, // Fix along with HARMONY-290 to parse query params
-          cookies,
-        },
-      ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+          this.res = await rangesetRequest(
+            this.frontend,
+            version,
+            collection,
+            coverageId,
+            {
+              query: query as unknown as object, // Fix along with HARMONY-290 to parse query params
+              cookies,
+            },
+          ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+        }
     }
   });
   after(function () {
