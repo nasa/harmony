@@ -100,7 +100,7 @@
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
     "serve-favicon": "^2.5.0",
-    "shpjs": "^3.5.0",
+    "shpjs": "^4.0.2",
     "simple-oauth2": "git+https://github.com/bilts/simple-oauth2.git#fix-encoding",
     "source-map-support": "^0.5.19",
     "sqlite3": "^4.2.0",

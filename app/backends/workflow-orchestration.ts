@@ -6,7 +6,6 @@ import JobLink from 'models/job-link';
 import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from 'models/work-item';
 import { getWorkflowStepByJobIdStepIndex } from 'models/workflow-steps';
 import path from 'path';
-import { title } from 'process';
 import db, { Transaction } from 'util/db';
 import env from 'util/env';
 import log from '../util/log';
