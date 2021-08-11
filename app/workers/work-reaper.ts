@@ -1,7 +1,7 @@
 import { JobStatus } from 'models/job';
 import { Logger } from 'winston';
-import { getWorkItemsByJobUpdateAgeAndStatus, deleteWorkItemsById } from 'models/work-item';
-import { deleteWorkflowStepsById, getWorkflowStepsByJobUpdateAgeAndStatus } from 'models/workflow-steps';
+import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from 'models/work-item';
+import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from 'models/workflow-steps';
 import { Worker } from './worker';
 import db from '../util/db';
 import sleep from '../util/sleep';
@@ -22,19 +22,24 @@ export default class WorkReaper implements Worker {
   }
 
   async deleteTerminalWork(notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise<void> {
-    const workItems = await getWorkItemsByJobUpdateAgeAndStatus(
+    const workItemIds = await getWorkItemIdsByJobUpdateAgeAndStatus(
       db, notUpdatedForMinutes, jobStatus,
     );
-    const workItemIds = workItems.map((i) => i.id);
-    const numItemsDeleted = await deleteWorkItemsById(db, workItemIds);
-    this.logger.info(`Work reaper removed ${numItemsDeleted} work items`);
-
-    const workSteps = await getWorkflowStepsByJobUpdateAgeAndStatus(
+    if (workItemIds.length) {
+      const numItemsDeleted = await deleteWorkItemsById(db, workItemIds);
+      this.logger.info(`Work reaper removed ${numItemsDeleted} work items`);
+    } else {
+      this.logger.info('Work reaper did not find any work items to delete');
+    }
+    const workStepIds = await getWorkflowStepIdsByJobUpdateAgeAndStatus(
       db, notUpdatedForMinutes, jobStatus,
     );
-    const workStepIds = workSteps.map((i) => i.id);
-    const numStepsDeleted = await deleteWorkflowStepsById(db, workStepIds);
-    this.logger.info(`Work reaper removed ${numStepsDeleted} workflow steps`);
+    if (workStepIds.length) {
+      const numStepsDeleted = await deleteWorkflowStepsById(db, workStepIds);
+      this.logger.info(`Work reaper removed ${numStepsDeleted} workflow steps`);
+    } else {
+      this.logger.info('Work reaper did not find any workflow steps to delete');
+    }
   }
 
   async start(): Promise<void> {
@@ -43,7 +48,7 @@ export default class WorkReaper implements Worker {
       this.logger.info('Starting work reaper');
       try {
         await this.deleteTerminalWork(
-          60 * 1,
+          60 * 24, // 24 hrs
           [
             JobStatus.FAILED,
             JobStatus.SUCCESSFUL,

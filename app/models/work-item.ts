@@ -148,28 +148,29 @@ export async function getWorkItemById(
 }
 
 /**
- * Get all work items associated with jobs that haven't been updated for a
+ * Get all work item ids associated with jobs that haven't been updated for a
  * certain amount of minutes and that have a particular JobStatus
  * @param tx - the transaction to use for querying
  * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago
  * will be joined with the returned work items
  * @param jobStatus - only jobs with this status will be joined
- * @returns - all work items associated with the jobs that
+ * @returns - all work item ids associated with the jobs that
  * met the updatedAt and status constraints
  */
-export async function getWorkItemsByJobUpdateAgeAndStatus(
+export async function getWorkItemIdsByJobUpdateAgeAndStatus(
   tx: Transaction,
   notUpdatedForMinutes: number,
   jobStatus: JobStatus[],
-): Promise<WorkItem[]> {
+): Promise<number[]> {
   const pastDate = subMinutes(new Date(), notUpdatedForMinutes);
-  const workItemData = await tx(WorkItem.table)
+  const workItemIds = (await tx(WorkItem.table)
     .innerJoin(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
     .select(...tableFields)
     .where(`${Job.table}.updatedAt`, '<', pastDate)
-    .whereIn(`${Job.table}.status`, jobStatus);
+    .whereIn(`${Job.table}.status`, jobStatus))
+    .map((item) => item.id);
 
-  return workItemData;
+  return workItemIds;
 }
 
 /**
