@@ -212,6 +212,18 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         queryParameterString,
       );
 
+      it('passes the temporal range to the backend service', function () {
+        const { start, end } = this.service.operation.temporal;
+        expect(start).to.equal('2020-01-02T00:00:00.000Z');
+        expect(end).to.equal('2020-01-02T01:00:00.000Z');
+      });
+
+      it('identifies the correct granule based on time range', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.granules.length === 1);
+        expect(source.granules[0].id).to.equal('G1233800352-EEDTEST');
+      });
+
       it('successfully queries CMR and accepts the request', function () {
         expect(this.res.status).to.be.lessThan(400);
       });
