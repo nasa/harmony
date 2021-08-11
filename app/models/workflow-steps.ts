@@ -1,7 +1,15 @@
+import { subMinutes } from 'date-fns';
 import _ from 'lodash';
 import { Transaction } from '../util/db';
 import DataOperation from './data-operation';
+import { Job, JobStatus } from './job';
 import Record from './record';
+
+// The fields to save to the database
+const serializedFields = [
+  'id', 'jobID', 'serviceID', 'stepIndex',
+  'workItemCount', 'operation', 'createdAt', 'updatedAt',
+];
 
 /**
  *
@@ -26,6 +34,8 @@ export default class WorkflowStep extends Record {
   // The operation to be performed by the service
   operation: DataOperation;
 }
+
+const tableFields = serializedFields.map((field) => `${WorkflowStep.table}.${field}`);
 
 /**
  * Returns the workflow step by the ID
@@ -64,4 +74,46 @@ export async function getWorkflowStepByJobIdStepIndex(
     .first();
 
   return workflowStepData && new WorkflowStep(workflowStepData);
+}
+
+/**
+ * Get all workflow steps associated with jobs that haven't been updated for a
+ * certain amount of minutes and that have a particular JobStatus
+ * @param tx - the transaction to use for querying
+ * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago
+ * will be joined with the returned workflow steps
+ * @param jobStatus - only jobs with this status will be joined
+ * @returns - all workflow steps associated with the jobs that
+ * met the updatedAt and status constraints
+ */
+export async function getWorkflowStepsByJobUpdateAgeAndStatus(
+  tx: Transaction,
+  notUpdatedForMinutes: number,
+  jobStatus: JobStatus[],
+): Promise<WorkflowStep[]> {
+  const pastDate = subMinutes(new Date(), notUpdatedForMinutes);
+  const workflowStepsData = await tx(WorkflowStep.table)
+    .innerJoin(Job.table, `${WorkflowStep.table}.jobID`, '=', `${Job.table}.jobID`)
+    .select(...tableFields)
+    .where(`${Job.table}.updatedAt`, '<', pastDate)
+    .whereIn(`${Job.table}.status`, jobStatus);
+
+  return workflowStepsData;
+}
+
+/**
+ * Delete all workflow steps that have an id in the ids array.
+ * @param tx - the transaction to use for querying
+ * @param ids - the ids associated with workflow steps that will be deleted
+ * @returns - the number of deleted workflow steps
+ */
+export async function deleteWorkflowStepsById(
+  tx: Transaction,
+  ids: number[],
+): Promise<number> {
+  const numDeleted = await tx(WorkflowStep.table)
+    .whereIn('id', ids)
+    .del();
+
+  return numDeleted;
 }

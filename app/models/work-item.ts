@@ -1,6 +1,8 @@
+import { subMinutes } from 'date-fns';
 import _ from 'lodash';
 import { Transaction } from '../util/db';
 import DataOperation from './data-operation';
+import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
 
@@ -64,6 +66,8 @@ export default class WorkItem extends Record {
   }
 }
 
+const tableFields = serializedFields.map((field) => `${WorkItem.table}.${field}`);
+
 /**
  * Returns the next work item to process for a service
  * @param tx - the transaction to use for querying
@@ -75,7 +79,6 @@ export async function getNextWorkItem(
   tx: Transaction,
   serviceID: string,
 ): Promise<WorkItem> {
-  const tableFields = serializedFields.map((field) => `${WorkItem.table}.${field}`);
   const workItemData = await tx(WorkItem.table)
     .forUpdate()
     .select(...tableFields, `${WorkflowStep.table}.operation`)
@@ -142,6 +145,47 @@ export async function getWorkItemById(
     .first();
 
   return workItemData && new WorkItem(workItemData);
+}
+
+/**
+ * Get all work items associated with jobs that haven't been updated for a
+ * certain amount of minutes and that have a particular JobStatus
+ * @param tx - the transaction to use for querying
+ * @param notUpdatedForMinutes - jobs with updateAt older than notUpdatedForMinutes ago
+ * will be joined with the returned work items
+ * @param jobStatus - only jobs with this status will be joined
+ * @returns - all work items associated with the jobs that
+ * met the updatedAt and status constraints
+ */
+export async function getWorkItemsByJobUpdateAgeAndStatus(
+  tx: Transaction,
+  notUpdatedForMinutes: number,
+  jobStatus: JobStatus[],
+): Promise<WorkItem[]> {
+  const pastDate = subMinutes(new Date(), notUpdatedForMinutes);
+  const workItemData = await tx(WorkItem.table)
+    .innerJoin(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
+    .select(...tableFields)
+    .where(`${Job.table}.updatedAt`, '<', pastDate)
+    .whereIn(`${Job.table}.status`, jobStatus);
+
+  return workItemData;
+}
+
+/**
+ * Delete all work items that have an id in the ids array.
+ * @param tx - the transaction to use for querying
+ * @param ids - the ids associated with work items that will be deleted
+ * @returns - the number of deleted work items
+ */
+export async function deleteWorkItemsById(
+  tx: Transaction,
+  ids: number[],
+): Promise<number> {
+  const numDeleted = await tx(WorkItem.table)
+    .whereIn('id', ids)
+    .del();
+  return numDeleted;
 }
 
 /**
