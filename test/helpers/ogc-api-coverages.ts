@@ -208,7 +208,6 @@ export function hookPostRangesetRequest(
   version: string, collection: string, coverageId: string, form: object, queryString = '',
 ): void {
   before(async function () {
-console.log(form, queryString);
     this.res = await postRangesetRequest(
       this.frontend,
       version,

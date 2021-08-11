@@ -199,8 +199,26 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
     });
 
+    describe('which contains both form and query parameter', function () {
+      const queryLocal = { ...query };
+      delete queryLocal.subset;
+      const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookPostRangesetRequest(
+        version,
+        collection,
+        variableName,
+        queryLocal,
+        queryParameterString,
+      );
+
+      it('successfully queries CMR and accepts the request', function () {
+        expect(this.res.status).to.be.lessThan(400);
+      });
+    });
+
     describe('which has a duplicate key from form and query parameter', function () {
-      const queryParameterString = 'subset=time%28%222020-02-16T00%3A00%3A00Z%22%3A%222020-03-02T00%3A00%3A00Z%22%29';
+      const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookPostRangesetRequest(
         version,
