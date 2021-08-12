@@ -9,10 +9,11 @@
     "build-query-cmr-wrapper": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/query-cmr -t harmonyservices/query-cmr-wrap:${VERSION:-latest} -f Dockerfile.queryCmr .",
     "build-service-example-wrapper": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/service-example --tag harmonyservices/service-example-wrap:${VERSION:-latest} -f Dockerfile.harmony-service-example .",
     "build-netcdf-to-zarr-wrapper": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/netcdf-to-zarr --tag harmonyservices/netcdf-to-zarr-wrap:${VERSION:-latest} -f Dockerfile.netcdf-to-zarr .",
-    "build": "npm run build-query-cmr-wrapper && npm run build-service-example-wrapper && npm run build-netcdf-to-zarr-wrapper"
+    "build-swot-repr-wrapper": "tsc && docker build --build-arg BASE_IMAGE=sds/swot-reproject --tag sds/swot-reproject-wrap:${VERSION:-latest} -f Dockerfile.swot-reproject .",
+    "build": "npm run build-query-cmr-wrapper && npm run build-service-example-wrapper && npm run build-netcdf-to-zarr-wrapper && npm run build-swot-repr-wrapper"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "NASA EOSDIS Harmony team",
+  "license": "Apache-2.0",
   "dependencies": {
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
@@ -24,7 +25,11 @@
     "semaphore": "^1.1.0",
     "sqlite3": "^4.2.0",
     "superagent": "^6.1.0",
-    "winston": "^3.3.3"
+    "winston": "^3.3.3",
+    "node-fetch": "^2.6.1",
+    "date-fns": "^2.21.3",
+    "tmp": "^0.2.1",
+    "aws-sdk": "^2.906.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.12",

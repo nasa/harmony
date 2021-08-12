@@ -1,8 +1,8 @@
 import { pick } from 'lodash';
 import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
-import { removeEmptyProperties } from 'util/object';
-import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from 'util/cmr';
+import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from '../util/cmr';
+import { removeEmptyProperties } from '../util/object';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';

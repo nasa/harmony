@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swot-reproject
+  labels:
+    name: swot-reproject
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: swot-reproject
+  template:
+    metadata:
+      labels:
+        name: swot-reproject
+    spec:
+      containers:
+        - name: swot-reproject
+          imagePullPolicy: IfNotPresent
+          image: sds/swot-reproject-wrap:latest
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          env:
+          - name: HARMONY_SERVICE
+            value: "sds/swot-reproject:latest"
+          - name: INVOCATION_ARGS
+            value: |-
+              swotrepr.py
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+      volumes:
+      - name: test-volume
+        hostPath:
+          # directory location on host
+          path: $HOST_VOLUME_PATH
+          # this field is optional
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: swot-reproject
+spec:
+  ports:
+    - name: frontend
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    name: swot-reproject
+  type: LoadBalancer
