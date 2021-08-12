@@ -503,12 +503,11 @@ export function initateGranuleScroll(
   collectionId: string,
   query: CmrQuery,
   token: string,
-  _limit = 10,
+  limit = 10,
 ): Promise<CmrGranuleHits> {
   const baseQuery = {
     collection_concept_id: collectionId,
-    // page_size: limit,
-    page_size: 1,
+    page_size: limit,
     scroll: 'defer',
   };
 
@@ -527,11 +526,10 @@ export function initateGranuleScroll(
  * @returns The granules associated with the input collection
  */
 export function queryGranulesForScrollId(
-  scrollId: string, token: string, _limit = 2000,
+  scrollId: string, token: string, limit = 2000,
 ): Promise<CmrGranuleHits> {
   const cmrQuery = {
-    // page_size: limit,
-    page_size: 1,
+    page_size: limit,
     scroll: 'true',
   };
 

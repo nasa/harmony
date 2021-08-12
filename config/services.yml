@@ -694,6 +694,9 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: false
       output_formats:
         - application/x-zarr
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
 
   # CHAINED SERVICES BELOW HERE
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr

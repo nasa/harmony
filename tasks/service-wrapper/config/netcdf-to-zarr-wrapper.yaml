@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netcdf-to-zarr
+  labels:
+    name: netcdf-to-zarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: netcdf-to-zarr
+  template:
+    metadata:
+      labels:
+        name: netcdf-to-zarr
+    spec:
+      containers:
+        - name: netcdf-to-zarr
+          imagePullPolicy: IfNotPresent
+          image: harmonyservices/netcdf-to-zarr-wrap:latest
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          env:
+          - name: HARMONY_SERVICE
+            value: "harmonyservices/netcdf-to-zarr:latest"
+          - name: INVOCATION_ARGS
+            value: |-
+              -m
+              harmony_netcdf_to_zarr
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+      volumes:
+      - name: test-volume
+        hostPath:
+          # directory location on host
+          path: $HOST_VOLUME_PATH
+          # this field is optional
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: netcdf-to-zarr
+spec:
+  ports:
+    - name: frontend
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    name: netcdf-to-zarr
+  type: LoadBalancer

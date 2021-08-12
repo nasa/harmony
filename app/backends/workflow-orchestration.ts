@@ -1,13 +1,12 @@
 import { NextFunction, Response } from 'express';
-import * as fs from 'fs';
 import HarmonyRequest from 'models/harmony-request';
 import { Job, JobStatus } from 'models/job';
 import JobLink from 'models/job-link';
 import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from 'models/work-item';
 import { getWorkflowStepByJobIdStepIndex } from 'models/workflow-steps';
-import path from 'path';
 import db, { Transaction } from 'util/db';
 import env from 'util/env';
+import { readCatalogItems } from 'util/stac';
 import log from '../util/log';
 
 /**
@@ -60,44 +59,6 @@ export async function createWorkItem(req: HarmonyRequest, res: Response): Promis
   res.send(workItem);
 }
 
-interface StacItem {
-  assets: {
-    data: {
-      href: string;
-      type: string;
-      title: string;
-    };
-  };
-
-  properties: {
-    start_datetime: string;
-    end_datetime: string;
-  };
-
-  bbox: [number, number, number, number];
-}
-
-/**
- * Reads the content of the catalog and returns the catalog items
- * @param filename - the catalog filename
- */
-function readCatalogItems(filename: string): StacItem[] {
-  const dirname = path.dirname(filename);
-  const catalog = JSON.parse(fs.readFileSync(filename, 'utf-8'));
-  const childLinks = catalog.links
-    .filter((l) => l.rel === 'item')
-    .map((l) => l.href);
-
-  const items: StacItem[] = [];
-  for (const link of childLinks) {
-    const location = `${dirname}/${link.replace('./', '/')}`;
-    const item = JSON.parse(fs.readFileSync(location, 'utf-8')) as unknown as StacItem;
-    items.push(item);
-  }
-
-  return items;
-}
-
 /**
  * Add links to the Job for the WorkItem
  *
@@ -116,11 +77,12 @@ async function _handleWorkItemResults(
     const items = readCatalogItems(localLocation);
 
     for await (const item of items) {
+      const { href, type, title } = item.assets.data;
       const link = new JobLink({
-        href: item.assets.data.href,
         jobID: job.jobID,
-        type: item.assets.data.type,
-        title: item.assets.data.title,
+        href,
+        type,
+        title,
         rel: 'data',
         temporal: {
           start: new Date(item.properties.start_datetime),
@@ -188,7 +150,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         // the current step
         const workItemCount = await workItemCountForStep(tx, workItem.jobID, nextStep.stepIndex);
         if (workItem.scrollID && workItemCount < nextStep.workItemCount) {
-          const newWorkItem = new WorkItem({
+          const nextQueryCmrItem = new WorkItem({
             jobID: workItem.jobID,
             scrollID: workItem.scrollID,
             serviceID: workItem.serviceID,
@@ -197,7 +159,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
             workflowStepIndex: workItem.workflowStepIndex,
           });
 
-          await newWorkItem.save(tx);
+          await nextQueryCmrItem.save(tx);
         }
       } else {
         // 1. add job links for the results
@@ -216,11 +178,11 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
           workItem.workflowStepIndex,
         );
 
+        job.updateProgress(results.length, thisStep.workItemCount);
         if (successWorkItemCount === thisStep.workItemCount) {
-          job.status = JobStatus.SUCCESSFUL;
-          job.message = 'Job completed successfully';
-          await job.save(tx);
+          job.succeed();
         }
+        await job.save(tx);
       }
     }
   });

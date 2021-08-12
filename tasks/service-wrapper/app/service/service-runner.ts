@@ -51,7 +51,7 @@ export function runServiceForRequest(operation, res: Response): void {
     res.send(JSON.stringify(results));
   });
 
-  shell.on('stderr', function (stderr) {
+  shell.on('stderr', (stderr) => {
     // handle stderr (a line of text from stderr)
     log.info(`[PythonShell stderr event] ${stderr}`);
   });
@@ -155,7 +155,7 @@ export function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
       }
     });
 
-    shell.on('stderr', function (stderr) {
+    shell.on('stderr', (stderr) => {
       // handle stderr (a line of text from stderr)
       log.info(`[PythonShell stderr event] ${stderr}`);
     });

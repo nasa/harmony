@@ -309,10 +309,10 @@ export class Job extends Record {
   validate(): string[] {
     const errors = [];
     if (this.progress < 0 || this.progress > 100) {
-      errors.push('Job progress must be between 0 and 100');
+      errors.push(`Invalid progress ${this.progress}. Job progress must be between 0 and 100.`);
     }
     if (this.batchesCompleted < 0) {
-      errors.push('Job batchesCompleted must be greater than or equal to 0');
+      errors.push(`Invalid batchesCompleted ${this.batchesCompleted}. Job batchesCompleted must be greater than or equal to 0.`);
     }
     if (!this.request.match(/^https?:\/\/.+$/)) {
       errors.push(`Invalid request ${this.request}. Job request must be a URL.`);
@@ -415,6 +415,25 @@ export class Job extends Record {
     if (this.status === JobStatus.SUCCESSFUL) {
       this.progress = 100;
     }
+  }
+
+  /**
+   * Update the progress for a job
+   * You must call `#save` to persist the change
+   *
+   * @param numItemsCompleted - The number of items that completed in this update
+   * @param totalItemCount - the number of items in total that need to be processed for the job
+   * to complete.
+   */
+  updateProgress(numItemsCompleted: number, totalItemCount: number = this.numInputGranules): void {
+    this.batchesCompleted += numItemsCompleted;
+    // Only allow progress to be set to 100 when the job status is set to successful
+    let progress = Math.min(100 * (this.batchesCompleted / totalItemCount), 99);
+    // don't allow negative progress
+    progress = Math.max(0, progress);
+    // progress must be an integer
+    progress = Math.floor(progress);
+    this.progress = progress;
   }
 
   /**

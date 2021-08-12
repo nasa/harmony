@@ -1,0 +1,16 @@
+ARG BASE_IMAGE=harmonyservices/netcdf-to-zarr
+FROM ${BASE_IMAGE}
+
+RUN useradd node
+RUN apt-get install -y npm
+RUN npm install -g npm@7
+
+RUN mkdir -p ./service-wrapper
+RUN mkdir -p /tmp/metadata
+COPY built env-defaults package.json package-lock.json ./service-wrapper/
+WORKDIR ./service-wrapper
+RUN npm ci
+RUN chown -R node .
+USER node
+
+ENTRYPOINT [ "node", "tasks/service-wrapper/app/server.js"]

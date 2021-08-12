@@ -4,6 +4,7 @@ import env from '../util/env';
 import WorkItem, { WorkItemStatus } from '../../../../app/models/work-item';
 import logger from '../util/log';
 import { runPythonServiceFromPull, runQueryCmrFromPull, ServiceResponse } from '../service/service-runner';
+import sleep from '../../../../app/util/sleep';
 
 const JSON_TYPE = 'application/json';
 const timeout = 30_000; // Wait up to 30 seconds for the server to start sending
@@ -83,8 +84,9 @@ async function pullAndDoWork(): Promise<void> {
     // something bad happened
     logger.error(`Full details: ${JSON.stringify(work)}`);
     logger.error(`Unexpected error while pulling work: ${work.error}`);
+    sleep(10000);
   }
-  setTimeout(pullAndDoWork, 5000);
+  setTimeout(pullAndDoWork, 1000);
 }
 
 export default class PullWorker implements Worker {
