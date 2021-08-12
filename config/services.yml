@@ -641,7 +641,6 @@ https://cmr.uat.earthdata.nasa.gov:
       # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
       # to prevent re-adding. This is needed for tests related to HARMONY-875
       # - C1233800302-EEDTEST
-      - C1233860183-EEDTEST
       - C1234410736-POCLOUD
       - C1234082763-POCLOUD
       - C1234071416-POCLOUD
