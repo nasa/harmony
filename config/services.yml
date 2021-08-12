@@ -210,6 +210,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/podaac/l2-subsetter
+    umm_s:
+      - S1962070864-POCLOUD
     collections:
       - C1940473819-POCLOUD
       - C1940475563-POCLOUD
@@ -353,6 +355,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/podaac/l2-subsetter
+    umm_s:
+      - S1234899453-POCLOUD
     collections:
       - C1234208436-POCLOUD
       - C1234208437-POCLOUD
