@@ -22,8 +22,12 @@ export interface ServiceCapabilities {
 }
 
 export interface ServiceStep {
-  service?: string;
   image?: string;
+  operations?: string[];
+  conditional?: {
+    exists?: string[];
+    format?: string[];
+  };
 }
 
 export interface ServiceConfig<ServiceParamType> {
@@ -264,7 +268,7 @@ export default abstract class BaseService<ServiceParamType> {
           workItemCount: this.numInputGranules,
           // operation: this.operation.serialize(this.config.data_operation_version),
           // New version that doesn't require granules in the sources
-          operation: this.operation.serialize('0.11.0'),
+          operation: this.operation.serialize('0.11.0', step.operations || []),
         }));
       }));
     }

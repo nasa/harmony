@@ -737,7 +737,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-zarr
 
   - name: harmony/swot-repr-netcdf-to-zarr
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     batch_size: 1
     type:
       <<: *default-argo-config
@@ -767,3 +767,13 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
         - application/x-zarr
       reprojection: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${SWOT_REPROJECT_IMAGE}
+        operations: ['reproject']
+        conditional:
+          exists: ['outputCrs']
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        operations: ['reformat']
+        conditional:
+          format: ['application/x-zarr']

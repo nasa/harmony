@@ -678,7 +678,7 @@ export default class DataOperation {
    * @throws TypeError - If validate is `true` and validation fails, or if version is not provided
    * @throws RangeError - If the provided version cannot be serialized
    */
-  serialize(version: string): string {
+  serialize(version: string, fields: string[] = []): string {
     if (!version) {
       throw new TypeError('Schema version is required to serialize DataOperation objects');
     }
@@ -709,6 +709,29 @@ export default class DataOperation {
     if (!valid) {
       logger.error(`Invalid JSON: ${JSON.stringify(toWrite)}`);
       throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validatorInstance.errors)}`);
+    }
+
+    if (fields.length > 0) {
+      if (!fields.includes('reproject')) {
+        delete toWrite.format.crs;
+        delete toWrite.format.srs;
+        delete toWrite.format.interpolation;
+        delete toWrite.format.scaleExtent;
+      }
+      if (!fields.includes('reformat')) {
+        delete toWrite.format.mime;
+      }
+      if (!fields.includes('variable')) {
+        for (const source of toWrite.sources) {
+          delete source.variables;
+        }
+      }
+      if (!fields.includes('spatial')) {
+        delete toWrite.subset.bbox;
+      }
+      if (!fields.includes('shape')) {
+        delete toWrite.subset.shape;
+      }
     }
 
     return JSON.stringify(toWrite);
