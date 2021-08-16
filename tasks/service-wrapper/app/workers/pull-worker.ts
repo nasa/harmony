@@ -29,12 +29,7 @@ async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: s
         responseType: 'json',
         httpAgent: keepaliveAgent,
       });
-      // .query(`serviceID=${env.harmonyService}`)
-      // .accept(JSON_TYPE)
-      // .timeout({
-      //   response: timeout,
-      //   deadline: 60_000, // but allow up to 60 seconds for the server to complete the response;
-      // });
+
     if (response.status >= 400) {
       const errMsg = response.statusText ? response.statusText : 'Unknown error';
       return { error: errMsg, status: response.status };
@@ -54,7 +49,6 @@ async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: s
  * Pull work and execute it
  */
 async function pullAndDoWork(): Promise<void> {
-  // logger.debug('Getting work..');
   const work = await pullWork();
   if (!work.error) {
     if (work.item) {
