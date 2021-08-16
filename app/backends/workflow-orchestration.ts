@@ -9,6 +9,9 @@ import env from 'util/env';
 import { readCatalogItems } from 'util/stac';
 import log from '../util/log';
 
+const MAX_TRY_COUNT = 30;
+const RETRY_DELAY = 1000;
+
 /**
  * Return a work item for the given service
  * @param req - The request sent by the client
@@ -17,17 +20,23 @@ import log from '../util/log';
  * @returns Resolves when the request is complete
  */
 export async function getWork(
-  req: HarmonyRequest, res: Response, _next: NextFunction,
+  req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
   const { serviceID } = req.query;
   const { logger } = req.context;
-  logger.info(`Getting work for service [${serviceID}]`);
+  if (tryCount === 1) {
+    logger.debug(`Getting work for service [${serviceID}]`);
+  }
   let workItem;
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
   });
   if (workItem) {
     res.send(workItem);
+  } else if (tryCount < MAX_TRY_COUNT) {
+    setTimeout(async () => {
+      getWork(req, res, next, tryCount + 1);
+    }, RETRY_DELAY);
   } else {
     res.status(404).send();
   }

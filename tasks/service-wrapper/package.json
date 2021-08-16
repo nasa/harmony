@@ -15,21 +15,23 @@
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
   "dependencies": {
+    "agentkeepalive": "^4.1.4",
+    "aws-sdk": "^2.906.0",
+    "axios": "^0.21.1",
+    "date-fns": "^2.21.3",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "knex": "^0.95.9",
     "knex-paginate": "^2.2.0",
-    "lodash.camelcase": "^4.3.0",
     "lodash": "^4.17.21",
+    "lodash.camelcase": "^4.3.0",
+    "node-fetch": "^2.6.1",
     "python-shell": "^3.0.0",
     "semaphore": "^1.1.0",
     "sqlite3": "^4.2.0",
     "superagent": "^6.1.0",
-    "winston": "^3.3.3",
-    "node-fetch": "^2.6.1",
-    "date-fns": "^2.21.3",
     "tmp": "^0.2.1",
-    "aws-sdk": "^2.906.0"
+    "winston": "^3.3.3"
   },
   "devDependencies": {
     "@types/express": "^4.17.12",

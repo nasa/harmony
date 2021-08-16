@@ -1,10 +1,12 @@
 #!/bin/bash
 # create back end services for Harmony
 
+env_save=$(export -p)
+set -a
 source "env-defaults"
 source ".env"
-
-export HOST_VOLUME_PATH=$HOST_VOLUME_PATH
+set +a
+eval "$env_save"
 
 if [[ -z "${HOST_VOLUME_PATH}" ]]; then
   echo "HOST_VOLUME_PATH must be set before running this script"

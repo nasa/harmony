@@ -1,4 +1,6 @@
 import request from 'superagent';
+import axios from 'axios';
+import Agent from 'agentkeepalive';
 import { Worker } from '../../../../app/workers/worker';
 import env from '../util/env';
 import WorkItem, { WorkItemStatus } from '../../../../app/models/work-item';
@@ -13,19 +15,31 @@ const timeout = 30_000; // Wait up to 30 seconds for the server to start sending
  */
 async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: string }> {
   try {
-    const response = await request
-      .get(env.pullUrl)
-      .query(`serviceID=${env.harmonyService}`)
-      .accept(JSON_TYPE)
-      .timeout({
-        response: timeout,
-        deadline: 60_000, // but allow up to 60 seconds for the server to complete the response;
+    const keepaliveAgent = new Agent({
+      maxSockets: 10,
+      maxFreeSockets: 10,
+      timeout: 60000, // active socket keepalive for 60 seconds
+      freeSocketTimeout: 30000, // free socket keepalive for 30 seconds
+    });
+
+    const response = await axios
+      .get(env.pullUrl, {
+        params: { serviceID: env.harmonyService },
+        timeout,
+        responseType: 'json',
+        httpAgent: keepaliveAgent,
       });
+      // .query(`serviceID=${env.harmonyService}`)
+      // .accept(JSON_TYPE)
+      // .timeout({
+      //   response: timeout,
+      //   deadline: 60_000, // but allow up to 60 seconds for the server to complete the response;
+      // });
     if (response.status >= 400) {
-      const errMsg = response.error ? response.error.message : 'Unknown error';
+      const errMsg = response.statusText ? response.statusText : 'Unknown error';
       return { error: errMsg, status: response.status };
     }
-    return { item: response.body };
+    return { item: response.data };
   } catch (err) {
     if (err.status !== 404 && err.message !== `Response timeout of ${timeout}ms exceeded`) {
       logger.error(`Request failed with error: ${err.message}`);
