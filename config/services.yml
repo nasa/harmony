@@ -43,6 +43,10 @@ https://cmr.earthdata.nasa.gov:
       - C1214354031-ASF
       - C1808440897-ASF
       - C2011599335-ASF
+      - C1239324659-POCUMULUS
+      - C1239379702-POCLOUD
+      - C1238618571-POCUMULUS
+      - C1238621141-POCLOUD
     capabilities:
       subsetting:
         shape: true
