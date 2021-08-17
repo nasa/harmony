@@ -79,6 +79,44 @@ function serviceImageToId(image: string): string {
   return image;
 }
 
+const conditionToOperationField = {
+  reproject: 'crs',
+  reformat: 'outputFormat',
+};
+
+/**
+ * Returns true if the workflow step is required for the given operation. If any
+ * of the conditional exists operations are present in the operation then the step
+ * will be considered required. If any of the conditional formats are requested in
+ * the operation the step will be considered required. If both a list of formats
+ * and a list of operations are provided both the formats must include the format
+ * requested by the operation and one of the required operations must be present in
+ * the request in order to require the step.
+ *
+ * @param step - The workflow step
+ * @param operation - The operation
+ *
+ * @returns true if the workflow step is required
+ */
+function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
+  let required = true;
+  if (step.conditional?.exists?.length > 0) {
+    required = false;
+    for (const condition of step.conditional.exists) {
+      if (operation[conditionToOperationField[condition]]) {
+        required = true;
+      }
+    }
+  }
+  if (required && step.conditional?.format) {
+    required = false;
+    if (step.conditional.format.includes(operation.outputFormat)) {
+      required = true;
+    }
+  }
+  return required;
+}
+
 /**
  * Abstract base class for services.  Provides a basic interface and handling of backend response
  * callback plumbing.
@@ -260,16 +298,21 @@ export default abstract class BaseService<ServiceParamType> {
   protected _createWorkflowSteps(): WorkflowStep[] {
     const workflowSteps = [];
     if (this.config.steps) {
-      this.config.steps.forEach(((step, i) => {
-        workflowSteps.push(new WorkflowStep({
-          jobID: this.operation.requestId,
-          serviceID: serviceImageToId(step.image),
-          stepIndex: i,
-          workItemCount: this.numInputGranules,
-          // operation: this.operation.serialize(this.config.data_operation_version),
-          // New version that doesn't require granules in the sources
-          operation: this.operation.serialize('0.11.0', step.operations || []),
-        }));
+      let i = 0;
+      this.config.steps.forEach(((step) => {
+        if (stepRequired(step, this.operation)) {
+          i += 1;
+          workflowSteps.push(new WorkflowStep({
+            jobID: this.operation.requestId,
+            serviceID: serviceImageToId(step.image),
+            stepIndex: i,
+            workItemCount: this.numInputGranules,
+            operation: this.operation.serialize(
+              this.config.data_operation_version,
+              step.operations || [],
+            ),
+          }));
+        }
       }));
     }
     return workflowSteps;

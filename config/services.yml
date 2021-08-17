@@ -426,7 +426,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1226288788-EDF_DEV07
       - C1233147317-EEDTEST
       - C1233147319-EEDTEST
-      - C1234724470-POCLOUD
+      # - C1234724470-POCLOUD
     capabilities:
       subsetting:
         bbox: false
@@ -653,7 +653,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234208437-POCLOUD
       - C1234208436-POCLOUD
       - C1234208438-POCLOUD
-      - C1234724470-POCLOUD
+      # - C1234724470-POCLOUD
       - C1234724471-POCLOUD
       - C1239379704-POCLOUD
       - C1238621141-POCLOUD
@@ -707,7 +707,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   # CHAINED SERVICES BELOW HERE
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     batch_size: 20
     type:
       <<: *default-argo-config
@@ -735,6 +735,16 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: true
       output_formats:
         - application/x-zarr
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        operations: ['spatial', 'variable']
+        conditional:
+          exists: ['spatial', 'variable']
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        operations: ['reformat']
+        conditional:
+          format: ['application/x-zarr']
 
   - name: harmony/swot-repr-netcdf-to-zarr
     data_operation_version: '0.11.0'
@@ -760,9 +770,6 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: false
         variable: false
       output_formats:
-        - image/tiff
-        - image/png
-        - image/gif
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
         - application/x-zarr
@@ -772,7 +779,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${SWOT_REPROJECT_IMAGE}
         operations: ['reproject']
         conditional:
-          exists: ['outputCrs']
+          exists: ['reproject']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         operations: ['reformat']
         conditional:
