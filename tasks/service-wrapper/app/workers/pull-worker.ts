@@ -30,6 +30,9 @@ async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: s
         timeout,
         responseType: 'json',
         httpAgent: keepaliveAgent,
+        validateStatus(status) {
+          return status === 404 || (status >= 200 && status < 400);
+        },
       });
 
     if (response.status >= 400) {
@@ -59,7 +62,7 @@ async function pullAndDoWork(): Promise<void> {
       const workFunc = workItem.scrollID ? runQueryCmrFromPull : runPythonServiceFromPull;
 
       workFunc(work.item).then(async (serviceResponse: ServiceResponse) => {
-        logger.info('Finished work');
+        logger.debug('Finished work');
         if (serviceResponse.batchCatalogs) {
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = serviceResponse.batchCatalogs;
@@ -69,7 +72,7 @@ async function pullAndDoWork(): Promise<void> {
           workItem.errorMessage = `${serviceResponse.error}`;
         }
         // call back to Harmony to mark the work unit as complete or failed
-        logger.info(`Sending response to Harmony for results ${JSON.stringify(work)}`);
+        logger.debug(`Sending response to Harmony for results ${JSON.stringify(work)}`);
         try {
           const response = await axios.put(`${env.responseUrl}/${workItem.id}`, workItem);
 
