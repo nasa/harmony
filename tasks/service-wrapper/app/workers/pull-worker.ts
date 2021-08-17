@@ -85,7 +85,7 @@ async function pullAndDoWork(): Promise<void> {
         }
       });
     }
-  } else if (work.error === `Response timeout of ${timeout}ms exceeded`) {
+  } else if (work.error === `timeout of ${timeout}ms exceeded`) {
     // timeouts are expected - just try again after a short delay (100 ms)
     logger.debug('Polling timeout - retrying');
   } else if (work.status !== 404) {
