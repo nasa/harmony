@@ -26,6 +26,8 @@ spec:
           env:
           - name: HARMONY_SERVICE
             value: "harmonyservices/netcdf-to-zarr:latest"
+          - name: WORKING_DIR
+            value: "/opt/harmony-netcdf-to-zarr"
           - name: INVOCATION_ARGS
             value: |-
               -m

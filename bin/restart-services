@@ -1,0 +1,13 @@
+#!/bin/bash
+
+pids=()
+services=(harmony-service-example netcdf-to-zarr query-cmr swot-reproject)
+for service in "${services[@]}"; do
+echo "restarting $service"
+kubectl get pods -n argo | grep "$service" | awk '{ print $1; }' | xargs kubectl -n argo delete pod &
+pids[${i}]=$!
+done
+
+for pid in ${pids[*]}; do
+  wait $pid
+done

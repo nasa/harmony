@@ -122,9 +122,10 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
 export function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
   const { operation, stacCatalogLocation } = workItem;
   const commandLine = env.invocationArgs.split('\n');
+  log.debug(`Working dir: ${env.workingDir}`);
   const options = {
     // pythonOptions: ['-u'], // get print results in real-time
-    cwd: '/home',
+    cwd: env.workingDir,
     args: [
       ...commandLine,
       '--harmony-action',
@@ -138,7 +139,7 @@ export function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
     ],
   };
   return new Promise<{}>((resolve) => {
-    log.info(`Calling service ${env.harmonyService}`);
+    log.debug(`Calling service ${env.harmonyService}`);
     const shell = PythonShell.run('-u', options, (err, results) => {
       if (err) {
         log.error('ERROR');
@@ -148,7 +149,7 @@ export function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
         // results is an array consisting of messages collected during execution
         log.debug(`results: ${results}`);
         const catalogs = _getStacCatalogs(`/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`);
-        log.info(`catalogs: ${catalogs}`);
+        log.debug(`catalogs: ${catalogs}`);
         resolve({
           batchCatalogs: catalogs,
         });
@@ -157,7 +158,7 @@ export function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
 
     shell.on('stderr', (stderr) => {
       // handle stderr (a line of text from stderr)
-      log.info(`[PythonShell stderr event] ${stderr}`);
+      log.debug(`[PythonShell stderr event] ${stderr}`);
     });
   });
 }
