@@ -1,4 +1,3 @@
-import request from 'superagent';
 import axios from 'axios';
 import Agent from 'agentkeepalive';
 import { Worker } from '../../../../app/workers/worker';
@@ -8,18 +7,21 @@ import logger from '../util/log';
 import { runPythonServiceFromPull, runQueryCmrFromPull, ServiceResponse } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
 
-const JSON_TYPE = 'application/json';
 const timeout = 30_000; // Wait up to 30 seconds for the server to start sending
+const activeSocketKeepAlive = 60_000;
+const maxSockets = 10;
+const maxFreeSockets = 10;
+
 /**
  * Requests work items from Harmony
  */
 async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: string }> {
   try {
     const keepaliveAgent = new Agent({
-      maxSockets: 10,
-      maxFreeSockets: 10,
-      timeout: 60000, // active socket keepalive for 60 seconds
-      freeSocketTimeout: 30000, // free socket keepalive for 30 seconds
+      maxSockets,
+      maxFreeSockets,
+      timeout: activeSocketKeepAlive, // active socket keepalive for 60 seconds
+      freeSocketTimeout: timeout, // free socket keepalive for 30 seconds
     });
 
     const response = await axios
@@ -69,16 +71,11 @@ async function pullAndDoWork(): Promise<void> {
         // call back to Harmony to mark the work unit as complete or failed
         logger.info(`Sending response to Harmony for results ${JSON.stringify(work)}`);
         try {
-          const response = await request
-            .put(`${env.responseUrl}/${workItem.id}`)
-            .type(JSON_TYPE)
-            .accept(JSON_TYPE)
-            .send(JSON.stringify(workItem));
+          const response = await axios.put(`${env.responseUrl}/${workItem.id}`, workItem);
 
-          // TODO add retry or other error handling here
-          if (response.error) {
+          if (response.status >= 400) {
             logger.error(`Error: received status [${response.status}] when updating WorkItem ${workItem.id}`);
-            logger.error(`Error: ${response.error.message}`);
+            logger.error(`Error: ${response.statusText}`);
           }
         } catch (e) {
           logger.error(e);
