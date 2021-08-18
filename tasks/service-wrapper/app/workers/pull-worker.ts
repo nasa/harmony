@@ -7,23 +7,23 @@ import logger from '../util/log';
 import { runPythonServiceFromPull, runQueryCmrFromPull, ServiceResponse } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
 
-const timeout = 30_000; // Wait up to 30 seconds for the server to start sending
-const activeSocketKeepAlive = 60_000;
-const maxSockets = 10;
-const maxFreeSockets = 10;
+const timeout = 3_000; // Wait up to 30 seconds for the server to start sending
+const activeSocketKeepAlive = 6_000;
+const maxSockets = 1;
+const maxFreeSockets = 1;
+
+const keepaliveAgent = new Agent({
+  maxSockets,
+  maxFreeSockets,
+  timeout: activeSocketKeepAlive, // active socket keepalive for 60 seconds
+  freeSocketTimeout: timeout, // free socket keepalive for 30 seconds
+});
 
 /**
  * Requests work items from Harmony
  */
 async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: string }> {
   try {
-    const keepaliveAgent = new Agent({
-      maxSockets,
-      maxFreeSockets,
-      timeout: activeSocketKeepAlive, // active socket keepalive for 60 seconds
-      freeSocketTimeout: timeout, // free socket keepalive for 30 seconds
-    });
-
     const response = await axios
       .get(env.pullUrl, {
         params: { serviceID: env.harmonyService },
@@ -74,7 +74,7 @@ async function pullAndDoWork(): Promise<void> {
         // call back to Harmony to mark the work unit as complete or failed
         logger.debug(`Sending response to Harmony for results ${JSON.stringify(work)}`);
         try {
-          const response = await axios.put(`${env.responseUrl}/${workItem.id}`, workItem);
+          const response = await axios.put(`${env.responseUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
 
           if (response.status >= 400) {
             logger.error(`Error: received status [${response.status}] when updating WorkItem ${workItem.id}`);
@@ -92,9 +92,9 @@ async function pullAndDoWork(): Promise<void> {
     // something bad happened
     logger.error(`Full details: ${JSON.stringify(work)}`);
     logger.error(`Unexpected error while pulling work: ${work.error}`);
-    sleep(10000);
+    sleep(3000);
   }
-  setTimeout(pullAndDoWork, 1000);
+  setTimeout(pullAndDoWork, 500);
 }
 
 export default class PullWorker implements Worker {

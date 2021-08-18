@@ -9,7 +9,7 @@ import env from 'util/env';
 import { readCatalogItems } from 'util/stac';
 import log from '../util/log';
 
-const MAX_TRY_COUNT = 30;
+const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
 
 /**
