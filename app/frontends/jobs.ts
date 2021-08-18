@@ -342,8 +342,8 @@ export async function getWorkItemsForWorkflowUI(
         job,
         workItems,
         workflowSteps,
-        updatedAtString() { return (new Date(this.updatedAt).toTimeString()); },
-        createdAtString() { return (new Date(this.createdAt).toTimeString()); },
+        updatedAtString() { return (new Date(this.updatedAt).toString()); },
+        createdAtString() { return (new Date(this.createdAt).toString()); },
         badgeClass() { return badgeClasses[this.status]; },
         stepName() {
           return workflowSteps[this.workflowStepIndex - 1].serviceID;
