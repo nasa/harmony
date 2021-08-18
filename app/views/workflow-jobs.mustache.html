@@ -43,6 +43,7 @@
                 <thead>
                     <tr>
                         <th scope="col">jobID</th>
+                        <th scope="col">request</th>
                         <th scope="col">status</th>
                         <th scope="col">message</th>
                         <th scope="col">progress</th>
@@ -51,7 +52,8 @@
                 <tbody>
                     {{#jobs}}
                     <tr>
-                        <th scope="row"><a href="jobs/{{jobID}}" target='__blank'>{{jobID}}</a></th>
+                        <th scope="row"><a href="jobs/{{jobID}}" target='_blank'>{{jobID}}</a></th>
+                        <td><a href='{{request}}' target='_blank'>{{urlString}}</a></td>
                         <td><span class="badge bg-{{badgeClass}}">{{status}}</span></td>
                         <td>{{message}}</td>
                         <td>{{progress}}%</td>

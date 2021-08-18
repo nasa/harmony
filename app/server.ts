@@ -13,7 +13,7 @@ import HarmonyRequest from 'models/harmony-request';
 import { Logger } from 'winston';
 import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/service-response-router';
-import logger from './util/log';
+import logger, { ignorePaths, inIgnoreList } from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import WorkflowTerminationListener from './workers/workflow-termination-listener';
 import JobReaper from './workers/job-reaper';
@@ -34,12 +34,13 @@ function addRequestLogger(appLogger: Logger): RequestHandler {
     winstonInstance: appLogger,
     requestFilter,
     dynamicMeta(req: HarmonyRequest) { return { requestId: req.context.id }; },
+    ignoreRoute(req) { return inIgnoreList(req.url, ignorePaths); },
   });
 }
 
 /**
  * Returns middleware to set a requestID for a request if the request does not already
- * have one set.
+ * have one set. Also adds requestUrl to the logger info object.
  *
  * @param appLogger - Request specific application logger
  * @param appName - The name of the listener - either frontend or backend
@@ -47,8 +48,9 @@ function addRequestLogger(appLogger: Logger): RequestHandler {
 function addRequestId(appLogger: Logger, appName: string): RequestHandler {
   return (req: HarmonyRequest, res: Response, next: NextFunction): void => {
     const requestId = req.context?.id || uuid();
+    const requestUrl = req.url;
     const context = new RequestContext(requestId);
-    context.logger = appLogger.child({ requestId });
+    context.logger = appLogger.child({ requestId, requestUrl });
     context.logger.info(`timing.${appName}-request.start`);
     req.context = context;
     next();

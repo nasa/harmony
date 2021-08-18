@@ -263,6 +263,7 @@ export async function getJobsForWorkflowUI(
     res.render('workflow-jobs', {
       jobs,
       badgeClass() { return badgeClasses[this.status]; },
+      urlString() { return (new URL(this.request)).pathname; },
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -323,7 +324,6 @@ export async function getWorkItemsForWorkflowUI(
   badgeClasses[WorkItemStatus.FAILED] = 'danger';
   badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
-  req.context.logger.info(`Get job for workflow UI table job ${jobID} and user ${req.user}`);
   try {
     validateJobId(jobID);
     const query: JobQuery = { requestId: jobID };
