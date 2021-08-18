@@ -57,6 +57,25 @@ export async function getWorkflowStepById(
 }
 
 /**
+ * Returns all workflow steps for a job
+ * @param tx - the transaction to use for querying
+ * @param jobID - the job ID
+ *
+ * @returns A promise with the workflow steps array
+ */
+export async function getWorkflowStepsByJobId(
+  tx: Transaction,
+  jobID: string,
+): Promise<WorkflowStep[]> {
+  const workItemData = await tx(WorkflowStep.table)
+    .select()
+    .where({ jobID })
+    .orderBy('id');
+
+  return workItemData.map((i) => new WorkflowStep(i));
+}
+
+/**
  *
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the Job for the step

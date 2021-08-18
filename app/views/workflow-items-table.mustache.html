@@ -1,0 +1,28 @@
+<div class="col-12">
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">workflowStepIndex</th>
+                <th scope="col">workflowStepName</th>
+                <th scope="col">id</th>
+                <th scope="col">jobID</th>
+                <th scope="col">status</th>
+                <th scope="col">createdAt</th>
+                <th scope="col">updatedAt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#workItems}}
+            <tr>
+                <th scope="row">{{workflowStepIndex}}</th>
+                <td>{{stepName}}</td>
+                <td>{{id}}</td>
+                <td>{{jobID}}</td>
+                <td><span class="badge bg-{{badgeClass}}">{{status}}</span></td>
+                <td>{{createdAtString}}</td>
+                <td>{{updatedAtString}}</td>
+            </tr>
+            {{/workItems}}
+        </tbody>
+    </table>
+</div>

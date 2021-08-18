@@ -4,6 +4,7 @@ import { keysToLowerCase } from 'util/object';
 import isUUID from 'util/uuid';
 import cancelAndSaveJob from 'util/job';
 import JobLink from 'models/job-link';
+import { getWorkItemsByJobId, WorkItemStatus } from 'models/work-item';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink, Link } from '../util/links';
@@ -12,6 +13,8 @@ import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagin
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 import env = require('../util/env');
+import { getWorkflowStepsByJobId } from 'models/workflow-steps';
+import workItem from 'tasks/service-wrapper/built/app/models/work-item';
 
 /**
  * Returns true if the job contains S3 direct access links
@@ -229,5 +232,128 @@ export async function cancelJob(
     } else {
       next(e);
     }
+  }
+}
+
+/**
+ * Display jobs along with their status in the workflow UI.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns HTML page of clickable jobs which take the user to a
+ * page where they can visualize the whole workflow as it happens
+ */
+export async function getJobsForWorkflowUI(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const badgeClasses = {};
+  badgeClasses[JobStatus.ACCEPTED] = 'primary';
+  badgeClasses[JobStatus.CANCELED] = 'secondary';
+  badgeClasses[JobStatus.FAILED] = 'danger';
+  badgeClasses[JobStatus.SUCCESSFUL] = 'success';
+  badgeClasses[JobStatus.RUNNING] = 'info';
+  try {
+    const { page, limit } = getPagingParams(req, env.maxPageSize);
+    const query: JobQuery = {};
+    if (!req.context.isAdminAccess) {
+      query.username = req.user;
+      query.isAsync = true;
+    }
+    const jobs: Job[] = (await Job.queryAll(db, query, false, page, limit)).data;
+    res.render('workflow-jobs', {
+      jobs,
+      badgeClass() { return badgeClasses[this.status]; },
+    });
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * Display a job's progress and work items in the workflow UI.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The workflow UI page where the user can visualize the job as it happens
+ */
+export async function getJobForWorkflowUI(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobID } = req.params;
+  try {
+    validateJobId(jobID);
+    const query: JobQuery = { requestId: jobID };
+    if (!req.context.isAdminAccess) {
+      query.username = req.user;
+    }
+    const { job } = await Job.byRequestId(db, jobID, 0, 0);
+    if (job) {
+      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+        throw new NotFoundError();
+      }
+      res.render('workflow-job', {
+        job,
+      });
+    } else {
+      throw new NotFoundError(`Unable to find job ${jobID}`);
+    }
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * Render the work items table for the workflow UI.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The work items table HTML
+ */
+export async function getWorkItemsForWorkflowUI(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobID } = req.params;
+  const badgeClasses = {};
+  badgeClasses[WorkItemStatus.READY] = 'primary';
+  badgeClasses[WorkItemStatus.CANCELED] = 'secondary';
+  badgeClasses[WorkItemStatus.FAILED] = 'danger';
+  badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
+  badgeClasses[WorkItemStatus.RUNNING] = 'info';
+  req.context.logger.info(`Get job for workflow UI table job ${jobID} and user ${req.user}`);
+  try {
+    validateJobId(jobID);
+    const query: JobQuery = { requestId: jobID };
+    if (!req.context.isAdminAccess) {
+      query.username = req.user;
+    }
+    const { job } = await Job.byRequestId(db, jobID, 0, 0);
+    if (job) {
+      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+        throw new NotFoundError();
+      }
+      const workItems = await getWorkItemsByJobId(db, job.jobID, 'asc');
+      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+      res.render('workflow-items-table', {
+        job,
+        workItems,
+        workflowSteps,
+        updatedAtString() { return (new Date(this.updatedAt).toTimeString()); },
+        createdAtString() { return (new Date(this.createdAt).toTimeString()); },
+        badgeClass() { return badgeClasses[this.status]; },
+        stepName() {
+          return workflowSteps[this.workflowStepIndex - 1].serviceID;
+        },
+      });
+    } else {
+      throw new NotFoundError(`Unable to find job ${jobID}`);
+    }
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
   }
 }

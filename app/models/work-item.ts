@@ -148,6 +148,27 @@ export async function getWorkItemById(
 }
 
 /**
+ * Returns all work items for a job
+ * @param tx - the transaction to use for querying
+ * @param jobID - the job ID
+ * @param sortOrder - orderBy string (desc or asc)
+ *
+ * @returns A promise with the work items array
+ */
+export async function getWorkItemsByJobId(
+  tx: Transaction,
+  jobID: string,
+  sortOrder: 'asc' | 'desc' = 'asc',
+): Promise<WorkItem[]> {
+  const workItemData = await tx(WorkItem.table)
+    .select()
+    .where({ jobID })
+    .orderBy('id', sortOrder);
+
+  return workItemData.map((i) => new WorkItem(i));
+}
+
+/**
  * Get all work item ids associated with jobs that haven't been updated for a
  * certain amount of minutes and that have a particular JobStatus
  * @param tx - the transaction to use for querying

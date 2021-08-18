@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../../eui.min.css">
+    <link rel="stylesheet" href="../../../default.css">
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"
+        integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/"
+        crossorigin="anonymous"></script>
+    <script language="javascript" id="_fed_an_ua_tag"
+        src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"></script>
+    <script language="javascript" type="module" src="../../../workflow-jobs.js"></script>
+    <title>Harmony</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <div id="earthdata-notification-banner"></div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-lg">
+            <a class="navbar-brand nasa" href="/">Earthdata Harmony</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            </div>
+        </div>
+    </nav>
+    <nav class="ml-0 pl-0"
+        style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);"
+        aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin/workflow-ui/jobs">Jobs</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{job.jobID}}</li>
+        </ol>
+    </nav>
+    <div class="container-lg">
+        <div class="row pb-4">
+            <div class="col-12" id="workflow-items-table-col">
+
+            </div>
+        </div>
+    </div>
+    <footer class="mt-auto">
+        <div class="container-lg">
+            <div class="row pt-1">
+                <div class="col-md-8">
+                    <ul class="list-inline">
+                        <li class="list-inline-item">NASA Official: Stephen Berrick</li>
+                        <li class="list-inline-item"><a href="http://www.nasa.gov/FOIA/index.html">FOIA</a></li>
+                        <li class="list-inline-item"><a href="http://www.nasa.gov/about/highlights/HP_Privacy.html">NASA
+                                Privacy Policy</a></li>
+                        <li class="list-inline-item"><a href="http://www.usa.gov/">USA.gov</a></li>
+                        <li class="list-inline-item"><a href="#" onclick="javascript:feedback.showForm();">Feedback</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <p class="text-right"><a href="/versions"><span class="badge bg-dark">v {{version}}</span></a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script type="text/javascript" src="https://status.earthdata.nasa.gov/assets/banner_widget.js"></script>
+    <script type="text/javascript" src="https://fbm.earthdata.nasa.gov/for/Harmony/feedback.js"></script>
+    <script type="text/javascript">feedback.init({ showIcon: false });</script>
+</body>
+
+</html>
