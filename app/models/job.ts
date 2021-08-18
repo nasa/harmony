@@ -91,7 +91,7 @@ export interface JobQuery {
  *   - createdAt: (Date) the date / time at which the job was created
  *   - updatedAt: (Date) the date / time at which the job was last updated
  */
-export class Job extends Record {
+export class Job extends Record implements JobRecord {
   static table = 'jobs';
 
   static statuses: JobStatus;

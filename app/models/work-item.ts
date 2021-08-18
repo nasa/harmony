@@ -20,12 +20,41 @@ const serializedFields = [
   'stacCatalogLocation', 'workflowStepIndex',
 ];
 
+export interface WorkItemRecord {
+  // The ID of the job that created this work item
+  jobID: string;
+
+  // The ID of the scroll session (only used for the query cmr service)
+  scrollID?: string;
+
+  // unique identifier for the service - this should be the docker image tag (with version)
+  serviceID: string;
+
+  // The status of the operation - see WorkItemStatus
+  status?: WorkItemStatus;
+
+  // error message if status === FAILED
+  errorMessage?: string;
+
+  // The location of the STAC catalog for the item(s) to process
+  stacCatalogLocation?: string;
+
+  // The corresponding workflow step ID for the work item - used to look up the operation
+  workflowStepIndex: number;
+
+  // The operation to be performed by the service (not serialized)
+  operation?: DataOperation;
+
+  // The location of the resulting STAC catalog(s) (not serialized)
+  results?: string[];
+}
+
 /**
  *
  * Wrapper object for persisted work items
  *
  */
-export default class WorkItem extends Record {
+export default class WorkItem extends Record implements WorkItemRecord {
   static table = 'work_items';
 
   // The ID of the job that created this work item
