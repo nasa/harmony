@@ -52,7 +52,7 @@ CREATE TABLE `workflow_steps` (
   `serviceID` varchar(255) not null,
   `stepIndex` integer not null,
   `workItemCount` integer not null,
-  `operation` text,
+  `operation` text not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID)
@@ -64,5 +64,5 @@ CREATE INDEX work_items_jobID_idx ON work_items(jobID);
 CREATE INDEX work_items_serviceID_idx ON work_items(serviceID);
 CREATE INDEX workflow_steps_jobID_idx ON workflow_steps(jobID);
 CREATE INDEX workflow_steps_jobID_StepIndex_idx ON workflow_steps(jobID, stepIndex);
-CREATE INDEX workflow_steps_sericeID_idx ON workflow_steps(serviceID);
+CREATE INDEX workflow_steps_serviceID_idx ON workflow_steps(serviceID);
 

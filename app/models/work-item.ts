@@ -1,6 +1,6 @@
 import { subMinutes } from 'date-fns';
 import _ from 'lodash';
-import { Transaction } from '../util/db';
+import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
 import { Job, JobStatus } from './job';
 import Record from './record';
@@ -211,6 +211,11 @@ export async function workItemCountForStep(
     .count('id')
     .where(whereClause);
 
-  // TODO not sure if this works with postgres
-  return Number(count[0]['count(`id`)']);
+  let workItemCount;
+  if (db.client.config.client === 'pg') {
+    workItemCount = Number(count[0].count);
+  } else {
+    workItemCount = Number(count[0]['count(`id`)']);
+  }
+  return workItemCount;
 }
