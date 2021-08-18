@@ -5,6 +5,7 @@ import isUUID from 'util/uuid';
 import cancelAndSaveJob from 'util/job';
 import JobLink from 'models/job-link';
 import { getWorkItemsByJobId, WorkItemStatus } from 'models/work-item';
+import { getWorkflowStepsByJobId } from 'models/workflow-steps';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink, Link } from '../util/links';
@@ -13,8 +14,6 @@ import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagin
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 import env = require('../util/env');
-import { getWorkflowStepsByJobId } from 'models/workflow-steps';
-import workItem from 'tasks/service-wrapper/built/app/models/work-item';
 
 /**
  * Returns true if the job contains S3 direct access links
