@@ -54,6 +54,27 @@ export function hookWorkItemCreationEach(props: Partial<WorkItemRecord> = {}): v
 }
 
 /**
+ * Adds a before hook to provide a work item update callback and await its processing
+ *
+ * @param fn - A function that takes a callback request and returns it augmented with any query
+ *   params, post bodies, etc
+ * @param finish - True if the hook should wait for the user request to finish
+ * @param beforeFn - The mocha `before` function to use, i.e. `before` or `beforeEach`
+ */
+export function hookWorkItemUpdate(
+  fn: (req: request.Test) => request.Test,
+  finish = false,
+  beforeFn = before,
+): void {
+  beforeFn(async function () {
+    this.callbackRes = await fn(request(this.backend).put(`/service/work/${this.workItem.id}`).type('json'));
+    if (finish) {
+      this.userResp = await this.userPromise;
+    }
+  });
+}
+
+/**
  * Adds a beforeEach hook to provide a work item update callback and await its processing
  *
  * @param fn - A function that takes a callback request and returns it augmented with any query
@@ -61,12 +82,8 @@ export function hookWorkItemCreationEach(props: Partial<WorkItemRecord> = {}): v
  * @param finish - True if the hook should wait for the user request to finish
  */
 export function hookWorkItemUpdateEach(
-  fn: (req: request.Test) => request.Test, finish = false,
+  fn: (req: request.Test) => request.Test,
+  finish = false,
 ): void {
-  beforeEach(async function () {
-    this.callbackRes = await fn(request(this.backend).put(`/service/work/${this.workItem.id}`).type('json'));
-    if (finish) {
-      this.userResp = await this.userPromise;
-    }
-  });
+  hookWorkItemUpdate(fn, finish, beforeEach);
 }
