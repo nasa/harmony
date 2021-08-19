@@ -1,8 +1,10 @@
+import { Application } from 'express';
 import { afterEach, beforeEach } from 'mocha';
 import WorkItem, { WorkItemRecord, WorkItemStatus } from 'models/work-item';
-import request from 'supertest';
+import request, { Test } from 'supertest';
 import db from '../../app/util/db';
 import { truncateAll } from './db';
+import { hookBackendRequest } from './hooks';
 
 const exampleProps = {
   jobID: '1',
@@ -87,3 +89,16 @@ export function hookWorkItemUpdateEach(
 ): void {
   hookWorkItemUpdate(fn, finish, beforeEach);
 }
+
+/**
+ * Performs getCoverageRangeset request on the given collection with the given params
+ *
+ * @param app - The express application (typically this.backend)
+ * @param serviceID - The service polling for work
+ * @returns The response
+ */
+export function getWorkForService(app: Application, serviceID: string): Test {
+  return request(app).get('/service/work').query({ serviceID });
+}
+
+export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForService);

@@ -25,12 +25,14 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
       expect(workflowSteps.length).to.equal(2);
     });
+
     it('starts with the query-cmr task', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
       expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
     });
+
     it('then requests reformatting using netcdf-to-zarr', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
@@ -59,12 +61,14 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
       expect(workflowSteps.length).to.equal(2);
     });
+
     it('starts with the query-cmr task', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
       expect(workflowSteps[0].serviceID).to.equal('harmonyservices/query-cmr:latest');
     });
+
     it('then requests reprojection using swot reprojection', async function () {
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
