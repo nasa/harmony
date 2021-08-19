@@ -258,7 +258,6 @@ export async function getJobsForWorkflowUI(
     const query: JobQuery = {};
     if (!req.context.isAdminAccess) {
       query.username = req.user;
-      query.isAsync = true;
     }
     const jobs: Job[] = (await Job.queryAll(db, query, false, page, limit)).data;
     res.render('workflow-jobs', {
