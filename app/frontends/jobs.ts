@@ -254,14 +254,24 @@ export async function getJobsForWorkflowUI(
   badgeClasses[JobStatus.SUCCESSFUL] = 'success';
   badgeClasses[JobStatus.RUNNING] = 'info';
   try {
-    const { page, limit } = getPagingParams(req, env.maxPageSize);
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const query: JobQuery = {};
     if (!req.context.isAdminAccess) {
       query.username = req.user;
     }
-    const jobs: Job[] = (await Job.queryAll(db, query, false, page, limit)).data;
+    const { data: jobs, pagination } = await Job.queryAll(db, query, false, page, limit);
+    const pageLinks = getPagingLinks(req, pagination);
+    const nextPage = pageLinks.find((l) => l.rel === 'next');
+    const previousPage = pageLinks.find((l) => l.rel === 'prev');
+    const pageLinkHtml = (link, title): string => (
+      `<li class="page-item ${link ? '' : 'disabled'}"><a class="page-link" href="${link ? link.href : ''}" title="${link ? link.title : ''}">${title}</a></li>`
+    );
+    setPagingHeaders(res, pagination);
     res.render('workflow-jobs', {
       jobs,
+      pageLinks,
+      nextPageLi: pageLinkHtml(nextPage, 'next'),
+      previousPageLi: pageLinkHtml(previousPage, 'previous'),
       badgeClass() { return badgeClasses[this.status]; },
       urlString() { return (new URL(this.request)).pathname; },
       truncatedMessage() { return truncateString((this.message || ''), 40); },
