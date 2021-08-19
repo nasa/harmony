@@ -1,3 +1,4 @@
-import { WorkItemsTable } from "./work-items-table.js";
-
-(new WorkItemsTable()).startPolling();
+const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+tooltipTriggerList.map(function (tooltipTriggerEl) {
+  return new bootstrap.Tooltip(tooltipTriggerEl);
+});

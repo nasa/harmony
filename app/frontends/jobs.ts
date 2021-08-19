@@ -6,6 +6,7 @@ import cancelAndSaveJob from 'util/job';
 import JobLink from 'models/job-link';
 import { getWorkItemsByJobId, WorkItemStatus } from 'models/work-item';
 import { getWorkflowStepsByJobId } from 'models/workflow-steps';
+import { truncateString } from 'util/string';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink, Link } from '../util/links';
@@ -264,6 +265,7 @@ export async function getJobsForWorkflowUI(
       jobs,
       badgeClass() { return badgeClasses[this.status]; },
       urlString() { return (new URL(this.request)).pathname; },
+      truncatedMessage() { return truncateString((this.message || ''), 40); },
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -341,8 +343,8 @@ export async function getWorkItemsForWorkflowUI(
         job,
         workItems,
         workflowSteps,
-        updatedAtString() { return (new Date(this.updatedAt).toString()); },
-        createdAtString() { return (new Date(this.createdAt).toString()); },
+        updatedAtString() { return (new Date(this.updatedAt).toISOString()); },
+        createdAtString() { return (new Date(this.createdAt).toISOString()); },
         badgeClass() { return badgeClasses[this.status]; },
         stepName() {
           return workflowSteps[this.workflowStepIndex - 1].serviceID;
