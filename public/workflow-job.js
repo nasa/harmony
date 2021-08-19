@@ -1,3 +1,3 @@
-import { WorkItemsTable } from "./work-items-table.js";
+import { WorkFlowItemsTable } from "./workflow-items-table.js";
 
-(new WorkItemsTable()).startPolling();
+(new WorkFlowItemsTable()).startPolling();

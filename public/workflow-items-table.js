@@ -1,4 +1,4 @@
-export class WorkItemsTable {
+export class WorkFlowItemsTable {
   
     constructor() {
       this.shouldPoll = true;
