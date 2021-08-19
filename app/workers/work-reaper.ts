@@ -2,14 +2,13 @@ import { JobStatus } from 'models/job';
 import { Logger } from 'winston';
 import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from 'models/work-item';
 import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from 'models/workflow-steps';
+import env from 'util/env';
 import { Worker } from './worker';
 import db from '../util/db';
 import sleep from '../util/sleep';
 
 export interface WorkReaperConfig {
-
   logger: Logger;
-
 }
 
 export default class WorkReaper implements Worker {
@@ -48,14 +47,14 @@ export default class WorkReaper implements Worker {
       this.logger.info('Starting work reaper');
       try {
         await this.deleteTerminalWork(
-          60 * 24, // 24 hrs
+          env.reapableWorkAgeMinutes,
           [
             JobStatus.FAILED,
             JobStatus.SUCCESSFUL,
             JobStatus.CANCELED,
           ],
         );
-        await sleep(60 * 60 * 1000); // 1 hr
+        await sleep(env.workReaperPeriodSec * 1000);
       } catch (e) {
         this.logger.error('Error while removing old work steps and items');
         this.logger.error(e);

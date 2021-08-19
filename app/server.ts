@@ -17,6 +17,7 @@ import logger, { ignorePaths, inIgnoreList } from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import WorkflowTerminationListener from './workers/workflow-termination-listener';
 import JobReaper from './workers/job-reaper';
+import WorkReaper from './workers/work-reaper';
 
 /**
  * Returns middleware to add a request specific logger
@@ -141,6 +142,7 @@ export function start(config: Record<string, string>): {
   backend: Server;
   workflowTerminationListener: WorkflowTerminationListener;
   jobReaper: JobReaper;
+  workReaper: WorkReaper;
 } {
   const appPort = +config.PORT;
   const backendPort = +config.BACKEND_PORT;
@@ -164,16 +166,25 @@ export function start(config: Record<string, string>): {
     listener.start();
   }
 
-  let reaper;
+  let jobReaper;
   if (config.startJobReaper !== 'false') {
     const reaperConfig = {
       logger: logger.child({ application: 'workflow-events' }),
     };
-    reaper = new JobReaper(reaperConfig);
-    reaper.start();
+    jobReaper = new JobReaper(reaperConfig);
+    jobReaper.start();
   }
 
-  return { frontend, backend, workflowTerminationListener: listener, jobReaper: reaper };
+  let workReaper;
+  if (config.startWorkReaper !== 'false') {
+    const reaperConfig = {
+      logger: logger.child({ application: 'workflow-events' }),
+    };
+    workReaper = new WorkReaper(reaperConfig);
+    workReaper.start();
+  }
+
+  return { frontend, backend, workflowTerminationListener: listener, jobReaper, workReaper };
 }
 
 /**
@@ -183,18 +194,21 @@ export function start(config: Record<string, string>): {
  * @param backend - http.Server object as returned by start()
  * @param workflowTerminationListener - listener for workflow termination events
  * @param jobReaper - service that checks for orphan jobs and marks them as canceled
+ * @param workReaper - service that checks for old work items and workflow steps and deletes them
  * @returns A promise that completes when the servers close
  */
 export async function stop({
   frontend,
   backend,
   workflowTerminationListener,
-  jobReaper }): Promise<void> {
+  jobReaper,
+  workReaper }): Promise<void> {
   await Promise.all([
     promisify(frontend.close.bind(frontend))(),
     promisify(backend.close.bind(backend))(),
     workflowTerminationListener?.stop(),
     jobReaper?.stop(),
+    workReaper?.stop(),
   ]);
 }
 
