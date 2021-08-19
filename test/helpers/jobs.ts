@@ -327,7 +327,7 @@ export function hookJobCreation(
 ): void {
   beforeFn(async function () {
     this.job = buildJob(props);
-    this.job.save(db);
+    await this.job.save(db);
   });
 
   afterFn(async function () {

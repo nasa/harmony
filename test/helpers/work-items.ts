@@ -31,18 +31,17 @@ export function buildWorkItem(fields: Partial<WorkItemRecord> = {}): WorkItem {
 export function hookWorkItemCreation(
   props: Partial<WorkItemRecord> = {},
   beforeFn = before,
-  _afterFn = after,
+  afterFn = after,
 ): void {
   beforeFn(async function () {
     this.workItem = buildWorkItem(props);
-    console.log('CREATING WORK ITEM');
     await this.workItem.save(db);
   });
 
-  // afterFn(async function () {
-  //   delete this.workItem;
-  //   await truncateAll();
-  // });
+  afterFn(async function () {
+    delete this.workItem;
+    await truncateAll();
+  });
 }
 
 /**
