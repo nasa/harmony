@@ -61,7 +61,7 @@ async function pullAndDoWork(): Promise<void> {
       // work items with a scrollID are only for the query-cmr service
       const workFunc = workItem.scrollID ? runQueryCmrFromPull : runPythonServiceFromPull;
 
-      workFunc(work.item).then(async (serviceResponse: ServiceResponse) => {
+      await workFunc(work.item).then(async (serviceResponse: ServiceResponse) => {
         logger.debug('Finished work');
         if (serviceResponse.batchCatalogs) {
           workItem.status = WorkItemStatus.SUCCESSFUL;

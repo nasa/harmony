@@ -173,7 +173,8 @@ export async function getWorkItemById(
     .where({ id })
     .first();
 
-  return workItemData && new WorkItem(workItemData);
+  const workItem = workItemData && new WorkItem(workItemData);
+  return workItem;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach } from 'mocha';
 import WorkItem, { WorkItemRecord, WorkItemStatus } from 'models/work-item';
+import request from 'supertest';
 import db from '../../app/util/db';
 import { truncateAll } from './db';
 
@@ -30,17 +31,18 @@ export function buildWorkItem(fields: Partial<WorkItemRecord> = {}): WorkItem {
 export function hookWorkItemCreation(
   props: Partial<WorkItemRecord> = {},
   beforeFn = before,
-  afterFn = after,
+  _afterFn = after,
 ): void {
   beforeFn(async function () {
     this.workItem = buildWorkItem(props);
-    this.workItem.save(db);
+    console.log('CREATING WORK ITEM');
+    await this.workItem.save(db);
   });
 
-  afterFn(async function () {
-    delete this.workItem;
-    await truncateAll();
-  });
+  // afterFn(async function () {
+  //   delete this.workItem;
+  //   await truncateAll();
+  // });
 }
 
 /**
@@ -50,4 +52,22 @@ export function hookWorkItemCreation(
  */
 export function hookWorkItemCreationEach(props: Partial<WorkItemRecord> = {}): void {
   hookWorkItemCreation(props, beforeEach, afterEach);
+}
+
+/**
+ * Adds a beforeEach hook to provide a work item update callback and await its processing
+ *
+ * @param fn - A function that takes a callback request and returns it augmented with any query
+ *   params, post bodies, etc
+ * @param finish - True if the hook should wait for the user request to finish
+ */
+export function hookWorkItemUpdateEach(
+  fn: (req: request.Test) => request.Test, finish = false,
+): void {
+  beforeEach(async function () {
+    this.callbackRes = await fn(request(this.backend).put(`/service/work/${this.workItem.id}`).type('json'));
+    if (finish) {
+      this.userResp = await this.userPromise;
+    }
+  });
 }
