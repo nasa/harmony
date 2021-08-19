@@ -1,4 +1,5 @@
 import { subMinutes } from 'date-fns';
+import { IPagination } from 'knex-paginate';
 import _ from 'lodash';
 import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
@@ -181,6 +182,8 @@ export async function getWorkItemById(
  * Returns all work items for a job
  * @param tx - the transaction to use for querying
  * @param jobID - the job ID
+ * @param currentPage - the page of work items to get
+ * @param perPage - number of results to include per page
  * @param sortOrder - orderBy string (desc or asc)
  *
  * @returns A promise with the work items array
@@ -188,14 +191,20 @@ export async function getWorkItemById(
 export async function getWorkItemsByJobId(
   tx: Transaction,
   jobID: string,
+  currentPage = 0,
+  perPage = 10,
   sortOrder: 'asc' | 'desc' = 'asc',
-): Promise<WorkItem[]> {
-  const workItemData = await tx(WorkItem.table)
+): Promise<{ workItems: WorkItem[]; pagination: IPagination }> {
+  const result = await tx(WorkItem.table)
     .select()
     .where({ jobID })
-    .orderBy('id', sortOrder);
+    .orderBy('id', sortOrder)
+    .paginate({ currentPage, perPage, isLengthAware: true });
 
-  return workItemData.map((i) => new WorkItem(i));
+  return {
+    workItems: result.data.map((i) => new WorkItem(i)),
+    pagination: result.pagination,
+  };
 }
 
 /**

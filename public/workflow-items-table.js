@@ -1,25 +1,30 @@
 export class WorkFlowItemsTable {
   
-    constructor() {
+    constructor(jobId, page, limit) {
       this.shouldPoll = true;
+      this.tableUrl = `./table/${jobId}?page=${page}&limit=${limit}`;
     }
   
     async startPolling() {
-      const jobID = window.location.href.split("/").pop();
-      const tableUrl = `./table/${jobID}`;
-      this._pollLoadTable(tableUrl);
-      this.intervalId = setInterval(() => this._pollLoadTable(tableUrl), (2 * 1000));
+      this._pollLoadTable();
+      this.intervalId = setInterval(() => this._pollLoadTable(), (2 * 1000));
     }
   
-    async _pollLoadTable(tableUrl) {
+    stopPolling() {
+      this.shouldPoll = false;
+    }
+
+    async _pollLoadTable() {
       if(this.shouldPoll) {
-        await this._loadTable(tableUrl);
+        await this._loadTable();
+      } else {
+        clearInterval(this.intervalId);
       }
     }
   
-    async _loadTable(tableUrl) {
-      const res = await fetch(tableUrl);
+    async _loadTable() {
+      const res = await fetch(this.tableUrl);
       const template = await res.text();
-      document.getElementById('workflow-items-table-col').innerHTML = template;     
+      document.getElementById('workflow-items-table-container').innerHTML = template;     
     }
   }  

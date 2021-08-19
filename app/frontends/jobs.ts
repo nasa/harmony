@@ -264,12 +264,13 @@ export async function getJobsForWorkflowUI(
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     const pageLinkHtml = (link, title): string => (
-      `<li class="page-item ${link ? '' : 'disabled'}"><a class="page-link" href="${link ? link.href : ''}" title="${link ? link.title : ''}">${title}</a></li>`
+      `<li class="page-item ${link ? '' : 'disabled'}">
+        <a class="page-link" href="${link ? link.href : ''}" title="${link ? link.title : ''}">${title}</a>
+      </li>`
     );
     setPagingHeaders(res, pagination);
     res.render('workflow-jobs', {
       jobs,
-      pageLinks,
       nextPageLi: pageLinkHtml(nextPage, 'next'),
       previousPageLi: pageLinkHtml(previousPage, 'previous'),
       badgeClass() { return badgeClasses[this.status]; },
@@ -300,6 +301,7 @@ export async function getJobForWorkflowUI(
   const { jobID } = req.params;
   try {
     validateJobId(jobID);
+    const { page, limit } = getPagingParams(req, 1000);
     const query: JobQuery = { requestId: jobID };
     if (!req.context.isAdminAccess) {
       query.username = req.user;
@@ -311,6 +313,8 @@ export async function getJobForWorkflowUI(
       }
       res.render('workflow-job', {
         job,
+        page,
+        limit,
       });
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
@@ -341,6 +345,7 @@ export async function getWorkItemsForWorkflowUI(
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
   try {
     validateJobId(jobID);
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const query: JobQuery = { requestId: jobID };
     if (!req.context.isAdminAccess) {
       query.username = req.user;
@@ -350,12 +355,23 @@ export async function getWorkItemsForWorkflowUI(
       if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
         throw new NotFoundError();
       }
-      const workItems = await getWorkItemsByJobId(db, job.jobID, 'asc');
+      const { workItems, pagination } = await getWorkItemsByJobId(db, job.jobID, page, limit, 'asc');
+      const pageLinks = getPagingLinks(req, pagination);
+      const nextPage = pageLinks.find((l) => l.rel === 'next');
+      const previousPage = pageLinks.find((l) => l.rel === 'prev');
+      const pageLinkHtml = (link, title): string => (
+        `<li class="page-item ${link ? '' : 'disabled'}">
+          <a class="page-link" href="${link ? link.href.replace('/table', '') : ''}" title="${link ? link.title : ''}">${title}</a>
+        </li>`
+      );
+      setPagingHeaders(res, pagination);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
       res.render('workflow-items-table', {
         job,
         workItems,
         workflowSteps,
+        nextPageLi: pageLinkHtml(nextPage, 'next'),
+        previousPageLi: pageLinkHtml(previousPage, 'previous'),
         updatedAtString() { return (new Date(this.updatedAt).toISOString()); },
         createdAtString() { return (new Date(this.createdAt).toISOString()); },
         badgeClass() { return badgeClasses[this.status]; },
