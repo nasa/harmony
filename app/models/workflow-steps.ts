@@ -11,12 +11,30 @@ const serializedFields = [
   'workItemCount', 'operation', 'createdAt', 'updatedAt',
 ];
 
+export interface WorkflowStepRecord {
+
+  // The ID of the job that created this work item
+  jobID: string;
+
+  // unique identifier for the service - this should be the docker image tag (with version)
+  serviceID: string;
+
+  // the index of the step within the workflow
+  stepIndex: number;
+
+  // the total number of work items for this step
+  workItemCount: number;
+
+  // The operation to be performed by the service
+  operation: DataOperation;
+}
+
 /**
  *
  * Wrapper object for persisted work items
  *
  */
-export default class WorkflowStep extends Record {
+export default class WorkflowStep extends Record implements WorkflowStepRecord {
   static table = 'workflow_steps';
 
   // The ID of the job that created this work item

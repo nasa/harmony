@@ -14,7 +14,7 @@ const exampleProps = {
 /**
  *  Creates a work item with default values for fields that are not passed in
  *
- * @param fields - feilds to use for the work item record
+ * @param fields - fields to use for the work item record
  * @returns a work item
  */
 export function buildWorkItem(fields: Partial<WorkItemRecord> = {}): WorkItem {
