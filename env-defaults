@@ -141,6 +141,12 @@ JOB_REAPER_PERIOD_SEC=360
 # Jobs older than this many minutes that are running are checked by the job reaper
 REAPABLE_JOB_AGE_MINUTES=60
 
+# The time (in seconds) between invocations of the work reaper service
+WORK_REAPER_PERIOD_SEC=360
+
+# WorkItems and WorkflowSteps (in a terminal state) older than this many minutes are checked by the work reaper
+REAPABLE_WORK_AGE_MINUTES=1440
+
 # The number of seconds before timing out a single step (pod) in an Argo workflow
 DEFAULT_ARGO_POD_TIMEOUT_SECS=14400
 

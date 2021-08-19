@@ -13,10 +13,11 @@ import HarmonyRequest from 'models/harmony-request';
 import { Logger } from 'winston';
 import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/service-response-router';
-import logger from './util/log';
+import logger, { ignorePaths, inIgnoreList } from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import WorkflowTerminationListener from './workers/workflow-termination-listener';
 import JobReaper from './workers/job-reaper';
+import WorkReaper from './workers/work-reaper';
 
 /**
  * Returns middleware to add a request specific logger
@@ -34,12 +35,13 @@ function addRequestLogger(appLogger: Logger): RequestHandler {
     winstonInstance: appLogger,
     requestFilter,
     dynamicMeta(req: HarmonyRequest) { return { requestId: req.context.id }; },
+    ignoreRoute(req) { return inIgnoreList(req.url, ignorePaths); },
   });
 }
 
 /**
  * Returns middleware to set a requestID for a request if the request does not already
- * have one set.
+ * have one set. Also adds requestUrl to the logger info object.
  *
  * @param appLogger - Request specific application logger
  * @param appName - The name of the listener - either frontend or backend
@@ -47,8 +49,9 @@ function addRequestLogger(appLogger: Logger): RequestHandler {
 function addRequestId(appLogger: Logger, appName: string): RequestHandler {
   return (req: HarmonyRequest, res: Response, next: NextFunction): void => {
     const requestId = req.context?.id || uuid();
+    const requestUrl = req.url;
     const context = new RequestContext(requestId);
-    context.logger = appLogger.child({ requestId });
+    context.logger = appLogger.child({ requestId, requestUrl });
     context.logger.info(`timing.${appName}-request.start`);
     req.context = context;
     next();
@@ -139,6 +142,7 @@ export function start(config: Record<string, string>): {
   backend: Server;
   workflowTerminationListener: WorkflowTerminationListener;
   jobReaper: JobReaper;
+  workReaper: WorkReaper;
 } {
   const appPort = +config.PORT;
   const backendPort = +config.BACKEND_PORT;
@@ -162,16 +166,25 @@ export function start(config: Record<string, string>): {
     listener.start();
   }
 
-  let reaper;
+  let jobReaper;
   if (config.startJobReaper !== 'false') {
     const reaperConfig = {
       logger: logger.child({ application: 'workflow-events' }),
     };
-    reaper = new JobReaper(reaperConfig);
-    reaper.start();
+    jobReaper = new JobReaper(reaperConfig);
+    jobReaper.start();
   }
 
-  return { frontend, backend, workflowTerminationListener: listener, jobReaper: reaper };
+  let workReaper;
+  if (config.startWorkReaper !== 'false') {
+    const reaperConfig = {
+      logger: logger.child({ application: 'workflow-events' }),
+    };
+    workReaper = new WorkReaper(reaperConfig);
+    workReaper.start();
+  }
+
+  return { frontend, backend, workflowTerminationListener: listener, jobReaper, workReaper };
 }
 
 /**
@@ -181,18 +194,21 @@ export function start(config: Record<string, string>): {
  * @param backend - http.Server object as returned by start()
  * @param workflowTerminationListener - listener for workflow termination events
  * @param jobReaper - service that checks for orphan jobs and marks them as canceled
+ * @param workReaper - service that checks for old work items and workflow steps and deletes them
  * @returns A promise that completes when the servers close
  */
 export async function stop({
   frontend,
   backend,
   workflowTerminationListener,
-  jobReaper }): Promise<void> {
+  jobReaper,
+  workReaper }): Promise<void> {
   await Promise.all([
     promisify(frontend.close.bind(frontend))(),
     promisify(backend.close.bind(backend))(),
     workflowTerminationListener?.stop(),
     jobReaper?.stop(),
+    workReaper?.stop(),
   ]);
 }
 

@@ -4,6 +4,28 @@ import env = require('./env');
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
 
+// used to allow winston to ignore particular logs
+// also used to filter express-winston logs
+export const ignorePaths = ['/admin/workflow-ui/jobs/table', '/service/work'];
+export const ignoreMessages = [
+  'timing.frontend-request',
+  'timing.backend-request',
+  'Invoking middleware',
+  'Completed middleware',
+  'Getting work for service',
+];
+export const inIgnoreList = (str, ignoreList): boolean => ignoreList.some((i) => str.includes(i));
+
+const urlAndMessageBasedFilter = winston.format((info) => {
+  if (info.requestUrl
+    && info.message
+    && inIgnoreList(info.message, ignoreMessages)
+    && inIgnoreList(info.requestUrl, ignorePaths)) {
+    return false;
+  }
+  return info;
+});
+
 /**
  * Creates a logger that logs messages in JSON format.
  *
@@ -15,6 +37,7 @@ function createJsonLogger(): winston.Logger {
       winston.format.timestamp(),
       envNameFormat(),
       winston.format.json(),
+      urlAndMessageBasedFilter(),
     ),
     transports: [
       new winston.transports.Console({ level: env.logLevel }),
@@ -56,6 +79,7 @@ function createTextLogger(): winston.Logger {
       winston.format.prettyPrint(),
       winston.format.colorize({ colors: { error: 'red', info: 'blue' } }),
       textformat,
+      urlAndMessageBasedFilter(),
     ),
     transports: [
       new winston.transports.Console({ level: env.logLevel }),

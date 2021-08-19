@@ -22,6 +22,7 @@ export default function hookServersStartStop(opts = { skipEarthdataLogin: true }
       skipEarthdataLogin: skipEdl,
       startWorkflowTerminationListener: 'false',
       startJobReaper: 'false',
+      startWorkReaper: 'false',
       // Hardcoded to 4000 to match the port in the url for the example HTTP service in services.yml
       PORT: '4000',
       BACKEND_PORT: '0',
