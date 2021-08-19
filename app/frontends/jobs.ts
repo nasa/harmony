@@ -273,7 +273,11 @@ export async function getJobsForWorkflowUI(
       nextPageLi: pageLinkHtml(nextPage, 'next'),
       previousPageLi: pageLinkHtml(previousPage, 'previous'),
       badgeClass() { return badgeClasses[this.status]; },
-      urlString() { return (new URL(this.request)).pathname; },
+      urlString() {
+        const url = new URL(this.request);
+        const path = url.pathname + url.search;
+        return path;
+      },
       truncatedMessage() { return truncateString((this.message || ''), 40); },
     });
   } catch (e) {
