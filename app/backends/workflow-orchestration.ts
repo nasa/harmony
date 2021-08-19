@@ -1,12 +1,12 @@
 import { NextFunction, Response } from 'express';
-import HarmonyRequest from 'models/harmony-request';
-import { Job, JobStatus } from 'models/job';
-import JobLink from 'models/job-link';
-import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from 'models/work-item';
-import { getWorkflowStepByJobIdStepIndex } from 'models/workflow-steps';
-import db, { Transaction } from 'util/db';
-import env from 'util/env';
-import { readCatalogItems } from 'util/stac';
+import db, { Transaction } from '../util/db';
+import env from '../util/env';
+import { readCatalogItems } from '../util/stac';
+import HarmonyRequest from '../models/harmony-request';
+import { Job, JobStatus } from '../models/job';
+import JobLink from '../models/job-link';
+import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from '../models/work-item';
+import { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 import log from '../util/log';
 
 const MAX_TRY_COUNT = 1;
@@ -69,7 +69,7 @@ export async function createWorkItem(req: HarmonyRequest, res: Response): Promis
 }
 
 /**
- * Add links to the Job for the WorkItem
+ * Add links to the Job for the WorkItem and save them to the database.
  *
  * @param workItem - The work item associated with the results
  * @param results  - an array of paths to STAC catalogs
@@ -118,7 +118,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   await db.transaction(async (tx) => {
     await updateWorkItemStatus(tx, id, status as WorkItemStatus);
     workItem = await getWorkItemById(tx, parseInt(id, 10));
-    log.debug('Got work item');
     const job: Job = await Job.byJobID(tx, workItem.jobID);
     // If the response is an error then set the job status to 'failed'
     if (workItem.status === WorkItemStatus.FAILED) {
@@ -157,18 +156,20 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         // If the current step is the query-cmr service and the number of work items for the next
         // step is less than 'workItemCount' for the next step then create a new work item for
         // the current step
-        const workItemCount = await workItemCountForStep(tx, workItem.jobID, nextStep.stepIndex);
-        if (workItem.scrollID && workItemCount < nextStep.workItemCount) {
-          const nextQueryCmrItem = new WorkItem({
-            jobID: workItem.jobID,
-            scrollID: workItem.scrollID,
-            serviceID: workItem.serviceID,
-            status: WorkItemStatus.READY,
-            stacCatalogLocation: workItem.stacCatalogLocation,
-            workflowStepIndex: workItem.workflowStepIndex,
-          });
+        if (workItem.scrollID) {
+          const workItemCount = await workItemCountForStep(tx, workItem.jobID, nextStep.stepIndex);
+          if (workItemCount < nextStep.workItemCount) {
+            const nextQueryCmrItem = new WorkItem({
+              jobID: workItem.jobID,
+              scrollID: workItem.scrollID,
+              serviceID: workItem.serviceID,
+              status: WorkItemStatus.READY,
+              stacCatalogLocation: workItem.stacCatalogLocation,
+              workflowStepIndex: workItem.workflowStepIndex,
+            });
 
-          await nextQueryCmrItem.save(tx);
+            await nextQueryCmrItem.save(tx);
+          }
         }
       } else {
         // 1. add job links for the results

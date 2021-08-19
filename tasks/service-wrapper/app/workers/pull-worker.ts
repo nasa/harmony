@@ -11,8 +11,10 @@ const timeout = 3_000; // Wait up to 30 seconds for the server to start sending
 const activeSocketKeepAlive = 6_000;
 const maxSockets = 1;
 const maxFreeSockets = 1;
+const maxRetries = 3;
 
 const keepaliveAgent = new Agent({
+  keepAlive: true,
   maxSockets,
   maxFreeSockets,
   timeout: activeSocketKeepAlive, // active socket keepalive for 60 seconds
@@ -72,16 +74,26 @@ async function pullAndDoWork(): Promise<void> {
           workItem.errorMessage = `${serviceResponse.error}`;
         }
         // call back to Harmony to mark the work unit as complete or failed
-        logger.debug(`Sending response to Harmony for results ${JSON.stringify(work)}`);
-        try {
-          const response = await axios.put(`${env.responseUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
-
-          if (response.status >= 400) {
-            logger.error(`Error: received status [${response.status}] when updating WorkItem ${workItem.id}`);
-            logger.error(`Error: ${response.statusText}`);
+        logger.debug(`Sending response to Harmony for results work item id ${work.item.id} and job id ${work.item.jobID}`);
+        let tries = 0;
+        let complete = false;
+        while (tries < maxRetries && !complete) {
+          tries += 1;
+          try {
+            const response = await axios.put(`${env.responseUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
+            if (response.status >= 400) {
+              logger.error(`Error: received status [${response.status}] when updating WorkItem ${workItem.id}`);
+              logger.error(`Error: ${response.statusText}`);
+            } else {
+              complete = true;
+            }
+          } catch (e) {
+            logger.error(e);
           }
-        } catch (e) {
-          logger.error(e);
+          if (tries < maxRetries && !complete) {
+            logger.info(`Retrying failure to update work item id ${work.item.id} and job id ${work.item.jobID}`);
+            sleep(1000);
+          }
         }
       });
     }
