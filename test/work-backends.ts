@@ -6,15 +6,18 @@ import { v4 as uuid } from 'uuid';
 import { JobStatus } from 'tasks/service-wrapper/built/app/models/job';
 import { defaultContainerRegistry } from 'util/container-registry';
 import { WorkflowStepRecord } from 'models/workflow-steps';
+import DataOperation from 'models/data-operation';
 import hookServersStartStop from './helpers/servers';
 import db from '../app/util/db';
 import { hookJobCreation, hookJobCreationEach } from './helpers/jobs';
 import { hookWorkItemCreation, hookWorkItemCreationEach, hookWorkItemUpdate, hookWorkItemUpdateEach } from './helpers/work-items';
 import { hookWorkflowStepCreationEach } from './helpers/workflow-steps';
+import { parseSchemaFile } from './helpers/data-operation';
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();
   const jobRecord = { jobID: requestId, requestId } as Partial<JobRecord>;
+  const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
   const service = 'harmonyservices/query-cmr';
 
   const workItemRecord = {
@@ -25,11 +28,14 @@ describe('Work Backends', function () {
   const workflowStepRecod = {
     jobID: jobRecord.jobID,
     serviceID: service,
+    stepIndex: 0,
+    workItemCount: 1,
+    operation: validOperation,
   } as Partial<WorkflowStepRecord>;
 
   hookServersStartStop({ skipEarthdataLogin: true });
   hookJobCreationEach(jobRecord);
-  // hookWorkflowStepCreationEach(workflowStepRecod);
+  hookWorkflowStepCreationEach(workflowStepRecod);
   hookWorkItemCreationEach(workItemRecord);
 
   describe('getting a work item', function () {
