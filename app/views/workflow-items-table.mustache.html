@@ -1,26 +1,24 @@
-<div class="col-12">
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th scope="col">workflowStepIndex</th>
-                <th scope="col">workflowStepName</th>
-                <th scope="col">id</th>
-                <th scope="col">status</th>
-                <th scope="col">createdAt</th>
-                <th scope="col">updatedAt</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{#workItems}}
-            <tr>
-                <th scope="row">{{workflowStepIndex}}</th>
-                <td><small><code>{{stepName}}</code></small></td>
-                <td>{{id}}</td>
-                <td><span class="badge bg-{{badgeClass}}">{{status}}</span></td>
-                <td>{{createdAtString}}</td>
-                <td>{{updatedAtString}}</td>
-            </tr>
-            {{/workItems}}
-        </tbody>
-    </table>
-</div>
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th scope="col">workflowStepIndex</th>
+            <th scope="col">workflowStepName</th>
+            <th scope="col">id</th>
+            <th scope="col">status</th>
+            <th scope="col">createdAt</th>
+            <th scope="col">updatedAt</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#workItems}}
+        <tr>
+            <th scope="row">{{workflowStepIndex}}</th>
+            <td><small><code>{{stepName}}</code></small></td>
+            <td>{{id}}</td>
+            <td><span class="badge bg-{{badgeClass}}">{{status}}</span></td>
+            <td>{{createdAtString}}</td>
+            <td>{{updatedAtString}}</td>
+        </tr>
+        {{/workItems}}
+    </tbody>
+</table>

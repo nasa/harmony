@@ -56,12 +56,14 @@
                     <tr>
                         <th scope="row"><a href="jobs/{{jobID}}">{{jobID}}</a></th>
                         <td>
-                            <a class="btn btn-sm btn-outline-info" href='{{request}}' target='_blank' title="{{urlString}}" data-bs-toggle="tooltip" data-bs-placement="right">
+                            <a class="btn btn-sm btn-outline-info" href='{{request}}' target='_blank'
+                                title="{{urlString}}" data-bs-toggle="tooltip" data-bs-placement="right">
                                 replay
                             </a>
                         </td>
                         <td><span class="badge bg-{{badgeClass}}">{{status}}</span></td>
-                        <td><small><code title="{{message}}" data-bs-toggle="tooltip" data-bs-placement="right">{{truncatedMessage}}</code></small></td>
+                        <td><small><code title="{{message}}" data-bs-toggle="tooltip"
+                                    data-bs-placement="right">{{truncatedMessage}}</code></small></td>
                         <td><span class="badge rounded-pill bg-warning text-dark">{{numInputGranules}}</span></td>
                         <td>{{progress}}%</td>
                     </tr>
@@ -72,6 +74,12 @@
 
         </div>
     </div>
+    <nav aria-label="Page navigation" class=mx-auto>
+        <ul class="pagination">
+            {{{previousPageLi}}}
+            {{{nextPageLi}}}
+        </ul>
+    </nav>
     <footer class="mt-auto">
         <div class="container-lg">
             <div class="row pt-3">

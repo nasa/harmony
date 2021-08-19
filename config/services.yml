@@ -772,7 +772,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${SWOT_REPROJECT_IMAGE}
         operations: ['reproject']
         conditional:
-          exists: ['outputCrs']
+          exists: ['reproject']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         operations: ['reformat']
         conditional:
