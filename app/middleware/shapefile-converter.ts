@@ -1,23 +1,18 @@
 import { get } from 'lodash';
-import * as fs from 'fs';
 import rewind from '@mapbox/geojson-rewind';
 import * as togeojson from '@tmcw/togeojson';
 
 import { DOMParser } from 'xmldom';
 import * as shpjs from 'shpjs';
 import * as tmp from 'tmp-promise';
-import * as util from 'util';
 
-import { RequestValidationError, HttpError, ServerError } from 'util/errors';
-import { defaultObjectStore } from 'util/object-store';
-import { listToText } from 'util/string';
 import { Logger } from 'winston';
 import { NextFunction } from 'express';
-import { cookieOptions } from 'util/cookies';
-
-const unlink = util.promisify(fs.unlink);
-const readFile = util.promisify(fs.readFile);
-const writeFile = util.promisify(fs.writeFile);
+import { RequestValidationError, HttpError, ServerError } from '../util/errors';
+import { defaultObjectStore } from '../util/object-store';
+import { listToText } from '../util/string';
+import { cookieOptions } from '../util/cookies';
+import { readFile, unlink, writeFile } from '../util/file';
 
 /**
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,

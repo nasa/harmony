@@ -1,4 +1,5 @@
 import { NextFunction, Response } from 'express';
+import { Logger } from 'winston';
 import db, { Transaction } from '../util/db';
 import env from '../util/env';
 import { readCatalogItems } from '../util/stac';
@@ -7,7 +8,7 @@ import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
 import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from '../models/work-item';
 import { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
-import log from '../util/log';
+import { rmdir } from '../util/file';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
@@ -52,7 +53,7 @@ export async function getWork(
  */
 export async function createWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { serviceID, stacCatalogLocation, jobID, scrollID, workflowStepIndex } = req.body;
-  log.info(`Creating work item for jobID ${jobID}, service ${serviceID}, ${stacCatalogLocation}`);
+  req.context.logger.info(`Creating work item for jobID ${jobID}, service ${serviceID}, ${stacCatalogLocation}`);
   let workItem;
   await db.transaction(async (tx) => {
     workItem = new WorkItem({
@@ -71,17 +72,20 @@ export async function createWorkItem(req: HarmonyRequest, res: Response): Promis
 /**
  * Add links to the Job for the WorkItem and save them to the database.
  *
- * @param workItem - The work item associated with the results
+ * @param tx - The database transaction
+ * @param job - The job for the work item
  * @param results  - an array of paths to STAC catalogs
+ * @param logger - The logger for the request
  */
 async function _handleWorkItemResults(
   tx: Transaction,
   job: Job,
   results: string[],
+  logger: Logger,
 ): Promise<void> {
   for (const catalogLocation of results) {
     const localLocation = catalogLocation.replace('/tmp/metadata', env.hostVolumePath);
-    log.debug(`Adding link for STAC catalog ${localLocation}`);
+    logger.debug(`Adding link for STAC catalog ${localLocation}`);
 
     const items = readCatalogItems(localLocation);
 
@@ -105,6 +109,20 @@ async function _handleWorkItemResults(
 }
 
 /**
+ * Cleans up the temporary work items for the provided jobID
+ * @param jobID - the jobID for which to remove temporary work items
+ * @param logger - the logger associated with the request
+ */
+async function _cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<void> {
+  try {
+    await rmdir(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
+  } catch (e) {
+    logger.warn(`Unable to clean up temporary files for ${jobID}`);
+    logger.warn(e);
+  }
+}
+
+/**
  * Update a work item from a service response
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -113,7 +131,8 @@ async function _handleWorkItemResults(
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
   const { status, results, errorMessage } = req.body;
-  log.info(`Updating work item for ${id} to ${status}`);
+  const { logger } = req.context;
+  logger.info(`Updating work item for ${id} to ${status}`);
   let workItem: WorkItem;
   await db.transaction(async (tx) => {
     await updateWorkItemStatus(tx, id, status as WorkItemStatus);
@@ -130,7 +149,14 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
           message = 'Unknown error';
         }
         job.message = message;
-        await job.save(tx);
+        try {
+          await job.save(tx);
+        } catch (e) {
+          logger.error('Failed to update job');
+          logger.error(e);
+        } finally {
+          await _cleanupWorkItemsForJobID(job.jobID, logger);
+        }
       }
     } else if (results) {
       const nextStep = await getWorkflowStepByJobIdStepIndex(
@@ -173,7 +199,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         }
       } else {
         // 1. add job links for the results
-        await _handleWorkItemResults(tx, job, results);
+        await _handleWorkItemResults(tx, job, results, logger);
         // 2. If the number of work items with status 'successful' equals 'workItemCount'
         //    for the current step (which is the last) then set the job status to 'complete'.
         const successWorkItemCount = await workItemCountForStep(
@@ -191,6 +217,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         job.updateProgress(results.length, thisStep.workItemCount);
         if (successWorkItemCount === thisStep.workItemCount) {
           job.succeed();
+          await _cleanupWorkItemsForJobID(job.jobID, logger);
         }
         await job.save(tx);
       }
