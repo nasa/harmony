@@ -7,7 +7,6 @@ export class WorkFlowItemsTable {
   constructor(jobId, page, limit) {
     const fiveSeconds = 5 * 1000;
     this.tableUrl = `./table/${jobId}?page=${page}&limit=${limit}`;
-    this._loadTable(true);
     this._startPolling(fiveSeconds, true);
   }
 
@@ -17,6 +16,7 @@ export class WorkFlowItemsTable {
    * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
    */
   async _startPolling(interval, checkJobStatus) {
+    this._loadTable(checkJobStatus);
     this.intervalId = setInterval(() => this._loadTable(checkJobStatus), interval);
   }
 
@@ -43,7 +43,6 @@ export class WorkFlowItemsTable {
       // but keep polling in case work items are still being updated
       const fifteenSeconds = 15 * 1000;
       this._stopPolling();
-      this._loadTable(false);
       this._startPolling(fifteenSeconds, false);
     }
   }
