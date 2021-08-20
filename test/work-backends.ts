@@ -6,9 +6,9 @@ import { v4 as uuid } from 'uuid';
 import { WorkflowStepRecord } from 'models/workflow-steps';
 import hookServersStartStop from './helpers/servers';
 import db from '../app/util/db';
-import { hookJobCreationEach } from './helpers/jobs';
-import { hookGetWorkForService, hookWorkItemCreationEach, hookWorkItemUpdateEach, hookWorkflowStepAndItemCreationEach, hookWorkItemUpdate } from './helpers/work-items';
-import { hookWorkflowStepCreationEach, validOperation } from './helpers/workflow-steps';
+import { hookJobCreation } from './helpers/jobs';
+import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation } from './helpers/work-items';
+import { hookWorkflowStepCreation, validOperation } from './helpers/workflow-steps';
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();
@@ -30,9 +30,6 @@ describe('Work Backends', function () {
   } as Partial<WorkflowStepRecord>;
 
   hookServersStartStop({ skipEarthdataLogin: true });
-  hookJobCreationEach(jobRecord);
-  hookWorkflowStepCreationEach(workflowStepRecod);
-  hookWorkItemCreationEach(workItemRecord);
 
   describe('getting a work item', function () {
     const readyWorkItem = {
@@ -50,8 +47,8 @@ describe('Work Backends', function () {
       jobID: 'RUN',
     };
 
-    hookWorkflowStepAndItemCreationEach(readyWorkItem);
-    hookWorkflowStepAndItemCreationEach(runningWorkItem);
+    hookWorkflowStepAndItemCreation(readyWorkItem);
+    hookWorkflowStepAndItemCreation(runningWorkItem);
 
     describe('when no work item is available for the service', function () {
       hookGetWorkForService('noWorkService');
@@ -123,11 +120,15 @@ describe('Work Backends', function () {
 
   describe('updating a work item', function () {
     describe('and the work item failed', async function () {
+      hookJobCreation(jobRecord);
+      hookWorkflowStepCreation(workflowStepRecod);
+
       const failedWorkItemRecord = {
         ...workItemRecord, ...{ status: WorkItemStatus.FAILED },
       };
 
-      hookWorkItemUpdateEach((r) => r.send(failedWorkItemRecord));
+      hookWorkItemCreation(failedWorkItemRecord);
+      hookWorkItemUpdate((r) => r.send(failedWorkItemRecord));
 
       it('the work item status is set to failed', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
@@ -140,6 +141,9 @@ describe('Work Backends', function () {
     });
 
     describe('and the work item succeeded', async function () {
+      hookJobCreation(jobRecord);
+      hookWorkflowStepCreation(workflowStepRecod);
+      hookWorkItemCreation(workItemRecord);
       const successfulWorkItemRecord = {
         ...workItemRecord,
         ...{
@@ -154,11 +158,13 @@ describe('Work Backends', function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.SUCCESSFUL);
       });
+
       describe('and the work item is the last in the chain', async function () {
         it('the job updatedAt field is set to the current time', async function () {
           const updatedJob = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.updatedAt.valueOf()).to.greaterThan(this.job.updatedAt.valueOf());
         });
+
         it('a link for the work results is added to the job', async function () {
           const updatedJob = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.links.filter(

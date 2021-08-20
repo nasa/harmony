@@ -6,7 +6,7 @@ import _ from 'lodash';
 import db from '../../app/util/db';
 import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';
-import { buildWorkflowStep, hookWorkflowStepCreationEach } from './workflow-steps';
+import { buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach } from './workflow-steps';
 
 export const exampleWorkItemProps = {
   jobID: '1',
@@ -72,6 +72,23 @@ export function hookWorkflowStepAndItemCreationEach(props: object = {}): void {
 
   hookWorkflowStepCreationEach(workflowStep);
   hookWorkItemCreationEach(workItem);
+}
+
+/**
+ * Adds beforeEach / afterEach hooks to create a work item with the given properties, saving it
+ * to the DB, and storing it in `this.workItem`
+ * @param props - properties to set on the work item
+ */
+export function hookWorkflowStepAndItemCreation(props: object = {}): void {
+  const workItem = buildWorkItem(_.pick(props, ['jobID', 'serviceID', 'status', 'workflowStepIndex', 'scrollID', 'stacCatalogLocation']));
+  const workflowStep = buildWorkflowStep(_.pick(props, ['jobID', 'serviceID', 'stepIndex', 'workItemCount', 'operation']));
+
+  workItem.jobID = workflowStep.jobID;
+  workItem.serviceID = workflowStep.serviceID;
+  workItem.workflowStepIndex = workflowStep.stepIndex;
+
+  hookWorkflowStepCreation(workflowStep);
+  hookWorkItemCreation(workItem);
 }
 
 /**
