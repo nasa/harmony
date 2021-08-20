@@ -48,7 +48,7 @@ function _redirect(req: HarmonyRequest): string[] {
     const bodyKeys = Object.keys(req.body);
     const duplicateKeys = queryKeys.filter((x) => bodyKeys.includes(x));
     if (duplicateKeys.length) {
-      throw new RequestValidationError(`ZZZZZZZ Duplicate keys "${duplicateKeys}" found from request body and query string!`);
+      throw new RequestValidationError(`Duplicate keys "${duplicateKeys}" found from request body and query string!`);
     }
     req.query = { ...req.query, ...req.body };
   }
