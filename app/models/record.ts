@@ -30,6 +30,15 @@ export default abstract class Record {
    */
   constructor(fields: object) {
     Object.assign(this, fields);
+
+    // Make sure that updatedAt and createdAt are always Date objects
+    const tsWorkaround = fields as unknown as { updatedAt: number; createdAt: number };
+    if (tsWorkaround.updatedAt && typeof tsWorkaround.updatedAt === 'number') {
+      this.updatedAt = new Date(tsWorkaround.updatedAt);
+    }
+    if (tsWorkaround.createdAt && typeof tsWorkaround.createdAt === 'number') {
+      this.createdAt = new Date(tsWorkaround.createdAt);
+    }
   }
 
   /**

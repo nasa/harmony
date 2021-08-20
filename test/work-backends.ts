@@ -35,10 +35,27 @@ describe('Work Backends', function () {
   hookWorkItemCreationEach(workItemRecord);
 
   describe('getting a work item', function () {
-    hookWorkflowStepAndItemCreationEach({ serviceID: 'theReadyService', status: WorkItemStatus.READY });
+    const readyWorkItem = {
+      serviceID: 'theReadyService',
+      status: WorkItemStatus.READY,
+      jobID: 'ABCD',
+      scrollID: '-1234',
+      stacCatalogLocation: '/tmp/catalog.json',
+      stepIndex: 3,
+    };
+
+    const runningWorkItem = {
+      serviceID: 'theRunningService',
+      status: WorkItemStatus.RUNNING,
+      jobID: 'RUN',
+    };
+
+    hookWorkflowStepAndItemCreationEach(readyWorkItem);
+    hookWorkflowStepAndItemCreationEach(runningWorkItem);
 
     describe('when no work item is available for the service', function () {
       hookGetWorkForService('noWorkService');
+
       it('returns a 404', function () {
         expect(this.res.status).to.equal(404);
       });
@@ -46,14 +63,60 @@ describe('Work Backends', function () {
 
     describe('when a work item is in the ready state for the service', function () {
       hookGetWorkForService('theReadyService');
+
       it('returns a 200', function () {
         expect(this.res.status).to.equal(200);
+      });
+
+      it('returns the correct fields for a work item', function () {
+        expect(Object.keys(this.res.body)).to.eql([
+          'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
+          'stacCatalogLocation', 'workflowStepIndex', 'operation',
+        ]);
+      });
+
+      it('returns the expected service ID', function () {
+        expect(this.res.body.serviceID).to.equal('theReadyService');
+      });
+
+      it('returns the expected operation', function () {
+        expect(this.res.body.operation).to.eql(JSON.parse(validOperation));
+      });
+
+      it('returns the expected jobID', function () {
+        expect(this.res.body.jobID).to.equal('ABCD');
+      });
+
+      it('returns a datetime string for createdAt', function () {
+        expect(this.res.body.createdAt).to.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/);
+      });
+
+      it('returns a datetime string for updatedAt', function () {
+        expect(this.res.body.updatedAt).to.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/);
+      });
+
+      it('returns the expected scrollID', function () {
+        expect(this.res.body.scrollID).to.equal('-1234');
+      });
+
+      it('returns the expected stac catalog location', function () {
+        expect(this.res.body.stacCatalogLocation).to.equal('/tmp/catalog.json');
+      });
+
+      it('returns the expected workflow step index', function () {
+        expect(this.res.body.workflowStepIndex).to.equal(3);
       });
     });
 
     describe('when a work item is in the running state for the service', function () {
-      describe('when the work item has stayed in the running state longer than the configured timeout', function () {
+      hookGetWorkForService('theRunningService');
 
+      it('returns a 404 (does not return the work item)', function () {
+        expect(this.res.status).to.equal(404);
+      });
+
+      describe('when the work item has stayed in the running state longer than the configured timeout', function () {
+        // Not implemented yet
       });
     });
   });

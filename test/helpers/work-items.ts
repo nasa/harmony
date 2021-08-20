@@ -8,7 +8,7 @@ import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';
 import { buildWorkflowStep, hookWorkflowStepCreationEach } from './workflow-steps';
 
-const exampleProps = {
+export const exampleWorkItemProps = {
   jobID: '1',
   serviceID: 'harmony-services/query-cmr:latest',
   status: WorkItemStatus.READY,
@@ -22,7 +22,7 @@ const exampleProps = {
  * @returns a work item
  */
 export function buildWorkItem(fields: Partial<WorkItemRecord> = {}): WorkItem {
-  return new WorkItem({ ...exampleProps, ...fields });
+  return new WorkItem({ ...exampleWorkItemProps, ...fields });
 }
 
 /**
@@ -62,8 +62,8 @@ export function hookWorkItemCreationEach(props: Partial<WorkItemRecord> = {}): v
  * to the DB, and storing it in `this.workItem`
  * @param props - properties to set on the work item
  */
-export function hookWorkflowStepAndItemCreationEach(props: Partial<WorkItemRecord> = {}): void {
-  const workItem = buildWorkItem(_.pick(props, ['jobID', 'serviceID', 'status', 'workflowStepIndex']));
+export function hookWorkflowStepAndItemCreationEach(props: object = {}): void {
+  const workItem = buildWorkItem(_.pick(props, ['jobID', 'serviceID', 'status', 'workflowStepIndex', 'scrollID', 'stacCatalogLocation']));
   const workflowStep = buildWorkflowStep(_.pick(props, ['jobID', 'serviceID', 'stepIndex', 'workItemCount', 'operation']));
 
   workItem.jobID = workflowStep.jobID;
