@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { RequestValidationError } from './errors';
+import { mergeParameters } from './parameter-parsing';
 import * as urlUtil from './url';
 import HarmonyRequest from '../models/harmony-request';
 
@@ -44,13 +44,7 @@ function _redirect(req: HarmonyRequest): string[] {
   if (req.files || req.body) {
     // merge form parameters into the query on req so they get used
     // when building the redirect
-    const queryKeys = Object.keys(req.query);
-    const bodyKeys = Object.keys(req.body);
-    const duplicateKeys = queryKeys.filter((x) => bodyKeys.includes(x));
-    if (duplicateKeys.length) {
-      throw new RequestValidationError(`Duplicate keys "${duplicateKeys}" found from request body and query string!`);
-    }
-    req.query = { ...req.query, ...req.body };
+    mergeParameters(req);
   }
 
   return ['redirect', urlUtil.getRequestUrl(req)];
