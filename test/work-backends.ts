@@ -171,6 +171,16 @@ describe('Work Backends', function () {
             (jobLink) => jobLink.href === expectedLink,
           ).length).to.equal(1);
         });
+
+        it('the job status is set to complete', async function () {
+          const updatedJob = await Job.byJobID(db, this.job.jobID);
+          expect(updatedJob.status === JobStatus.SUCCESSFUL);
+        });
+
+        it('the job progress is 100', async function () {
+          const updatedJob = await Job.byJobID(db, this.job.jobID);
+          expect(updatedJob.progress).to.equal(100);
+        });
       });
     });
   });
