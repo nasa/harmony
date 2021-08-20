@@ -1,9 +1,8 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { Job, JobRecord } from 'models/job';
+import { Job, JobRecord, JobStatus } from 'models/job';
 import { WorkItemRecord, WorkItemStatus, getWorkItemById } from 'models/work-item';
 import { v4 as uuid } from 'uuid';
-import { JobStatus } from 'tasks/service-wrapper/built/app/models/job';
 import { WorkflowStepRecord } from 'models/workflow-steps';
 import hookServersStartStop from './helpers/servers';
 import db from '../app/util/db';
