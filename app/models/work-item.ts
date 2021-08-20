@@ -2,7 +2,6 @@ import { subMinutes } from 'date-fns';
 import { IPagination } from 'knex-paginate';
 import _ from 'lodash';
 import db, { Transaction } from '../util/db';
-import DataOperation from './data-operation';
 import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
@@ -44,7 +43,7 @@ export interface WorkItemRecord {
   workflowStepIndex: number;
 
   // The operation to be performed by the service (not serialized)
-  operation?: DataOperation;
+  operation?: string;
 
   // The location of the resulting STAC catalog(s) (not serialized)
   results?: string[];
@@ -79,8 +78,8 @@ export default class WorkItem extends Record implements WorkItemRecord {
   // The corresponding workflow step ID for the work item - used to look up the operation
   workflowStepIndex: number;
 
-  // The operation to be performed by the service (not serialized)
-  operation?: DataOperation;
+  // The string representation of the data operation to be performed by the service (not serialized)
+  operation?: string;
 
   // The location of the resulting STAC catalog(s) (not serialized)
   results?: string[];

@@ -1,7 +1,6 @@
 import { subMinutes } from 'date-fns';
 import _ from 'lodash';
 import { Transaction } from '../util/db';
-import DataOperation from './data-operation';
 import { Job, JobStatus } from './job';
 import Record from './record';
 
@@ -26,7 +25,7 @@ export interface WorkflowStepRecord {
   workItemCount: number;
 
   // The operation to be performed by the service
-  operation: DataOperation;
+  operation: string;
 }
 
 /**
@@ -49,8 +48,8 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
   // the total number of work items for this step
   workItemCount: number;
 
-  // The operation to be performed by the service
-  operation: DataOperation;
+  // The operation to be performed by the service as a string
+  operation: string;
 }
 
 const tableFields = serializedFields.map((field) => `${WorkflowStep.table}.${field}`);

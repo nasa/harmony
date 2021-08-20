@@ -4,20 +4,16 @@ import { Job, JobRecord } from 'models/job';
 import { WorkItemRecord, WorkItemStatus, getWorkItemById } from 'models/work-item';
 import { v4 as uuid } from 'uuid';
 import { JobStatus } from 'tasks/service-wrapper/built/app/models/job';
-import { defaultContainerRegistry } from 'util/container-registry';
 import { WorkflowStepRecord } from 'models/workflow-steps';
-import DataOperation from 'models/data-operation';
 import hookServersStartStop from './helpers/servers';
 import db from '../app/util/db';
-import { hookJobCreation, hookJobCreationEach } from './helpers/jobs';
-import { hookWorkItemCreation, hookWorkItemCreationEach, hookWorkItemUpdate, hookWorkItemUpdateEach } from './helpers/work-items';
-import { hookWorkflowStepCreationEach } from './helpers/workflow-steps';
-import { parseSchemaFile } from './helpers/data-operation';
+import { hookJobCreationEach } from './helpers/jobs';
+import { hookGetWorkForService, hookWorkItemCreationEach, hookWorkItemUpdateEach, hookWorkflowStepAndItemCreationEach } from './helpers/work-items';
+import { hookWorkflowStepCreationEach, validOperation } from './helpers/workflow-steps';
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();
   const jobRecord = { jobID: requestId, requestId } as Partial<JobRecord>;
-  const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
   const service = 'harmonyservices/query-cmr';
 
   const workItemRecord = {
@@ -39,12 +35,26 @@ describe('Work Backends', function () {
   hookWorkItemCreationEach(workItemRecord);
 
   describe('getting a work item', function () {
-    describe('when a work item is not available', function () {
+    hookWorkflowStepAndItemCreationEach({ serviceID: 'theReadyService', status: WorkItemStatus.READY });
 
+    describe('when no work item is available for the service', function () {
+      hookGetWorkForService('noWorkService');
+      it('returns a 404', function () {
+        expect(this.res.status).to.equal(404);
+      });
     });
 
-    describe('when a work item is available', function () {
+    describe('when a work item is in the ready state for the service', function () {
+      hookGetWorkForService('theReadyService');
+      it('returns a 200', function () {
+        expect(this.res.status).to.equal(200);
+      });
+    });
 
+    describe('when a work item is in the running state for the service', function () {
+      describe('when the work item has stayed in the running state longer than the configured timeout', function () {
+
+      });
     });
   });
 

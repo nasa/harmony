@@ -3,9 +3,10 @@ import * as path from 'path';
 
 export const samplesDir = './test/resources/data-operation-samples';
 
-export const CURRENT_SCHEMA_VERSION = '0.10.0';
+export const CURRENT_SCHEMA_VERSION = '0.11.0';
 
 export const versions = [
+  '0.11.0',
   '0.10.0',
   '0.9.0',
   '0.8.0',

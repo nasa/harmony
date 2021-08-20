@@ -2,12 +2,17 @@ import { afterEach, beforeEach } from 'mocha';
 import WorkflowStep, { WorkflowStepRecord } from 'models/workflow-steps';
 import db from '../../app/util/db';
 import { truncateAll } from './db';
+import { parseSchemaFile } from './data-operation';
+import DataOperation from '../../app/models/data-operation';
+
+export const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json')).serialize('0.11.0');
 
 const exampleProps = {
   jobID: '1',
   serviceID: 'harmony-services/query-cmr:latest',
   stepIndex: 0,
   workItemCount: 10,
+  operation: validOperation,
 } as WorkflowStepRecord;
 
 /**
