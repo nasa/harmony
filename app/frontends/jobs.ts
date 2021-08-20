@@ -277,7 +277,7 @@ export async function getJobsForWorkflowUI(
       urlString() {
         const url = new URL(this.request);
         const path = url.pathname + url.search;
-        return path;
+        return truncateString(path, 80);
       },
       truncatedMessage() { return truncateString((this.message || ''), 40); },
     });
@@ -337,6 +337,7 @@ export async function getWorkItemsForWorkflowUI(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { jobID } = req.params;
+  const { checkJobStatus } = req.query;
   const badgeClasses = {};
   badgeClasses[WorkItemStatus.READY] = 'primary';
   badgeClasses[WorkItemStatus.CANCELED] = 'secondary';
@@ -345,7 +346,6 @@ export async function getWorkItemsForWorkflowUI(
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
   try {
     validateJobId(jobID);
-    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const query: JobQuery = { requestId: jobID };
     if (!req.context.isAdminAccess) {
       query.username = req.user;
@@ -355,6 +355,12 @@ export async function getWorkItemsForWorkflowUI(
       if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
         throw new NotFoundError();
       }
+      if (([JobStatus.SUCCESSFUL, JobStatus.CANCELED, JobStatus.FAILED].indexOf(job.status) > -1) && checkJobStatus === 'true') {
+        // tell the client that the job has finished
+        res.status(204).json({ status: job.status });
+        return;
+      }
+      const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
       const { workItems, pagination } = await getWorkItemsByJobId(db, job.jobID, page, limit, 'asc');
       const pageLinks = getPagingLinks(req, pagination);
       const nextPage = pageLinks.find((l) => l.rel === 'next');

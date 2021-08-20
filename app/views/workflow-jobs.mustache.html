@@ -56,10 +56,8 @@
                     <tr>
                         <th scope="row"><a href="jobs/{{jobID}}">{{jobID}}</a></th>
                         <td>
-                            <a class="btn btn-sm btn-outline-info" href='{{request}}' target='_blank'
-                                title="{{urlString}}" data-bs-toggle="tooltip" data-bs-placement="right">
-                                replay
-                            </a>
+                            <small><code title="{{request}}" data-bs-toggle="tooltip"
+                                data-bs-placement="right">{{urlString}}</code></small>
                         </td>
                         <td><span class="badge bg-{{badgeClass}}">{{status}}</span></td>
                         <td><small><code title="{{message}}" data-bs-toggle="tooltip"

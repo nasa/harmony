@@ -4,4 +4,4 @@ const page = document.getElementById('workflow-items-table-container').getAttrib
 const limit = document.getElementById('workflow-items-table-container').getAttribute('data-limit');
 const jobId = document.getElementById('workflow-items-table-container').getAttribute('data-job-id');
 
-(new WorkFlowItemsTable(jobId, page, limit)).startPolling();
+new WorkFlowItemsTable(jobId, page, limit);
