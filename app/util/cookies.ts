@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { RequestValidationError } from 'util/errors';
+import { RequestValidationError } from './errors';
 import * as urlUtil from './url';
 import HarmonyRequest from '../models/harmony-request';
 
