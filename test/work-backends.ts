@@ -150,12 +150,12 @@ describe('Work Backends', function () {
 
       hookWorkItemUpdateEach((r) => r.send(successfulWorkItemRecord));
 
-      xit('the work item status is set to successful', async function () {
+      it('the work item status is set to successful', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.SUCCESSFUL);
       });
       describe('and the work item is the last in the chain', async function () {
-        xit('the job updatedAt field is set to the current time', async function () {
+        it('the job updatedAt field is set to the current time', async function () {
           const updatedJob = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.updatedAt.valueOf()).to.greaterThan(this.job.updatedAt.valueOf());
         });
