@@ -8,13 +8,14 @@ import { WorkflowStepRecord } from 'models/workflow-steps';
 import hookServersStartStop from './helpers/servers';
 import db from '../app/util/db';
 import { hookJobCreationEach } from './helpers/jobs';
-import { hookGetWorkForService, hookWorkItemCreationEach, hookWorkItemUpdateEach, hookWorkflowStepAndItemCreationEach } from './helpers/work-items';
+import { hookGetWorkForService, hookWorkItemCreationEach, hookWorkItemUpdateEach, hookWorkflowStepAndItemCreationEach, hookWorkItemUpdate } from './helpers/work-items';
 import { hookWorkflowStepCreationEach, validOperation } from './helpers/workflow-steps';
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();
   const jobRecord = { jobID: requestId, requestId } as Partial<JobRecord>;
   const service = 'harmonyservices/query-cmr';
+  const expectedLink = 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc';
 
   const workItemRecord = {
     jobID: jobRecord.jobID,
@@ -144,11 +145,11 @@ describe('Work Backends', function () {
         ...workItemRecord,
         ...{
           status: WorkItemStatus.SUCCESSFUL,
-          results: [],
+          results: ['test/resources/worker-response-sample/catalog0.json'],
         },
       };
 
-      hookWorkItemUpdateEach((r) => r.send(successfulWorkItemRecord));
+      hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
 
       it('the work item status is set to successful', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
@@ -158,6 +159,12 @@ describe('Work Backends', function () {
         it('the job updatedAt field is set to the current time', async function () {
           const updatedJob = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.updatedAt.valueOf()).to.greaterThan(this.job.updatedAt.valueOf());
+        });
+        it('a link for the work results is added to the job', async function () {
+          const updatedJob = await Job.byJobID(db, this.job.jobID);
+          expect(updatedJob.links.filter(
+            (jobLink) => jobLink.href === expectedLink,
+          ).length).to.equal(1);
         });
       });
     });

@@ -1,0 +1,62 @@
+{
+  "stac_version": "1.0.0-beta.2",
+  "stac_extensions": [],
+  "id": "d8b1bc53-f310-4683-b8eb-6834c4c91ebf",
+  "type": "Feature",
+  "links": [],
+  "properties": {
+    "start_datetime": "2020-01-01T00:00:00.000Z",
+    "end_datetime": "2020-01-01T01:59:59.000Z"
+  },
+  "bbox": [
+    -180,
+    -90,
+    180,
+    90
+  ],
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          -180,
+          -90
+        ],
+        [
+          -180,
+          90
+        ],
+        [
+          180,
+          90
+        ],
+        [
+          180,
+          -90
+        ],
+        [
+          -180,
+          -90
+        ]
+      ]
+    ]
+  },
+  "assets": {
+    "data": {
+      "href": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc",
+      "title": "001_00_8f00ff_global.nc",
+      "type": "application/x-netcdf4",
+      "roles": [
+        "data"
+      ]
+    },
+    "data1": {
+      "href": "https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/001_00_7f00ff_global.tif",
+      "title": "001_00_7f00ff_global.tif",
+      "type": "image/tiff",
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}
