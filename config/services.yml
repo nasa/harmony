@@ -411,9 +411,8 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/podaac/concise
     collections:
-      - C1234088182-EEDTEST
-      - C1233800302-EEDTEST
-      - C1233860183-EEDTEST
+      - C1238658049-POCLOUD
+      - C1238570311-POCLOUD
     capabilities:
       output_formats:
         # Workaround for many-to-one support
