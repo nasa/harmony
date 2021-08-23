@@ -198,6 +198,56 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(this.res.status).to.be.lessThan(400);
       });
     });
+
+    describe('which contains both form and query parameter', function () {
+      const queryLocal = { ...query };
+      delete queryLocal.subset;
+      const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookPostRangesetRequest(
+        version,
+        collection,
+        variableName,
+        queryLocal,
+        queryParameterString,
+      );
+
+      it('passes the temporal range to the backend service', function () {
+        const { start, end } = this.service.operation.temporal;
+        expect(start).to.equal('2020-01-02T00:00:00.000Z');
+        expect(end).to.equal('2020-01-02T01:00:00.000Z');
+      });
+
+      it('identifies the correct granule based on time range', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.granules.length === 1);
+        expect(source.granules[0].id).to.equal('G1233800352-EEDTEST');
+      });
+
+      it('successfully queries CMR and accepts the request', function () {
+        expect(this.res.status).to.be.lessThan(400);
+      });
+    });
+
+    describe('which has a duplicate key from form and query parameter', function () {
+      const queryParameterString = 'subset=time%28%222020-01-02T00%3A00%3A00Z%22%3A%222020-01-02T01%3A00%3A00Z%22%29';
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookPostRangesetRequest(
+        version,
+        collection,
+        variableName,
+        query,
+        queryParameterString,
+      );
+
+      it('propagates the error message into the response', function () {
+        expect(this.res.text).to.include('Duplicate keys');
+      });
+
+      it('responds with an HTTP 400 "Bad Request" status code', function () {
+        expect(this.res.status).to.equal(400);
+      });
+    });
   });
 
   describe('when passed a blank outputCrs', function () {

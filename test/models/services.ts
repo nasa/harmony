@@ -2,6 +2,9 @@ import { expect } from 'chai';
 import { describe, it, beforeEach } from 'mocha';
 import { stub } from 'sinon';
 import { getMaxSynchronousGranules } from 'models/services/base-service';
+import StubService from 'test/helpers/stub-service';
+import { hookRangesetRequest } from 'test/helpers/ogc-api-coverages';
+import hookServersStartStop from 'test/helpers/servers';
 import DataOperation from '../../app/models/data-operation';
 import { chooseServiceConfig, buildService } from '../../app/models/services';
 import env from '../../app/util/env';
@@ -469,6 +472,39 @@ describe('granule limits', function () {
   describe('when the service configures a granule limit for sync requests to be zero', function () {
     it('returns zero for the limit', function () {
       expect(getMaxSynchronousGranules({ maximum_sync_granules: 0 })).to.equal(0);
+    });
+  });
+});
+
+describe('Services by association', function () {
+  const conversionCollection = 'C1233800302-EEDTEST';
+  const reprojectCollection = 'C1234088182-EEDTEST';
+  const tiff = 'image/tiff';
+  const zarr = 'application/x-zarr';
+  const granuleId = 'G1233800352-EEDTEST';
+  const granulQuery = { granuleId };
+  const reprojQuery = { outputCrs: 'EPSG:4326' };
+  const version = '1.0.0';
+
+  hookServersStartStop();
+
+  describe('when choosing a service', function () {
+    const headers = { accept: `${zarr}, ${tiff}` };
+
+    describe('when a matching service is provided through a UMM-S association', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, conversionCollection, 'all', { headers, query: granulQuery });
+      it('uses the backend service from the association', function () {
+        expect(this.service.name).to.equal('harmony/netcdf-to-zarr');
+      });
+    });
+
+    describe('when matching services are provided directly and through associations', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookRangesetRequest(version, reprojectCollection, 'all', { headers, query: reprojQuery });
+      it('it uses the first matching service', function () {
+        expect(this.service.name).to.equal('harmony/service-example');
+      });
     });
   });
 });

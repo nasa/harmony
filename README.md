@@ -47,7 +47,16 @@ developing the Harmony code itself, the following steps are enough to start a lo
 ```bash
 git clone https://github.com/nasa/harmony.git
 ```
-3. Run the bootstrap script and answer the prompts with your EDL application credentials
+
+3. Install the Argo CLI
+```bash
+curl -f -sSL -o argo https://github.com/argoproj/argo-workflows/releases/download/v2.9.5/argo-darwin-amd64
+chmod +x argo
+mv ./argo /usr/local/bin/argo
+argo version
+```
+
+4. Run the bootstrap script and answer the prompts with your EDL application credentials
 ```bash
 cd harmony && ./bin/bootstrap-harmony
 ```
@@ -503,33 +512,10 @@ If you are a developer on another team and would like to submit a Pull
 Request to this repo:
 
 1. Create a fork of the harmony repository.
-2. In the fork repo's permissions, add the `edc_snyk_user`
-   with `Read` access
-3. In the `#harmony-service-providers` Slack channel, ask a Harmony
-   team member to import your fork repo into Snyk (see below).
-4. When ready, submit a PR from the fork's branch back to the harmony
+2. When ready, submit a PR from the fork's branch back to the harmony
    master branch. Ideally name the PR with a Jira ticket name (e.g.,
-   HARMONY-314)
-5. The PR's 'build' tab should not show errors
-
-### Importing a Fork Repo Into Snyk
-
-To run Snyk on a fork of the repo (see above), the developer's
-fork needs to be imported into Snyk:
-
-1. Open [Snyk](https://app.snyk.io/org/esdis-cumulus-core-gibs-cmr-etc./reports/)
-2. Click [Integrations](https://app.snyk.io/org/esdis-cumulus-core-gibs-cmr-etc./integrations)
-   on the navbar at the top of the page
-3. Click the integration type based on where the repo is hosted. E.g.:
-   Bitbucket Server, GitHub, etc.
-4. Search for 'harmony' using the search box
-5. Click the checkbox on the developer's newly-created fork repo
-6. Click the 'Import selected repositories' button
-
-This import should be done before the developer submits a PR. If it
-hasn't, the PR 'build' will fail and the PR will be blocked. In this
-situation, the project can still be imported into Snyk, but then the
-PR will need to be declined and resubmitted.
+   HARMONY-314).
+3. The PR's 'build' tab should not show errors.
 
 ## Additional Resources
 

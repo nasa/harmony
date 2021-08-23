@@ -1,0 +1,22 @@
+GET /access-control/permissions?user_type=guest&concept_id=C1233800302-EEDTEST
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-length: 32
+connection: close
+date: Mon, 19 Jul 2021 17:06:26 GMT
+cmr-request-id: e0022387-4cae-41d5-807e-e7184fefea10
+x-request-id: e0022387-4cae-41d5-807e-e7184fefea10
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+strict-transport-security: max-age=31536000
+x-cache: Miss from cloudfront
+via: 1.1 55e412eec3baebe47cd72947531b5c5d.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: 8ZfU-sjoy2ULdOBnyhLRauvHajp4zdM44FmYHoz78MwVQIWjO8KpNA==
+
+{"C1233800302-EEDTEST":["read"]}

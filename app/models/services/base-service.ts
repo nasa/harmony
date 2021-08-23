@@ -27,6 +27,7 @@ export interface ServiceConfig<ServiceParamType> {
     name: string;
     params?: ServiceParamType;
   };
+  umm_s?: string[];
   collections?: string[];
   capabilities?: ServiceCapabilities;
   concurrency?: number;
@@ -218,6 +219,7 @@ export default abstract class BaseService<ServiceParamType> {
       isAsync: !this.isSynchronous,
       numInputGranules: this.numInputGranules,
       message: this.operation.message,
+      collectionIds: this.operation.collectionIds,
     });
     job.addStagingBucketLink(stagingLocation);
     return job;

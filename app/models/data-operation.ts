@@ -245,6 +245,16 @@ export default class DataOperation {
   }
 
   /**
+   * Returns the collections used in the data operation as
+   * a list of strings
+   *
+   * @returns string[] of collections
+   */
+  get collectionIds(): string[] {
+    return this.model.sources.map((s: DataSource) => s.collection);
+  }
+
+  /**
    * Adds a new service data source to the list of those to operate on
    *
    * @param collection - The CMR ID of the collection being operated on

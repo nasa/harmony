@@ -43,6 +43,10 @@ https://cmr.earthdata.nasa.gov:
       - C1214354031-ASF
       - C1808440897-ASF
       - C2011599335-ASF
+      - C1239324659-POCUMULUS
+      - C1239379702-POCLOUD
+      - C1238618571-POCUMULUS
+      - C1238621141-POCLOUD
     capabilities:
       subsetting:
         shape: true
@@ -210,6 +214,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/podaac/l2-subsetter
+    umm_s:
+      - S1962070864-POCLOUD
     collections:
       - C1940473819-POCLOUD
       - C1940475563-POCLOUD
@@ -266,12 +272,10 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1215802948-GES_DISC
       - C1225808241-GES_DISC
       - C1221131370-GES_DISC
-      - C1225808238-GES_DISC
       - C1225808237-GES_DISC
       - C1216382991-GES_DISC
       - C1224264723-GES_DISC
       - C1236380582-GES_DISC
-      - C1215802944-GES_DISC
       - C1215726323-GES_DISC
       - C1215802935-GES_DISC
       - C1215802938-GES_DISC
@@ -296,7 +300,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1215139640-GES_DISC
       - C1215802932-GES_DISC
       - C1221312185-GES_DISC
-      - C1234724470-POCLOUD
     capabilities:
       subsetting:
         shape: true
@@ -353,6 +356,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/podaac/l2-subsetter
+    umm_s:
+      - S1234899453-POCLOUD
     collections:
       - C1234208436-POCLOUD
       - C1234208437-POCLOUD
@@ -418,7 +423,7 @@ https://cmr.uat.earthdata.nasa.gov:
         # Workaround for many-to-one support
         - application/x-netcdf4.merge
 
-  - name: ds/swot-reproject
+  - name: sds/swot-reproject
     data_operation_version: '0.9.0'
     batch_size: 1
     type:
@@ -433,8 +438,12 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/swot-reproject
+    umm_s:
+      - S1237974711-EEDTEST
     collections:
-      - C1233860183-EEDTEST
+      # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
+      # to prevent re-adding. This is needed for tests related to HARMONY-875
+      # - C1233860183-EEDTEST
       - C1233800302-EEDTEST
       - C1221286860-NSIDC_TS1
       - C1226288788-EDF_DEV07
@@ -454,6 +463,7 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: true
 
   - name: sds/variable-subsetter
+    # The Variable Subsetter provides _only_ variable subsetting
     data_operation_version: '0.9.0'
     type:
       <<: *default-argo-config
@@ -467,14 +477,44 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/variable-subsetter
+    umm_s:
+      - S1237976118-EEDTEST
     collections:
       - C1234714691-EEDTEST  # ATL03 UAT
       - C1234714698-EEDTEST  # ATL08 UAT
+    capabilities:
+      subsetting:
+        bbox: false
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+
+  - name: sds/HOSS
+    # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
+    data_operation_version: '0.9.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: var-subsetter
+        template_type: chaining
+        image: !Env ${VAR_SUBSETTER_IMAGE}
+        image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/sds/HOSS
+    umm_s:
+      - S1240682712-EEDTEST
+    collections:
       - C1238392622-EEDTEST  # RSSMIF16D test collection UAT
       - C1222931739-GHRC_CLOUD  # RSSMIF16D UAT
       - C1238621141-POCLOUD # GHRSST Level 4 MUR Global Foundation Sea Surface Temperature Analysis (v4.1)
+
     capabilities:
       subsetting:
+        bbox: true
         variable: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
@@ -494,6 +534,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/maskfill
+    umm_s:
+      - S1240151795-EEDTEST
     collections:
       - C1240150677-EEDTEST  # SPL4CMDL test collection
     capabilities:
@@ -617,10 +659,14 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
+    umm_s:
+      - S1237980031-EEDTEST # Just NetCDF-to-Zarr
+      - S1240999847-EEDTEST # NetCDF-to-Zarr + swotrepr
     collections:
       - C1234088182-EEDTEST
-      - C1233800302-EEDTEST
-      - C1233860183-EEDTEST
+      # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
+      # to prevent re-adding. This is needed for tests related to HARMONY-875
+      # - C1233800302-EEDTEST
       - C1234410736-POCLOUD
       - C1234082763-POCLOUD
       - C1234071416-POCLOUD
@@ -722,8 +768,9 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/swot-repr-netcdf-to-zarr
+    umm_s:
+      - S1240999847-EEDTEST
     collections:
-      - C1233860183-EEDTEST
       - C1233800302-EEDTEST
       - C1234724470-POCLOUD
     maximum_sync_granules: 0
