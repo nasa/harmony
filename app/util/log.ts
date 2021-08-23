@@ -37,7 +37,6 @@ function createJsonLogger(): winston.Logger {
       winston.format.timestamp(),
       envNameFormat(),
       winston.format.json(),
-      urlAndMessageBasedFilter(),
     ),
     transports: [
       new winston.transports.Console({ level: env.logLevel }),
