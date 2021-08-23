@@ -1,5 +1,5 @@
 import { Router, json } from 'express';
-import { createWorkItem, getWork, updateWorkItem } from 'backends/workflow-orchestration';
+import { getWork, updateWorkItem } from '../backends/workflow-orchestration';
 import { responseHandler } from '../backends/service-response';
 import argoResponsehandler from '../backends/argo-response';
 import log from '../util/log';
@@ -17,7 +17,6 @@ export default function router(): Router {
   }));
   result.post('/:requestId/response', responseHandler);
   result.post('/:requestId/argo-response', argoResponsehandler);
-  result.post('/work', createWorkItem);
   result.get('/work', getWork);
   result.put('/work/:id', updateWorkItem);
 

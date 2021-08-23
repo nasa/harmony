@@ -44,32 +44,6 @@ export async function getWork(
 }
 
 /**
- * Update a work item from a service response - TODO route just for test purposes can
- * delete before merging in HARMONY-804 branch
- *
- * @param req - The request sent by the client
- * @param res - The response to send to the client
- * @returns Resolves when the request is complete
- */
-export async function createWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
-  const { serviceID, stacCatalogLocation, jobID, scrollID, workflowStepIndex } = req.body;
-  req.context.logger.info(`Creating work item for jobID ${jobID}, service ${serviceID}, ${stacCatalogLocation}`);
-  let workItem;
-  await db.transaction(async (tx) => {
-    workItem = new WorkItem({
-      jobID,
-      workflowStepIndex,
-      scrollID,
-      serviceID,
-      stacCatalogLocation,
-      status: WorkItemStatus.READY,
-    });
-    await workItem.save(tx);
-  });
-  res.send(workItem);
-}
-
-/**
  * Add links to the Job for the WorkItem and save them to the database.
  *
  * @param tx - The database transaction
