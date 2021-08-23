@@ -263,23 +263,21 @@ export async function getJobsForWorkflowUI(
     const pageLinks = getPagingLinks(req, pagination);
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
-    const pageLinkHtml = (link, title): string => (
-      `<li class="page-item ${link ? '' : 'disabled'}">
-        <a class="page-link" href="${link ? link.href : ''}" title="${link ? link.title : ''}">${title}</a>
-      </li>`
-    );
     setPagingHeaders(res, pagination);
     res.render('workflow-jobs', {
       jobs,
-      nextPageLi: pageLinkHtml(nextPage, 'next'),
-      previousPageLi: pageLinkHtml(previousPage, 'previous'),
-      badgeClass() { return badgeClasses[this.status]; },
-      urlString() {
+      jobBadge() { return badgeClasses[this.status]; },
+      jobUrl() {
         const url = new URL(this.request);
         const path = url.pathname + url.search;
-        return truncateString(path, 80);
+        return path;
       },
-      truncatedMessage() { return truncateString((this.message || ''), 40); },
+      links: [
+        { ...previousPage, linkTitle: 'previous' },
+        { ...nextPage, linkTitle: 'next' },
+      ],
+      linkDisabled() { return (this.href ? '' : 'disabled'); },
+      linkHref() { return (this.href || ''); },
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -365,25 +363,20 @@ export async function getWorkItemsForWorkflowUI(
       const pageLinks = getPagingLinks(req, pagination);
       const nextPage = pageLinks.find((l) => l.rel === 'next');
       const previousPage = pageLinks.find((l) => l.rel === 'prev');
-      const pageLinkHtml = (link, title): string => (
-        `<li class="page-item ${link ? '' : 'disabled'}">
-          <a class="page-link" href="${link ? link.href.replace('/table', '') : ''}" title="${link ? link.title : ''}">${title}</a>
-        </li>`
-      );
       setPagingHeaders(res, pagination);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
       res.render('workflow-items-table', {
-        job,
         workItems,
-        workflowSteps,
-        nextPageLi: pageLinkHtml(nextPage, 'next'),
-        previousPageLi: pageLinkHtml(previousPage, 'previous'),
-        updatedAtString() { return (new Date(this.updatedAt).toISOString()); },
-        createdAtString() { return (new Date(this.createdAt).toISOString()); },
-        badgeClass() { return badgeClasses[this.status]; },
-        stepName() {
-          return workflowSteps[this.workflowStepIndex - 1].serviceID;
-        },
+        workflowItemUpdated() { return (new Date(this.updatedAt).toISOString()); },
+        workflowItemCreated() { return (new Date(this.createdAt).toISOString()); },
+        workflowItemBadge() { return badgeClasses[this.status]; },
+        workflowItemStep() { return workflowSteps[this.workflowStepIndex - 1].serviceID; },
+        links: [
+          { ...previousPage, linkTitle: 'previous' },
+          { ...nextPage, linkTitle: 'next' },
+        ],
+        linkDisabled() { return (this.href ? '' : 'disabled'); },
+        linkHref() { return (this.href ? this.href.replace('/table', '') : ''); },
       });
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);

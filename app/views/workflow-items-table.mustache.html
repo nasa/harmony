@@ -13,18 +13,21 @@
         {{#workItems}}
         <tr>
             <th scope="row">{{workflowStepIndex}}</th>
-            <td><small><code>{{stepName}}</code></small></td>
+            <td><small><code>{{workflowItemStep}}</code></small></td>
             <td>{{id}}</td>
-            <td><span class="badge bg-{{badgeClass}}">{{status}}</span></td>
-            <td>{{createdAtString}}</td>
-            <td>{{updatedAtString}}</td>
+            <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
+            <td>{{workflowItemCreated}}</td>
+            <td>{{workflowItemUpdated}}</td>
         </tr>
         {{/workItems}}
     </tbody>
 </table>
 <nav aria-label="Page navigation" class="d-flex flex-column align-items-center">
     <ul class="pagination px-0 mx-auto">
-        {{{previousPageLi}}}
-        {{{nextPageLi}}}
+        {{#links}}
+        <li class="page-item {{linkDisabled}}">
+            <a class="page-link" href="{{linkHref}}" title="{{linkTitle}}">{{linkTitle}}</a>
+        </li>
+        {{/links}}
     </ul>
 </nav>
