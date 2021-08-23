@@ -6,7 +6,6 @@ import cancelAndSaveJob from 'util/job';
 import JobLink from 'models/job-link';
 import { getWorkItemsByJobId, WorkItemStatus } from 'models/work-item';
 import { getWorkflowStepsByJobId } from 'models/workflow-steps';
-import { truncateString } from 'util/string';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink, Link } from '../util/links';
