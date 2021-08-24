@@ -37,7 +37,7 @@ describe('WorkReaper-related functions', function () {
     MockDate.reset();
 
     MockDate.set(newDate); // make the below a "recent/new" job
-    const successfulJob = buildJob({ status: JobStatus.CANCELED });
+    const successfulJob = buildJob({ status: JobStatus.SUCCESSFUL });
     await successfulJob.save(this.trx);
     const successfulItem1 = buildWorkItem({ jobID: successfulJob.jobID });
     await successfulItem1.save(this.trx);
