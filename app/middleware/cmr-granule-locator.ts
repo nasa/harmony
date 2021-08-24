@@ -1,7 +1,7 @@
 import { NextFunction } from 'express';
-import { keysToLowerCase }from '../util/object';
 import { ServerResponse } from 'http';
 import _ from 'lodash';
+import { keysToLowerCase } from '../util/object';
 import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
 import DataOperation, { HarmonyGranule } from '../models/data-operation';
