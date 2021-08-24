@@ -58,9 +58,10 @@ export function hookWorkItemCreationEach(props: Partial<WorkItemRecord> = {}): v
 }
 
 /**
- * Adds beforeEach / afterEach hooks to create a work item with the given properties, saving it
- * to the DB, and storing it in `this.workItem`
- * @param props - properties to set on the work item
+ * Adds beforeEach / afterEach hooks to create a work item and workflow step
+ * with the given properties, saving to the DB, and storing the item in `this.workItem`
+ * and the step in `this.workflowStep`
+ * @param props - properties to set on the work item and workflow step
  */
 export function hookWorkflowStepAndItemCreationEach(props: object = {}): void {
   const workItem = buildWorkItem(_.pick(props, ['jobID', 'serviceID', 'status', 'workflowStepIndex', 'scrollID', 'stacCatalogLocation']));
@@ -75,9 +76,10 @@ export function hookWorkflowStepAndItemCreationEach(props: object = {}): void {
 }
 
 /**
- * Adds beforeEach / afterEach hooks to create a work item with the given properties, saving it
- * to the DB, and storing it in `this.workItem`
- * @param props - properties to set on the work item
+ * Adds before / after hooks to create a work item and workflow step
+ * with the given properties, saving to the DB, and storing the item in `this.workItem`
+ * and the step in `this.workflowStep`
+ * @param props - properties to set on the work item and workflow step
  */
 export function hookWorkflowStepAndItemCreation(props: object = {}): void {
   const workItem = buildWorkItem(_.pick(props, ['jobID', 'serviceID', 'status', 'workflowStepIndex', 'scrollID', 'stacCatalogLocation']));
