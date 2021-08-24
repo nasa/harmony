@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
-import itReturnsTheExpectedStacResponse from 'test/helpers/stac-item';
-import { buildJob } from 'test/helpers/jobs';
+import itReturnsTheExpectedStacResponse from '../helpers/stac-item';
+import { buildJob } from '../helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacItem, hookStacItem } from '../helpers/stac';

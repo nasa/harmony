@@ -1,7 +1,7 @@
 import { Response, Request } from 'express';
 import _ from 'lodash';
 import { Logger } from 'winston';
-import JobLink from 'models/job-link';
+import JobLink from '../models/job-link';
 import log from '../util/log';
 import { ServerError, RequestValidationError } from '../util/errors';
 import db from '../util/db';

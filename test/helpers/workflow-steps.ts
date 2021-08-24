@@ -1,5 +1,5 @@
 import { afterEach, beforeEach } from 'mocha';
-import WorkflowStep, { WorkflowStepRecord } from 'models/workflow-steps';
+import WorkflowStep, { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import db from '../../app/util/db';
 import { truncateAll } from './db';
 import { parseSchemaFile } from './data-operation';

@@ -1,4 +1,4 @@
-import { TemporalRange } from 'models/data-operation';
+import { TemporalRange } from './models/data-operation';
 
 const rangeSeparator = ':';
 const unbounded = '*';

@@ -1,8 +1,8 @@
 import { Application } from 'express';
 import { afterEach, beforeEach } from 'mocha';
-import WorkItem, { WorkItemRecord, WorkItemStatus } from 'models/work-item';
 import request, { Test } from 'supertest';
 import _ from 'lodash';
+import WorkItem, { WorkItemRecord, WorkItemStatus } from '../../app/models/work-item';
 import db from '../../app/util/db';
 import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';

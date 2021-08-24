@@ -1,5 +1,5 @@
 import { pick } from 'lodash';
-import JobLink from 'models/job-link';
+import JobLink from '../models/job-link';
 
 export interface SerializableCatalog {
   id: string;

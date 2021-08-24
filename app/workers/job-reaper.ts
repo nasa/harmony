@@ -1,6 +1,6 @@
-import { Job } from 'models/job';
 import { Logger } from 'winston';
-import { getArchivedWorkflowsForJob, getWorkflowsForJob, Workflow } from 'util/workflows';
+import { Job } from '../models/job';
+import { getArchivedWorkflowsForJob, getWorkflowsForJob, Workflow } from '../util/workflows';
 import { Worker } from './worker';
 import db from '../util/db';
 import env from '../util/env';

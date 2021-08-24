@@ -2,14 +2,6 @@
   "compilerOptions": {
       "module": "commonjs",
       "baseUrl": ".",
-      "paths": {
-        "frontends/*": ["app/frontends/*"],
-        "backends/*": ["app/backends/*"],
-        "middleware/*": ["app/middleware/*"],
-        "models/*": ["app/models/*"],
-        "routers/*": ["app/routers/*"],
-        "util/*": ["app/util/*"]
-      },
       "moduleResolution": "node",
       "target": "ES2018",
       "esModuleInterop": true,

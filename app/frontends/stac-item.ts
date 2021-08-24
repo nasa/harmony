@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import { pick } from 'lodash';
 
-import JobLink from 'models/job-link';
+import JobLink from '../models/job-link';
 
 export class HarmonyItem {
   id: string;

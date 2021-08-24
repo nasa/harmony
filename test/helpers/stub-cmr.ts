@@ -1,6 +1,6 @@
 import { before, after } from 'mocha';
 import * as sinon from 'sinon';
-import * as cmr from 'util/cmr';
+import * as cmr from '../../app/util/cmr';
 
 type CmrMethodName = 'cmrGetBase' | 'fetchPost' | 'cmrPostBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'belongsToGroup' | 'cmrApiConfig';
 

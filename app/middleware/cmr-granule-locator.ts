@@ -1,5 +1,5 @@
 import { NextFunction } from 'express';
-import { keysToLowerCase } from 'util/object';
+import { keysToLowerCase }from '../util/object';
 import { ServerResponse } from 'http';
 import _ from 'lodash';
 import * as cmr from '../util/cmr';

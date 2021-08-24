@@ -1,8 +1,8 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import DataOperation from 'models/data-operation';
-import { parseSchemaFile } from 'test/helpers/data-operation';
-import { batchOperations, operationGranuleCount } from 'util/batch';
+import { parseSchemaFile } from '../helpers/data-operation';
+import DataOperation from '../../app/models/data-operation';
+import { batchOperations, operationGranuleCount } from '../../app/util/batch';
 
 const model = parseSchemaFile('multiple-collections-operation.json');
 const operation: DataOperation = new DataOperation(model);

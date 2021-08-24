@@ -2,7 +2,7 @@ import axios from 'axios';
 import simpleOAuth2, { OAuthClient, Token } from 'simple-oauth2';
 import { RequestHandler, NextFunction } from 'express';
 
-import { cookieOptions } from 'util/cookies';
+import { cookieOptions }from '../util/cookies';
 import { listToText } from '../util/string';
 import { ForbiddenError } from '../util/errors';
 import { setCookiesForEdl } from '../util/cookies';

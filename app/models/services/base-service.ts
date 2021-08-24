@@ -1,8 +1,8 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import { v4 as uuid } from 'uuid';
-import WorkItem, { WorkItemStatus } from 'models/work-item';
-import WorkflowStep from 'models/workflow-steps';
+import WorkItem, { WorkItemStatus } from '../work-item';
+import WorkflowStep from '../workflow-steps';
 import InvocationResult from './invocation-result';
 import { Job, JobStatus } from '../job';
 import DataOperation from '../data-operation';

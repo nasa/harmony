@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import boxStringsToBox from 'util/bounding-box';
+import boxStringsToBox from '../../app/util/bounding-box';
 
 describe('util/bounding-box', function () {
   describe('boxStringsToBox', function () {

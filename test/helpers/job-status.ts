@@ -1,7 +1,7 @@
 import { it } from 'mocha';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { Job } from 'models/job';
+import { Job } from '../../app/models/job';
 import { hookUrl } from './hooks';
 import env from '../../app/util/env';
 import { S3ObjectStore } from '../../app/util/object-store';

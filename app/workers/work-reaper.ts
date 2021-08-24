@@ -1,8 +1,8 @@
-import { JobStatus } from 'models/job';
 import { Logger } from 'winston';
-import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from 'models/work-item';
-import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from 'models/workflow-steps';
-import env from 'util/env';
+import { JobStatus } from '../models/job';
+import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from '../models/work-item';
+import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from '../models/workflow-steps';
+import env from '../util/env';
 import { Worker } from './worker';
 import db from '../util/db';
 import sleep from '../util/sleep';
