@@ -1,6 +1,6 @@
 # Harmony
 
-Services.  Together.
+Services. Together.
 
 Harmony has two fundamental goals in life:
 1. **Services** - Increase usage and ease of use of EOSDIS' data, especially focusing on opportunities made possible now that data from multiple DAACs reside in AWS.  Users should be able to work seamlessly across data from different DAACs in ways previously unachievable.
