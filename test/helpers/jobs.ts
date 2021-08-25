@@ -142,6 +142,26 @@ export function adminJobListing(app: Application, query: object = {}): Test {
 }
 
 /**
+ * Makes a request to view the workflow UI jobs endpoint
+ * @param app - The express application (typically this.frontend)
+ * @param query - Mapping of query param names to values
+ * @returns The response
+ */
+export function workflowUIJobs(app: Application, query: object = {}): Test {
+  return request(app).get('/workflow-ui/jobs').query(query);
+}
+
+/**
+ * Makes an admin request to view the workflow UI jobs endpoint
+ * @param app - The express application (typically this.frontend)
+ * @param query - Mapping of query param names to values
+ * @returns The response
+ */
+export function adminWorkflowUIJobs(app: Application, query: object = {}): Test {
+  return request(app).get('/admin/workflow-ui/jobs').query(query);
+}
+
+/**
  * Navigates to the job status route as the given user
  *
  * @param app - The express application (typically this.frontend)
@@ -208,6 +228,8 @@ export function adminCancelJobWithGET(app: Express.Application, { jobID }: Job):
 
 export const hookJobListing = hookRequest.bind(this, jobListing);
 export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);
+export const hookWorkflowUIJobs = hookRequest.bind(this, workflowUIJobs);
+export const hookAdminWorkflowUIJobs = hookRequest.bind(this, adminWorkflowUIJobs);
 export const hookJobStatus = hookRequest.bind(this, jobStatus);
 export const hookAdminJobStatus = hookRequest.bind(this, adminJobStatus);
 export const hookCancelJob = hookRequest.bind(this, cancelJob);
