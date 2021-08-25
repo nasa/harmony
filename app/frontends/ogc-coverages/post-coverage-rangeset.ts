@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { mergeParameters } from 'util/parameter-parsing';
+import { mergeParameters } from '../../util/parameter-parsing';
 import getCoverageRangeset from './get-coverage-rangeset';
 import HarmonyRequest from '../../models/harmony-request';
 
