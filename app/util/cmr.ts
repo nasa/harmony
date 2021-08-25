@@ -1,16 +1,13 @@
 import FormData from 'form-data';
-import fs from 'fs';
+import * as fs from 'fs';
 import { get } from 'lodash';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
-import * as util from 'util';
 import { CmrError } from './errors';
 import { objectStoreForProtocol } from './object-store';
 import logger from './log';
 
 import env = require('./env');
-
-const unlink = util.promisify(fs.unlink);
 
 const clientIdHeader = {
   'Client-id': `${env.harmonyClientId}`,
@@ -310,7 +307,7 @@ export async function cmrPostBase(
     return module.exports.fetchPost(path, formData, headers);
   } finally {
     if (shapefile) {
-      unlink(shapefile);
+      await fs.promises.unlink(shapefile);
     }
   }
 }

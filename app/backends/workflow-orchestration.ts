@@ -1,5 +1,6 @@
 import { NextFunction, Response } from 'express';
 import { Logger } from 'winston';
+import { promises as fs } from 'fs';
 import db, { Transaction } from '../util/db';
 import env from '../util/env';
 import { readCatalogItems } from '../util/stac';
@@ -8,7 +9,6 @@ import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
 import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from '../models/work-item';
 import { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
-import { rmdir } from '../util/file';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
@@ -89,7 +89,7 @@ async function _handleWorkItemResults(
  */
 async function _cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<void> {
   try {
-    await rmdir(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
+    await fs.rmdir(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
   } catch (e) {
     logger.warn(`Unable to clean up temporary files for ${jobID}`);
     logger.warn(e);
