@@ -122,9 +122,6 @@ describe('Workflow UI jobs route', function () {
       describe('when the user is part of the admin group', function () {
         hookAdminWorkflowUIJobs({ username: 'adam', limit: 100 });
         it('returns jobs for all users', async function () {
-          // console.log(this.res.text);
-          // const jobs = (await Job.queryAll(this.trx, {}, false, 1, 1000)).data;
-          // expect(JSON.stringify(jobs)).to.equal('');
           const listing = this.res.text;
           [woodyJob1.request, woodyJob2.request, woodySyncJob.request, buzzJob1.request]
             .forEach((req) => expect(listing).to.contain(mustache.render('{{req}}', { req })));
