@@ -17,6 +17,8 @@ fi
 
 for file in tasks/service-wrapper/config/*.yaml
 do
-  echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
-  envsubst < $file | kubectl apply -f - -n argo
+  if [[ ! "$file" == "swot-repr-wrapper.yml" ]]; then
+    echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
+    envsubst < $file | kubectl apply -f - -n argo
+  fi
 done

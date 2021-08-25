@@ -11,22 +11,40 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 
 ## Table of Contents
 
-1. [Minimum System Requirements](#Minimum-System-Requirements)
-2. [Quick Start](#Quick-Start)
-3. [Development Prerequisites](#Development-Prerequisites)
-    1. [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement)
-    2. [Software Requirements](#Software-Requirements)
-4. [Running Harmony](#Running-Harmony)
-    1. [Set Up Environment Variables](#Set-Up-Environment-Variables)
-    2. [Run Tests](#Run-Tests)
-    3. [Set Up A Database](#Set-Up-A-Database)
-    4. [Set Up and Run Argo, Localstack](#Set-Up-and-Run-Argo,-Localstack)
-    5. [Add A Service Backend](#Add-A-Service-Backend)
-    6. [Run Harmony](#Run-Harmony)
-    7. [Connect A Client](#Connect-A-Client)
-5. [Local Development Of Workflows Using Visual Studio Code](#Local-Development-Of-Workflows-Using-Visual-Studio-Code)
-6. [Contributing to Harmony](#Contributing-to-Harmony)
-7. [Additional Resources](#Additional-Resources)
+- [Harmony](#harmony)
+  - [Table of Contents](#table-of-contents)
+  - [Minimum System Requirements](#minimum-system-requirements)
+  - [Quick Start](#quick-start)
+    - [Updating the Local Harmony Instance](#updating-the-local-harmony-instance)
+    - [Reloading the Services Configuration](#reloading-the-services-configuration)
+    - [Developing Services for Harmony Turbo](#developing-services-for-harmony-turbo)
+  - [Development Prerequisites](#development-prerequisites)
+    - [Earthdata Login Application Requirement](#earthdata-login-application-requirement)
+    - [Software Requirements](#software-requirements)
+  - [Running Harmony](#running-harmony)
+    - [Set up Environment](#set-up-environment)
+    - [Set Up Environment Variables](#set-up-environment-variables)
+      - [Advanced Configuration](#advanced-configuration)
+    - [Run Tests](#run-tests)
+      - [Test Fixtures](#test-fixtures)
+    - [Set Up A Database](#set-up-a-database)
+    - [Set Up and Run Argo, Localstack](#set-up-and-run-argo-localstack)
+      - [Prerequisites](#prerequisites)
+      - [Installing and running Argo and Localstack on Kubernetes](#installing-and-running-argo-and-localstack-on-kubernetes)
+      - [Deleting applications and stopping Kubernetes](#deleting-applications-and-stopping-kubernetes)
+      - [(minikube only) Configuring the callback URL for backend services](#minikube-only-configuring-the-callback-url-for-backend-services)
+    - [Add A Service Backend](#add-a-service-backend)
+    - [Run Harmony](#run-harmony)
+    - [Connect A Client](#connect-a-client)
+  - [Building and Publishing the Harmony Docker Image](#building-and-publishing-the-harmony-docker-image)
+  - [Local Development Of Workflows Using Visual Studio Code](#local-development-of-workflows-using-visual-studio-code)
+      - [Prerequisites](#prerequisites-1)
+    - [Mounting a local directory to a pod running in a workflow](#mounting-a-local-directory-to-a-pod-running-in-a-workflow)
+    - [Attaching a debugger to a running workflow](#attaching-a-debugger-to-a-running-workflow)
+    - [Updating development resources after pulling new code](#updating-development-resources-after-pulling-new-code)
+  - [Contributing to Harmony](#contributing-to-harmony)
+    - [Submitting a Pull Request](#submitting-a-pull-request)
+  - [Additional Resources](#additional-resources)
 
 ## Minimum System Requirements
 
@@ -40,6 +58,7 @@ built-in Kubernetes cluster (including `kubectl`) which can be enabled in prefer
 
 If you are interested in using a local Harmony instance to develop services, but not interested in
 developing the Harmony code itself, the following steps are enough to start a locally running Harmony instance.
+See the [Minimum System Requirement](#minimum-system-requirements) above.
 
 1. Follow the directions for creating an Earth Data Login application and credentials in the [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement) section below.
 
@@ -48,7 +67,7 @@ developing the Harmony code itself, the following steps are enough to start a lo
 git clone https://github.com/nasa/harmony.git
 ```
 
-3. Install the Argo CLI
+3. Install the Argo CLI (if not already installed)
 ```bash
 curl -f -sSL -o argo https://github.com/argoproj/argo-workflows/releases/download/v2.9.5/argo-darwin-amd64
 chmod +x argo
@@ -56,14 +75,28 @@ mv ./argo /usr/local/bin/argo
 argo version
 ```
 
-4. Run the bootstrap script and answer the prompts with your EDL application credentials
+4. (ONLY IF USING THE NEW TURBO WORKFLOWS)
+   a. export `HOST_VOLUME_PATH` to point to a directory under your home directory to use a volume
+   for the service containers (the directory will be created if it does not exist). This must be
+   the full path, e.g., `/Users/username/metadata` (Mac) or `/home/username/metadata` (Linux), not
+   a path using `~`, .e.g., `~/metadata`.
+   ``` bash
+   export HOST_VOLUME_PATH=<full path to some directory under your home directory>
+   ``` 
+   b. Build the service wrapper images (see [Developing Services for Harmony Turbo](#developing-services-for-harmony-turbo) first if 
+   developing a new service)
+  ```bash
+  pushd harmony/tasks/service-wrapper && npm run build && popd
+  ```
+
+5. Run the bootstrap script and answer the prompts
 ```bash
 cd harmony && ./bin/bootstrap-harmony
 ```
 
 Linux Only (Handled automatically by Docker Desktop)
 
-4. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
+6. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
 ```bash
 kubectl port-forward service/harmony 3000:3000 -n argo
 ```
@@ -106,6 +139,43 @@ If you modify the `services.yml` file Harmony will need to be restarted. You can
 ```
 **NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
 
+### Developing Services for Harmony Turbo
+**NOTE** This is alpha level functionality and likely to change.
+
+If you are developing a service and wish to test it locally with Harmony turbo mode then you must build a service wrapper
+image using the following steps before executing step 4 of the Quick Start instructions:
+
+1. Build the image for your service as you would for the (non-Turbo Harmony)
+2. Add a Dockerfile to harmony/tasks/service-wrapper to build the wrapper for your image by copying
+   an existing one such as `Dockerfile.netcdf-to-zarr` and modifying it to fit your base image.
+3. Create a service wrapper YAML file in harmony/tasks/service-wrapper/config by copying the `netcdf-to-zar-wrapper.yaml`
+   file and modifying it for your service.
+  a. Change `netcdf-to-zarr` everywhere in the file to the name of your service
+  b. Set `image` under `containers` to the Docker image you want to wrap. Do the same for the
+  `HARMONY_SERVICE` environment variable entry
+  c. Set the `WORKING_DIR` environment variable to the directory where in your container that the code should
+  execute. This defaults to `/home`, so you can remove this variable if that works for your service.
+  d. Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run
+  your service with Python from the command line. For example, if you had a module name `my-service`
+  in the working directory, then you would run the service using 
+  ```bash
+  python -m my-service
+  ```
+  So your entry for `INVOCATION_ARGS` would be
+  ```yaml
+  - name: INVOCATION_ARGS
+    value: |-
+      -m
+      my-service
+  ```
+4. Add a `scripts` entry to  harmony/tasks/service-wrapper/package.json for your service by copying
+   one of the existing script target, e.g., `build-netcdf-to-zarr` and modifying it to fit your Docker build.
+5. Build the service wrapper for your service image using `npm`
+``` bash
+export HOST_VOLUME_PATH=<some directory under your home director>
+cd harmony/tasks/service-wrapper && npm run build-my-service-wrapper
+```
+  
 ## Development Prerequisites
 
 For developing Harmony on Windows follow this document as well as the information in [docs/dev_container/README.md](docs/dev_container/README.md).

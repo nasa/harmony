@@ -3,5 +3,17 @@
 # This script starts Harmomny in the local kubernetes cluster - it is called from the start-all
 # script. The environment variables for Harmony are read from k8s configmaps and secrets.
 
-kubectl apply -f ./config/harmony-k8s.yaml -n argo > /dev/null
+env_save=$(export -p)
+set -a
+source "env-defaults"
+source ".env"
+set +a
+eval "$env_save"
+
+if [[ -z "${HOST_VOLUME_PATH}" ]]; then
+  echo "HOST_VOLUME_PATH must be set before running this script"
+  exit 1
+fi
+
+envsubst < ./config/harmony-k8s.yaml | kubectl apply -f - -n argo > /dev/null
 echo 'Harmony has started at http://localhost:3000/'

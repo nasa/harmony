@@ -4,7 +4,16 @@ HARMONY_SERVICE="harmonyservices/query-cmr:latest"
 SCRIPT_FILE=__main__.py
 SCRIPT_DIR=/home
 NODE_ENV=development
-PULL_URL="http://host.docker.internal:3001/service/work"
-RESPONSE_URL="http://host.docker.internal:3001/service/work"
+# The defaults for the endpoints the services use for talking to the Harmony back end. these
+# defaults are appropriate for when Harmony is running in k8s, was with the local quick start.
+PULL_URL="http://harmony:3001/service/work"
+RESPONSE_URL="http://harmony:3001/service/work"
+# When running locally on a Mac or Linux (not in Kubernetes), use the appropriate value below.
+# Mac OS X:
+# PULL_URL="http://host.docker.internal:3001/service/work"
+# RESPONSE_URL="http://host.docker.internal:3001/service/work"
+# Linux:
+# PULL_URL="http://localhost:3001/service/work"
+# RESPONSE_URL="http://localhost:3001/service/work"
 WORKING_DIR="/home"
 LOG_LEVEL=debug

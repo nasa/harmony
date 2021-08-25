@@ -24,10 +24,10 @@ else
   # remove the empty OUATH env vars already in the file
   awk -v n=3 'NR==FNR{total=NR;next} FNR==total-n+1{exit} 1' .env .env > env.tmp && mv env.tmp .env
 
-cat <<PROMPT
+cat <<PROMPT_EDL
 Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions for this or do not understand what this means, please contact the Harmony team for help. Once you have your EDL application created, please enter the credentials as prompted.
 
-PROMPT
+PROMPT_EDL
 
   # prompt for the users EDL app credentials
   read -p "EDL Application Client ID: " OAUTH_CLIENT_ID
@@ -36,6 +36,18 @@ PROMPT
   echo ""
   read -s -p "EDL Application Password: " OAUTH_PASSWORD
   echo ""
+
+# cat<<PROMPT_HOST_VOLUME_PATH
+# Harmony and its services share data using a shared directory. Enter the path to the directoy you would like to use for this. If this directory does not exist it will be created for you.
+
+# PROMPT_HOST_VOLUME_PATH
+
+# # prompt for the HOST_VOLUME_PATH value
+# host_vol_path="${HOST_VOLUME_PATH:=$HOME/metadata"
+# read -p "SHARED DATA DIRECTORY PATH: (default $host_vol_path)" HOST_VOLUME_PATH
+# echo ""
+
+# HOST_VOLUME_PATH="$HOST_VOLUME_PATH:=$host_vol_path"
 
 cat << EOF >> .env
 OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
@@ -50,4 +62,9 @@ fi
 
 # run argo, localstack, and harmony in kubernetes
 ./bin/start-all
+
+if [[ -n "$HOST_VOLUME_PATH" ]]; then
+  mkdir -p "$HOST_VOLUME_PATH"
+  ./bin/deploy-services
+fi
 
