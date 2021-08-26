@@ -15,9 +15,26 @@ spec:
         name: netcdf-to-zarr
     spec:
       containers:
-        - name: netcdf-to-zarr
+        - name: worker
           imagePullPolicy: IfNotPresent
-          image: harmonyservices/netcdf-to-zarr-wrap:latest
+          image: harmonyservices/netcdf-to-zarr:latest
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+          command: ["/bin/sh", "-c"]
+          args:
+            - while true; do
+                date;
+                sleep 10;
+              done
+        - name: manager
+          imagePullPolicy: IfNotPresent
+          image: harmonyservices/service-runner:latest
           envFrom:
           - configMapRef:
               name: harmony-env

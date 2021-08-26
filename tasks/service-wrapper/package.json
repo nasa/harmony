@@ -10,11 +10,13 @@
     "build-service-example-wrapper": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/service-example --tag harmonyservices/service-example-wrap:${VERSION:-latest} -f Dockerfile.harmony-service-example .",
     "build-netcdf-to-zarr-wrapper": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/netcdf-to-zarr --tag harmonyservices/netcdf-to-zarr-wrap:${VERSION:-latest} -f Dockerfile.netcdf-to-zarr .",
     "build-swot-repr-wrapper": "tsc && docker build --build-arg BASE_IMAGE=sds/swot-reproject --tag sds/swot-reproject-wrap:${VERSION:-latest} -f Dockerfile.swot-reproject .",
-    "build": "npm run build-query-cmr-wrapper && npm run build-service-example-wrapper && npm run build-netcdf-to-zarr-wrapper"
+    "build-old": "npm run build-query-cmr-wrapper && npm run build-service-example-wrapper && npm run build-netcdf-to-zarr-wrapper",
+    "build": "tsc && docker build --tag harmonyservices/service-runner:${VERSION:-latest} -f Dockerfile.service-runner ."
   },
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
   "dependencies": {
+    "@kubernetes/client-node": "^0.15.1",
     "agentkeepalive": "^4.1.4",
     "aws-sdk": "^2.906.0",
     "axios": "^0.21.1",

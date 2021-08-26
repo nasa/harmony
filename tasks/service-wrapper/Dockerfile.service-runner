@@ -1,0 +1,13 @@
+FROM node:12-alpine
+
+RUN apk add bash vim
+
+RUN mkdir -p /service-wrapper
+RUN mkdir -p /tmp/metadata
+COPY built env-defaults package.json package-lock.json /service-wrapper/
+WORKDIR /service-wrapper
+RUN npm ci
+RUN chown -R node /service-wrapper
+USER node
+
+ENTRYPOINT [ "node", "tasks/service-wrapper/app/server.js"]
