@@ -88,7 +88,7 @@ describe('Workflow UI jobs route', function () {
       this.trx.commit();
     });
 
-    describe('Who has no jobs', function () {
+    describe('who has no jobs', function () {
       hookWorkflowUIJobs({ username: 'andy' });
       it('returns an HTTP success response', function () {
         expect(this.res.statusCode).to.equal(200);
@@ -99,7 +99,7 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
-    describe('Who has jobs', function () {
+    describe('who has jobs', function () {
       hookWorkflowUIJobs({ username: 'woody' });
       it('returns an HTTP success response', function () {
         expect(this.res.statusCode).to.equal(200);
@@ -118,7 +118,32 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
-    describe('admin access', function () {
+    describe('who has 3 jobs and asks for page 1, with a limit of 1', function () {
+      hookWorkflowUIJobs({ username: 'woody', limit: 1 });
+      it('returns a link to the next page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: '/workflow-ui/jobs?limit=1&page=2' }));
+      });
+      it('returns only one job', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who has 3 jobs and asks for page 2, with a limit of 1', function () {
+      hookWorkflowUIJobs({ username: 'woody', limit: 1, page: 2 });
+      it('returns a link to the next and previous page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: '/workflow-ui/jobs?limit=1&page=1' }));
+        expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: '/workflow-ui/jobs?limit=1&page=3' }));
+      });
+      it('returns only one job', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('when accessing the admin endpoint', function () {
       describe('when the user is part of the admin group', function () {
         hookAdminWorkflowUIJobs({ username: 'adam', limit: 100 });
         it('returns jobs for all users', async function () {
