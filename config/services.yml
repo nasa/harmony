@@ -43,6 +43,10 @@ https://cmr.earthdata.nasa.gov:
       - C1214354031-ASF
       - C1808440897-ASF
       - C2011599335-ASF
+      - C1239324659-POCUMULUS
+      - C1239379702-POCLOUD
+      - C1238618571-POCUMULUS
+      - C1238621141-POCLOUD
     capabilities:
       subsetting:
         shape: true
@@ -210,6 +214,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/podaac/l2-subsetter
+    umm_s:
+      - S1962070864-POCLOUD
     collections:
       - C1940473819-POCLOUD
       - C1940475563-POCLOUD
@@ -294,6 +300,10 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1215139640-GES_DISC
       - C1215802932-GES_DISC
       - C1221312185-GES_DISC
+      - C1239324659-POCUMULUS
+      - C1239379702-POCLOUD
+      - C1238618571-POCUMULUS
+      - C1238621141-POCLOUD
     capabilities:
       subsetting:
         shape: true
@@ -350,6 +360,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/podaac/l2-subsetter
+    umm_s:
+      - S1234899453-POCLOUD
     collections:
       - C1234208436-POCLOUD
       - C1234208437-POCLOUD
@@ -630,13 +642,13 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
     umm_s:
-      - S1237980031-EEDTEST
+      - S1237980031-EEDTEST # Just NetCDF-to-Zarr
+      - S1240999847-EEDTEST # NetCDF-to-Zarr + swotrepr
     collections:
       - C1234088182-EEDTEST
       # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
       # to prevent re-adding. This is needed for tests related to HARMONY-875
       # - C1233800302-EEDTEST
-      - C1233860183-EEDTEST
       - C1234410736-POCLOUD
       - C1234082763-POCLOUD
       - C1234071416-POCLOUD
@@ -738,6 +750,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/swot-repr-netcdf-to-zarr
+    umm_s:
+      - S1240999847-EEDTEST
     collections:
       - C1233800302-EEDTEST
       - C1234724470-POCLOUD

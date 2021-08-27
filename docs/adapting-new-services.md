@@ -200,6 +200,8 @@ The second method is now the preferred approach to adding collections to a servi
 collections to be added/removed to/from an existing service without requiring a pull request or 
 deployment.
 
+If you intend for Harmony job results that include this collection to be shareable, make sure that guests have `read` permission on the collection (via [CMR ACLs endpoints](https://cmr.earthdata.nasa.gov/access-control/site/docs/access-control/api.html)), and if no EULAs are present that the `harmony.has-eula` tag is associated with the collection and set to `false` via the CMR `/search/tags/harmony.has-eula/associations` endpoint. Example request body: `[{"concept_id": "C1233860183-EEDTEST", "data": false}]`. All collections used in the Harmony job must meet these two requirements in order for the job to be shareable.
+
 ## 6. Creating a workflow template for the service
 
 Docker based services are invoked from within Argo (HTTP based services can skip this step). Argo uses workflow templates to provide the instructions for executing a request. Harmony provides templates for common steps within workflows such as querying the CMR for granules and providing those as inputs to later steps and responding back to Harmony to provide outputs.
