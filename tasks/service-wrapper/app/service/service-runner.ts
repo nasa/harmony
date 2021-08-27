@@ -9,6 +9,11 @@ import log from '../util/log';
 import sem from '../util/semaphore';
 import WorkItem from '../../../../app/models/work-item';
 
+const kc = new k8s.KubeConfig();
+kc.loadFromDefault();
+
+const exec = new k8s.Exec(kc);
+
 export interface ServiceResponse {
   batchCatalogs?: string[];
   error?: string;
@@ -145,12 +150,6 @@ export function runPythonServiceFromPull(workItem: WorkItem): Promise<ServiceRes
 
   const catalogDir = `/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`;
 
-  const kc = new k8s.KubeConfig();
-  kc.loadFromDefault();
-
-  let exec = new k8s.Exec(kc);
-
-  exec = new k8s.Exec(kc);
   return new Promise<ServiceResponse>((resolve) => {
     log.debug('CALLING WORKER');
     // timeout if things take too long
