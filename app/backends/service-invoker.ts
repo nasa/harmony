@@ -80,7 +80,7 @@ export default async function serviceInvoker(
   });
   try {
     serviceResult = await service.invokeOrAttach(
-      serviceLogger, getRequestRoot(req), getRequestUrl(req),
+      serviceLogger, getRequestRoot(req), getRequestUrl(req), req.geojsonHash,
     );
     await translateServiceResult(serviceResult, req.operation.user, res);
   } finally {

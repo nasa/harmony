@@ -123,7 +123,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
       try {
         convertedFile = await converter.geoJsonConverter(originalFile, req.context.logger);
         operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
-        req.geojsonHash = fileCheckSum(convertedFile);
+        req.geojsonHash = await fileCheckSum(convertedFile);
       } finally {
         if (convertedFile) {
           unlink(convertedFile);
@@ -131,7 +131,7 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
       }
     } else {
       operation.geojson = url;
-      req.geojsonHash = fileCheckSum(originalFile);
+      req.geojsonHash = await fileCheckSum(originalFile);
     }
     unlink(originalFile);
   } catch (e) {
