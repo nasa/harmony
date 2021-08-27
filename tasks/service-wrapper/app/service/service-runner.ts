@@ -171,44 +171,51 @@ export async function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> 
   // const ex = promisify(exec.exec.bind(exec));
   log.debug('CALLING WORKER');
   // const result = await ex(
-  const result = await exec.exec(
-    'argo',
-    env.myPodName,
-    'worker',
-    [
-      'python',
-      ...commandLine,
-      '--harmony-action',
-      'invoke',
-      '--harmony-input',
-      `${JSON.stringify(operation)}`,
-      '--harmony-sources',
-      stacCatalogLocation,
-      '--harmony-metadata-dir',
-      `${catalogDir}`,
-    ],
-    process.stdout as stream.Writable,
-    process.stderr as stream.Writable,
-    process.stdin as stream.Readable,
-    true,
-    (status: k8s.V1Status) => {
-      log.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
-    },
-  );
+  try {
+    await exec.exec(
+      'argo',
+      env.myPodName,
+      'worker',
+      [
+        'python',
+        ...commandLine,
+        '--harmony-action',
+        'invoke',
+        '--harmony-input',
+        `${JSON.stringify(operation)}`,
+        '--harmony-sources',
+        stacCatalogLocation,
+        '--harmony-metadata-dir',
+        `${catalogDir}`,
+      ],
+      process.stdout as stream.Writable,
+      process.stderr as stream.Writable,
+      process.stdin as stream.Readable,
+      true,
+      (status: k8s.V1Status) => {
+        log.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
+      },
+    );
 
-  log.debug(JSON.stringify(result));
+    // log.debug(JSON.stringify(result));
 
-  // TODO figure out error handling
-  // log.debug('Sleeping for 10 seconds');
-  // await sleep(10000);
-  log.debug(`Testing for ${catalogDir}/catalog.json`);
-  while (!existsSync(`${catalogDir}/catalog.json`)) {
-    await sleep(250); // 1/4 second
+    // TODO figure out error handlin
+    // log.debug('Sleeping for 10 seconds');
+    // await sleep(10000);
+    let tryCount = 0;
+    log.debug(`Testing for ${catalogDir}/catalog.json`);
+    while (tryCount < 100 && !existsSync(`${catalogDir}/catalog.json`)) {
+      await sleep(250); // 1/4 second
+      tryCount += 1;
+    }
+    log.debug('Getting STAC catalogs');
+    const catalogs = _getStacCatalogs(`${catalogDir}`);
+
+    return { batchCatalogs: catalogs };
+  } catch (e) {
+    log.error(e.message);
+    return { error: e.message };
   }
-  log.debug('Getting STAC catalogs');
-  const catalogs = _getStacCatalogs(`${catalogDir}`);
-
-  return { batchCatalogs: catalogs };
 
   // log.debug(`EXEC RESULT: ${JSON.stringify(execResult)}`);
 
