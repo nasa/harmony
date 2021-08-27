@@ -14,3 +14,4 @@ require:
   - tsconfig-paths/register
 recursive: true
 exit: true
+timeout: 3000

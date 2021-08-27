@@ -202,7 +202,7 @@ describe('Individual job status route', function () {
     const variableName = 'all';
     const version = '1.0.0';
 
-    describe.only('when the job has started but not completed', function () {
+    describe('when the job has started but not completed', function () {
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
 
       describe('retrieving its job status', function () {
@@ -253,7 +253,7 @@ describe('Individual job status route', function () {
       });
     });
 
-    describe.only('when an incomplete job has provided links as a partial status updates', function () {
+    describe('when an incomplete job has provided links as a partial status updates', function () {
       const shortLinks = [
         {
           href: 'http://example.com/1',
@@ -336,25 +336,18 @@ describe('Individual job status route', function () {
       });
     });
 
-    describe.only('when a job has provided an S3 URL as a result', function () {
+    describe('when a job has provided an S3 URL as a result', function () {
       const s3Uri = 's3://example-bucket/public/example/path.tif';
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe4' });
       before(async function () {
         await this.service.sendResponse({ item: { href: s3Uri } });
       });
 
       // HARMONY-770 AC 1
       describe('when linkType is unset', function () {
-        // console.log('*************************************************************');
-        // console.log('*************************************************************');
-        // console.log('');
-        // console.log(this.res.text);
-        // console.log('');
-        // console.log('*************************************************************');
-        // console.log('*************************************************************');
-        hookRedirect('jdoe1');
-        itProvidesAWorkingHttpUrl('jdoe1');
+        hookRedirect('jdoe4');
+        itProvidesAWorkingHttpUrl('jdoe4');
       });
 
       describe('when linkType is set', function () {
@@ -362,7 +355,7 @@ describe('Individual job status route', function () {
           hookUrl(function () {
             const { location } = this.res.headers;
             return location;
-          }, 'jdoe1', { linkType: 's3' });
+          }, 'jdoe4', { linkType: 's3' });
           // HARMONY-770 AC 4
           it('provides s3 links for data', function () {
             const job = new Job(JSON.parse(this.res.text));
@@ -377,25 +370,25 @@ describe('Individual job status route', function () {
           hookUrl(function () {
             const { location } = this.res.headers;
             return location;
-          }, 'jdoe1', { linkType: 'http' });
+          }, 'jdoe4', { linkType: 'http' });
 
-          itProvidesAWorkingHttpUrl('jdoe1');
+          itProvidesAWorkingHttpUrl('jdoe4');
         });
         /// HARMONY-770 AC 3
         describe('and the linkType is https', function () {
           hookUrl(function () {
             const { location } = this.res.headers;
             return location;
-          }, 'jdoe1', { linkType: 'https' });
+          }, 'jdoe4', { linkType: 'https' });
 
-          itProvidesAWorkingHttpUrl('jdoe1');
+          itProvidesAWorkingHttpUrl('jdoe4');
         });
 
         describe('and the linkType is capitalized', function () {
           hookUrl(function () {
             const { location } = this.res.headers;
             return location;
-          }, 'jdoe1', { linkType: 'S3' });
+          }, 'jdoe4', { linkType: 'S3' });
           // HARMONY-770 AC 4
           it('linkType is case insensitive', function () {
             const job = new Job(JSON.parse(this.res.text));
@@ -430,13 +423,13 @@ describe('Individual job status route', function () {
     describe('when a job has provided an S3 URL result with application/x-zarr mime type', function () {
       const s3Uri = 's3://example-bucket/public/example/path.tif';
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe5' });
       before(async function () {
         await this.service.sendResponse({ item: { href: s3Uri, type: 'application/x-zarr' } });
       });
 
       describe('when linkType is unset', function () {
-        hookRedirect('jdoe1');
+        hookRedirect('jdoe5');
         itReturnsUnchangedDataLinksForZarr(s3Uri);
       });
 
@@ -444,7 +437,7 @@ describe('Individual job status route', function () {
         hookUrl(function () {
           const { location } = this.res.headers;
           return location;
-        }, 'jdoe1', { linkType: 's3' });
+        }, 'jdoe5', { linkType: 's3' });
         itReturnsUnchangedDataLinksForZarr(s3Uri);
       });
 
@@ -452,7 +445,7 @@ describe('Individual job status route', function () {
         hookUrl(function () {
           const { location } = this.res.headers;
           return location;
-        }, 'jdoe1', { linkType: 'http' });
+        }, 'jdoe5', { linkType: 'http' });
         itReturnsUnchangedDataLinksForZarr(s3Uri);
       });
 
@@ -460,14 +453,14 @@ describe('Individual job status route', function () {
         hookUrl(function () {
           const { location } = this.res.headers;
           return location;
-        }, 'jdoe1', { linkType: 'https' });
+        }, 'jdoe5', { linkType: 'https' });
         itReturnsUnchangedDataLinksForZarr(s3Uri);
       });
     });
 
     describe('when a job has links with temporal and bbox fields', function () {
       StubService.hook({ params: { status: 'successful' } });
-      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1' });
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe6' });
       before(async function () {
         await this.service.sendResponse({
           item: {
@@ -478,7 +471,7 @@ describe('Individual job status route', function () {
           },
         });
       });
-      hookRedirect('jdoe1');
+      hookRedirect('jdoe6');
 
       it('includes the temporal range in the link', function () {
         const job = new Job(JSON.parse(this.res.text));

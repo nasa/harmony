@@ -410,8 +410,6 @@ describe('Backend Callbacks', function () {
     });
 
     describe('bbox validation', function () {
-      hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', {}); });
-
       it('rejects bbox params containing invalid numbers', async function () {
         const response = await request(this.backend).post(this.callback).query({
           item: { href, bbox: '0.0,1.1,broken,3.3' },

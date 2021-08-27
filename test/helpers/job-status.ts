@@ -83,7 +83,7 @@ export function itProvidesAWorkingHttpUrl(user: string): void {
 
     it('temporarily redirects to a presigned URL for the data', function () {
       expect(this.res.statusCode).to.equal(307);
-      expect(this.res.headers.location).to.equal('https://example.com/signed/jdoe1');
+      expect(this.res.headers.location).to.equal(`https://example.com/signed/${user}`);
     });
   });
 }

@@ -15,10 +15,12 @@ import { truncateAll } from './db';
 export const adminUsername = 'adam';
 
 export const expectedJobKeys = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID', 'shapeFileHash' 
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID', 'attachedStatus', 'shapeFileHash',
 ];
 
-export const expectedNoOpJobKeys = expectedJobKeys.filter((k) => k !== 'jobID');
+export const expectedJobKeysForDB = expectedJobKeys.filter((k) => k !== 'attachedStatus');
+
+export const expectedNoOpJobKeys = expectedJobKeys.filter((k) => k !== 'jobID' && k !== 'shapefileHash');
 
 const exampleProps = {
   username: 'anonymous',
