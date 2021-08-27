@@ -23,65 +23,6 @@ export interface ServiceResponse {
 const { workerTimeout } = env;
 
 /**
- * Runs a service request
- *
- * @param operation - The requested operation
- * @param res - The Response to use to reply
- */
-export function runServiceForRequest(operation, res: Response): void {
-  const kc = new k8s.KubeConfig();
-  if (this.cluster) {
-    kc.loadFromOptions({
-      clusters: [this.cluster],
-      contexts: [this.context],
-      currentContext: this.context.name,
-    });
-  } else {
-    kc.loadFromDefault();
-  }
-
-  const exec = new k8s.Exec(kc);
-  exec.exec('argo', env.myPodName, 'worker', 'cd /home && ls', process.stdout, process.stderr, process.stdin, true);
-
-  const options = {
-    pythonOptions: ['-u'], // get print results in real-time
-    cwd: '/home',
-    args: [
-      `${env.harmonyService}`,
-      '--harmony-action',
-      'invoke',
-      '--harmony-input',
-      `${JSON.stringify(operation)}`,
-      '--harmony-sources',
-      `/tmp/metadata/${operation.requestId}/inputs/catalog0.json`,
-      '--harmony-metadata-dir',
-      `/tmp/metadata/${operation.requestId}/outputs`,
-    ],
-  };
-
-  log.info(`Calling service ${env.harmonyService}`);
-  const shell = PythonShell.run('-m', options, (err, results) => {
-    if (err) {
-      sem.leave();
-      log.error('ERROR');
-      log.error(err);
-      res.status(500);
-      res.send('Error');
-      return;
-    }
-    // results is an array consisting of messages collected during execution
-    log.info(`results: ${results}`);
-    sem.leave();
-    res.send(JSON.stringify(results));
-  });
-
-  shell.on('stderr', (stderr) => {
-    // handle stderr (a line of text from stderr)
-    log.info(`[PythonShell stderr event] ${stderr}`);
-  });
-}
-
-/**
  * Get a list of STAC catalog in a directory
  * @param dir - the directory containing the catalogs
  */
