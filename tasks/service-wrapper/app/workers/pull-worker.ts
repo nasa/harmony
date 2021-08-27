@@ -109,17 +109,44 @@ async function pullAndDoWork(): Promise<void> {
   setTimeout(pullAndDoWork, 500);
 }
 
+/**
+ * Call the sidecar query-cmr service once to get around a k8s client bug
+ */
+function _primeCmrService(): void {
+  const exampleWorkItemProps = {
+    jobID: '1',
+    serviceID: 'harmony-services/query-cmr:latest',
+    status: WorkItemStatus.READY,
+    workflowStepIndex: 0,
+    operation: { requestId: 'abc' },
+    scrollID: '1234',
+  } as WorkItemRecord;
+
+  runQueryCmrFromPull(new WorkItem(exampleWorkItemProps));
+}
+
+/**
+ * Call the sidecar service once to get around a k8s client bug
+ */
+function _primeServide(): void {
+  const exampleWorkItemProps = {
+    jobID: '1',
+    serviceID: 'harmony-services/query-cmr:latest',
+    status: WorkItemStatus.READY,
+    workflowStepIndex: 0,
+    operation: { requestId: 'abc' },
+  } as WorkItemRecord;
+  runPythonServiceFromPull(new WorkItem(exampleWorkItemProps));
+}
+
 export default class PullWorker implements Worker {
   async start(): Promise<void> {
     // workaround for k8s client bug https://github.com/kubernetes-client/javascript/issues/714
-    const exampleWorkItemProps = {
-      jobID: '1',
-      serviceID: 'harmony-services/query-cmr:latest',
-      status: WorkItemStatus.READY,
-      workflowStepIndex: 0,
-      operation: { requestId: 'abc' },
-    } as WorkItemRecord;
-    runPythonServiceFromPull(new WorkItem(exampleWorkItemProps));
+    if (env.harmonyService === 'harmonyservices/query-cmr:latest') {
+      _primeCmrService();
+    } else {
+      _primeServide();
+    }
 
     // poll the Harmony work endpoint
     pullAndDoWork();

@@ -1,12 +1,9 @@
 import * as k8s from '@kubernetes/client-node';
-import { PythonShell } from 'python-shell';
-import { Response } from 'express';
 import { readdirSync } from 'fs';
 import { spawn } from 'child_process';
 import stream from 'stream';
 import env from '../util/env';
 import log from '../util/log';
-import sem from '../util/semaphore';
 import WorkItem from '../../../../app/models/work-item';
 
 const kc = new k8s.KubeConfig();
@@ -41,6 +38,7 @@ function _getStacCatalogs(dir: string): string[] {
   */
 export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse> {
   const { operation, scrollID } = workItem;
+  const catalogDir = `/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`;
   const args = [
     'tasks/query-cmr/app/cli',
     '--harmony-input',
@@ -48,35 +46,74 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
     '--scroll-id',
     scrollID,
     '--output-dir',
-    `/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`,
+    catalogDir,
   ];
 
-  const opts = {
-    cwd: '/app',
-  };
+  // const opts = {
+  //   cwd: '/app',
+  // };
 
   return new Promise<ServiceResponse>((resolve) => {
-    log.info(`Calling service ${env.harmonyService}`);
-    const process = spawn('node', args, opts);
-    process.stdout.on('data', (data) => {
-      log.info(data.toString());
-    });
-    process.stderr.on('data', (data) => {
-      log.error(data.toString());
-    });
-    process.on('exit', (code) => {
-      if (code !== 0) {
-        resolve({ error: `Process exited with code ${code}` });
-      } else {
-        resolve({
-          batchCatalogs: _getStacCatalogs(`/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`),
-        });
-      }
-    });
-    process.on('error', (error: Error) => {
-      resolve({ error: error.message });
-    });
+    log.debug('CALLING WORKER');
+    // timeout if things take too long
+    const timeout = setTimeout(() => {
+      resolve({ error: 'Worker timed out' });
+    }, workerTimeout);
+    try {
+      exec.exec(
+        'argo',
+        env.myPodName,
+        'worker',
+        [
+          'node',
+          ...args,
+        ],
+        process.stdout as stream.Writable,
+        process.stderr as stream.Writable,
+        process.stdin as stream.Readable,
+        true,
+        (status: k8s.V1Status) => {
+          log.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
+          if (status.status === 'Success') {
+            clearTimeout(timeout);
+            log.debug('Getting STAC catalogs');
+            const catalogs = _getStacCatalogs(`${catalogDir}`);
+            resolve({ batchCatalogs: catalogs });
+          } else {
+            clearTimeout(timeout);
+            resolve({ error: status.message });
+          }
+        },
+      );
+    } catch (e) {
+      clearTimeout(timeout);
+      log.error(e.message);
+      resolve({ error: e.message });
+    }
   });
+
+  // return new Promise<ServiceResponse>((resolve) => {
+  //   log.info(`Calling service ${env.harmonyService}`);
+  //   const process = spawn('node', args, opts);
+  //   process.stdout.on('data', (data) => {
+  //     log.info(data.toString());
+  //   });
+  //   process.stderr.on('data', (data) => {
+  //     log.error(data.toString());
+  //   });
+  //   process.on('exit', (code) => {
+  //     if (code !== 0) {
+  //       resolve({ error: `Process exited with code ${code}` });
+  //     } else {
+  //       resolve({
+  //         batchCatalogs: _getStacCatalogs(`/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`),
+  //       });
+  //     }
+  //   });
+  //   process.on('error', (error: Error) => {
+  //     resolve({ error: error.message });
+  //   });
+  // });
 }
 
 /**
