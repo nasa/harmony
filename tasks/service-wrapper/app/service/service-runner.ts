@@ -1,19 +1,21 @@
 import * as k8s from '@kubernetes/client-node';
 import { PythonShell } from 'python-shell';
 import { Response } from 'express';
-import { existsSync, readdirSync } from 'fs';
+import { readdirSync } from 'fs';
 import { spawn } from 'child_process';
 import stream from 'stream';
 import env from '../util/env';
 import log from '../util/log';
 import sem from '../util/semaphore';
-import sleep from '../../../../app/util/sleep';
 import WorkItem from '../../../../app/models/work-item';
 
 export interface ServiceResponse {
   batchCatalogs?: string[];
   error?: string;
 }
+
+// how long to let a worker run before giving up
+const { workerTimeout } = env;
 
 /**
  * Runs a service request
@@ -107,7 +109,7 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
     cwd: '/app',
   };
 
-  return new Promise<{}>((resolve) => {
+  return new Promise<ServiceResponse>((resolve) => {
     log.info(`Calling service ${env.harmonyService}`);
     const process = spawn('node', args, opts);
     process.stdout.on('data', (data) => {
@@ -131,26 +133,12 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
   });
 }
 
-// async function _checkForFile(path: string): Promise<boolean> {
-//   fs.access(path, fs.F_OK, (err) => {
-//     if (err) {
-//       setTimeout()
-//     }
-
-//     // file exists
-//   });
-// }
-
-// async function _waitForFile(path: string, timeout: number): Promise<void> {
-
-// }
-
 /**
  * Run a service for a work item pulled from Harmony
  * @param operation - The requested operation
  * @param callback - Function to call with result
  */
-export async function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> {
+export function runPythonServiceFromPull(workItem: WorkItem): Promise<ServiceResponse> {
   const { operation, stacCatalogLocation } = workItem;
   const commandLine = env.invocationArgs.split('\n');
   log.debug(`Working dir: ${env.workingDir}`);
@@ -158,102 +146,55 @@ export async function runPythonServiceFromPull(workItem: WorkItem): Promise<{}> 
   const catalogDir = `/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`;
 
   const kc = new k8s.KubeConfig();
-  // if (this.cluster) {
-  //   kc.loadFromOptions({
-  //     clusters: [this.cluster],
-  //     contexts: [this.context],
-  //     currentContext: this.context.name,
-  //   });
-  // } else {
   kc.loadFromDefault();
-  // }
-  const exec = new k8s.Exec(kc);
-  // const ex = promisify(exec.exec.bind(exec));
-  log.debug('CALLING WORKER');
-  // const result = await ex(
-  try {
-    await exec.exec(
-      'argo',
-      env.myPodName,
-      'worker',
-      [
-        'python',
-        ...commandLine,
-        '--harmony-action',
-        'invoke',
-        '--harmony-input',
-        `${JSON.stringify(operation)}`,
-        '--harmony-sources',
-        stacCatalogLocation,
-        '--harmony-metadata-dir',
-        `${catalogDir}`,
-      ],
-      process.stdout as stream.Writable,
-      process.stderr as stream.Writable,
-      process.stdin as stream.Readable,
-      true,
-      (status: k8s.V1Status) => {
-        log.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
-      },
-    );
 
-    // log.debug(JSON.stringify(result));
+  let exec = new k8s.Exec(kc);
 
-    // TODO figure out error handlin
-    // log.debug('Sleeping for 10 seconds');
-    // await sleep(10000);
-    let tryCount = 0;
-    log.debug(`Testing for ${catalogDir}/catalog.json`);
-    while (tryCount < 100 && !existsSync(`${catalogDir}/catalog.json`)) {
-      await sleep(250); // 1/4 second
-      tryCount += 1;
+  exec = new k8s.Exec(kc);
+  return new Promise<ServiceResponse>((resolve) => {
+    log.debug('CALLING WORKER');
+    // timeout if things take too long
+    const timeout = setTimeout(() => {
+      resolve({ error: 'Worker timed out' });
+    }, workerTimeout);
+    try {
+      exec.exec(
+        'argo',
+        env.myPodName,
+        'worker',
+        [
+          'python',
+          ...commandLine,
+          '--harmony-action',
+          'invoke',
+          '--harmony-input',
+          `${JSON.stringify(operation)}`,
+          '--harmony-sources',
+          stacCatalogLocation,
+          '--harmony-metadata-dir',
+          `${catalogDir}`,
+        ],
+        process.stdout as stream.Writable,
+        process.stderr as stream.Writable,
+        process.stdin as stream.Readable,
+        true,
+        (status: k8s.V1Status) => {
+          log.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
+          if (status.status === 'Success') {
+            clearTimeout(timeout);
+            log.debug('Getting STAC catalogs');
+            const catalogs = _getStacCatalogs(`${catalogDir}`);
+            resolve({ batchCatalogs: catalogs });
+          } else {
+            clearTimeout(timeout);
+            resolve({ error: status.message });
+          }
+        },
+      );
+    } catch (e) {
+      clearTimeout(timeout);
+      log.error(e.message);
+      resolve({ error: e.message });
     }
-    log.debug('Getting STAC catalogs');
-    const catalogs = _getStacCatalogs(`${catalogDir}`);
-
-    return { batchCatalogs: catalogs };
-  } catch (e) {
-    log.error(e.message);
-    return { error: e.message };
-  }
-
-  // log.debug(`EXEC RESULT: ${JSON.stringify(execResult)}`);
-
-  // const options = {
-  //   cwd: env.workingDir,
-  //   args: [
-  //     ...commandLine,
-  //     '--harmony-action',
-  //     'invoke',
-  //     '--harmony-input',
-  //     `${JSON.stringify(operation)}`,
-  //     '--harmony-sources',
-  //     stacCatalogLocation,
-  //     '--harmony-metadata-dir',
-  //     `/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`,
-  //   ],
-  // };
-  // return new Promise<{}>((resolve) => {
-  //   log.debug(`Calling service ${env.harmonyService}`);
-  //   const shell = PythonShell.run('-u', options, (err, results) => {
-  //     if (err) {
-  //       log.error('ERROR');
-  //       log.error(err);
-  //       resolve({ error: err });
-  //     } else {
-  //       // results is an array consisting of messages collected during execution
-  //       log.debug(`results: ${results}`);
-  //       const catalogs = _getStacCatalogs(`/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`);
-  //       log.debug(`catalogs: ${catalogs}`);
-  //       resolve({
-  //         batchCatalogs: catalogs,
-  //       });
-  //     }
-  //   });
-
-  //   shell.on('stderr', (stderr) => {
-  //     // handle stderr (a line of text from stderr)
-  //     log.debug(`[PythonShell stderr event] ${stderr}`);
-  //   });
-  // });
+  });
 }

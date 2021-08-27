@@ -54,6 +54,7 @@ interface HarmonyEnv {
   harmonyService: string;
   invocationArgs: string;
   logLevel: string;
+  myPodName: string;
   port: number;
   pullUrl: string;
   responseUrl: string;
@@ -61,8 +62,8 @@ interface HarmonyEnv {
   scriptDir: string;
   uploadBucket: string;
   useLocalstack: boolean;
+  workerTimeout: number;
   workingDir: string;
-  myPodName: string;
 }
 
 // special cases
