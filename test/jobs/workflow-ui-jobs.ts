@@ -73,7 +73,7 @@ describe('Workflow UI jobs route', function () {
     });
 
     it('sets the "redirect" cookie to the originally-requested resource', function () {
-      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent('/jobs'));
+      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent('/workflow-ui/jobs'));
     });
   });
 
