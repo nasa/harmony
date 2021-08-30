@@ -46,7 +46,7 @@ spec:
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: $SWOT_REPROJECT_IMAGE_PULL_POLICY
+            value: $SWOT_REPROJECT_IMAGE
           - name: WORKING_DIR
             value: "/home"
           - name: INVOCATION_ARGS
