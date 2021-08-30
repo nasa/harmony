@@ -418,15 +418,14 @@ export class Job extends Record implements JobRecord {
   }
 
   /**
-   * Update the progress for a job
+   * Updates the job progress based on a single batch completing
    * You must call `#save` to persist the change
    *
-   * @param numItemsCompleted - The number of items that completed in this update
    * @param totalItemCount - the number of items in total that need to be processed for the job
    * to complete.
    */
-  updateProgress(numItemsCompleted: number, totalItemCount: number = this.numInputGranules): void {
-    this.batchesCompleted += numItemsCompleted;
+  completeBatch(totalItemCount: number = this.numInputGranules): void {
+    this.batchesCompleted += 1;
     // Only allow progress to be set to 100 when the job status is set to successful
     let progress = Math.min(100 * (this.batchesCompleted / totalItemCount), 99);
     // don't allow negative progress

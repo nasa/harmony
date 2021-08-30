@@ -8,10 +8,12 @@ import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
 import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from '../models/work-item';
-import { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
+import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
+// Must match where the service wrapper is mounting artifacts
+const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
 
 /**
  * Return a work item for the given service
@@ -36,7 +38,7 @@ export async function getWork(
     res.send(workItem);
   } else if (tryCount < MAX_TRY_COUNT) {
     setTimeout(async () => {
-      getWork(req, res, next, tryCount + 1);
+      await getWork(req, res, next, tryCount + 1);
     }, RETRY_DELAY);
   } else {
     res.status(404).send();
@@ -58,7 +60,7 @@ async function _handleWorkItemResults(
   logger: Logger,
 ): Promise<void> {
   for (const catalogLocation of results) {
-    const localLocation = catalogLocation.replace('/tmp/metadata', env.hostVolumePath);
+    const localLocation = catalogLocation.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
     logger.debug(`Adding link for STAC catalog ${localLocation}`);
 
     const items = readCatalogItems(localLocation);
@@ -97,6 +99,48 @@ async function _cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise
 }
 
 /**
+ * Creates the next work items for the workflow based on
+ * @param tx - The database transaction
+ * @param currentWorkItem - The current work item
+ * @param nextStep - the next step in the workflow
+ * @param results - an array of paths to STAC catalogs
+ */
+async function _createNextWorkItems(
+  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, results: string[],
+): Promise<void> {
+  // Create a new work item for each result using the next step
+  for await (const result of results) {
+    const newWorkItem = new WorkItem({
+      jobID: currentWorkItem.jobID,
+      serviceID: nextStep.serviceID,
+      status: WorkItemStatus.READY,
+      stacCatalogLocation: result,
+      workflowStepIndex: nextStep.stepIndex,
+    });
+
+    await newWorkItem.save(tx);
+  }
+
+  // If the current step is the query-cmr service and the number of work items for the next
+  // step is less than 'workItemCount' for the next step then create a new work item for
+  // the current step
+  if (currentWorkItem.scrollID) {
+    const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex);
+    if (workItemCount < nextStep.workItemCount) {
+      const nextQueryCmrItem = new WorkItem({
+        jobID: currentWorkItem.jobID,
+        scrollID: currentWorkItem.scrollID,
+        serviceID: currentWorkItem.serviceID,
+        status: WorkItemStatus.READY,
+        stacCatalogLocation: currentWorkItem.stacCatalogLocation,
+        workflowStepIndex: currentWorkItem.workflowStepIndex,
+      });
+
+      await nextQueryCmrItem.save(tx);
+    }
+  }
+}
+/**
  * Update a work item from a service response
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -112,6 +156,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     await updateWorkItemStatus(tx, id, status as WorkItemStatus);
     workItem = await getWorkItemById(tx, parseInt(id, 10));
     const job: Job = await Job.byJobID(tx, workItem.jobID);
+
     // If the response is an error then set the job status to 'failed'
     if (workItem.status === WorkItemStatus.FAILED) {
       if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
@@ -140,37 +185,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       );
 
       if (nextStep) {
-        // Create a new work item for each result using the next step
-        for await (const result of results) {
-          const newWorkItem = new WorkItem({
-            jobID: workItem.jobID,
-            serviceID: nextStep.serviceID,
-            status: WorkItemStatus.READY,
-            stacCatalogLocation: result,
-            workflowStepIndex: nextStep.stepIndex,
-          });
-
-          await newWorkItem.save(tx);
-        }
-
-        // If the current step is the query-cmr service and the number of work items for the next
-        // step is less than 'workItemCount' for the next step then create a new work item for
-        // the current step
-        if (workItem.scrollID) {
-          const workItemCount = await workItemCountForStep(tx, workItem.jobID, nextStep.stepIndex);
-          if (workItemCount < nextStep.workItemCount) {
-            const nextQueryCmrItem = new WorkItem({
-              jobID: workItem.jobID,
-              scrollID: workItem.scrollID,
-              serviceID: workItem.serviceID,
-              status: WorkItemStatus.READY,
-              stacCatalogLocation: workItem.stacCatalogLocation,
-              workflowStepIndex: workItem.workflowStepIndex,
-            });
-
-            await nextQueryCmrItem.save(tx);
-          }
-        }
+        await _createNextWorkItems(tx, workItem, nextStep, results);
       } else {
         // 1. add job links for the results
         await _handleWorkItemResults(tx, job, results, logger);
@@ -188,7 +203,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
           workItem.workflowStepIndex,
         );
 
-        job.updateProgress(results.length, thisStep.workItemCount);
+        job.completeBatch(thisStep.workItemCount);
         if (successWorkItemCount === thisStep.workItemCount) {
           job.succeed();
           await _cleanupWorkItemsForJobID(job.jobID, logger);

@@ -128,7 +128,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
 
   const { job } = await Job.byRequestId(trx, requestId);
   if (!job) {
-    trx.rollback();
+    await trx.rollback();
     res.status(404);
     logger.error(`Received a callback for a missing job: requestId=${requestId}`);
     res.json({ code: 404, message: 'could not find a job with the given ID' });
