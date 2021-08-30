@@ -15,9 +15,26 @@ spec:
         name: harmony-service-example
     spec:
       containers:
-        - name: harmony-service-example
+        - name: worker
           imagePullPolicy: IfNotPresent
-          image: harmonyservices/service-example-wrap:latest
+          image: harmonyservices/service-example:latest
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+          command: ["/bin/sh", "-c"]
+          args:
+            - while true; do
+                date;
+                sleep 10;
+              done
+        - name: manager
+          imagePullPolicy: IfNotPresent
+          image: harmonyservices/service-runner:latest
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -30,6 +47,18 @@ spec:
             value: |-
               -m
               harmony_service_example
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
           ports:
             - containerPort: 5000
           volumeMounts:

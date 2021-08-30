@@ -43,9 +43,6 @@ function makeConfigVar(envName: string, defaultValue?: string): void {
   process.env[envName] = stringValue;
 }
 
-winston.warn(`WORKING_DIR=${process.env.WORKING_DIR}`);
-winston.warn(`INVOCATION_ARGS=${process.env.INVOCATION_ARGS}`);
-
 const allEnv = { ...envDefaults, ...envOverrides, ...process.env };
 
 for (const k of Object.keys(allEnv)) {
@@ -57,6 +54,7 @@ interface HarmonyEnv {
   harmonyService: string;
   invocationArgs: string;
   logLevel: string;
+  myPodName: string;
   port: number;
   pullUrl: string;
   responseUrl: string;
@@ -64,6 +62,7 @@ interface HarmonyEnv {
   scriptDir: string;
   uploadBucket: string;
   useLocalstack: boolean;
+  workerTimeout: number;
   workingDir: string;
 }
 
