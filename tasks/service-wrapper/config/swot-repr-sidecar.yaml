@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: harmony-service-example
+  name: swot-reproject
   labels:
-    name: harmony-service-example
+    name: swot-reproject
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: harmony-service-example
+      name: swot-reproject
   template:
     metadata:
       labels:
-        name: harmony-service-example
+        name: swot-reproject
     spec:
       containers:
         - name: worker
-          imagePullPolicy: IfNotPresent
-          image: harmonyservices/service-example:latest
+          imagePullPolicy: $SWOT_REPROJECT_IMAGE_PULL_POLICY
+          image: $SWOT_REPROJECT_IMAGE
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -41,12 +41,17 @@ spec:
           - secretRef:
               name: harmony-secrets
           env:
+          - name: BACKEND_HOST
+            value: $BACKEND_HOST
+          - name: BACKEND_PORT
+            value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: "harmonyservices/service-example:latest"
+            value: $SWOT_REPROJECT_IMAGE_PULL_POLICY
+          - name: WORKING_DIR
+            value: "/home"
           - name: INVOCATION_ARGS
             value: |-
-              -m
-              harmony_service_example
+              swotrepr.py
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -75,7 +80,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: harmony-service-example
+  name: swot-reproject
 spec:
   ports:
     - name: frontend
@@ -83,5 +88,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: harmony-service-example
+    name: swot-reproject
   type: LoadBalancer

@@ -83,8 +83,7 @@ argo version
    ``` bash
    export HOST_VOLUME_PATH=<full path to some directory under your home directory>
    ``` 
-   b. Build the service wrapper images (see [Developing Services for Harmony Turbo](#developing-services-for-harmony-turbo) first if 
-   developing a new service)
+   b. Build the service wrapper image
   ```bash
   pushd harmony/tasks/service-wrapper && npm run build && popd
   ```
@@ -122,7 +121,10 @@ We recommend using [harmony-py](https://github.com/nasa/harmony-py) and its exam
 You can update Harmony by running the `bin/update-harmony` script. This will pull the latest Harmony Docker images from DockerHub and
 restart Harmony.
 
-**NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
+**NOTE** This will recreate the jobs database, so old links to job statuses will no longer work. Also, since it
+pulls the hamrony image from DockerHub it will overwrite any local changes you have made to the image. This is also
+true for the query-cmr image. This script is intended for service developers not working directly on the harmony
+source code.
 
 You can include the `-s` flag to update service images as well, e.g.,
 
@@ -156,8 +158,8 @@ image using the following steps before executing step 4 of the Quick Start instr
   c. Set the `WORKING_DIR` environment variable to the directory where in your container that the code should
   execute. This defaults to `/home`, so you can remove this variable if that works for your service.
   d. Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run
-  your service with Python from the command line. For example, if you had a module name `my-service`
-  in the working directory, then you would run the service using 
+  your service with Python from the command line. For example, if you had a module named `my-service`
+  in the working directory, then you would run the service using
   ```bash
   python -m my-service
   ```
@@ -167,15 +169,7 @@ image using the following steps before executing step 4 of the Quick Start instr
     value: |-
       -m
       my-service
-  ```
-4. Add a `scripts` entry to  harmony/tasks/service-wrapper/package.json for your service by copying
-   one of the existing script target, e.g., `build-netcdf-to-zarr` and modifying it to fit your Docker build.
-5. Build the service wrapper for your service image using `npm`
-``` bash
-export HOST_VOLUME_PATH=<some directory under your home director>
-cd harmony/tasks/service-wrapper && npm run build-my-service-wrapper
-```
-  
+  ```  
 ## Development Prerequisites
 
 For developing Harmony on Windows follow this document as well as the information in [docs/dev_container/README.md](docs/dev_container/README.md).

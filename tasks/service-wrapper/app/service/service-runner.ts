@@ -1,6 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
 import { readdirSync } from 'fs';
-import { spawn } from 'child_process';
 import stream from 'stream';
 import env from '../util/env';
 import log from '../util/log';
@@ -49,10 +48,6 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
     catalogDir,
   ];
 
-  // const opts = {
-  //   cwd: '/app',
-  // };
-
   return new Promise<ServiceResponse>((resolve) => {
     log.debug('CALLING WORKER');
     // timeout if things take too long
@@ -91,29 +86,6 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
       resolve({ error: e.message });
     }
   });
-
-  // return new Promise<ServiceResponse>((resolve) => {
-  //   log.info(`Calling service ${env.harmonyService}`);
-  //   const process = spawn('node', args, opts);
-  //   process.stdout.on('data', (data) => {
-  //     log.info(data.toString());
-  //   });
-  //   process.stderr.on('data', (data) => {
-  //     log.error(data.toString());
-  //   });
-  //   process.on('exit', (code) => {
-  //     if (code !== 0) {
-  //       resolve({ error: `Process exited with code ${code}` });
-  //     } else {
-  //       resolve({
-  //         batchCatalogs: _getStacCatalogs(`/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`),
-  //       });
-  //     }
-  //   });
-  //   process.on('error', (error: Error) => {
-  //     resolve({ error: error.message });
-  //   });
-  // });
 }
 
 /**

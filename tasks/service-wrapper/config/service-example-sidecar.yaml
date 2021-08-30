@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: query-cmr
+  name: harmony-service-example
   labels:
-    name: query-cmr
+    name: harmony-service-example
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: query-cmr
+      name: harmony-service-example
   template:
     metadata:
       labels:
-        name: query-cmr
+        name: harmony-service-example
     spec:
       containers:
         - name: worker
-          imagePullPolicy: IfNotPresent
-          image: harmonyservices/query-cmr:latest
+          imagePullPolicy: $HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY
+          image: $HARMONY_SERVICE_EXAMPLE_IMAGE
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -41,8 +41,16 @@ spec:
           - secretRef:
               name: harmony-secrets
           env:
+          - name: BACKEND_HOST
+            value: $BACKEND_HOST
+          - name: BACKEND_PORT
+            value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: "harmonyservices/query-cmr:latest"
+            value: $HARMONY_SERVICE_EXAMPLE_IMAGE
+          - name: INVOCATION_ARGS
+            value: |-
+              -m
+              harmony_service_example
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -71,7 +79,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: query-cmr
+  name: harmony-service-example
 spec:
   ports:
     - name: frontend
@@ -79,5 +87,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: query-cmr
+    name: harmony-service-example
   type: LoadBalancer

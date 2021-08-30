@@ -7,7 +7,7 @@ import logger from '../util/log';
 import { runPythonServiceFromPull, runQueryCmrFromPull, ServiceResponse } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
 
-const timeout = 3_000; // Wait up to 30 seconds for the server to start sending
+const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
 const activeSocketKeepAlive = 6_000;
 const maxSockets = 1;
 const maxFreeSockets = 1;
@@ -21,13 +21,16 @@ const keepaliveAgent = new Agent({
   freeSocketTimeout: timeout, // free socket keepalive for 30 seconds
 });
 
+const workUrl = `http://${env.backendHost}:${env.backendPort}/service/work`;
+logger.debug(`WORK URL: ${workUrl}`);
+
 /**
  * Requests work items from Harmony
  */
 async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: string }> {
   try {
     const response = await axios
-      .get(env.pullUrl, {
+      .get(workUrl, {
         params: { serviceID: env.harmonyService },
         timeout,
         responseType: 'json',
@@ -80,7 +83,7 @@ async function pullAndDoWork(): Promise<void> {
         while (tries < maxRetries && !complete) {
           tries += 1;
           try {
-            const response = await axios.put(`${env.responseUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
+            const response = await axios.put(`${workUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
             if (response.status >= 400) {
               logger.error(`Error: received status [${response.status}] when updating WorkItem ${workItem.id}`);
               logger.error(`Error: ${response.statusText}`);

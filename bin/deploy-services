@@ -1,6 +1,33 @@
 #!/bin/bash
 # create back end services for Harmony
 
+SELF=$(basename $0)
+
+function usage() {
+  echo "Usage: $SELF [-s]"
+  echo "  -s: include sds/swot-reproject:latest in deployed serivces. This requires a local build of the sds/swot-reproject:latest image."
+}
+
+include_swot_repr=0
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+  -s)
+  include_swot_repr=1
+  shift
+  ;;
+  -h|--help)
+  usage && exit 1
+  shift
+  ;;
+  *)
+  usage && exit 1
+  ;;
+esac
+done
+
 env_save=$(export -p)
 set -a
 source "env-defaults"
@@ -17,7 +44,7 @@ fi
 
 for file in tasks/service-wrapper/config/*.yaml
 do
-  if [[ ! "$file" == "swot-repr-wrapper.yml" ]]; then
+  if [[ "$include_swot_repr" == "1"  || ! "$file" =~ ^.*swot-repr-sidecar.yaml$ ]]; then
     echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
     envsubst < $file | kubectl apply -f - -n argo
   fi

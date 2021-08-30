@@ -50,14 +50,14 @@ for (const k of Object.keys(allEnv)) {
 }
 
 interface HarmonyEnv {
+  backendHost: string;
+  backendPort: number;
   harmonyClientId: string;
   harmonyService: string;
   invocationArgs: string;
   logLevel: string;
   myPodName: string;
   port: number;
-  pullUrl: string;
-  responseUrl: string;
   scriptFile: string;
   scriptDir: string;
   uploadBucket: string;

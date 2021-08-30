@@ -25,7 +25,7 @@ x-argo-config: &default-argo-config
 
 https://cmr.earthdata.nasa.gov:
   - name: asfdataservices/gdal-subsetter
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     type:
       <<: *default-argo-config
       params:
@@ -247,7 +247,7 @@ https://cmr.earthdata.nasa.gov:
 https://cmr.uat.earthdata.nasa.gov:
 
   - name: asfdataservices/gdal-subsetter
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     type:
       <<: *default-argo-config
       params:
@@ -316,6 +316,9 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/png
         - image/gif
       reprojection: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
 
   - name: harmony/service-example
     data_operation_version: '0.11.0'

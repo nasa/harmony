@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: netcdf-to-zarr
+  name: query-cmr
   labels:
-    name: netcdf-to-zarr
+    name: query-cmr
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: netcdf-to-zarr
+      name: query-cmr
   template:
     metadata:
       labels:
-        name: netcdf-to-zarr
+        name: query-cmr
     spec:
       containers:
         - name: worker
-          imagePullPolicy: IfNotPresent
-          image: harmonyservices/netcdf-to-zarr:latest
+          imagePullPolicy: $CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY
+          image: $CMR_GRANULE_LOCATOR_IMAGE
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -41,14 +41,12 @@ spec:
           - secretRef:
               name: harmony-secrets
           env:
+          - name: BACKEND_HOST
+            value: $BACKEND_HOST
+          - name: BACKEND_PORT
+            value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: "harmonyservices/netcdf-to-zarr:latest"
-          - name: WORKING_DIR
-            value: "/opt/harmony-netcdf-to-zarr"
-          - name: INVOCATION_ARGS
-            value: |-
-              -m
-              harmony_netcdf_to_zarr
+            value: "$CMR_GRANULE_LOCATOR_IMAGE"
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -77,7 +75,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: netcdf-to-zarr
+  name: query-cmr
 spec:
   ports:
     - name: frontend
@@ -85,5 +83,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: netcdf-to-zarr
+    name: query-cmr
   type: LoadBalancer
