@@ -1,3 +1,4 @@
+import logger from 'app/util/log';
 import { subMinutes } from 'date-fns';
 import { IPagination } from 'knex-paginate';
 import _ from 'lodash';
@@ -109,24 +110,30 @@ export async function getNextWorkItem(
   tx: Transaction,
   serviceID: string,
 ): Promise<WorkItem> {
-  const workItemData = await tx(WorkItem.table)
-    .forUpdate()
-    .select(...tableFields, `${WorkflowStep.table}.operation`)
-    // eslint-disable-next-line func-names
-    .join(WorkflowStep.table, function () {
-      this
-        .on(`${WorkflowStep.table}.stepIndex`, `${WorkItem.table}.workflowStepIndex`)
-        .on(`${WorkflowStep.table}.jobID`, `${WorkItem.table}.jobID`);
-    })
-    .where({ 'work_items.serviceID': serviceID, status: WorkItemStatus.READY })
-    .orderBy([`${WorkItem.table}.id`])
-    .first();
+  let workItemData;
+  try {
+    workItemData = await tx(WorkItem.table)
+      .forUpdate()
+      .select(...tableFields, `${WorkflowStep.table}.operation`)
+      // eslint-disable-next-line func-names
+      .join(WorkflowStep.table, function () {
+        this
+          .on(`${WorkflowStep.table}.stepIndex`, `${WorkItem.table}.workflowStepIndex`)
+          .on(`${WorkflowStep.table}.jobID`, `${WorkItem.table}.jobID`);
+      })
+      .where({ 'work_items.serviceID': serviceID, status: WorkItemStatus.READY })
+      .orderBy([`${WorkItem.table}.id`])
+      .first();
 
-  if (workItemData) {
-    workItemData.operation = JSON.parse(workItemData.operation);
-    await tx(WorkItem.table)
-      .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
-      .where({ id: workItemData.id });
+    if (workItemData) {
+      workItemData.operation = JSON.parse(workItemData.operation);
+      await tx(WorkItem.table)
+        .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
+        .where({ id: workItemData.id });
+    }
+  } catch (e) {
+    logger.error('Error getting next work item');
+    throw e;
   }
 
   return workItemData && new WorkItem(workItemData);

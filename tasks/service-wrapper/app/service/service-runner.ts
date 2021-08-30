@@ -5,6 +5,8 @@ import env from '../util/env';
 import log from '../util/log';
 import WorkItem from '../../../../app/models/work-item';
 
+// Must match where harmony expects artifacts in workflow-orchestration.ts
+const ARTIFACT_DIRECTORY = '/tmp/metadata';
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
@@ -37,7 +39,7 @@ function _getStacCatalogs(dir: string): string[] {
   */
 export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse> {
   const { operation, scrollID } = workItem;
-  const catalogDir = `/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`;
+  const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
   const args = [
     'tasks/query-cmr/app/cli',
     '--harmony-input',
@@ -98,7 +100,7 @@ export function runPythonServiceFromPull(workItem: WorkItem): Promise<ServiceRes
   const commandLine = env.invocationArgs.split('\n');
   log.debug(`Working dir: ${env.workingDir}`);
 
-  const catalogDir = `/tmp/metadata/${operation.requestId}/${workItem.id}/outputs`;
+  const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
 
   return new Promise<ServiceResponse>((resolve) => {
     log.debug('CALLING WORKER');

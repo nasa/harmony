@@ -93,8 +93,7 @@ export async function queryScrollId(
     pageSize,
   );
   const { hits } = cmrResponse;
-  logger.info(`HITS: ${hits}`);
-  logger.info(`GOT ${cmrResponse.granules.length} granules in page`);
+  logger.info(`CMR Hits: ${hits}, Number of granules returned in this page: ${cmrResponse.granules.length}`);
   const catalogs = cmrResponse.granules.map((granule) => {
     const result = new CmrStacCatalog({ description: `CMR collection ${granule.collection_concept_id}, granule ${granule.id}` });
     result.links.push({

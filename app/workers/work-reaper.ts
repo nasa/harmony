@@ -21,44 +21,45 @@ export default class WorkReaper implements Worker {
   }
 
   async deleteTerminalWork(notUpdatedForMinutes: number, jobStatus: JobStatus[]): Promise<void> {
-    const workItemIds = await getWorkItemIdsByJobUpdateAgeAndStatus(
-      db, notUpdatedForMinutes, jobStatus,
-    );
-    if (workItemIds.length) {
-      const numItemsDeleted = await deleteWorkItemsById(db, workItemIds);
-      this.logger.info(`Work reaper removed ${numItemsDeleted} work items`);
-    } else {
-      this.logger.info('Work reaper did not find any work items to delete');
-    }
-    const workStepIds = await getWorkflowStepIdsByJobUpdateAgeAndStatus(
-      db, notUpdatedForMinutes, jobStatus,
-    );
-    if (workStepIds.length) {
-      const numStepsDeleted = await deleteWorkflowStepsById(db, workStepIds);
-      this.logger.info(`Work reaper removed ${numStepsDeleted} workflow steps`);
-    } else {
-      this.logger.info('Work reaper did not find any workflow steps to delete');
+    try {
+      const workItemIds = await getWorkItemIdsByJobUpdateAgeAndStatus(
+        db, notUpdatedForMinutes, jobStatus,
+      );
+      if (workItemIds.length) {
+        const numItemsDeleted = await deleteWorkItemsById(db, workItemIds);
+        this.logger.info(`Work reaper removed ${numItemsDeleted} work items`);
+      } else {
+        this.logger.info('Work reaper did not find any work items to delete');
+      }
+      const workStepIds = await getWorkflowStepIdsByJobUpdateAgeAndStatus(
+        db, notUpdatedForMinutes, jobStatus,
+      );
+      if (workStepIds.length) {
+        const numStepsDeleted = await deleteWorkflowStepsById(db, workStepIds);
+        this.logger.info(`Work reaper removed ${numStepsDeleted} workflow steps`);
+      } else {
+        this.logger.info('Work reaper did not find any workflow steps to delete');
+      }
+    } catch (e) {
+      this.logger.error('Error attempting to delete terminal work items');
+      this.logger.error(e);
     }
   }
 
   async start(): Promise<void> {
     this.isRunning = true;
     while (this.isRunning) {
+      await sleep(10000);
       this.logger.info('Starting work reaper');
-      try {
-        await this.deleteTerminalWork(
-          env.reapableWorkAgeMinutes,
-          [
-            JobStatus.FAILED,
-            JobStatus.SUCCESSFUL,
-            JobStatus.CANCELED,
-          ],
-        );
-        await sleep(env.workReaperPeriodSec * 1000);
-      } catch (e) {
-        this.logger.error('Error while removing old work steps and items');
-        this.logger.error(e);
-      }
+      await this.deleteTerminalWork(
+        env.reapableWorkAgeMinutes,
+        [
+          JobStatus.FAILED,
+          JobStatus.SUCCESSFUL,
+          JobStatus.CANCELED,
+        ],
+      );
+      await sleep(env.workReaperPeriodSec * 1000);
     }
   }
 
