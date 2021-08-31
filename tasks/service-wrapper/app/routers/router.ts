@@ -1,7 +1,5 @@
 import express, { NextFunction } from 'express';
 
-import sem from '../util/semaphore';
-
 /**
  *
  * @returns Router configured with service routes.
@@ -14,12 +12,7 @@ export default function router(): express.Router {
   });
 
   result.get('/readiness', async (req, res, _next: NextFunction): Promise<void> => {
-    if (sem.available(1)) {
-      res.send('OK');
-    } else {
-      res.status(502);
-      res.send('Busy');
-    }
+    res.send('OK');
   });
 
   return result;

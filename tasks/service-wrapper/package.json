@@ -29,7 +29,6 @@
     "lodash.camelcase": "^4.3.0",
     "node-fetch": "^2.6.1",
     "python-shell": "^3.0.0",
-    "semaphore": "^1.1.0",
     "sqlite3": "^4.2.0",
     "superagent": "^6.1.0",
     "tmp": "^0.2.1",

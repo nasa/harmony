@@ -18,6 +18,13 @@ spec:
         - name: worker
           imagePullPolicy: $HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY
           image: $HARMONY_NETCDF_TO_ZARR_IMAGE
+          resources:
+            limits:
+              cpu: $HARMONY_NETCDF_TO_ZARR_LIMITS_CPU
+              memory: $HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY
+            requests:
+              cpu: $HARMONY_NETCDF_TO_ZARR_REQUESTS_CPU
+              memory: $HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -35,6 +42,13 @@ spec:
         - name: manager
           imagePullPolicy: IfNotPresent
           image: harmonyservices/service-runner:latest
+          resources:
+            limits:
+              cpu: $SERVICE_WRAPPER_LIMITS_CPU
+              memory: $SERVICE_WRAPPER_LIMITS_MEMORY
+            requests:
+              cpu: $SERVICE_WRAPPER_REQUESTS_CPU
+              memory: $SERVICE_WRAPPER_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env

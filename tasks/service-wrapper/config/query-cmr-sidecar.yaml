@@ -18,6 +18,13 @@ spec:
         - name: worker
           imagePullPolicy: $CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY
           image: $CMR_GRANULE_LOCATOR_IMAGE
+          resources:
+            limits:
+              cpu: $CMR_GRANULE_LOCATOR_LIMITS_CPU
+              memory: $CMR_GRANULE_LOCATOR_LIMITS_MEMORY
+            requests:
+              cpu: $CMR_GRANULE_LOCATOR_REQUESTS_CPU
+              memory: $CMR_GRANULE_LOCATOR_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -35,6 +42,13 @@ spec:
         - name: manager
           imagePullPolicy: IfNotPresent
           image: harmonyservices/service-runner:latest
+          resources:
+            limits:
+              cpu: $SERVICE_WRAPPER_LIMITS_CPU
+              memory: $SERVICE_WRAPPER_LIMITS_MEMORY
+            requests:
+              cpu: $SERVICE_WRAPPER_REQUESTS_CPU
+              memory: $SERVICE_WRAPPER_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env

@@ -18,11 +18,21 @@ spec:
         - name: worker
           imagePullPolicy: $SWOT_REPROJECT_IMAGE_PULL_POLICY
           image: $SWOT_REPROJECT_IMAGE
+          resources:
+            limits:
+              cpu: $SWOT_REPROJECT_LIMITS_CPU
+              memory: $SWOT_REPROJECT_LIMITS_MEMORY
+            requests:
+              cpu: $SWOT_REPROJECT_REQUESTS_CPU
+              memory: $SWOT_REPROJECT_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
           - secretRef:
               name: harmony-secrets
+          env:
+            - name: TEXT_LOGGER
+              value: "false"
           volumeMounts:
             - mountPath: /tmp/metadata
               name: test-volume
@@ -35,6 +45,13 @@ spec:
         - name: manager
           imagePullPolicy: IfNotPresent
           image: harmonyservices/service-runner:latest
+          resources:
+            limits:
+              cpu: $SERVICE_WRAPPER_LIMITS_CPU
+              memory: $SERVICE_WRAPPER_LIMITS_MEMORY
+            requests:
+              cpu: $SERVICE_WRAPPER_REQUESTS_CPU
+              memory: $SERVICE_WRAPPER_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env

@@ -8,6 +8,6 @@ SCRIPT_DIR=/home
 NODE_ENV=development
 WORKING_DIR="/home"
 LOG_LEVEL=debug
-# How long to let a worker run on a work item before timing out and reporting an error
-# default is 5 days
-WORKER_TIMEOUT=432000
+# How long (in ms) to let a worker run on a work item before timing out and reporting an error
+# default is 4 hours
+WORKER_TIMEOUT=14400000
