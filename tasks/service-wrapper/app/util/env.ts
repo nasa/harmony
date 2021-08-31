@@ -58,10 +58,6 @@ interface HarmonyEnv {
   logLevel: string;
   myPodName: string;
   port: number;
-  scriptFile: string;
-  scriptDir: string;
-  uploadBucket: string;
-  useLocalstack: boolean;
   workerTimeout: number;
   workingDir: string;
 }
@@ -69,8 +65,6 @@ interface HarmonyEnv {
 // special cases
 
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
-envVars.uploadBucket = process.env.UPLOAD_BUCKET || process.env.STAGING_BUCKET || 'local-staging-bucket';
-envVars.useLocalstack = process.env.USE_LOCALSTACK === 'true';
 envVars.port = 1234;
 
 export = envVars;
