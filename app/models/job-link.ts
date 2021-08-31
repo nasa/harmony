@@ -1,6 +1,6 @@
-import logger from 'app/util/log';
 import { IPagination } from 'knex-paginate'; // For types only
 import _ from 'lodash';
+import logger from '../util/log';
 import { Transaction } from '../util/db';
 import { removeEmptyProperties } from '../util/object';
 import Record from './record';

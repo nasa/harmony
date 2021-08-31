@@ -1,7 +1,7 @@
-import logger from 'app/util/log';
 import { subMinutes } from 'date-fns';
 import { IPagination } from 'knex-paginate';
 import _ from 'lodash';
+import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
 import { Job, JobStatus } from './job';
