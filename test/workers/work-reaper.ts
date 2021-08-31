@@ -1,8 +1,8 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import MockDate from 'mockdate';
-import { buildJob } from 'test/helpers/jobs';
-import { buildWorkflowStep } from 'test/helpers/workflow-steps';
+import { buildJob } from '../helpers/jobs';
+import { buildWorkflowStep } from '../helpers/workflow-steps';
 import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from '../../app/models/workflow-steps';
 import { JobStatus } from '../../app/models/job';
 import { deleteWorkItemsById, getWorkItemIdsByJobUpdateAgeAndStatus } from '../../app/models/work-item';
@@ -23,9 +23,9 @@ describe('WorkReaper-related functions', function () {
     await failedItem1.save(this.trx);
     const failedItem2 = buildWorkItem({ jobID: failedJob.jobID });
     await failedItem2.save(this.trx);
-    const failedStep1 = buildWorkflowStep({ jobID: failedJob.jobID });
+    const failedStep1 = buildWorkflowStep({ jobID: failedJob.jobID, stepIndex: 1 });
     await failedStep1.save(this.trx);
-    const failedStep2 = buildWorkflowStep({ jobID: failedJob.jobID });
+    const failedStep2 = buildWorkflowStep({ jobID: failedJob.jobID, stepIndex: 2 });
     await failedStep2.save(this.trx);
 
     const canceledJob = buildJob({ status: JobStatus.CANCELED });

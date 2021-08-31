@@ -30,6 +30,8 @@ exports.up = function(knex) {
         .notNullable();
 
       t.index(['jobID', 'stepIndex', 'serviceID']);
+
+      t.unique(['jobID', 'stepIndex']);
     })
     .createTable('work_items', (t) => {
       t.increments('id')

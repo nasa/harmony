@@ -55,7 +55,8 @@ CREATE TABLE `workflow_steps` (
   `operation` text not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
-  FOREIGN KEY(jobID) REFERENCES jobs(jobID)
+  FOREIGN KEY(jobID) REFERENCES jobs(jobID),
+  UNIQUE(jobID, stepIndex)
 );
 
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);
