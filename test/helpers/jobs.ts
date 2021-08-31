@@ -260,6 +260,40 @@ export function adminCancelJobWithGET(app: Express.Application, { jobID }: Job):
   return request(app).get(`/admin/jobs/${jobID}/cancel`);
 }
 
+/**
+ * Makes a request to view the workflow UI work items endpoint
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param options - Mapping object. Includes (optional) query param object (which maps query
+ * param names to values), jobID (to be used as the URL param), and (optional) username.
+ * e.g. \{jobID: job.jobID, username: 'billy', query: \{...\}\}
+ */
+export function workflowUIWorkItems(
+  app: Express.Application,
+  options: { jobID: string; username?: string; query?: object },
+): Test {
+  const { jobID, query } = options;
+  const actualQuery = query || {};
+  return request(app).get(`/workflow-ui/jobs/table/${jobID}`).query(actualQuery);
+}
+
+/**
+ * Makes an admin request to view the workflow UI work items endpoint
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param options - Mapping object. Includes (optional) query param object (which maps query
+ * param names to values), jobID (to be used as the URL param), and (optional) username.
+ * e.g. \{jobID: job.jobID, username: 'billy', query: \{...\}\}
+ */
+export function adminWorkflowUIWorkItems(
+  app: Express.Application,
+  options: { jobID: string; username?: string; query?: object },
+): Test {
+  const { jobID, query } = options;
+  const actualQuery = query || {};
+  return request(app).get(`/admin/workflow-ui/jobs/table/${jobID}`).query(actualQuery);
+}
+
 export const hookJobListing = hookRequest.bind(this, jobListing);
 export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);
 export const hookWorkflowUIJobs = hookRequest.bind(this, workflowUIJobs);
@@ -272,6 +306,8 @@ export const hookCancelJob = hookRequest.bind(this, cancelJob);
 export const hookAdminCancelJob = hookRequest.bind(this, adminCancelJob);
 export const hookCancelJobWithGET = hookRequest.bind(this, cancelJobWithGET);
 export const hookAdminCancelJobWithGET = hookRequest.bind(this, adminCancelJobWithGET);
+export const hookWorkflowUIWorkItems = hookRequest.bind(this, workflowUIWorkItems);
+export const hookAdminWorkflowUIWorkItems = hookRequest.bind(this, adminWorkflowUIWorkItems);
 
 /**
  * Given a string returns a new string with all characters escaped such that the string
