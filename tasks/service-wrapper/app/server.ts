@@ -12,7 +12,7 @@ import PullWorker from './workers/pull-worker';
 export default function start(_config: Record<string, string>): {} {
   // start the puller
   const pullWorker = new PullWorker();
-  pullWorker.start();
+  pullWorker.start().catch();
 
   const app = express();
 

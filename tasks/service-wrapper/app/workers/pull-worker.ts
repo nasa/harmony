@@ -27,7 +27,7 @@ logger.debug(`WORK URL: ${workUrl}`);
 /**
  * Requests work items from Harmony
  */
-async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: string }> {
+async function _pullWork(): Promise<{ item?: WorkItem; status?: number; error?: string }> {
   try {
     const response = await axios
       .get(workUrl, {
@@ -44,22 +44,22 @@ async function pullWork(): Promise<{ item?: WorkItem; status?: number; error?: s
       const errMsg = response.statusText ? response.statusText : 'Unknown error';
       return { error: errMsg, status: response.status };
     }
-    return { item: response.data };
+    return { item: response.data, status: response.status };
   } catch (err) {
     if (err.status !== 404 && err.message !== `Response timeout of ${timeout}ms exceeded`) {
       logger.error(`Request failed with error: ${err.message}`);
       return { error: err.message };
     }
     // 404s are expected when no work is available
-    return {};
+    return { status: err.status };
   }
 }
 
 /**
  * Pull work and execute it
  */
-async function pullAndDoWork(): Promise<void> {
-  const work = await pullWork();
+async function _pullAndDoWork(): Promise<void> {
+  const work = await _pullWork();
   if (!work.error) {
     if (work.item) {
       const workItem = work.item;
@@ -95,7 +95,7 @@ async function pullAndDoWork(): Promise<void> {
           }
           if (tries < maxRetries && !complete) {
             logger.info(`Retrying failure to update work item id ${work.item.id} and job id ${work.item.jobID}`);
-            sleep(1000);
+            await sleep(1000);
           }
         }
       });
@@ -107,9 +107,9 @@ async function pullAndDoWork(): Promise<void> {
     // something bad happened
     logger.error(`Full details: ${JSON.stringify(work)}`);
     logger.error(`Unexpected error while pulling work: ${work.error}`);
-    sleep(3000);
+    await sleep(3000);
   }
-  setTimeout(pullAndDoWork, 500);
+  setTimeout(_pullAndDoWork, 500);
 }
 
 /**
@@ -131,7 +131,7 @@ function _primeCmrService(): void {
 /**
  * Call the sidecar service once to get around a k8s client bug
  */
-function _primeServide(): void {
+function _primeService(): void {
   const exampleWorkItemProps = {
     jobID: '1',
     serviceID: 'harmony-services/query-cmr:latest',
@@ -148,10 +148,16 @@ export default class PullWorker implements Worker {
     if (env.harmonyService === 'harmonyservices/query-cmr:latest') {
       _primeCmrService();
     } else {
-      _primeServide();
+      _primeService();
     }
 
     // poll the Harmony work endpoint
-    pullAndDoWork();
+    _pullAndDoWork().catch((e) => {
+      logger.error(e.message);
+    });
   }
 }
+
+export const exportedForTesting = {
+  _pullWork,
+};
