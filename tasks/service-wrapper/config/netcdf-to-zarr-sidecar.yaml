@@ -41,7 +41,7 @@ spec:
               done
         - name: manager
           imagePullPolicy: IfNotPresent
-          image: harmonyservices/service-runner:latest
+          image: $SERVICE_RUNNER_IMAGE
           resources:
             limits:
               cpu: $SERVICE_WRAPPER_LIMITS_CPU

@@ -213,11 +213,14 @@ DEFAULT_PARALLELISM=2
 # default is 4 hours
 WORKER_TIMEOUT=14400000
 
+# The service runner image used as a sidecar for polling for work for
 SERVICE_WRAPPER_REQUESTS_CPU=128m
 SERVICE_WRAPPER_REQUESTS_MEMORY=128Mi
 SERVICE_WRAPPER_LIMITS_CPU=128m
 SERVICE_WRAPPER_LIMITS_MEMORY=512Mi
+SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:latest
 
+# backend services
 ASF_GDAL_SUBSETTER_IMAGE=asfdataservices/gdal-subsetter:latest
 ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
 ASF_GDAL_SUBSETTER_PARALLELISM=2
