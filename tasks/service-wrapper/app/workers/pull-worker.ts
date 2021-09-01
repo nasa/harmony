@@ -115,7 +115,7 @@ async function _pullAndDoWork(): Promise<void> {
 /**
  * Call the sidecar query-cmr service once to get around a k8s client bug
  */
-function _primeCmrService(): void {
+async function _primeCmrService(): Promise<void> {
   const exampleWorkItemProps = {
     jobID: '1',
     serviceID: 'harmony-services/query-cmr:latest',
@@ -131,7 +131,7 @@ function _primeCmrService(): void {
 /**
  * Call the sidecar service once to get around a k8s client bug
  */
-function _primeService(): void {
+async function _primeService(): Promise<void> {
   const exampleWorkItemProps = {
     jobID: '1',
     serviceID: 'harmony-services/query-cmr:latest',
@@ -146,9 +146,9 @@ export default class PullWorker implements Worker {
   async start(): Promise<void> {
     // workaround for k8s client bug https://github.com/kubernetes-client/javascript/issues/714
     if (env.harmonyService === 'harmonyservices/query-cmr:latest') {
-      _primeCmrService();
+      await _primeCmrService();
     } else {
-      _primeService();
+      await _primeService();
     }
 
     // poll the Harmony work endpoint

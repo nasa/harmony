@@ -1,6 +1,5 @@
 import axios from 'axios';
-import { expect } from 'chai';
-import MockAdapter from 'axios-mock-adapter'
+import MockAdapter from 'axios-mock-adapter';
 import WorkItem from '../../../../app/models/work-item';
 
 /**
