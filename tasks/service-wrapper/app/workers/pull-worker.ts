@@ -3,8 +3,8 @@ import Agent from 'agentkeepalive';
 import { Worker } from '../../../../app/workers/worker';
 import env from '../util/env';
 import WorkItem, { WorkItemStatus, WorkItemRecord } from '../../../../app/models/work-item';
-import logger from '../util/log';
-import { runPythonServiceFromPull, runQueryCmrFromPull, ServiceResponse } from '../service/service-runner';
+import logger from '../../../../app/util/log';
+import { runPythonServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
 
 const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
@@ -66,39 +66,38 @@ async function _pullAndDoWork(): Promise<void> {
       // work items with a scrollID are only for the query-cmr service
       const workFunc = workItem.scrollID ? runQueryCmrFromPull : runPythonServiceFromPull;
       logger.debug('Calling work function');
-      await workFunc(work.item).then(async (serviceResponse: ServiceResponse) => {
-        logger.debug('Finished work');
-        if (serviceResponse.batchCatalogs) {
-          workItem.status = WorkItemStatus.SUCCESSFUL;
-          workItem.results = serviceResponse.batchCatalogs;
-        } else {
-          logger.error(`Service failed with error: ${serviceResponse.error}`);
-          workItem.status = WorkItemStatus.FAILED;
-          workItem.errorMessage = `${serviceResponse.error}`;
-        }
-        // call back to Harmony to mark the work unit as complete or failed
-        logger.debug(`Sending response to Harmony for results work item id ${work.item.id} and job id ${work.item.jobID}`);
-        let tries = 0;
-        let complete = false;
-        while (tries < maxRetries && !complete) {
-          tries += 1;
-          try {
-            const response = await axios.put(`${workUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
-            if (response.status >= 400) {
-              logger.error(`Error: received status [${response.status}] when updating WorkItem ${workItem.id}`);
-              logger.error(`Error: ${response.statusText}`);
-            } else {
-              complete = true;
-            }
-          } catch (e) {
-            logger.error(e);
+      const serviceResponse = await workFunc(work.item);
+      logger.debug('Finished work');
+      if (serviceResponse.batchCatalogs) {
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = serviceResponse.batchCatalogs;
+      } else {
+        logger.error(`Service failed with error: ${serviceResponse.error}`);
+        workItem.status = WorkItemStatus.FAILED;
+        workItem.errorMessage = `${serviceResponse.error}`;
+      }
+      // call back to Harmony to mark the work unit as complete or failed
+      logger.debug(`Sending response to Harmony for results work item id ${work.item.id} and job id ${work.item.jobID}`);
+      let tries = 0;
+      let complete = false;
+      while (tries < maxRetries && !complete) {
+        tries += 1;
+        try {
+          const response = await axios.put(`${workUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
+          if (response.status >= 400) {
+            logger.error(`Error: received status [${response.status}] when updating WorkItem ${workItem.id}`);
+            logger.error(`Error: ${response.statusText}`);
+          } else {
+            complete = true;
           }
-          if (tries < maxRetries && !complete) {
-            logger.info(`Retrying failure to update work item id ${work.item.id} and job id ${work.item.jobID}`);
-            await sleep(1000);
-          }
+        } catch (e) {
+          logger.error(e);
         }
-      });
+        if (tries < maxRetries && !complete) {
+          logger.info(`Retrying failure to update work item id ${work.item.id} and job id ${work.item.jobID}`);
+          await sleep(1000);
+        }
+      }
     }
   } else if (work.error === `timeout of ${timeout}ms exceeded`) {
     // timeouts are expected - just try again after a short delay (100 ms)
@@ -125,7 +124,10 @@ async function _primeCmrService(): Promise<void> {
     scrollID: '1234',
   } as WorkItemRecord;
 
-  runQueryCmrFromPull(new WorkItem(exampleWorkItemProps));
+  runQueryCmrFromPull(new WorkItem(exampleWorkItemProps)).catch((e) => {
+    logger.error('Failed to prime service');
+    throw e;
+  });
 }
 
 /**
@@ -139,7 +141,11 @@ async function _primeService(): Promise<void> {
     workflowStepIndex: 0,
     operation: { requestId: 'abc' },
   } as WorkItemRecord;
-  runPythonServiceFromPull(new WorkItem(exampleWorkItemProps));
+
+  runPythonServiceFromPull(new WorkItem(exampleWorkItemProps)).catch((e) => {
+    logger.error('Failed to prime service');
+    throw e;
+  });
 }
 
 export default class PullWorker implements Worker {

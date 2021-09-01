@@ -2,7 +2,7 @@ import * as k8s from '@kubernetes/client-node';
 import { readdirSync } from 'fs';
 import stream from 'stream';
 import env from '../util/env';
-import log from '../util/log';
+import logger from '../../../../app/util/log';
 import WorkItem from '../../../../app/models/work-item';
 
 // Must match where harmony expects artifacts in workflow-orchestration.ts
@@ -29,7 +29,7 @@ class LogStream extends stream.Writable {
     const chunkStr = chunk.toString('utf8');
     this.logStr += chunkStr;
     if (this.shouldLog) {
-      log.debug(`FROM WORKER LOG: ${chunkStr}`);
+      logger.debug(`FROM WORKER LOG: ${chunkStr}`);
     }
     next();
   }
@@ -86,7 +86,7 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
   ];
 
   return new Promise<ServiceResponse>((resolve) => {
-    log.debug('CALLING WORKER');
+    logger.debug('CALLING WORKER');
     // create a writable stream to capture stdout from the exec call
     // using stdout instead of stderr because the service library seems to log ERROR to stdout
     const stdOut = new LogStream();
@@ -109,10 +109,10 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
       process.stdin as stream.Readable,
       true,
       (status: k8s.V1Status) => {
-        log.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
+        logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
         if (status.status === 'Success') {
           clearTimeout(timeout);
-          log.debug('Getting STAC catalogs');
+          logger.debug('Getting STAC catalogs');
           const catalogs = _getStacCatalogs(`${catalogDir}`);
           resolve({ batchCatalogs: catalogs });
         } else {
@@ -124,7 +124,7 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
       },
     ).catch((e) => {
       clearTimeout(timeout);
-      log.error(e.message);
+      logger.error(e.message);
       resolve({ error: e.message });
     });
   });
@@ -138,12 +138,12 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
 export async function runPythonServiceFromPull(workItem: WorkItem): Promise<ServiceResponse> {
   const { operation, stacCatalogLocation } = workItem;
   const commandLine = env.invocationArgs.split('\n');
-  log.debug(`Working dir: ${env.workingDir}`);
+  logger.debug(`Working dir: ${env.workingDir}`);
 
   const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
 
   return new Promise<ServiceResponse>((resolve) => {
-    log.debug('CALLING WORKER');
+    logger.debug('CALLING WORKER');
     // create a writable stream to capture stdout from the exec call
     // using stdout instead of stderr because the service library seems to log ERROR to stdout
     const stdOut = new LogStream();
@@ -173,10 +173,10 @@ export async function runPythonServiceFromPull(workItem: WorkItem): Promise<Serv
       process.stdin as stream.Readable,
       true,
       (status: k8s.V1Status) => {
-        log.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
+        logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
         if (status.status === 'Success') {
           clearTimeout(timeout);
-          log.debug('Getting STAC catalogs');
+          logger.debug('Getting STAC catalogs');
           const catalogs = _getStacCatalogs(`${catalogDir}`);
           resolve({ batchCatalogs: catalogs });
         } else {
@@ -188,7 +188,7 @@ export async function runPythonServiceFromPull(workItem: WorkItem): Promise<Serv
       },
     ).catch((e) => {
       clearTimeout(timeout);
-      log.error(e.message);
+      logger.error(e.message);
       resolve({ error: e.message });
     });
   });

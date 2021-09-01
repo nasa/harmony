@@ -1,6 +1,6 @@
 import express from 'express';
 import env from './util/env';
-import log from './util/log';
+import log from '../../../app/util/log';
 import router from './routers/router';
 import PullWorker from './workers/pull-worker';
 
