@@ -375,7 +375,11 @@ export async function getWorkItemsForWorkflowUI(
           { ...nextPage, linkTitle: 'next' },
         ],
         linkDisabled() { return (this.href ? '' : 'disabled'); },
-        linkHref() { return (this.href ? this.href.replace('/table', '') : ''); },
+        linkHref() {
+          return (this.href ? this.href
+            .replace('/work-items', '')
+            .replace(/(&|\?)checkJobStatus=(true|false)/, '') : '');
+        },
       });
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
