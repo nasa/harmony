@@ -263,7 +263,7 @@ export async function getJobsForWorkflowUI(
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     setPagingHeaders(res, pagination);
-    res.render('workflow-jobs', {
+    res.render('jobs/workflow-jobs', {
       jobs,
       jobBadge() { return badgeClasses[this.status]; },
       jobUrl() {
@@ -308,7 +308,7 @@ export async function getJobForWorkflowUI(
       if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
         throw new NotFoundError();
       }
-      res.render('workflow-job', {
+      res.render('jobs/workflow-job', {
         job,
         page,
         limit,
@@ -364,7 +364,7 @@ export async function getWorkItemsForWorkflowUI(
       const previousPage = pageLinks.find((l) => l.rel === 'prev');
       setPagingHeaders(res, pagination);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
-      res.render('workflow-items-table', {
+      res.render('jobs/workflow-items-table', {
         workItems,
         workflowItemUpdated() { return (new Date(this.updatedAt).toISOString()); },
         workflowItemCreated() { return (new Date(this.createdAt).toISOString()); },

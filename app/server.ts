@@ -89,7 +89,7 @@ function buildBackendServer(port: number): Server {
   const serviceResponseRegexp = /^\/service\/[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}\/response$/i;
   app.use(logForRoutes('timing.backend-request.start', 'allow', [serviceResponseRegexp]));
 
-  app.use(favicon(path.join(__dirname, '..', 'public', 'favicon.ico')));
+  app.use(favicon(path.join(__dirname, '..', 'public/assets/images', 'favicon.ico')));
   app.use('/service', serviceResponseRouter());
   app.get('/', ((req, res) => res.send('OK')));
   app.use(errorHandler);
@@ -114,7 +114,7 @@ function buildFrontendServer(port: number, config: RouterConfig): Server {
   // currently, only service requests are timed (for the frontend)
   app.use(logForRoutes('timing.frontend-request.start', 'allow', [cmrCollectionReader.collectionRegex]));
 
-  app.use(favicon(path.join(__dirname, '..', 'public', 'favicon.ico')));
+  app.use(favicon(path.join(__dirname, '..', 'public/assets/images', 'favicon.ico')));
 
   // Setup mustache as a templating engine for HTML views
   app.engine('mustache.html', mustacheExpress());
