@@ -27,8 +27,6 @@ export function hookWorkItemUpdate(status: number, message?: string): void {
   const mock = new MockAdapter(axios);
   beforeEach(function () {
     mock.onPut().reply(status, message);
-    // expect(mock.history.get.length).to.equal(1);
-    // expect(mock.history.put.length).to.equal(1);
   });
 
   afterEach(function () {

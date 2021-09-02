@@ -56,28 +56,42 @@ async function _pullWork(): Promise<{ item?: WorkItem; status?: number; error?: 
 }
 
 /**
- * Pull work and execute it
+ * Call a service to perform some work
+ *
+ * @param workItem - the work to be done
  */
-async function _pullAndDoWork(): Promise<void> {
+async function _doWork(
+  workItem: WorkItem,
+): Promise<WorkItem> {
+  const newWorkItem = workItem;
+  // work items with a scrollID are only for the query-cmr service
+  const workFunc = newWorkItem.scrollID ? runQueryCmrFromPull : runPythonServiceFromPull;
+  logger.debug('Calling work function');
+  const serviceResponse = await workFunc(newWorkItem);
+  logger.debug('Finished work');
+  if (serviceResponse.batchCatalogs) {
+    newWorkItem.status = WorkItemStatus.SUCCESSFUL;
+    newWorkItem.results = serviceResponse.batchCatalogs;
+  } else {
+    logger.error(`Service failed with error: ${serviceResponse.error}`);
+    newWorkItem.status = WorkItemStatus.FAILED;
+    newWorkItem.errorMessage = `${serviceResponse.error}`;
+  }
+
+  return newWorkItem;
+}
+
+/**
+ * Pull work and execute it
+ * @param repeat - if true the function will loop forever (added for testing purposes)
+ */
+async function _pullAndDoWork(repeat = true): Promise<void> {
   const work = await _pullWork();
   if (!work.error) {
     if (work.item) {
-      const workItem = work.item;
-      // work items with a scrollID are only for the query-cmr service
-      const workFunc = workItem.scrollID ? runQueryCmrFromPull : runPythonServiceFromPull;
-      logger.debug('Calling work function');
-      const serviceResponse = await workFunc(work.item);
-      logger.debug('Finished work');
-      if (serviceResponse.batchCatalogs) {
-        workItem.status = WorkItemStatus.SUCCESSFUL;
-        workItem.results = serviceResponse.batchCatalogs;
-      } else {
-        logger.error(`Service failed with error: ${serviceResponse.error}`);
-        workItem.status = WorkItemStatus.FAILED;
-        workItem.errorMessage = `${serviceResponse.error}`;
-      }
+      const workItem = await _doWork(work.item);
       // call back to Harmony to mark the work unit as complete or failed
-      logger.debug(`Sending response to Harmony for results work item id ${work.item.id} and job id ${work.item.jobID}`);
+      logger.debug(`Sending response to Harmony for results work item id ${workItem.id} and job id ${workItem.jobID}`);
       let tries = 0;
       let complete = false;
       while (tries < maxRetries && !complete) {
@@ -94,7 +108,7 @@ async function _pullAndDoWork(): Promise<void> {
           logger.error(e);
         }
         if (tries < maxRetries && !complete) {
-          logger.info(`Retrying failure to update work item id ${work.item.id} and job id ${work.item.jobID}`);
+          logger.info(`Retrying failure to update work item id ${workItem.id} and job id ${workItem.jobID}`);
           await sleep(1000);
         }
       }
@@ -108,11 +122,15 @@ async function _pullAndDoWork(): Promise<void> {
     logger.error(`Unexpected error while pulling work: ${work.error}`);
     await sleep(3000);
   }
-  setTimeout(_pullAndDoWork, 500);
+
+  if (repeat) {
+    setTimeout(_pullAndDoWork, 500);
+  }
 }
 
 /**
  * Call the sidecar query-cmr service once to get around a k8s client bug
+ * only exported so we can spy during testing
  */
 async function _primeCmrService(): Promise<void> {
   const exampleWorkItemProps = {
@@ -148,22 +166,27 @@ async function _primeService(): Promise<void> {
   });
 }
 
+export const exportedForTesting = {
+  _pullWork,
+  _doWork,
+  _primeCmrService,
+  _primeService,
+};
+
 export default class PullWorker implements Worker {
-  async start(): Promise<void> {
+  async start(repeat = true): Promise<void> {
     // workaround for k8s client bug https://github.com/kubernetes-client/javascript/issues/714
     if (env.harmonyService === 'harmonyservices/query-cmr:latest') {
-      await _primeCmrService();
+      // called this way to support sinon spy
+      await exportedForTesting._primeCmrService();
     } else {
-      await _primeService();
+      // called this way to support sinon spy
+      await exportedForTesting._primeService();
     }
 
     // poll the Harmony work endpoint
-    _pullAndDoWork().catch((e) => {
+    _pullAndDoWork(repeat).catch((e) => {
       logger.error(e.message);
     });
   }
 }
-
-export const exportedForTesting = {
-  _pullWork,
-};

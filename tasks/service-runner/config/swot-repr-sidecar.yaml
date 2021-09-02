@@ -18,11 +18,11 @@ spec:
         - name: worker
           imagePullPolicy: $SWOT_REPROJECT_IMAGE_PULL_POLICY
           image: $SWOT_REPROJECT_IMAGE
-          resources:
-            limits:
-              memory: $SWOT_REPROJECT_LIMITS_MEMORY
-            requests:
-              memory: $SWOT_REPROJECT_REQUESTS_MEMORY
+          # resources:
+          #   limits:
+          #     memory: $SWOT_REPROJECT_LIMITS_MEMORY
+          #   requests:
+          #     memory: $SWOT_REPROJECT_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -44,10 +44,10 @@ spec:
           imagePullPolicy: IfNotPresent
           image: $SERVICE_RUNNER_IMAGE
           resources:
-            limits:
-              memory: $SERVICE_RUNNER_LIMITS_MEMORY
-            requests:
-              memory: $SERVICE_RUNNER_REQUESTS_MEMORY
+            # limits:
+            #   memory: $SERVICE_RUNNER_LIMITS_MEMORY
+            # requests:
+            #   memory: $SERVICE_RUNNER_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
