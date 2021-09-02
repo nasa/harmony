@@ -41,7 +41,7 @@ describe('Workflow UI work items table route', function () {
     });
 
     it('sets the "redirect" cookie to the originally-requested resource', function () {
-      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/workflow-ui/jobs/table/${targetJob.jobID}`));
+      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/workflow-ui/jobs/${targetJob.jobID}/work-items`));
     });
   });
 

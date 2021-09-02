@@ -6,7 +6,7 @@ export class WorkFlowItemsTable {
 
   constructor(jobId, page, limit) {
     const fiveSeconds = 5 * 1000;
-    this.tableUrl = `./table/${jobId}?page=${page}&limit=${limit}`;
+    this.tableUrl = `./${jobId}/work-items?page=${page}&limit=${limit}`;
     this._startPolling(fiveSeconds, true);
   }
 

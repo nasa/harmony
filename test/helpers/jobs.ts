@@ -274,7 +274,7 @@ export function workflowUIWorkItems(
 ): Test {
   const { jobID, query } = options;
   const actualQuery = query || {};
-  return request(app).get(`/workflow-ui/jobs/table/${jobID}`).query(actualQuery);
+  return request(app).get(`/workflow-ui/jobs/${jobID}/work-items`).query(actualQuery);
 }
 
 /**
@@ -291,7 +291,7 @@ export function adminWorkflowUIWorkItems(
 ): Test {
   const { jobID, query } = options;
   const actualQuery = query || {};
-  return request(app).get(`/admin/workflow-ui/jobs/table/${jobID}`).query(actualQuery);
+  return request(app).get(`/admin/workflow-ui/jobs/${jobID}/work-items`).query(actualQuery);
 }
 
 export const hookJobListing = hookRequest.bind(this, jobListing);

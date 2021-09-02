@@ -186,7 +186,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.get('/', landingPage);
   result.get('/versions', getVersions);
-  result.use('/docs/api', swaggerUi.serve, swaggerUi.setup(yaml.load(ogcCoverageApi.openApiContent), { customJs: '/analytics-tag.js' }));
+  result.use('/docs/api', swaggerUi.serve, swaggerUi.setup(yaml.load(ogcCoverageApi.openApiContent), { customJs: '/js/docs/analytics-tag.js' }));
   result.get(collectionPrefix('(wms|eoss|ogc-api-coverages)'), service(serviceInvoker));
   result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
   result.get('/jobs', getJobsListing);
@@ -194,13 +194,13 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.post('/jobs/:jobID/cancel', cancelJob);
   result.get('/workflow-ui/jobs', getJobsForWorkflowUI);
   result.get('/workflow-ui/jobs/:jobID', getJobForWorkflowUI);
-  result.get('/workflow-ui/jobs/table/:jobID', getWorkItemsForWorkflowUI);
+  result.get('/workflow-ui/jobs/:jobID/work-items', getWorkItemsForWorkflowUI);
   result.get('/admin/jobs', getJobsListing);
   result.get('/admin/jobs/:jobID', getJobStatus);
   result.post('/admin/jobs/:jobID/cancel', cancelJob);
   result.get('/admin/workflow-ui/jobs', getJobsForWorkflowUI);
   result.get('/admin/workflow-ui/jobs/:jobID', getJobForWorkflowUI);
-  result.get('/admin/workflow-ui/jobs/table/:jobID', getWorkItemsForWorkflowUI);
+  result.get('/admin/workflow-ui/jobs/:jobID/work-items', getWorkItemsForWorkflowUI);
 
   // Allow canceling with a GET in addition to POST to workaround issues with redirects using EDL
   result.get('/jobs/:jobID/cancel', cancelJob);

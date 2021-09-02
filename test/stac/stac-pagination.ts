@@ -33,7 +33,7 @@ describe('STAC - pagination', function () {
     // circumvent ordering problems with sqlite
     const jTrx = await db.transaction();
     await aJob.save(jTrx);
-    jTrx.commit();
+    await jTrx.commit();
     for (let i = 1; i < 51; i++) {
       links.push(
         new JobLink({
@@ -56,7 +56,7 @@ describe('STAC - pagination', function () {
         link,
       );
       await aJob.save(trx);
-      trx.commit();
+      await trx.commit();
     }
   });
 

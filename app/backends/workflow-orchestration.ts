@@ -26,10 +26,6 @@ export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
   const { serviceID } = req.query;
-  const { logger } = req.context;
-  if (tryCount === 1) {
-    logger.debug(`Getting work for service [${serviceID}]`);
-  }
   let workItem;
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
