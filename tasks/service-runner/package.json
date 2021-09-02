@@ -1,5 +1,5 @@
 {
-  "name": "service-wrapper",
+  "name": "service-runner",
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",

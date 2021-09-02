@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: swot-reproject
+  name: query-cmr
   labels:
-    name: swot-reproject
+    name: query-cmr
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: swot-reproject
+      name: query-cmr
   template:
     metadata:
       labels:
-        name: swot-reproject
+        name: query-cmr
     spec:
       containers:
         - name: worker
-          imagePullPolicy: $SWOT_REPROJECT_IMAGE_PULL_POLICY
-          image: $SWOT_REPROJECT_IMAGE
+          imagePullPolicy: $CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY
+          image: $CMR_GRANULE_LOCATOR_IMAGE
           resources:
             limits:
-              memory: $SWOT_REPROJECT_LIMITS_MEMORY
+              memory: $CMR_GRANULE_LOCATOR_LIMITS_MEMORY
             requests:
-              memory: $SWOT_REPROJECT_REQUESTS_MEMORY
+              memory: $CMR_GRANULE_LOCATOR_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -59,12 +59,7 @@ spec:
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: $SWOT_REPROJECT_IMAGE
-          - name: WORKING_DIR
-            value: "/home"
-          - name: INVOCATION_ARGS
-            value: |-
-              swotrepr.py
+            value: "$CMR_GRANULE_LOCATOR_IMAGE"
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -93,7 +88,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: swot-reproject
+  name: query-cmr
 spec:
   ports:
     - name: frontend
@@ -101,5 +96,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: swot-reproject
+    name: query-cmr
   type: LoadBalancer

@@ -82,10 +82,10 @@ argo version
    a path using `~`, .e.g., `~/metadata`.
    ``` bash
    export HOST_VOLUME_PATH=<full path to some directory under your home directory>
-   ``` 
+   ```
    b. Build the service wrapper image
   ```bash
-  pushd harmony/tasks/service-wrapper && npm run build && popd
+  pushd harmony/tasks/service-runner && npm run build && popd
   ```
 
 5. Run the bootstrap script and answer the prompts
@@ -148,9 +148,9 @@ If you are developing a service and wish to test it locally with Harmony turbo m
 image using the following steps before executing step 4 of the Quick Start instructions:
 
 1. Build the image for your service as you would for the (non-Turbo Harmony)
-2. Add a Dockerfile to harmony/tasks/service-wrapper to build the wrapper for your image by copying
+2. Add a Dockerfile to harmony/tasks/service-runner to build the wrapper for your image by copying
    an existing one such as `Dockerfile.netcdf-to-zarr` and modifying it to fit your base image.
-3. Create a service wrapper YAML file in harmony/tasks/service-wrapper/config by copying the `netcdf-to-zar-wrapper.yaml`
+3. Create a service wrapper YAML file in harmony/tasks/service-runner/config by copying the `netcdf-to-zar-wrapper.yaml`
    file and modifying it for your service.
   a. Change `netcdf-to-zarr` everywhere in the file to the name of your service
   b. Set `image` under `containers` to the Docker image you want to wrap. Do the same for the
@@ -169,7 +169,7 @@ image using the following steps before executing step 4 of the Quick Start instr
     value: |-
       -m
       my-service
-  ```  
+  ```
 ## Development Prerequisites
 
 For developing Harmony on Windows follow this document as well as the information in [docs/dev_container/README.md](docs/dev_container/README.md).

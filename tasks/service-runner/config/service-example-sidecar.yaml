@@ -20,10 +20,8 @@ spec:
           image: $HARMONY_SERVICE_EXAMPLE_IMAGE
           resources:
             limits:
-              cpu: $HARMONY_SERVICE_EXAMPLE_LIMITS_CPU
               memory: $HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY
             requests:
-              cpu: $HARMONY_SERVICE_EXAMPLE_REQUESTS_CPU
               memory: $HARMONY_SERVICE_EXAMPLE_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
@@ -47,11 +45,9 @@ spec:
           image: $SERVICE_RUNNER_IMAGE
           resources:
             limits:
-              cpu: $SERVICE_WRAPPER_LIMITS_CPU
-              memory: $SERVICE_WRAPPER_LIMITS_MEMORY
+              memory: $SERVICE_RUNNER_LIMITS_MEMORY
             requests:
-              cpu: $SERVICE_WRAPPER_REQUESTS_CPU
-              memory: $SERVICE_WRAPPER_REQUESTS_MEMORY
+              memory: $SERVICE_RUNNER_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env

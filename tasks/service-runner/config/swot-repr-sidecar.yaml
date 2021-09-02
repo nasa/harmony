@@ -1,30 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: asf-gdal-service
+  name: swot-reproject
   labels:
-    name: asf-gdal-service
+    name: swot-reproject
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: asf-gdal-service
+      name: swot-reproject
   template:
     metadata:
       labels:
-        name: asf-gdal-service
+        name: swot-reproject
     spec:
       containers:
         - name: worker
-          imagePullPolicy: $ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY
-          image: $ASF_GDAL_SUBSETTER_IMAGE
+          imagePullPolicy: $SWOT_REPROJECT_IMAGE_PULL_POLICY
+          image: $SWOT_REPROJECT_IMAGE
           resources:
             limits:
-              cpu: $ASF_GDAL_SUBSETTER_LIMITS_CPU
-              memory: $ASF_GDAL_SUBSETTER_LIMITS_MEMORY
+              memory: $SWOT_REPROJECT_LIMITS_MEMORY
             requests:
-              cpu: $ASF_GDAL_SUBSETTER_REQUESTS_CPU
-              memory: $ASF_GDAL_SUBSETTER_REQUESTS_MEMORY
+              memory: $SWOT_REPROJECT_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -47,11 +45,9 @@ spec:
           image: $SERVICE_RUNNER_IMAGE
           resources:
             limits:
-              cpu: $SERVICE_WRAPPER_LIMITS_CPU
-              memory: $SERVICE_WRAPPER_LIMITS_MEMORY
+              memory: $SERVICE_RUNNER_LIMITS_MEMORY
             requests:
-              cpu: $SERVICE_WRAPPER_REQUESTS_CPU
-              memory: $SERVICE_WRAPPER_REQUESTS_MEMORY
+              memory: $SERVICE_RUNNER_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -63,13 +59,12 @@ spec:
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: "$ASF_GDAL_SUBSETTER_IMAGE"
+            value: $SWOT_REPROJECT_IMAGE
           - name: WORKING_DIR
             value: "/home"
           - name: INVOCATION_ARGS
             value: |-
-              -m
-              gdal_subsetter
+              swotrepr.py
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -98,13 +93,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: asf-gdal-service
+  name: swot-reproject
 spec:
   ports:
     - name: frontend
-      port: 5001
+      port: 5000
       targetPort: 5000
       protocol: TCP
   selector:
-    name: asf-gdal-service
+    name: swot-reproject
   type: LoadBalancer

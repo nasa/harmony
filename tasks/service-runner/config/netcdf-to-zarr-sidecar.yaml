@@ -1,30 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: query-cmr
+  name: netcdf-to-zarr
   labels:
-    name: query-cmr
+    name: netcdf-to-zarr
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: query-cmr
+      name: netcdf-to-zarr
   template:
     metadata:
       labels:
-        name: query-cmr
+        name: netcdf-to-zarr
     spec:
       containers:
         - name: worker
-          imagePullPolicy: $CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY
-          image: $CMR_GRANULE_LOCATOR_IMAGE
+          imagePullPolicy: $HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY
+          image: $HARMONY_NETCDF_TO_ZARR_IMAGE
           resources:
             limits:
-              cpu: $CMR_GRANULE_LOCATOR_LIMITS_CPU
-              memory: $CMR_GRANULE_LOCATOR_LIMITS_MEMORY
+              memory: $HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY
             requests:
-              cpu: $CMR_GRANULE_LOCATOR_REQUESTS_CPU
-              memory: $CMR_GRANULE_LOCATOR_REQUESTS_MEMORY
+              memory: $HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -47,11 +45,9 @@ spec:
           image: $SERVICE_RUNNER_IMAGE
           resources:
             limits:
-              cpu: $SERVICE_WRAPPER_LIMITS_CPU
-              memory: $SERVICE_WRAPPER_LIMITS_MEMORY
+              memory: $SERVICE_RUNNER_LIMITS_MEMORY
             requests:
-              cpu: $SERVICE_WRAPPER_REQUESTS_CPU
-              memory: $SERVICE_WRAPPER_REQUESTS_MEMORY
+              memory: $SERVICE_RUNNER_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -63,7 +59,13 @@ spec:
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: "$CMR_GRANULE_LOCATOR_IMAGE"
+            value: $HARMONY_NETCDF_TO_ZARR_IMAGE
+          - name: WORKING_DIR
+            value: "/opt/harmony-netcdf-to-zarr"
+          - name: INVOCATION_ARGS
+            value: |-
+              -m
+              harmony_netcdf_to_zarr
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -92,7 +94,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: query-cmr
+  name: netcdf-to-zarr
 spec:
   ports:
     - name: frontend
@@ -100,5 +102,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: query-cmr
+    name: netcdf-to-zarr
   type: LoadBalancer
