@@ -47,15 +47,15 @@ describe('Pull Worker', async function () {
     });
   });
 
-  (describe('pullWork', async function () {
-    (describe('when work is available', async function () {
+  describe('pullWork', async function () {
+    describe('when work is available', async function () {
       const workItem = new WorkItem({
         jobID: '123',
         serviceID: 'abc',
         workflowStepIndex: 1,
       });
 
-      hookGetWorkRequest(200, workItem);
+      hookGetWorkRequest({ status: 200, workItem });
 
       it('returns a 200 status', async function () {
         const work = await _pullWork();
@@ -66,18 +66,26 @@ describe('Pull Worker', async function () {
         const work = await _pullWork();
         expect(work.item).to.eql(workItem, 'Expected a work item');
       });
-    }));
-    (describe('when work is not available', async function () {
-      hookGetWorkRequest(404, null);
+    });
+    describe('when work is not available', async function () {
+      hookGetWorkRequest({ status: 404 });
 
       it('returns a 404 status', async function () {
         const work = await _pullWork();
         expect(work.status).to.equal(404, 'Expected a 404 status when work is not available');
       });
-    }));
-  }));
+    });
+    describe('when there was an error getting work', async function () {
+      hookGetWorkRequest({ status: 503, statusText: 'something bad happened' });
+      it('returns an error message', async function () {
+        const work = await _pullWork();
+        expect(work.status).to.be.greaterThanOrEqual(400, 'Expected an error status');
+        expect(work.error).to.eql('something bad happened');
+      });
+    });
+  });
 
-  describe('pull and do work', async function () {
+  describe('do work', async function () {
     let queryCmrSpy: sinon.SinonSpy;
     let serviceSpy: sinon.SinonSpy;
     const invocArgs = env.invocationArgs;
@@ -122,6 +130,42 @@ describe('Pull Worker', async function () {
           await _doWork(workItem);
           expect(serviceSpy.called).to.be.true;
         });
+      });
+    });
+  });
+
+  describe('Pull and do work', async function () {
+
+  });
+
+  describe('Service primers', async function () {
+    let queryCmrSpy: sinon.SinonSpy;
+    let serviceSpy: sinon.SinonSpy;
+    const invocArgs = env.invocationArgs;
+    beforeEach(function () {
+      queryCmrSpy = sinon.spy(serviceRunner, 'runQueryCmrFromPull');
+      serviceSpy = sinon.spy(serviceRunner, 'runPythonServiceFromPull');
+
+      env.invocationArgs = 'abc\n123';
+    });
+
+    afterEach(function () {
+      env.invocationArgs = invocArgs;
+      queryCmrSpy.restore();
+      serviceSpy.restore();
+    });
+
+    describe('When the query-cmr service is primed', async function () {
+      it('calls runQueryCmrFromPull', async function () {
+        await _primeCmrService();
+        expect(queryCmrSpy.called).to.be.true;
+      });
+    });
+
+    describe('When a service is primed', async function () {
+      it('calls runPythonServiceFromPull', async function () {
+        await _primeService();
+        expect(serviceSpy.called).to.be.true;
       });
     });
   });

@@ -40,7 +40,7 @@ class LogStream extends stream.Writable {
  * @param dir - the directory containing the catalogs
  */
 function _getStacCatalogs(dir: string): string[] {
-  // readdirync should be ok since a service only ever handles one WorkItem at a time and may
+  // readdirSync should be ok since a service only ever handles one WorkItem at a time and may
   // actually be necessary to ensure read after write consistency on EFS
   return readdirSync(dir)
     .filter((fileName) => fileName.match(/catalog\d*.json/))
@@ -119,6 +119,7 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
           clearTimeout(timeout);
           const logErr = _getErrorMessage(stdOut.logStr);
           const errMsg = `${env.harmonyService}: ${logErr}`;
+          stdOut.destroy();
           resolve({ error: errMsg });
         }
       },
@@ -193,3 +194,8 @@ export async function runPythonServiceFromPull(workItem: WorkItem): Promise<Serv
     });
   });
 }
+
+export const exportedForTesting = {
+  _getStacCatalogs,
+  _getErrorMessage,
+};

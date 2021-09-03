@@ -7,11 +7,17 @@ import WorkItem from '../../../../app/models/work-item';
  * @param status - the http status code to return
  * @param workItem - the work item to return
  */
-export function hookGetWorkRequest(status: number, workItem: WorkItem): void {
+export function hookGetWorkRequest(
+  response: { status: number; statusText?: string; workItem?: WorkItem },
+): void {
   let mock;
   beforeEach(function () {
     mock = new MockAdapter(axios);
-    mock.onGet().reply(status, workItem);
+    if (response.workItem) {
+      mock.onGet().reply(response.status, response.workItem);
+    } else {
+      mock.onGet().reply(response.status, response.statusText);
+    }
   });
 
   afterEach(function () {

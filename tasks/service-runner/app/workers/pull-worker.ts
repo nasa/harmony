@@ -40,18 +40,19 @@ async function _pullWork(): Promise<{ item?: WorkItem; status?: number; error?: 
         },
       });
 
-    if (response.status >= 400) {
-      const errMsg = response.statusText ? response.statusText : 'Unknown error';
-      return { error: errMsg, status: response.status };
+    // 404s are expected when no work is available
+    if (response.status === 404) {
+      return { status: response.status };
     }
+
     return { item: response.data, status: response.status };
   } catch (err) {
-    if (err.status !== 404 && err.message !== `Response timeout of ${timeout}ms exceeded`) {
-      logger.error(`Request failed with error: ${err.message}`);
-      return { error: err.message };
+    if (err.message !== `Response timeout of ${timeout}ms exceeded`) {
+      logger.error(`Request failed with error: ${err.response.data}`);
+      return { status: err.response.status, error: err.response.data };
     }
-    // 404s are expected when no work is available
-    return { status: err.status };
+
+    return { status: err.response.status, error: err.message };
   }
 }
 
