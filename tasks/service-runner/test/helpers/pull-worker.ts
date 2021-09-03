@@ -14,9 +14,9 @@ export function hookGetWorkRequest(
   beforeEach(function () {
     mock = new MockAdapter(axios);
     if (response.workItem) {
-      mock.onGet().reply(response.status, response.workItem);
+      mock.onGet().replyOnce(response.status, response.workItem);
     } else {
-      mock.onGet().reply(response.status, response.statusText);
+      mock.onGet().replyOnce(response.status, response.statusText);
     }
   });
 
@@ -29,7 +29,7 @@ export function hookGetWorkRequest(
  * @param status - the http status code to return
  * @param message - the message to return
  */
-export function hookWorkItemUpdate(status: number, message?: string): void {
+export function hookWorkItemUpdate(status: number, message?: string): MockAdapter {
   const mock = new MockAdapter(axios);
   beforeEach(function () {
     mock.onPut().reply(status, message);
@@ -38,4 +38,6 @@ export function hookWorkItemUpdate(status: number, message?: string): void {
   afterEach(function () {
     mock.restore();
   });
+
+  return mock;
 }

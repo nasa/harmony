@@ -8,7 +8,12 @@ import * as pullWorker from '../app/workers/pull-worker';
 import PullWorker from '../app/workers/pull-worker';
 import * as serviceRunner from '../app/service/service-runner';
 
-const { _pullWork, _doWork, _primeCmrService, _primeService } = pullWorker.exportedForTesting;
+const {
+  _pullWork,
+  _doWork,
+  _pullAndDoWork,
+  _primeCmrService,
+  _primeService } = pullWorker.exportedForTesting;
 
 describe('Pull Worker', async function () {
   describe('on start', async function () {
@@ -122,7 +127,7 @@ describe('Pull Worker', async function () {
         const workItem = new WorkItem({
           jobID: '123',
           serviceID: 'abc',
-          workflowStepIndex: 0,
+          workflowStepIndex: 1,
           operation: { requestID: 'foo' },
           id: 1,
         });
@@ -132,10 +137,6 @@ describe('Pull Worker', async function () {
         });
       });
     });
-  });
-
-  describe('Pull and do work', async function () {
-
   });
 
   describe('Service primers', async function () {

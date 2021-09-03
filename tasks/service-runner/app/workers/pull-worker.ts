@@ -172,6 +172,7 @@ async function _primeService(): Promise<void> {
 export const exportedForTesting = {
   _pullWork,
   _doWork,
+  _pullAndDoWork,
   _primeCmrService,
   _primeService,
 };
