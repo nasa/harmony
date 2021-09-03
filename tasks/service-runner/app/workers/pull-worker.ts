@@ -23,6 +23,8 @@ const keepaliveAgent = new Agent({
 
 const workUrl = `http://${env.backendHost}:${env.backendPort}/service/work`;
 logger.debug(`WORK URL: ${workUrl}`);
+logger.debug(`HARMONY_SERVICE: ${env.harmonyService}`);
+logger.debug(`INVOCATION_ARGS: ${env.invocationArgs}`);
 
 /**
  * Requests work items from Harmony
@@ -177,7 +179,7 @@ export const exportedForTesting = {
 export default class PullWorker implements Worker {
   async start(repeat = true): Promise<void> {
     // workaround for k8s client bug https://github.com/kubernetes-client/javascript/issues/714
-    if (env.harmonyService === 'harmonyservices/query-cmr:latest') {
+    if (env.harmonyService.includes('harmonyservices/query-cmr')) {
       // called this way to support sinon spy
       await exportedForTesting._primeCmrService();
     } else {
