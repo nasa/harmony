@@ -489,6 +489,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/HOSS
     umm_s:
       - S1240682712-EEDTEST
+      - S1241070355-GES_DISC # GESDISC_HOSS
     collections:
       - C1238392622-EEDTEST  # RSSMIF16D test collection UAT
       - C1222931739-GHRC_CLOUD  # RSSMIF16D UAT
