@@ -9,12 +9,7 @@
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
-    "build-query-cmr-wrapper": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/query-cmr -t harmonyservices/query-cmr-wrap:${VERSION:-latest} -f Dockerfile.queryCmr .",
-    "build-service-example-wrapper": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/service-example --tag harmonyservices/service-example-wrap:${VERSION:-latest} -f Dockerfile.harmony-service-example .",
-    "build-netcdf-to-zarr-wrapper": "tsc && docker build --build-arg BASE_IMAGE=harmonyservices/netcdf-to-zarr --tag harmonyservices/netcdf-to-zarr-wrap:${VERSION:-latest} -f Dockerfile.netcdf-to-zarr .",
-    "build-swot-repr-wrapper": "tsc && docker build --build-arg BASE_IMAGE=sds/swot-reproject --tag sds/swot-reproject-wrap:${VERSION:-latest} -f Dockerfile.swot-reproject .",
-    "build-old": "npm run build-query-cmr-wrapper && npm run build-service-example-wrapper && npm run build-netcdf-to-zarr-wrapper",
-    "build": "tsc && docker build --tag harmonyservices/service-runner:${VERSION:-latest} -f Dockerfile.service-runner ."
+    "build": "tsc && docker build --tag harmonyservices/service-runner:${VERSION:-latest} ."
   },
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
