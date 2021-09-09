@@ -95,7 +95,7 @@ async function _cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise
 }
 
 /**
- * Creates the next work items for the workflow based on
+ * Creates the next work items for the workflow based on the results of the current step
  * @param tx - The database transaction
  * @param currentWorkItem - The current work item
  * @param nextStep - the next step in the workflow
