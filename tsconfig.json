@@ -10,5 +10,6 @@
       "sourceMap": true,
       "outDir": "built"
   },
-  "include": ["./app/**/*", "./test/**/*", "./tasks/**/app/**/*"]
+  "include": ["./app/**/*", "./test/**/*", "./tasks/**/app/**/*"],
+  "exclude": ["./tasks/**/built/**/*"]
 }
