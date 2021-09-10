@@ -31,7 +31,7 @@ describe('Work Backends', function () {
 
   hookServersStartStop({ skipEarthdataLogin: true });
 
-  describe('getting a work item', function () {
+  describe('when getting a work item', function () {
     const readyWorkItem = {
       serviceID: 'theReadyService',
       status: WorkItemStatus.READY,
@@ -119,7 +119,7 @@ describe('Work Backends', function () {
   });
 
   describe('updating a work item', function () {
-    describe('and the work item failed', async function () {
+    describe('when the work item failed', async function () {
       hookJobCreation(jobRecord);
       hookWorkflowStepCreation(workflowStepRecod);
 
@@ -130,11 +130,11 @@ describe('Work Backends', function () {
       hookWorkItemCreation(failedWorkItemRecord);
       hookWorkItemUpdate((r) => r.send(failedWorkItemRecord));
 
-      it('the work item status is set to failed', async function () {
+      it('sets the work item status is set to failed', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.FAILED);
       });
-      it('the job status is set to failed', async function () {
+      it('sets the job status is set to failed', async function () {
         const job = await Job.byJobID(db, this.job.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
       });
@@ -154,30 +154,30 @@ describe('Work Backends', function () {
 
       hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
 
-      it('the work item status is set to successful', async function () {
+      it('sets the work item status to successful', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.SUCCESSFUL);
       });
 
       describe('and the work item is the last in the chain', async function () {
-        it('the job updatedAt field is set to the current time', async function () {
+        it('sets the job updatedAt field to the current time', async function () {
           const updatedJob = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.updatedAt.valueOf()).to.greaterThan(this.job.updatedAt.valueOf());
         });
 
-        it('a link for the work results is added to the job', async function () {
+        it('adds a link for the work results to the job', async function () {
           const updatedJob = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.links.filter(
             (jobLink) => jobLink.href === expectedLink,
           ).length).to.equal(1);
         });
 
-        it('the job status is set to complete', async function () {
+        it('sets the job status to complete', async function () {
           const updatedJob = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.status === JobStatus.SUCCESSFUL);
         });
 
-        it('the job progress is 100', async function () {
+        it('sets the job progress to 100', async function () {
           const updatedJob = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.progress).to.equal(100);
         });
