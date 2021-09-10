@@ -49,12 +49,10 @@ async function _pullWork(): Promise<{ item?: WorkItem; status?: number; error?: 
 
     return { item: response.data, status: response.status };
   } catch (err) {
-    if (err.message !== `Response timeout of ${timeout}ms exceeded`) {
-      logger.error(`Request failed with error: ${err.response.data}`);
+    if (err.response) {
       return { status: err.response.status, error: err.response.data };
     }
-
-    return { status: err.response.status, error: err.message };
+    return { status: 500, error: err.message };
   }
 }
 

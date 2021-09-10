@@ -11,6 +11,10 @@
     "coverage": "nyc mocha",
     "build": "tsc && docker build --tag harmonyservices/service-runner:${VERSION:-latest} ."
   },
+  "engines": {
+    "node": "^12.14.1",
+    "npm": ">=7"
+  },
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
   "dependencies": {
