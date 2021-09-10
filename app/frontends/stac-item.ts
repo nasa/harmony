@@ -56,8 +56,8 @@ export class HarmonyItem {
    * @param bbox - GeoJSON bounding box
    */
   addSpatialExtent(bbox: number[]): void {
-    // Validate bounding box; should compliant with GeoJSON spec
-    if (bbox.length < 4) {
+    // Validate bounding box; should be compliant with GeoJSON spec
+    if (!bbox || bbox.length < 4) {
       throw new TypeError('Bounding box');
     }
 

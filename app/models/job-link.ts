@@ -1,6 +1,5 @@
 import { IPagination } from 'knex-paginate'; // For types only
 import _ from 'lodash';
-import logger from '../util/log';
 import { Transaction } from '../util/db';
 import { removeEmptyProperties } from '../util/object';
 import Record from './record';
@@ -185,40 +184,23 @@ export async function getLinksForJob(
   rel?: string,
   requireSpatioTemporal = false,
 ): Promise<{ data: JobLink[]; pagination: IPagination }> {
-  let links;
-  let pagination;
-  try {
-    const result = await transaction('job_links').select()
-      .where({ jobID })
-      .orderBy(['id'])
-      .modify((queryBuilder) => {
-        if (rel) {
-          queryBuilder
-            .where({ rel })
-            .catch((e) => {
-              logger.error('Failed to execute query to get job links');
-              throw e;
-            });
-        }
-        if (requireSpatioTemporal) {
-          queryBuilder
-            .whereNotNull('bbox')
-            .whereNotNull('temporalStart')
-            .whereNotNull('temporalEnd')
-            .catch((e) => {
-              logger.error('Failed to execute query with spatial and temporal to get job links');
-              throw e;
-            });
-        }
-      })
-      .forUpdate()
-      .paginate({ currentPage, perPage, isLengthAware: true });
-    links = result.data.map((j) => new JobLink(j));
-    // eslint-disable-next-line prefer-destructuring
-    pagination = result.pagination;
-  } catch (e) {
-    logger.error(`Unable to get links for job ${jobID}`);
-    logger.error(e);
-  }
-  return { data: links, pagination };
+  const result = await transaction('job_links').select()
+    .where({ jobID })
+    .orderBy(['id'])
+    .modify((queryBuilder) => {
+      if (rel) {
+        queryBuilder
+          .where({ rel });
+      }
+      if (requireSpatioTemporal) {
+        queryBuilder
+          .whereNotNull('bbox')
+          .whereNotNull('temporalStart')
+          .whereNotNull('temporalEnd');
+      }
+    })
+    .forUpdate()
+    .paginate({ currentPage, perPage, isLengthAware: true });
+  const links = result.data.map((j) => new JobLink(j));
+  return { data: links, pagination: result.pagination };
 }

@@ -48,18 +48,27 @@ export default class WorkReaper implements Worker {
 
   async start(): Promise<void> {
     this.isRunning = true;
+    let firstRun = true;
     while (this.isRunning) {
-      await sleep(10000);
+      if (!firstRun) {
+        await sleep(env.workReaperPeriodSec * 1000);
+      }
       this.logger.info('Starting work reaper');
-      await this.deleteTerminalWork(
-        env.reapableWorkAgeMinutes,
-        [
-          JobStatus.FAILED,
-          JobStatus.SUCCESSFUL,
-          JobStatus.CANCELED,
-        ],
-      );
-      await sleep(env.workReaperPeriodSec * 1000);
+      try {
+        await this.deleteTerminalWork(
+          env.reapableWorkAgeMinutes,
+          [
+            JobStatus.FAILED,
+            JobStatus.SUCCESSFUL,
+            JobStatus.CANCELED,
+          ],
+        );
+      } catch (e) {
+        this.logger.error('Work reaper failed to delete terminal work');
+        this.logger.error(e);
+      } finally {
+        firstRun = false;
+      }
     }
   }
 

@@ -93,11 +93,20 @@ export default class WorkflowReaper implements Worker {
 
   async start(): Promise<void> {
     this.isRunning = true;
+    let firstRun = true;
     while (this.isRunning) {
-      await sleep(10000);
+      if (!firstRun) {
+        await sleep(env.jobReaperPeriodSec * 1000);
+      }
       this.logger.info('Starting job reaper');
-      await this.cancelOrphanedJobs();
-      await sleep(env.jobReaperPeriodSec * 1000);
+      try {
+        await this.cancelOrphanedJobs();
+      } catch (e) {
+        this.logger.error('Job reaper failed to cancel jobs');
+        this.logger.error(e);
+      } finally {
+        firstRun = false;
+      }
     }
   }
 
