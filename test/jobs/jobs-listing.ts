@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
-import { Job, JobStatus } from 'models/job';
-import env from 'util/env';
+import { Job, JobStatus } from '../../app/models/job';
+import env from '../../app/util/env';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure, truncateAll } from '../helpers/db';
 import { containsJob, jobListing, hookJobListing, createIndexedJobs, itIncludesPagingRelations, hookAdminJobListing, buildJob } from '../helpers/jobs';

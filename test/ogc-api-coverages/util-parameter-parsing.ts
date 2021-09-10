@@ -5,7 +5,7 @@ import {
   subsetParamsToBbox,
   subsetParamsToTemporal,
   ParameterParseError,
-} from 'frontends/ogc-coverages/util/parameter-parsing';
+} from '../../app/frontends/ogc-coverages/util/parameter-parsing';
 
 describe('OGC API Coverages - Utilities', function () {
   describe('parseSubsetParams', function () {

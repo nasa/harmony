@@ -1,8 +1,8 @@
 import { pick } from 'lodash';
 import { IPagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
-import { removeEmptyProperties } from 'util/object';
-import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from 'util/cmr';
+import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from '../util/cmr';
+import { removeEmptyProperties } from '../util/object';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
@@ -91,7 +91,7 @@ export interface JobQuery {
  *   - createdAt: (Date) the date / time at which the job was created
  *   - updatedAt: (Date) the date / time at which the job was last updated
  */
-export class Job extends Record {
+export class Job extends Record implements JobRecord {
   static table = 'jobs';
 
   static statuses: JobStatus;
@@ -210,6 +210,18 @@ export class Job extends Record {
   }
 
   /**
+  * Returns a Job with the given jobID using the given transaction
+  *
+  * @param transaction - the transaction to use for querying
+  * @param jobID - the jobID for the job that should be retrieved
+  * @returns the Job with the given JobID or null if not found
+  */
+  static async byJobID(transaction: Transaction, jobID: string): Promise<Job | null> {
+    const jobList = await this.queryAll(transaction, { jobID }, true, 0, 1);
+    return jobList.data.shift();
+  }
+
+  /**
    * Returns the job matching the given username and request ID, or null if
    * no such job exists.
    *
@@ -297,10 +309,10 @@ export class Job extends Record {
   validate(): string[] {
     const errors = [];
     if (this.progress < 0 || this.progress > 100) {
-      errors.push('Job progress must be between 0 and 100');
+      errors.push(`Invalid progress ${this.progress}. Job progress must be between 0 and 100.`);
     }
     if (this.batchesCompleted < 0) {
-      errors.push('Job batchesCompleted must be greater than or equal to 0');
+      errors.push(`Invalid batchesCompleted ${this.batchesCompleted}. Job batchesCompleted must be greater than or equal to 0.`);
     }
     if (!this.request.match(/^https?:\/\/.+$/)) {
       errors.push(`Invalid request ${this.request}. Job request must be a URL.`);
@@ -403,6 +415,24 @@ export class Job extends Record {
     if (this.status === JobStatus.SUCCESSFUL) {
       this.progress = 100;
     }
+  }
+
+  /**
+   * Updates the job progress based on a single batch completing
+   * You must call `#save` to persist the change
+   *
+   * @param totalItemCount - the number of items in total that need to be processed for the job
+   * to complete.
+   */
+  completeBatch(totalItemCount: number = this.numInputGranules): void {
+    this.batchesCompleted += 1;
+    // Only allow progress to be set to 100 when the job status is set to successful
+    let progress = Math.min(100 * (this.batchesCompleted / totalItemCount), 99);
+    // don't allow negative progress
+    progress = Math.max(0, progress);
+    // progress must be an integer
+    progress = Math.floor(progress);
+    this.progress = progress;
   }
 
   /**

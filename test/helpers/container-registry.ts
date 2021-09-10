@@ -1,5 +1,5 @@
 import sinon, { SinonStub } from 'sinon';
-import { ECR, ImageDetails } from 'util/container-registry';
+import { ECR, ImageDetails } from '../../app/util/container-registry';
 
 /**
  * Adds before and after hooks to the ECR describe image call.

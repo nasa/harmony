@@ -1,6 +1,6 @@
 import { stub, SinonStub } from 'sinon';
-import { Job } from 'models/job';
 import { Logger } from 'winston';
+import { Job } from '../../app/models/job';
 import * as workflows from '../../app/util/workflows';
 
 /**

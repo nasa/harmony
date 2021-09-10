@@ -1,0 +1,79 @@
+{
+  "client": "harmony-test",
+  "callback": "http://example.com/callback",
+  "stagingLocation": "s3://some-bucket/public/some/prefix/",
+  "sources": [
+    {
+      "collection": "C1233800302-EEDTEST",
+      "variables": [{
+        "id": "V1233801717-EEDTEST",
+        "name": "alpha_var",
+        "fullPath": "data/colors/red_var"
+      }],
+      "granules": [
+        {
+          "id": "G1233800343-EEDTEST",
+          "name": "001_00_7f00ff_global.nc",
+          "url": "http://opendap.two.example.com",
+          "bbox": [
+            -100.5,
+            30.4,
+            -99.5,
+            31.4
+          ],
+          "temporal": {
+            "start": "1999-01-01T10:00:00.000Z",
+            "end": "2020-02-20T15:00:00.000Z"
+          }
+        }
+      ]
+    }
+  ],
+  "format": {
+    "mime": "image/png",
+    "interpolation": "near",
+    "scaleExtent": {
+      "x": {
+        "min": 0.5,
+        "max": 125
+      },
+      "y": {
+        "min": 52,
+        "max": 75.22
+      }
+    },
+    "scaleSize": {
+      "x": 14.2,
+      "y": 35
+    },
+    "crs": "CRS84",
+    "srs": {
+      "proj4": "+proj=longlat +datum=WGS84 +no_defs",
+      "wkt": "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]]",
+      "epsg": "EPSG:4326"
+    },
+    "width": 120,
+    "height": 225
+  },
+  "user": "test-user",
+  "accessToken": "ABCD1234567890",
+  "subset": {
+    "bbox": [
+      -130,
+      -45,
+      130,
+      45
+    ],
+    "shape": {
+      "href": "s3://example-bucket/some/path/resource.ext",
+      "type": "application/geo+json"
+    }
+  },
+  "isSynchronous": true,
+  "requestId": "c045c793-19f1-43b5-9547-c87a5c7dfadb",
+  "temporal": {
+    "start": "1999-01-01T10:00:00.000Z",
+    "end": "2020-02-20T15:00:00.000Z"
+  },
+  "version": "0.11.0"
+}

@@ -1,23 +1,18 @@
 import { get } from 'lodash';
-import * as fs from 'fs';
 import rewind from '@mapbox/geojson-rewind';
 import * as togeojson from '@tmcw/togeojson';
 
 import { DOMParser } from 'xmldom';
 import * as shpjs from 'shpjs';
 import * as tmp from 'tmp-promise';
-import * as util from 'util';
 
-import { RequestValidationError, HttpError, ServerError } from 'util/errors';
-import { defaultObjectStore } from 'util/object-store';
-import { listToText } from 'util/string';
 import { Logger } from 'winston';
 import { NextFunction } from 'express';
-import { cookieOptions } from 'util/cookies';
-
-const unlink = util.promisify(fs.unlink);
-const readFile = util.promisify(fs.readFile);
-const writeFile = util.promisify(fs.writeFile);
+import { promises as fs } from 'fs';
+import { RequestValidationError, HttpError, ServerError } from '../util/errors';
+import { defaultObjectStore } from '../util/object-store';
+import { listToText } from '../util/string';
+import { cookieOptions } from '../util/cookies';
 
 /**
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
@@ -32,9 +27,9 @@ async function _esriToGeoJson(filename: string): Promise<string> {
 
   try {
     geoJsonFile = await tmp.file();
-    const buffer = await readFile(filename);
+    const buffer = await fs.readFile(filename);
     const geojson = rewind(await shpjs.parseZip(buffer));
-    await writeFile(geoJsonFile.path, JSON.stringify(geojson), 'utf8');
+    await fs.writeFile(geoJsonFile.path, JSON.stringify(geojson), 'utf8');
   } catch (e) {
     if (geoJsonFile) geoJsonFile.cleanup();
     if (e instanceof RequestValidationError) throw e;
@@ -66,10 +61,10 @@ async function _kmlToGeoJson(filename: string, logger: Logger): Promise<string> 
         throw new RequestValidationError('The provided KML file could not be parsed. Please check its validity before retrying.');
       },
     };
-    const file = await readFile(filename, 'utf8');
+    const file = await fs.readFile(filename, 'utf8');
     const kml = new DOMParser(parserOpts).parseFromString(file);
     const converted = togeojson.kml(kml);
-    await writeFile(geoJsonFile.path, JSON.stringify(converted), 'utf8');
+    await fs.writeFile(geoJsonFile.path, JSON.stringify(converted), 'utf8');
   } catch (e) {
     if (geoJsonFile) geoJsonFile.cleanup();
     if (e instanceof RequestValidationError) throw e;
@@ -123,9 +118,9 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
         convertedFile = await converter.geoJsonConverter(originalFile, req.context.logger);
         operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
       } finally {
-        unlink(originalFile);
+        await fs.unlink(originalFile);
         if (convertedFile) {
-          unlink(convertedFile);
+          await fs.unlink(convertedFile);
         }
       }
     } else {

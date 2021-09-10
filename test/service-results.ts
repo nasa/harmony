@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { describe, it, before, after } from 'mocha';
-import { createPublicPermalink } from 'frontends/service-results';
-import { S3ObjectStore } from 'util/object-store';
+import { createPublicPermalink } from '../app/frontends/service-results';
+import { S3ObjectStore } from '../app/util/object-store';
 import hookServersStartStop from './helpers/servers';
 import { hookUrl } from './helpers/hooks';
 

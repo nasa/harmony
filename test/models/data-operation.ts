@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import DataOperation from 'models/data-operation';
-import { CURRENT_SCHEMA_VERSION, parseSchemaFile, versions } from 'test/helpers/data-operation';
+import { CURRENT_SCHEMA_VERSION, parseSchemaFile, versions } from '../helpers/data-operation';
+import DataOperation from '../../app/models/data-operation';
 
 const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 // bbox has one too many numbers

@@ -1,8 +1,8 @@
 import { NextFunction, Response } from 'express';
-import HarmonyRequest from 'models/harmony-request';
-import { RequestValidationError } from 'util/errors';
-import { Conjunction, listToText } from 'util/string';
-import { keysToLowerCase } from 'util/object';
+import HarmonyRequest from '../models/harmony-request';
+import { RequestValidationError } from '../util/errors';
+import { Conjunction, listToText } from '../util/string';
+import { keysToLowerCase } from '../util/object';
 
 /**
  * Middleware to execute various parameter validations

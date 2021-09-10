@@ -41,7 +41,7 @@ BACKEND_PORT=3001
 
 # The base URL for the service callbacks. This needs to be accessible from
 # wherever the service is run. The Harmony CI/CD scripts sets this to the
-# backend load balancer when running on AWS. The default is set for 
+# backend load balancer when running on AWS. The default is set for
 # running Harmony in Kubernetes.
 CALLBACK_URL_ROOT=http://harmony:3001
 # When running locally on a Mac or Linux (not in Kubernetes), use the appropriate value below.
@@ -141,6 +141,12 @@ JOB_REAPER_PERIOD_SEC=360
 # Jobs older than this many minutes that are running are checked by the job reaper
 REAPABLE_JOB_AGE_MINUTES=60
 
+# The time (in seconds) between invocations of the work reaper service
+WORK_REAPER_PERIOD_SEC=360
+
+# WorkItems and WorkflowSteps (in a terminal state) older than this many minutes are checked by the work reaper
+REAPABLE_WORK_AGE_MINUTES=1440
+
 # The number of seconds before timing out a single step (pod) in an Argo workflow
 DEFAULT_ARGO_POD_TIMEOUT_SECS=14400
 
@@ -203,44 +209,96 @@ KUBE_CONTEXT=docker-desktop
 DEFAULT_IMAGE_PULL_POLICY='IfNotPresent'
 DEFAULT_PARALLELISM=2
 
+# How long (in ms) to let a worker run on a work item before timing out and reporting an error
+# default is 4 hours
+WORKER_TIMEOUT=14400000
+
+# The service runner image used as a sidecar for polling for work for
+SERVICE_RUNNER_REQUESTS_CPU=128m
+SERVICE_RUNNER_REQUESTS_MEMORY=128Mi
+SERVICE_RUNNER_LIMITS_CPU=1024m
+SERVICE_RUNNER_LIMITS_MEMORY=512Mi
+SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:latest
+
+# backend services
 ASF_GDAL_SUBSETTER_IMAGE=asfdataservices/gdal-subsetter:latest
 ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
 ASF_GDAL_SUBSETTER_PARALLELISM=2
+ASF_GDAL_SUBSETTER_REQUESTS_CPU=128m
+ASF_GDAL_SUBSETTER_REQUESTS_MEMORY=128Mi
+ASF_GDAL_SUBSETTER_LIMITS_CPU=128m
+ASF_GDAL_SUBSETTER_LIMITS_MEMORY=512Mi
 
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
 HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY='IfNotPresent'
 HARMONY_SERVICE_EXAMPLE_PARALLELISM=2
+HARMONY_SERVICE_EXAMPLE_REQUESTS_CPU=128m
+HARMONY_SERVICE_EXAMPLE_REQUESTS_MEMORY=128Mi
+HARMONY_SERVICE_EXAMPLE_LIMITS_CPU=128m
+HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY=512Mi
 
 HARMONY_NETCDF_TO_ZARR_IMAGE=harmonyservices/netcdf-to-zarr:latest
 HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY='IfNotPresent'
 HARMONY_NETCDF_TO_ZARR_PARALLELISM=2
+HARMONY_NETCDF_TO_ZARR_REQUESTS_CPU=128m
+HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY=128Mi
+HARMONY_NETCDF_TO_ZARR_LIMITS_CPU=128m
+HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY=512Mi
 
 SWOT_REPROJECT_IMAGE=sds/swot-reproject:latest
 SWOT_REPROJECT_IMAGE_PULL_POLICY='IfNotPresent'
 SWOT_REPROJECT_PARALLELISM=2
+SWOT_REPROJECT_REQUESTS_CPU=128m
+SWOT_REPROJECT_REQUESTS_MEMORY=128Mi
+SWOT_REPROJECT_LIMITS_CPU=128m
+SWOT_REPROJECT_LIMITS_MEMORY=512Mi
 
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
 VAR_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
 VAR_SUBSETTER_PARALLELISM=2
+VAR_SUBSETTER_REQUESTS_CPU=128m
+VAR_SUBSETTER_REQUESTS_MEMORY=128Mi
+VAR_SUBSETTER_LIMITS_CPU=128m
+VAR_SUBSETTER_LIMITS_MEMORY=512Mi
 
 SDS_MASKFILL_IMAGE=sds/maskfill-harmony
 SDS_MASKFILL_IMAGE_PULL_POLICY='IfNotPresent'
 SDS_MASKFILL_PARALLELISM=2
+SDS_MASKFILL_REQUESTS_CPU=128m
+SDS_MASKFILL_REQUESTS_MEMORY=128Mi
+SDS_MASKFILL_LIMITS_CPU=128m
+SDS_MASKFILL_LIMITS_MEMORY=512Mi
 
 PODAAC_L2_SUBSETTER_IMAGE=podaac/podaac-cloud/podaac-subsetter:latest
 PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
 PODAAC_L2_SUBSETTER_PARALLELISM=2
+PODAAC_L2_SUBSETTER_REQUESTS_CPU=128m
+PODAAC_L2_SUBSETTER_REQUESTS_MEMORY=128Mi
+PODAAC_L2_SUBSETTER_LIMITS_CPU=128m
+PODAAC_L2_SUBSETTER_LIMITS_MEMORY=512Mi
 
 PODAAC_PS3_IMAGE=podaac/podaac-cloud/podaac-shapefile-subsetter:latest
 PODAAC_PS3_IMAGE_PULL_POLICY='IfNotPresent'
 PODAAC_PS3_PARALLELISM=2
+PODAAC_PS3_REQUESTS_CPU=128m
+PODAAC_PS3_REQUESTS_MEMORY=128Mi
+PODAAC_PS3_LIMITS_CPU=128m
+PODAAC_PS3_LIMITS_MEMORY=512Mi
 
 PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
 PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='IfNotPresent'
 PODAAC_NETCDF_CONVERTER_PARALLELISM=2
+PODAAC_NETCDF_CONVERTER_REQUESTS_CPU=128m
+PODAAC_NETCDF_CONVERTER_REQUESTS_MEMORY=128Mi
+PODAAC_NETCDF_CONVERTER_LIMITS_CPU=128m
+PODAAC_NETCDF_CONVERTER_LIMITS_MEMORY=512Mi
 
 CMR_GRANULE_LOCATOR_IMAGE=harmonyservices/query-cmr:latest
 CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY='IfNotPresent'
+CMR_GRANULE_LOCATOR_REQUESTS_CPU=128m
+CMR_GRANULE_LOCATOR_REQUESTS_MEMORY=128Mi
+CMR_GRANULE_LOCATOR_LIMITS_CPU=128m
+CMR_GRANULE_LOCATOR_LIMITS_MEMORY=512Mi
 
 # page size to use with CMR calls
 CMR_MAX_PAGE_SIZE=2000
@@ -282,6 +340,10 @@ MAX_POST_FILE_SIZE=2000000000
 
 # Maximum number of multipart parts to accept when providing a shapefile
 MAX_POST_FILE_PARTS=100
+
+# The location on the file system to save the work items that will be mounted into the
+# containers for any services to read and save STAC catalogs.
+HOST_VOLUME_PATH=
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #

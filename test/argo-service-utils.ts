@@ -1,9 +1,9 @@
 import { describe } from 'mocha';
 import * as fc from 'fast-check';
-import ArgoService, { ArgoServiceParams } from 'models/services/argo-service';
-import { ServiceConfig } from 'models/services/base-service';
-import DataOperation from 'models/data-operation';
 import sinon from 'sinon';
+import ArgoService, { ArgoServiceParams } from '../app/models/services/argo-service';
+import { ServiceConfig } from '../app/models/services/base-service';
+import DataOperation from '../app/models/data-operation';
 import env from '../app/util/env';
 
 describe('ArgoService utility functions property based tests', function () {

@@ -1,10 +1,10 @@
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import * as crypto from 'crypto';
-import { objectStoreForProtocol } from 'util/object-store';
 import { RequestHandler } from 'express';
+import { objectStoreForProtocol } from '../util/object-store';
 
-import env = require('util/env');
+import env = require('../util/env');
 
 /**
  * Build a middleware for uploading shapefiles passed in with the request to S3

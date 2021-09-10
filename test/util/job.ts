@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import _ from 'lodash';
-import { buildJob } from 'test/helpers/jobs';
+import { buildJob } from '../helpers/jobs';
 import { hookTransaction } from '../helpers/db';
 import { stubTerminateWorkflows } from '../helpers/workflows';
 import cancelAndSaveJob from '../../app/util/job';
