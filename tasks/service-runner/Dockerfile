@@ -1,6 +1,6 @@
 FROM node:12-alpine
 
-RUN apk add bash vim
+RUN apk add bash vim curl
 
 RUN mkdir -p /service-runner
 RUN mkdir -p /tmp/metadata
