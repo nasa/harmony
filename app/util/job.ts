@@ -38,10 +38,11 @@ export default async function cancelAndSaveJob(
         await job.save(tx);
         const hasWorkItemsTable = await tx.schema.hasTable('work_items');
         if (hasWorkItemsTable) {
-          const workItems = await tx('work_items').select().where({ jobID }).forUpdate();
-          workItems.forEach((workItem) => {
-            console.log(workItem);
-          });
+          let rr1 = await tx('work_items').select().where({ jobID: job.jobID }).forUpdate();
+          console.log(rr1);
+          await tx('work_items').where({ jobID: job.jobID }).update({ status: 'canceled' });
+          rr1 = await tx('work_items').select().where({ jobID: job.jobID }).forUpdate();
+          console.log(rr1);
         } else if (shouldTerminateWorkflows) {
           await terminateWorkflows(job, logger);
         }
