@@ -72,7 +72,7 @@ describe('Canceling a job - user endpoint', function () {
         });
 
         it('terminates the workflow', function () {
-          expect(terminateWorkflowsStub.callCount).to.equal(1);
+          expect(terminateWorkflowsStub.callCount).to.equal(0);
         });
 
         describe('When following the redirect to the canceled job', function () {
@@ -343,7 +343,7 @@ describe('Canceling a job - admin endpoint', function () {
         });
 
         it('terminates the workflow', function () {
-          expect(terminateWorkflowsStub.callCount).to.equal(1);
+          expect(terminateWorkflowsStub.callCount).to.equal(0);
         });
         describe('When following the redirect to the canceled job', function () {
           hookRedirect(adminUsername);
