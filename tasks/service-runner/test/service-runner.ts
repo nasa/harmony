@@ -102,7 +102,7 @@ describe('Service Runner', function () {
       });
       it('returns an error message', async function () {
         const result = await serviceRunner.runQueryCmrFromPull(workItem);
-        expect(result).to.eql({ error: 'Unexpected server response: 404' });
+        expect(result.error).to.be.not.empty;
       });
     });
   });
@@ -127,7 +127,7 @@ describe('Service Runner', function () {
 
       it('returns an error message', async function () {
         const result = await serviceRunner.runPythonServiceFromPull(workItem);
-        expect(result).to.eql({ error: 'Unexpected server response: 404' });
+        expect(result.error).to.be.not.empty;
       });
     });
   });
