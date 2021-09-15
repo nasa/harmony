@@ -34,7 +34,6 @@
     "sqlite3": "^4.2.0",
     "superagent": "^6.1.0",
     "tmp": "^0.2.1",
-    "tmp-promise": "^3.0.2",
     "winston": "^3.3.3"
   },
   "devDependencies": {
