@@ -39,8 +39,9 @@ export default async function cancelAndSaveJob(
         const hasWorkItemsTable = await tx.schema.hasTable('work_items');
         if (hasWorkItemsTable) {
           const workItems = await tx('work_items').select().where({ jobID }).forUpdate();
-          if (Object.keys(workItems).length) {
-          }
+          workItems.forEach((workItem) => {
+            console.log(workItem);
+          });
         } else if (shouldTerminateWorkflows) {
           await terminateWorkflows(job, logger);
         }
