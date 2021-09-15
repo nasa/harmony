@@ -29,13 +29,19 @@ export default async function cancelAndSaveJob(
     } else {
       ({ job } = await Job.byRequestId(tx, jobID));
     }
+
     if (job) {
       if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
         job.status = JobStatus.CANCELED;
         job.validateStatus();
         job.cancel(message);
         await job.save(tx);
-        if (shouldTerminateWorkflows) {
+        const hasWorkItemsTable = await tx.schema.hasTable('work_items');
+        if (hasWorkItemsTable) {
+          const workItems = await tx('work_items').select().where({ jobID }).forUpdate();
+          if (Object.keys(workItems).length) {
+          }
+        } else if (shouldTerminateWorkflows) {
           await terminateWorkflows(job, logger);
         }
       } else {
