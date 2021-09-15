@@ -37,8 +37,13 @@ export default async function cancelAndSaveJob(
         job.validateStatus();
         job.cancel(message);
         await job.save(tx);
+        let isTURBO = false;
         const hasWorkItemsTable = await tx.schema.hasTable('work_items');
         if (hasWorkItemsTable) {
+          const workItemsCount = await tx('work_items').count('jobID as Count').where({ jobID }).forUpdate();
+          if (workItemsCount[0].Count) isTURBO = true;
+        }
+        if (isTURBO) {
           await tx('work_items').where({ jobID: job.jobID }).update({ status: WorkItemStatus.CANCELED });
         } else if (shouldTerminateWorkflows) {
           await terminateWorkflows(job, logger);
