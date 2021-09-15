@@ -55,16 +55,20 @@ function _getStacCatalogs(dir: string): string[] {
  */
 function _getErrorMessage(logStr: string): string {
   // expect JSON logs entries
-  const regex = /\{.*?\}/gs;
-  const matches = logStr?.match(regex) || [];
-  for (const match of matches) {
-    const logEntry = JSON.parse(match);
-    if (logEntry.level?.toUpperCase() === 'ERROR') {
-      return logEntry.message;
+  try {
+    const regex = /\{.*?\}/gs;
+    const matches = logStr?.match(regex) || [];
+    for (const match of matches) {
+      const logEntry = JSON.parse(match);
+      if (logEntry.level?.toUpperCase() === 'ERROR') {
+        return logEntry.message;
+      }
     }
+    return 'Unknown error';
+  } catch (e) {
+    logger.error(e.message);
+    return e.message;
   }
-
-  return 'Unknown error';
 }
 
 /**
