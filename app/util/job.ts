@@ -1,6 +1,7 @@
 import { Logger } from 'winston';
 import db from './db';
 import { Job, JobStatus } from '../models/job';
+import { WorkItemStatus } from '../models/work-item';
 import { NotFoundError } from './errors';
 import { terminateWorkflows } from './workflows';
 
@@ -40,7 +41,7 @@ export default async function cancelAndSaveJob(
         if (hasWorkItemsTable) {
           let rr1 = await tx('work_items').select().where({ jobID: job.jobID }).forUpdate();
           console.log(rr1);
-          await tx('work_items').where({ jobID: job.jobID }).update({ status: 'canceled' });
+          await tx('work_items').where({ jobID: job.jobID }).update({ status: WorkItemStatus.CANCELED });
           rr1 = await tx('work_items').select().where({ jobID: job.jobID }).forUpdate();
           console.log(rr1);
         } else if (shouldTerminateWorkflows) {
