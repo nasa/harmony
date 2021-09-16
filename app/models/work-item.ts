@@ -294,12 +294,12 @@ export async function workItemCountForStep(
  */
 export async function workItemCountForJobID(
   tx: Transaction,
-  jobID: string
+  jobID: string,
 ): Promise<number> {
   const count = await tx(WorkItem.table)
     .select()
     .count('id')
-    .where( {jobID} );
+    .where({ jobID });
 
   let workItemCount;
   if (db.client.config.client === 'pg') {
