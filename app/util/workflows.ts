@@ -131,7 +131,7 @@ export async function terminateWorkflows(job: Job, logger: Logger): Promise<void
  * @param transaction - the transaction to use for querying
  * @param logger - The Logger to use for logging errors/info
  */
-export async function CheckIfTurboWorkflow(
+export async function checkIfTurboWorkflow(
   transaction: Transaction,
   jobID: string,
   logger: Logger
