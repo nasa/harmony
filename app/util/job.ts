@@ -1,7 +1,7 @@
 import { Logger } from 'winston';
 import db from './db';
 import { Job, JobStatus } from '../models/job';
-import { workItemCountForJobID, WorkItemStatus } from '../models/work-item';
+import { WorkItemStatus } from '../models/work-item';
 import { NotFoundError } from './errors';
 import { terminateWorkflows, checkIfTurboWorkflow } from './workflows';
 
@@ -37,7 +37,7 @@ export default async function cancelAndSaveJob(
         job.validateStatus();
         job.cancel(message);
         await job.save(tx);
-        const isTurboWorkflow = checkIfTurboWorkflow(tx, jobID, logger);
+        const isTurboWorkflow = await checkIfTurboWorkflow(tx, jobID, logger);
         if (isTurboWorkflow) {
           await tx('work_items').where({ jobID: job.jobID }).update({ status: WorkItemStatus.CANCELED });
         } else if (shouldTerminateWorkflows) {
