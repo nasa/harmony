@@ -2,7 +2,7 @@ import * as axios from 'axios';
 import { Logger } from 'winston';
 import { Job } from '../models/job';
 import { workItemCountForJobID } from '../models/work-item';
-import { Transaction } from '../util/db';
+import { Transaction } from './db';
 
 import env = require('./env');
 
@@ -135,7 +135,7 @@ export async function terminateWorkflows(job: Job, logger: Logger): Promise<void
 export async function checkIfTurboWorkflow(
   transaction: Transaction,
   jobID: string,
-  logger: Logger
+  logger: Logger,
 ): Promise<boolean> {
   let isTurboWorkflow = false;
   try {
