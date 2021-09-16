@@ -1,7 +1,7 @@
 import { Logger } from 'winston';
 import db from './db';
 import { Job, JobStatus } from '../models/job';
-import { WorkItemStatus } from '../models/work-item';
+import { workItemCountForJobID, WorkItemStatus } from '../models/work-item';
 import { NotFoundError } from './errors';
 import { terminateWorkflows } from './workflows';
 
@@ -40,8 +40,8 @@ export default async function cancelAndSaveJob(
         let isTURBO = false;
         const hasWorkItemsTable = await tx.schema.hasTable('work_items');
         if (hasWorkItemsTable) {
-          const workItemsCount = await tx('work_items').count('jobID as Count').where({ jobID }).forUpdate();
-          if (workItemsCount[0].Count) isTURBO = true;
+          const workItemCount = await workItemCountForJobID(tx, jobID);
+          if (workItemCount) isTURBO = true;
         }
         if (isTURBO) {
           await tx('work_items').where({ jobID: job.jobID }).update({ status: WorkItemStatus.CANCELED });
