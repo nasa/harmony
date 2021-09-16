@@ -143,8 +143,8 @@ export async function checkIfTurboWorkflow(
     if (hasWorkItemsTable) {
       const workItemCount = await workItemCountForJobID(transaction, jobID);
       if (workItemCount) isTurboWorkflow = true;
-      return isTurboWorkflow;
     }
+    return isTurboWorkflow;
   } catch (e) {
     logger.error(`Failed to verify turbo workflow: ${JSON.stringify(e.response?.data)}`);
     throw e;
