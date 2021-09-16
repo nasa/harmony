@@ -125,13 +125,13 @@ export async function terminateWorkflows(job: Job, logger: Logger): Promise<void
 
 /**
  *
- * Check whether it's a turbo workflow for a given Job
+ * Check if it's a turbo workflow for a given Job
  *
  * @param jobID - The job id associated with the workflow
  * @param transaction - the transaction to use for querying
  * @param logger - The Logger to use for logging errors/info
  */
-export async function isTurboWorkflow(
+export async function CheckIfTurboWorkflow(
   transaction: Transaction,
   jobID: string,
   logger: Logger
