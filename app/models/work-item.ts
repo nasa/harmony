@@ -286,3 +286,26 @@ export async function workItemCountForStep(
   }
   return workItemCount;
 }
+
+/**
+ *  Returns the number of existing work items for a specific job id
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the job that created this work item
+ */
+export async function workItemCountForJobID(
+  tx: Transaction,
+  jobID: string
+): Promise<number> {
+  const count = await tx(WorkItem.table)
+    .select()
+    .count('id')
+    .where( {jobID} );
+
+  let workItemCount;
+  if (db.client.config.client === 'pg') {
+    workItemCount = Number(count[0].count);
+  } else {
+    workItemCount = Number(count[0]['count(`id`)']);
+  }
+  return workItemCount;
+}
