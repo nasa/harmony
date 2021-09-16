@@ -1,6 +1,7 @@
 import * as axios from 'axios';
 import { Logger } from 'winston';
 import { Job } from '../models/job';
+import { Transaction } from '../util/db';
 
 import env = require('./env');
 
@@ -118,6 +119,33 @@ export async function terminateWorkflows(job: Job, logger: Logger): Promise<void
     });
   } catch (e) {
     logger.error(`Argo workflow termination failed: ${JSON.stringify(e.response?.data)}`);
+    throw e;
+  }
+}
+
+/**
+ *
+ * Check whether it's a turbo workflow for a given Job
+ *
+ * @param jobID - The job id associated with the workflow
+ * @param transaction - the transaction to use for querying
+ * @param logger - The Logger to use for logging errors/info
+ */
+export async function isTurboWorkflow(
+  transaction: Transaction,
+  jobID: string,
+  logger: Logger
+): Promise<void> {
+  let isTurboWorkflow = false;
+  try {
+    const hasWorkItemsTable = await transaction.schema.hasTable('work_items');
+    if (hasWorkItemsTable) {
+      const workItemCount = await workItemCountForJobID(transaction, jobID);
+      if (workItemCount) isTurboWorkflow = true;
+      return isTurboWorkflow;
+    }
+  } catch (e) {
+    logger.error(`Failed to verify turbo workflow: ${JSON.stringify(e.response?.data)}`);
     throw e;
   }
 }
