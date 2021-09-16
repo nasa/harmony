@@ -3,7 +3,7 @@ import db from './db';
 import { Job, JobStatus } from '../models/job';
 import { workItemCountForJobID, WorkItemStatus } from '../models/work-item';
 import { NotFoundError } from './errors';
-import { terminateWorkflows } from './workflows';
+import { terminateWorkflows, checkIfTurboWorkflow } from './workflows';
 
 /**
  * Cancel the job and save it to the database
@@ -37,13 +37,8 @@ export default async function cancelAndSaveJob(
         job.validateStatus();
         job.cancel(message);
         await job.save(tx);
-        let isTURBO = false;
-        const hasWorkItemsTable = await tx.schema.hasTable('work_items');
-        if (hasWorkItemsTable) {
-          const workItemCount = await workItemCountForJobID(tx, jobID);
-          if (workItemCount) isTURBO = true;
-        }
-        if (isTURBO) {
+        const isTurboWorkflow = checkIfTurboWorkflow(tx, jobID, logger);
+        if (isTurboWorkflow) {
           await tx('work_items').where({ jobID: job.jobID }).update({ status: WorkItemStatus.CANCELED });
         } else if (shouldTerminateWorkflows) {
           await terminateWorkflows(job, logger);
