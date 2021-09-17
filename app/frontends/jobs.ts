@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { sanitizeImageStrict } from 'app/util/string';
+import { sanitizeImage } from 'app/util/string';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { keysToLowerCase } from '../util/object';
 import isUUID from '../util/uuid';
@@ -278,7 +278,7 @@ export async function getJobsForWorkflowUI(
       ],
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() { return (this.href || ''); },
-      sanitizedMessage() { return sanitizeImageStrict(this.message); },
+      sanitizedMessage() { return sanitizeImage(this.message); },
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -372,7 +372,7 @@ export async function getWorkItemsForWorkflowUI(
         workflowItemCreated() { return (new Date(this.createdAt).toISOString()); },
         workflowItemBadge() { return badgeClasses[this.status]; },
         workflowItemStep() {
-          return sanitizeImageStrict(workflowSteps[this.workflowStepIndex - 1].serviceID);
+          return sanitizeImage(workflowSteps[this.workflowStepIndex - 1].serviceID);
         },
         links: [
           { ...previousPage, linkTitle: 'previous' },
