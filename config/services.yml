@@ -25,7 +25,7 @@ x-argo-config: &default-argo-config
 
 https://cmr.earthdata.nasa.gov:
   - name: asfdataservices/gdal-subsetter
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     type:
       <<: *default-argo-config
       params:
@@ -75,6 +75,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
+    umm_s:
+      - S2009180097-POCLOUD
     collections:
       - C1996881146-POCLOUD
       - C2006849995-POCLOUD
@@ -247,7 +249,7 @@ https://cmr.earthdata.nasa.gov:
 https://cmr.uat.earthdata.nasa.gov:
 
   - name: asfdataservices/gdal-subsetter
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     type:
       <<: *default-argo-config
       params:
@@ -316,9 +318,12 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/png
         - image/gif
       reprojection: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
 
   - name: harmony/service-example
-    data_operation_version: '0.10.0'
+    data_operation_version: '0.11.0'
     batch_size: 10
     type:
       <<: *default-argo-config
@@ -345,6 +350,9 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/png
         - image/gif
       reprojection: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
     data_operation_version: '0.9.0'
@@ -406,7 +414,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
 
   - name: sds/swot-reproject
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     batch_size: 1
     type:
       <<: *default-argo-config
@@ -443,6 +451,9 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
       reprojection: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${SWOT_REPROJECT_IMAGE}
 
   - name: sds/variable-subsetter
     # The Variable Subsetter provides _only_ variable subsetting
@@ -489,6 +500,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/HOSS
     umm_s:
       - S1240682712-EEDTEST
+      - S1241070355-GES_DISC # GESDISC_HOSS
     collections:
       - C1238392622-EEDTEST  # RSSMIF16D test collection UAT
       - C1222931739-GHRC_CLOUD  # RSSMIF16D UAT
@@ -627,7 +639,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
 
   - name: harmony/netcdf-to-zarr
-    data_operation_version: '0.10.0'
+    data_operation_version: '0.11.0'
     batch_size: 20
     type:
       <<: *default-argo-config
@@ -644,6 +656,7 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s:
       - S1237980031-EEDTEST # Just NetCDF-to-Zarr
       - S1240999847-EEDTEST # NetCDF-to-Zarr + swotrepr
+      - S1241248230-POCLOUD # PODDAC just netcdf to zarr
     collections:
       - C1234088182-EEDTEST
       # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
@@ -703,6 +716,9 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: false
       output_formats:
         - application/x-zarr
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
 
   # CHAINED SERVICES BELOW HERE
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
@@ -736,7 +752,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-zarr
 
   - name: harmony/swot-repr-netcdf-to-zarr
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     batch_size: 1
     type:
       <<: *default-argo-config
@@ -768,3 +784,13 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
         - application/x-zarr
       reprojection: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${SWOT_REPROJECT_IMAGE}
+        operations: ['reproject']
+        conditional:
+          exists: ['reproject']
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        operations: ['reformat']
+        conditional:
+          format: ['application/x-zarr']

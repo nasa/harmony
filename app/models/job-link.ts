@@ -1,7 +1,7 @@
 import { IPagination } from 'knex-paginate'; // For types only
 import _ from 'lodash';
-import { Transaction } from 'util/db';
-import { removeEmptyProperties } from 'util/object';
+import { Transaction } from '../util/db';
+import { removeEmptyProperties } from '../util/object';
 import Record from './record';
 
 /**

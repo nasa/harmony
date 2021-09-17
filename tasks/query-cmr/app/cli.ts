@@ -4,7 +4,7 @@ import path from 'path';
 import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
 import logger from '../../../app/util/log';
-import { queryGranules } from './query';
+import { queryGranules, queryGranulesScrolling } from './query';
 
 interface HarmonyArgv {
   outputDir?: string;
@@ -13,6 +13,7 @@ interface HarmonyArgv {
   pageSize?: number;
   maxPages?: number;
   batchSize?: number;
+  scrollId?: string;
 }
 
 /**
@@ -21,7 +22,7 @@ interface HarmonyArgv {
  */
 export function parser(): yargs.Argv<HarmonyArgv> {
   return yargs
-    .usage('Usage: --output-dir <dir> --harmony-input <message> --query <query1> <query2>')
+    .usage('Usage: --output-dir <dir> --harmony-input <message> [--query <query1> <query2>] [--scroll-id <id>]')
     .option('output-dir', {
       alias: 'o',
       describe: 'the directory where output files should be placed',
@@ -39,7 +40,6 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       alias: 'q',
       describe: 'file locations containing the CMR query to be performed, one per message source',
       type: 'array',
-      demandOption: true,
     })
     .option('page-size', {
       describe: 'the size of each page of results provided',
@@ -56,6 +56,22 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       describe: 'number of granules to include in a single batch; create one catalog file per batch',
       type: 'number',
       default: 2000,
+    })
+    // if present, we are using a non-Argo workflow, and will ignore params like page-size,
+    // batch-size, max-pages, query
+    .option('scroll-id', {
+      alias: 's',
+      describe: 'scroll session id used in the CMR-Scroll-Id header to perform a granule search using scrolling',
+      type: 'string',
+    })
+    .check((argv) => {
+      const scrollId = argv['scroll-id'];
+      const { query } = argv;
+      if (!scrollId && !query) {
+        throw new Error('Missing required argument: query');
+      } else {
+        return true; // tell Yargs that the arguments passed the check
+      }
     });
 }
 
@@ -73,13 +89,16 @@ export default async function main(args: string[]): Promise<void> {
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing.cmr-granule-locator.start');
   await fs.mkdir(options.outputDir, { recursive: true });
-  const catalogs = await queryGranules(
-    operation,
-    options.query as string[],
-    options.pageSize,
-    options.maxPages,
-    options.batchSize,
-  );
+
+  const catalogs = options.scrollId
+    ? await queryGranulesScrolling(operation, options.scrollId)
+    : await queryGranules(
+      operation,
+      options.query as string[],
+      options.pageSize,
+      options.maxPages,
+      options.batchSize,
+    );
 
   const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {

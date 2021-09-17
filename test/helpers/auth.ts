@@ -122,7 +122,7 @@ export function auth({
   ).returns(null);
   fakePost.callThrough();
 
-  return (request): void => { request.set('Cookie', cookieStr); };
+  return (request): SuperAgentRequest => request.set('Cookie', cookieStr);
 }
 
 /**

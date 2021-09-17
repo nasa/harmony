@@ -1,5 +1,5 @@
-import { Job, JobStatus } from 'models/job';
 import { Logger } from 'winston';
+import { Job, JobStatus } from '../job';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
 

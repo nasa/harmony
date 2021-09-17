@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
-import { Job } from 'models/job';
-import JobLink from 'models/job-link';
+import { Job } from '../../app/models/job';
+import JobLink from '../../app/models/job-link';
 import hookServersStartStop from '../helpers/servers';
 import { hookJobStatus, buildJob, areJobLinksEqual, itIncludesPagingRelations } from '../helpers/jobs';
 import db from '../../app/util/db';
@@ -23,7 +23,7 @@ describe('Individual job status route - pagination', function () {
     // circumvent ordering problems with sqlite
     const jTrx = await db.transaction();
     await aJob.save(jTrx);
-    jTrx.commit();
+    await jTrx.commit();
     for (let i = 1; i < 51; i++) {
       links.push(
         new JobLink({
@@ -41,7 +41,7 @@ describe('Individual job status route - pagination', function () {
         link,
       );
       await aJob.save(trx);
-      trx.commit();
+      await trx.commit();
     }
   });
 

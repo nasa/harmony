@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
-import { Job, JobStatus } from 'models/job';
-import JobLink from 'models/job-link';
-import { SerializableCatalog } from 'frontends/stac-catalog';
+import { Job, JobStatus } from '../../app/models/job';
+import JobLink from '../../app/models/job-link';
+import { SerializableCatalog } from '../../app/frontends/stac-catalog';
 import hookServersStartStop from '../helpers/servers';
 import { buildJob, itIncludesPagingRelations, areStacJobLinksEqual } from '../helpers/jobs';
 import { hookStacCatalog } from '../helpers/stac';
@@ -33,7 +33,7 @@ describe('STAC - pagination', function () {
     // circumvent ordering problems with sqlite
     const jTrx = await db.transaction();
     await aJob.save(jTrx);
-    jTrx.commit();
+    await jTrx.commit();
     for (let i = 1; i < 51; i++) {
       links.push(
         new JobLink({
@@ -56,7 +56,7 @@ describe('STAC - pagination', function () {
         link,
       );
       await aJob.save(trx);
-      trx.commit();
+      await trx.commit();
     }
   });
 

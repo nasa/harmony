@@ -1,5 +1,5 @@
 import { NextFunction } from 'express';
-import { harmonyCollections } from 'models/services';
+import { harmonyCollections } from '../models/services';
 import { getVariablesForCollection, CmrCollection, getCollectionsByIds, getCollectionsByShortName, cmrApiConfig } from '../util/cmr';
 import { NotFoundError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';

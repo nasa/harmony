@@ -64,10 +64,17 @@ describe('cli', function () {
     });
 
     describe('--query', function () {
-      describe('when not provided', function () {
+      describe('when not provided and scroll-id is not provided', function () {
         hookCliParser('--output-dir', 'temp', '--harmony-input', '{}');
         it('produces a missing argument error', function () {
           expect(this.error.message).to.equal('Missing required argument: query');
+        });
+      });
+
+      describe('when not provided and scroll-id is provided', function () {
+        hookCliParser('--output-dir', 'temp', '--harmony-input', '{}', '--scroll-id', 'a-scroll-id');
+        it('does not produce an error', function () {
+          expect(this.error).to.equal(null);
         });
       });
 

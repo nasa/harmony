@@ -76,3 +76,20 @@ export function hookRequest(
     delete this.res;
   });
 }
+
+/**
+ * Adds before / after hooks to execute an HTTP request against a harmony backend endpoint
+ * and setting the result to this.res
+ *
+ * @param requestFn - The request function to execute
+ */
+export function hookBackendRequest(
+  requestFn: Function, options = { },
+): void {
+  before(async function () {
+    this.res = await requestFn(this.backend, options);
+  });
+  after(function () {
+    delete this.res;
+  });
+}

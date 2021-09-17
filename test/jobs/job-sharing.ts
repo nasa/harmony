@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
-import { JobStatus } from 'models/job';
+import { JobStatus } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookStacCatalog, hookStacItem } from '../helpers/stac';
 import { hookTransaction } from '../helpers/db';

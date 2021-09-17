@@ -2,10 +2,10 @@
 import { before, after, beforeEach, afterEach } from 'mocha';
 import sinon, { SinonStub } from 'sinon';
 import request from 'superagent';
-import BaseService, { ServiceConfig } from 'models/services/base-service';
-import * as services from 'models/services/index';
 import { Logger } from 'winston';
-import { CallbackQuery } from 'backends/service-response';
+import { CallbackQuery } from '../../app/backends/service-response';
+import BaseService, { ServiceConfig } from '../../app/models/services/base-service';
+import * as services from '../../app/models/services/index';
 import DataOperation from '../../app/models/data-operation';
 import InvocationResult from '../../app/models/services/invocation-result';
 

@@ -29,6 +29,41 @@ CREATE TABLE `job_links` (
   `bbox` varchar(255),
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
-  FOREIGN KEY(jobID) REFERENCES jobs(jobID));
+  FOREIGN KEY(jobID) REFERENCES jobs(jobID)
+);
 
+CREATE TABLE `work_items` (
+  `id` integer not null primary key autoincrement,
+  `jobID` char(36) not null,
+  `workflowStepIndex` integer not null,
+  `scrollID` varchar(32),
+  `serviceID` varchar(255) not null,
+  `status` text check (`status` in ('ready', 'running', 'successful', 'failed', 'canceled')) not null,
+  `stacCatalogLocation` varchar(255),
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  FOREIGN KEY(jobID) REFERENCES jobs(jobID)
+  FOREIGN KEY(jobID, workflowStepIndex) REFERENCES workflow_steps(jobID, stepIndex)
+);
+
+CREATE TABLE `workflow_steps` (
+  `id` integer not null primary key autoincrement,
+  `jobID` char(36) not null,
+  `serviceID` varchar(255) not null,
+  `stepIndex` integer not null,
+  `workItemCount` integer not null,
+  `operation` text not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  FOREIGN KEY(jobID) REFERENCES jobs(jobID),
+  UNIQUE(jobID, stepIndex)
+);
+
+CREATE INDEX jobs_jobID_idx ON jobs(jobID);
 CREATE INDEX job_links_jobID_idx ON job_links(jobID);
+CREATE INDEX work_items_jobID_idx ON work_items(jobID);
+CREATE INDEX work_items_serviceID_idx ON work_items(serviceID);
+CREATE INDEX workflow_steps_jobID_idx ON workflow_steps(jobID);
+CREATE INDEX workflow_steps_jobID_StepIndex_idx ON workflow_steps(jobID, stepIndex);
+CREATE INDEX workflow_steps_serviceID_idx ON workflow_steps(serviceID);
+

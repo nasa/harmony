@@ -1,6 +1,6 @@
 import * as axios from 'axios';
 import { Logger } from 'winston';
-import { Job } from 'models/job';
+import { Job } from '../models/job';
 
 import env = require('./env');
 

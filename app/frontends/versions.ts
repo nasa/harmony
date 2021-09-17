@@ -1,7 +1,7 @@
 import { Response } from 'express';
-import { defaultContainerRegistry, ECR } from 'util/container-registry';
 import { Logger } from 'winston';
-import { toISODateTime } from 'util/date';
+import { defaultContainerRegistry, ECR } from '../util/container-registry';
+import { toISODateTime } from '../util/date';
 import { getServiceConfigs } from '../models/services';
 import { ServiceConfig } from '../models/services/base-service';
 import HarmonyRequest from '../models/harmony-request';

@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import { v4 as uuid } from 'uuid';
+import WorkItem, { WorkItemStatus } from '../work-item';
+import WorkflowStep from '../workflow-steps';
 import InvocationResult from './invocation-result';
 import { Job, JobStatus } from '../job';
 import DataOperation from '../data-operation';
@@ -19,6 +21,15 @@ export interface ServiceCapabilities {
   reprojection?: boolean;
 }
 
+export interface ServiceStep {
+  image?: string;
+  operations?: string[];
+  conditional?: {
+    exists?: string[];
+    format?: string[];
+  };
+}
+
 export interface ServiceConfig<ServiceParamType> {
   batch_size?: number;
   name?: string;
@@ -33,6 +44,7 @@ export interface ServiceConfig<ServiceParamType> {
   concurrency?: number;
   message?: string;
   maximum_sync_granules?: number;
+  steps?: ServiceStep[];
 }
 
 /**
@@ -55,6 +67,54 @@ export function functionalSerializeOperation(
   config: ServiceConfig<unknown>,
 ): string {
   return op.serialize(config.data_operation_version);
+}
+
+/**
+ * Takes a docker image name for a service and returns the service ID for that image.
+ *
+ * @param image - the docker image for the service
+ * @returns the service ID for that image.
+ */
+function serviceImageToId(image: string): string {
+  return image;
+}
+
+const conditionToOperationField = {
+  reproject: 'crs',
+  reformat: 'outputFormat',
+};
+
+/**
+ * Returns true if the workflow step is required for the given operation. If any
+ * of the conditional exists operations are present in the operation then the step
+ * will be considered required. If any of the conditional formats are requested in
+ * the operation the step will be considered required. If both a list of formats
+ * and a list of operations are provided both the formats must include the format
+ * requested by the operation and one of the required operations must be present in
+ * the request in order to require the step.
+ *
+ * @param step - The workflow step
+ * @param operation - The operation
+ *
+ * @returns true if the workflow step is required
+ */
+function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
+  let required = true;
+  if (step.conditional?.exists?.length > 0) {
+    required = false;
+    for (const condition of step.conditional.exists) {
+      if (operation[conditionToOperationField[condition]]) {
+        required = true;
+      }
+    }
+  }
+  if (required && step.conditional?.format) {
+    required = false;
+    if (step.conditional.format.includes(operation.outputFormat)) {
+      required = true;
+    }
+  }
+  return required;
 }
 
 /**
@@ -111,21 +171,17 @@ export default abstract class BaseService<ServiceParamType> {
   async invokeOrAttach(
     logger?: Logger, harmonyRoot?: string, requestUrl?: string, geojsonHash?: string,
   ): Promise<InvocationResult> {
-    let job: Job;
     logger.info('Invoking service for operation', { operation: this.operation });
     try {
-      const startTime = new Date().getTime();
-      logger.info('timing.save-job-to-database.start');
-      job = await this._createJob(logger, requestUrl, this.operation.stagingLocation, geojsonHash);
+      const job = this._createJob(requestUrl, geojsonHash);
       await job.maybeAttach(db);
       if (job.attachedStatus.didAttach) {
         const { originalId, assumedId } = job.attachedStatus;
         job.requestId = assumedId;
         logger.info(`This job attached to a previous job: ${originalId} is now ${assumedId}.`);
+      } else {
+        await this._createAndSaveWorkflow(logger, job);
       }
-      await job.save(db);
-      const durationMs = new Date().getTime() - startTime;
-      logger.info('timing.save-job-to-database.end', { durationMs });
     } catch (e) {
       logger.error(e.stack);
       throw new ServerError('Failed to save job to database.');
@@ -203,25 +259,19 @@ export default abstract class BaseService<ServiceParamType> {
   protected abstract _run(_logger: Logger): Promise<InvocationResult>;
 
   /**
-   * Creates a new job for this service's operation, with appropriate logging, errors,
-   * and warnings.
+   * Creates a new job object for this service's operation
    *
-   * @param transaction - The transaction to use when creating the job
-   * @param logger - The logger associated with this request
    * @param requestUrl - The URL the end user invoked
    * @param stagingLocation - The staging location for this job
    * @returns The created job
    * @throws ServerError - if the job cannot be created
    */
-  protected async _createJob(
-    logger: Logger,
+  protected _createJob(
     requestUrl: string,
-    stagingLocation: string,
     geojsonHash?: string,
-  ): Promise<Job> {
+  ): Job {
     const { requestId, user } = this.operation;
     const shapeFileHash = geojsonHash || '';
-    logger.info(`Creating job for ${requestId}`);
     const job = new Job({
       username: user,
       requestId,
@@ -234,8 +284,97 @@ export default abstract class BaseService<ServiceParamType> {
       collectionIds: this.operation.collectionIds,
       shapeFileHash,
     });
-    job.addStagingBucketLink(stagingLocation);
+    job.addStagingBucketLink(this.operation.stagingLocation);
     return job;
+  }
+
+  /**
+   * Creates a new work item object which will kick off the first task for this request
+   * @param stepId - The
+   * @returns The created WorkItem for the query CMR job
+   * @throws ServerError - if the work item cannot be created
+   */
+  protected _createFirstStepWorkItems(workflowStep: WorkflowStep): WorkItem[] {
+    const workItems = [];
+    for (const scrollID of this.operation.scrollIDs) {
+      workItems.push(new WorkItem({
+        jobID: this.operation.requestId,
+        scrollID,
+        serviceID: workflowStep.serviceID,
+        status: WorkItemStatus.READY,
+      }));
+    }
+
+    return workItems;
+  }
+
+  /**
+   * Creates the workflow steps objects for this request
+   *
+   * @returns The created WorkItem for the query CMR job
+   * @throws ServerError - if the work item cannot be created
+   */
+  protected _createWorkflowSteps(): WorkflowStep[] {
+    const workflowSteps = [];
+    if (this.config.steps) {
+      let i = 0;
+      this.config.steps.forEach(((step) => {
+        if (stepRequired(step, this.operation)) {
+          i += 1;
+          workflowSteps.push(new WorkflowStep({
+            jobID: this.operation.requestId,
+            serviceID: serviceImageToId(step.image),
+            stepIndex: i,
+            workItemCount: this.numInputGranules,
+            operation: this.operation.serialize(
+              this.config.data_operation_version,
+              step.operations || [],
+            ),
+          }));
+        }
+      }));
+    }
+    return workflowSteps;
+  }
+
+  /**
+   * Creates all of the database entries associated with starting a workflow
+   *
+   * @param service - The instantiation of a service for this operation
+   * @param configuration - The service configuration
+   * @param requestUrl - the request the end user sent
+   */
+  protected async _createAndSaveWorkflow(
+    logger: Logger,
+    job: Job,
+  ): Promise<void> {
+    try {
+      const startTime = new Date().getTime();
+      const workflowSteps = this._createWorkflowSteps();
+      const firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+
+      logger.info('timing.save-job-to-database.start');
+      await db.transaction(async (tx) => {
+        await job.save(tx);
+        if (this.operation.scrollIDs.length > 0) {
+          // New workflow style bypassing Argo
+          for await (const step of workflowSteps) {
+            await step.save(tx);
+          }
+          for await (const workItem of firstStepWorkItems) {
+            // use first step as the workflow step associated with each work item
+            workItem.workflowStepIndex = workflowSteps[0].stepIndex;
+            await workItem.save(tx);
+          }
+        }
+      });
+
+      const durationMs = new Date().getTime() - startTime;
+      logger.info('timing.save-job-to-database.end', { durationMs });
+    } catch (e) {
+      logger.error(e.stack);
+      throw new ServerError('Failed to save job to database.');
+    }
   }
 
   /**

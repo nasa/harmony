@@ -2,12 +2,12 @@
 import { initialize } from 'express-openapi';
 import * as fs from 'fs';
 import * as path from 'path';
-import { keysToLowerCase } from 'util/object';
-import { RequestValidationError, NotFoundError } from 'util/errors';
-import * as services from 'models/services';
 import { Router, Application } from 'express';
 import _ from 'lodash';
-import DataOperation from 'models/data-operation';
+import { keysToLowerCase } from '../util/object';
+import { RequestValidationError, NotFoundError } from '../util/errors';
+import * as services from '../models/services';
+import DataOperation from '../models/data-operation';
 import { CmrUmmVariable } from '../util/cmr';
 import { createDecrypter, createEncrypter } from '../util/crypto';
 import parseCRS from '../util/crs';
