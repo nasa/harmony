@@ -58,3 +58,39 @@ export function truncateString(s: string, n: number): string {
 export function isInteger(value: string): boolean {
   return /^-?\d+$/.test(value);
 }
+
+/**
+ * Removes AWS account ECR information or *.earthdata.nasa.gov from the image name
+ * since we may not want to expose that information.
+ *
+ * @param image - The image name to sanitize
+ * @returns the sanitized string
+ */
+export function sanitizeImage(image: string): string {
+  return image
+    .replace(/.*amazonaws.com\//, '')
+    .replace(/.*earthdata.nasa.gov\//, '');
+}
+
+/**
+ * Scrub AWS account ECR information or *.earthdata.nasa.gov from text.
+ * Employs stricter matching than sanitizeImage to ensure that
+ * no other text is accidentally replaced in longer strings.
+ * @param text - The string to scrub
+ * @returns the sanitized string
+ */
+export function sanitizeImageStrict(text: string): string {
+  return text
+    .replace(/[0-9]+(.[a-z]+){2}.[^\s]+.amazonaws.com\//i, '')
+    .replace(/m[a-z]+.earthdata.nasa.gov\//i, '');
+}
+
+/**
+ * Returns true if the image repository for the given image is ECR
+ *
+ * @param image - the full image string
+ * @returns true if the image is in ECR and false otherwise
+ */
+export function inECR(image: string): boolean {
+  return /.*amazonaws.com\//.test(image);
+}

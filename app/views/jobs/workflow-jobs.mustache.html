@@ -60,8 +60,8 @@
                                 data-bs-placement="right">{{jobUrl}}</code></small>
                         </td>
                         <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
-                        <td class="mw-40ch"><small><code class="text-truncate d-block" title="{{message}}" data-bs-toggle="tooltip"
-                                    data-bs-placement="right">{{message}}</code></small></td>
+                        <td class="mw-40ch"><small><code class="text-truncate d-block" title="{{sanitizedMessage}}" data-bs-toggle="tooltip"
+                                    data-bs-placement="right">{{sanitizedMessage}}</code></small></td>
                         <td><span class="badge rounded-pill bg-warning text-dark">{{numInputGranules}}</span></td>
                         <td>{{progress}}%</td>
                     </tr>
