@@ -122,8 +122,8 @@ export async function getNextWorkItem(
           .on(`${WorkflowStep.table}.jobID`, `${WorkItem.table}.jobID`);
       })
       .join(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
-      .where({ 'work_items.serviceID': serviceID, status: WorkItemStatus.READY })
-      .andWhere({ 'jobs.status': JobStatus.RUNNING })
+      .where({ 'work_items.serviceID': serviceID, 'work_items.status': WorkItemStatus.READY })
+      .whereIn('jobs.status', [JobStatus.RUNNING, JobStatus.ACCEPTED])
       .orderBy([`${WorkItem.table}.id`])
       .first();
 
