@@ -153,12 +153,11 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     workItem = await getWorkItemById(tx, parseInt(id, 10));
     const job: Job = await Job.byJobID(tx, workItem.jobID);
 
+    // If the job was already canceled then send 400 response
+    if (job.status === JobStatus.CANCELED) {
+      res.status(400).send();
     // If the response is an error then set the job status to 'failed'
-    if (workItem.status === WorkItemStatus.CANCELED) {
-        res.status(400).send();
-        return;
-    }
-    else if (workItem.status === WorkItemStatus.FAILED) {
+    } else if (workItem.status === WorkItemStatus.FAILED) {
       if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
         job.status = JobStatus.FAILED;
         let message: string;
