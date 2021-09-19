@@ -121,7 +121,9 @@ export async function getNextWorkItem(
           .on(`${WorkflowStep.table}.stepIndex`, `${WorkItem.table}.workflowStepIndex`)
           .on(`${WorkflowStep.table}.jobID`, `${WorkItem.table}.jobID`);
       })
+      .join(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
       .where({ 'work_items.serviceID': serviceID, status: WorkItemStatus.READY })
+      .andWhere({ 'job.status': JobStatus.RUNNING })
       .orderBy([`${WorkItem.table}.id`])
       .first();
 
