@@ -123,7 +123,7 @@ export async function getNextWorkItem(
       })
       .join(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
       .where({ 'work_items.serviceID': serviceID, status: WorkItemStatus.READY })
-      .andWhere({ 'job.status': JobStatus.RUNNING })
+      .andWhere({ 'jobs.status': JobStatus.RUNNING })
       .orderBy([`${WorkItem.table}.id`])
       .first();
 
