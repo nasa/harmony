@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { Logger } from 'winston';
-import { inECR, sanitizeImage } from 'app/util/string';
+import { inEcr, sanitizeImage } from 'app/util/string';
 import { defaultContainerRegistry, ECR } from '../util/container-registry';
 import { toISODateTime } from '../util/date';
 import { getServiceConfigs } from '../models/services';
@@ -40,7 +40,7 @@ async function getServiceForDisplay(
     imagePullPolicy,
   };
 
-  if (inECR(image)) {
+  if (inEcr(image)) {
     try {
       const { lastUpdated, imageDigest } = await ecr.describeImage(imageName, imageTag);
       serviceInfo.lastUpdated = toISODateTime(lastUpdated);

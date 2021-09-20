@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { listToText, truncateString, Conjunction, isInteger, inECR, sanitizeImage } from '../../app/util/string';
+import { listToText, truncateString, Conjunction, isInteger, inEcr, sanitizeImage } from '../../app/util/string';
 
 describe('util/string', function () {
   describe('#listToText', function () {
@@ -86,12 +86,12 @@ describe('util/string', function () {
     });
   });
 
-  describe('#inECR', function () {
+  describe('#inEcr', function () {
     it('returns false if the image is not in ECR', function () {
-      expect(inECR('00000000.xyz.abc.REGION-5.googlecloud.com/')).to.be.false;
+      expect(inEcr('00000000.xyz.abc.REGION-5.googlecloud.com/')).to.be.false;
     });
     it('returns true if the image is in ECR', function () {
-      expect(inECR('00000000.xyz.abc.REGION-5.amazonaws.com/')).to.be.true;
+      expect(inEcr('00000000.xyz.abc.REGION-5.amazonaws.com/')).to.be.true;
     });
   });
 

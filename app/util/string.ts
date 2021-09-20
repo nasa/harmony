@@ -78,6 +78,6 @@ export function sanitizeImage(text: string): string {
  * @param image - the full image string
  * @returns true if the image is in ECR and false otherwise
  */
-export function inECR(image: string): boolean {
+export function inEcr(image: string): boolean {
   return /.*amazonaws.com\//.test(image);
 }
