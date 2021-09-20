@@ -278,7 +278,6 @@ export async function getJobsForWorkflowUI(
       ],
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() { return (this.href || ''); },
-      sanitizedMessage() { return sanitizeImage(this.message); },
     });
   } catch (e) {
     req.context.logger.error(e);

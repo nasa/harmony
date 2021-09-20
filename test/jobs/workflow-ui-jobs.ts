@@ -6,21 +6,11 @@ import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, truncateAll } from '../helpers/db';
 import { workflowUIJobs, buildJob, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../helpers/jobs';
 
-// build the job message with and without the sensitive location info
-const ecrImage = 'dataservices/query-it:latest'; // non-sensitive part
-const ecrLocation = '00000000.xyz.abc.REGION-5.amazonaws.com/'; // sensitive part
-const earthdataImage = 'otherservices/subsetter:not-latest'; // non-sensitive part
-const earthdataLocation = 'MightBeSensitive.earthdata.NASA.gov/'; // sensitive part
-const buildTestMessage = (locationOne, locationTwo): string => `The job failed with:"${locationOne}${ecrImage} exploded!"
-  So did:${locationTwo}${earthdataImage}`;
-const sensitiveMessage = buildTestMessage(ecrLocation, earthdataLocation);
-const scrubbedMessage = buildTestMessage('', '');
-
 // Example jobs to use in tests
 const woodyJob1 = buildJob({
   username: 'woody',
-  status: JobStatus.FAILED,
-  message: sensitiveMessage,
+  status: JobStatus.SUCCESSFUL,
+  message: 'Completed successfully',
   progress: 100,
   links: [{ href: 'http://example.com/woody1', rel: 'link', type: 'text/plain' }],
   request: 'http://example.com/harmony?request=woody1&turbo=true',
@@ -125,12 +115,6 @@ describe('Workflow UI jobs route', function () {
       it('does not return jobs for other users', function () {
         const listing = this.res.text;
         expect(listing).to.not.contain(mustache.render('{{req}}', { req: buzzJob1.request }));
-      });
-
-      it('return useful but nonsensitive information about docker images', function () {
-        const listing = this.res.text;
-        expect(listing).to.not.contain(mustache.render('{{sensitiveMessage}}', { sensitiveMessage }));
-        expect(listing).to.contain(mustache.render('{{scrubbedMessage}}', { scrubbedMessage }));
       });
     });
 
