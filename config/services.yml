@@ -374,7 +374,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234208436-POCLOUD
       - C1234208437-POCLOUD
       - C1234208438-POCLOUD
-      - C1234724470-POCLOUD
       - C1234724471-POCLOUD
       - C1234071416-POCLOUD
       - C1238543220-POCLOUD
@@ -439,7 +438,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1226288788-EDF_DEV07
       - C1233147317-EEDTEST
       - C1233147319-EEDTEST
-      - C1234724470-POCLOUD
     capabilities:
       subsetting:
         bbox: false
@@ -668,7 +666,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234208437-POCLOUD
       - C1234208436-POCLOUD
       - C1234208438-POCLOUD
-      - C1234724470-POCLOUD
       - C1234724471-POCLOUD
       - C1239379704-POCLOUD
       - C1238621141-POCLOUD
