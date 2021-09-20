@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { listToText, truncateString, Conjunction, isInteger } from '../../app/util/string';
+import { listToText, truncateString, Conjunction, isInteger, inECR, sanitizeImage } from '../../app/util/string';
 
 describe('util/string', function () {
   describe('#listToText', function () {
@@ -83,6 +83,24 @@ describe('util/string', function () {
     });
     it('returns false for 31115.foo.bar', function () {
       expect(isInteger('31115.foo.bar')).to.be.false;
+    });
+  });
+
+  describe('#inECR', function () {
+    it('returns false if the image is not in ECR', function () {
+      expect(inECR('00000000.xyz.abc.REGION-5.googlecloud.com/')).to.be.false;
+    });
+    it('returns true if the image is in ECR', function () {
+      expect(inECR('00000000.xyz.abc.REGION-5.amazonaws.com/')).to.be.true;
+    });
+  });
+
+  describe('#sanitizeImage', function () {
+    it('strips aws account information from image url', function () {
+      expect(sanitizeImage('00000000.xyz.abc.REGION-5.amazonaws.com/the-image-name')).to.equal('the-image-name');
+    });
+    it('strips private earthdata location from image url', function () {
+      expect(sanitizeImage('private.earthdata.nasa.gov/the-image-name')).to.equal('the-image-name');
     });
   });
 });
