@@ -364,14 +364,13 @@ export async function getWorkItemsForWorkflowUI(
       const nextPage = pageLinks.find((l) => l.rel === 'next');
       const previousPage = pageLinks.find((l) => l.rel === 'prev');
       setPagingHeaders(res, pagination);
-      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
       res.render('jobs/workflow-items-table', {
         workItems,
         workflowItemUpdated() { return (new Date(this.updatedAt).toISOString()); },
         workflowItemCreated() { return (new Date(this.createdAt).toISOString()); },
         workflowItemBadge() { return badgeClasses[this.status]; },
         workflowItemStep() {
-          return sanitizeImage(workflowSteps[this.workflowStepIndex - 1].serviceID);
+          return sanitizeImage(this.serviceID);
         },
         links: [
           { ...previousPage, linkTitle: 'previous' },
