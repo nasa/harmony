@@ -172,14 +172,16 @@ export default abstract class BaseService<ServiceParamType> {
     logger?: Logger, harmonyRoot?: string, requestUrl?: string, geojsonHash?: string,
   ): Promise<InvocationResult> {
     logger.info('Invoking service for operation', { operation: this.operation });
+    const job = this._createJob(requestUrl, geojsonHash);
     try {
-      const job = this._createJob(requestUrl, geojsonHash);
       await job.maybeAttach(db);
       if (job.attachedStatus.didAttach) {
+        // attached jobs do not initiate new work
         const { originalId, assumedId } = job.attachedStatus;
         job.requestId = assumedId;
         logger.info(`This job attached to a previous job: ${originalId} is now ${assumedId}.`);
       } else {
+        // proceed with saving and creating workflow
         await this._createAndSaveWorkflow(logger, job);
       }
     } catch (e) {
