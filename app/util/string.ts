@@ -63,7 +63,7 @@ export function isInteger(value: string): boolean {
  * Removes AWS account ECR information or *.earthdata.nasa.gov from image name
  * since we may not want to expose that information.
  *
- * @param text - The string to sanitize
+ * @param image - The image name string to sanitize
  * @returns the sanitized image name
  */
 export function sanitizeImage(image: string): string {
