@@ -369,9 +369,7 @@ export async function getWorkItemsForWorkflowUI(
         workflowItemUpdated() { return (new Date(this.updatedAt).toISOString()); },
         workflowItemCreated() { return (new Date(this.createdAt).toISOString()); },
         workflowItemBadge() { return badgeClasses[this.status]; },
-        workflowItemStep() {
-          return sanitizeImage(this.serviceID);
-        },
+        workflowItemStep() { return sanitizeImage(this.serviceID); },
         links: [
           { ...previousPage, linkTitle: 'previous' },
           { ...nextPage, linkTitle: 'next' },
