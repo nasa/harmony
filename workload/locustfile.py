@@ -6,63 +6,30 @@ from harmony.common import BaseHarmonyUser
 class HarmonyUatUser(BaseHarmonyUser):
 
     def _harmony_service_example_bbox_variable_reformat(self, turbo=False):
-      name = 'Harmony Service Example: Bbox, Variable, and reformat'
-      collection = 'C1233800302-EEDTEST'
-      variable = 'blue_var'
-      params = {
-          'subset': [
-              'lat(20:60)',
-              'lon(-140:-50)'
-          ],
-          'granuleId': 'G1233800343-EEDTEST',
-          'outputCrs': 'EPSG:4326',
-          'format': 'image/png'
-      }
-      if turbo:
-        params['turbo'] = 'true'
+        name = 'Harmony Service Example: Bbox, Variable, and reformat'
+        collection = 'C1233800302-EEDTEST'
+        variable = 'blue_var'
+        params = {
+            'subset': [
+                'lat(20:60)',
+                'lon(-140:-50)'
+            ],
+            'granuleId': 'G1233800343-EEDTEST',
+            'outputCrs': 'EPSG:4326',
+            'format': 'image/png'
+        }
+        if turbo:
+            params['turbo'] = 'true'
 
-      self.client.get(
-          self.coverages_root.format(
-              collection=collection,
-              variable=variable),
-          params=params,
-          name=f'Turbo: {name}' if turbo else f'Argo: {name}')
+        self.client.get(
+            self.coverages_root.format(
+                collection=collection,
+                variable=variable),
+            params=params,
+            name=f'Turbo: {name}' if turbo else f'Argo: {name}')
 
-    @tag('harmony-service-example', 'sync', 'variable', 'bbox', 'reproject', 'png')
-    @task(2)
-    def harmony_service_example_bbox_variable_reformat(self):
-      self._harmony_service_example_bbox_variable_reformat()
-
-    @tag('harmony-service-example', 'sync', 'variable', 'bbox', 'reproject', 'png', 'turbo')
-    @task(2)
-    def harmony_service_example_bbox_variable_reformat_turbo(self):
-      self._harmony_service_example_bbox_variable_reformat(True)
-
-    # @tag('harmony-service-example', 'sync', 'variable', 'bbox', 'reproject', 'png')
-    # @task(2)
-    # def harmony_service_example_bbox_variable_reformat(self):
-    #     collection = 'C1233800302-EEDTEST'
-    #     variable = 'blue_var'
-    #     params = {
-    #         'subset': [
-    #             'lat(20:60)',
-    #             'lon(-140:-50)'
-    #         ],
-    #         'granuleId': 'G1233800343-EEDTEST',
-    #         'outputCrs': 'EPSG:4326',
-    #         'format': 'image/png'
-    #     }
-
-    #     self.client.get(
-    #         self.coverages_root.format(
-    #             collection=collection,
-    #             variable=variable),
-    #         params=params,
-    #         name='Harmony Service Example: Bbox, Variable, and reformat')
-
-    @tag('swot-repr', 'sync', 'reproject', 'netcdf4')
-    @task(2)
-    def swot_repr_europe(self):
+    def _swot_repr_europe(self, turbo=False):
+        name='SWOT Reprojection: Europe scale extent'
         collection = 'C1233860183-EEDTEST'
         variable = 'all'
         params = {
@@ -71,92 +38,114 @@ class HarmonyUatUser(BaseHarmonyUser):
             'interpolation': 'near',
             'scaleExtent': '-7000000,1000000,8000000,8000000'
         }
+        if turbo:
+          params['turbo'] = 'true'
 
         self.client.get(
             self.coverages_root.format(
                 collection=collection,
                 variable=variable),
             params=params,
-            name='SWOT Reprojection: Europe scale extent')
+            name=f'Turbo: {name}' if turbo else f'Argo: {name}')
 
-    # @tag('harmony-service-example', 'sync', 'variable', 'bbox', 'reproject', 'png', 'turbo')
-    # @task(2)
-    # def harmony_service_example_bbox_variable_reformat_turbo(self):
-    #     collection = 'C1233800302-EEDTEST'
-    #     variable = 'blue_var'
-    #     params = {
-    #         'subset': [
-    #             'lat(20:60)',
-    #             'lon(-140:-50)'
-    #         ],
-    #         'granuleId': 'G1233800343-EEDTEST',
-    #         'outputCrs': 'EPSG:4326',
-    #         'format': 'image/png',
-    #         'turbo': 'true'
-    #     }
-
-    #     self.client.get(
-    #         self.coverages_root.format(
-    #             collection=collection,
-    #             variable=variable),
-    #         params=params,
-    #         name='Turbo: Harmony Service Example: Bbox, Variable, and reformat')
-
-    @tag('swot-repr', 'sync', 'reproject', 'netcdf4', 'turbo')
-    @task(2)
-    def swot_repr_europe(self):
-        collection = 'C1233860183-EEDTEST'
+    def _netcdf_to_zarr_10_granules(self, turbo=False):
+        name = 'NetCDF-to-Zarr: 10 granules'
+        collection = 'harmony_example_l2'
         variable = 'all'
         params = {
-            'granuleId': 'G1233860486-EEDTEST',
+            'format': 'application/x-zarr',
+            'maxResults': '10',
+            'turbo': 'true'
+        }
+
+        response = self.client.get(
+            self.coverages_root.format(
+                collection=collection,
+                variable=variable),
+            params=params,
+            name=f'Turbo: {name}' if turbo else f'Argo: {name}')
+        self.wait_for_job_completion(response)
+
+    def _chain_swot_repr_europe_to_zarr(self, turbo=False):
+        name = 'Chain SWOT Reprojection to NetCDF-to-Zarr'
+        collection = 'harmony_example_l2'
+        variable = 'all'
+        params = {
+            'maxResults': '1',
             'outputCrs': '+proj=lcc +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m no_defs',
             'interpolation': 'near',
             'scaleExtent': '-7000000,1000000,8000000,8000000',
-            'turbo': 'true'
+            'format': 'application/x-zarr'
         }
 
-        self.client.get(
+        response = self.client.get(
             self.coverages_root.format(
                 collection=collection,
                 variable=variable),
             params=params,
-            name='Turbo: SWOT Reprojection: Europe scale extent')
+            name=f'Turbo: {name}' if turbo else f'Argo: {name}')
+        self.wait_for_job_completion(response)
+
+    def _netcdf_to_zarr_large_granule(self, turbo=False):
+        name='NetCDF to Zarr large granules'
+        collection = 'C1238621141-POCLOUD'
+        variable = 'all'
+        params = {
+            'format': 'application/x-zarr',
+            'maxResults': '1',
+            'turbo': 'true'
+        }
+        response = self.client.get(
+            self.coverages_root.format(
+                collection=collection,
+                variable=variable
+            ),
+            params=params,
+            name=f'Turbo: {name}' if turbo else f'Argo: {name}')
+        self.wait_for_job_completion(response)
+
+    ############################################
+    # Locust tasks
+    ############################################
+    @tag('harmony-service-example', 'sync', 'variable', 'bbox', 'reproject', 'png', 'argo')
+    @task(2)
+    def harmony_service_example_bbox_variable_reformat_argo(self):
+        self._harmony_service_example_bbox_variable_reformat(False)
+
+    @tag('harmony-service-example', 'sync', 'variable', 'bbox', 'reproject', 'png', 'turbo')
+    @task(2)
+    def harmony_service_example_bbox_variable_reformat_turbo(self):
+      self._harmony_service_example_bbox_variable_reformat(True)
+
+    @tag('swot-repr', 'sync', 'reproject', 'netcdf4', 'argo')
+    @task(2)
+    def swot_repr_europe_argo(self):
+        self._swot_repr_europe()
+
+    @tag('swot-repr', 'sync', 'reproject', 'netcdf4', 'turbo')
+    @task(2)
+    def swot_repr_europe_argo(self):
+        self._swot_repr_europe(True)
+
+    @tag('netcdf-to-zarr', 'async', 'zarr', 'argo')
+    @task(2)
+    def netcdf_to_zarr_10_granules_argo(self):
+        self._netcdf_to_zarr_10_granules()
 
     @tag('netcdf-to-zarr', 'async', 'zarr', 'turbo')
     @task(2)
-    def swot_repr_europe(self):
-        collection = 'harmony_example_l2'
-        variable = 'all'
-        params = {
-            'format': 'application/x-zarr',
-            'maxResults': '10',
-            'turbo': 'true'
-        }
+    def netcdf_to_zarr_10_granules_turbo(self):
+        self._netcdf_to_zarr_10_granules(True)
 
-        self.client.get(
-            self.coverages_root.format(
-                collection=collection,
-                variable=variable),
-            params=params,
-            name='Turbo: netcdf-to-zarr: up to 10 granules')
-
-    @tag('chain-swot-repr-netcdf-to-zarr', 'async', 'zarr', 'reproject', 'turbo', 'chain')
+    @tag('chain', 'async', 'zarr', 'reproject', 'argo', 'chain')
     @task(2)
-    def swot_repr_europe(self):
-        collection = 'harmony_example_l2'
-        variable = 'all'
-        params = {
-            'format': 'application/x-zarr',
-            'maxResults': '10',
-            'turbo': 'true'
-        }
+    def chain_swot_repr_europe_to_zarr_argo(self):
+        self._chain_swot_repr_europe_to_zarr()
 
-        self.client.get(
-            self.coverages_root.format(
-                collection=collection,
-                variable=variable),
-            params=params,
-            name='Turbo: netcdf-to-zarr: up to 10 granules')
+    @tag('chain', 'async', 'zarr', 'reproject', 'turbo', 'chain')
+    @task(2)
+    def chain_swot_repr_europe_to_zarr_turbo(self):
+        self._chain_swot_repr_europe_to_zarr(True)
 
     # @tag('podaac-ps3', 'shapefile', 'sync', 'temporal', 'netcdf4')
     # @task(2)
@@ -217,22 +206,22 @@ class HarmonyUatUser(BaseHarmonyUser):
     #         name='ASF GDAL'
     #     )
 
-    @tag('var-subsetter', 'sync', 'variable', 'hierarchical-variable', 'netcdf4')
-    @task(2)
-    def var_subsetter(self):
-        collection = 'C1234714698-EEDTEST'
-        variable = urllib.parse.quote('/gt1l/land_segments/canopy/h_canopy', safe='')
-        params = {
-            'granuleid': 'G1238479514-EEDTEST'
-        }
-        self.client.get(
-            self.coverages_root.format(
-                collection=collection,
-                variable=variable
-            ),
-            params=params,
-            name='Variable subsetter'
-        )
+    # @tag('var-subsetter', 'sync', 'variable', 'hierarchical-variable', 'netcdf4')
+    # @task(2)
+    # def var_subsetter(self):
+    #     collection = 'C1234714698-EEDTEST'
+    #     variable = urllib.parse.quote('/gt1l/land_segments/canopy/h_canopy', safe='')
+    #     params = {
+    #         'granuleid': 'G1238479514-EEDTEST'
+    #     }
+    #     self.client.get(
+    #         self.coverages_root.format(
+    #             collection=collection,
+    #             variable=variable
+    #         ),
+    #         params=params,
+    #         name='Variable subsetter'
+    # )
 
     # @tag('podaac-l2ss', 'bbox', 'async', 'netcdf4')
     # @task(5)
@@ -278,61 +267,52 @@ class HarmonyUatUser(BaseHarmonyUser):
     #     )
     #     self.wait_for_job_completion(response)
 
-    @tag('netcdf-to-zarr', 'async', 'zarr', 'agu')
-    @task(1)
-    def netcdf_to_zarr_single_granule(self):
-        collection = 'C1234082763-POCLOUD'
-        variable = 'all'
-        params = {
-            'maxResults': 1
-        }
-        response = self.client.get(
-            self.coverages_root.format(
-                collection=collection,
-                variable=variable
-            ),
-            params=params,
-            name='NetCDF to Zarr single granule'
-        )
-        self.wait_for_job_completion(response)
+    # @tag('netcdf-to-zarr', 'async', 'zarr', 'agu')
+    # @task(1)
+    # def netcdf_to_zarr_single_granule(self):
+    #     collection = 'C1234082763-POCLOUD'
+    #     variable = 'all'
+    #     params = {
+    #         'maxResults': 1
+    #     }
+    #     response = self.client.get(
+    #         self.coverages_root.format(
+    #             collection=collection,
+    #             variable=variable
+    #         ),
+    #         params=params,
+    #         name='NetCDF to Zarr single granule'
+    #     )
+    #     self.wait_for_job_completion(response)
 
-    @tag('netcdf-to-zarr', 'async', 'zarr', 'agu', 'temporal')
-    @task(1)
-    def netcdf_to_zarr_temporal(self):
-        collection = 'C1234410736-POCLOUD'
-        variable = 'all'
-        params = {
-            'subset': [
-              'time("2020-01-01T00:00:00.000Z":"2020-01-02T00:00:00.000Z")'
-            ]
-        }
-        response = self.client.get(
-            self.coverages_root.format(
-                collection=collection,
-                variable=variable
-            ),
-            params=params,
-            name='NetCDF to Zarr temporal subset'
-        )
-        self.wait_for_job_completion(response)
+    # @tag('netcdf-to-zarr', 'async', 'zarr', 'agu', 'temporal')
+    # @task(1)
+    # def netcdf_to_zarr_temporal(self):
+    #     collection = 'C1234410736-POCLOUD'
+    #     variable = 'all'
+    #     params = {
+    #         'subset': [
+    #           'time("2020-01-01T00:00:00.000Z":"2020-01-02T00:00:00.000Z")'
+    #         ]
+    #     }
+    #     response = self.client.get(
+    #         self.coverages_root.format(
+    #             collection=collection,
+    #             variable=variable
+    #         ),
+    #         params=params,
+    #         name='NetCDF to Zarr temporal subset'
+    #     )
+    #     self.wait_for_job_completion(response)
 
+
+    @tag('netcdf-to-zarr', 'async', 'zarr', 'argo', 'memory', 'slow')
+    @task(1)
+    def netcdf_to_zarr_large_granule_argo(self):
+        self._netcdf_to_zarr_large_granule()
 
     @tag('netcdf-to-zarr', 'async', 'zarr', 'turbo', 'memory', 'slow')
     @task(1)
-    def netcdf_to_zarr_temporal(self):
-        collection = 'C1238621141-POCLOUD'
-        variable = 'all'
-        params = {
-            'format': 'application/x-zarr',
-            'maxResults': '1',
-            'turbo': 'true'
-        }
-        response = self.client.get(
-            self.coverages_root.format(
-                collection=collection,
-                variable=variable
-            ),
-            params=params,
-            name='NetCDF to Zarr large granules'
-        )
-        self.wait_for_job_completion(response)
+    def netcdf_to_zarr_large_granule_turbo(self):
+        self._netcdf_to_zarr_large_granule(True)
+
