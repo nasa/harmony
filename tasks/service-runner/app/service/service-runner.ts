@@ -1,6 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import { readdirSync } from 'fs';
 import stream from 'stream';
+import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import logger from '../../../../app/util/log';
 import WorkItem from '../../../../app/models/work-item';
@@ -124,7 +125,7 @@ export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceRe
             } else {
               clearTimeout(timeout);
               const logErr = _getErrorMessage(stdOut.logStr);
-              const errMsg = `${env.harmonyService}: ${logErr}`;
+              const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               stdOut.destroy();
               resolve({ error: errMsg });
             }
@@ -197,7 +198,7 @@ export async function runPythonServiceFromPull(workItem: WorkItem): Promise<Serv
             } else {
               clearTimeout(timeout);
               const logErr = _getErrorMessage(stdOut.logStr);
-              const errMsg = `${env.harmonyService}: ${logErr}`;
+              const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }
           } catch (e) {
