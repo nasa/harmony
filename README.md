@@ -414,6 +414,16 @@ This will set up the proper environment for building the image so that it may be
 
 This may take some time, but ultimately it will produce a local docker image tagged `harmonyservices/service-example:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
 
+### Deploy Turbo Services
+
+To run service(s) in turbo mode, you need to create a k8s deployment for each service. Only services currently listed in `tasks/service-runner/config/*.yaml` can be run in turbo mode. The docker images for each service must be available locally in order for the k8s deployment to succeed:
+- first follow step **4** under "Quick Start"
+- then run `./bin/deploy-services` (deploys to k8s)
+
+These services will run in tandem with the argo-deployed services.
+
+Passing the `turbo=true` flag to a request will cause a request to run via turbo workflows (not argo). 
+
 ### Run Harmony
 
 To run Harmony locally such that it reloads when files change (recommended during development), run
