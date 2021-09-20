@@ -34,6 +34,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
       - [Deleting applications and stopping Kubernetes](#deleting-applications-and-stopping-kubernetes)
       - [(minikube only) Configuring the callback URL for backend services](#minikube-only-configuring-the-callback-url-for-backend-services)
     - [Add A Service Backend](#add-a-service-backend)
+    - [Deploy Turbo Services](#deploy-turbo-services)
     - [Run Harmony](#run-harmony)
     - [Connect A Client](#connect-a-client)
   - [Building and Publishing the Harmony Docker Image](#building-and-publishing-the-harmony-docker-image)
