@@ -68,8 +68,8 @@ export function isInteger(value: string): boolean {
  */
 export function sanitizeImage(image: string): string {
   return image
-    .replace(/[0-9]+(.[a-z]+){2}.[^\s]+.amazonaws.com\//i, '')
-    .replace(/[a-z|-]+.earthdata.nasa.gov\//i, '');
+    .replace(/.*amazonaws.com\//, '')
+    .replace(/.*earthdata.nasa.gov\//, '');
 }
 
 /**
