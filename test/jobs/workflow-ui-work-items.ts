@@ -12,25 +12,33 @@ import { hookWorkflowUIWorkItems, hookAdminWorkflowUIWorkItems, buildJob, workfl
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
 
-// build the items
-const item1 = buildWorkItem({ jobID: targetJob.jobID, workflowStepIndex: 1 });
-const item2 = buildWorkItem({ jobID: targetJob.jobID, workflowStepIndex: 1 });
-const item3 = buildWorkItem({ jobID: targetJob.jobID, workflowStepIndex: 2 });
-
-// build the steps
+// build docker image urls / serviceIds
 const ecrImage = 'dataservices/query-it:latest'; // non-sensitive part
-const ecrLocation = '00000000.xyz.abc.REGION-5.amazonaws.com/'; // sensitive part
+const ecrLocation = '00000000.xyz.abc.region-5.amazonaws.com/'; // sensitive part
 const earthdataImage = 'otherservices/subsetter:not-latest'; // non-sensitive part
-const earthdataLocation = 'MightBeSensitive.earthdata.NASA.gov/'; // sensitive part
+const earthdataLocation = 'mightbeSensitive.earthdata.nasa.gov/'; // sensitive part
 const step1ServiceId = `${ecrLocation}${ecrImage}`;
 const step1ServiceIdScrubbed = ecrImage;
 const step2ServiceId = `${earthdataLocation}${earthdataImage}`;
 const step2ServiceIdScrubbed = earthdataImage;
+
+// build the steps
 const step1 = buildWorkflowStep(
   { jobID: targetJob.jobID, stepIndex: 1, serviceID: step1ServiceId },
 );
 const step2 = buildWorkflowStep(
   { jobID: targetJob.jobID, stepIndex: 2, serviceID: step2ServiceId },
+);
+
+// build the items
+const item1 = buildWorkItem(
+  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId },
+);
+const item2 = buildWorkItem(
+  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId },
+);
+const item3 = buildWorkItem(
+  { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId },
 );
 
 describe('Workflow UI work items table route', function () {
