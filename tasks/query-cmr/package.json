@@ -33,7 +33,7 @@
     "tweetnacl-util": "^0.15.1",
     "uuid": "^3.4.0",
     "winston": "^3.3.3",
-    "yargs": "^16.1.0"
+    "yargs": "^16.2.0"
   },
   "engines": {
     "node": "^12.14.1",
