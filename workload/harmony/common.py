@@ -1,8 +1,11 @@
-import time
-from locust import HttpUser, task, tag, between
+from time import time, sleep
+from locust import HttpUser, task, tag, between, events
+from locust.exception import RescheduleTask
 import requests
 import logging
 from threading import Thread, Lock
+
+from contextlib import contextmanager, ContextDecorator
 
 session_cookies = None
 mutex = Lock()
@@ -36,7 +39,7 @@ class BaseHarmonyUser(HttpUser):
     def landing_page(self):
         self.client.get('/', name='landing page')
 
-    def wait_for_job_completion(self, response):
+    def wait_for_job_completion(self, response, name, start_time):
         """
         Polls and waits for an async job to complete.
 
@@ -44,10 +47,60 @@ class BaseHarmonyUser(HttpUser):
             response {response.Response} -- the initial job status response
         """
         body = response.json()
-        while body['status'] not in ['successful', 'failed', 'canceled']:
-            time.sleep(1)
-            response = self.client.get(response.url)
-            body = response.json()
-        status = body['status']
-        assert(status not in ['failed', 'canceled'])
+        status = None
+        try:
+            while body['status'] not in ['successful', 'failed', 'canceled']:
+                sleep(1)
+                try:
+                    with self.client.get(response.url, name='ignore') as response:
+                        body = response.json()
+                        # if body['status'] not in ['successful', 'failed', 'canceled']:
+                        status = body['status']
+                        raise RescheduleTask()
+                except Exception as e:
+                    # This is fine
+                    pass
+            raise 'End'
+        except Exception as e:
+          assert(status not in ['failed', 'canceled'])
+          events.request.fire(
+            context=self.context,
+            request_type='async_job',
+            name=name,
+            response_time=(time() - start_time) * 1000,
+            response_length=0,
+            exception=None,
+        )
+        # raise RescheduleTask()
         return status
+
+@contextmanager
+def _manual_report(name):
+    start_time = time()
+    try:
+        yield
+    except Exception as e:
+        events.request.fire(
+            request_type="manual",
+            name=name,
+            response_time=(time() - start_time) * 1000,
+            response_length=0,
+            exception=e,
+        )
+        raise
+    else:
+        events.request.fire(
+            request_type="manual",
+            name=name,
+            response_time=(time() - start_time) * 1000,
+            response_length=0,
+            exception=None,
+        )
+
+
+def manual_report(name_or_func):
+    if callable(name_or_func):
+        # used as decorator without name argument specified
+        return _manual_report(name_or_func.__name__)(name_or_func)
+    else:
+        return _manual_report(name_or_func)
