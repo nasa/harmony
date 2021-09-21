@@ -34,6 +34,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
       - [Deleting applications and stopping Kubernetes](#deleting-applications-and-stopping-kubernetes)
       - [(minikube only) Configuring the callback URL for backend services](#minikube-only-configuring-the-callback-url-for-backend-services)
     - [Add A Service Backend](#add-a-service-backend)
+    - [Deploy Turbo Services](#deploy-turbo-services)
     - [Run Harmony](#run-harmony)
     - [Connect A Client](#connect-a-client)
   - [Building and Publishing the Harmony Docker Image](#building-and-publishing-the-harmony-docker-image)
@@ -413,6 +414,16 @@ This will set up the proper environment for building the image so that it may be
 ```
 
 This may take some time, but ultimately it will produce a local docker image tagged `harmonyservices/service-example:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
+
+### Deploy Turbo Services
+
+To run service(s) in turbo mode, you need to create a k8s deployment for each service. Only services currently listed in `tasks/service-runner/config/*.yaml` can be run in turbo mode. The docker images for each service must be available locally in order for the k8s deployment to succeed:
+- first follow step **4** under "Quick Start"
+- then run `./bin/deploy-services` (deploys to k8s)
+
+These services will run in tandem with the argo-deployed services.
+
+Passing the `turbo=true` flag to a request will cause a request to run via turbo workflows (not argo). 
 
 ### Run Harmony
 
