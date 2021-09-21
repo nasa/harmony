@@ -1,6 +1,10 @@
-from locust import task, tag
+from locust import task, tag, events
+from time import time
 import urllib.parse
-from harmony.common import BaseHarmonyUser
+import logging
+from pprint import pprint
+from harmony.common import BaseHarmonyUser, manual_report
+# , manual_report
 
 
 class HarmonyUatUser(BaseHarmonyUser):
@@ -50,24 +54,28 @@ class HarmonyUatUser(BaseHarmonyUser):
 
     def _netcdf_to_zarr_10_granules(self, turbo=False):
         name = 'NetCDF-to-Zarr: 10 granules'
+        full_name = f'Turbo: {name}' if turbo else f'Argo: {name}'
         collection = 'harmony_example_l2'
         variable = 'all'
         params = {
             'format': 'application/x-zarr',
-            'maxResults': '10',
-            'turbo': 'true'
+            'maxResults': '10'
         }
+        if turbo:
+          params['turbo'] = 'true'
 
+        start_time = time()
         response = self.client.get(
             self.coverages_root.format(
                 collection=collection,
                 variable=variable),
             params=params,
-            name=f'Turbo: {name}' if turbo else f'Argo: {name}')
-        self.wait_for_job_completion(response)
+            name='ignore')
+        self.wait_for_job_completion(response, full_name, start_time)
 
     def _chain_swot_repr_europe_to_zarr(self, turbo=False):
         name = 'Chain SWOT Reprojection to NetCDF-to-Zarr'
+        full_name = f'Turbo: {name}' if turbo else f'Argo: {name}'
         collection = 'harmony_example_l2'
         variable = 'all'
         params = {
@@ -77,17 +85,21 @@ class HarmonyUatUser(BaseHarmonyUser):
             'scaleExtent': '-7000000,1000000,8000000,8000000',
             'format': 'application/x-zarr'
         }
+        if turbo:
+          params['turbo'] = 'true'
 
+        start_time = time()
         response = self.client.get(
             self.coverages_root.format(
                 collection=collection,
                 variable=variable),
             params=params,
-            name=f'Turbo: {name}' if turbo else f'Argo: {name}')
-        self.wait_for_job_completion(response)
+            name='ignore')
+        self.wait_for_job_completion(response, full_name, start_time)
 
     def _netcdf_to_zarr_large_granule(self, turbo=False):
         name='NetCDF to Zarr large granules'
+        full_name = f'Turbo: {name}' if turbo else f'Argo: {name}'
         collection = 'C1238621141-POCLOUD'
         variable = 'all'
         params = {
@@ -95,14 +107,66 @@ class HarmonyUatUser(BaseHarmonyUser):
             'maxResults': '1',
             'turbo': 'true'
         }
+        if turbo:
+          params['turbo'] = 'true'
+
+        start_time = time()
         response = self.client.get(
             self.coverages_root.format(
                 collection=collection,
                 variable=variable
             ),
             params=params,
-            name=f'Turbo: {name}' if turbo else f'Argo: {name}')
-        self.wait_for_job_completion(response)
+            name='ignore')
+        self.wait_for_job_completion(response, full_name, start_time)
+
+    @tag('thetest2')
+    @task(2)
+    # @manual_report('manual report test')
+    # def the_test(self, turbo=False):
+    def the_test2(self):
+        name='The test: service-example'
+        full_name = f'Turbo: {name}' if turbo else f'Argo: {name}'
+        collection = 'C1233800302-EEDTEST'
+        variable = 'blue_var'
+        params = {
+            'subset': [
+                'lat(20:60)',
+                'lon(-140:-50)'
+            ],
+            'granuleId': 'G1233800343-EEDTEST',
+            'outputCrs': 'EPSG:4326',
+            'format': 'image/png',
+            'forceAsync': 'true',
+            'turbo': 'true'
+        }
+        turbo = True
+
+        # if turbo:
+        #   params['turbo'] = 'true'
+        start_time = time()
+        response = self.client.get(
+            self.coverages_root.format(
+                collection=collection,
+                variable=variable
+            ),
+            params=params,
+            name='ignore')
+            # initial_request_time = response.elapsed
+            # initial_request_time = response['response_time']
+            # logging.info('Response is: %s', response)
+            # pprint(vars(response))
+
+            # async_wait_time_start = time.perf_counter()
+        self.wait_for_job_completion(response, full_name, start_time)
+        # events.request.fire(
+        #     context=self.context,
+        #     request_type='async_job',
+        #     name='The custom thing',
+        #     response_time=(time() - start_time) * 1000,
+        #     response_length=0,
+        #     exception=None,
+        # )
 
     ############################################
     # Locust tasks
@@ -115,7 +179,7 @@ class HarmonyUatUser(BaseHarmonyUser):
     @tag('harmony-service-example', 'sync', 'variable', 'bbox', 'reproject', 'png', 'turbo')
     @task(2)
     def harmony_service_example_bbox_variable_reformat_turbo(self):
-      self._harmony_service_example_bbox_variable_reformat(True)
+        self._harmony_service_example_bbox_variable_reformat(True)
 
     @tag('swot-repr', 'sync', 'reproject', 'netcdf4', 'argo')
     @task(2)
@@ -124,7 +188,7 @@ class HarmonyUatUser(BaseHarmonyUser):
 
     @tag('swot-repr', 'sync', 'reproject', 'netcdf4', 'turbo')
     @task(2)
-    def swot_repr_europe_argo(self):
+    def swot_repr_europe_turbo(self):
         self._swot_repr_europe(True)
 
     @tag('netcdf-to-zarr', 'async', 'zarr', 'argo')
