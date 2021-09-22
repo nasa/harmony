@@ -39,7 +39,8 @@ export default async function cancelAndSaveJob(
         await job.save(tx);
         const isTurboWorkflow = await checkIfTurboWorkflow(tx, jobID, logger);
         if (isTurboWorkflow) {
-          await tx('work_items').where({ jobID: job.jobID }).update({ status: WorkItemStatus.CANCELED });
+          const updatedAt = new Date();
+          await tx('work_items').where({ jobID: job.jobID }).update({ status: WorkItemStatus.CANCELED, updatedAt });
         } else if (shouldTerminateWorkflows) {
           await terminateWorkflows(job, logger);
         }
