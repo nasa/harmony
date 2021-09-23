@@ -37,11 +37,11 @@ export default async function cancelAndSaveJob(
         job.validateStatus();
         job.cancel(message);
         await job.save(tx);
-        const isTurboWorkflow = await checkIfTurboWorkflow(tx, jobID, logger);
-        if (isTurboWorkflow) {
-          const updatedAt = new Date();
-          await tx('work_items').where({ jobID: job.jobID }).update({ status: WorkItemStatus.CANCELED, updatedAt });
-        } else if (shouldTerminateWorkflows) {
+        const updatedAt = new Date();
+        await tx('work_items').where({ jobID: job.jobID }).update({ status: WorkItemStatus.CANCELED, updatedAt });
+        // The following can be removed once Argo is removed
+        const isArgoWorkflow = !await checkIfTurboWorkflow(tx, jobID, logger);
+        if (isArgoWorkflow && shouldTerminateWorkflows) {
           await terminateWorkflows(job, logger);
         }
       } else {
