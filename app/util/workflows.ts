@@ -142,7 +142,7 @@ export async function checkIfTurboWorkflow(
     const hasWorkItemsTable = await transaction.schema.hasTable('work_items');
     if (hasWorkItemsTable) {
       const workItemCount = await workItemCountForJobID(transaction, jobID);
-      if (workItemCount) isTurboWorkflow = true;
+      if (workItemCount > 0) isTurboWorkflow = true;
     }
     return isTurboWorkflow;
   } catch (e) {
