@@ -4,7 +4,8 @@ import { describe, it, before } from 'mocha';
 import { JobStatus } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, truncateAll } from '../helpers/db';
-import { workflowUIJobs, buildJob, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../helpers/jobs';
+import { buildJob } from '../helpers/jobs';
+import { workflowUIJobs, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../helpers/workflow-ui';
 
 // Example jobs to use in tests
 const woodyJob1 = buildJob({
@@ -73,7 +74,7 @@ describe('Workflow UI jobs route', function () {
     });
 
     it('sets the "redirect" cookie to the originally-requested resource', function () {
-      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent('/workflow-ui/jobs'));
+      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent('/workflow-ui'));
     });
   });
 
@@ -122,7 +123,7 @@ describe('Workflow UI jobs route', function () {
       hookWorkflowUIJobs({ username: 'woody', limit: 1 });
       it('returns a link to the next page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: '/workflow-ui/jobs?limit=1&page=2' }));
+        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: '/workflow-ui?limit=1&page=2' }));
       });
       it('returns only one job', function () {
         const listing = this.res.text;
@@ -134,8 +135,8 @@ describe('Workflow UI jobs route', function () {
       hookWorkflowUIJobs({ username: 'woody', limit: 1, page: 2 });
       it('returns a link to the next and previous page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: '/workflow-ui/jobs?limit=1&page=1' }));
-        expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: '/workflow-ui/jobs?limit=1&page=3' }));
+        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: '/workflow-ui?limit=1&page=1' }));
+        expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: '/workflow-ui?limit=1&page=3' }));
       });
       it('returns only one job', function () {
         const listing = this.res.text;

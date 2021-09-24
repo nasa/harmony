@@ -7,7 +7,8 @@ import { buildWorkflowStep } from 'test/helpers/workflow-steps';
 import { JobStatus } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, truncateAll } from '../helpers/db';
-import { hookWorkflowUIWorkItems, hookAdminWorkflowUIWorkItems, buildJob, workflowUIWorkItems } from '../helpers/jobs';
+import { buildJob } from '../helpers/jobs';
+import { hookWorkflowUIWorkItems, hookAdminWorkflowUIWorkItems, workflowUIWorkItems } from '../helpers/workflow-ui';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
@@ -65,7 +66,7 @@ describe('Workflow UI work items table route', function () {
     });
 
     it('sets the "redirect" cookie to the originally-requested resource', function () {
-      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/workflow-ui/jobs/${targetJob.jobID}/work-items`));
+      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/workflow-ui/${targetJob.jobID}/work-items`));
     });
   });
 
@@ -103,11 +104,7 @@ describe('Workflow UI work items table route', function () {
       });
 
       it('returns a JSON error response', function () {
-        const response = JSON.parse(this.res.text);
-        expect(response).to.eql({
-          code: 'harmony.NotFoundError',
-          description: `Error: Unable to find job ${unknownRequest}`,
-        });
+        expect(this.res.text).to.include(`Unable to find job ${unknownRequest}`);
       });
     });
 
@@ -156,7 +153,7 @@ describe('Workflow UI work items table route', function () {
       hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1 } });
       it('returns a link to the next page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/jobs/${targetJob.jobID}?limit=1&page=2` }));
+        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=2` }));
       });
       it('returns only one work item', function () {
         const listing = this.res.text;
@@ -169,8 +166,8 @@ describe('Workflow UI work items table route', function () {
       hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, page: 2 } });
       it('returns a link to the next and previous page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/jobs/${targetJob.jobID}?limit=1&page=1` }));
-        expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: `/workflow-ui/jobs/${targetJob.jobID}?limit=1&page=3` }));
+        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=1` }));
+        expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=3` }));
       });
       it('returns only one work item', function () {
         const listing = this.res.text;

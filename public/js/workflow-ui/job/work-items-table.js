@@ -2,7 +2,7 @@
  * Handles polling for work items and loading the work items
  * table as a job is in progress.
  */
-export class WorkFlowItemsTable {
+export class WorkItemsTable {
 
   constructor(jobId, page, limit) {
     const fiveSeconds = 5 * 1000;
@@ -34,6 +34,7 @@ export class WorkFlowItemsTable {
    * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
    */
   async _loadTable(checkJobStatus) {
+    console.log('load');
     const res = await fetch(this.tableUrl + `&checkJobStatus=${checkJobStatus}`);
     if (res.status === 200) {
       const template = await res.text();
