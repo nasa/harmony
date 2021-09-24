@@ -11,8 +11,7 @@ const anArgoJob = buildJob({ username: 'joe' });
 const anotherArgoJob = buildJob({ username: 'joe' });
 const aTurboJob = buildJob({ username: 'doe' });
 const anotherTurboJob = buildJob({ username: 'doe' });
-const aTurboWorkItem= buildWorkItem({ jobID: aTurboJob.jobID });
-
+const aTurboWorkItem = buildWorkItem({ jobID: aTurboJob.jobID });
 
 describe('Canceling a job', async function () {
   hookTransaction();
