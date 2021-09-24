@@ -42,9 +42,7 @@ describe('Canceling a job', async function () {
       await cancelAndSaveJob(anArgoJob.requestId, 'Canceled by admin', log, true, 'joe');
       expect(terminateWorkflowsStub.callCount).to.equal(1);
     });
-  });
 
-  describe('when workflow termination is not requested', async function () {
     it('does not terminates the workflow', async function () {
       await cancelAndSaveJob(anotherArgoJob.requestId, 'Canceled by admin', log, false, 'joe');
       expect(terminateWorkflowsStub.callCount).to.equal(0);
@@ -57,9 +55,7 @@ describe('Canceling a job', async function () {
       const { workItems } = await getWorkItemsByJobId(db, aTurboWorkItem.jobID);
       expect(workItems[0].status).to.equal('canceled');
     });
-  });
 
-  describe('when cancelation is requested for a turbo workflow', async function () {
     it('does not terminates the workflow', async function () {
       await cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
       expect(terminateWorkflowsStub.callCount).to.equal(0);
