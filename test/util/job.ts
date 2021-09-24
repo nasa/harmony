@@ -5,6 +5,8 @@ import { buildWorkItem } from '../helpers/work-items';
 import { hookTransaction } from '../helpers/db';
 import { stubTerminateWorkflows } from '../helpers/workflows';
 import cancelAndSaveJob from '../../app/util/job';
+import { getWorkItemsByJobId } from '../../app/models/work-item';
+import db from '../../app/util/db'
 import log from '../../app/util/log';
 
 const anArgoJob = buildJob({ username: 'joe' });
@@ -12,6 +14,7 @@ const anotherArgoJob = buildJob({ username: 'joe' });
 const aTurboJob = buildJob({ username: 'doe' });
 const anotherTurboJob = buildJob({ username: 'doe' });
 const aTurboWorkItem = buildWorkItem({ jobID: aTurboJob.jobID });
+const anotherTurboWorkItem = buildWorkItem({ jobID: anotherTurboJob.jobID });
 
 describe('Canceling a job', async function () {
   hookTransaction();
@@ -22,6 +25,7 @@ describe('Canceling a job', async function () {
     await aTurboJob.save(this.trx);
     await anotherTurboJob.save(this.trx);
     await aTurboWorkItem.save(this.trx);
+    await anotherTurboWorkItem.save(this.trx);
     this.trx.commit();
     this.trx = null;
   });
@@ -48,8 +52,16 @@ describe('Canceling a job', async function () {
   });
 
   describe('when cancelation is requested for a turbo workflow', async function () {
-    it('does not terminates the workflow', async function () {
+    it('changes the work-item status to be canceled', async function () {
       await cancelAndSaveJob(aTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
+      const { workItems } = await getWorkItemsByJobId(db, aTurboWorkItem.jobID);
+      expect(workItems[0].status).to.equal('canceled');
+    });
+  });
+
+  describe('when cancelation is requested for a turbo workflow', async function () {
+    it('does not terminates the workflow', async function () {
+      await cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
       expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
