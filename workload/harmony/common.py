@@ -1,11 +1,7 @@
 from time import time, sleep
 from locust import HttpUser, task, tag, between, events
-from locust.exception import RescheduleTask
-import requests
 import logging
 from threading import Thread, Lock
-
-from contextlib import contextmanager, ContextDecorator
 
 session_cookies = None
 mutex = Lock()
@@ -45,62 +41,66 @@ class BaseHarmonyUser(HttpUser):
 
         Arguments:
             response {response.Response} -- the initial job status response
+            name {String}                -- the name of the request to display in the UI
+            start_time {Timestamp}       -- the time the request was submitted
         """
-        body = response.json()
-        status = None
+        status = response.json()['status']
         try:
-            while body['status'] not in ['successful', 'failed', 'canceled']:
+            while status not in ['successful', 'failed', 'canceled']:
                 sleep(1)
                 try:
-                    with self.client.get(response.url, name='ignore') as response:
-                        body = response.json()
-                        # if body['status'] not in ['successful', 'failed', 'canceled']:
-                        status = body['status']
-                        raise RescheduleTask()
+                    response = self.client.get(response.url, name='job status')
+                    status = response.json()['status']
                 except Exception as e:
-                    # This is fine
-                    pass
-            raise 'End'
+                    logging.warn('Job status endpoint error %s: %s', response, response.body)
+
+            assert(status not in ['failed', 'canceled'])
+            events.request.fire(
+                context=self.context,
+                request_type='async_job',
+                name=name,
+                response_time=(time() - start_time) * 1000,
+                response_length=0,
+                exception=None,
+            )
         except Exception as e:
-          assert(status not in ['failed', 'canceled'])
-          events.request.fire(
-            context=self.context,
-            request_type='async_job',
-            name=name,
-            response_time=(time() - start_time) * 1000,
-            response_length=0,
-            exception=None,
-        )
-        # raise RescheduleTask()
+            events.request.fire(
+                context=self.context,
+                request_type='async_job',
+                name=name,
+                response_time=(time() - start_time) * 1000,
+                response_length=0,
+                exception=e,
+            )
         return status
 
-@contextmanager
-def _manual_report(name):
-    start_time = time()
-    try:
-        yield
-    except Exception as e:
-        events.request.fire(
-            request_type="manual",
-            name=name,
-            response_time=(time() - start_time) * 1000,
-            response_length=0,
-            exception=e,
-        )
-        raise
-    else:
-        events.request.fire(
-            request_type="manual",
-            name=name,
-            response_time=(time() - start_time) * 1000,
-            response_length=0,
-            exception=None,
-        )
+    def _sync_request(self, name, collection, variable, params, turbo, test_number):
+        workflow_type = 'Turbo' if turbo else 'Argo'
+        full_name = f'{test_number:03}: {workflow_type}: {name}'
 
+        if turbo:
+            params['turbo'] = 'true'
 
-def manual_report(name_or_func):
-    if callable(name_or_func):
-        # used as decorator without name argument specified
-        return _manual_report(name_or_func.__name__)(name_or_func)
-    else:
-        return _manual_report(name_or_func)
+        self.client.get(
+            self.coverages_root.format(
+                collection=collection,
+                variable=variable),
+            params=params,
+            name=full_name)
+
+    def _async_request(self, name, collection, variable, params, turbo, test_number):
+        workflow_type = 'Turbo' if turbo else 'Argo'
+        full_name = f'{test_number:03}: {workflow_type}: {name}'
+
+        if turbo:
+          params['turbo'] = 'true'
+
+        start_time = time()
+        response = self.client.get(
+            self.coverages_root.format(
+                collection=collection,
+                variable=variable),
+            params=params,
+            name='async request started')
+        self.wait_for_job_completion(response, full_name, start_time)
+
