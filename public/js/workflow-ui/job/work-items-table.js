@@ -34,7 +34,6 @@ export class WorkItemsTable {
    * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
    */
   async _loadTable(checkJobStatus) {
-    console.log('load');
     const res = await fetch(this.tableUrl + `&checkJobStatus=${checkJobStatus}`);
     if (res.status === 200) {
       const template = await res.text();
