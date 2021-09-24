@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import db, { Transaction } from '../util/db';
 import env from '../util/env';
 import { readCatalogItems } from '../util/stac';
+import { ConflictError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
@@ -155,7 +156,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
 
     // If the job was already canceled then send 400 response
     if (job.status === JobStatus.CANCELED) {
-      res.status(409).send('Job was already canceled.');
+      throw new ConflictError('Job was already canceled.');
     // If the response is an error then set the job status to 'failed'
     } else if (workItem.status === WorkItemStatus.FAILED) {
       if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
