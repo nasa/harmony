@@ -9,7 +9,7 @@ import log from '../../app/util/log';
 const aJob = buildJob({ username: 'joe' });
 const anotherJob = buildJob({ username: 'joe' });
 
-describe('Canceling a job', async function () {
+describe('Canceling a job a', async function () {
   hookTransaction();
   let terminateWorkflowsStub: sinon.SinonStub;
   before(async function () {
@@ -35,8 +35,8 @@ describe('Canceling a job', async function () {
 
   describe('when workflow termination is not requested', async function () {
     it('does not terminates the workflow', async function () {
-      await cancelAndSaveJob(anotherJob.requestId, 'Canceled by admin', log, true, 'joe');
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
+      await cancelAndSaveJob(anotherJob.requestId, 'Canceled by admin', log, false, 'joe');
+      expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
   });
 });
