@@ -6,7 +6,7 @@ import { hookTransaction } from '../helpers/db';
 import { stubTerminateWorkflows } from '../helpers/workflows';
 import cancelAndSaveJob from '../../app/util/job';
 import { getWorkItemsByJobId } from '../../app/models/work-item';
-import db from '../../app/util/db'
+import db from '../../app/util/db';
 import log from '../../app/util/log';
 
 const anArgoJob = buildJob({ username: 'joe' });
