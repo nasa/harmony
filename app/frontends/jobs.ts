@@ -1,11 +1,11 @@
 import { Response, NextFunction } from 'express';
+import { sanitizeImage } from 'app/util/string';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { keysToLowerCase } from '../util/object';
 import isUUID from '../util/uuid';
 import cancelAndSaveJob from '../util/job';
 import JobLink from '../models/job-link';
 import { getWorkItemsByJobId, WorkItemStatus } from '../models/work-item';
-import { getWorkflowStepsByJobId } from '../models/workflow-steps';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink, Link } from '../util/links';
@@ -363,13 +363,12 @@ export async function getWorkItemsForWorkflowUI(
       const nextPage = pageLinks.find((l) => l.rel === 'next');
       const previousPage = pageLinks.find((l) => l.rel === 'prev');
       setPagingHeaders(res, pagination);
-      const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
       res.render('jobs/workflow-items-table', {
         workItems,
         workflowItemUpdated() { return (new Date(this.updatedAt).toISOString()); },
         workflowItemCreated() { return (new Date(this.createdAt).toISOString()); },
         workflowItemBadge() { return badgeClasses[this.status]; },
-        workflowItemStep() { return workflowSteps[this.workflowStepIndex - 1].serviceID; },
+        workflowItemStep() { return sanitizeImage(this.serviceID); },
         links: [
           { ...previousPage, linkTitle: 'previous' },
           { ...nextPage, linkTitle: 'next' },

@@ -1,6 +1,5 @@
-import time
-from locust import HttpUser, task, tag, between
-import requests
+from time import time, sleep
+from locust import HttpUser, task, tag, between, events
 import logging
 from threading import Thread, Lock
 
@@ -36,18 +35,72 @@ class BaseHarmonyUser(HttpUser):
     def landing_page(self):
         self.client.get('/', name='landing page')
 
-    def wait_for_job_completion(self, response):
+    def wait_for_job_completion(self, response, name, start_time):
         """
         Polls and waits for an async job to complete.
 
         Arguments:
             response {response.Response} -- the initial job status response
+            name {String}                -- the name of the request to display in the UI
+            start_time {Timestamp}       -- the time the request was submitted
         """
-        body = response.json()
-        while body['status'] not in ['successful', 'failed', 'canceled']:
-            time.sleep(1)
-            response = self.client.get(response.url)
-            body = response.json()
-        status = body['status']
-        assert(status not in ['failed', 'canceled'])
+        status = response.json()['status']
+        try:
+            while status not in ['successful', 'failed', 'canceled']:
+                sleep(1)
+                try:
+                    response = self.client.get(response.url, name='job status')
+                    status = response.json()['status']
+                except Exception as e:
+                    logging.warn('Job status endpoint error %s: %s', response, response.body)
+
+            assert(status not in ['failed', 'canceled'])
+            events.request.fire(
+                context=self.context,
+                request_type='async_job',
+                name=name,
+                response_time=(time() - start_time) * 1000,
+                response_length=0,
+                exception=None,
+            )
+        except Exception as e:
+            events.request.fire(
+                context=self.context,
+                request_type='async_job',
+                name=name,
+                response_time=(time() - start_time) * 1000,
+                response_length=0,
+                exception=e,
+            )
         return status
+
+    def _sync_request(self, name, collection, variable, params, turbo, test_number):
+        workflow_type = 'Turbo' if turbo else 'Argo'
+        full_name = f'{test_number:03}: {workflow_type}: {name}'
+
+        if turbo:
+            params['turbo'] = 'true'
+
+        self.client.get(
+            self.coverages_root.format(
+                collection=collection,
+                variable=variable),
+            params=params,
+            name=full_name)
+
+    def _async_request(self, name, collection, variable, params, turbo, test_number):
+        workflow_type = 'Turbo' if turbo else 'Argo'
+        full_name = f'{test_number:03}: {workflow_type}: {name}'
+
+        if turbo:
+          params['turbo'] = 'true'
+
+        start_time = time()
+        response = self.client.get(
+            self.coverages_root.format(
+                collection=collection,
+                variable=variable),
+            params=params,
+            name='async request started')
+        self.wait_for_job_completion(response, full_name, start_time)
+

@@ -1,6 +1,9 @@
+import axios from 'axios';
+import MockAdapter from 'axios-mock-adapter';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
+import { SinonStub } from 'sinon';
 import env from '../app/util/env';
 import WorkItem from '../../../app/models/work-item';
 import { hookGetWorkRequest } from './helpers/pull-worker';
@@ -135,6 +138,58 @@ describe('Pull Worker', async function () {
           await _doWork(workItem);
           expect(serviceSpy.called).to.be.true;
         });
+      });
+    });
+  });
+
+  describe('_pullAndDoWork()', async function () {
+    describe('when _pullWork throws an exception', async function () {
+      let pullStub: SinonStub;
+      let doWorkStub: SinonStub;
+      const mock = new MockAdapter(axios);
+      beforeEach(function () {
+        pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () {
+          throw new Error('something bad happened');
+        });
+        doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(async function (): Promise<WorkItem> {
+          return new WorkItem({});
+        });
+        mock.onPut().reply(200, 'OK');
+      });
+      this.afterEach(function () {
+        pullStub.restore();
+        doWorkStub.restore();
+        mock.restore();
+      });
+
+      it('does not throw', async function () {
+        const call = (): Promise<void> => _pullAndDoWork(false);
+        expect(call).to.not.throw();
+      });
+    });
+
+    describe('when _doWork throws an exception', async function () {
+      let pullStub: SinonStub;
+      let doWorkStub: SinonStub;
+      const mock = new MockAdapter(axios);
+      beforeEach(function () {
+        pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function (): Promise<{ item?: WorkItem; status?: number; error?: string }> {
+          return {};
+        });
+        doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(async function (): Promise<WorkItem> {
+          throw new Error('something bad happened');
+        });
+        mock.onPut().reply(200, 'OK');
+      });
+      this.afterEach(function () {
+        pullStub.restore();
+        doWorkStub.restore();
+        mock.restore();
+      });
+
+      it('does not throw', async function () {
+        const call = (): Promise<void> => _pullAndDoWork(false);
+        expect(call).to.not.throw();
       });
     });
   });
