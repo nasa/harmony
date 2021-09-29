@@ -2,7 +2,7 @@
  * Handles polling for work items and loading the work items
  * table as a job is in progress.
  */
-export class WorkFlowItemsTable {
+export class WorkItemsTable {
 
   constructor(jobId, page, limit) {
     const fiveSeconds = 5 * 1000;

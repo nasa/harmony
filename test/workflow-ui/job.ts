@@ -5,7 +5,8 @@ import { v4 as uuid } from 'uuid';
 import { JobStatus } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, truncateAll } from '../helpers/db';
-import { workflowUIJob, buildJob, hookWorkflowUIJob, hookAdminWorkflowUIJob } from '../helpers/jobs';
+import { buildJob } from '../helpers/jobs';
+import { workflowUIJob, hookWorkflowUIJob, hookAdminWorkflowUIJob } from '../helpers/workflow-ui';
 
 // Example job to use in tests
 const woodyJob1 = buildJob({
@@ -41,7 +42,7 @@ describe('Workflow UI job route', function () {
     });
 
     it('sets the "redirect" cookie to the originally-requested resource', function () {
-      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/workflow-ui/jobs/${woodyJob1.jobID}`));
+      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/workflow-ui/${woodyJob1.jobID}`));
     });
   });
 
@@ -72,11 +73,7 @@ describe('Workflow UI job route', function () {
       });
 
       it('returns a JSON error response', function () {
-        const response = JSON.parse(this.res.text);
-        expect(response).to.eql({
-          code: 'harmony.NotFoundError',
-          description: `Error: Unable to find job ${unknownRequest}`,
-        });
+        expect(this.res.text).to.include(`Unable to find job ${unknownRequest}`);
       });
     });
 
