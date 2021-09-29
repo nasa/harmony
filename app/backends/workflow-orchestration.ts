@@ -156,7 +156,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
 
     // If the job was already canceled then send 400 response
     if (job.status === JobStatus.CANCELED) {
-      throw new ConflictError('Job was already canceled.');
+      res.status(409).send('Job was already canceled.');
     // If the response is an error then set the job status to 'failed'
     } else if (workItem.status === WorkItemStatus.FAILED) {
       if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
