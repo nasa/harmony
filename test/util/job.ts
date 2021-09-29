@@ -5,7 +5,8 @@ import { buildWorkItem } from '../helpers/work-items';
 import { hookTransaction } from '../helpers/db';
 import { stubTerminateWorkflows } from '../helpers/workflows';
 import cancelAndSaveJob from '../../app/util/job';
-import { getWorkItemsByJobId } from '../../app/models/work-item';
+import { JobStatus } from '../../app/models/job';
+import { getWorkItemsByJobId, WorkItemStatus } from '../../app/models/work-item';
 import db from '../../app/util/db';
 import log from '../../app/util/log';
 
@@ -13,10 +14,13 @@ const anArgoJob = buildJob({ username: 'joe' });
 const anotherArgoJob = buildJob({ username: 'joe' });
 const aTurboJob = buildJob({ username: 'doe' });
 const anotherTurboJob = buildJob({ username: 'doe' });
-const finishedTurboJob = buildJob({ username: 'doe', status: 'successful' });
+const finishedTurboJob = buildJob({ username: 'doe', status: JobStatus.SUCCESSFUL });
 const aTurboWorkItem = buildWorkItem({ jobID: aTurboJob.jobID });
 const anotherTurboWorkItem = buildWorkItem({ jobID: anotherTurboJob.jobID });
-const finishedTurboWorkItem = buildWorkItem({ jobID: finishedTurboJob.jobID, status: 'successful' });
+const finishedTurboWorkItem = buildWorkItem({
+  jobID: finishedTurboJob.jobID,
+  status: WorkItemStatus.SUCCESSFUL,
+});
 
 describe('Canceling a job', async function () {
   hookTransaction();
