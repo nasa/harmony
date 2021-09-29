@@ -18,6 +18,9 @@ let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
 
+// retry twice for tests and 1200 (2 mintues) for real
+const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
+
 const keepaliveAgent = new Agent({
   keepAlive: true,
   maxSockets,
@@ -199,7 +202,7 @@ export default class PullWorker implements Worker {
     // workaround for k8s client bug https://github.com/kubernetes-client/javascript/issues/714
     let isPrimed = false;
     let primeCount = 0;
-    while (!isPrimed && primeCount < 5) {
+    while (!isPrimed && primeCount < maxPrimeRetries) {
       try {
         if (env.harmonyService.includes('harmonyservices/query-cmr')) {
           // called this way to support sinon spy
@@ -211,7 +214,7 @@ export default class PullWorker implements Worker {
         isPrimed = true;
       } catch (e) {
         primeCount += 1;
-        if (primeCount === 5) {
+        if (primeCount === maxPrimeRetries) {
           logger.error('Failed to prime service');
           // kill this process which will cause the container to get restarted
           exit(1);

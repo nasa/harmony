@@ -76,11 +76,11 @@ describe('Pull Worker', async function () {
       env.harmonyService = harmonyService;
     });
 
-    it('tries five times then exits the program', async function () {
+    it('tries two times then exits the program', async function () {
       const worker = new PullWorker();
       await worker.start(false);
       expect(exitStub.called).to.be.true;
-      expect(queryCMRStub.callCount).to.equal(5);
+      expect(queryCMRStub.callCount).to.equal(2);
     });
   });
 
