@@ -55,6 +55,35 @@ describe('Pull Worker', async function () {
     });
   });
 
+  describe('on start with primer errors', async function () {
+    let queryCMRStub: SinonStub;
+    let exitStub: SinonStub;
+    const { harmonyService } = env;
+
+    beforeEach(async function () {
+      exitStub = sinon.stub(process, 'exit');
+      queryCMRStub = sinon.stub(pullWorker.exportedForTesting, '_primeCmrService').callsFake(
+        async function () {
+          throw new Error('primer failed');
+        },
+      );
+      env.harmonyService = 'harmonyservices/query-cmr:latest';
+    });
+
+    afterEach(function () {
+      exitStub.restore();
+      queryCMRStub.restore();
+      env.harmonyService = harmonyService;
+    });
+
+    it('tries five times then exits the program', async function () {
+      const worker = new PullWorker();
+      await worker.start(false);
+      expect(exitStub.called).to.be.true;
+      expect(queryCMRStub.callCount).to.equal(5);
+    });
+  });
+
   describe('pullWork', async function () {
     describe('when work is available', async function () {
       const workItem = new WorkItem({

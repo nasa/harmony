@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Agent from 'agentkeepalive';
+import { exit } from 'process';
 import { Worker } from '../../../../app/workers/worker';
 import env from '../util/env';
 import WorkItem, { WorkItemStatus, WorkItemRecord } from '../../../../app/models/work-item';
@@ -195,12 +196,29 @@ export const exportedForTesting = {
 export default class PullWorker implements Worker {
   async start(repeat = true): Promise<void> {
     // workaround for k8s client bug https://github.com/kubernetes-client/javascript/issues/714
-    if (env.harmonyService.includes('harmonyservices/query-cmr')) {
-      // called this way to support sinon spy
-      await exportedForTesting._primeCmrService();
-    } else {
-      // called this way to support sinon spy
-      await exportedForTesting._primeService();
+    let isPrimed = false;
+    let primeCount = 0;
+    while (!isPrimed && primeCount < 5) {
+      try {
+        if (env.harmonyService.includes('harmonyservices/query-cmr')) {
+          // called this way to support sinon spy
+          await exportedForTesting._primeCmrService();
+        } else {
+          // called this way to support sinon spy
+          await exportedForTesting._primeService();
+        }
+        isPrimed = true;
+      } catch (e) {
+        primeCount += 1;
+        if (primeCount === 5) {
+          logger.error('Failed to prime service');
+          // kill this process which will cause the container to get restarted
+          exit(1);
+        } else {
+          // wait 100 ms before trying again
+          sleep(100);
+        }
+      }
     }
 
     // poll the Harmony work endpoint
