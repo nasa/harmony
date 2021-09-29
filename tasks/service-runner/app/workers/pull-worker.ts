@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Agent from 'agentkeepalive';
+import { exit } from 'process';
 import { Worker } from '../../../../app/workers/worker';
 import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
@@ -16,6 +17,9 @@ const maxRetries = 3;
 let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
+
+// retry twice for tests and 1200 (2 mintues) for real
+const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 
 const keepaliveAgent = new Agent({
   keepAlive: true,
@@ -196,12 +200,29 @@ export const exportedForTesting = {
 export default class PullWorker implements Worker {
   async start(repeat = true): Promise<void> {
     // workaround for k8s client bug https://github.com/kubernetes-client/javascript/issues/714
-    if (env.harmonyService.includes('harmonyservices/query-cmr')) {
-      // called this way to support sinon spy
-      await exportedForTesting._primeCmrService();
-    } else {
-      // called this way to support sinon spy
-      await exportedForTesting._primeService();
+    let isPrimed = false;
+    let primeCount = 0;
+    while (!isPrimed && primeCount < maxPrimeRetries) {
+      try {
+        if (env.harmonyService.includes('harmonyservices/query-cmr')) {
+          // called this way to support sinon spy
+          await exportedForTesting._primeCmrService();
+        } else {
+          // called this way to support sinon spy
+          await exportedForTesting._primeService();
+        }
+        isPrimed = true;
+      } catch (e) {
+        primeCount += 1;
+        if (primeCount === maxPrimeRetries) {
+          logger.error('Failed to prime service');
+          // kill this process which will cause the container to get restarted
+          exit(1);
+        } else {
+          // wait 100 ms before trying again
+          sleep(100);
+        }
+      }
     }
 
     // poll the Harmony work endpoint
