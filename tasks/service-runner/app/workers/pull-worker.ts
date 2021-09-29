@@ -117,7 +117,14 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
               complete = true;
             }
           } catch (e) {
-            logger.error(e);
+            if ('response' in e && 'status' in e.response) {
+              if (e.response.status === 409) {
+                logger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
+                complete = true;
+              }
+            } else {
+              logger.error(e);
+            }
           }
           if (!complete) {
             if (tries < maxRetries) {
