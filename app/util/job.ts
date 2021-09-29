@@ -1,8 +1,9 @@
 import { Logger } from 'winston';
 import db from './db';
 import { Job, JobStatus } from '../models/job';
-import { NotFoundError } from './errors';
+import { NotFoundError, RequestValidationError } from './errors';
 import { terminateWorkflows } from './workflows';
+import isUUID from './uuid';
 
 /**
  * Cancel the job and save it to the database
@@ -45,4 +46,14 @@ export default async function cancelAndSaveJob(
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
   });
+}
+
+/**
+ * Throws RequestValidationError if the JobID is not in the valid format for a jobID.
+ * @param jobID - The jobID to validate
+ */
+export function validateJobId(jobID: string): void {
+  if (!isUUID(jobID)) {
+    throw new RequestValidationError(`Invalid format for Job ID '${jobID}'. Job ID must be a UUID.`);
+  }
 }

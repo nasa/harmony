@@ -7,15 +7,40 @@ import { buildWorkflowStep } from 'test/helpers/workflow-steps';
 import { JobStatus } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, truncateAll } from '../helpers/db';
-import { hookWorkflowUIWorkItems, hookAdminWorkflowUIWorkItems, buildJob, workflowUIWorkItems } from '../helpers/jobs';
+import { buildJob } from '../helpers/jobs';
+import { hookWorkflowUIWorkItems, hookAdminWorkflowUIWorkItems, workflowUIWorkItems } from '../helpers/workflow-ui';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
-const item1 = buildWorkItem({ jobID: targetJob.jobID, workflowStepIndex: 1 });
-const item2 = buildWorkItem({ jobID: targetJob.jobID, workflowStepIndex: 1 });
-const item3 = buildWorkItem({ jobID: targetJob.jobID, workflowStepIndex: 2 });
-const step1 = buildWorkflowStep({ jobID: targetJob.jobID, stepIndex: 1, serviceID: 'service 1' });
-const step2 = buildWorkflowStep({ jobID: targetJob.jobID, stepIndex: 2, serviceID: 'service 2' });
+
+// build docker image urls / serviceIds
+const ecrImage = 'dataservices/query-it:latest'; // non-sensitive part
+const ecrLocation = '00000000.xyz.abc.region-5.amazonaws.com/'; // sensitive part
+const earthdataImage = 'otherservices/subsetter:not-latest'; // non-sensitive part
+const earthdataLocation = 'mightbeSensitive.earthdata.nasa.gov/'; // sensitive part
+const step1ServiceId = `${ecrLocation}${ecrImage}`;
+const step1ServiceIdScrubbed = ecrImage;
+const step2ServiceId = `${earthdataLocation}${earthdataImage}`;
+const step2ServiceIdScrubbed = earthdataImage;
+
+// build the steps
+const step1 = buildWorkflowStep(
+  { jobID: targetJob.jobID, stepIndex: 1, serviceID: step1ServiceId },
+);
+const step2 = buildWorkflowStep(
+  { jobID: targetJob.jobID, stepIndex: 2, serviceID: step2ServiceId },
+);
+
+// build the items
+const item1 = buildWorkItem(
+  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId },
+);
+const item2 = buildWorkItem(
+  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId },
+);
+const item3 = buildWorkItem(
+  { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId },
+);
 
 describe('Workflow UI work items table route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -41,7 +66,7 @@ describe('Workflow UI work items table route', function () {
     });
 
     it('sets the "redirect" cookie to the originally-requested resource', function () {
-      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/workflow-ui/jobs/${targetJob.jobID}/work-items`));
+      expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/workflow-ui/${targetJob.jobID}/work-items`));
     });
   });
 
@@ -79,11 +104,7 @@ describe('Workflow UI work items table route', function () {
       });
 
       it('returns a JSON error response', function () {
-        const response = JSON.parse(this.res.text);
-        expect(response).to.eql({
-          code: 'harmony.NotFoundError',
-          description: `Error: Unable to find job ${unknownRequest}`,
-        });
+        expect(this.res.text).to.include(`Unable to find job ${unknownRequest}`);
       });
     });
 
@@ -107,18 +128,24 @@ describe('Workflow UI work items table route', function () {
       it('returns an HTTP success response', function () {
         expect(this.res.statusCode).to.equal(200);
       });
-
       it('returns an HTML table of all the work items associated with the job', function () {
         const listing = this.res.text;
         [item1.workflowStepIndex, item2.workflowStepIndex, item3.workflowStepIndex]
           .forEach((stepIndex) => expect(listing).to.contain(mustache.render('<th scope="row">{{stepIndex}}</th>', { stepIndex })));
-        [step1.serviceID, step2.serviceID]
-          .forEach((workflowItemStep) => expect(listing).to.contain(
-            mustache.render('<td><small><code>{{workflowItemStep}}</code></small></td>', { workflowItemStep }),
-          ));
         [1, 2, 3]
           .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
         expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+      });
+      it('return useful but nonsensitive information about docker images', function () {
+        const listing = this.res.text;
+        [step1.serviceID, step2.serviceID]
+          .forEach((workflowItemStep) => expect(listing).to.not.contain(
+            mustache.render('<td><small><code>{{workflowItemStep}}</code></small></td>', { workflowItemStep }),
+          ));
+        [step1ServiceIdScrubbed, step2ServiceIdScrubbed]
+          .forEach((workflowItemStep) => expect(listing).to.contain(
+            mustache.render('<td><small><code>{{workflowItemStep}}</code></small></td>', { workflowItemStep }),
+          ));
       });
     });
 
@@ -126,7 +153,7 @@ describe('Workflow UI work items table route', function () {
       hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1 } });
       it('returns a link to the next page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/jobs/${targetJob.jobID}?limit=1&page=2` }));
+        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=2` }));
       });
       it('returns only one work item', function () {
         const listing = this.res.text;
@@ -139,8 +166,8 @@ describe('Workflow UI work items table route', function () {
       hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, page: 2 } });
       it('returns a link to the next and previous page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/jobs/${targetJob.jobID}?limit=1&page=1` }));
-        expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: `/workflow-ui/jobs/${targetJob.jobID}?limit=1&page=3` }));
+        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=1` }));
+        expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=3` }));
       });
       it('returns only one work item', function () {
         const listing = this.res.text;
@@ -156,7 +183,7 @@ describe('Workflow UI work items table route', function () {
           const listing = this.res.text;
           [item1.workflowStepIndex, item2.workflowStepIndex, item3.workflowStepIndex]
             .forEach((stepIndex) => expect(listing).to.contain(mustache.render('<th scope="row">{{stepIndex}}</th>', { stepIndex })));
-          [step1.serviceID, step2.serviceID]
+          [step1ServiceIdScrubbed, step2ServiceIdScrubbed]
             .forEach((workflowItemStep) => expect(listing).to.contain(
               mustache.render('<td><small><code>{{workflowItemStep}}</code></small></td>', { workflowItemStep }),
             ));

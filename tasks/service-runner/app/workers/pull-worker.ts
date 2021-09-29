@@ -2,6 +2,7 @@ import axios from 'axios';
 import Agent from 'agentkeepalive';
 import { exit } from 'process';
 import { Worker } from '../../../../app/workers/worker';
+import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import WorkItem, { WorkItemStatus, WorkItemRecord } from '../../../../app/models/work-item';
 import logger from '../../../../app/util/log';
@@ -27,7 +28,7 @@ const keepaliveAgent = new Agent({
 
 const workUrl = `http://${env.backendHost}:${env.backendPort}/service/work`;
 logger.debug(`WORK URL: ${workUrl}`);
-logger.debug(`HARMONY_SERVICE: ${env.harmonyService}`);
+logger.debug(`HARMONY_SERVICE: ${sanitizeImage(env.harmonyService)}`);
 logger.debug(`INVOCATION_ARGS: ${env.invocationArgs}`);
 
 /**
