@@ -4,7 +4,6 @@ import { promises as fs } from 'fs';
 import db, { Transaction } from '../util/db';
 import env from '../util/env';
 import { readCatalogItems } from '../util/stac';
-import { ConflictError } from '../util/errors';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
