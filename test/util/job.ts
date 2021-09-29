@@ -13,8 +13,10 @@ const anArgoJob = buildJob({ username: 'joe' });
 const anotherArgoJob = buildJob({ username: 'joe' });
 const aTurboJob = buildJob({ username: 'doe' });
 const anotherTurboJob = buildJob({ username: 'doe' });
+const finishedTurboJob = buildJob({ username: 'doe', status: 'successful' });
 const aTurboWorkItem = buildWorkItem({ jobID: aTurboJob.jobID });
 const anotherTurboWorkItem = buildWorkItem({ jobID: anotherTurboJob.jobID });
+const finishedTurboWorkItem = buildWorkItem({ jobID: finishedTurboJob.jobID, status: 'successful' });
 
 describe('Canceling a job', async function () {
   hookTransaction();
@@ -24,8 +26,10 @@ describe('Canceling a job', async function () {
     await anotherArgoJob.save(this.trx);
     await aTurboJob.save(this.trx);
     await anotherTurboJob.save(this.trx);
+    await finishedTurboJob.save(this.trx);
     await aTurboWorkItem.save(this.trx);
     await anotherTurboWorkItem.save(this.trx);
+    await finishedTurboWorkItem.save(this.trx);
     this.trx.commit();
     this.trx = null;
   });
@@ -59,6 +63,18 @@ describe('Canceling a job', async function () {
     it('does not terminates the workflow', async function () {
       await cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
       expect(terminateWorkflowsStub.callCount).to.equal(0);
+    });
+
+    it('fails to cancel an already-canceled worklow', async function () {
+      await expect(
+        cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by admin', log, true, 'doe'),
+      ).to.be.rejectedWith('Job status cannot be updated from canceled to canceled.');
+    });
+
+    it('fails to cancel an already-finished worklow', async function () {
+      await expect(
+        cancelAndSaveJob(finishedTurboJob.requestId, 'Canceled by admin', log, true, 'doe'),
+      ).to.be.rejectedWith('Job status cannot be updated from successful to canceled.');
     });
   });
 });
