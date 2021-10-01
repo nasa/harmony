@@ -82,13 +82,13 @@ describe('Canceling a job', async function () {
       expect(terminateWorkflowsStub.callCount).to.equal(0);
     });
 
-    it('fails to cancel an already-canceled worklow', async function () {
+    it('fails to cancel an already-canceled workflow', async function () {
       await expect(
         cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by admin', log, true, 'doe'),
       ).to.be.rejectedWith('Job status cannot be updated from canceled to canceled.');
     });
 
-    it('fails to cancel an already-finished worklow', async function () {
+    it('fails to cancel an already-finished workflow', async function () {
       await expect(
         cancelAndSaveJob(finishedTurboJob.requestId, 'Canceled by admin', log, true, 'doe'),
       ).to.be.rejectedWith('Job status cannot be updated from successful to canceled.');
