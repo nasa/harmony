@@ -14,13 +14,13 @@ const anArgoJob = buildJob({ username: 'joe' });
 const anotherArgoJob = buildJob({ username: 'joe' });
 const aTurboJob = buildJob({ username: 'doe' });
 const anotherTurboJob = buildJob({ username: 'doe' });
-const readyTurboJob = buildJob({ username: 'doe', status: JobStatus.READY });
+const acceptedTurboJob = buildJob({ username: 'doe', status: JobStatus.ACCEPTED });
 const finishedTurboJob = buildJob({ username: 'doe', status: JobStatus.SUCCESSFUL });
 const failedTurboJob = buildJob({ username: 'doe', status: JobStatus.FAILED });
 const aTurboWorkItem = buildWorkItem({ jobID: aTurboJob.jobID });
 const anotherTurboWorkItem = buildWorkItem({ jobID: anotherTurboJob.jobID });
 const readyTurboWorkItem = buildWorkItem({
-  jobID: readyTurboJob.jobID,
+  jobID: acceptedTurboJob.jobID,
   status: WorkItemStatus.READY,
 });
 const finishedTurboWorkItem = buildWorkItem({
@@ -40,7 +40,7 @@ describe('Canceling a job', async function () {
     await anotherArgoJob.save(this.trx);
     await aTurboJob.save(this.trx);
     await anotherTurboJob.save(this.trx);
-    await readyTurboJob.save(this.trx);
+    await acceptedTurboJob.save(this.trx);
     await finishedTurboJob.save(this.trx);
     await failedTurboJob.save(this.trx);
     await aTurboWorkItem.save(this.trx);
@@ -73,7 +73,7 @@ describe('Canceling a job', async function () {
 
   describe('when cancelation is requested for a turbo workflow', async function () {
     it('is able to cancel the job in ready state', async function () {
-      await cancelAndSaveJob(readyTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
+      await cancelAndSaveJob(acceptedTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
       const { workItems } = await getWorkItemsByJobId(db, readyTurboWorkItem.jobID);
       expect(workItems[0].status).to.equal('canceled');
     });
