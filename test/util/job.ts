@@ -16,6 +16,7 @@ const aTurboJob = buildJob({ username: 'doe' });
 const anotherTurboJob = buildJob({ username: 'doe' });
 const readyTurboJob = buildJob({ username: 'doe', status: JobStatus.READY });
 const finishedTurboJob = buildJob({ username: 'doe', status: JobStatus.SUCCESSFUL });
+const failedTurboJob = buildJob({ username: 'doe', status: JobStatus.FAILED });
 const aTurboWorkItem = buildWorkItem({ jobID: aTurboJob.jobID });
 const anotherTurboWorkItem = buildWorkItem({ jobID: anotherTurboJob.jobID });
 const readyTurboWorkItem = buildWorkItem({
@@ -25,6 +26,10 @@ const readyTurboWorkItem = buildWorkItem({
 const finishedTurboWorkItem = buildWorkItem({
   jobID: finishedTurboJob.jobID,
   status: WorkItemStatus.SUCCESSFUL,
+});
+const failedTurboWorkItem = buildWorkItem({
+  jobID: failedTurboJob.jobID,
+  status: WorkItemStatus.FAILED,
 });
 
 describe('Canceling a job', async function () {
@@ -37,10 +42,12 @@ describe('Canceling a job', async function () {
     await anotherTurboJob.save(this.trx);
     await readyTurboJob.save(this.trx);
     await finishedTurboJob.save(this.trx);
+    await failedTurboJob.save(this.trx);
     await aTurboWorkItem.save(this.trx);
     await anotherTurboWorkItem.save(this.trx);
     await readyTurboWorkItem.save(this.trx);
     await finishedTurboWorkItem.save(this.trx);
+    await failedTurboWorkItem.save(this.trx);
     this.trx.commit();
     this.trx = null;
   });
@@ -92,6 +99,12 @@ describe('Canceling a job', async function () {
       await expect(
         cancelAndSaveJob(finishedTurboJob.requestId, 'Canceled by admin', log, true, 'doe'),
       ).to.be.rejectedWith('Job status cannot be updated from successful to canceled.');
+    });
+
+    it('fails to cancel a failed workflow', async function () {
+      await expect(
+        cancelAndSaveJob(failedTurboJob.requestId, 'Canceled by admin', log, true, 'doe'),
+      ).to.be.rejectedWith('Job status cannot be updated from failed to canceled.');
     });
   });
 });
