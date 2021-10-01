@@ -71,7 +71,7 @@ describe('Canceling a job', async function () {
       expect(workItems[0].status).to.equal('canceled');
     });
 
-    it('changes the work-item status to be canceled', async function () {
+    it('is able to cancel the job in running state', async function () {
       await cancelAndSaveJob(aTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
       const { workItems } = await getWorkItemsByJobId(db, aTurboWorkItem.jobID);
       expect(workItems[0].status).to.equal('canceled');
