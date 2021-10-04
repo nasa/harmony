@@ -113,15 +113,21 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
         while (tries < maxRetries && !complete) {
           tries += 1;
           try {
-            const response = await axios.put(`${workUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
-            if (response.status >= 400) {
-              logger.error(`Error: received status [${response.status}] when updating WorkItem ${workItem.id}`);
-              logger.error(`Error: ${response.statusText}`);
-            } else {
-              complete = true;
-            }
+            await axios.put(`${workUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
+            complete = true;
           } catch (e) {
-            logger.error(e);
+            const status = e.response?.status;
+            if (status) {
+              if (status === 409) {
+                logger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
+                complete = true;
+              } else if (status >= 400) {
+                logger.error(`Error: received status [${status}] with message [${e.response.data}] when updating WorkItem ${workItem.id}`);
+                logger.error(`Error: ${e.response.statusText}`);
+              }
+            } else {
+              logger.error(e);
+            }
           }
           if (!complete) {
             if (tries < maxRetries) {

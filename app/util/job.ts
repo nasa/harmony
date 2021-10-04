@@ -1,8 +1,9 @@
 import { Logger } from 'winston';
 import db from './db';
 import { Job, JobStatus } from '../models/job';
+import { WorkItemStatus } from '../models/work-item';
 import { NotFoundError, RequestValidationError } from './errors';
-import { terminateWorkflows } from './workflows';
+import { terminateWorkflows, checkIfTurboWorkflow } from './workflows';
 import isUUID from './uuid';
 
 /**
@@ -30,13 +31,21 @@ export default async function cancelAndSaveJob(
     } else {
       ({ job } = await Job.byRequestId(tx, jobID));
     }
+
     if (job) {
       if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
         job.status = JobStatus.CANCELED;
         job.validateStatus();
         job.cancel(message);
         await job.save(tx);
-        if (shouldTerminateWorkflows) {
+        const updatedAt = new Date();
+        await tx('work_items')
+          .where({ jobID: job.jobID })
+          .whereIn('status', [WorkItemStatus.READY, WorkItemStatus.RUNNING])
+          .update({ status: WorkItemStatus.CANCELED, updatedAt });
+        // The following can be removed once Argo is removed
+        const isArgoWorkflow = !await checkIfTurboWorkflow(tx, jobID, logger);
+        if (isArgoWorkflow && shouldTerminateWorkflows) {
           await terminateWorkflows(job, logger);
         }
       } else {
