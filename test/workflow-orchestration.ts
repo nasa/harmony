@@ -140,7 +140,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
   describe('when making a request and the job fails while in progress', function () {
     const reprojectAndZarrQuery = {
-      maxResults: 2,
+      maxResults: 3,
       outputCrs: 'EPSG:4326',
       interpolation: 'near',
       scaleExtent: '0,2500000.3,1500000,3300000',
@@ -159,12 +159,16 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         const workItem = JSON.parse(res.text);
         expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
         workItem.status = WorkItemStatus.SUCCESSFUL;
-        workItem.results = ['test/resources/worker-response-sample/catalog0.json', 'test/resources/worker-response-sample/catalog1.json'];
+        workItem.results = [
+          'test/resources/worker-response-sample/catalog0.json',
+          'test/resources/worker-response-sample/catalog1.json',
+          'test/resources/worker-response-sample/catalog2.json',
+        ];
         await updateWorkItem(this.backend, workItem);
         // since there were 2 query cmr results, 2 work items should be generated for the next step
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
-        expect(currentWorkItems.length).to.equal(3);
-        expect(currentWorkItems.filter((i) => i.status === WorkItemStatus.READY && i.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
+        expect(currentWorkItems.length).to.equal(4);
+        expect(currentWorkItems.filter((i) => i.status === WorkItemStatus.READY && i.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
       });
 
       describe('when the first swot-reprojection service work item fails', function () {
@@ -181,8 +185,9 @@ describe('Workflow chaining for a collection configured for swot reprojection an
           expect(job.status === JobStatus.FAILED);
           // job failure should trigger cancellation of any pending work items
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
-          expect(currentWorkItems.length).to.equal(3);
-          expect(currentWorkItems.filter((i) => i.status === WorkItemStatus.CANCELED && i.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.length).to.equal(4);
+          expect(currentWorkItems.filter((i) => i.status === WorkItemStatus.SUCCESSFUL && i.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((i) => i.status === WorkItemStatus.CANCELED && i.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
           expect(currentWorkItems.filter((i) => i.status === WorkItemStatus.FAILED && i.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         });
 
