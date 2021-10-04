@@ -11,22 +11,36 @@ import db from '../../app/util/db';
 import log from '../../app/util/log';
 
 const anArgoJob = buildJob({ username: 'joe' });
+
 const anotherArgoJob = buildJob({ username: 'joe' });
+
 const aTurboJob = buildJob({ username: 'doe' });
+const firstTurboWorkItem = buildWorkItem({ jobID: aTurboJob.jobID });
+const secondTurboWorkItem = buildWorkItem({
+  jobID: aTurboJob.jobID,
+  status: WorkItemStatus.SUCCESSFUL,
+});
+const thirdTurboWorkItem = buildWorkItem({
+  jobID: aTurboJob.jobID,
+  status: WorkItemStatus.FAILED,
+});
+
 const anotherTurboJob = buildJob({ username: 'doe' });
-const acceptedTurboJob = buildJob({ username: 'doe', status: JobStatus.ACCEPTED });
-const finishedTurboJob = buildJob({ username: 'doe', status: JobStatus.SUCCESSFUL });
-const failedTurboJob = buildJob({ username: 'doe', status: JobStatus.FAILED });
-const aTurboWorkItem = buildWorkItem({ jobID: aTurboJob.jobID });
 const anotherTurboWorkItem = buildWorkItem({ jobID: anotherTurboJob.jobID });
+
+const acceptedTurboJob = buildJob({ username: 'doe', status: JobStatus.ACCEPTED });
 const readyTurboWorkItem = buildWorkItem({
   jobID: acceptedTurboJob.jobID,
   status: WorkItemStatus.READY,
 });
+
+const finishedTurboJob = buildJob({ username: 'doe', status: JobStatus.SUCCESSFUL });
 const finishedTurboWorkItem = buildWorkItem({
   jobID: finishedTurboJob.jobID,
   status: WorkItemStatus.SUCCESSFUL,
 });
+
+const failedTurboJob = buildJob({ username: 'doe', status: JobStatus.FAILED });
 const failedTurboWorkItem = buildWorkItem({
   jobID: failedTurboJob.jobID,
   status: WorkItemStatus.FAILED,
@@ -43,7 +57,9 @@ describe('Canceling a job', async function () {
     await acceptedTurboJob.save(this.trx);
     await finishedTurboJob.save(this.trx);
     await failedTurboJob.save(this.trx);
-    await aTurboWorkItem.save(this.trx);
+    await firstTurboWorkItem.save(this.trx);
+    await secondTurboWorkItem.save(this.trx);
+    await thirdTurboWorkItem.save(this.trx);
     await anotherTurboWorkItem.save(this.trx);
     await readyTurboWorkItem.save(this.trx);
     await finishedTurboWorkItem.save(this.trx);
@@ -72,7 +88,7 @@ describe('Canceling a job', async function () {
   });
 
   describe('when cancelation is requested for a turbo workflow', async function () {
-    it('is able to cancel the job in ready state', async function () {
+    it('is able to cancel the job in accepted state', async function () {
       await cancelAndSaveJob(acceptedTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
       const { workItems } = await getWorkItemsByJobId(db, readyTurboWorkItem.jobID);
       expect(workItems[0].status).to.equal(WorkItemStatus.CANCELED);
@@ -80,8 +96,10 @@ describe('Canceling a job', async function () {
 
     it('is able to cancel the job in running state', async function () {
       await cancelAndSaveJob(aTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
-      const { workItems } = await getWorkItemsByJobId(db, aTurboWorkItem.jobID);
+      const { workItems } = await getWorkItemsByJobId(db, aTurboJob.jobID);
       expect(workItems[0].status).to.equal(WorkItemStatus.CANCELED);
+      expect(workItems[1].status).to.equal(WorkItemStatus.SUCCESSFUL);
+      expect(workItems[2].status).to.equal(WorkItemStatus.FAILED);
     });
 
     it('does not terminates the workflow', async function () {
