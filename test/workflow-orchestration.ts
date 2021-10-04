@@ -165,7 +165,8 @@ describe('Workflow chaining for a collection configured for swot reprojection an
           'test/resources/worker-response-sample/catalog2.json',
         ];
         await updateWorkItem(this.backend, workItem);
-        // since there were 2 query cmr results, 2 work items should be generated for the next step
+        // since there were multiple query cmr results,
+        // multiple work items should be generated for the next step
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
         expect(currentWorkItems.filter((i) => i.status === WorkItemStatus.READY && i.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
