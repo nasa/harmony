@@ -141,7 +141,7 @@ export function hookWorkItemUpdateEach(
 }
 
 /**
- * Performs getCoverageRangeset request on the given collection with the given params
+ * Performs /service/work (get work for service) request for the given serviceID
  *
  * @param app - The express application (typically this.backend)
  * @param serviceID - The service polling for work

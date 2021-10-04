@@ -7,7 +7,7 @@ import { readCatalogItems } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
-import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from '../models/work-item';
+import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep, updateWorkItemsStatusByJobId } from '../models/work-item';
 import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 
 const MAX_TRY_COUNT = 1;
@@ -159,16 +159,18 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     // If the response is an error then set the job status to 'failed'
     } else if (workItem.status === WorkItemStatus.FAILED) {
       if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
-        job.status = JobStatus.FAILED;
         let message: string;
         if (errorMessage) {
           message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
         } else {
           message = 'Unknown error';
         }
-        job.message = message;
+        job.fail(message);
         try {
           await job.save(tx);
+          await updateWorkItemsStatusByJobId(
+            tx, job.jobID, [WorkItemStatus.READY, WorkItemStatus.RUNNING], WorkItemStatus.CANCELED,
+          );
         } catch (e) {
           logger.error('Failed to update job');
           logger.error(e);

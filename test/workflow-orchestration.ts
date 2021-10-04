@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { WorkItemStatus } from '../app/models/work-item';
+import { getWorkItemsByJobId, WorkItemStatus } from '../app/models/work-item';
 import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
-import { Job } from '../app/models/job';
+import { Job, JobStatus } from '../app/models/job';
 import { hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
@@ -132,6 +132,64 @@ describe('Workflow chaining for a collection configured for swot reprojection an
                 expect(job.progress).to.equal(100);
               });
             });
+          });
+        });
+      });
+    });
+  });
+
+  describe('when making a request and the job fails while in progress', function () {
+    const reprojectAndZarrQuery = {
+      maxResults: 2,
+      outputCrs: 'EPSG:4326',
+      interpolation: 'near',
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+      format: 'application/x-zarr',
+      turbo: true,
+    };
+
+    hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
+    hookRedirect('joe');
+
+    describe('when checking for a query-cmr work item', function () {
+      it('finds and completes it, queueing the next work item for each result', async function () {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        expect(res.status).to.equal(200);
+        const workItem = JSON.parse(res.text);
+        expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = ['test/resources/worker-response-sample/catalog0.json', 'test/resources/worker-response-sample/catalog1.json'];
+        await updateWorkItem(this.backend, workItem);
+        // since there were 2 query cmr results, 2 work items should be generated for the next step
+        const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
+        expect(currentWorkItems.length).to.equal(3);
+        expect(currentWorkItems.filter((i) => i.status === WorkItemStatus.READY && i.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
+      });
+
+      describe('when the first swot-reprojection service work item fails', function () {
+        it('the job fails, and all further work items are canceled', async function () {
+          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          expect(res.status).to.equal(200);
+          const workItem = JSON.parse(res.text);
+          workItem.status = WorkItemStatus.FAILED;
+          workItem.results = [];
+          await updateWorkItem(this.backend, workItem);
+          expect(workItem.serviceID).to.equal('sds/swot-reproject:latest');
+          // work item failure should trigger job failure
+          const job = await Job.byJobID(db, workItem.jobID);
+          expect(job.status === JobStatus.FAILED);
+          // job failure should trigger cancellation of any pending work items
+          const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
+          expect(currentWorkItems.length).to.equal(3);
+          expect(currentWorkItems.filter((i) => i.status === WorkItemStatus.CANCELED && i.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((i) => i.status === WorkItemStatus.FAILED && i.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+        });
+
+        describe('when checking to see if further reprojection work is queued', function () {
+          hookGetWorkForService('sds/swot-reproject:latest');
+          it('does not find a work item', async function () {
+            expect(this.res.status).to.equal(404);
           });
         });
       });
