@@ -121,7 +121,9 @@ export async function getNextWorkItem(
           .on(`${WorkflowStep.table}.stepIndex`, `${WorkItem.table}.workflowStepIndex`)
           .on(`${WorkflowStep.table}.jobID`, `${WorkItem.table}.jobID`);
       })
-      .where({ 'work_items.serviceID': serviceID, status: WorkItemStatus.READY })
+      .join(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
+      .where({ 'work_items.serviceID': serviceID, 'work_items.status': WorkItemStatus.READY })
+      .whereIn('jobs.status', [JobStatus.RUNNING, JobStatus.ACCEPTED])
       .orderBy([`${WorkItem.table}.id`])
       .first();
 
@@ -277,6 +279,29 @@ export async function workItemCountForStep(
     .select()
     .count('id')
     .where(whereClause);
+
+  let workItemCount;
+  if (db.client.config.client === 'pg') {
+    workItemCount = Number(count[0].count);
+  } else {
+    workItemCount = Number(count[0]['count(`id`)']);
+  }
+  return workItemCount;
+}
+
+/**
+ *  Returns the number of existing work items for a specific job id
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the job that created this work item
+ */
+export async function workItemCountForJobID(
+  tx: Transaction,
+  jobID: string,
+): Promise<number> {
+  const count = await tx(WorkItem.table)
+    .select()
+    .count('id')
+    .where({ jobID });
 
   let workItemCount;
   if (db.client.config.client === 'pg') {

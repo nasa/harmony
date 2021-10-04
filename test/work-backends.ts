@@ -32,6 +32,17 @@ describe('Work Backends', function () {
   hookServersStartStop({ skipEarthdataLogin: true });
 
   describe('when getting a work item', function () {
+    const runningJob = new Job({
+      jobID: 'ABCD',
+      requestId,
+      status: JobStatus.RUNNING,
+      username: 'anonymous',
+      request: 'http://example.com/harmony?foo=bar',
+      numInputGranules: 100,
+      collectionIds: [],
+    });
+    before(async () => { await runningJob.save(db); });
+
     const readyWorkItem = {
       serviceID: 'theReadyService',
       status: WorkItemStatus.READY,
