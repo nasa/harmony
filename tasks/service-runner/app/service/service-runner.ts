@@ -149,7 +149,7 @@ export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceRe
  * @param operation - The requested operation
  * @param callback - Function to call with result
  */
-export async function runPythonServiceFromPull(workItem: WorkItem): Promise<ServiceResponse> {
+export async function runServiceFromPull(workItem: WorkItem): Promise<ServiceResponse> {
   try {
     const { operation, stacCatalogLocation } = workItem;
     const commandLine = env.invocationArgs.split('\n');
@@ -172,7 +172,6 @@ export async function runPythonServiceFromPull(workItem: WorkItem): Promise<Serv
         env.myPodName,
         'worker',
         [
-          'python',
           ...commandLine,
           '--harmony-action',
           'invoke',

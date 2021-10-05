@@ -64,6 +64,7 @@ spec:
             value: "/home"
           - name: INVOCATION_ARGS
             value: |-
+              python
               -m
               gdal_subsetter
           - name: MY_POD_NAME
@@ -103,4 +104,4 @@ spec:
       protocol: TCP
   selector:
     name: asf-gdal-service
-  type: LoadBalancer
+  type: ClusterIP

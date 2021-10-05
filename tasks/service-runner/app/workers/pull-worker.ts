@@ -6,7 +6,7 @@ import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import WorkItem, { WorkItemStatus, WorkItemRecord } from '../../../../app/models/work-item';
 import logger from '../../../../app/util/log';
-import { runPythonServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
+import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
 
 const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
@@ -74,7 +74,7 @@ async function _doWork(
 ): Promise<WorkItem> {
   const newWorkItem = workItem;
   // work items with a scrollID are only for the query-cmr service
-  const workFunc = newWorkItem.scrollID ? runQueryCmrFromPull : runPythonServiceFromPull;
+  const workFunc = newWorkItem.scrollID ? runQueryCmrFromPull : runServiceFromPull;
   logger.debug('Calling work function');
   const serviceResponse = await workFunc(newWorkItem);
   logger.debug('Finished work');
@@ -189,7 +189,7 @@ async function _primeService(): Promise<void> {
     operation: { requestId: 'abc' },
   } as WorkItemRecord;
 
-  runPythonServiceFromPull(new WorkItem(exampleWorkItemProps)).catch((e) => {
+  runServiceFromPull(new WorkItem(exampleWorkItemProps)).catch((e) => {
     logger.error('Failed to prime service');
     throw e;
   });

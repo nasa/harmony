@@ -411,6 +411,34 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
+  
+  - name: podaac/concise
+    data_operation_version: '0.9.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: podaac-concise
+        template_type: chaining
+        image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/podaac/concise
+    collections:
+      - C1234208436-POCLOUD
+      - C1234208437-POCLOUD
+      - C1234208438-POCLOUD
+    capabilities:
+      # TODO implement this in HARMONY-990
+      aggregation: true
+      subsetting:
+        bbox: false
+        variable: false
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
 
   - name: sds/swot-reproject
     data_operation_version: '0.11.0'

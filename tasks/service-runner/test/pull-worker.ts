@@ -128,7 +128,7 @@ describe('Pull Worker', async function () {
     const invocArgs = env.invocationArgs;
     beforeEach(function () {
       queryCmrSpy = sinon.spy(serviceRunner, 'runQueryCmrFromPull');
-      serviceSpy = sinon.spy(serviceRunner, 'runPythonServiceFromPull');
+      serviceSpy = sinon.spy(serviceRunner, 'runServiceFromPull');
 
       env.invocationArgs = 'abc\n123';
     });
@@ -163,7 +163,7 @@ describe('Pull Worker', async function () {
           operation: { requestID: 'foo' },
           id: 1,
         });
-        it('calls runPythonServiceFromPull', async function () {
+        it('calls runServiceFromPull', async function () {
           await _doWork(workItem);
           expect(serviceSpy.called).to.be.true;
         });
@@ -229,7 +229,7 @@ describe('Pull Worker', async function () {
     const invocArgs = env.invocationArgs;
     beforeEach(function () {
       queryCmrSpy = sinon.spy(serviceRunner, 'runQueryCmrFromPull');
-      serviceSpy = sinon.spy(serviceRunner, 'runPythonServiceFromPull');
+      serviceSpy = sinon.spy(serviceRunner, 'runServiceFromPull');
 
       env.invocationArgs = 'abc\n123';
     });
@@ -248,7 +248,7 @@ describe('Pull Worker', async function () {
     });
 
     describe('When a service is primed', async function () {
-      it('calls runPythonServiceFromPull', async function () {
+      it('calls runServiceFromPull', async function () {
         await _primeService();
         expect(serviceSpy.called).to.be.true;
       });

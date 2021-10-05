@@ -64,6 +64,7 @@ spec:
             value: "/opt/harmony-netcdf-to-zarr"
           - name: INVOCATION_ARGS
             value: |-
+              python
               -m
               harmony_netcdf_to_zarr
           - name: MY_POD_NAME
