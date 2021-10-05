@@ -174,14 +174,14 @@ export async function updateWorkItemStatus(
  * @param oldStatuses - restricts the updates to work items where the status is in oldStatuses
  * @param newStatus - the value of the updated status
  */
-export async function updateWorkItemsStatusByJobId(
+export async function updateWorkItemStatusesByJobId(
   tx: Transaction,
   jobID: string,
   oldStatuses: WorkItemStatus[],
   newStatus: WorkItemStatus,
 ): Promise<void> {
   const updatedAt = new Date();
-  await tx(WorkItem.table)
+  return tx(WorkItem.table)
     .where({ jobID })
     .modify((queryBuilder) => {
       if (oldStatuses.length) {

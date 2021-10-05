@@ -38,7 +38,7 @@ export enum JobStatus {
   CANCELED = 'canceled',
 }
 
-const terminalStates = [JobStatus.SUCCESSFUL, JobStatus.FAILED, JobStatus.CANCELED];
+export const terminalStates = [JobStatus.SUCCESSFUL, JobStatus.FAILED, JobStatus.CANCELED];
 
 export interface JobRecord {
   id?: number;
