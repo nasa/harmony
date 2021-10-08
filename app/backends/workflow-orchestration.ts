@@ -1,7 +1,7 @@
 import { NextFunction, Response } from 'express';
 import { Logger } from 'winston';
-import { promises as fs } from 'fs';
 import db, { Transaction } from '../util/db';
+import { completeJob } from '../util/job';
 import env from '../util/env';
 import { readCatalogItems } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
@@ -81,20 +81,6 @@ async function _handleWorkItemResults(
 }
 
 /**
- * Cleans up the temporary work items for the provided jobID
- * @param jobID - the jobID for which to remove temporary work items
- * @param logger - the logger associated with the request
- */
-async function _cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<void> {
-  try {
-    await fs.rmdir(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
-  } catch (e) {
-    logger.warn(`Unable to clean up temporary files for ${jobID}`);
-    logger.warn(e);
-  }
-}
-
-/**
  * Creates the next work items for the workflow based on the results of the current step
  * @param tx - The database transaction
  * @param currentWorkItem - The current work item
@@ -147,34 +133,23 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const { status, results, errorMessage } = req.body;
   const { logger } = req.context;
   logger.info(`Updating work item for ${id} to ${status}`);
-  let workItem: WorkItem;
   await db.transaction(async (tx) => {
-    await updateWorkItemStatus(tx, id, status as WorkItemStatus);
-    workItem = await getWorkItemById(tx, parseInt(id, 10));
+    const workItem = await getWorkItemById(tx, parseInt(id, 10));
     const job: Job = await Job.byJobID(tx, workItem.jobID);
-
-    // If the job was already canceled then send 400 response
-    if (job.status === JobStatus.CANCELED) {
-      res.status(409).send('Job was already canceled.');
+    // If the job was already canceled or failed then send 400 response
+    if ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
+      res.status(409).send(`Job was already ${job.status}.`);
+      return;
+    }
+    await updateWorkItemStatus(tx, id, status as WorkItemStatus);
     // If the response is an error then set the job status to 'failed'
-    } else if (workItem.status === WorkItemStatus.FAILED) {
+    if (status === WorkItemStatus.FAILED) {
       if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
-        job.status = JobStatus.FAILED;
-        let message: string;
+        let message = 'Unknown error';
         if (errorMessage) {
           message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
-        } else {
-          message = 'Unknown error';
         }
-        job.message = message;
-        try {
-          await job.save(tx);
-        } catch (e) {
-          logger.error('Failed to update job');
-          logger.error(e);
-        } finally {
-          await _cleanupWorkItemsForJobID(job.jobID, logger);
-        }
+        await completeJob(tx, job, JobStatus.FAILED, logger, message);
       }
     } else if (results) {
       const nextStep = await getWorkflowStepByJobIdStepIndex(
@@ -204,10 +179,10 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
 
         job.completeBatch(thisStep.workItemCount);
         if (successWorkItemCount === thisStep.workItemCount) {
-          job.succeed();
-          await _cleanupWorkItemsForJobID(job.jobID, logger);
+          await completeJob(tx, job, JobStatus.SUCCESSFUL, logger);
+        } else {
+          await job.save(tx);
         }
-        await job.save(tx);
       }
     }
   });

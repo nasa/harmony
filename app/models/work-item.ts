@@ -168,6 +168,31 @@ export async function updateWorkItemStatus(
 }
 
 /**
+ * Update the status of work items by job ID.
+ * @param tx - the transaction to use for the update
+ * @param jobID - the jobID associated with the work items
+ * @param oldStatuses - restricts the updates to work items where the status is in oldStatuses
+ * @param newStatus - the value of the updated status
+ */
+export async function updateWorkItemStatusesByJobId(
+  tx: Transaction,
+  jobID: string,
+  oldStatuses: WorkItemStatus[],
+  newStatus: WorkItemStatus,
+): Promise<void> {
+  const updatedAt = new Date();
+  return tx(WorkItem.table)
+    .where({ jobID })
+    .modify((queryBuilder) => {
+      if (oldStatuses.length) {
+        queryBuilder
+          .whereIn('status', oldStatuses);
+      }
+    })
+    .update({ status: newStatus, updatedAt });
+}
+
+/**
  * Returns the next work item to process for a service
  * @param tx - the transaction to use for querying
  * @param id - the work item ID
