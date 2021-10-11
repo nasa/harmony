@@ -2,7 +2,7 @@ import request, { Test } from 'supertest';
 import { it } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { Transaction } from 'knex';
+import { Knex } from 'knex';
 import { Application } from 'express';
 import _ from 'lodash';
 import JobLink from '../../app/models/job-link';
@@ -251,7 +251,7 @@ export function itIncludesRequestUrl(expectedPath: string): void {
  * @returns the list of jobs created in descending order of creation time
  */
 export async function createIndexedJobs(
-  trx: Transaction,
+  trx: Knex,
   username: string,
   count: number,
 ): Promise<Job[]> {
