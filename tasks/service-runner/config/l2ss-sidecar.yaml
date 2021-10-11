@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: podaac-concise
+  name: podaac-l2-subsetter
   labels:
-    name: podaac-concise
+    name: podaac-l2-subsetter
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: podaac-concise
+      name: podaac-l2-subsetter
   template:
     metadata:
       labels:
-        name: podaac-concise
+        name: podaac-l2-subsetter
     spec:
       containers:
         - name: worker
-          imagePullPolicy: $PODAAC_CONCISE_IMAGE_PULL_POLICY
-          image: $PODAAC_CONCISE_IMAGE
+          imagePullPolicy: $PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY
+          image: $PODAAC_L2_SUBSETTER_IMAGE
           resources:
             limits:
-              memory: $PODAAC_CONCISE_LIMITS_MEMORY
+              memory: $PODAAC_L2_SUBSETTER_LIMITS_MEMORY
             requests:
-              memory: $PODAAC_CONCISE_REQUESTS_MEMORY
+              memory: $PODAAC_L2_SUBSETTER_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -59,10 +59,10 @@ spec:
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: $PODAAC_CONCISE_IMAGE
+            value: $PODAAC_L2_SUBSETTER_IMAGE
           - name: INVOCATION_ARGS
             value: |-
-              concise_harmony
+              ./docker-entrypoint.sh
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -91,7 +91,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: podaac-concise
+  name: podaac-l2-subsetter
 spec:
   ports:
     - name: frontend
@@ -99,5 +99,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: podaac-concise
+    name: podaac-l2-subsetter
   type: ClusterIP

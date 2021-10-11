@@ -28,7 +28,7 @@ esac
 done
 
 pids=()
-services=(harmony-service-example netcdf-to-zarr concise query-cmr)
+services=(harmony-service-example netcdf-to-zarr podaac-concise podaac-l2-subsetter query-cmr)
 if [[ "$include_swot_repr" == "1" ]]; then
 echo "including swot_repr"
 services+=(swot-reproject)

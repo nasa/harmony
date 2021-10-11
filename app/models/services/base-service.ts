@@ -83,6 +83,7 @@ function serviceImageToId(image: string): string {
 const conditionToOperationField = {
   reproject: 'crs',
   reformat: 'outputFormat',
+  subset: 'shouldSubset',
 };
 
 /**
@@ -99,7 +100,9 @@ const conditionToOperationField = {
  *
  * @returns true if the workflow step is required
  */
-function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
+function stepRequired(step: ServiceStep, operation: DataOperation, logger: Logger): boolean {
+  logger.info('OPERATION');
+  logger.info(JSON.stringify(operation));
   let required = true;
   if (step.conditional?.exists?.length > 0) {
     required = false;
@@ -107,6 +110,9 @@ function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
       if (operation[conditionToOperationField[condition]]) {
         required = true;
       }
+      // if (condition === 'subset' && operation.model?.subset) {
+      //   required = true;
+      // }
     }
   }
   if (required && step.conditional?.format) {
@@ -131,6 +137,8 @@ export default abstract class BaseService<ServiceParamType> {
   operation: DataOperation;
 
   invocation: Promise<boolean>;
+
+  logger: Logger;
 
   /**
    * Creates an instance of BaseService.
@@ -172,9 +180,10 @@ export default abstract class BaseService<ServiceParamType> {
   async invoke(
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
   ): Promise<InvocationResult> {
+    this.logger = logger;
     logger.info('Invoking service for operation', { operation: this.operation });
     const job = this._createJob(requestUrl);
-    await this._createAndSaveWorkflow(logger, job);
+    await this._createAndSaveWorkflow(job);
 
     const { isAsync, requestId } = job;
     this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
@@ -301,7 +310,9 @@ export default abstract class BaseService<ServiceParamType> {
     if (this.config.steps) {
       let i = 0;
       this.config.steps.forEach(((step) => {
-        if (stepRequired(step, this.operation)) {
+        this.logger.debug('STEP');
+        this.logger.debug(JSON.stringify(step));
+        if (stepRequired(step, this.operation, this.logger)) {
           i += 1;
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,
@@ -327,15 +338,15 @@ export default abstract class BaseService<ServiceParamType> {
    * @param requestUrl - the request the end user sent
    */
   protected async _createAndSaveWorkflow(
-    logger: Logger,
     job: Job,
   ): Promise<void> {
     try {
       const startTime = new Date().getTime();
+      this.logger.debug('Creating workflow steps');
       const workflowSteps = this._createWorkflowSteps();
       const firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
 
-      logger.info('timing.save-job-to-database.start');
+      this.logger.info('timing.save-job-to-database.start');
       await db.transaction(async (tx) => {
         await job.save(tx);
         if (this.operation.scrollIDs.length > 0) {
@@ -352,9 +363,9 @@ export default abstract class BaseService<ServiceParamType> {
       });
 
       const durationMs = new Date().getTime() - startTime;
-      logger.info('timing.save-job-to-database.end', { durationMs });
+      this.logger.info('timing.save-job-to-database.end', { durationMs });
     } catch (e) {
-      logger.error(e.stack);
+      this.logger.error(e.stack);
       throw new ServerError('Failed to save job to database.');
     }
   }

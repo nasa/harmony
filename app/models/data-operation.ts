@@ -232,6 +232,15 @@ export default class DataOperation {
   }
 
   /**
+   * Returns true if the operation is requesting subsetting
+   *
+   * @returns true if the operation requests subsetting
+   */
+  get shouldSubset(): boolean {
+    return !_.isEmpty(this.model.subset);
+  }
+
+  /**
    * Returns the service data sources, a list of objects containing a collection ID with the
    * variables and granules to operate on.
    *
