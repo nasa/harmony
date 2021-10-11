@@ -1,12 +1,12 @@
 // Import has to happen after the knexfile, so disable that rule
 // eslint-disable-next-line import/order
 import knexfile from '../../db/knexfile';
-import knex from 'knex';
+import { knex, Knex } from 'knex';
 import { attachPaginate } from 'knex-paginate';
 import env from './env';
 import logger from './log';
 
-export type Transaction = knex.Transaction | knex;
+export type Transaction = Knex;
 
 const environment = env.nodeEnv;
 const config = knexfile[environment];
