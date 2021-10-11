@@ -134,6 +134,11 @@ async function cmrGranuleLocatorNew(
 
       operation.cmrHits += hits;
       operation.scrollIDs.push(scrollID);
+
+      const limitedMessage = getResultsLimitedMessage(operation);
+      if (limitedMessage) {
+        req.context.messages.push(getResultsLimitedMessage(operation));
+      }
     });
     await Promise.all(queries);
   } catch (e) {
