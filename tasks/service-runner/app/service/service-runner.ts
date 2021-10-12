@@ -91,7 +91,7 @@ export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceRe
       catalogDir,
     ];
 
-    return new Promise<ServiceResponse>((resolve) => {
+    return await new Promise<ServiceResponse>((resolve) => {
       logger.debug('CALLING WORKER');
       // create a writable stream to capture stdout from the exec call
       // using stdout instead of stderr because the service library seems to log ERROR to stdout
@@ -157,7 +157,7 @@ export async function runPythonServiceFromPull(workItem: WorkItem): Promise<Serv
 
     const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
 
-    return new Promise<ServiceResponse>((resolve) => {
+    return await new Promise<ServiceResponse>((resolve) => {
       logger.debug('CALLING WORKER');
       // create a writable stream to capture stdout from the exec call
       // using stdout instead of stderr because the service library seems to log ERROR to stdout
