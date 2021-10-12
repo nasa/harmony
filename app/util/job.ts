@@ -1,10 +1,64 @@
 import { Logger } from 'winston';
-import db from './db';
-import { Job, JobStatus } from '../models/job';
-import { WorkItemStatus } from '../models/work-item';
-import { NotFoundError, RequestValidationError } from './errors';
+import { promises as fs } from 'fs';
+import db, { Transaction } from './db';
+import { Job, JobStatus, terminalStates } from '../models/job';
+import env from './env';
+import { updateWorkItemStatusesByJobId, WorkItemStatus } from '../models/work-item';
+import { ConflictError, NotFoundError, RequestValidationError } from './errors';
 import { terminateWorkflows, checkIfTurboWorkflow } from './workflows';
 import isUUID from './uuid';
+
+/**
+ * Cleans up the temporary work items for the provided jobID
+ * @param jobID - the jobID for which to remove temporary work items
+ * @param logger - the logger associated with the request
+ */
+async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<void> {
+  try {
+    await fs.rmdir(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
+  } catch (e) {
+    logger.warn(`Unable to clean up temporary files for ${jobID}`);
+    logger.warn(e);
+  }
+}
+
+/**
+   * Set and save the final status of the turbo job
+   * and in the case of job failure or cancellation, its work items.
+   * (Also clean up temporary work items.)
+   * @param tx - the transaction to perform the updated with
+   * @param job - the job to save and update
+   * @param finalStatus - the job's final status
+   * @param logger - the logger to use for logging errors/info
+   * @param message - the job's final message
+   * @throws {@link ConflictError} if the finalStatus is not within terminalStates
+   */
+export async function completeJob(
+  tx: Transaction,
+  job: Job,
+  finalStatus: JobStatus,
+  logger: Logger,
+  message = '',
+): Promise<void> {
+  try {
+    if (!terminalStates.includes(finalStatus)) {
+      throw new ConflictError(`Job cannot complete with status of ${finalStatus}.`);
+    }
+    job.updateStatus(finalStatus, message);
+    await job.save(tx);
+    if ([JobStatus.FAILED, JobStatus.CANCELED].includes(finalStatus)) {
+      await updateWorkItemStatusesByJobId(
+        tx, job.jobID, [WorkItemStatus.READY, WorkItemStatus.RUNNING], WorkItemStatus.CANCELED,
+      );
+    }
+  } catch (e) {
+    logger.error(`Error encountered for job ${job.jobID} while attempting to set final status`);
+    logger.error(e);
+    throw e;
+  } finally {
+    await cleanupWorkItemsForJobID(job.jobID, logger);
+  }
+}
 
 /**
  * Cancel the job and save it to the database
@@ -34,15 +88,7 @@ export default async function cancelAndSaveJob(
 
     if (job) {
       if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
-        job.status = JobStatus.CANCELED;
-        job.validateStatus();
-        job.cancel(message);
-        await job.save(tx);
-        const updatedAt = new Date();
-        await tx('work_items')
-          .where({ jobID: job.jobID })
-          .whereIn('status', [WorkItemStatus.READY, WorkItemStatus.RUNNING])
-          .update({ status: WorkItemStatus.CANCELED, updatedAt });
+        await completeJob(tx, job, JobStatus.CANCELED, logger, message);
         // The following can be removed once Argo is removed
         const isArgoWorkflow = !await checkIfTurboWorkflow(tx, jobID, logger);
         if (isArgoWorkflow && shouldTerminateWorkflows) {
