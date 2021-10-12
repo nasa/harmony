@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { IPagination } from 'knex-paginate';
+import { ILengthAwarePagination } from 'knex-paginate';
 import { Link } from './links';
 import { RequestValidationError } from './errors';
 import { getRequestUrl } from './url';
@@ -70,12 +70,12 @@ export function getPagingParams(req: Request, defaultPageSize: number): PagingPa
  */
 function getPagingLink(
   req: Request,
-  pagination: IPagination,
+  pagination: ILengthAwarePagination,
   page: number,
   rel: string,
   relName: string = rel,
 ): Link {
-  const { lastPage, perPage } = pagination;
+  const { lastPage, perPage } = pagination as unknown as { lastPage: number; perPage; number; };
   const suffix = (lastPage <= 1 && page === 1) || perPage === 0 ? '' : ` (${page} of ${lastPage})`;
   return {
     title: `The ${relName} page${suffix}`,
@@ -91,9 +91,10 @@ function getPagingLink(
  * @param pagination - the pagination information as returned by, e.g. knex-paginate
  * @returns the links to paginate
  */
-export function getPagingLinks(req: Request, pagination: IPagination): Link[] {
+export function getPagingLinks(req: Request, pagination: ILengthAwarePagination): Link[] {
   const result = [];
   const { currentPage, lastPage, perPage } = pagination;
+  // const { currentPage, lastPage, perPage } = pagination as unknown as { lastPage: number; perPage; number; currentPage: number; total: number; };
   if (perPage > 0 && currentPage > 2) result.push(getPagingLink(req, pagination, 1, 'first'));
   if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous'));
   result.push(getPagingLink(req, pagination, currentPage, 'self', 'current'));
@@ -107,6 +108,6 @@ export function getPagingLinks(req: Request, pagination: IPagination): Link[] {
  * @param res - The Express response where paging params should be set
  * @param pagination - Paging information about the request
  */
-export function setPagingHeaders(res: Response, pagination: IPagination): void {
+export function setPagingHeaders(res: Response, pagination: ILengthAwarePagination): void {
   res.set('Harmony-Hits', pagination.total.toString());
 }

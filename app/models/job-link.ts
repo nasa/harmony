@@ -1,4 +1,4 @@
-import { IPagination } from 'knex-paginate'; // For types only
+import { ILengthAwarePagination } from 'knex-paginate'; // For types only
 import _ from 'lodash';
 import { Transaction } from '../util/db';
 import { removeEmptyProperties } from '../util/object';
@@ -183,7 +183,7 @@ export async function getLinksForJob(
   perPage = 10,
   rel?: string,
   requireSpatioTemporal = false,
-): Promise<{ data: JobLink[]; pagination: IPagination<unknown> }> {
+): Promise<{ data: JobLink[]; pagination: ILengthAwarePagination }> {
   const result = await transaction('job_links').select()
     .where({ jobID })
     .orderBy(['id'])
