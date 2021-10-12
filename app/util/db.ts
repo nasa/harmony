@@ -6,7 +6,7 @@ import { attachPaginate } from 'knex-paginate';
 import env from './env';
 import logger from './log';
 
-export type Transaction = Knex;
+export type Transaction = Knex.Transaction | Knex;
 
 const environment = env.nodeEnv;
 const config = knexfile[environment];

@@ -2,13 +2,12 @@ import request, { Test } from 'supertest';
 import { it } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { Knex } from 'knex';
 import { Application } from 'express';
 import _ from 'lodash';
 import JobLink from '../../app/models/job-link';
 import { Job, JobStatus, JobRecord } from '../../app/models/job';
 import { JobListing } from '../../app/frontends/jobs';
-import db from '../../app/util/db';
+import db, { Transaction } from '../../app/util/db';
 import { hookRequest } from './hooks';
 import { truncateAll } from './db';
 
@@ -251,7 +250,7 @@ export function itIncludesRequestUrl(expectedPath: string): void {
  * @returns the list of jobs created in descending order of creation time
  */
 export async function createIndexedJobs(
-  trx: Knex,
+  trx: Transaction,
   username: string,
   count: number,
 ): Promise<Job[]> {
