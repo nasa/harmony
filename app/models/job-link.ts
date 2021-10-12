@@ -20,20 +20,20 @@ interface BaseJobLink {
 
 /**
  * Fields that will be in a JobLink when saving or retrieving from
- * the database.
+ * the database. Not used, just documenting.
  */
-interface JobLinkRecord extends BaseJobLink {
+interface _JobLinkRecord extends BaseJobLink {
   bbox?: string;
   temporalStart?: Date;
   temporalEnd?: Date;
 }
 
 /**
- * For the constructor we can take either a JobLink or a JobLinkRecord.
- * When created from the database it will be a JobLinkRecord, but when
+ * For the constructor we can take either a JobLink or a _JobLinkRecord.
+ * When created from the database it will be a _JobLinkRecord, but when
  * constructed outside of the database it will likely be a JobLink
  * which has a different representation for the bbox and temporal.
- * Specifying JobLink | JobLinkRecord as the type causes many Typescript
+ * Specifying JobLink | _JobLinkRecord as the type causes many Typescript
  * errors so we use this interface to avoid that.
  */
 export interface JobLinkOrRecord extends BaseJobLink {

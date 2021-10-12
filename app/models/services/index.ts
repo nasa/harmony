@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as yaml from 'js-yaml';
+import yaml from 'js-yaml';
 import _, { get as getIn } from 'lodash';
 
 import logger from '../../util/log';
@@ -495,15 +495,22 @@ function unsupportedCombinationMessage(error: UnsupportedOperation): string {
   return message;
 }
 
+type filterFunction = (
+  // The operation to perform
+  operation: DataOperation,
+  // Request specific context that is not part of the operation model
+  context: RequestContext,
+  // All service configurations that have matched so far.
+  configs: ServiceConfig<unknown>[],
+  // Operations requested to be performed. Used for messages when no services could be
+  // found to fulfill the request.
+  requestedOperations: string[])
+=> ServiceConfig<unknown>[];
+
 // List of filter functions to call to identify the services that can support an operation.
 // The functions will be chained in the specified order passing in the list of services
 // that would work for each into the next filter function in the chain.
-// All filter functions need to accept three arguments:
-// 'operation' DataOperation The operation to perform.
-// 'context' RequestContext request specific context that is not part of the operation model.
-// 'configs' ServiceConfig[] configs All service configurations that have matched so far.
-// 'requestedOperations' string[] Operations requested to be performed. Used for messages
-//     when no services could be found to fulfill the request.
+// All filter functions use the filterFunction type signature.
 const allFilterFns = [
   filterCollectionMatches,
   filterVariableSubsettingMatches,
@@ -548,13 +555,14 @@ export function isCollectionSupported(collection: CmrCollection): boolean {
  *     choice regarding the service to use
  * @param configs - The configuration to use for finding the operation, with all variables
  *     resolved (default: the contents of config/services.yml)
+ * @param filterFns - The list of filter functions to execute to filter matching services
  * @returns the service configuration to use
  */
 function filterServiceConfigs(
   operation: DataOperation,
   context: RequestContext,
   configs: ServiceConfig<unknown>[],
-  filterFns: Function[],
+  filterFns: filterFunction[],
 ): ServiceConfig<unknown> {
   let serviceConfig;
   let matches = configs;

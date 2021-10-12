@@ -1,4 +1,4 @@
-import sinon, { SinonStub } from 'sinon';
+import { stub, SinonStub } from 'sinon';
 import { ECR, ImageDetails } from '../../app/util/container-registry';
 
 /**
@@ -8,7 +8,7 @@ import { ECR, ImageDetails } from '../../app/util/container-registry';
  */
 export default function hookDescribeImage(imageResponse: ImageDetails): void {
   before(function () {
-    sinon.stub(ECR.prototype, 'describeImage')
+    stub(ECR.prototype, 'describeImage')
       .resolves(imageResponse);
   });
   after(function () {

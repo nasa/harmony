@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 import { before, after, beforeEach, afterEach } from 'mocha';
-import sinon, { SinonStub } from 'sinon';
+import { stub, SinonStub } from 'sinon';
 import request from 'superagent';
 import { Logger } from 'winston';
 import { CallbackQuery } from '../../app/backends/service-response';
@@ -110,7 +110,7 @@ export default class StubService extends BaseService<void> {
   static beforeHook(callbackOptions: object = { params: { redirect: 'http://example.com' } }): () => void {
     return function (): void {
       const ctx = this;
-      sinon.stub(services, 'buildService')
+      stub(services, 'buildService')
         .callsFake((config, operation) => {
           ctx.service = new StubService(callbackOptions, operation, config.name);
           return ctx.service;
@@ -167,7 +167,7 @@ export function hookServices(serviceConfigs: ServiceConfig<unknown>[]): void {
   let stubService;
 
   before(function () {
-    stubService = sinon.stub(services, 'getServiceConfigs')
+    stubService = stub(services, 'getServiceConfigs')
       .returns(serviceConfigs);
   });
 

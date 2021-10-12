@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import sinon from 'sinon';
+import { stub, mock } from 'sinon';
 import { AWSError, Request } from 'aws-sdk';
 import { HeadObjectOutput, GetObjectOutput } from 'aws-sdk/clients/s3';
 import { objectStoreForProtocol, defaultObjectStore, S3ObjectStore } from '../../app/util/object-store';
@@ -38,7 +38,7 @@ describe('util/object-store', function () {
     describe('#getObject', function () {
       it('parses valid S3 URL strings and passes their bucket and key to s3.getObject', function () {
         const store = new S3ObjectStore();
-        const s3 = sinon.mock(store.s3);
+        const s3 = mock(store.s3);
         s3.expects('getObject').once().withArgs({ Bucket: 'example-bucket', Key: 'example/path.txt' });
         store.getObject('s3://example-bucket/example/path.txt');
       });
@@ -51,7 +51,7 @@ describe('util/object-store', function () {
       it('passes options objects directly to s3.getObject', function () {
         const store = new S3ObjectStore();
         const options = { Bucket: 'example-bucket', Key: 'example/path.txt' };
-        const s3 = sinon.mock(store.s3);
+        const s3 = mock(store.s3);
         s3.expects('getObject').once().withArgs(options);
         store.getObject(options);
       });
@@ -67,8 +67,8 @@ describe('util/object-store', function () {
       before(async function () {
         const store = new S3ObjectStore();
         const headObjectResponse = { Metadata: { foo: 'bar' }, ContentType: 'image/png' };
-        this.headObjectStub = sinon.stub(store.s3, 'headObject').returns({ promise: () => headObjectResponse } as unknown as Request<HeadObjectOutput, AWSError>);
-        this.getObjectStub = sinon.stub(store.s3, 'getObject').returns({ presign: () => 'http://example.com/signed' } as unknown as Request<GetObjectOutput, AWSError>);
+        this.headObjectStub = stub(store.s3, 'headObject').returns({ promise: () => headObjectResponse } as unknown as Request<HeadObjectOutput, AWSError>);
+        this.getObjectStub = stub(store.s3, 'getObject').returns({ presign: () => 'http://example.com/signed' } as unknown as Request<GetObjectOutput, AWSError>);
         await store.signGetObject('s3://example-bucket/example/path.txt', { 'A-userid': 'joe' });
       });
 

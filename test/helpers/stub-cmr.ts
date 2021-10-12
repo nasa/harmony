@@ -1,5 +1,6 @@
+/* eslint-disable import/namespace */
 import { before, after } from 'mocha';
-import * as sinon from 'sinon';
+import { stub } from 'sinon';
 import * as cmr from '../../app/util/cmr';
 
 type CmrMethodName = 'cmrGetBase' | 'fetchPost' | 'cmrPostBase' | 'getCollectionsByIds' | 'getVariablesByIds' | 'getVariablesForCollection' | 'queryGranulesForCollection' | 'belongsToGroup' | 'cmrApiConfig';
@@ -12,7 +13,7 @@ type CmrMethodName = 'cmrGetBase' | 'fetchPost' | 'cmrPostBase' | 'getCollection
  * @param response - The function that should run, or object that should be returned
  */
 function stubCmr(functionName: CmrMethodName, response: Function | object): void {
-  sinon.stub(cmr, functionName)
+  stub(cmr, functionName)
     .callsFake(async function () {
       if (typeof response === 'object') {
         return response;
