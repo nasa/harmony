@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach, after } from 'mocha';
 import { expect } from 'chai';
 import request from 'supertest';
-import Sinon, { SinonStub } from 'sinon';
+import { stub, SinonStub } from 'sinon';
 import { HTTPError } from 'superagent';
 import { Job } from '../app/models/job';
 import { truncateAll } from './helpers/db';
@@ -22,7 +22,7 @@ describe('Argo Callbacks', function () {
 
   beforeEach(function () {
     // Avoid signing objects, which mock-aws-s3 cannot do the way we need it to
-    Sinon.stub(S3ObjectStore.prototype, 'signGetObject')
+    stub(S3ObjectStore.prototype, 'signGetObject')
       .callsFake(async (s3Uri) => `signed+${s3Uri}`);
   });
 

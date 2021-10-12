@@ -28,6 +28,11 @@ const serializedJobFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID',
 ];
 
+const jobRecordFields = [
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request', 'numInputGranules',
+  'jobID', 'requestId', 'batchesCompleted', 'isAsync',
+];
+
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
 
 export enum JobStatus {
@@ -541,24 +546,19 @@ export class Job extends Record implements JobRecord {
     this.validateStatus();
     this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
-    const { links, originalStatus, collectionIds } = this;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-    // @ts-ignore so that we can store stringified json
-    this.collectionIds = JSON.stringify(this.collectionIds || []);
-    delete this.links;
-    delete this.originalStatus;
-    await super.save(transaction);
+    // Cannot say Record<string, unknown> because of conflict with imported database Record class
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dbRecord = pick(this, jobRecordFields) as any;
+    dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
+    await super.save(transaction, dbRecord);
     const promises = [];
-    for (const link of links) {
+    for (const link of this.links) {
       // Note we will not update existing links in the database - only add new ones
       if (!link.id) {
         promises.push(link.save(transaction));
       }
     }
     await Promise.all(promises);
-    this.links = links;
-    this.originalStatus = originalStatus;
-    this.collectionIds = collectionIds;
   }
 
   /**

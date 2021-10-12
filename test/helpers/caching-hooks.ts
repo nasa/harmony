@@ -1,6 +1,6 @@
 import FormData from 'form-data';
 import { before, after } from 'mocha';
-import sinon, { SinonStub } from 'sinon';
+import { stub, SinonStub } from 'sinon';
 import { hookMockS3 } from './object-store';
 import * as cmr from '../../app/util/cmr';
 
@@ -23,18 +23,18 @@ const originalFetchPost = cmr.fetchPost;
 const originalDisposition = (FormData.prototype as any)._getContentDisposition;
 before(function () {
   // Stub getBoundary to return a consistent multipart form boundary
-  sinon.stub(FormData.prototype, 'getBoundary').callsFake(function () {
+  stub(FormData.prototype, 'getBoundary').callsFake(function () {
     return '----------------------------012345678901234567890123';
   });
 
   // Stub append to use a consistent filename for shapefiles
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  sinon.stub(FormData.prototype as any, '_getContentDisposition').callsFake(function (value, options) {
+  stub(FormData.prototype as any, '_getContentDisposition').callsFake(function (value, options) {
     return originalDisposition(value, options) ? 'filename="shapefile"' : undefined;
   });
 
   // Stub fetchPost to provide a string body rather than a FormData stream
-  sinon.stub(cmr, 'fetchPost').callsFake(async function (
+  stub(cmr, 'fetchPost').callsFake(async function (
     path: string, formData: FormData, headers: { [key: string]: string },
   ): Promise<cmr.CmrResponse> {
     // Read the body into a stream
