@@ -1,5 +1,5 @@
 import { subMinutes } from 'date-fns';
-import { IPagination } from 'knex-paginate';
+import { ILengthAwarePagination } from 'knex-paginate';
 import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
@@ -228,7 +228,7 @@ export async function getWorkItemsByJobId(
   currentPage = 0,
   perPage = 10,
   sortOrder: 'asc' | 'desc' = 'asc',
-): Promise<{ workItems: WorkItem[]; pagination: IPagination<unknown> }> {
+): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
   const result = await tx(WorkItem.table)
     .select()
     .where({ jobID })
