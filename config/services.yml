@@ -451,9 +451,10 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-argo-params
         image: !Env ${PODAAC_CONCISE_IMAGE}
         image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
+        template_type: chaining
         env:
           <<: *default-argo-env
-          STAGING_PATH: public/podaac/concise
+          STAGING_PATH: public/podaac/l2-subsetter-concise
     collections:
       - C1234208436-POCLOUD
       - C1234208437-POCLOUD
