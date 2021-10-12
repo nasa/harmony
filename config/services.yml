@@ -432,7 +432,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234208438-POCLOUD
     capabilities:
       # TODO implement this in HARMONY-993
-      aggregation: true
+      concatenation: true
       subsetting:
         bbox: false
         variable: false
@@ -460,7 +460,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234208438-POCLOUD
     capabilities:
       # TODO implement this in HARMONY-993
-      aggregation: true
+      concatenation: true
       subsetting:
         bbox: false
         variable: false
@@ -474,9 +474,9 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['subset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
-        operations: ['aggregate']
+        operations: ['concatenate']
         conditional:
-          exists: ['aggregate']
+          exists: ['concatenate']
 
   - name: sds/swot-reproject
     data_operation_version: '0.11.0'

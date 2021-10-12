@@ -12,7 +12,7 @@ import db from '../../util/db';
 import env from '../../util/env';
 
 export interface ServiceCapabilities {
-  aggregation?: boolean;
+  concatenation?: boolean;
   subsetting?: {
     bbox?: boolean;
     variable?: boolean;

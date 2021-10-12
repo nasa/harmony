@@ -204,6 +204,8 @@ export default class DataOperation {
 
   message: string;
 
+  concatenate?: boolean;
+
   requestStartTime: Date; // The time that the initial request to harmony was received
 
   /**
@@ -288,6 +290,20 @@ export default class DataOperation {
       fullPath: umm.Name,
     })) : undefined;
     this.model.sources.push({ collection, variables, granules });
+  }
+
+  /**
+   * Gets whether or not the data should be concatenated
+   */
+  get isConcatenate(): boolean {
+    return !!this.concatenate;
+  }
+
+  /**
+   * Sets whether or not the data should be concatenated
+   */
+  set isConcatenate(value: boolean) {
+    this.concatenate = value;
   }
 
   /**
