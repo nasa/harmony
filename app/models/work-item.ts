@@ -228,7 +228,7 @@ export async function getWorkItemsByJobId(
   currentPage = 0,
   perPage = 10,
   sortOrder: 'asc' | 'desc' = 'asc',
-): Promise<{ workItems: WorkItem[]; pagination: IPagination }> {
+): Promise<{ workItems: WorkItem[]; pagination: IPagination<unknown> }> {
   const result = await tx(WorkItem.table)
     .select()
     .where({ jobID })

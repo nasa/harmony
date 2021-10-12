@@ -183,7 +183,7 @@ export async function getLinksForJob(
   perPage = 10,
   rel?: string,
   requireSpatioTemporal = false,
-): Promise<{ data: JobLink[]; pagination: IPagination }> {
+): Promise<{ data: JobLink[]; pagination: IPagination<unknown> }> {
   const result = await transaction('job_links').select()
     .where({ jobID })
     .orderBy(['id'])
