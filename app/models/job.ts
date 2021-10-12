@@ -143,7 +143,7 @@ export class Job extends Record implements JobRecord {
     getLinks = true,
     currentPage = 0,
     perPage = 10,
-  ): Promise<{ data: Job[]; pagination: IPagination }> {
+  ): Promise<{ data: Job[]; pagination: IPagination<unknown> }> {
     const items = await transaction('jobs')
       .select()
       .where(constraints)
@@ -179,7 +179,7 @@ export class Job extends Record implements JobRecord {
     currentPage = 0,
     perPage = 10,
   ):
-    Promise<{ data: Job[]; pagination: IPagination }> {
+    Promise<{ data: Job[]; pagination: IPagination<unknown> }> {
     const pastDate = subMinutes(new Date(), minutes);
     const items = await transaction('jobs')
       .select()
@@ -210,7 +210,7 @@ export class Job extends Record implements JobRecord {
    * @returns a list of all of the user's jobs
    */
   static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
-  Promise<{ data: Job[]; pagination: IPagination }> {
+  Promise<{ data: Job[]; pagination: IPagination<unknown> }> {
     return this.queryAll(transaction, { username }, true, currentPage, perPage);
   }
 
@@ -246,7 +246,7 @@ export class Job extends Record implements JobRecord {
     includeLinks = true,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: IPagination }> {
+  ): Promise<{ job: Job; pagination: IPagination<unknown> }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
@@ -272,7 +272,7 @@ export class Job extends Record implements JobRecord {
     requestId,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: IPagination }> {
+  ): Promise<{ job: Job; pagination: IPagination<unknown> }> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;

@@ -4,7 +4,7 @@ import { keysToLowerCase } from '../util/object';
 import isUUID from '../util/uuid';
 import { getRequestRoot } from '../util/url';
 import { ConflictError, NotFoundError, RequestValidationError } from '../util/errors';
-import { getPagingLinks, getPagingParams, Pagination, PagingParams } from '../util/pagination';
+import { getPagingLinks, getPagingParams, PagingParams } from '../util/pagination';
 import JobLink, { getLinksForJob } from '../models/job-link';
 import stacItemCreate from './stac-item';
 import stacCatalogCreate from './stac-catalog';
@@ -21,7 +21,7 @@ import env from '../util/env';
  * @returns Resolves when the request is complete
  */
 async function handleStacRequest(
-  req, res, callback: (job: Job, pagination: Pagination) => void, pagingParams: PagingParams, linkType?: string,
+  req, res, callback: (job: Job, pagination: IPagination) => void, pagingParams: PagingParams, linkType?: string,
 ): Promise<void> {
   const { jobId } = req.params;
   if (!isUUID(jobId)) {
