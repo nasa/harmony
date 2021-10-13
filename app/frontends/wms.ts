@@ -279,7 +279,7 @@ export default async function wmsFrontend(req, res, next: NextFunction): Promise
     }
     if (wmsRequest === 'GetMap') {
       validateParamIn(query, 'version', ['1.3.0']);
-      return await getMap(req, res, next);
+      return getMap(req, res, next);
     }
     throw new Error(`Unrecognized operation: ${wmsRequest}`);
   } catch (e) {

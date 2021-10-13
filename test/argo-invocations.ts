@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import sinon, { SinonStub } from 'sinon';
+import { stub, SinonStub } from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import * as axios from 'axios';
 import fs from 'fs';
@@ -18,17 +18,17 @@ describe('Argo invocations', function () {
   describe('calling a service that has an Argo backend', function () {
     describe('calling the backend service', function () {
       let post;
-      let stub;
+      let get;
       before(function () {
         const postStub = axios.default.post as SinonStub;
         if (postStub.restore) postStub.restore();
-        post = sinon.stub(axios.default, 'post');
-        stub = sinon.stub(env, 'cmrGranuleLocatorImagePullPolicy').get(() => 'FOO');
+        post = stub(axios.default, 'post');
+        get = stub(env, 'cmrGranuleLocatorImagePullPolicy').get(() => 'FOO');
       });
 
       after(function () {
         if (post.restore) post.restore();
-        if (stub.restore) stub.restore();
+        if (get.restore) get.restore();
       });
 
       hookRangesetRequest(version, collection, 'all');

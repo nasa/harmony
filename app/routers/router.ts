@@ -59,7 +59,7 @@ function logged(fn: RequestHandler): RequestHandler {
     const startTime = new Date().getTime();
     try {
       child.debug('Invoking middleware');
-      return await fn(req, res, next);
+      return fn(req, res, next);
     } finally {
       const msTaken = new Date().getTime() - startTime;
       child.debug('Completed middleware', { durationMs: msTaken });

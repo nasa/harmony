@@ -3,13 +3,14 @@ import env from './util/env';
 import log from '../../../app/util/log';
 import router from './routers/router';
 import PullWorker from './workers/pull-worker';
+import { Server } from 'http';
 
 /**
  *
  * @param config - The configuration Record from the environment variables
  * @returns An object containing the running components
  */
-export default function start(_config: Record<string, string>): {} {
+export default function start(_config: Record<string, string>): Server {
   // start the puller
   const pullWorker = new PullWorker();
   pullWorker.start().catch((e) => {
