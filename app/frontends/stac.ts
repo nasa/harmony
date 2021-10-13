@@ -1,4 +1,4 @@
-import { IPagination } from 'knex-paginate';
+import { ILengthAwarePagination } from 'knex-paginate';
 import { Job } from '../models/job';
 import { keysToLowerCase } from '../util/object';
 import isUUID from '../util/uuid';
@@ -21,7 +21,7 @@ import env from '../util/env';
  * @returns Resolves when the request is complete
  */
 async function handleStacRequest(
-  req, res, callback: Function, pagingParams: PagingParams, linkType?: string,
+  req, res, callback: (job: Job, pagination: ILengthAwarePagination) => void, pagingParams: PagingParams, linkType?: string,
 ): Promise<void> {
   const { jobId } = req.params;
   if (!isUUID(jobId)) {
@@ -86,7 +86,7 @@ export async function getStacCatalog(req, res, next): Promise<void> {
     const pagingParams = getPagingParams(req, env.defaultResultPageSize);
     await handleStacRequest(
       req, res,
-      (job: Job, pagination: IPagination) => {
+      (job: Job, pagination: ILengthAwarePagination) => {
         const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
         return stacCatalogCreate(
           job.jobID, job.request, job.links, pagingLinks, linkType,

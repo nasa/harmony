@@ -1,5 +1,5 @@
 import { pick } from 'lodash';
-import { IPagination } from 'knex-paginate'; // For types only
+import { ILengthAwarePagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from '../util/cmr';
 import { removeEmptyProperties } from '../util/object';
@@ -26,6 +26,11 @@ const defaultMessages = Object.values(statesToDefaultMessages);
 
 const serializedJobFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID',
+];
+
+const jobRecordFields = [
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request', 'numInputGranules',
+  'jobID', 'requestId', 'batchesCompleted', 'isAsync',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -138,7 +143,7 @@ export class Job extends Record implements JobRecord {
     getLinks = true,
     currentPage = 0,
     perPage = 10,
-  ): Promise<{ data: Job[]; pagination: IPagination }> {
+  ): Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     const items = await transaction('jobs')
       .select()
       .where(constraints)
@@ -174,7 +179,7 @@ export class Job extends Record implements JobRecord {
     currentPage = 0,
     perPage = 10,
   ):
-    Promise<{ data: Job[]; pagination: IPagination }> {
+    Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     const pastDate = subMinutes(new Date(), minutes);
     const items = await transaction('jobs')
       .select()
@@ -205,7 +210,7 @@ export class Job extends Record implements JobRecord {
    * @returns a list of all of the user's jobs
    */
   static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
-  Promise<{ data: Job[]; pagination: IPagination }> {
+  Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     return this.queryAll(transaction, { username }, true, currentPage, perPage);
   }
 
@@ -241,7 +246,7 @@ export class Job extends Record implements JobRecord {
     includeLinks = true,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: IPagination }> {
+  ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
@@ -267,7 +272,7 @@ export class Job extends Record implements JobRecord {
     requestId,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: IPagination }> {
+  ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
@@ -541,24 +546,19 @@ export class Job extends Record implements JobRecord {
     this.validateStatus();
     this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
-    const { links, originalStatus, collectionIds } = this;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-    // @ts-ignore so that we can store stringified json
-    this.collectionIds = JSON.stringify(this.collectionIds || []);
-    delete this.links;
-    delete this.originalStatus;
-    await super.save(transaction);
+    // Cannot say Record<string, unknown> because of conflict with imported database Record class
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dbRecord = pick(this, jobRecordFields) as any;
+    dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
+    await super.save(transaction, dbRecord);
     const promises = [];
-    for (const link of links) {
+    for (const link of this.links) {
       // Note we will not update existing links in the database - only add new ones
       if (!link.id) {
         promises.push(link.save(transaction));
       }
     }
     await Promise.all(promises);
-    this.links = links;
-    this.originalStatus = originalStatus;
-    this.collectionIds = collectionIds;
   }
 
   /**

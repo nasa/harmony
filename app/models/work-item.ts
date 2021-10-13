@@ -1,5 +1,5 @@
 import { subMinutes } from 'date-fns';
-import { IPagination } from 'knex-paginate';
+import { ILengthAwarePagination } from 'knex-paginate';
 import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
@@ -115,13 +115,13 @@ export async function getNextWorkItem(
     workItemData = await tx(WorkItem.table)
       .forUpdate()
       .select(...tableFields, `${WorkflowStep.table}.operation`)
-      // eslint-disable-next-line func-names
       .join(WorkflowStep.table, function () {
         this
           .on(`${WorkflowStep.table}.stepIndex`, `${WorkItem.table}.workflowStepIndex`)
           .on(`${WorkflowStep.table}.jobID`, `${WorkItem.table}.jobID`);
       })
       .join(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       .where({ 'work_items.serviceID': serviceID, 'work_items.status': WorkItemStatus.READY })
       .whereIn('jobs.status', [JobStatus.RUNNING, JobStatus.ACCEPTED])
       .orderBy([`${WorkItem.table}.id`])
@@ -228,7 +228,7 @@ export async function getWorkItemsByJobId(
   currentPage = 0,
   perPage = 10,
   sortOrder: 'asc' | 'desc' = 'asc',
-): Promise<{ workItems: WorkItem[]; pagination: IPagination }> {
+): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
   const result = await tx(WorkItem.table)
     .select()
     .where({ jobID })
@@ -296,6 +296,9 @@ export async function workItemCountForStep(
   stepIndex: number,
   status?: WorkItemStatus,
 ): Promise<number> {
+  // Record<string, unknown> clashes with imported database Record class
+  // so we use '{}' causing a linter error
+  // eslint-disable-next-line @typescript-eslint/ban-types
   let whereClause: {} = {
     jobID, workflowStepIndex: stepIndex,
   };
