@@ -83,7 +83,9 @@ function serviceImageToId(image: string): string {
 const conditionToOperationField = {
   reproject: 'crs',
   reformat: 'outputFormat',
-  subset: 'shouldSubset',
+  variableSubset: 'shouldVariableSubset',
+  spatialSubset: 'shouldSpatialSubset',
+  temporalSubset: 'shouldTemporalSubset',
 };
 
 /**
@@ -100,9 +102,7 @@ const conditionToOperationField = {
  *
  * @returns true if the workflow step is required
  */
-function stepRequired(step: ServiceStep, operation: DataOperation, logger: Logger): boolean {
-  logger.info('OPERATION');
-  logger.info(JSON.stringify(operation));
+function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
   let required = true;
   if (step.conditional?.exists?.length > 0) {
     required = false;
@@ -110,9 +110,6 @@ function stepRequired(step: ServiceStep, operation: DataOperation, logger: Logge
       if (operation[conditionToOperationField[condition]]) {
         required = true;
       }
-      // if (condition === 'subset' && operation.model?.subset) {
-      //   required = true;
-      // }
     }
   }
   if (required && step.conditional?.format) {
@@ -310,9 +307,7 @@ export default abstract class BaseService<ServiceParamType> {
     if (this.config.steps) {
       let i = 0;
       this.config.steps.forEach(((step) => {
-        this.logger.debug('STEP');
-        this.logger.debug(JSON.stringify(step));
-        if (stepRequired(step, this.operation, this.logger)) {
+        if (stepRequired(step, this.operation)) {
           i += 1;
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,

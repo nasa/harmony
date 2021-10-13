@@ -416,7 +416,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
   
   - name: podaac/concise
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     type:
       <<: *default-argo-config
       params:
@@ -444,7 +444,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         
   - name: podaac/l2-subsetter-concise
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     type:
       <<: *default-argo-config
       params:
@@ -463,17 +463,17 @@ https://cmr.uat.earthdata.nasa.gov:
       # TODO implement this in HARMONY-993
       concatenation: true
       subsetting:
-        bbox: false
-        variable: false
+        bbox: true
+        variable: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['subset']
+        operations: ['spatialSubset', 'variableSubset']
         conditional:
-          exists: ['subset']
+          exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         operations: ['concatenate']
         conditional:

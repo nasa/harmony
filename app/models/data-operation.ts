@@ -233,13 +233,33 @@ export default class DataOperation {
     this.decrypter = decrypter;
   }
 
+
   /**
-   * Returns true if the operation is requesting subsetting
+   * Returns true if the operation is requesting spatial subsetting
    *
-   * @returns true if the operation requests subsetting
+   * @returns true if the operation requests spatial subsetting
    */
-  get shouldSubset(): boolean {
-    return !_.isEmpty(this.model.subset);
+  get shouldSpatialSubset(): boolean {
+    return !!this.model.subset?.bbox;
+  }
+
+  /**
+   * Returns true if the operation is requesting temporal subsetting
+   *
+   * @returns true if the operation requests temporal subsetting
+   */
+  get shouldTemporalSubset(): boolean {
+    return !_.isEmpty(this.model.temporal);
+  }
+
+  /**
+   * Returns true if the operation is requesting variable subsetting
+   *
+   * @returns true if the operation requests variable subsetting
+   */
+  get shouldVariableSubset(): boolean {
+    const varSources = this.sources.filter((s) => s.variables && s.variables.length > 0);
+    return varSources.length > 0;
   }
 
   /**

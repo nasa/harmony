@@ -211,8 +211,7 @@ function requiresReformatting(operation: DataOperation, context: RequestContext)
  * @returns true if the provided operation requires variable subsetting and false otherwise
  */
 function requiresVariableSubsetting(operation: DataOperation): boolean {
-  const varSources = operation.sources.filter((s) => s.variables && s.variables.length > 0);
-  return varSources.length > 0;
+  return operation.shouldVariableSubset;
 }
 
 /**
@@ -230,7 +229,7 @@ function supportsVariableSubsetting(configs: ServiceConfig<unknown>[]): ServiceC
  * @returns true if the provided operation requires spatial subsetting
  */
 function requiresSpatialSubsetting(operation: DataOperation): boolean {
-  return !!operation.boundingRectangle;
+  return operation.shouldSpatialSubset;
 }
 
 /**
