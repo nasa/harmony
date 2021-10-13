@@ -495,7 +495,7 @@ function unsupportedCombinationMessage(error: UnsupportedOperation): string {
   return message;
 }
 
-type filterFunction = (
+type FilterFunction = (
   // The operation to perform
   operation: DataOperation,
   // Request specific context that is not part of the operation model
@@ -510,7 +510,7 @@ type filterFunction = (
 // List of filter functions to call to identify the services that can support an operation.
 // The functions will be chained in the specified order passing in the list of services
 // that would work for each into the next filter function in the chain.
-// All filter functions use the filterFunction type signature.
+// All filter functions use the FilterFunction type signature.
 const allFilterFns = [
   filterCollectionMatches,
   filterVariableSubsettingMatches,
@@ -562,7 +562,7 @@ function filterServiceConfigs(
   operation: DataOperation,
   context: RequestContext,
   configs: ServiceConfig<unknown>[],
-  filterFns: filterFunction[],
+  filterFns: FilterFunction[],
 ): ServiceConfig<unknown> {
   let serviceConfig;
   let matches = configs;
