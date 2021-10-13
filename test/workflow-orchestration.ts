@@ -54,6 +54,11 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       expect(workflowSteps[2].serviceID).to.equal('harmonyservices/netcdf-to-zarr:latest');
     });
 
+    it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.message).to.equal('CMR query identified 177 granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults.');
+    });
+
     // Verify it only queues a work item for the query-cmr task
     describe('when checking for a swot reproject work item', function () {
       hookGetWorkForService('sds/swot-reproject:latest');
