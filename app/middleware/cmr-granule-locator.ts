@@ -137,7 +137,7 @@ async function cmrGranuleLocatorNew(
 
       const limitedMessage = getResultsLimitedMessage(operation);
       if (limitedMessage) {
-        req.context.messages.push(getResultsLimitedMessage(operation));
+        req.context.messages.push(limitedMessage);
       }
     });
     await Promise.all(queries);
@@ -247,7 +247,7 @@ async function cmrGranuleLocatorArgo(
     operation.cmrQueryLocations = operation.cmrQueryLocations.sort();
     const limitedMessage = getResultsLimitedMessage(operation);
     if (limitedMessage) {
-      req.context.messages.push(getResultsLimitedMessage(operation));
+      req.context.messages.push(limitedMessage);
     }
   } catch (e) {
     if (e instanceof RequestValidationError || e instanceof CmrError) {
