@@ -107,7 +107,7 @@ describe('Service Runner', function () {
     });
   });
 
-  describe('runPythonServiceFromPull', async function () {
+  describe('runServiceFromPull', async function () {
     describe('when an error occurs', async function () {
       const invocArgs = env.invocationArgs;
       const workItem = new WorkItem({
@@ -126,7 +126,7 @@ describe('Service Runner', function () {
       });
 
       it('returns an error message', async function () {
-        const result = await serviceRunner.runPythonServiceFromPull(workItem);
+        const result = await serviceRunner.runServiceFromPull(workItem);
         expect(result.error).to.be.not.empty;
       });
     });

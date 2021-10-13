@@ -97,4 +97,4 @@ spec:
       protocol: TCP
   selector:
     name: query-cmr
-  type: LoadBalancer
+  type: ClusterIP

@@ -204,6 +204,8 @@ export default class DataOperation {
 
   message: string;
 
+  concatenate?: boolean;
+
   requestStartTime: Date; // The time that the initial request to harmony was received
 
   /**
@@ -229,6 +231,35 @@ export default class DataOperation {
 
     this.encrypter = encrypter;
     this.decrypter = decrypter;
+  }
+
+
+  /**
+   * Returns true if the operation is requesting spatial subsetting
+   *
+   * @returns true if the operation requests spatial subsetting
+   */
+  get shouldSpatialSubset(): boolean {
+    return !!this.model.subset?.bbox;
+  }
+
+  /**
+   * Returns true if the operation is requesting temporal subsetting
+   *
+   * @returns true if the operation requests temporal subsetting
+   */
+  get shouldTemporalSubset(): boolean {
+    return !_.isEmpty(this.model.temporal);
+  }
+
+  /**
+   * Returns true if the operation is requesting variable subsetting
+   *
+   * @returns true if the operation requests variable subsetting
+   */
+  get shouldVariableSubset(): boolean {
+    const varSources = this.sources.filter((s) => s.variables && s.variables.length > 0);
+    return varSources.length > 0;
   }
 
   /**
@@ -279,6 +310,20 @@ export default class DataOperation {
       fullPath: umm.Name,
     })) : undefined;
     this.model.sources.push({ collection, variables, granules });
+  }
+
+  /**
+   * Gets whether or not the data should be concatenated
+   */
+  get isConcatenate(): boolean {
+    return !!this.concatenate;
+  }
+
+  /**
+   * Sets whether or not the data should be concatenated
+   */
+  set isConcatenate(value: boolean) {
+    this.concatenate = value;
   }
 
   /**

@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: swot-reproject
+  name: podaac-concise
   labels:
-    name: swot-reproject
+    name: podaac-concise
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: swot-reproject
+      name: podaac-concise
   template:
     metadata:
       labels:
-        name: swot-reproject
+        name: podaac-concise
     spec:
       containers:
         - name: worker
-          imagePullPolicy: $SWOT_REPROJECT_IMAGE_PULL_POLICY
-          image: $SWOT_REPROJECT_IMAGE
+          imagePullPolicy: $PODAAC_CONCISE_IMAGE_PULL_POLICY
+          image: $PODAAC_CONCISE_IMAGE
           resources:
             limits:
-              memory: $SWOT_REPROJECT_LIMITS_MEMORY
+              memory: $PODAAC_CONCISE_LIMITS_MEMORY
             requests:
-              memory: $SWOT_REPROJECT_REQUESTS_MEMORY
+              memory: $PODAAC_CONCISE_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -59,13 +59,10 @@ spec:
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: $SWOT_REPROJECT_IMAGE
-          - name: WORKING_DIR
-            value: "/home"
+            value: $PODAAC_CONCISE_IMAGE
           - name: INVOCATION_ARGS
             value: |-
-              python
-              swotrepr.py
+              concise_harmony
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -94,7 +91,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: swot-reproject
+  name: podaac-concise
 spec:
   ports:
     - name: frontend
@@ -102,5 +99,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: swot-reproject
+    name: podaac-concise
   type: ClusterIP

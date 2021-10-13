@@ -27,6 +27,8 @@ describe('Versions endpoint', function () {
           'asfdataservices/gdal-subsetter',
           'harmony/service-example',
           'podaac/l2-subsetter',
+          'podaac/concise',
+          'podaac/l2-subsetter-concise',
           'sds/swot-reproject',
           'sds/variable-subsetter',
           'sds/HOSS',

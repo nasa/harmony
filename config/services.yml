@@ -411,6 +411,73 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+  
+  - name: podaac/concise
+    data_operation_version: '0.11.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        image: !Env ${PODAAC_CONCISE_IMAGE}
+        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/podaac/concise
+    collections:
+      - C1234208436-POCLOUD
+      - C1234208437-POCLOUD
+      - C1234208438-POCLOUD
+    capabilities:
+      # TODO implement this in HARMONY-993
+      concatenation: true
+      subsetting:
+        bbox: false
+        variable: false
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${PODAAC_CONCISE_IMAGE}
+        
+  - name: podaac/l2-subsetter-concise
+    data_operation_version: '0.11.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        image: !Env ${PODAAC_CONCISE_IMAGE}
+        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
+        template_type: chaining
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/podaac/l2-subsetter-concise
+    collections:
+      - C1234208436-POCLOUD
+      - C1234208437-POCLOUD
+      - C1234208438-POCLOUD
+    capabilities:
+      # TODO implement this in HARMONY-993
+      concatenation: true
+      subsetting:
+        bbox: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        operations: ['spatialSubset', 'variableSubset']
+        conditional:
+          exists: ['spatialSubset', 'variableSubset']
+      - image: !Env ${PODAAC_CONCISE_IMAGE}
+        operations: ['concatenate']
+        conditional:
+          exists: ['concatenate']
 
   - name: sds/swot-reproject
     data_operation_version: '0.11.0'
@@ -719,7 +786,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   # CHAINED SERVICES BELOW HERE
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     batch_size: 20
     type:
       <<: *default-argo-config
@@ -747,6 +814,16 @@ https://cmr.uat.earthdata.nasa.gov:
         variable: true
       output_formats:
         - application/x-zarr
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        operations: ['subset']
+        conditional:
+          exists: ['subset']
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        operations: ['reformat']
+        conditional:
+          format: ['application/x-zarr']
 
   - name: harmony/swot-repr-netcdf-to-zarr
     data_operation_version: '0.11.0'

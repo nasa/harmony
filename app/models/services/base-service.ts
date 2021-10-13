@@ -12,6 +12,7 @@ import db from '../../util/db';
 import env from '../../util/env';
 
 export interface ServiceCapabilities {
+  concatenation?: boolean;
   subsetting?: {
     bbox?: boolean;
     variable?: boolean;
@@ -82,6 +83,9 @@ function serviceImageToId(image: string): string {
 const conditionToOperationField = {
   reproject: 'crs',
   reformat: 'outputFormat',
+  variableSubset: 'shouldVariableSubset',
+  spatialSubset: 'shouldSpatialSubset',
+  temporalSubset: 'shouldTemporalSubset',
 };
 
 /**
@@ -131,6 +135,8 @@ export default abstract class BaseService<ServiceParamType> {
 
   invocation: Promise<boolean>;
 
+  logger: Logger;
+
   /**
    * Creates an instance of BaseService.
    * @param config - The service configuration from config/services.yml
@@ -171,9 +177,10 @@ export default abstract class BaseService<ServiceParamType> {
   async invoke(
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
   ): Promise<InvocationResult> {
+    this.logger = logger;
     logger.info('Invoking service for operation', { operation: this.operation });
     const job = this._createJob(requestUrl);
-    await this._createAndSaveWorkflow(logger, job);
+    await this._createAndSaveWorkflow(job);
 
     const { isAsync, requestId } = job;
     this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
@@ -326,15 +333,15 @@ export default abstract class BaseService<ServiceParamType> {
    * @param requestUrl - the request the end user sent
    */
   protected async _createAndSaveWorkflow(
-    logger: Logger,
     job: Job,
   ): Promise<void> {
     try {
       const startTime = new Date().getTime();
+      this.logger.debug('Creating workflow steps');
       const workflowSteps = this._createWorkflowSteps();
       const firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
 
-      logger.info('timing.save-job-to-database.start');
+      this.logger.info('timing.save-job-to-database.start');
       await db.transaction(async (tx) => {
         await job.save(tx);
         if (this.operation.scrollIDs.length > 0) {
@@ -351,9 +358,9 @@ export default abstract class BaseService<ServiceParamType> {
       });
 
       const durationMs = new Date().getTime() - startTime;
-      logger.info('timing.save-job-to-database.end', { durationMs });
+      this.logger.info('timing.save-job-to-database.end', { durationMs });
     } catch (e) {
-      logger.error(e.stack);
+      this.logger.error(e.stack);
       throw new ServerError('Failed to save job to database.');
     }
   }

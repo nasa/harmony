@@ -62,6 +62,7 @@ spec:
             value: $HARMONY_SERVICE_EXAMPLE_IMAGE
           - name: INVOCATION_ARGS
             value: |-
+              python
               -m
               harmony_service_example
           - name: MY_POD_NAME
@@ -101,4 +102,4 @@ spec:
       protocol: TCP
   selector:
     name: harmony-service-example
-  type: LoadBalancer
+  type: ClusterIP
