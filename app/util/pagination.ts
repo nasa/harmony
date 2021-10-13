@@ -75,7 +75,7 @@ function getPagingLink(
   rel: string,
   relName: string = rel,
 ): Link {
-  const { lastPage, perPage } = pagination as unknown as { lastPage: number; perPage; number; };
+  const { lastPage, perPage } = pagination;
   const suffix = (lastPage <= 1 && page === 1) || perPage === 0 ? '' : ` (${page} of ${lastPage})`;
   return {
     title: `The ${relName} page${suffix}`,
