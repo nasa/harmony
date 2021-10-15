@@ -414,7 +414,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-  
+
   - name: podaac/concise
     data_operation_version: '0.11.0'
     type:
@@ -442,7 +442,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
-        
+
   - name: podaac/l2-subsetter-concise
     data_operation_version: '0.11.0'
     type:
@@ -475,7 +475,6 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
-        operations: ['concatenate']
         conditional:
           exists: ['concatenate']
 
@@ -817,9 +816,9 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['subset']
+        operations: ['spatialSubset', 'variableSubset']
         conditional:
-          exists: ['subset']
+          exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         operations: ['reformat']
         conditional:
