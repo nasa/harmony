@@ -168,6 +168,22 @@ export async function updateWorkItemStatus(
 }
 
 /**
+ * Update the statuses in the database for the given WorkItem ids
+ * @param tx - the transaction to use for querying
+ * @param ids - the ids of the WorkItems
+ * @param status - the status to set for the WorkItems
+ */
+export async function updateWorkItemStatuses(
+  tx: Transaction,
+  ids: number[],
+  status: WorkItemStatus,
+): Promise<void> {
+  await tx(WorkItem.table)
+    .update({ status, updatedAt: new Date() })
+    .whereIn(`${WorkItem.table}.id`, ids);
+}
+
+/**
  * Update the status of work items by job ID.
  * @param tx - the transaction to use for the update
  * @param jobID - the jobID associated with the work items
@@ -265,6 +281,28 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
     .map((item) => item.id);
 
   return workItemIds;
+}
+
+/**
+ * Get all WorkItems older than a particular age (minutes), that also have a particular status.
+ * @param tx - the transaction to use for querying
+ * @param olderThanMinutes - retrieve WorkItems with createdAt older than olderThanMinutes
+ * @param status - only WorkItems with this status will be retrieved
+ * @returns - all WorkItems that meet the olderThanMinutes and status constraints
+*/
+export async function getWorkItemsByAgeAndStatus(
+  tx: Transaction,
+  olderThanMinutes: number,
+  status: WorkItemStatus,
+): Promise<WorkItem[]> {
+  const pastDate = subMinutes(new Date(), olderThanMinutes);
+  const workItems = (await tx(WorkItem.table)
+    .select()
+    .where(`${WorkItem.table}.createdAt`, '<', pastDate)
+    .where(`${WorkItem.table}.status`, status))
+    .map((item) => new WorkItem(item));
+
+  return workItems;
 }
 
 /**
