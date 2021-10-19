@@ -49,9 +49,7 @@ describe('WorkFailer', function () {
     MockDate.set(newDate); // make the below work item "new"
     const unproblematicJobItem1 = buildWorkItem({ jobID: unproblematicJob.jobID, status: WorkItemStatus.RUNNING });
     await unproblematicJobItem1.save(this.trx);
-    MockDate.reset();
-
-    MockDate.set(newDate);
+    
     const config: WorkFailerConfig = { logger };
     const workFailer = new WorkFailer(config);
     await workFailer.failWork(60, this.trx);
