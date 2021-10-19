@@ -36,7 +36,7 @@ export default class WorkFailer implements Worker {
     };
     try {
       const workItems = await getWorkItemsByAgeAndStatus(
-        tx, olderThanMinutes, WorkItemStatus.RUNNING,
+        tx, olderThanMinutes, [WorkItemStatus.RUNNING, WorkItemStatus.READY],
       );
       if (workItems.length) {
         const workItemIds = workItems.map((item) => item.id);
