@@ -23,8 +23,16 @@ export default class WorkFailer implements Worker {
     this.logger = config.logger;
   }
 
-  async failWork(olderThanMinutes: number): Promise<{ failedWorkItemIds: number[], failedJobIds: Set<string> }> {
-    let failedCounts;
+  /**
+   * Find work items that're older than olderThanMinutes. Fail them and any associated jobs.
+   * @param olderThanMinutes - upper limit on work item age
+   * @returns \{ failedWorkItemIds: number[], failedJobIds: string[] \}
+   */
+  async failWork(olderThanMinutes: number): Promise<{ failedWorkItemIds: number[], failedJobIds: string[] }> {
+    let failedItems: { 
+      failedWorkItemIds: number[], 
+      failedJobIds: string[] 
+    };
     try {
       await db.transaction(async (tx) => {
         const workItems = await getWorkItemsByAgeAndStatus(
@@ -41,17 +49,18 @@ export default class WorkFailer implements Worker {
               `Job failed because one or more work items took too long (more than ${olderThanMinutes} minutes) to complete.`,
             );
           }
-          failedCounts = { failedJobIds: jobIds, failedWorkItemIds: workItemIds };
+          failedItems = { 
+            failedJobIds: Array.from(jobIds.values()), 
+            failedWorkItemIds: workItemIds, 
+          };
           this.logger.info(`Work failer failed ${jobIds.size} jobs and ${workItems.length} work items.`);
         }
       });
     } catch (e) {
       this.logger.error('Error attempting to fail long-running work items.');
       this.logger.error(e);
-      return;
-    } finally {
-      return failedCounts;
     }
+    return failedItems;
   }
 
   async start(): Promise<void> {
