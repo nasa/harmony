@@ -190,7 +190,7 @@ export function start(config: Record<string, string>): {
   let workReaper;
   if (config.startWorkReaper !== 'false') {
     const reaperConfig = {
-      logger: logger.child({ application: 'workflow-events' }),
+      logger: logger.child({ application: 'work-reaper' }),
     };
     workReaper = new WorkReaper(reaperConfig);
     workReaper.start();
@@ -199,7 +199,7 @@ export function start(config: Record<string, string>): {
   let workFailer;
   if (config.startWorkFailer !== 'false') {
     const failerConfig = {
-      logger: logger.child({ application: 'workflow-events' }),
+      logger: logger.child({ application: 'work-failer' }),
     };
     workFailer = new WorkFailer(failerConfig);
     workFailer.start();

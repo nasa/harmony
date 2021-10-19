@@ -151,7 +151,7 @@ REAPABLE_WORK_AGE_MINUTES=1440
 WORK_FAILER_PERIOD_SEC=360
 
 # WorkItems and associated job (in a running state) older than this many minutes are set to failed by the work failer
-FAILABLE_WORK_AGE_MINUTES=20
+FAILABLE_WORK_AGE_MINUTES=240
 
 # The number of seconds before timing out a single step (pod) in an Argo workflow
 DEFAULT_ARGO_POD_TIMEOUT_SECS=14400
