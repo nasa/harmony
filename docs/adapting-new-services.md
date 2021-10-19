@@ -68,10 +68,10 @@ Note that you will need to define 3 environment variables for your service as we
 The structure of an entry in the [services.yml](../config/services.yml) file is as follows:
 
 ```yaml
-- name: harmony/docker-example     # A unique identifier string for the service, conventionally <team>/<service>
+- name: harmony/service-example     # A unique identifier string for the service, conventionally <team>/<service>
   data_operation_version: '0.10.0' # The version of the data-operation messaging schema to use
   type:                            # Configuration for service invocation
-      <<: *default-argo-config     # Docker based services use Argo. To reduce boilerplate, services.yml includes default configuration suitable for all Argo based services.
+      <<: *default-argo-config     # To reduce boilerplate, services.yml includes default configuration suitable for all Argo based services. This is ignored for Turbo services.
       params:
         <<: *default-argo-params             # Always include the default argo parameters for Argo services
         template: harmony-service-example    # Name of the argo workflow template
@@ -102,7 +102,7 @@ The structure of an entry in the [services.yml](../config/services.yml) file is 
   # Turbo config
   steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
-      - image: !Env ${DOCKER_EXAMPLE_IMAGE}
+      - image: !Env ${HARMONY_EXAMPLE_IMAGE}
 ```
 
 This format is under active development. In the long-term a large portion of it is likely to be editable and discoverable through the CMR via UMM-S. As of this writing, collections on which a service works can
@@ -427,7 +427,7 @@ Synchronous requests are ones where a user has made a call to Harmony and the co
 
 #### For Docker services
 
-Since Harmony has moved to using Argo to kick off Docker services, services are no longer required to call back to harmony in order to provide service responses. Services can optionally call back to Harmony as described below using an HTTP POST to the URL provided in the `callback` field of the Harmony input.
+Docker based services are no longer required to call back to harmony in order to provide service responses. This is handled by Argo or the Turbo workflow management. However, services can optionally call back to Harmony as described below using an HTTP POST to the URL provided in the `callback` field of the Harmony input.
 
 The following are the options for how to call back to the Harmony URL:
 
