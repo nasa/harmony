@@ -26,6 +26,7 @@ export default class WorkFailer implements Worker {
   /**
    * Find work items that're older than olderThanMinutes. Fail them and any associated jobs.
    * @param olderThanMinutes - upper limit on work item age
+   * @param tx - the transaction to use for database interactions
    * @returns \{ failedWorkItemIds: number[], failedJobIds: string[] \}
    */
   async failWork(olderThanMinutes: number, tx: Transaction): Promise<{ failedWorkItemIds: number[], failedJobIds: string[] }> {
