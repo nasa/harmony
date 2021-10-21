@@ -33,7 +33,15 @@ export default function getCoverageRangeset(
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(null, encrypter, decrypter);
 
-  operation.shouldConcatenate = parseBoolean(query.concatenate);
+  try {
+    operation.shouldConcatenate = parseBoolean(query.concatenate);
+  } catch (e) {
+    if (e instanceof ParameterParseError) {
+      // Turn parsing exceptions into 400 errors pinpointing the source parameter
+      throw new RequestValidationError(`query parameter "concatenate" ${e.message}`);
+    }
+    throw e;
+  }
 
   if (query.format) {
     operation.outputFormat = query.format;
