@@ -654,7 +654,9 @@ function requiresStrictCapabilitiesMatching(
   context: RequestContext,
 ): boolean {
   let strictMatching = false;
-  if ((!requiresSpatialSubsetting(operation) && !requiresShapefileSubsetting(operation))
+  if (requiresConcatenation(operation)) {
+    strictMatching = true;
+  } else if ((!requiresSpatialSubsetting(operation) && !requiresShapefileSubsetting(operation))
       || (!requiresVariableSubsetting(operation) && !requiresReprojection(operation)
          && !requiresReformatting(operation, context))) {
     strictMatching = true;
@@ -677,6 +679,10 @@ export function chooseServiceConfig(
   configs: ServiceConfig<unknown>[] = serviceConfigs,
 ): ServiceConfig<unknown> {
   let serviceConfig = filterServiceConfigs(operation, context, configs, allFilterFns);
+  // if we are asked to concatenate, but no matching concat service is available then throw an error
+  if (serviceConfig.name === 'noOpService' && operation.shouldConcatenate) {
+    throw new NotFoundError('no matching service');
+  }
   if (serviceConfig.name === 'noOpService' && !requiresStrictCapabilitiesMatching(operation, context)) {
     // if we couldn't find a matching service, make a best effort to find a service that
     // can do part of what the operation requested
