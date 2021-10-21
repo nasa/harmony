@@ -7,7 +7,7 @@ import InvocationResult from './invocation-result';
 import { Job, JobStatus } from '../job';
 import DataOperation from '../data-operation';
 import { defaultObjectStore } from '../../util/object-store';
-import { ServerError } from '../../util/errors';
+import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
 
@@ -321,6 +321,8 @@ export default abstract class BaseService<ServiceParamType> {
           }));
         }
       }));
+    } else {
+      throw new RequestValidationError(`Service: ${this.config.name} does not yet support Turbo.`);
     }
     return workflowSteps;
   }
@@ -335,12 +337,12 @@ export default abstract class BaseService<ServiceParamType> {
   protected async _createAndSaveWorkflow(
     job: Job,
   ): Promise<void> {
-    try {
-      const startTime = new Date().getTime();
-      this.logger.debug('Creating workflow steps');
-      const workflowSteps = this._createWorkflowSteps();
-      const firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+    const startTime = new Date().getTime();
+    this.logger.debug('Creating workflow steps');
+    const workflowSteps = this._createWorkflowSteps();
+    const firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
 
+    try {
       this.logger.info('timing.save-job-to-database.start');
       await db.transaction(async (tx) => {
         await job.save(tx);
