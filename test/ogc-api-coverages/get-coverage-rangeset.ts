@@ -469,6 +469,16 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when passing the concatenate parameter', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    describe('set to "false"', function () {
+      const concatenate = false;
+      hookPostRangesetRequest(version, collection, variableName, { query: { concatenate } });
+
+      it('');
+    });
+  });
+
   describe('when the granule spatial metadata is defined by polygons instead of a bbox', function () {
     const query = {
       granuleid: 'G1235282638-ASF',

@@ -1,0 +1,27 @@
+GET /search/collections.json?short_name=%2520C1234208436-POCLOUD&page_size=2000&sort_key=-revisionDate
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 234
+connection: close
+date: Tue, 19 Oct 2021 17:25:10 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: cec855ff-c05b-4dd2-b39c-aef5e0ad116f
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 7
+x-request-id: cec855ff-c05b-4dd2-b39c-aef5e0ad116f
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 5a45573ebecfd555d93af04bbbcf0557.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: ve3MUIJyIzBnkSIyGnImwQ_Wsff-SzSYdNGontmDLcjNsNnBkAm3Vw==
+
+{"feed":{"updated":"2021-10-19T17:25:10.382Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?short_name=%2520C1234208436-POCLOUD&page_size=2000&sort_key=-revisionDate","title":"ECHO dataset metadata","entry":[]}}

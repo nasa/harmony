@@ -121,6 +121,15 @@ export function buildService(
 }
 
 /**
+ *  Returns any services that support concatenation from the list of configs
+ * @param configs - The potential matching service configurations
+ * @returns any configurations that support concatenation
+ */
+function supportsConcatenation(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.concatenation', false));
+}
+
+/**
  * Returns true if all of the collections in the given operation can be operated on by
  * the given service.
  *
@@ -203,6 +212,15 @@ function requiresReformatting(operation: DataOperation, context: RequestContext)
   }
 
   return false;
+}
+
+/**
+ * Returns true if the operation requires concatenation
+ * @param operation - The operation to perform.
+ * @returns true if the provided operation requires concatenation and false otherwise
+ */
+function requiresConcatenation(operation: DataOperation): boolean {
+  return operation.shouldConcatenate;
 }
 
 /**
@@ -303,7 +321,35 @@ class UnsupportedOperation extends Error {
 }
 
 /**
- * Returns any services that support variable subsetting from the list of configs
+ * Returns any services that support concatenation from the list of configs
+ * @param operation - The operation to perform.
+ * @param context - Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs - All service configurations that have matched up to this call
+ * @param requestedOperations - Operations that have been considered in filtering out services up to
+ *     this call
+ * @returns Any service configurations that support concatenation
+ */
+function filterConcatenationMatches(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[],
+  requestedOperations: string[],
+): ServiceConfig<unknown>[] {
+  let matches = configs;
+  if (requiresConcatenation(operation)) {
+    requestedOperations.push('concatenation');
+    matches = supportsConcatenation(configs);
+  }
+
+  if (matches.length === 0) {
+    throw new UnsupportedOperation(operation, requestedOperations);
+  }
+  return matches;
+}
+
+/**
+ * Returns any services that support the collection in the operation from the list of configs
  * @param operation - The operation to perform.
  * @param context - Additional context that's not part of the operation, but influences the
  *     choice regarding the service to use
@@ -512,6 +558,7 @@ type FilterFunction = (
 // All filter functions use the FilterFunction type signature.
 const allFilterFns = [
   filterCollectionMatches,
+  filterConcatenationMatches,
   filterVariableSubsettingMatches,
   filterSpatialSubsettingMatches,
   filterShapefileSubsettingMatches,
@@ -528,6 +575,7 @@ const allFilterFns = [
 // filter functions that are considered optional for matching.
 const requiredFilterFns = [
   filterCollectionMatches,
+  filterConcatenationMatches,
   filterVariableSubsettingMatches,
   filterReprojectionMatches,
   // See caveat above in allFilterFns about why this filter must be applied last
@@ -545,6 +593,8 @@ const bestEffortMessage = 'Data in output files may extend outside the spatial b
 export function isCollectionSupported(collection: CmrCollection): boolean {
   return serviceConfigs.find((sc) => sc.collections.includes(collection.id)) !== undefined;
 }
+
+// TODO add filter function for concatenate
 
 /**
  * Returns the service configuration to use for the given data operation and request context

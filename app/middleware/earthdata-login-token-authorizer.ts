@@ -92,6 +92,14 @@ export default function buildEdlAuthorizer(paths: Array<string | RegExp> = []): 
           next(e);
         }
       }
+    } else if (req.headers.cookie) {
+      // TODO - is this safe or will it let people access job status of other users by faking the
+      // cookie header?
+      const match = req.headers.cookie.match(/users%2F(.*?)%22/);
+      if (match) {
+        const username = match[1];
+        req.user = username;
+      }
     }
     return next();
   };

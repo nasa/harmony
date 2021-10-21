@@ -4,7 +4,7 @@ import { keysToLowerCase } from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import wrap from '../../util/array';
 import parseVariables from './util/variable-parsing';
-import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
+import { parseBoolean, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
 import { parseAcceptHeader } from '../../util/content-negotiation';
 import parseMultiValueParameter from '../../util/parameter-parsing';
 import HarmonyRequest from '../../models/harmony-request';
@@ -32,6 +32,8 @@ export default function getCoverageRangeset(
   const encrypter = createEncrypter(env.sharedSecretKey);
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(null, encrypter, decrypter);
+
+  operation.shouldConcatenate = parseBoolean(query.concatenate);
 
   if (query.format) {
     operation.outputFormat = query.format;

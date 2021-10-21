@@ -92,6 +92,7 @@ function service(fn: RequestHandler): RequestHandler {
       if (!req.collections || req.collections.length === 0) {
         throw new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.');
       }
+      console.log('ok');
       child.info('Running service');
       await fn(req, res, next);
     } catch (e) {

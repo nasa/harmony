@@ -315,14 +315,14 @@ export default class DataOperation {
   /**
    * Gets whether or not the data should be concatenated
    */
-  get isConcatenate(): boolean {
+  get shouldConcatenate(): boolean {
     return !!this.concatenate;
   }
 
   /**
    * Sets whether or not the data should be concatenated
    */
-  set isConcatenate(value: boolean) {
+  set shouldConcatenate(value: boolean) {
     this.concatenate = value;
   }
 
