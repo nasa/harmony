@@ -3,6 +3,8 @@ import { stub } from 'sinon';
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
+process.env.NODE_ENV = 'test';
+
 // We do not use an EDL application or call backend services in our tests.
 process.env.COOKIE_SECRET = 'foo';
 process.env.OAUTH_CLIENT_ID = 'foo';

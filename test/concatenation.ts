@@ -27,7 +27,6 @@ describe('CONCISE workflow', function () {
       });
     });
 
-
     describe('and it is not set', function () {
       const query = {
         maxResults: 2,
@@ -79,25 +78,25 @@ describe('CONCISE workflow', function () {
     });
 
     describe('and it is set to something besides true or false', function () {
-      const query = {
+      const badQuery = {
         concatenate: 'random',
         maxResults: 2,
         turbo: true,
       };
 
-      it('invokes the service', async function () {
+      it('returns an error', async function () {
         const res = await rangesetRequest(
           this.frontend,
           '1.0.0',
           collection,
           'all',
-          { query },
+          { query: badQuery },
         );
 
-        expect(res.statusCode).to.eql(400);
+        expect(res.statusCode).to.equal(400);
         expect(res.body).to.eql({
           code: 'harmony.RequestValidationError',
-          description: 'Error: query parameter "concatenate" unable to parse \'concatenate\' from value "random"',
+          description: 'Error: query parameter "concatenate" must be \'false\' or \'true\'',
         });
       });
     });

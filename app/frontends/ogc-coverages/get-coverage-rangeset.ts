@@ -35,6 +35,12 @@ export default function getCoverageRangeset(
 
   try {
     operation.shouldConcatenate = parseBoolean(query.concatenate);
+
+    // TODO remove this when implementing HARMOMNY-959 - 962
+    if (operation.shouldConcatenate && !(process.env.NODE_ENV === 'test')) {
+      throw new RequestValidationError('query parameter "concatenate" is not enabled yet');
+    }
+
   } catch (e) {
     if (e instanceof ParameterParseError) {
       // Turn parsing exceptions into 400 errors pinpointing the source parameter

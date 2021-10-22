@@ -860,4 +860,4 @@ components:
       description: requests results to be concatenated into a single result
       required: false
       schema:
-        type: boolean
+        type: string

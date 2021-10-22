@@ -84,8 +84,8 @@ export class ParameterParseError extends Error {}
 export function parseBoolean(valueStr: string): boolean {
   if (!valueStr) return false;
   if (valueStr.toLowerCase() === 'true') return true;
-  if (valueStr.toLowerCase() == 'false') return false;
-  throw new ParameterParseError(`unable to parse 'concatenate' from value "${valueStr}"`);
+  if (valueStr.toLowerCase() === 'false') return false;
+  throw new ParameterParseError('must be \'false\' or \'true\'');
 }
 
 /**
