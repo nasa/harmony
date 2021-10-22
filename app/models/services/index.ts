@@ -594,8 +594,6 @@ export function isCollectionSupported(collection: CmrCollection): boolean {
   return serviceConfigs.find((sc) => sc.collections.includes(collection.id)) !== undefined;
 }
 
-// TODO add filter function for concatenate
-
 /**
  * Returns the service configuration to use for the given data operation and request context
  * by using the provided filter functions.
