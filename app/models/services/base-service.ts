@@ -338,15 +338,21 @@ export default abstract class BaseService<ServiceParamType> {
     job: Job,
   ): Promise<void> {
     const startTime = new Date().getTime();
-    this.logger.debug('Creating workflow steps');
-    const workflowSteps = this._createWorkflowSteps();
-    const firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+    const isTurbo = (this.operation.scrollIDs.length > 0);
+    let workflowSteps = [];
+    let firstStepWorkItems = [];
+
+    if (isTurbo) {
+      this.logger.debug('Creating workflow steps');
+      workflowSteps = this._createWorkflowSteps();
+      firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+    }
 
     try {
       this.logger.info('timing.save-job-to-database.start');
       await db.transaction(async (tx) => {
         await job.save(tx);
-        if (this.operation.scrollIDs.length > 0) {
+        if (isTurbo) {
           // New workflow style bypassing Argo
           for await (const step of workflowSteps) {
             await step.save(tx);
