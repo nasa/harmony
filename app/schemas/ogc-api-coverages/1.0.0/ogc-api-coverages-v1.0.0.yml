@@ -320,6 +320,7 @@ paths:
       - $ref: '#/components/parameters/scaleExtent'
       - $ref: '#/components/parameters/scaleSize'
       # Parameters below this line are not part of the OGC specification
+      - $ref: '#/components/parameters/concatenate'
       - $ref: '#/components/parameters/granuleId'
       - $ref: '#/components/parameters/width'
       - $ref: '#/components/parameters/height'
@@ -352,6 +353,7 @@ paths:
       - $ref: '#/components/parameters/scaleExtent'
       - $ref: '#/components/parameters/scaleSize'
       # Parameters below this line are not part of the OGC specification
+      - $ref: '#/components/parameters/concatenate'
       - $ref: '#/components/parameters/granuleId'
       - $ref: '#/components/parameters/width'
       - $ref: '#/components/parameters/height'
@@ -852,3 +854,10 @@ components:
       schema:
         type: integer
         minimum: 1
+    concatenate:
+      name: concatenate
+      in: query
+      description: requests results to be concatenated into a single result
+      required: false
+      schema:
+        type: boolean

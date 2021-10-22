@@ -14,7 +14,7 @@ describe('CONCISE workflow', function () {
   describe('When passing the concatenate parameter', function () {
     hookServersStartStop();
 
-    describe('calling the backend servcie', function () {
+    describe('calling the backend service', function () {
       const query = {
         concatenate: true,
         maxResults: 2,
@@ -69,10 +69,6 @@ describe('CONCISE workflow', function () {
       };
       hookRangesetRequest('1.0.0', collection, 'all', { query });
       hookRedirect('anonymous');
-
-      // it('sets the concatenate flag on the operation', function () {
-      //   expect(this.service.operation.shouldConcatenate).to.equal(true);
-      // });
 
       it('invokes the service', async function () {
         const job = JSON.parse(this.res.text);
