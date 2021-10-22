@@ -308,6 +308,17 @@ CMR_GRANULE_LOCATOR_REQUESTS_MEMORY=128Mi
 CMR_GRANULE_LOCATOR_LIMITS_CPU=128m
 CMR_GRANULE_LOCATOR_LIMITS_MEMORY=512Mi
 
+# The services to deploy locally. A comma-separated list of services that the bin/deploy-services
+# script should attempt to deploy. By default only a couple of harmony example services are deployed.
+# When specifying another service to be deployed make sure the name matches the prefix for the
+# sidecar file in tasks/service-runner-config and the name of the service in that file. For example
+# to deploy the SWOT reprojection service which has a sidecar file swot-reproject-sidecar.yaml
+# and service-name of swot-reproject, specify swot-reproject. query-cmr is required for all services,
+# so it will always be deployed, and does not need to be specified. Make sure if the image for the
+# service is not publicly available that you have built the docker image locally, otherwise the
+# service will fail to start.
+LOCALLY_DEPLOYED_SERVICES=harmony-service-example,netcdf-to-zarr
+
 # page size to use with CMR calls
 CMR_MAX_PAGE_SIZE=2000
 
