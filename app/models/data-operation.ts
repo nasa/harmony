@@ -719,11 +719,13 @@ export default class DataOperation {
    * to the provided JSON schema version ID (default: highest available)
    *
    * @param version - The version to serialize
+   * @param fieldsToInclude - The fields to include in the serialized operation. An empty array
+   * indicates that all fields should be included.
    * @returns The serialized data operation in the requested version
    * @throws TypeError - If validate is `true` and validation fails, or if version is not provided
    * @throws RangeError - If the provided version cannot be serialized
    */
-  serialize(version: string, fields: string[] = []): string {
+  serialize(version: string, fieldsToInclude: string[] = []): string {
     if (!version) {
       throw new TypeError('Schema version is required to serialize DataOperation objects');
     }
@@ -756,26 +758,30 @@ export default class DataOperation {
       throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validatorInstance.errors)}`);
     }
 
-    if (fields.length > 0) {
-      if (!fields.includes('reproject')) {
+    if (fieldsToInclude.length > 0) {
+      if (!fieldsToInclude.includes('reproject')) {
         delete toWrite.format.crs;
         delete toWrite.format.srs;
         delete toWrite.format.interpolation;
         delete toWrite.format.scaleExtent;
       }
-      if (!fields.includes('reformat')) {
+      if (!fieldsToInclude.includes('reformat')) {
         delete toWrite.format.mime;
       }
-      if (!fields.includes('variable')) {
+      if (!fieldsToInclude.includes('variableSubset')) {
         for (const source of toWrite.sources) {
           delete source.variables;
         }
       }
-      if (!fields.includes('spatial')) {
+      if (!fieldsToInclude.includes('spatialSubset')) {
         delete toWrite.subset.bbox;
       }
-      if (!fields.includes('shape')) {
+      if (!fieldsToInclude.includes('shapefileSubset')) {
         delete toWrite.subset.shape;
+      }
+
+      if (Object.keys(toWrite.subset).length === 0) {
+        delete toWrite.subset;
       }
     }
 

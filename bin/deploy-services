@@ -1,33 +1,6 @@
 #!/bin/bash
 # create back end services for Harmony
 
-SELF=$(basename $0)
-
-function usage() {
-  echo "Usage: $SELF [-s]"
-  echo "  -s: include sds/swot-reproject:latest in deployed serivces. This requires a local build of the sds/swot-reproject:latest image."
-}
-
-include_swot_repr=0
-while [[ $# -gt 0 ]]
-do
-key="$1"
-
-case $key in
-  -s)
-  include_swot_repr=1
-  shift
-  ;;
-  -h|--help)
-  usage && exit 1
-  shift
-  ;;
-  *)
-  usage && exit 1
-  ;;
-esac
-done
-
 env_save=$(export -p)
 set -a
 source "env-defaults"
@@ -42,10 +15,14 @@ fi
 
 . ./bin/create-k8s-config-maps-and-secrets
 
-for file in tasks/service-runner/config/*.yaml
+# for file in tasks/service-runner/config/*.yaml
+for service in ${LOCALLY_DEPLOYED_SERVICES//,/ } query-cmr
 do
-  if [[ "$include_swot_repr" == "1"  || ! "$file" =~ ^.*swot-repr-sidecar.yaml$ ]]; then
-    echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
-    envsubst < $file | kubectl apply -f - -n argo
+  file="tasks/service-runner/config/${service}-sidecar.yaml"
+  if [ ! -f "$file" ]; then
+    echo "Invalid LOCALLY_DEPLOYED_SERVICES environment variable. $file was not found."
+    exit 1
   fi
+  echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
+  envsubst < $file | kubectl apply -f - -n argo
 done

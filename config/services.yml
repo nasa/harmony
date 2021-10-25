@@ -414,7 +414,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-  
+
   - name: podaac/concise
     data_operation_version: '0.11.0'
     type:
@@ -442,7 +442,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
-        
+
   - name: podaac/l2-subsetter-concise
     data_operation_version: '0.11.0'
     type:
@@ -475,7 +475,6 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
-        operations: ['concatenate']
         conditional:
           exists: ['concatenate']
 
@@ -522,7 +521,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: sds/variable-subsetter
     # The Variable Subsetter provides _only_ variable subsetting
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     type:
       <<: *default-argo-config
       params:
@@ -547,10 +546,14 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${VAR_SUBSETTER_IMAGE}
+        operations: ['variableSubset']
 
   - name: sds/HOSS
     # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     type:
       <<: *default-argo-config
       params:
@@ -570,7 +573,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1238392622-EEDTEST  # RSSMIF16D test collection UAT
       - C1222931739-GHRC_CLOUD  # RSSMIF16D UAT
       - C1238621141-POCLOUD # GHRSST Level 4 MUR Global Foundation Sea Surface Temperature Analysis (v4.1)
-
     capabilities:
       subsetting:
         bbox: true
@@ -578,6 +580,10 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${VAR_SUBSETTER_IMAGE}
+        operations: ['variableSubset', 'spatialSubset']
 
   - name: sds/maskfill
     data_operation_version: '0.9.0'
@@ -817,9 +823,9 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['subset']
+        operations: ['spatialSubset', 'variableSubset']
         conditional:
-          exists: ['subset']
+          exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         operations: ['reformat']
         conditional:
