@@ -7,7 +7,7 @@ import InvocationResult from './invocation-result';
 import { Job, JobStatus } from '../job';
 import DataOperation from '../data-operation';
 import { defaultObjectStore } from '../../util/object-store';
-import { ServerError } from '../../util/errors';
+import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
 
@@ -321,6 +321,8 @@ export default abstract class BaseService<ServiceParamType> {
           }));
         }
       }));
+    } else {
+      throw new RequestValidationError(`Service: ${this.config.name} does not yet support Turbo.`);
     }
     return workflowSteps;
   }
@@ -335,16 +337,22 @@ export default abstract class BaseService<ServiceParamType> {
   protected async _createAndSaveWorkflow(
     job: Job,
   ): Promise<void> {
-    try {
-      const startTime = new Date().getTime();
-      this.logger.debug('Creating workflow steps');
-      const workflowSteps = this._createWorkflowSteps();
-      const firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+    const startTime = new Date().getTime();
+    const isTurbo = (this.operation.scrollIDs.length > 0);
+    let workflowSteps = [];
+    let firstStepWorkItems = [];
 
+    if (isTurbo) {
+      this.logger.debug('Creating workflow steps');
+      workflowSteps = this._createWorkflowSteps();
+      firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+    }
+
+    try {
       this.logger.info('timing.save-job-to-database.start');
       await db.transaction(async (tx) => {
         await job.save(tx);
-        if (this.operation.scrollIDs.length > 0) {
+        if (isTurbo) {
           // New workflow style bypassing Argo
           for await (const step of workflowSteps) {
             await step.save(tx);
