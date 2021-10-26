@@ -13,7 +13,7 @@ To build and run in Docker:
 
 ```
 npm run build
-npm run docker-example -- --harmony-input "$(cat example/message.json)" --query example/query.json -o temp
+npm run docker-example -- --harmony-input '$(cat example/message.json)' --query example/query.json -o temp
 ```
 
 To test:
