@@ -11,6 +11,10 @@ export interface WorkReaperConfig {
   logger: Logger;
 }
 
+/**
+ * Delete the work items and workflow steps associated with terminal jobs 
+ * that haven't been updated for a configurable amount of minutes.
+ */
 export default class WorkReaper implements Worker {
   isRunning: boolean;
 
