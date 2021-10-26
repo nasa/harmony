@@ -26,7 +26,7 @@ async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<
    * Set and save the final status of the turbo job
    * and in the case of job failure or cancellation, its work items.
    * (Also clean up temporary work items.)
-   * @param tx - the transaction to perform the updated with
+   * @param tx - the transaction to perform the updates with
    * @param job - the job to save and update
    * @param finalStatus - the job's final status
    * @param logger - the logger to use for logging errors/info

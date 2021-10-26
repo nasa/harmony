@@ -19,6 +19,7 @@ import * as exampleBackend from '../example/http-backend';
 import WorkflowTerminationListener from './workers/workflow-termination-listener';
 import JobReaper from './workers/job-reaper';
 import WorkReaper from './workers/work-reaper';
+import WorkFailer from './workers/work-failer';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
 
 /**
@@ -153,6 +154,7 @@ export function start(config: Record<string, string>): {
   workflowTerminationListener: WorkflowTerminationListener;
   jobReaper: JobReaper;
   workReaper: WorkReaper;
+  workFailer: WorkFailer;
 } {
   const appPort = +config.PORT;
   const backendPort = +config.BACKEND_PORT;
@@ -188,13 +190,22 @@ export function start(config: Record<string, string>): {
   let workReaper;
   if (config.startWorkReaper !== 'false') {
     const reaperConfig = {
-      logger: logger.child({ application: 'workflow-events' }),
+      logger: logger.child({ application: 'work-reaper' }),
     };
     workReaper = new WorkReaper(reaperConfig);
     workReaper.start();
   }
 
-  return { frontend, backend, workflowTerminationListener: listener, jobReaper, workReaper };
+  let workFailer;
+  if (config.startWorkFailer !== 'false') {
+    const failerConfig = {
+      logger: logger.child({ application: 'work-failer' }),
+    };
+    workFailer = new WorkFailer(failerConfig);
+    workFailer.start();
+  }
+
+  return { frontend, backend, workflowTerminationListener: listener, jobReaper, workReaper, workFailer };
 }
 
 /**
