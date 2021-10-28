@@ -636,6 +636,9 @@ https://cmr.uat.earthdata.nasa.gov:
     capabilities:
       subsetting:
         shape: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${SDS_MASKFILL_IMAGE}
 
   - name: sds/trajectory-subsetter
     data_operation_version: '0.11.0'
