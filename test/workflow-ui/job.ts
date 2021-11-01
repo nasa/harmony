@@ -63,6 +63,11 @@ describe('Workflow UI job route', function () {
         const listing = this.res.text;
         expect(listing).to.contain(mustache.render('{{req}}', { req: woodyJob1.jobID }));
       });
+
+      it('returns a breadcrumb that includes the non-admin path', async function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(mustache.render('<a href="/workflow-ui">Jobs</a>', {}));
+      });
     });
 
     describe('For a non-existent job ID', function () {
@@ -98,6 +103,11 @@ describe('Workflow UI job route', function () {
         it('returns a job for any user', async function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('{{req}}', { req: woodyJob1.jobID }));
+        });
+
+        it('returns a breadcrumb that includes the admin path', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<a href="{{adminRoute}}/workflow-ui">Jobs</a>', { adminRoute: '/admin' }));
         });
       });
 

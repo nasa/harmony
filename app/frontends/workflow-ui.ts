@@ -87,6 +87,7 @@ export async function getJob(
         job,
         page,
         limit,
+        adminRoute: req.context.isAdminAccess ? '/admin' : '',
       });
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
