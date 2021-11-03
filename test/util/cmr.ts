@@ -11,5 +11,10 @@ describe('util/cmr', function () {
       const variables = await getVariablesByIds(ids, '');
       expect(variables.length).to.eql(1);
     });
+
+    it('response contains related URLs when the CMR variable has them', async function () {
+      // TODO - once CMR deployed
+      expect(true).to.eql(true);
+    });
   });
 });
