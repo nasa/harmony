@@ -130,16 +130,6 @@ function supportsConcatenation(configs: ServiceConfig<unknown>[]): ServiceConfig
 }
 
 /**
- * Returns any services that don't support concatenation from the list of configs
- * @param configs - The potential matching service configurations
- * @returns any configurations that don't support concatenation
- */
-function supportsOperationsOtherThanConcatenation(
-  configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
-  return configs.filter((config) => !getIn(config, 'capabilities.concatenation', false));
-}
-
-/**
  * Returns true if all of the collections in the given operation can be operated on by
  * the given service.
  *
@@ -350,8 +340,6 @@ function filterConcatenationMatches(
   if (requiresConcatenation(operation)) {
     requestedOperations.push('concatenation');
     matches = supportsConcatenation(configs);
-  } else {
-    matches = supportsOperationsOtherThanConcatenation(configs);
   }
 
   if (matches.length === 0) {
