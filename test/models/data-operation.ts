@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { CURRENT_SCHEMA_VERSION, parseSchemaFile, versions } from '../helpers/data-operation';
-import DataOperation from '../../app/models/data-operation';
+import DataOperation, { cmrRelatedUrlToHarmony } from '../../app/models/data-operation';
 
 const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 // bbox has one too many numbers
@@ -241,9 +241,22 @@ describe('DataOperation', () => {
       url: 'https://example.com/foo',
       temporal: {},
     }];
+    const relatedUrl = {
+      Description: 'This related URL points to a color map',
+      URLContentType: 'VisualizationURL',
+      Type: 'Color Map',
+      Subtype: 'Harmony GDAL',
+      URL: 'https://example.com/colormap123.txt',
+      MimeType: 'text/plain',
+      Format: 'ASCII',
+    };
     const variables = [{
       meta: { 'concept-id': 'V123-BAR' },
-      umm: { Name: 'the/nested/name', LongName: 'A long name' },
+      umm: { 
+        Name: 'the/nested/name', 
+        LongName: 'A long name',
+        RelatedURLs: [relatedUrl],
+      },
     }];
 
     describe('when adding a source', () => {
@@ -268,6 +281,12 @@ describe('DataOperation', () => {
 
       it('uses the variable name as the fullPath', () => {
         expect(operation.model.sources[0].variables[0].fullPath).to.equal('the/nested/name');
+      });
+
+      it('sets the related URL', () => {
+        expect(operation.model.sources[0].variables[0].relatedUrls[0]).to.deep.equal(
+          cmrRelatedUrlToHarmony(relatedUrl),
+        );
       });
     });
   });

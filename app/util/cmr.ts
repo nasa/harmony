@@ -97,13 +97,18 @@ export interface CmrUmmVariable {
   umm: {
     Name: string;
     LongName?: string;
+    RelatedURLs?: CmrRelatedUrl[]
   };
 }
 
-export interface CmrVariable {
-  concept_id: string;
-  name: string;
-  long_name: string;
+export interface CmrRelatedUrl {
+  URL: string;
+  URLContentType: string;
+  Type: string;
+  Subtype?: string;
+  Description?: string;
+  Format?: string;
+  MimeType?: string;
 }
 
 export interface CmrQuery

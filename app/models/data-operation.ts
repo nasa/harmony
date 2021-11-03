@@ -3,7 +3,7 @@ import * as path from 'path';
 import Ajv from 'ajv';
 import _ from 'lodash';
 import logger from '../util/log';
-import { CmrUmmVariable } from '../util/cmr';
+import { CmrRelatedUrl, CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 
 /**
@@ -36,6 +36,22 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.12.0',
+      schema: readSchema('0.12.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        revertedModel.sources.forEach((s) => {
+          if (s.variables) {
+            s.variables.forEach((v) => {
+              delete v.relatedUrls; // eslint-disable-line no-param-reassign
+            });
+          }
+        });
+
+        return revertedModel;
+      },
+    },
     {
       version: '0.11.0',
       schema: readSchema('0.11.0'),
@@ -144,6 +160,18 @@ function validator(): Ajv.Ajv {
 export interface HarmonyVariable {
   id: string;
   name: string;
+  fullPath: string;
+  relatedUrls?: HarmonyRelatedUrl[];
+}
+
+export interface HarmonyRelatedUrl {
+  url: string;
+  urlContentType: string;
+  type: string;
+  subtype?: string;
+  description?: string;
+  format?: string;
+  mimeType?: string;
 }
 
 export interface TemporalRange {
@@ -173,6 +201,25 @@ export interface SRS {
   proj4: string;
   wkt: string;
   epsg?: string;
+}
+
+/**
+ * Transform a related URL from CMR to a Harmony related URL that can be used in the DataOperation.
+ * @param relatedUrl - A CmrRelatedUrl
+ * @returns the equivalent HarmonyRelatedUrl 
+ */
+export function cmrRelatedUrlToHarmony(relatedUrl: CmrRelatedUrl): HarmonyRelatedUrl {
+  const harmonyRelatedUrl: HarmonyRelatedUrl = {
+    url: relatedUrl.URL,
+    urlContentType: relatedUrl.URLContentType,
+    type: relatedUrl.Type,
+  };
+  if (relatedUrl.Subtype) harmonyRelatedUrl.subtype = relatedUrl.Subtype;
+  if (relatedUrl.Description) harmonyRelatedUrl.description = relatedUrl.Description;
+  if (relatedUrl.Format) harmonyRelatedUrl.format = relatedUrl.Format;
+  if (relatedUrl.MimeType) harmonyRelatedUrl.mimeType = relatedUrl.MimeType;
+  
+  return harmonyRelatedUrl;
 }
 
 /**
@@ -304,11 +351,17 @@ export default class DataOperation {
     vars?: CmrUmmVariable[],
     granules?: HarmonyGranule[],
   ): void {
-    const variables = vars ? vars.map(({ umm, meta }) => ({
-      id: meta['concept-id'],
-      name: umm.Name,
-      fullPath: umm.Name,
-    })) : undefined;
+    const variables = vars ? vars.map(({ umm, meta }) => {
+      const schemaVar: HarmonyVariable = {
+        id: meta['concept-id'],
+        name: umm.Name,
+        fullPath: umm.Name,
+      };
+      if (umm.RelatedURLs) {
+        schemaVar.relatedUrls = umm.RelatedURLs.map(cmrRelatedUrlToHarmony);
+      }
+      return schemaVar;
+    }) : undefined;
     this.model.sources.push({ collection, variables, granules });
   }
 
