@@ -104,7 +104,7 @@ export interface CmrUmmVariable {
 export interface CmrRelatedUrl {
   URL: string;
   URLContentType: string;
-  Type: string;
+  Type: CmrRelatedUrlType;
   Subtype?: string;
   Description?: string;
   Format?: string;
