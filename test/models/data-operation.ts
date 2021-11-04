@@ -241,21 +241,50 @@ describe('DataOperation', () => {
       url: 'https://example.com/foo',
       temporal: {},
     }];
-    const relatedUrl = {
-      Description: 'This related URL points to a color map',
-      URLContentType: 'VisualizationURL',
-      Type: 'Color Map',
-      Subtype: 'Harmony GDAL',
-      URL: 'https://example.com/colormap123.txt',
-      MimeType: 'text/plain',
-      Format: 'ASCII',
-    };
+    const relatedUrls = [
+      {
+        Description: 'This related URL points to a color map',
+        URLContentType: 'VisualizationURL',
+        Type: 'Color Map',
+        Subtype: 'Harmony GDAL',
+        URL: 'https://example.com/colormap123.txt',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      },
+      {
+        Description: 'This related URL points to a different color map',
+        URLContentType: 'VisualizationURL',
+        Type: 'Color Map',
+        Subtype: 'GITC',
+        URL: 'https://example.com/colormap456.txt',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      },
+      {
+        Description: 'This related URL has an invalid Type property',
+        URLContentType: 'VisualizationURL',
+        Type: undefined,
+        Subtype: 'Harmony GDAL',
+        URL: 'https://example.com/colormap789.txt',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      },
+      {
+        Description: 'This related URL points to some data',
+        URLContentType: 'DistributionURL',
+        Type: 'GET DATA',
+        Subtype: 'EOSDIS DATA POOL',
+        URL: 'https://example.com/colormap123.nc4',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      },
+    ];
     const variables = [{
       meta: { 'concept-id': 'V123-BAR' },
       umm: { 
         Name: 'the/nested/name', 
         LongName: 'A long name',
-        RelatedURLs: [relatedUrl],
+        RelatedURLs: relatedUrls,
       },
     }];
 
@@ -285,8 +314,12 @@ describe('DataOperation', () => {
 
       it('sets the Color Map related URL', () => {
         expect(operation.model.sources[0].variables[0].relatedUrls[0]).to.deep.equal(
-          cmrRelatedUrlToHarmony(relatedUrl),
+          cmrRelatedUrlToHarmony(relatedUrls[0]),
         );
+        expect(operation.model.sources[0].variables[0].relatedUrls[1]).to.deep.equal(
+          cmrRelatedUrlToHarmony(relatedUrls[1]),
+        );
+        expect(operation.model.sources[0].variables[0].relatedUrls.length).length.to.equal(2);
       });
     });
   });
