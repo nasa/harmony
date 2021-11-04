@@ -101,7 +101,7 @@ const aggregatingOperations = [
  * @param step - the step in a workflow
  * @returns true if the step is an aggregating step, false otherwise
  */
-function _stepHasAggregatedOutput(step: ServiceStep): boolean {
+function stepHasAggregatedOutput(step: ServiceStep): boolean {
   return _.intersection(aggregatingOperations, step.operations).length > 0;
 }
 
@@ -119,7 +119,7 @@ function _stepHasAggregatedOutput(step: ServiceStep): boolean {
  *
  * @returns true if the workflow step is required
  */
-function _stepRequired(step: ServiceStep, operation: DataOperation): boolean {
+function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
   let required = true;
   if (step.conditional?.exists?.length > 0) {
     required = false;
@@ -324,7 +324,7 @@ export default abstract class BaseService<ServiceParamType> {
     if (this.config.steps) {
       let i = 0;
       this.config.steps.forEach(((step) => {
-        if (_stepRequired(step, this.operation)) {
+        if (stepRequired(step, this.operation)) {
           i += 1;
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,
@@ -335,7 +335,7 @@ export default abstract class BaseService<ServiceParamType> {
               this.config.data_operation_version,
               step.operations || [],
             ),
-            hasAggregatedOutput: _stepHasAggregatedOutput(step),
+            hasAggregatedOutput: stepHasAggregatedOutput(step),
           }));
         }
       }));
