@@ -271,7 +271,7 @@ describe('DataOperation', () => {
         Format: 'ASCII',
       },
       {
-        Description: 'This related URL has is missing the Type property',
+        Description: 'This related URL is missing the Type property',
         URLContentType: 'VisualizationURL',
         Subtype: 'Harmony GDAL',
         URL: 'https://example.com/colormap789.txt',
