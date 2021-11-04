@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { CURRENT_SCHEMA_VERSION, parseSchemaFile, versions } from '../helpers/data-operation';
 import DataOperation, { cmrRelatedUrlToHarmony } from '../../app/models/data-operation';
+import { CmrRelatedUrl, CmrRelatedUrlType } from 'app/util/cmr';
 
 const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 // bbox has one too many numbers
@@ -269,6 +270,14 @@ describe('DataOperation', () => {
         MimeType: 'text/plain',
         Format: 'ASCII',
       },
+      {
+        Description: 'This related URL has is missing the Type property',
+        URLContentType: 'VisualizationURL',
+        Subtype: 'Harmony GDAL',
+        URL: 'https://example.com/colormap789.txt',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      } as CmrRelatedUrl,
       {
         Description: 'This related URL points to some data',
         URLContentType: 'DistributionURL',
