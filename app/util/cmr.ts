@@ -111,7 +111,7 @@ export interface CmrRelatedUrl {
   MimeType?: string;
 }
 
-export enum RelatedUrlType {
+export enum CmrRelatedUrlType {
   ColorMap = 'Color Map',
 }
 
