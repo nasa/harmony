@@ -69,7 +69,7 @@ The structure of an entry in the [services.yml](../config/services.yml) file is 
 
 ```yaml
 - name: harmony/service-example     # A unique identifier string for the service, conventionally <team>/<service>
-  data_operation_version: '0.10.0' # The version of the data-operation messaging schema to use
+  data_operation_version: '0.12.0' # The version of the data-operation messaging schema to use
   type:                            # Configuration for service invocation
       <<: *default-argo-config     # To reduce boilerplate, services.yml includes default configuration suitable for all Argo based services. This is ignored for Turbo services.
       params:
