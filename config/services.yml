@@ -435,7 +435,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234208437-POCLOUD
       - C1234208438-POCLOUD
     capabilities:
-      # TODO implement this in HARMONY-993
       concatenation: true
       subsetting:
         bbox: false
@@ -446,6 +445,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
     data_operation_version: '0.11.0'
@@ -478,6 +478,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        operations: ['concatenate']
         conditional:
           exists: ['concatenate']
 

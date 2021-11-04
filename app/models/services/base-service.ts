@@ -89,6 +89,23 @@ const conditionToOperationField = {
 };
 
 /**
+ * Step operations that are aggregating steps
+ */
+const aggregatingOperations = [
+  'concatenate',
+];
+
+/**
+ *  Returns true if the workflow step aggregates output from the previous step
+ * (and therefore must wait for all output before executing)
+ * @param step - the step in a workflow
+ * @returns true if the step is an aggregating step, false otherwise
+ */
+function _stepHasAggregatedOutput(step: ServiceStep): boolean {
+  return _.intersection(aggregatingOperations, step.operations).length > 0;
+}
+
+/**
  * Returns true if the workflow step is required for the given operation. If any
  * of the conditional exists operations are present in the operation then the step
  * will be considered required. If any of the conditional formats are requested in
@@ -102,7 +119,7 @@ const conditionToOperationField = {
  *
  * @returns true if the workflow step is required
  */
-function stepRequired(step: ServiceStep, operation: DataOperation): boolean {
+function _stepRequired(step: ServiceStep, operation: DataOperation): boolean {
   let required = true;
   if (step.conditional?.exists?.length > 0) {
     required = false;
@@ -307,7 +324,7 @@ export default abstract class BaseService<ServiceParamType> {
     if (this.config.steps) {
       let i = 0;
       this.config.steps.forEach(((step) => {
-        if (stepRequired(step, this.operation)) {
+        if (_stepRequired(step, this.operation)) {
           i += 1;
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,
@@ -318,6 +335,7 @@ export default abstract class BaseService<ServiceParamType> {
               this.config.data_operation_version,
               step.operations || [],
             ),
+            hasAggregatedOutput: _stepHasAggregatedOutput(step),
           }));
         }
       }));

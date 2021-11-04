@@ -41,6 +41,13 @@ describe('CONCISE workflow', function () {
 
         expect(workflowSteps.find((value): boolean => value.serviceID === serviceTag)).to.be.undefined;
       });
+
+      it('has the `hasAggregatedOutput` flag set to false on the workflow step', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+        expect(workflowSteps[1].hasAggregatedOutput).to.equal(0);
+      });
     });
 
     describe('and it is set to false', function () {
@@ -58,6 +65,13 @@ describe('CONCISE workflow', function () {
 
         expect(workflowSteps.find((value): boolean => value.serviceID === serviceTag)).to.be.undefined;
       });
+
+      it('has the `hasAggregatedOutput` flag set to false on the workflow step', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+        expect(workflowSteps[1].hasAggregatedOutput).to.equal(0);
+      });
     });
 
     describe('and it is set to true', function () {
@@ -74,6 +88,13 @@ describe('CONCISE workflow', function () {
         const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
         expect(workflowSteps[1].serviceID).to.eql(serviceTag);
+      });
+
+      it('has the `hasAggregatedOutput` flag set to true on the workflow step', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+        expect(workflowSteps[1].hasAggregatedOutput).to.equal(1);
       });
     });
 
