@@ -425,13 +425,13 @@
           },
           "urlContentType": {
             "type": "string",
-            "enum": ["CollectionURL", "PublicationURL", "DataCenterURL", "DistributionURL", "DataContactURL", "VisualizationURL"],
-            "description": "A keyword which describes the content of a link at a high level."
+            "description": "A keyword which describes the content of a link at a high level.",
+            "examples": ["CollectionURL", "PublicationURL", "DataCenterURL", "DistributionURL", "DataContactURL", "VisualizationURL"]
           },
           "type": {
             "type": "string",
             "description": "A keyword which specifies the content of a link.",
-            "examples": ["GET DATA", "HOME PAGE"]
+            "examples": ["GET DATA", "HOME PAGE", "Color Map"]
           },
           "subtype": {
             "type": "string",

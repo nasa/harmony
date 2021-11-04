@@ -3,7 +3,7 @@ import * as path from 'path';
 import Ajv from 'ajv';
 import _ from 'lodash';
 import logger from '../util/log';
-import { CmrRelatedUrl, CmrUmmVariable } from '../util/cmr';
+import { CmrRelatedUrl, CmrUmmVariable, RelatedUrlType } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 
 /**
@@ -345,11 +345,13 @@ export default class DataOperation {
    * @param collection - The CMR ID of the collection being operated on
    * @param vars - An array of objects containing variable id and name
    * @param granules - An array of objects containing granule id, name, and url
+   * @param varUrlTypes - the types of variable related URLs to include in the source
    */
   addSource(
     collection: string,
     vars?: CmrUmmVariable[],
     granules?: HarmonyGranule[],
+    varUrlTypes: RelatedUrlType[] = [RelatedUrlType.ColorMap],
   ): void {
     const variables = vars ? vars.map(({ umm, meta }) => {
       const schemaVar: HarmonyVariable = {
@@ -358,7 +360,12 @@ export default class DataOperation {
         fullPath: umm.Name,
       };
       if (umm.RelatedURLs) {
-        schemaVar.relatedUrls = umm.RelatedURLs.map(cmrRelatedUrlToHarmony);
+        const colorMapUrls = umm.RelatedURLs
+          .filter((url) => varUrlTypes.includes(url.Type as RelatedUrlType))
+          .map(cmrRelatedUrlToHarmony);
+        if (colorMapUrls.length) {
+          schemaVar.relatedUrls = colorMapUrls;
+        }
       }
       return schemaVar;
     }) : undefined;

@@ -283,7 +283,7 @@ describe('DataOperation', () => {
         expect(operation.model.sources[0].variables[0].fullPath).to.equal('the/nested/name');
       });
 
-      it('sets the related URL', () => {
+      it('sets the Color Map related URL', () => {
         expect(operation.model.sources[0].variables[0].relatedUrls[0]).to.deep.equal(
           cmrRelatedUrlToHarmony(relatedUrl),
         );
