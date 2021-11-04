@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { describe, it } from 'mocha';
+import { describe, it, xit } from 'mocha';
 import { expect } from 'chai';
 import { getVariablesByIds } from '../../app/util/cmr';
 
@@ -12,7 +12,7 @@ describe('util/cmr', function () {
       expect(variables.length).to.eql(1);
     });
 
-    it('response contains related URLs when the CMR variable has them', async function () {
+    xit('response contains related URLs when the CMR variable has them', async function () {
       // TODO - once CMR-7760 deployed to UAT
       expect(true).to.eql(true);
     });
