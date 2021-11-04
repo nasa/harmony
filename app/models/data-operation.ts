@@ -351,7 +351,7 @@ export default class DataOperation {
     collection: string,
     vars?: CmrUmmVariable[],
     granules?: HarmonyGranule[],
-    varUrlTypes: CmrRelatedUrlType[] = [RelatedUrlType.ColorMap],
+    varUrlTypes: CmrRelatedUrlType[] = [CmrRelatedUrlType.ColorMap],
   ): void {
     const variables = vars ? vars.map(({ umm, meta }) => {
       const schemaVar: HarmonyVariable = {
