@@ -360,11 +360,11 @@ export default class DataOperation {
         fullPath: umm.Name,
       };
       if (umm.RelatedURLs) {
-        const colorMapUrls = umm.RelatedURLs
+        const filteredUrls = umm.RelatedURLs
           .filter((url) => varUrlTypes.includes(url.Type as CmrRelatedUrlType))
           .map(cmrRelatedUrlToHarmony);
-        if (colorMapUrls.length) {
-          schemaVar.relatedUrls = colorMapUrls;
+        if (filteredUrls.length) {
+          schemaVar.relatedUrls = filteredUrls;
         }
       }
       return schemaVar;
