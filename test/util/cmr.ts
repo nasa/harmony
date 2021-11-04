@@ -13,7 +13,7 @@ describe('util/cmr', function () {
     });
 
     it('response contains related URLs when the CMR variable has them', async function () {
-      // TODO - once CMR deployed
+      // TODO - once CMR-7760 deployed to UAT
       expect(true).to.eql(true);
     });
   });
