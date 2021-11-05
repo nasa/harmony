@@ -464,7 +464,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234208437-POCLOUD
       - C1234208438-POCLOUD
     capabilities:
-      # TODO implement this in HARMONY-993
       concatenation: true
       subsetting:
         bbox: true
