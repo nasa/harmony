@@ -1,6 +1,6 @@
 
 exports.up = function(knex) {
-  const result = knex.schema
+  return knex.schema
     .alterTable('workflow_steps', (t) => {
       t.boolean('hasAggregatedOutput').defaultTo(false).notNullable();
     });
