@@ -52,6 +52,7 @@ CREATE TABLE `workflow_steps` (
   `serviceID` varchar(255) not null,
   `stepIndex` integer not null,
   `workItemCount` integer not null,
+  `hasAggregatedOutput` boolean not null default false,
   `operation` text not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,

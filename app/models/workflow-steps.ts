@@ -8,6 +8,7 @@ import Record from './record';
 const serializedFields = [
   'id', 'jobID', 'serviceID', 'stepIndex',
   'workItemCount', 'operation', 'createdAt', 'updatedAt',
+  'hasAggregatedOutput',
 ];
 
 export interface WorkflowStepRecord {
@@ -26,6 +27,9 @@ export interface WorkflowStepRecord {
 
   // The operation to be performed by the service
   operation: string;
+
+  // Whether or not this step aggregates the outputs of a previous step
+  hasAggregatedOutput: boolean;
 }
 
 /**
@@ -50,6 +54,10 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
 
   // The operation to be performed by the service as a string
   operation: string;
+
+  // Whether or not this step aggregates the outputs of a previous step
+  hasAggregatedOutput: boolean;
+
 }
 
 const tableFields = serializedFields.map((field) => `${WorkflowStep.table}.${field}`);

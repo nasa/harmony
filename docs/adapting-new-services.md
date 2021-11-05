@@ -9,6 +9,7 @@
   - [3. Sending results to Harmony](#3-sending-results-to-harmony)
   - [4. Canceled requests](#4-canceled-requests)
   - [5. Registering services in services.yml](#5-registering-services-in-servicesyml)
+    - [Aggregation Steps](#aggregation-steps)
   - [6. Creating a workflow template for the service (deprecated soon)](#6-creating-a-workflow-template-for-the-service-deprecated-soon)
   - [7. Creating a Kubernetes service template for local deployments (optional - Turbo only)](#7-creating-a-kubernetes-service-template-for-local-deployments-optional---turbo-only)
   - [8. Docker Container Images](#8-docker-container-images)
@@ -136,6 +137,11 @@ steps:
 ```
 
 First we have the query-cmr service (this service is the first in every current workflow). This is followed by the PODAAC L2 Subsetter service, which provides the 'spatialSubset' and 'variableSubset' operations and is only invoked if the user is requesting one or both of those. Finally, we have the Harmony netcdf-to-zarr service which provides the 'reformat' operation and is only invoked if the request asks for 'zarr' output.
+
+### Aggregation Steps
+Services that provide aggregation, e.g., concatenation for CONCISE, require that all inputs are 
+available when they are run. Harmony infers this from the `operations` field in the associated step.
+Currently the only supported aggregation operation is `concatenate`.
 
 ## 6. Creating a workflow template for the service (deprecated soon)
 
