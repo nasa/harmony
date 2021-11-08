@@ -22,25 +22,27 @@ describe('When a workflow contains an aggregating step', async function () {
     await buildWorkflowStep({
       jobID: job.jobID,
       serviceID: 'foo',
-      stepIndex: 0,
+      stepIndex: 1,
       workItemCount: 2,
     }).save(db);
 
     await buildWorkflowStep({
       jobID: job.jobID,
       serviceID: aggregateService,
-      stepIndex: 1,
+      stepIndex: 2,
       hasAggregatedOutput: true,
     }).save(db);
 
     await buildWorkItem({
       jobID: job.jobID,
       serviceID: 'foo',
+      workflowStepIndex: 1,
     }).save(db);
 
     await buildWorkItem({
       jobID: job.jobID,
       serviceID: 'foo',
+      workflowStepIndex: 1,
     }).save(db);
     const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
     const savedWorkItem = JSON.parse(savedWorkItemResp.text);
@@ -54,7 +56,6 @@ describe('When a workflow contains an aggregating step', async function () {
   });
 
   this.afterEach(async function () {
-    // await knex('work_items').whereIn('id', [1, 2]).del();
     await db.table('work_items').del();
   });
 
