@@ -81,6 +81,7 @@ async function _handleWorkItemResults(
 }
 
 /**
+ * Creates a work item that uses all the output of the previous step.
  * 
  * @param tx - The database transaction
  * @param currentWorkItem - The current work item

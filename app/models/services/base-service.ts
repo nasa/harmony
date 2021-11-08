@@ -314,7 +314,7 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
-   * Return the number of work items that should be created for a give step
+   * Return the number of work items that should be created for a given step
    * 
    * @param step - workflow service step
    * @returns  the number of work items for the given step
