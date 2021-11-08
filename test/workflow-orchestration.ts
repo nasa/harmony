@@ -6,7 +6,89 @@ import { Job, JobStatus } from '../app/models/job';
 import { hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
-import { getWorkForService, hookGetWorkForService, updateWorkItem } from './helpers/work-items';
+import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem } from './helpers/work-items';
+import { buildWorkflowStep } from './helpers/workflow-steps';
+import { buildJob } from './helpers/jobs';
+
+describe('When a workflow contains an aggregating step', async function () {
+  const aggregateService = 'bar';
+  hookServersStartStop();
+
+  beforeEach(async function () {
+    const job = buildJob();
+    await job.save(db);
+    this.jobID = job.jobID;
+
+    await buildWorkflowStep({
+      jobID: job.jobID,
+      serviceID: 'foo',
+      stepIndex: 0,
+      workItemCount: 2,
+    }).save(db);
+
+    await buildWorkflowStep({
+      jobID: job.jobID,
+      serviceID: aggregateService,
+      stepIndex: 1,
+      hasAggregatedOutput: true,
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: job.jobID,
+      serviceID: 'foo',
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: job.jobID,
+      serviceID: 'foo',
+    }).save(db);
+    const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
+    const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+    savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
+    savedWorkItem.results = [
+      'test/resources/worker-response-sample/catalog0.json',
+      'test/resources/worker-response-sample/catalog1.json',
+      'test/resources/worker-response-sample/catalog2.json',
+    ];
+    await updateWorkItem(this.backend, savedWorkItem);
+  });
+
+  this.afterEach(async function () {
+    // await knex('work_items').whereIn('id', [1, 2]).del();
+    await db.table('work_items').del();
+  });
+
+  describe('and a work item for the first step is completed', async function () {
+    describe('and it is not the last work item for the step', async function () {
+      it('the next step has no work available', async function () {
+
+        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(nextStepWorkResponse.statusCode).to.equal(404);
+      });
+    });
+
+    describe('and it is the last work item for the step', async function () {
+      it('the next step has exactly one work item available', async function () {
+        const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
+        const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+        savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
+        savedWorkItem.results = [
+          'test/resources/worker-response-sample/catalog0.json',
+          'test/resources/worker-response-sample/catalog1.json',
+          'test/resources/worker-response-sample/catalog2.json',
+        ];
+        await updateWorkItem(this.backend, savedWorkItem);
+
+        // one work item available
+        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(nextStepWorkResponse.statusCode).to.equal(200);
+
+        const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(secondNextStepWorkResponse.statusCode).to.equal(404);
+      });
+    });
+  });
+});
 
 describe('Workflow chaining for a collection configured for swot reprojection and netcdf-to-zarr', function () {
   const collection = 'C1233800302-EEDTEST';
