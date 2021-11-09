@@ -111,10 +111,6 @@ export interface CmrRelatedUrl {
   MimeType?: string;
 }
 
-export enum CmrRelatedUrlType {
-  ColorMap = 'Color Map',
-}
-
 export interface CmrQuery
   extends NodeJS.Dict<string | string[] | number | number[] | boolean | boolean[] | null> {
   concept_id?: string | string[];

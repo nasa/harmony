@@ -3,7 +3,7 @@ import * as path from 'path';
 import Ajv from 'ajv';
 import _ from 'lodash';
 import logger from '../util/log';
-import { CmrRelatedUrl, CmrUmmVariable, CmrRelatedUrlType } from '../util/cmr';
+import { CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 
 /**
@@ -204,25 +204,6 @@ export interface SRS {
 }
 
 /**
- * Transform a related URL from CMR to a Harmony related URL that can be used in the DataOperation.
- * @param relatedUrl - A CmrRelatedUrl
- * @returns the equivalent HarmonyRelatedUrl 
- */
-export function cmrRelatedUrlToHarmony(relatedUrl: CmrRelatedUrl): HarmonyRelatedUrl {
-  const harmonyRelatedUrl: HarmonyRelatedUrl = {
-    url: relatedUrl.URL,
-    urlContentType: relatedUrl.URLContentType,
-    type: relatedUrl.Type,
-  };
-  if (relatedUrl.Subtype) harmonyRelatedUrl.subtype = relatedUrl.Subtype;
-  if (relatedUrl.Description) harmonyRelatedUrl.description = relatedUrl.Description;
-  if (relatedUrl.Format) harmonyRelatedUrl.format = relatedUrl.Format;
-  if (relatedUrl.MimeType) harmonyRelatedUrl.mimeType = relatedUrl.MimeType;
-  
-  return harmonyRelatedUrl;
-}
-
-/**
  * Encapsulates an operation to be performed against a backend.  Currently the
  * class is largely getters and setters.  The eventual intent is to allow us
  * to maintain multiple versions of the operation JSON schema, which this class
@@ -345,13 +326,11 @@ export default class DataOperation {
    * @param collection - The CMR ID of the collection being operated on
    * @param vars - An array of objects containing variable id and name
    * @param granules - An array of objects containing granule id, name, and url
-   * @param varUrlTypes - the types of variable related URLs to include in the source
    */
   addSource(
     collection: string,
     vars?: CmrUmmVariable[],
     granules?: HarmonyGranule[],
-    varUrlTypes: CmrRelatedUrlType[] = [CmrRelatedUrlType.ColorMap],
   ): void {
     const variables = vars ? vars.map(({ umm, meta }) => {
       const schemaVar: HarmonyVariable = {
@@ -360,12 +339,18 @@ export default class DataOperation {
         fullPath: umm.Name,
       };
       if (umm.RelatedURLs) {
-        const filteredUrls = umm.RelatedURLs
-          .filter((url) => varUrlTypes.includes(url.Type as CmrRelatedUrlType))
-          .map(cmrRelatedUrlToHarmony);
-        if (filteredUrls.length) {
-          schemaVar.relatedUrls = filteredUrls;
-        }
+        schemaVar.relatedUrls = umm.RelatedURLs
+          .map((relatedUrl) => {
+            return {
+              url: relatedUrl.URL,
+              urlContentType: relatedUrl.URLContentType,
+              type: relatedUrl.Type,
+              subtype: relatedUrl.Subtype,
+              description: relatedUrl.Description,
+              format: relatedUrl.Format,
+              mimeType:relatedUrl.MimeType,
+            };
+          });
       }
       return schemaVar;
     }) : undefined;

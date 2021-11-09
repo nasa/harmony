@@ -453,7 +453,7 @@
             "examples": ["application/json", "application/x-hdf", "image/png"]
           }
         },
-        "required": ["url", "urlContentType", "type"]
+        "required": []
       }
     }
   }
