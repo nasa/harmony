@@ -33,6 +33,7 @@ describe('Versions endpoint', function () {
           'sds/variable-subsetter',
           'sds/HOSS',
           'sds/maskfill',
+          'sds/trajectory-subsetter',
           'harmony/chaining-example',
           'harmony/netcdf-to-zarr',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
