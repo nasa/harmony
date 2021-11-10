@@ -7,7 +7,7 @@ import { readCatalogItems } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
-import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from '../models/work-item';
+import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep, SUCCESSFUL_WORK_ITEM_STATUSES } from '../models/work-item';
 import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 
 const MAX_TRY_COUNT = 1;
@@ -81,26 +81,55 @@ async function _handleWorkItemResults(
 }
 
 /**
+ * Creates a work item that uses all the output of the previous step.
+ * 
+ * @param tx - The database transaction
+ * @param currentWorkItem - The current work item
+ * @param nextStep - the next step in the workflow
+ * @param results - an array of paths to STAC catalogs
+ */
+async function createAggregatingWorkItem(
+  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, results: string[],
+): Promise<void> {
+  // TODO use ALL outputs from the prior step here (HARMONY-961)
+  // just use the first result of the current output for now
+  const newWorkItem = new WorkItem({
+    jobID: currentWorkItem.jobID,
+    serviceID: nextStep.serviceID,
+    status: WorkItemStatus.READY,
+    stacCatalogLocation: results[0],
+    workflowStepIndex: nextStep.stepIndex,
+  });
+
+  await newWorkItem.save(tx);
+}
+
+/**
  * Creates the next work items for the workflow based on the results of the current step
  * @param tx - The database transaction
  * @param currentWorkItem - The current work item
  * @param nextStep - the next step in the workflow
  * @param results - an array of paths to STAC catalogs
  */
-async function _createNextWorkItems(
+async function createNextWorkItems(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, results: string[],
 ): Promise<void> {
-  // Create a new work item for each result using the next step
-  for await (const result of results) {
-    const newWorkItem = new WorkItem({
-      jobID: currentWorkItem.jobID,
-      serviceID: nextStep.serviceID,
-      status: WorkItemStatus.READY,
-      stacCatalogLocation: result,
-      workflowStepIndex: nextStep.stepIndex,
-    });
+  if (nextStep.hasAggregatedOutput) {
+    return createAggregatingWorkItem(tx, currentWorkItem, nextStep, results);
+  } else {
+    // Create a new work item for each result using the next step
+    // FIXME Do this as a bulk insertion when working NO GRANULES LIMIT TICKET (HARMONY-276)
+    for await (const result of results) {
+      const newWorkItem = new WorkItem({
+        jobID: currentWorkItem.jobID,
+        serviceID: nextStep.serviceID,
+        status: WorkItemStatus.READY,
+        stacCatalogLocation: result,
+        workflowStepIndex: nextStep.stepIndex,
+      });
 
-    await newWorkItem.save(tx);
+      await newWorkItem.save(tx);
+    }
   }
 
   // If the current step is the query-cmr service and the number of work items for the next
@@ -158,25 +187,29 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         workItem.workflowStepIndex + 1,
       );
 
+      const successWorkItemCount = await workItemCountForStep(
+        tx,
+        workItem.jobID,
+        workItem.workflowStepIndex,
+        SUCCESSFUL_WORK_ITEM_STATUSES,
+      );
+      const thisStep = await getWorkflowStepByJobIdStepIndex(
+        tx,
+        workItem.jobID,
+        workItem.workflowStepIndex,
+      );
+
       if (nextStep) {
-        await _createNextWorkItems(tx, workItem, nextStep, results);
+        // if we have completed all the work items for this step or if the next step does not
+        // aggregate then create a work item for the next step
+        if (successWorkItemCount === thisStep.workItemCount || !nextStep.hasAggregatedOutput) {
+          await createNextWorkItems(tx, workItem, nextStep, results);
+        }
       } else {
         // 1. add job links for the results
         await _handleWorkItemResults(tx, job, results, logger);
         // 2. If the number of work items with status 'successful' equals 'workItemCount'
         //    for the current step (which is the last) then set the job status to 'complete'.
-        const successWorkItemCount = await workItemCountForStep(
-          tx,
-          workItem.jobID,
-          workItem.workflowStepIndex,
-          WorkItemStatus.SUCCESSFUL,
-        );
-        const thisStep = await getWorkflowStepByJobIdStepIndex(
-          tx,
-          workItem.jobID,
-          workItem.workflowStepIndex,
-        );
-
         job.completeBatch(thisStep.workItemCount);
         if (successWorkItemCount === thisStep.workItemCount) {
           await completeJob(tx, job, JobStatus.SUCCESSFUL, logger);

@@ -314,6 +314,23 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
+   * Return the number of work items that should be created for a given step
+   * 
+   * @param step - workflow service step
+   * @returns  the number of work items for the given step
+   */
+  protected _workItemCountForStep(step: ServiceStep): number {
+    const regex = /query\-cmr/;
+    // query-cmr number of work items is a function of the page size and total granules
+    if (step.image.match(regex)) {
+      return Math.ceil(this.numInputGranules / env.cmrMaxPageSize);
+    } else if (stepHasAggregatedOutput(step)) {
+      return 1;
+    }
+    return this.numInputGranules;
+  }
+
+  /**
    * Creates the workflow steps objects for this request
    *
    * @returns The created WorkItem for the query CMR job
@@ -330,7 +347,7 @@ export default abstract class BaseService<ServiceParamType> {
             jobID: this.operation.requestId,
             serviceID: serviceImageToId(step.image),
             stepIndex: i,
-            workItemCount: this.numInputGranules,
+            workItemCount: this._workItemCountForStep(step),
             operation: this.operation.serialize(
               this.config.data_operation_version,
               step.operations || [],

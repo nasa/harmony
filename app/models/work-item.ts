@@ -16,6 +16,9 @@ export enum WorkItemStatus {
   CANCELED = 'canceled',
 }
 
+// Future-proofing for when we have other success statuses like 'SUCCESSFUL_WITH_WARNINGS'
+export const SUCCESSFUL_WORK_ITEM_STATUSES = [WorkItemStatus.SUCCESSFUL];
+
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
@@ -326,25 +329,36 @@ export async function deleteWorkItemsById(
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the job that created this work item
  * @param stepIndex - the index of the step in the workflow
- * @param status - if provided only work items with this status will be counted
+ * @param status - a single status or list of statuses. If provided only work items with this status
+ * (or status in the list) will be counted
  */
 export async function workItemCountForStep(
   tx: Transaction,
   jobID: string,
   stepIndex: number,
-  status?: WorkItemStatus,
+  status?: WorkItemStatus | WorkItemStatus[],
 ): Promise<number> {
   // Record<string, unknown> clashes with imported database Record class
   // so we use '{}' causing a linter error
   // eslint-disable-next-line @typescript-eslint/ban-types
-  let whereClause: {} = {
+  const whereClause: {} = {
     jobID, workflowStepIndex: stepIndex,
   };
-  whereClause = status ? { ...whereClause, status } : whereClause;
-  const count = await tx(WorkItem.table)
-    .select()
-    .count('id')
-    .where(whereClause);
+  const statusArray = Array.isArray(status) ? status : [status];
+  let count;
+
+  if (status) {
+    count = await tx(WorkItem.table)
+      .select()
+      .count('id')
+      .where(whereClause)
+      .whereIn('status', statusArray);
+  } else {
+    count = await tx(WorkItem.table)
+      .select()
+      .count('id')
+      .where(whereClause);
+  }
 
   let workItemCount;
   if (db.client.config.client === 'pg') {
