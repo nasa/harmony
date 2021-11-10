@@ -7,7 +7,7 @@ import { readCatalogItems } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
-import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep } from '../models/work-item';
+import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep, WORK_ITEM_SUCCESS_STATUSES } from '../models/work-item';
 import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 
 const MAX_TRY_COUNT = 1;
@@ -118,6 +118,7 @@ async function createNextWorkItems(
     return createAggregatingWorkItem(tx, currentWorkItem, nextStep, results);
   } else {
     // Create a new work item for each result using the next step
+    // FIXME Do this as a bulk insertion when working NO GRANULES LIMIT TICKET (HARMONY-276)
     for await (const result of results) {
       const newWorkItem = new WorkItem({
         jobID: currentWorkItem.jobID,
@@ -190,7 +191,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         tx,
         workItem.jobID,
         workItem.workflowStepIndex,
-        WorkItemStatus.SUCCESSFUL,
+        WORK_ITEM_SUCCESS_STATUSES,
       );
       const thisStep = await getWorkflowStepByJobIdStepIndex(
         tx,

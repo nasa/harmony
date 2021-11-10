@@ -61,7 +61,7 @@ describe('When a workflow contains an aggregating step', async function () {
 
   describe('and a work item for the first step is completed', async function () {
     describe('and it is not the last work item for the step', async function () {
-      it('the next step has no work available', async function () {
+      it('does not supply work for the next step', async function () {
 
         const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
         expect(nextStepWorkResponse.statusCode).to.equal(404);
@@ -69,7 +69,7 @@ describe('When a workflow contains an aggregating step', async function () {
     });
 
     describe('and it is the last work item for the step', async function () {
-      it('the next step has exactly one work item available', async function () {
+      it('supplies exactly one work item for the next step', async function () {
         const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
         const savedWorkItem = JSON.parse(savedWorkItemResp.text);
         savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
