@@ -266,6 +266,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/sds/HOSS
     # umm_s:
     #   - Add GES-DISC production UMM-S record here.
+    collections: []
     capabilities:
       subsetting:
         bbox: true
@@ -528,6 +529,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/swot-reproject
     umm_s:
       - S1237974711-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         bbox: false
@@ -560,6 +562,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/variable-subsetter
     umm_s:
       - S1237976118-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         bbox: false
@@ -590,6 +593,7 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s:
       - S1240682712-EEDTEST
       - S1241070355-GES_DISC # GESDISC_HOSS
+    collections: []
     capabilities:
       subsetting:
         bbox: true
@@ -618,6 +622,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/maskfill
     umm_s:
       - S1240151795-EEDTEST
+    collections: []
     capabilities:
       subsetting:
         shape: true
