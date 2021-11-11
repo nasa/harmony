@@ -261,6 +261,37 @@ export async function getWorkItemsByJobId(
 }
 
 /**
+ * Returns all work items for a job step
+ * @param tx - the transaction to use for querying
+ * @param jobID - the job ID
+ * @param workflowStepIndex - the index of the workflow step
+ * @param currentPage - the page of work items to get
+ * @param perPage - number of results to include per page
+ * @param sortOrder - orderBy string (desc or asc)
+ *
+ * @returns A promise with the work items array
+ */
+export async function getWorkItemsByJobIdAndStepIndex(
+  tx: Transaction,
+  jobID: string,
+  workflowStepIndex: number,
+  currentPage = 0,
+  perPage = 10,
+  sortOrder: 'asc' | 'desc' = 'asc',
+): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
+  const result = await tx(WorkItem.table)
+    .select()
+    .where({ jobID, workflowStepIndex })
+    .orderBy('id', sortOrder)
+    .paginate({ currentPage, perPage, isLengthAware: true });
+
+  return {
+    workItems: result.data.map((i) => new WorkItem(i)),
+    pagination: result.pagination,
+  };
+}
+
+/**
  * Get all work item ids associated with jobs that haven't been updated for a
  * certain amount of minutes and that have a particular JobStatus
  * @param tx - the transaction to use for querying

@@ -1,4 +1,5 @@
 import { NextFunction, Response } from 'express';
+import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
 import db, { Transaction } from '../util/db';
 import { completeJob } from '../util/job';
@@ -7,8 +8,10 @@ import { readCatalogItems } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
-import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep, SUCCESSFUL_WORK_ITEM_STATUSES } from '../models/work-item';
+import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep, SUCCESSFUL_WORK_ITEM_STATUSES, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
 import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
+import path from 'path';
+import { promises as fs } from 'fs';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
@@ -80,24 +83,77 @@ async function _handleWorkItemResults(
   }
 }
 
+
 /**
- * Creates a work item that uses all the output of the previous step.
+ * Creates a work item that uses all the output of the previous step. This function assumes that
+ * all work items for the previous step are completed. It also relies on the convention that
+ * services write out their results as STAC catalogs with the following path
+ * `/tmp/<JOB_ID>/<WORK_ITEM_ID>/outputs /catalogN.json`
+ * where N is from 0 to the number of results - 1.
  * 
  * @param tx - The database transaction
  * @param currentWorkItem - The current work item
  * @param nextStep - the next step in the workflow
- * @param results - an array of paths to STAC catalogs
+ * @param results - an array of paths to STAC catalogs from the last worked item
  */
 async function createAggregatingWorkItem(
-  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, results: string[],
+  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
 ): Promise<void> {
-  // TODO use ALL outputs from the prior step here (HARMONY-961)
-  // just use the first result of the current output for now
+  const catalogLinks: string[] = [];
+  const podMetadataDir = '/tmp/metadata';
+  // get all the previous results
+  const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1);
+  let page = 1;
+  let processedItemCount = 0;
+  while (processedItemCount != workItemCount) {
+    const prevStepWorkItems = await getWorkItemsByJobIdAndStepIndex(tx, currentWorkItem.jobID, nextStep.stepIndex - 1, page);
+    for (const workItem of prevStepWorkItems.workItems) {
+      const { id, jobID } = workItem;
+      // read the JSON file that lists all the result catalogs for this work item
+      const jsonPath = path.join(env.hostVolumePath, jobID, `${id}`, 'outputs', 'batch-catalogs.json');
+      const json = (await fs.readFile(jsonPath)).toString();
+      const catalog = JSON.parse(json);
+      for (const filePath of catalog) {
+        // we don't use fs.join here because the pods use linux paths
+        const fullPath = `${podMetadataDir}/${jobID}/${id}/outputs/${filePath}`;
+        catalogLinks.push(fullPath);
+      }
+      processedItemCount++;
+    }
+    page++;
+  }
+
+  // create a STAC catalog using `catalogLinks`
+  const catalog = {
+    stac_version: '1.0.0-beta.2',
+    stac_extensions: [],
+    id: uuid(),
+    description: 'Aggregation input catalogs',
+    links: catalogLinks.map((link) => {
+      return {
+        href: link,
+        rel: 'child',
+        type: 'application/json',
+        title: 'a sub-catalog',
+      };
+    }),
+  };
+
+  const catalogJson = JSON.stringify(catalog, null, 4);
+  // write the new catalog out to the file system
+  const outputDir = path.join(env.hostVolumePath, nextStep.jobID, 'aggregate', 'outputs');
+  await fs.mkdir(outputDir, { recursive: true });
+  const catalogPath = path.join(outputDir, 'catalog0.json');
+  await fs.writeFile(catalogPath, catalogJson);
+
+  // we don't use fs.join here because the pods use linux paths
+  const podCatalogPath = `/tmp/metadata/${nextStep.jobID}/aggregate/outputs/catalog0.json`;
+
   const newWorkItem = new WorkItem({
     jobID: currentWorkItem.jobID,
     serviceID: nextStep.serviceID,
     status: WorkItemStatus.READY,
-    stacCatalogLocation: results[0],
+    stacCatalogLocation: podCatalogPath,
     workflowStepIndex: nextStep.stepIndex,
   });
 
@@ -115,7 +171,7 @@ async function createNextWorkItems(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, results: string[],
 ): Promise<void> {
   if (nextStep.hasAggregatedOutput) {
-    return createAggregatingWorkItem(tx, currentWorkItem, nextStep, results);
+    return createAggregatingWorkItem(tx, currentWorkItem, nextStep);
   } else {
     // Create a new work item for each result using the next step
     // FIXME Do this as a bulk insertion when working NO GRANULES LIMIT TICKET (HARMONY-276)
