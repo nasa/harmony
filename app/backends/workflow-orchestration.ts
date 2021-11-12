@@ -132,12 +132,14 @@ async function createAggregatingWorkItem(
     const prevStepWorkItems = await getWorkItemsByJobIdAndStepIndex(tx, currentWorkItem.jobID, nextStep.stepIndex - 1, page);
     for (const workItem of prevStepWorkItems.workItems) {
       const { id, jobID } = workItem;
+      const directory = path.join(env.hostVolumePath, jobID, `${id}`, 'outputs');
       // read the JSON file that lists all the result catalogs for this work item
-      const jsonPath = path.join(env.hostVolumePath, jobID, `${id}`, 'outputs', 'batch-catalogs.json');
+      const jsonPath = path.join(directory, 'batch-catalogs.json');
       const json = (await fs.readFile(jsonPath)).toString();
       const catalog = JSON.parse(json);
       for (const filePath of catalog) {
-        const newLinks = await getLinksFromCatalog(filePath);
+        const fullPath = path.join(directory, filePath);
+        const newLinks = await getLinksFromCatalog(fullPath);
         itemLinks.push(...newLinks);
       }
       processedItemCount++;
@@ -186,7 +188,7 @@ async function createNextWorkItems(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, results: string[],
 ): Promise<void> {
   if (nextStep.hasAggregatedOutput) {
-    return createAggregatingWorkItem(tx, currentWorkItem, nextStep);
+    await createAggregatingWorkItem(tx, currentWorkItem, nextStep);
   } else {
     // Create a new work item for each result using the next step
     // FIXME Do this as a bulk insertion when working NO GRANULES LIMIT TICKET (HARMONY-276)

@@ -1,9 +1,12 @@
 import { Application } from 'express';
 import { afterEach, beforeEach } from 'mocha';
+import path from 'path';
+import { promises as fs } from 'fs';
 import request, { Test } from 'supertest';
 import _ from 'lodash';
 import WorkItem, { WorkItemRecord, WorkItemStatus } from '../../app/models/work-item';
 import db from '../../app/util/db';
+import env from '../../app/util/env';
 import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';
 import { buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach } from './workflow-steps';
@@ -152,3 +155,53 @@ export function getWorkForService(app: Application, serviceID: string): Test {
 }
 
 export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForService);
+
+/**
+ * 
+ * @param jobID - the job ID to which the STAC items belongs
+ * @param workItemID - the ID of the work item that generated the STAC items
+ */
+export async function fakeServiceOutput(jobID: string, workItemID: number): Promise<void> {
+  const outputDir = path.join(env.hostVolumePath, jobID, `${workItemID}`, 'outputs');
+  await fs.mkdir(outputDir, { recursive: true });
+
+  // create fake catalog of catalogs
+  const catalogOfCatalogs = ['catalog0.json'];
+  await fs.writeFile(path.join(outputDir, 'batch-catalogs.json'), JSON.stringify(catalogOfCatalogs, null, 4));
+
+  // create a fake STAC catalog
+  const catalog = {
+    stac_version: '1.0.0-beta.2',
+    stac_extensions: [],
+    id: '748a4966-2bf7-4a8f-9bbe-d10b6ccc0efd',
+    links: [
+      {
+        rel: 'harmony_source',
+        href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1234208438-POCLOUD',
+      },
+      {
+        rel: 'item',
+        href: './granule.json',
+        type: 'application/json',
+        title: 'Fake Granule',
+      },
+    ],
+    description: 'Fake STAC catalog',
+  };
+  await fs.writeFile(path.join(outputDir, 'catalog0.json'), JSON.stringify(catalog, null, 4));
+
+  // create a fake STAC item
+  // NOTE: this is not a valid STAC item because it is missing fields we don't need for our tests
+  const item = {
+    tac_version: '1.0.0-beta.2',
+    stac_extensions: [],
+    id: '63760c1d-0094-40f4-8344-319d8a7673cc',
+    type: 'Feature',
+    links: [],
+    properties: {
+      start_datetime: '2007-12-31T00:52:14.361Z',
+      end_datetime: '2007-12-31T01:48:26.552Z',
+    },
+  };
+  await fs.writeFile(path.join(outputDir, 'granule.json'), JSON.stringify(item, null, 4));
+}

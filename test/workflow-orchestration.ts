@@ -2,13 +2,16 @@ import { expect } from 'chai';
 import { getWorkItemsByJobId, WorkItemStatus } from '../app/models/work-item';
 import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
+import env from '../app/util/env';
 import { Job, JobStatus } from '../app/models/job';
 import { hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
-import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem } from './helpers/work-items';
+import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceOutput } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
 import { buildJob } from './helpers/jobs';
+import path from 'path';
+import { promises as fs } from 'fs';
 
 describe('When a workflow contains an aggregating step', async function () {
   const aggregateService = 'bar';
@@ -52,11 +55,13 @@ describe('When a workflow contains an aggregating step', async function () {
       'test/resources/worker-response-sample/catalog1.json',
       'test/resources/worker-response-sample/catalog2.json',
     ];
+    await fakeServiceOutput(job.jobID, savedWorkItem.id);
     await updateWorkItem(this.backend, savedWorkItem);
   });
 
   this.afterEach(async function () {
     await db.table('work_items').del();
+    await fs.rmdir(path.join(env.hostVolumePath, this.jobID), { recursive: true });
   });
 
   describe('and a work item for the first step is completed', async function () {
@@ -78,6 +83,7 @@ describe('When a workflow contains an aggregating step', async function () {
           'test/resources/worker-response-sample/catalog1.json',
           'test/resources/worker-response-sample/catalog2.json',
         ];
+        await fakeServiceOutput(savedWorkItem.jobID, savedWorkItem.id);
         await updateWorkItem(this.backend, savedWorkItem);
 
         // one work item available
