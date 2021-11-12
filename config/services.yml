@@ -264,7 +264,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/sds/HOSS
-    # umm_s:
+    umm_s:
+      - S2164732315-XYZ_PROV
     #   - Add GES-DISC production UMM-S record here.
     collections: []
     capabilities:
