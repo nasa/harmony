@@ -92,14 +92,14 @@ async function _handleWorkItemResults(
  * @param catlogPath - the path to the catalog
  */
 async function getLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]> {
-  const baseDir = path.dirname(catalogPath);
+  const baseDir = path.dirname(catalogPath).replace(env.hostVolumePath, PATH_TO_CONTAINER_ARTIFACTS);
   const text = (await fs.readFile(catalogPath)).toString();
   const catalog = JSON.parse(text);
   const links: StacItemLink[] = [];
   for (const link of catalog.links) {
     // make relative path absolute
     const { href } = link;
-    link.href = `${baseDir}/${href}`;
+    link.href = `${baseDir}/${path.normalize(href)}`;
     links.push(link);
   }
 
@@ -123,7 +123,7 @@ async function createAggregatingWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
 ): Promise<void> {
   const itemLinks: StacItemLink[] = [];
-  // const podMetadataDir = PATH_TO_CONTAINER_ARTIFACTS;
+  const podMetadataDir = PATH_TO_CONTAINER_ARTIFACTS;
   // get all the previous results
   const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1);
   let page = 1;
