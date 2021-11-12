@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
-import { sanitizeImage } from 'app/util/string';
-import { validateJobId } from 'app/util/job';
+import { sanitizeImage } from '../util/string';
+import { validateJobId } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { getWorkItemsByJobId, WorkItemStatus } from '../models/work-item';
 import { NotFoundError } from '../util/errors';

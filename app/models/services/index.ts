@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import _, { get as getIn } from 'lodash';
 
 import logger from '../../util/log';
@@ -53,7 +53,7 @@ function loadServiceConfigs(): void {
   // This allows us to use a configmap in k8s instead of reading the file system.
   const buffer = env.servicesYml ? Buffer.from(env.servicesYml, 'base64')
     : fs.readFileSync(path.join(__dirname, '../../../config/services.yml'));
-  const schema = yaml.Schema.create([EnvType]);
+  const schema = yaml.DEFAULT_SCHEMA.extend([EnvType]);
   const envConfigs = yaml.load(buffer.toString(), { schema });
   serviceConfigs = envConfigs[env.cmrEndpoint]
     .filter((config) => config.enabled !== false && config.enabled !== 'false');
@@ -91,7 +91,7 @@ export function getServiceConfigs(): ServiceConfig<unknown>[] {
 
 // Load config at require-time to ensure presence / validity early
 loadServiceConfigs();
-serviceConfigs.map(validateServiceConfig);
+serviceConfigs.forEach(validateServiceConfig);
 export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collections));
 
 const serviceTypesToServiceClasses = {
