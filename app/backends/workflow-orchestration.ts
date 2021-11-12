@@ -4,7 +4,7 @@ import { Logger } from 'winston';
 import db, { Transaction } from '../util/db';
 import { completeJob } from '../util/job';
 import env from '../util/env';
-import { readCatalogItems } from '../util/stac';
+import { readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
@@ -84,6 +84,29 @@ async function _handleWorkItemResults(
 }
 
 
+
+/**
+ * Read a STAC catalog and return the item links. This does not handle sub-catalogs. This function 
+ * makes assumptions based on the Harmony STAC directory layout for services inputs/outputs and
+ * is only intended to be used when aggregating service outputs into a single catalog.
+ * @param catlogPath - the path to the catalog
+ */
+async function getLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]> {
+  const baseDir = path.dirname(catalogPath);
+  const text = (await fs.readFile(catalogPath)).toString();
+  const catalog = JSON.parse(text);
+  const links: StacItemLink[] = [];
+  for (const link of catalog.links) {
+    // make relative path absolute
+    const { href } = link;
+    link.href = `${baseDir}/${href}`;
+    links.push(link);
+  }
+
+  return links;
+}
+
+
 /**
  * Creates a work item that uses all the output of the previous step. This function assumes that
  * all work items for the previous step are completed. It also relies on the convention that
@@ -99,8 +122,8 @@ async function _handleWorkItemResults(
 async function createAggregatingWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
 ): Promise<void> {
-  const catalogLinks: string[] = [];
-  const podMetadataDir = '/tmp/metadata';
+  const itemLinks: StacItemLink[] = [];
+  // const podMetadataDir = PATH_TO_CONTAINER_ARTIFACTS;
   // get all the previous results
   const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1);
   let page = 1;
@@ -114,9 +137,8 @@ async function createAggregatingWorkItem(
       const json = (await fs.readFile(jsonPath)).toString();
       const catalog = JSON.parse(json);
       for (const filePath of catalog) {
-        // we don't use fs.join here because the pods use linux paths
-        const fullPath = `${podMetadataDir}/${jobID}/${id}/outputs/${filePath}`;
-        catalogLinks.push(fullPath);
+        const newLinks = await getLinksFromCatalog(filePath);
+        itemLinks.push(...newLinks);
       }
       processedItemCount++;
     }
@@ -129,14 +151,7 @@ async function createAggregatingWorkItem(
     stac_extensions: [],
     id: uuid(),
     description: 'Aggregation input catalogs',
-    links: catalogLinks.map((link) => {
-      return {
-        href: link,
-        rel: 'child',
-        type: 'application/json',
-        title: 'a sub-catalog',
-      };
-    }),
+    links: itemLinks,
   };
 
   const catalogJson = JSON.stringify(catalog, null, 4);

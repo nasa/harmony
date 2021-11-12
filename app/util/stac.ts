@@ -2,13 +2,15 @@ import * as fs from 'fs';
 import path from 'path';
 import JobLink from '../models/job-link';
 
+export interface StacItemLink {
+  href: string;
+  rel: string;
+  type?: string;
+  title?: string;
+}
 export interface StacItem {
   assets: {
-    data: {
-      href: string;
-      type: string;
-      title: string;
-    };
+    data: StacItemLink;
   };
 
   properties: {
@@ -18,6 +20,7 @@ export interface StacItem {
 
   bbox: [number, number, number, number];
 }
+
 
 /**
  * Determine whether or not any of the given links contain the items necessary to generate STAC
