@@ -7,7 +7,7 @@ import { Job, JobStatus } from '../app/models/job';
 import { hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
-import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceOutput } from './helpers/work-items';
+import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
 import { buildJob } from './helpers/jobs';
 import { PATH_TO_CONTAINER_ARTIFACTS } from '../app/backends/workflow-orchestration';
@@ -54,7 +54,7 @@ describe('When a workflow contains an aggregating step', async function () {
     savedWorkItem.results = [
       'test/resources/worker-response-sample/catalog0.json',
     ];
-    await fakeServiceOutput(job.jobID, savedWorkItem.id);
+    await fakeServiceStacOutput(job.jobID, savedWorkItem.id);
     await updateWorkItem(this.backend, savedWorkItem);
   });
 
@@ -80,7 +80,7 @@ describe('When a workflow contains an aggregating step', async function () {
         savedWorkItem.results = [
           'test/resources/worker-response-sample/catalog0.json',
         ];
-        await fakeServiceOutput(savedWorkItem.jobID, savedWorkItem.id);
+        await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
         await updateWorkItem(this.backend, savedWorkItem);
 
         // one work item available
@@ -98,7 +98,7 @@ describe('When a workflow contains an aggregating step', async function () {
         savedWorkItem.results = [
           'test/resources/worker-response-sample/catalog0.json',
         ];
-        await fakeServiceOutput(savedWorkItem.jobID, savedWorkItem.id);
+        await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
         await updateWorkItem(this.backend, savedWorkItem);
         const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
         const workItem = JSON.parse(nextStepWorkResponse.text) as WorkItemRecord;

@@ -261,7 +261,7 @@ export async function getWorkItemsByJobId(
 }
 
 /**
- * Returns all work items for a job step
+ * Returns work items for a job step
  * @param tx - the transaction to use for querying
  * @param jobID - the job ID
  * @param workflowStepIndex - the index of the workflow step

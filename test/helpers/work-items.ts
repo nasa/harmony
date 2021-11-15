@@ -157,11 +157,12 @@ export function getWorkForService(app: Application, serviceID: string): Test {
 export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForService);
 
 /**
+ * Create fake output STAC catalogs/items to mock the execution of a service
  * 
- * @param jobID - the job ID to which the STAC items belongs
+ * @param jobID - the job ID to which the STAC items belong
  * @param workItemID - the ID of the work item that generated the STAC items
  */
-export async function fakeServiceOutput(jobID: string, workItemID: number): Promise<void> {
+export async function fakeServiceStacOutput(jobID: string, workItemID: number): Promise<void> {
   const outputDir = path.join(env.hostVolumePath, jobID, `${workItemID}`, 'outputs');
   await fs.mkdir(outputDir, { recursive: true });
 

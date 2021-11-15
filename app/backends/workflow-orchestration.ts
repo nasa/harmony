@@ -83,8 +83,6 @@ async function _handleWorkItemResults(
   }
 }
 
-
-
 /**
  * Read a STAC catalog and return the item links. This does not handle sub-catalogs. This function 
  * makes assumptions based on the Harmony STAC directory layout for services inputs/outputs and
@@ -97,15 +95,16 @@ async function getLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]>
   const catalog = JSON.parse(text);
   const links: StacItemLink[] = [];
   for (const link of catalog.links) {
-    // make relative path absolute
-    const { href } = link;
-    link.href = `${baseDir}/${path.normalize(href)}`;
-    links.push(link);
+    if (link.rel === 'item') {
+      // make relative path absolute
+      const { href } = link;
+      link.href = `${baseDir}/${path.normalize(href)}`;
+      links.push(link);
+    }
   }
 
   return links;
 }
-
 
 /**
  * Creates a work item that uses all the output of the previous step. This function assumes that

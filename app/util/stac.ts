@@ -8,6 +8,7 @@ export interface StacItemLink {
   type?: string;
   title?: string;
 }
+
 export interface StacItem {
   assets: {
     data: StacItemLink;
@@ -20,7 +21,6 @@ export interface StacItem {
 
   bbox: [number, number, number, number];
 }
-
 
 /**
  * Determine whether or not any of the given links contain the items necessary to generate STAC
