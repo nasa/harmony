@@ -7,7 +7,7 @@ import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildWorkItem } from '../helpers/work-items';
 import logger from '../../app/util/log';
 import { expect } from 'chai';
-import WorkFailer, { WorkFailerConfig } from 'app/workers/work-failer';
+import WorkFailer, { WorkFailerConfig } from '../../app/workers/work-failer';
 
 describe('WorkFailer', function () {
   // used to mock work items (create date), for items that have not been running for long
@@ -49,7 +49,7 @@ describe('WorkFailer', function () {
     MockDate.set(newDate); // make the below work item "new"
     const unproblematicJobItem1 = buildWorkItem({ jobID: unproblematicJob.jobID, status: WorkItemStatus.RUNNING });
     await unproblematicJobItem1.save(this.trx);
-    
+
     const config: WorkFailerConfig = { logger };
     const workFailer = new WorkFailer(config);
     await workFailer.failWork(60, this.trx);
@@ -62,7 +62,7 @@ describe('WorkFailer', function () {
   });
 
   describe('.failWork', async function () {
-    
+
     it('fails the work items that take too long to finish', async function () {
       const shouldFailJob1Items = (await getWorkItemsByJobId(this.trx, shouldFailJob1.jobID)).workItems;
       expect(shouldFailJob1Items.length).to.equal(2);
@@ -85,7 +85,7 @@ describe('WorkFailer', function () {
     it('fails the jobs associated with the work items that take too long to finish', async function () {
       const failedJob1 = await Job.byJobID(this.trx, shouldFailJob1.jobID);
       expect(failedJob1.status).to.equal(JobStatus.FAILED);
-      
+
       const failedJob2 = await Job.byJobID(this.trx, shouldFailJob2.jobID);
       expect(failedJob2.status).to.equal(JobStatus.FAILED);
     });

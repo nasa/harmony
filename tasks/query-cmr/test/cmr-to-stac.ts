@@ -1,4 +1,4 @@
-import { StacAsset, StacItem } from 'app/stac/types';
+import { StacAsset, StacItem } from '../app/stac/types';
 import { expect } from 'chai';
 import _ from 'lodash';
 import CmrCatalog, { bboxToGeometry } from '../app/stac/cmr-catalog';

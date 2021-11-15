@@ -59,6 +59,9 @@ https://cmr.earthdata.nasa.gov:
         - image/png
         - image/gif
       reprojection: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
 
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.10.0'
@@ -174,9 +177,12 @@ https://cmr.earthdata.nasa.gov:
         variable: false
       output_formats:
         - application/x-zarr
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
 
   - name: harmony/service-example
-    data_operation_version: '0.10.0'
+    data_operation_version: '0.11.0'
     type:
       <<: *default-argo-config
       params:
@@ -201,6 +207,9 @@ https://cmr.earthdata.nasa.gov:
         - image/png
         - image/gif
       reprojection: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
     data_operation_version: '0.11.0'
@@ -632,7 +641,7 @@ https://cmr.uat.earthdata.nasa.gov:
   # the frontend callback server.
   # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
   - name: harmony/example
-    data_operation_version: '0.10.0'
+    data_operation_version: '0.11.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     type:
       name: http
@@ -654,7 +663,7 @@ https://cmr.uat.earthdata.nasa.gov:
   # This is an example service and backend from example/http-backend.js mounted by
   # the frontend callback server.
   - name: harmony/chaining-example
-    data_operation_version: '0.9.0'
+    data_operation_version: '0.11.0'
     batch_size: 2000
     type:
       name: argo
@@ -679,56 +688,6 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - image/tiff
       reprojection: true
-
-  # PO.DAAC Shapefiles
-  - name: podaac/ps3
-    data_operation_version: '0.9.0'
-    type:
-      <<: *default-argo-config
-      params:
-        <<: *default-argo-params
-        template: podaac-ps3
-        image: !Env ${PODAAC_PS3_IMAGE}
-        image_pull_policy: !Env ${PODAAC_PS3_IMAGE_PULL_POLICY}
-        parallelism: !Env ${PODAAC_PS3_PARALLELISM}
-        env:
-          <<: *default-argo-env
-          STAGING_PATH: public/podaac/ps3
-    collections:
-      - C1234530532-EEDTEST
-      - C1234530533-EEDTEST
-    capabilities:
-      subsetting:
-        shape: true
-        variable: false
-      output_formats:
-        - application/shapefile+zip
-
-  # PO.DAAC NetCDF to COG
-  - name: podaac/netcdf-converter
-    data_operation_version: '0.9.0'
-    type:
-      <<: *default-argo-config
-      params:
-        <<: *default-argo-params
-        template: podaac-netcdf-converter
-        image: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE}
-        image_pull_policy: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${PODAAC_NETCDF_CONVERTER_PARALLELISM}
-        env:
-          <<: *default-argo-env
-          STAGING_PATH: public/podaac/netcdf-converter
-    collections:
-      - C1234410736-POCLOUD
-      - C1215802980-GES_DISC
-      - C1224264724-GES_DISC
-    maximum_sync_granules: 0
-    capabilities:
-      subsetting:
-        shape: false
-        variable: false
-      output_formats:
-        - image/tiff
 
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.11.0'
