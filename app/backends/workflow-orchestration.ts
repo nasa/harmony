@@ -16,7 +16,7 @@ import { promises as fs } from 'fs';
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
 // Must match where the service wrapper is mounting artifacts
-const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
+export const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
 
 /**
  * Return a work item for the given service
@@ -123,7 +123,6 @@ async function createAggregatingWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
 ): Promise<void> {
   const itemLinks: StacItemLink[] = [];
-  const podMetadataDir = PATH_TO_CONTAINER_ARTIFACTS;
   // get all the previous results
   const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1);
   let page = 1;
@@ -164,7 +163,7 @@ async function createAggregatingWorkItem(
   await fs.writeFile(catalogPath, catalogJson);
 
   // we don't use fs.join here because the pods use linux paths
-  const podCatalogPath = `/tmp/metadata/${nextStep.jobID}/aggregate/outputs/catalog0.json`;
+  const podCatalogPath = `${PATH_TO_CONTAINER_ARTIFACTS}/${nextStep.jobID}/aggregate/outputs/catalog0.json`;
 
   const newWorkItem = new WorkItem({
     jobID: currentWorkItem.jobID,
