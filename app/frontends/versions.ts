@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { Logger } from 'winston';
-import { inEcr, sanitizeImage } from 'app/util/string';
+import { inEcr, sanitizeImage } from '../util/string';
 import { defaultContainerRegistry, ECR } from '../util/container-registry';
 import { toISODateTime } from '../util/date';
 import { getServiceConfigs } from '../models/services';

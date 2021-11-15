@@ -4,8 +4,8 @@ import env from '../util/env';
 import { Worker } from './worker';
 import db, { Transaction } from '../util/db';
 import sleep from '../util/sleep';
-import { Job, JobStatus } from 'app/models/job';
-import { completeJob } from 'app/util/job';
+import { Job, JobStatus } from '../models/job';
+import { completeJob } from '../util/job';
 
 export interface WorkFailerConfig {
   logger: Logger;
@@ -30,9 +30,9 @@ export default class WorkFailer implements Worker {
    * @returns \{ failedWorkItemIds: number[], failedJobIds: string[] \}
    */
   async failWork(olderThanMinutes: number, tx: Transaction): Promise<{ failedWorkItemIds: number[], failedJobIds: string[] }> {
-    let failedItems: { 
-      failedWorkItemIds: number[], 
-      failedJobIds: string[] 
+    let failedItems: {
+      failedWorkItemIds: number[],
+      failedJobIds: string[]
     };
     try {
       const workItems = await getWorkItemsByAgeAndStatus(
@@ -45,13 +45,13 @@ export default class WorkFailer implements Worker {
         for (const jobId of jobIds) {
           const job = await Job.byJobID(tx, jobId);
           await completeJob(
-            tx, job, JobStatus.FAILED, this.logger, 
+            tx, job, JobStatus.FAILED, this.logger,
             `Job failed because one or more work items took too long (more than ${olderThanMinutes} minutes) to complete.`,
           );
         }
-        failedItems = { 
-          failedJobIds: Array.from(jobIds.values()), 
-          failedWorkItemIds: workItemIds, 
+        failedItems = {
+          failedJobIds: Array.from(jobIds.values()),
+          failedWorkItemIds: workItemIds,
         };
         this.logger.info(`Work failer failed ${jobIds.size} jobs and ${workItems.length} work items.`);
       }

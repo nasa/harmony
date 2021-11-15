@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 import _ from 'lodash';
 import logger from '../util/log';
 import { CmrUmmVariable } from '../util/cmr';
@@ -128,13 +129,14 @@ function schemaVersions(): SchemaVersion[] {
   return _schemaVersions;
 }
 
-let _validator: Ajv.Ajv;
+let _validator: Ajv;
 /**
  * @returns a memoized validator for the data operations schema
  */
-function validator(): Ajv.Ajv {
+function validator(): Ajv {
   if (_validator) return _validator;
-  _validator = new Ajv({ schemaId: 'auto' });
+  _validator = new Ajv({ strict: false });
+  addFormats(_validator);
   for (const { schema, version } of schemaVersions()) {
     _validator.addSchema(schema, version);
   }

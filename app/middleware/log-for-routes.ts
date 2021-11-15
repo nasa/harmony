@@ -1,4 +1,4 @@
-import HarmonyRequest from 'app/models/harmony-request';
+import HarmonyRequest from '../models/harmony-request';
 import { Response, NextFunction, RequestHandler } from 'express';
 
 /**
