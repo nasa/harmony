@@ -90,7 +90,7 @@ async function _handleWorkItemResults(
  * is only intended to be used when aggregating service outputs into a single catalog.
  * @param catalogPath - the path to the catalog
  */
-async function getLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]> {
+async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]> {
   const baseDir = path.dirname(catalogPath).replace(env.hostVolumePath, PATH_TO_CONTAINER_ARTIFACTS);
   const text = (await fs.readFile(catalogPath)).toString();
   const catalog = JSON.parse(text);
@@ -111,7 +111,9 @@ async function getLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]>
  * Creates a work item that uses all the output of the previous step. This function assumes that
  * all work items for the previous step are completed. It also relies on the convention that
  * services write out their results as STAC catalogs with the following path
- * `/tmp/<JOB_ID>/<WORK_ITEM_ID>/outputs /catalogN.json`
+ * `/tmp/<JOB_ID>/<WORK_ITEM_ID>/outputs/catalog.json`
+ *                       OR
+ * `/tmp/<JOB_ID>/<WORK_ITEM_ID>/outputs/catalogN.json` (when a step can generate multiple outputs)
  * where N is from 0 to the number of results - 1.
  * 
  * @param tx - The database transaction
@@ -135,15 +137,24 @@ async function createAggregatingWorkItem(
     for (const workItem of prevStepWorkItems.workItems) {
       const { id, jobID } = workItem;
       const directory = path.join(env.hostVolumePath, jobID, `${id}`, 'outputs');
-      // read the JSON file that lists all the result catalogs for this work item
-      const jsonPath = path.join(directory, 'batch-catalogs.json');
-      const json = (await fs.readFile(jsonPath)).toString();
-      const catalog = JSON.parse(json);
-      for (const filePath of catalog) {
-        const fullPath = path.join(directory, filePath);
-        const newLinks = await getLinksFromCatalog(fullPath);
+      try {
+        // try to use the default catalog output for single granule work items
+        const singleCatalogPath = path.join(directory, 'catalog.json');
+        const newLinks = await getItemLinksFromCatalog(singleCatalogPath);
         itemLinks.push(...newLinks);
+      } catch {
+        // couldn't read the single catalog so read the JSON file that lists all the result 
+        // catalogs for this work item
+        const jsonPath = path.join(directory, 'batch-catalogs.json');
+        const json = (await fs.readFile(jsonPath)).toString();
+        const catalog = JSON.parse(json);
+        for (const filePath of catalog) {
+          const fullPath = path.join(directory, filePath);
+          const newLinks = await getItemLinksFromCatalog(fullPath);
+          itemLinks.push(...newLinks);
+        }
       }
+
       processedItemCount++;
     }
     page++;
@@ -165,13 +176,13 @@ async function createAggregatingWorkItem(
 
   const catalogJson = JSON.stringify(catalog, null, 4);
   // write the new catalog out to the file system
-  const outputDir = path.join(env.hostVolumePath, nextStep.jobID, 'aggregate', 'outputs');
+  const outputDir = path.join(env.hostVolumePath, nextStep.jobID, `aggregate-${currentWorkItem.id}`, 'outputs');
   await fs.mkdir(outputDir, { recursive: true });
   const catalogPath = path.join(outputDir, 'catalog0.json');
   await fs.writeFile(catalogPath, catalogJson);
 
   // we don't use fs.join here because the pods use linux paths
-  const podCatalogPath = `${PATH_TO_CONTAINER_ARTIFACTS}/${nextStep.jobID}/aggregate/outputs/catalog0.json`;
+  const podCatalogPath = `${PATH_TO_CONTAINER_ARTIFACTS}/${nextStep.jobID}/aggregate-${currentWorkItem.id}/outputs/catalog0.json`;
 
   const newWorkItem = new WorkItem({
     jobID: currentWorkItem.jobID,
