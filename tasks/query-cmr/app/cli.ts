@@ -82,7 +82,7 @@ export function parser(): yargs.Argv<HarmonyArgv> {
 export default async function main(args: string[]): Promise<void> {
   const startTime = new Date().getTime();
   const appLogger = logger.child({ application: 'cmr-granule-locator' });
-  const options = parser().parse(args);
+  const options = parser().parse(args) as HarmonyArgv;
   const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
   const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
