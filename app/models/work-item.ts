@@ -276,7 +276,7 @@ export async function getWorkItemsByJobIdAndStepIndex(
   jobID: string,
   workflowStepIndex: number,
   currentPage = 0,
-  perPage = 10,
+  perPage = 100,
   sortOrder: 'asc' | 'desc' = 'asc',
 ): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
   const result = await tx(WorkItem.table)

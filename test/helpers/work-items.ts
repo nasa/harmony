@@ -194,7 +194,7 @@ export async function fakeServiceStacOutput(jobID: string, workItemID: number): 
   // create a fake STAC item
   // NOTE: this is not a valid STAC item because it is missing fields we don't need for our tests
   const item = {
-    tac_version: '1.0.0-beta.2',
+    stac_version: '1.0.0-beta.2',
     stac_extensions: [],
     id: '63760c1d-0094-40f4-8344-319d8a7673cc',
     type: 'Feature',

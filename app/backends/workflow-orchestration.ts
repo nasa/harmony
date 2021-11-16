@@ -12,6 +12,7 @@ import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWor
 import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 import path from 'path';
 import { promises as fs } from 'fs';
+import { ServiceError } from '../util/errors';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
@@ -87,7 +88,7 @@ async function _handleWorkItemResults(
  * Read a STAC catalog and return the item links. This does not handle sub-catalogs. This function 
  * makes assumptions based on the Harmony STAC directory layout for services inputs/outputs and
  * is only intended to be used when aggregating service outputs into a single catalog.
- * @param catlogPath - the path to the catalog
+ * @param catalogPath - the path to the catalog
  */
 async function getLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]> {
   const baseDir = path.dirname(catalogPath).replace(env.hostVolumePath, PATH_TO_CONTAINER_ARTIFACTS);
@@ -126,8 +127,11 @@ async function createAggregatingWorkItem(
   const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1);
   let page = 1;
   let processedItemCount = 0;
-  while (processedItemCount != workItemCount) {
+  while (processedItemCount < workItemCount) {
     const prevStepWorkItems = await getWorkItemsByJobIdAndStepIndex(tx, currentWorkItem.jobID, nextStep.stepIndex - 1, page);
+    // guard against failure case where we cannot retrieve all items - THIS SHOULD NEVER HAPPEN
+    if (prevStepWorkItems.workItems.length < 1) break;
+
     for (const workItem of prevStepWorkItems.workItems) {
       const { id, jobID } = workItem;
       const directory = path.join(env.hostVolumePath, jobID, `${id}`, 'outputs');
@@ -143,6 +147,11 @@ async function createAggregatingWorkItem(
       processedItemCount++;
     }
     page++;
+  }
+
+  // if we could not pull back all the work items we expected then something went wrong
+  if (processedItemCount < workItemCount) {
+    throw new ServiceError(500, `Failed to retrieve all work items for step ${nextStep.stepIndex - 1}`);
   }
 
   // create a STAC catalog using `catalogLinks`

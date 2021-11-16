@@ -368,8 +368,7 @@ MAX_POST_FILE_PARTS=100
 
 # The location on the file system to save the work items that will be mounted into the
 # containers for any services to read and save STAC catalogs.
-# Defaulting to /tmp to allow tests to pass in CI
-HOST_VOLUME_PATH=/tmp
+HOST_VOLUME_PATH=
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
