@@ -12,6 +12,9 @@ process.env.OAUTH_UID = 'foo';
 process.env.OAUTH_PASSWORD = 'foo';
 process.env.SHARED_SECRET_KEY = 'foo';
 
+// needed for aggregation tests
+process.env.HOST_VOLUME_PATH = '/tmp';
+
 // eslint-disable-next-line import/first
 import env from '../../app/util/env'; // Must set required env before loading the env file
 

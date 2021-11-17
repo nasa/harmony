@@ -86,6 +86,7 @@ const conditionToOperationField = {
   variableSubset: 'shouldVariableSubset',
   spatialSubset: 'shouldSpatialSubset',
   temporalSubset: 'shouldTemporalSubset',
+  concatenate: 'concatenate',
 };
 
 /**

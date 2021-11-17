@@ -2,13 +2,16 @@ import * as fs from 'fs';
 import path from 'path';
 import JobLink from '../models/job-link';
 
+export interface StacItemLink {
+  href: string;
+  rel: string;
+  type?: string;
+  title?: string;
+}
+
 export interface StacItem {
   assets: {
-    data: {
-      href: string;
-      type: string;
-      title: string;
-    };
+    data: StacItemLink;
   };
 
   properties: {
