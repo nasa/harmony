@@ -156,22 +156,19 @@ export function getWorkForService(app: Application, serviceID: string): Test {
 
 export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForService);
 
+
+
 /**
  * Create fake output STAC catalogs/items to mock the execution of a service
  * 
  * @param jobID - the job ID to which the STAC items belong
  * @param workItemID - the ID of the work item that generated the STAC items
  */
-export async function fakeServiceStacOutput(jobID: string, workItemID: number): Promise<void> {
+export async function fakeServiceStacOutput(jobID: string, workItemID: number, granuleCount = 1): Promise<void> {
   const outputDir = path.join(env.hostVolumePath, jobID, `${workItemID}`, 'outputs');
   await fs.mkdir(outputDir, { recursive: true });
 
-  // create fake catalog of catalogs
-  const catalogOfCatalogs = ['catalog0.json'];
-  await fs.writeFile(path.join(outputDir, 'batch-catalogs.json'), JSON.stringify(catalogOfCatalogs, null, 4));
-
-  // create a fake STAC catalog
-  const catalog = {
+  const exampleCatalog = {
     stac_version: '1.0.0-beta.2',
     stac_extensions: [],
     id: '748a4966-2bf7-4a8f-9bbe-d10b6ccc0efd',
@@ -189,11 +186,9 @@ export async function fakeServiceStacOutput(jobID: string, workItemID: number): 
     ],
     description: 'Fake STAC catalog',
   };
-  await fs.writeFile(path.join(outputDir, 'catalog0.json'), JSON.stringify(catalog, null, 4));
 
-  // create a fake STAC item
   // NOTE: this is not a valid STAC item because it is missing fields we don't need for our tests
-  const item = {
+  const exampleItem = {
     stac_version: '1.0.0-beta.2',
     stac_extensions: [],
     id: '63760c1d-0094-40f4-8344-319d8a7673cc',
@@ -204,5 +199,31 @@ export async function fakeServiceStacOutput(jobID: string, workItemID: number): 
       end_datetime: '2007-12-31T01:48:26.552Z',
     },
   };
-  await fs.writeFile(path.join(outputDir, 'granule.json'), JSON.stringify(item, null, 4));
+
+  if (granuleCount > 1) {
+    const catalogOfCatalogs = [];
+    for (let i = 0; i < granuleCount; i++) {
+      catalogOfCatalogs.push(`catalog${i}.json`);
+
+      // create a fake STAC catalog
+      exampleCatalog.links[1].href = `./granule${i}.json`;
+      await fs.writeFile(path.join(outputDir, `catalog${i}.json`), JSON.stringify(exampleCatalog, null, 4));
+
+      // create a fake STAC item
+      await fs.writeFile(path.join(outputDir, `granule${i}.json`), JSON.stringify(exampleItem, null, 4));
+
+    }
+
+    // create fake catalog of catalogs
+    await fs.writeFile(path.join(outputDir, 'batch-catalogs.json'), JSON.stringify(catalogOfCatalogs, null, 4));
+  } else {
+    // just write out a catalog and item
+
+    // create a fake STAC catalog
+    await fs.writeFile(path.join(outputDir, 'catalog.json'), JSON.stringify(exampleCatalog, null, 4));
+
+    // create a fake STAC item
+    await fs.writeFile(path.join(outputDir, 'granule.json'), JSON.stringify(exampleItem, null, 4));
+
+  }
 }
