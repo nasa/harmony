@@ -438,7 +438,7 @@ export async function workItemCountForJobID(
     .select()
     .count('id')
     .where({ serviceID })
-    //.whereIn(`${WorkItem.table}.status`, statuses)
+    .whereIn(`${WorkItem.table}.status`, statuses)
     ;
 
   let workItemCount;
