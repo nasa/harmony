@@ -195,6 +195,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/jobs/:jobID', getJobStatus);
   result.post('/jobs/:jobID/cancel', cancelJob);
 
+  result.get('/metrics', getVersions);
+
   result.get('/admin/jobs', getJobsListing);
   result.get('/admin/jobs/:jobID', getJobStatus);
   result.post('/admin/jobs/:jobID/cancel', cancelJob);
