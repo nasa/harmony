@@ -14,10 +14,15 @@ spec:
       labels:
         name: harmony-service-example
     spec:
+      terminationGracePeriodSeconds: $DEFAULT_ARGO_POD_TIMEOUT_SECS
       containers:
         - name: worker
           imagePullPolicy: $HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY
           image: $HARMONY_SERVICE_EXAMPLE_IMAGE
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","-c","touch /tmp/lock/TERMINATING; while [ -f /tmp/lock/WORKING ]; do sleep 1; done; kill -TERM 1"]
           resources:
             limits:
               memory: $HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY
@@ -34,15 +39,22 @@ spec:
           volumeMounts:
             - mountPath: /tmp/metadata
               name: test-volume
+            - mountPath: /tmp/lock
+              name: ephemeral-volume
           command: ["/bin/sh", "-c"]
           args:
-            - while true; do
+            - trap "exit 0" TERM;
+              while true; do
                 date;
                 sleep 10;
               done
         - name: manager
           imagePullPolicy: IfNotPresent
           image: $SERVICE_RUNNER_IMAGE
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","-c","touch /tmp/lock/TERMINATING; while [ -f /tmp/lock/WORKING ]; do sleep 1; done; kill -TERM 1"]
           resources:
             limits:
               memory: $SERVICE_RUNNER_LIMITS_MEMORY
@@ -82,6 +94,8 @@ spec:
           volumeMounts:
             - mountPath: /tmp/metadata
               name: test-volume
+            - mountPath: /tmp/lock
+              name: ephemeral-volume
       volumes:
       - name: test-volume
         hostPath:
@@ -89,6 +103,8 @@ spec:
           path: $HOST_VOLUME_PATH
           # this field is optional
           type: DirectoryOrCreate
+      - name: ephemeral-volume
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

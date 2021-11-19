@@ -11,6 +11,11 @@ import { Server } from 'http';
  * @returns An object containing the running components
  */
 export default function start(_config: Record<string, string>): Server {
+  // trap SIGTERM so we can shut down gracefully via the PreStop hook
+  process.on('SIGTERM', function () {
+    // eslint-disable-next-line no-process-exit
+    process.exit(0);
+  });
   // start the puller
   const pullWorker = new PullWorker();
   pullWorker.start().catch((e) => {
