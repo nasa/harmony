@@ -428,7 +428,7 @@ export async function workItemCountForJobID(
  * @param tx - the transaction to use for querying
  * @param serviceID - the ID of the service
  */
- export async function workItemCountByServiceIDAndStatus(
+export async function workItemCountByServiceIDAndStatus(
   tx: Transaction,
   serviceID: string,
   statuses: WorkItemStatus[],
