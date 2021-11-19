@@ -94,6 +94,8 @@ class BaseHarmonyUser(HttpUser):
 
         if turbo:
           params['turbo'] = 'true'
+        else:
+          params['turbo'] = 'false'
 
         start_time = time()
         response = self.client.get(

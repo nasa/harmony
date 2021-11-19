@@ -122,6 +122,44 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._async_request(name, collection, variable, params, turbo, 10)
 
+    def _concise_three_granules(self, turbo=False):
+        name='PODAAC Concise three granules'
+        collection = 'C1234208438-POCLOUD'
+        variable = 'all'
+        params = {
+            'maxResults': 3,
+            'concatenate': 'true'
+        }
+        self._async_request(name, collection, variable, params, turbo, 11)
+
+
+    def _hoss_spatial_and_variable_subset(self, turbo=False):
+        name='HOSS spatial and variable subset'
+        collection = 'C1222931739-GHRC_CLOUD'
+        variable = 'atmosphere_cloud_liquid_water_content'
+        params = {
+            'maxResults': 1,
+            'subset': [
+                'lat(-60:-30)',
+                'lon(-120:-90)',
+            ]
+        }
+        self._sync_request(name, collection, variable, params, turbo, 12)
+
+    def _chain_l2ss_to_zarr(self, turbo=False):
+        name='Chain L2SS to zarr'
+        collection = 'C1234724470-POCLOUD'
+        variable = 'all'
+        params = {
+            'maxResults': 1,
+            'subset': [
+                'lat(-45:45)',
+                'lon(0:180)',
+            ],
+            'format': 'application/x-zarr'
+        }
+        self._async_request(name, collection, variable, params, turbo, 13)
+
     ############################################
     # Locust tasks
     ############################################
@@ -182,33 +220,30 @@ class HarmonyUatUser(BaseHarmonyUser):
     def var_subsetter_argo(self):
         self._var_subsetter()
 
-    # Service does not support turbo yet
-    # @tag('var-subsetter', 'sync', 'variable', 'hierarchical-variable', 'netcdf4', 'turbo')
-    # @task(2)
-    # def var_subsetter_turbo(self):
-    #     self._var_subsetter(True)
+    @tag('var-subsetter', 'sync', 'variable', 'hierarchical-variable', 'netcdf4', 'turbo')
+    @task(2)
+    def var_subsetter_turbo(self):
+        self._var_subsetter(True)
 
     @tag('podaac-l2ss', 'bbox', 'sync', 'netcdf4', 'agu', 'variable', 'argo')
     @task(2)
     def podaac_l2ss_sync_variable_argo(self):
         self._podaac_l2ss_sync_variable()
 
-    # Service does not support turbo yet
-    # @tag('podaac-l2ss', 'bbox', 'sync', 'netcdf4', 'agu', 'variable', 'turbo')
-    # @task(2)
-    # def podaac_l2ss_sync_variable_turbo(self):
-    #     self._podaac_l2ss_sync_variable(True)
+    @tag('podaac-l2ss', 'bbox', 'sync', 'netcdf4', 'agu', 'variable', 'turbo')
+    @task(2)
+    def podaac_l2ss_sync_variable_turbo(self):
+        self._podaac_l2ss_sync_variable(True)
 
     @tag('podaac-l2ss', 'bbox', 'async', 'netcdf4', 'temporal', 'agu', 'argo')
     @task(2)
     def podaac_l2ss_async_spatial_temporal_argo(self):
         self._podaac_l2ss_async_spatial_temporal()
 
-    # Service does not support turbo yet
-    # @tag('podaac-l2ss', 'bbox', 'async', 'netcdf4', 'temporal', 'agu', 'turbo')
-    # @task(2)
-    # def podaac_l2ss_async_spatial_temporal_turbo(self):
-    #     self._podaac_l2ss_async_spatial_temporal(True)
+    @tag('podaac-l2ss', 'bbox', 'async', 'netcdf4', 'temporal', 'agu', 'turbo')
+    @task(2)
+    def podaac_l2ss_async_spatial_temporal_turbo(self):
+        self._podaac_l2ss_async_spatial_temporal(True)
 
     @tag('netcdf-to-zarr', 'async', 'zarr', 'agu', 'argo')
     @task(2)
@@ -220,15 +255,46 @@ class HarmonyUatUser(BaseHarmonyUser):
     def netcdf_to_zarr_single_granule_turbo(self):
         self._netcdf_to_zarr_single_granule(True)
 
-    @tag('netcdf-to-zarr', 'async', 'zarr', 'argo', 'memory', 'slow')
-    @task(1)
-    def netcdf_to_zarr_large_granule_argo(self):
-        self._netcdf_to_zarr_large_granule()
+    # @tag('new', 'async', 'concise', 'argo')
+    # @task(2)
+    # def concise_three_granules_argo(self):
+    #     self._concise_three_granules()
 
-    @tag('netcdf-to-zarr', 'async', 'zarr', 'turbo', 'memory', 'slow')
-    @task(1)
-    def netcdf_to_zarr_large_granule_turbo(self):
-        self._netcdf_to_zarr_large_granule(True)
+    @tag('new', 'async', 'concise', 'turbo')
+    @task(2)
+    def concise_three_granules_turbo(self):
+        self._concise_three_granules(True)
+
+    @tag('new', 'sync', 'hoss', 'argo')
+    @task(2)
+    def hoss_spatial_and_variable_subset_argo(self):
+        self._hoss_spatial_and_variable_subset()
+
+    @tag('new', 'async', 'hoss', 'turbo')
+    @task(2)
+    def hoss_spatial_and_variable_subset_turbo(self):
+        self._hoss_spatial_and_variable_subset(True)
+
+    @tag('new', 'async', 'chain', 'zarr', 'l2ss', 'argo')
+    @task(2)
+    def _chain_l2ss_to_zarr_argo(self):
+        self._chain_l2ss_to_zarr()
+
+    @tag('new', 'async', 'chain', 'zarr', 'l2ss', 'turbo')
+    @task(2)
+    def _chain_l2ss_to_zarr_turbo(self):
+        self._chain_l2ss_to_zarr(True)
+
+    ## Something broken with this granule
+    # @tag('netcdf-to-zarr', 'async', 'zarr', 'argo', 'memory', 'slow')
+    # @task(1)
+    # def netcdf_to_zarr_large_granule_argo(self):
+    #     self._netcdf_to_zarr_large_granule()
+
+    # @tag('netcdf-to-zarr', 'async', 'zarr', 'turbo', 'memory', 'slow')
+    # @task(1)
+    # def netcdf_to_zarr_large_granule_turbo(self):
+    #     self._netcdf_to_zarr_large_granule(True)
 
     ## Shapefile request is currently not working
     # @tag('podaac-ps3', 'shapefile', 'sync', 'temporal', 'netcdf4')
