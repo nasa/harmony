@@ -22,7 +22,7 @@ export async function getReadyWorkItemCountForServiceID(
   req.context.logger.info(`Get job status for job ${serviceID} in READY state`);
 
   // Return 400 if serviceID not provided in query
-  if (!serviceID) res.status(400).send("required parameter \"serviceID\" was not provided");
+  if (!serviceID) res.status(400).send('required parameter "serviceID" was not provided');
 
   // Return 404 if requested serviceID is not valid
   const serviceNameList = await Promise.all((getServiceConfigs() as ServiceConfig<ArgoServiceParams>[])
