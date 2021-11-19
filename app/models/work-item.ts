@@ -433,7 +433,6 @@ export async function workItemCountForJobID(
   serviceID: string,
   statuses: WorkItemStatus[],
 ): Promise<number> {
-  console.log("ZHL serviceID: ",serviceID);
   const count = await tx(WorkItem.table)
     .select()
     .count('id')
