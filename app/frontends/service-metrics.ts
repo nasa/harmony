@@ -17,22 +17,19 @@ import env = require('../util/env');
 export async function getReadyWorkItemCountForServiceID(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  const serviceID = String(req.query.serviceID);
+  const serviceID = req.query.serviceID;
   req.context.logger.info(`Get job status for job ${serviceID} in READY state`);
   try {
     // validateJobId(jobID);
     let workItemCount;
     await db.transaction(async (tx) => {
-      (workItemCount = await workItemCountByServiceIDAndStatus(tx, serviceID, [WorkItemStatus.READY]));
+      (workItemCount = await workItemCountByServiceIDAndStatus(tx, serviceID as string, [WorkItemStatus.READY]));
     });
-    if (workItemCount) {
-      const response = {
-        availableWorkItems: workItemCount,
-      };
-      res.json(response);
-    } else {
-      throw new NotFoundError(`Unable to find work item ${serviceID}`);
-    }
+    if (!workItemCount) workItemCount = 0;
+    const response = {
+      availableWorkItems: workItemCount,
+    };
+    res.json(response);
   } catch (e) {
     req.context.logger.error(e);
     next(e);
