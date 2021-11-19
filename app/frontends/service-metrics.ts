@@ -19,6 +19,7 @@ export async function getReadyWorkItemCountForServiceID(
 ): Promise<void> {
   const serviceID = req.query.serviceID;
   req.context.logger.info(`Get job status for job ${serviceID} in READY state`);
+  if (!serviceID) res.status(400).send("required parameter \"serviceID\" was not provided");
   try {
     // validateJobId(jobID);
     let workItemCount;
