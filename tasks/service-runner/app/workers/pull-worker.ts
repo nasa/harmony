@@ -22,7 +22,7 @@ const pullLogPeriod = 10;
 
 const LOCKFILE_DIR = '/tmp/lock';
 
-// retry twice for tests and 1200 (2 mintues) for real
+// retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 
 const keepaliveAgent = new Agent({
@@ -172,7 +172,12 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     logger.error(e.message);
   } finally {
     // remove the WORKING file
-    await fs.unlink(workingFilePath);
+    try {
+      await fs.unlink(workingFilePath);
+    } catch {
+      // log this, but don't let it stop things
+      logger.error('Failed to delete /tmp/log/WORKING');
+    }
     if (repeat) {
       setTimeout(_pullAndDoWork, 500);
     }
