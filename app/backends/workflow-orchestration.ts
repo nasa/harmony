@@ -271,7 +271,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         }
         await completeJob(tx, job, JobStatus.FAILED, logger, message);
       }
-    } else if (results) {
+    } else if (results && results.length > 0) {
       const nextStep = await getWorkflowStepByJobIdStepIndex(
         tx,
         workItem.jobID,

@@ -636,6 +636,38 @@ https://cmr.uat.earthdata.nasa.gov:
     capabilities:
       subsetting:
         shape: true
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${SDS_MASKFILL_IMAGE}
+
+  - name: sds/trajectory-subsetter
+    data_operation_version: '0.11.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: trajectory-subsetter
+        template_type: chaining
+        image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
+        image_pull_policy: !Env ${TRAJECTORY_SUBSETTER_IMAGE_PULL_POLICY}
+        parallelism: !Env ${TRAJECTORY_SUBSETTER_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/sds/trajectory-subsetter
+    umm_s:
+      - S1242315633-EEDTEST
+    collections: []
+    capabilities:  # The Trajectory Subsetter also supports temporal subsetting
+      subsetting:
+        bbox: true
+        shape: true
+        variable: true
+      output_formats:
+        - application/x-hdf
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
+        operations: ['variableSubset', 'spatialSubset']
 
   # This is an example service and backend from example/http-backend.js mounted by
   # the frontend callback server.
