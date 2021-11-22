@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import _, { get as getIn } from 'lodash';
 
 import logger from '../../util/log';
@@ -53,7 +53,7 @@ function loadServiceConfigs(): void {
   // This allows us to use a configmap in k8s instead of reading the file system.
   const buffer = env.servicesYml ? Buffer.from(env.servicesYml, 'base64')
     : fs.readFileSync(path.join(__dirname, '../../../config/services.yml'));
-  const schema = yaml.Schema.create([EnvType]);
+  const schema = yaml.DEFAULT_SCHEMA.extend([EnvType]);
   const envConfigs = yaml.load(buffer.toString(), { schema });
   serviceConfigs = envConfigs[env.cmrEndpoint]
     .filter((config) => config.enabled !== false && config.enabled !== 'false');
@@ -91,7 +91,7 @@ export function getServiceConfigs(): ServiceConfig<unknown>[] {
 
 // Load config at require-time to ensure presence / validity early
 loadServiceConfigs();
-serviceConfigs.map(validateServiceConfig);
+serviceConfigs.forEach(validateServiceConfig);
 export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collections));
 
 const serviceTypesToServiceClasses = {
@@ -118,6 +118,15 @@ export function buildService(
   }
 
   return new ServiceClass(serviceConfig, operation);
+}
+
+/**
+ *  Returns any services that support concatenation from the list of configs
+ * @param configs - The potential matching service configurations
+ * @returns any configurations that support concatenation
+ */
+function supportsConcatenation(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.concatenation', false));
 }
 
 /**
@@ -203,6 +212,15 @@ function requiresReformatting(operation: DataOperation, context: RequestContext)
   }
 
   return false;
+}
+
+/**
+ * Returns true if the operation requires concatenation
+ * @param operation - The operation to perform.
+ * @returns true if the provided operation requires concatenation and false otherwise
+ */
+function requiresConcatenation(operation: DataOperation): boolean {
+  return operation.shouldConcatenate;
 }
 
 /**
@@ -303,7 +321,35 @@ class UnsupportedOperation extends Error {
 }
 
 /**
- * Returns any services that support variable subsetting from the list of configs
+ * Returns any services that support concatenation from the list of configs
+ * @param operation - The operation to perform.
+ * @param context - Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs - All service configurations that have matched up to this call
+ * @param requestedOperations - Operations that have been considered in filtering out services up to
+ *     this call
+ * @returns Any service configurations that support concatenation
+ */
+function filterConcatenationMatches(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[],
+  requestedOperations: string[],
+): ServiceConfig<unknown>[] {
+  let matches = configs;
+  if (requiresConcatenation(operation)) {
+    requestedOperations.push('concatenation');
+    matches = supportsConcatenation(configs);
+  }
+
+  if (matches.length === 0) {
+    throw new UnsupportedOperation(operation, requestedOperations);
+  }
+  return matches;
+}
+
+/**
+ * Returns any services that support the collection in the operation from the list of configs
  * @param operation - The operation to perform.
  * @param context - Additional context that's not part of the operation, but influences the
  *     choice regarding the service to use
@@ -512,6 +558,7 @@ type FilterFunction = (
 // All filter functions use the FilterFunction type signature.
 const allFilterFns = [
   filterCollectionMatches,
+  filterConcatenationMatches,
   filterVariableSubsettingMatches,
   filterSpatialSubsettingMatches,
   filterShapefileSubsettingMatches,
@@ -528,6 +575,7 @@ const allFilterFns = [
 // filter functions that are considered optional for matching.
 const requiredFilterFns = [
   filterCollectionMatches,
+  filterConcatenationMatches,
   filterVariableSubsettingMatches,
   filterReprojectionMatches,
   // See caveat above in allFilterFns about why this filter must be applied last
@@ -606,7 +654,7 @@ function requiresStrictCapabilitiesMatching(
   let strictMatching = false;
   if ((!requiresSpatialSubsetting(operation) && !requiresShapefileSubsetting(operation))
       || (!requiresVariableSubsetting(operation) && !requiresReprojection(operation)
-         && !requiresReformatting(operation, context))) {
+      && !requiresReformatting(operation, context))) {
     strictMatching = true;
   }
   return strictMatching;
@@ -627,6 +675,10 @@ export function chooseServiceConfig(
   configs: ServiceConfig<unknown>[] = serviceConfigs,
 ): ServiceConfig<unknown> {
   let serviceConfig = filterServiceConfigs(operation, context, configs, allFilterFns);
+  // if we are asked to concatenate, but no matching concat service is available then throw an error
+  if (serviceConfig.name === 'noOpService' && operation.shouldConcatenate) {
+    throw new NotFoundError('no matching service');
+  }
   if (serviceConfig.name === 'noOpService' && !requiresStrictCapabilitiesMatching(operation, context)) {
     // if we couldn't find a matching service, make a best effort to find a service that
     // can do part of what the operation requested

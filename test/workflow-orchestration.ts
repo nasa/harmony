@@ -1,12 +1,115 @@
 import { expect } from 'chai';
-import { getWorkItemsByJobId, WorkItemStatus } from '../app/models/work-item';
+import { getWorkItemsByJobId, WorkItemRecord, WorkItemStatus } from '../app/models/work-item';
 import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
+import env from '../app/util/env';
 import { Job, JobStatus } from '../app/models/job';
 import { hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
-import { getWorkForService, hookGetWorkForService, updateWorkItem } from './helpers/work-items';
+import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
+import { buildWorkflowStep } from './helpers/workflow-steps';
+import { buildJob } from './helpers/jobs';
+import { PATH_TO_CONTAINER_ARTIFACTS } from '../app/backends/workflow-orchestration';
+import path from 'path';
+import { promises as fs } from 'fs';
+
+describe('When a workflow contains an aggregating step', async function () {
+  const aggregateService = 'bar';
+  hookServersStartStop();
+
+  beforeEach(async function () {
+    const job = buildJob();
+    await job.save(db);
+    this.jobID = job.jobID;
+
+    await buildWorkflowStep({
+      jobID: job.jobID,
+      serviceID: 'foo',
+      stepIndex: 1,
+      workItemCount: 2,
+    }).save(db);
+
+    await buildWorkflowStep({
+      jobID: job.jobID,
+      serviceID: aggregateService,
+      stepIndex: 2,
+      hasAggregatedOutput: true,
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: job.jobID,
+      serviceID: 'foo',
+      workflowStepIndex: 1,
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: job.jobID,
+      serviceID: 'foo',
+      workflowStepIndex: 1,
+    }).save(db);
+    const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
+    const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+    savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
+    savedWorkItem.results = [
+      'test/resources/worker-response-sample/catalog0.json',
+    ];
+    await fakeServiceStacOutput(job.jobID, savedWorkItem.id);
+    await updateWorkItem(this.backend, savedWorkItem);
+  });
+
+  this.afterEach(async function () {
+    await db.table('work_items').del();
+    await fs.rmdir(path.join(env.hostVolumePath, this.jobID), { recursive: true });
+  });
+
+  describe('and a work item for the first step is completed', async function () {
+    describe('and it is not the last work item for the step', async function () {
+      it('does not supply work for the next step', async function () {
+
+        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(nextStepWorkResponse.statusCode).to.equal(404);
+      });
+    });
+
+    describe('and it is the last work item for the step', async function () {
+      it('supplies exactly one work item for the next step', async function () {
+        const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
+        const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+        savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
+        savedWorkItem.results = [
+          'test/resources/worker-response-sample/catalog0.json',
+        ];
+        await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
+        await updateWorkItem(this.backend, savedWorkItem);
+
+        // one work item available
+        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(nextStepWorkResponse.statusCode).to.equal(200);
+
+        const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(secondNextStepWorkResponse.statusCode).to.equal(404);
+      });
+
+      it('provides all the outputs of the preceding step to the aggregating step', async function () {
+        const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
+        const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+        savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
+        savedWorkItem.results = [
+          'test/resources/worker-response-sample/catalog0.json',
+        ];
+        await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
+        await updateWorkItem(this.backend, savedWorkItem);
+        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        const workItem = JSON.parse(nextStepWorkResponse.text) as WorkItemRecord;
+        const filePath = workItem.stacCatalogLocation.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
+        const catalog = JSON.parse((await fs.readFile(filePath)).toString());
+        const items = catalog.links.filter(link => link.rel === 'item');
+        expect(items.length).to.equal(2);
+      });
+    });
+  });
+});
 
 describe('Workflow chaining for a collection configured for swot reprojection and netcdf-to-zarr', function () {
   const collection = 'C1233800302-EEDTEST';

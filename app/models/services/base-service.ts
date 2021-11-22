@@ -86,7 +86,25 @@ const conditionToOperationField = {
   variableSubset: 'shouldVariableSubset',
   spatialSubset: 'shouldSpatialSubset',
   temporalSubset: 'shouldTemporalSubset',
+  concatenate: 'concatenate',
 };
+
+/**
+ * Step operations that are aggregating steps
+ */
+const aggregatingOperations = [
+  'concatenate',
+];
+
+/**
+ *  Returns true if the workflow step aggregates output from the previous step
+ * (and therefore must wait for all output before executing)
+ * @param step - the step in a workflow
+ * @returns true if the step is an aggregating step, false otherwise
+ */
+function stepHasAggregatedOutput(step: ServiceStep): boolean {
+  return _.intersection(aggregatingOperations, step.operations).length > 0;
+}
 
 /**
  * Returns true if the workflow step is required for the given operation. If any
@@ -297,6 +315,23 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
+   * Return the number of work items that should be created for a given step
+   * 
+   * @param step - workflow service step
+   * @returns  the number of work items for the given step
+   */
+  protected _workItemCountForStep(step: ServiceStep): number {
+    const regex = /query\-cmr/;
+    // query-cmr number of work items is a function of the page size and total granules
+    if (step.image.match(regex)) {
+      return Math.ceil(this.numInputGranules / env.cmrMaxPageSize);
+    } else if (stepHasAggregatedOutput(step)) {
+      return 1;
+    }
+    return this.numInputGranules;
+  }
+
+  /**
    * Creates the workflow steps objects for this request
    *
    * @returns The created WorkItem for the query CMR job
@@ -313,11 +348,12 @@ export default abstract class BaseService<ServiceParamType> {
             jobID: this.operation.requestId,
             serviceID: serviceImageToId(step.image),
             stepIndex: i,
-            workItemCount: this.numInputGranules,
+            workItemCount: this._workItemCountForStep(step),
             operation: this.operation.serialize(
               this.config.data_operation_version,
               step.operations || [],
             ),
+            hasAggregatedOutput: stepHasAggregatedOutput(step),
           }));
         }
       }));

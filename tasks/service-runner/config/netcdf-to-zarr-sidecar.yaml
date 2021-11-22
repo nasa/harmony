@@ -104,4 +104,4 @@ spec:
       protocol: TCP
   selector:
     name: netcdf-to-zarr
-  type: LoadBalancer
+  type: ClusterIP

@@ -2,7 +2,7 @@ import process from 'process';
 import express, { RequestHandler } from 'express';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import log from '../util/log';
 
 // Middleware requires in outside-in order

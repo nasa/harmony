@@ -129,6 +129,9 @@ async function cmrGranuleLocatorNew(
         req.accessToken,
         maxResults,
       );
+      if (hits === 0) {
+        throw new RequestValidationError('No matching granules found.');
+      }
       const msTaken = new Date().getTime() - startTime;
       logger.info('timing.cmr-initiate-granule-scroll.end', { durationMs: msTaken, hits });
 

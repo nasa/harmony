@@ -16,6 +16,9 @@ export enum WorkItemStatus {
   CANCELED = 'canceled',
 }
 
+// Future-proofing for when we have other success statuses like 'SUCCESSFUL_WITH_WARNINGS'
+export const SUCCESSFUL_WORK_ITEM_STATUSES = [WorkItemStatus.SUCCESSFUL];
+
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
@@ -258,6 +261,37 @@ export async function getWorkItemsByJobId(
 }
 
 /**
+ * Returns work items for a job step
+ * @param tx - the transaction to use for querying
+ * @param jobID - the job ID
+ * @param workflowStepIndex - the index of the workflow step
+ * @param currentPage - the page of work items to get
+ * @param perPage - number of results to include per page
+ * @param sortOrder - orderBy string (desc or asc)
+ *
+ * @returns A promise with the work items array
+ */
+export async function getWorkItemsByJobIdAndStepIndex(
+  tx: Transaction,
+  jobID: string,
+  workflowStepIndex: number,
+  currentPage = 0,
+  perPage = 100,
+  sortOrder: 'asc' | 'desc' = 'asc',
+): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
+  const result = await tx(WorkItem.table)
+    .select()
+    .where({ jobID, workflowStepIndex })
+    .orderBy('id', sortOrder)
+    .paginate({ currentPage, perPage, isLengthAware: true });
+
+  return {
+    workItems: result.data.map((i) => new WorkItem(i)),
+    pagination: result.pagination,
+  };
+}
+
+/**
  * Get all work item ids associated with jobs that haven't been updated for a
  * certain amount of minutes and that have a particular JobStatus
  * @param tx - the transaction to use for querying
@@ -326,25 +360,36 @@ export async function deleteWorkItemsById(
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the job that created this work item
  * @param stepIndex - the index of the step in the workflow
- * @param status - if provided only work items with this status will be counted
+ * @param status - a single status or list of statuses. If provided only work items with this status
+ * (or status in the list) will be counted
  */
 export async function workItemCountForStep(
   tx: Transaction,
   jobID: string,
   stepIndex: number,
-  status?: WorkItemStatus,
+  status?: WorkItemStatus | WorkItemStatus[],
 ): Promise<number> {
   // Record<string, unknown> clashes with imported database Record class
   // so we use '{}' causing a linter error
   // eslint-disable-next-line @typescript-eslint/ban-types
-  let whereClause: {} = {
+  const whereClause: {} = {
     jobID, workflowStepIndex: stepIndex,
   };
-  whereClause = status ? { ...whereClause, status } : whereClause;
-  const count = await tx(WorkItem.table)
-    .select()
-    .count('id')
-    .where(whereClause);
+  const statusArray = Array.isArray(status) ? status : [status];
+  let count;
+
+  if (status) {
+    count = await tx(WorkItem.table)
+      .select()
+      .count('id')
+      .where(whereClause)
+      .whereIn('status', statusArray);
+  } else {
+    count = await tx(WorkItem.table)
+      .select()
+      .count('id')
+      .where(whereClause);
+  }
 
   let workItemCount;
   if (db.client.config.client === 'pg') {
