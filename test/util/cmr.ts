@@ -1,7 +1,6 @@
-/* eslint-disable max-len */
-import { describe, it, xit } from 'mocha';
+import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { getVariablesByIds } from '../../app/util/cmr';
+import { CmrRelatedUrl, CmrUmmVariable, getVariablesByIds } from '../../app/util/cmr';
 
 describe('util/cmr', function () {
   describe('getVariablesByIds', function () {
@@ -12,9 +11,19 @@ describe('util/cmr', function () {
       expect(variables.length).to.eql(1);
     });
 
-    xit('response contains related URLs when the CMR variable has them', async function () {
-      // TODO - once CMR-7760 deployed to UAT
-      expect(true).to.eql(true);
+    it('contains related URLs when the CMR variable has them', async function () {
+      const expectedRelatedUrls: CmrRelatedUrl[] = [{
+        URL: 'https://colormap_server.earthdata.nasa.gov/sea_surface_temperature/green-based',
+        URLContentType: 'VisualizationURL',
+        Type: 'Color Map',
+        Subtype: 'Harmony GDAL',
+        Description: 'This is a sample way of designating a colormap for a specific variable record.',
+        Format: 'XML',
+        MimeType: 'application/XML',
+      }];
+      const redVariable: CmrUmmVariable = (await getVariablesByIds(['V1233801695-EEDTEST'], ''))[0];
+      const redVariableRelatedUrls: CmrRelatedUrl[] = redVariable.umm.RelatedURLs;
+      expect(expectedRelatedUrls).to.deep.equal(redVariableRelatedUrls);
     });
   });
 });
