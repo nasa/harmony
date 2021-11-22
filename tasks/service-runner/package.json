@@ -18,7 +18,7 @@
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
   "dependencies": {
-    "@kubernetes/client-node": "^0.16.0",
+    "@kubernetes/client-node": "^0.16.1",
     "agentkeepalive": "^4.1.4",
     "aws-sdk": "^2.1029.0",
     "axios": "^0.24.0",
