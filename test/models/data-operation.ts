@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { CURRENT_SCHEMA_VERSION, parseSchemaFile, versions } from '../helpers/data-operation';
 import DataOperation from '../../app/models/data-operation';
-import { CmrRelatedUrl } from 'app/util/cmr';
+import { CmrRelatedUrl } from '../../app/util/cmr';
 
 const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 // bbox has one too many numbers
