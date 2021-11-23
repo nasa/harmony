@@ -8,7 +8,7 @@ import env from '../app/util/env';
 import hookDescribeImage from './helpers/container-registry';
 
 describe('service/metrics endpoint', function () {
-  hookServersStartStop();
+  hookServersStartStop({ skipEarthdataLogin: true });
   describe('when using the services from services.yml', function () {
     describe('when hitting the service/metrics endpoint without serviceID parameter', function () {
       hookServiceMetrics();
