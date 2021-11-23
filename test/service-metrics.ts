@@ -13,12 +13,16 @@ describe('service/metrics endpoint', function () {
     describe('when hitting the service/metrics endpoint without serviceID parameter', function () {
       hookServiceMetrics();
 
-      it('returns a 400 success', function () {
+      it('returns 400 status code', function () {
         expect(this.res.statusCode).to.equal(400);
       });
 
-      it('returns a JSON response', function () {
+      it('returns text content', function () {
         expect(this.res.get('Content-Type')).to.equal('text/html; charset=utf-8');
+      });
+
+      it('returns expected message', function () {
+        expect(this.res.text).to.equal(`required parameter "serviceID" was not provided`);
       });
 
     });
