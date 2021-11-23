@@ -40,5 +40,21 @@ describe('Backend service metrics endpoint', function () {
     });
   });
 
+  describe('when hitting the service/metrics endpoint with an existing serviceID', function () {
+    const serviceID = "harmony/query-cmr:latest";
+    hookServiceMetrics(serviceID);
+
+    it('returns 200 status code', function () {
+      expect(this.res.statusCode).to.equal(200);
+    });
+
+    it('returns json content', function () {
+      expect(this.res.get('Content-Type')).to.equal('application/json; charset=utf-8');
+    });
+
+    it('returns expected message', function () {
+      expect(JSON.stringify(this.res.body)).to.equal(JSON.stringify({availableWorkItems: 0}));
+    });
+  });
 
 });
