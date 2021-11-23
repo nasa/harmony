@@ -15,7 +15,7 @@ import db from '../util/db';
  * @returns Resolves when the request is complete
  */
 export async function getReadyWorkItemCountForServiceID(
-  req: Request, res: Response, next: NextFunction
+  req: Request, res: Response, next: NextFunction,
 ): Promise<void> {
 
   const logger = log.child({
