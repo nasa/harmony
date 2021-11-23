@@ -21,7 +21,7 @@ export default function router(): Router {
   result.get('/work', getWork);
   result.put('/work/:id', updateWorkItem);
 
-  result.get('/services/metrics', getReadyWorkItemCountForServiceID);
+  result.get('/metrics', getReadyWorkItemCountForServiceID);
 
   result.use((err, _req, _res, _next) => {
     if (err) {
