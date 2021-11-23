@@ -22,7 +22,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh","-c","touch /tmp/lock/TERMINATING; while [ -f /tmp/lock/WORKING ]; do sleep 1; done; kill -TERM 1"]
+                command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
           resources:
             limits:
               memory: $HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY
@@ -39,7 +39,7 @@ spec:
           volumeMounts:
             - mountPath: /tmp/metadata
               name: test-volume
-            - mountPath: /tmp/lock
+            - mountPath: /tmp
               name: ephemeral-volume
           command: ["/bin/sh", "-c"]
           args:
@@ -54,7 +54,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh","-c","touch /tmp/lock/TERMINATING; while [ -f /tmp/lock/WORKING ]; do sleep 1; done; kill -TERM 1"]
+                command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
           resources:
             limits:
               memory: $SERVICE_RUNNER_LIMITS_MEMORY
@@ -94,7 +94,7 @@ spec:
           volumeMounts:
             - mountPath: /tmp/metadata
               name: test-volume
-            - mountPath: /tmp/lock
+            - mountPath: /tmp
               name: ephemeral-volume
       volumes:
       - name: test-volume

@@ -10,7 +10,7 @@ import { hookGetWorkRequest } from './helpers/pull-worker';
 import * as pullWorker from '../app/workers/pull-worker';
 import PullWorker from '../app/workers/pull-worker';
 import * as serviceRunner from '../app/service/service-runner';
-import { existsSync, mkdirSync, rmdirSync, writeFileSync } from 'fs';
+import { existsSync, writeFileSync } from 'fs';
 
 const {
   _pullWork,
@@ -173,12 +173,6 @@ describe('Pull Worker', async function () {
   });
 
   describe('_pullAndDoWork()', function () {
-    beforeEach(function () {
-      mkdirSync('/tmp/lock');
-    });
-    afterEach(function () {
-      rmdirSync('/tmp/lock', { recursive: true });
-    });
 
     describe('when the pod is terminating', async function () {
       let pullWorkSpy: sinon.SinonSpy;
@@ -186,10 +180,9 @@ describe('Pull Worker', async function () {
       beforeEach(function () {
         pullWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_pullWork');
         doWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_doWork');
-        writeFileSync('/tmp/lock/TERMINATING', '1');
+        writeFileSync('/tmp/TERMINATING', '1');
       });
       afterEach(function () {
-        rmdirSync('/tmp/lock', { recursive: true });
         pullWorkSpy.restore();
         doWorkSpy.restore();
       });
@@ -222,7 +215,7 @@ describe('Pull Worker', async function () {
 
       it('deletes the WORKING lock file', async function () {
         await _pullAndDoWork(false);
-        expect(existsSync('/tmp/lock/WORKING')).to.be.false;
+        expect(existsSync('/tmp/WORKING')).to.be.false;
       });
 
       it('does not throw', async function () {
@@ -253,7 +246,7 @@ describe('Pull Worker', async function () {
 
       it('deletes the WORKING lock file', async function () {
         await _pullAndDoWork(false);
-        expect(existsSync('/tmp/lock/WORKING')).to.be.false;
+        expect(existsSync('/tmp/WORKING')).to.be.false;
       });
 
       it('does not throw', async function () {

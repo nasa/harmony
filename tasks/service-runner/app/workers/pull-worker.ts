@@ -20,7 +20,7 @@ let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
 
-const LOCKFILE_DIR = '/tmp/lock';
+const LOCKFILE_DIR = '/tmp';
 
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
@@ -176,7 +176,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       await fs.unlink(workingFilePath);
     } catch {
       // log this, but don't let it stop things
-      logger.error('Failed to delete /tmp/log/WORKING');
+      logger.error('Failed to delete /tmp/WORKING');
     }
     if (repeat) {
       setTimeout(_pullAndDoWork, 500);
