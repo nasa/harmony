@@ -13,7 +13,6 @@ import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
 import { getJobsListing, getJobStatus, cancelJob } from '../frontends/jobs';
 import { getJobs, getJob, getWorkItemsTable } from '../frontends/workflow-ui';
-import { getReadyWorkItemCountForServiceID } from '../frontends/service-metrics';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
@@ -195,8 +194,6 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/jobs', getJobsListing);
   result.get('/jobs/:jobID', getJobStatus);
   result.post('/jobs/:jobID/cancel', cancelJob);
-
-  result.get('/services/metrics', getReadyWorkItemCountForServiceID);
 
   result.get('/admin/jobs', getJobsListing);
   result.get('/admin/jobs/:jobID', getJobStatus);

@@ -2,6 +2,7 @@ import { Router, json } from 'express';
 import { getWork, updateWorkItem } from '../backends/workflow-orchestration';
 import { responseHandler } from '../backends/service-response';
 import argoResponsehandler from '../backends/argo-response';
+import { getReadyWorkItemCountForServiceID } from '../frontends/service-metrics';
 import log from '../util/log';
 
 /**
@@ -19,6 +20,8 @@ export default function router(): Router {
   result.post('/:requestId/argo-response', argoResponsehandler);
   result.get('/work', getWork);
   result.put('/work/:id', updateWorkItem);
+
+  result.get('/services/metrics', getReadyWorkItemCountForServiceID);
 
   result.use((err, _req, _res, _next) => {
     if (err) {
