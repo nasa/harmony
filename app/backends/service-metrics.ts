@@ -1,9 +1,9 @@
-import { Response, NextFunction } from 'express';
+import { Response, Request, NextFunction } from 'express';
+import log from '../util/log';
 import { workItemCountByServiceIDAndStatus, WorkItemStatus } from '../models/work-item';
 import { getServiceConfigs } from '../models/services';
 import { ServiceConfig } from '../models/services/base-service';
 import { ArgoServiceParams } from '../models/services/argo-service';
-import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 
 /**
@@ -15,11 +15,16 @@ import db from '../util/db';
  * @returns Resolves when the request is complete
  */
 export async function getReadyWorkItemCountForServiceID(
-  req: HarmonyRequest, res: Response, next: NextFunction,
+  req: Request, res: Response, next: NextFunction
 ): Promise<void> {
 
+  const logger = log.child({
+    component: 'service/metrics',
+    application: 'backend',
+  });
+
   const serviceID = req.query.serviceID as string;
-  req.context.logger.info(`Get job status for job ${serviceID} in READY state`);
+  logger.info(`Get job status for job ${serviceID} in READY state`);
 
   // Return 400 if serviceID not provided in query
   if (!serviceID) res.status(400).send('required parameter "serviceID" was not provided');
@@ -41,7 +46,7 @@ export async function getReadyWorkItemCountForServiceID(
     };
     res.json(response);
   } catch (e) {
-    req.context.logger.error(e);
+    logger.error(e);
     next(e);
   }
 }
