@@ -2,7 +2,7 @@ import { Router, json } from 'express';
 import { getWork, updateWorkItem } from '../backends/workflow-orchestration';
 import { responseHandler } from '../backends/service-response';
 import argoResponsehandler from '../backends/argo-response';
-import { getReadyWorkItemCountForServiceID } from '../frontends/service-metrics';
+import { getReadyWorkItemCountForServiceID } from '../backends/service-metrics';
 import log from '../util/log';
 
 /**
