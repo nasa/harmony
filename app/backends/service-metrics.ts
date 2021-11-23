@@ -27,13 +27,23 @@ export async function getReadyWorkItemCountForServiceID(
   logger.info(`Get job status for job ${serviceID} in READY state`);
 
   // Return 400 if serviceID not provided in query
-  if (!serviceID) res.status(400).send('required parameter "serviceID" was not provided');
+  if (!serviceID) {
+    const err_message = 'required parameter "serviceID" was not provided';
+    logger.error(err_message);
+    res.status(400).send(err_message);
+    return;
+  }
 
   // Return 404 if requested serviceID is not valid
   const serviceNameList = await Promise.all((getServiceConfigs() as ServiceConfig<ArgoServiceParams>[])
     .filter((s) => s.type.name === 'argo')
     .map((service) => service.type.params.image));
-  if (serviceNameList.indexOf(serviceID) === -1) res.status(404).send(`service [${serviceID}] does not exist`);
+  if (serviceNameList.indexOf(serviceID) === -1) {
+    const err_message = `service [${serviceID}] does not exist`; 
+    logger.error(err_message);
+    res.status(404).send(err_message);
+    return;
+  }
 
   try {
     let workItemCount;
