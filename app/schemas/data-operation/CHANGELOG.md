@@ -1,4 +1,4 @@
-## [0.12.0] -2021-11-03
+## [0.12.0] - 2021-11-23
 ### Added
 - variable.relatedUrls - Related URLs for a variable as provided by CMR.
 
