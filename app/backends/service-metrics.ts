@@ -30,7 +30,6 @@ export async function getReadyWorkItemCountForServiceID(
   // Return 400 if serviceID not provided in query
   if (!serviceID) {
     const err_message = 'required parameter "serviceID" was not provided';
-    logger.error(err_message);
     next(new RequestValidationError(err_message));
     return;
   }
@@ -41,7 +40,6 @@ export async function getReadyWorkItemCountForServiceID(
     .map((service) => service.type.params.image));
   if (serviceNameList.indexOf(serviceID) === -1) {
     const err_message = `service [${serviceID}] does not exist`; 
-    logger.error(err_message);
     next(new NotFoundError(err_message));
     return;
   }
@@ -57,7 +55,6 @@ export async function getReadyWorkItemCountForServiceID(
     };
     res.json(response);
   } catch (e) {
-    logger.error(e);
     next(e);
   }
 }
