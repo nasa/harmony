@@ -1,6 +1,6 @@
 {
-  "$schema": "../app/schemas/data-operation/0.10.0/data-operation-v0.10.0.json",
-  "version": "0.10.0",
+  "$schema": "../app/schemas/data-operation/0.12.0/data-operation-v0.12.0.json",
+  "version": "0.12.0",
   "callback": "http://localhost/some-path",
   "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
   "user": "jdoe",
@@ -11,9 +11,15 @@
         {
           "id": "V1233801695-EEDTEST",
           "name": "red_var",
-          "longName": "Red variable",
-          "alias": "red_alias",
-          "groupPath": "/"
+          "fullPath": "data/colors/red_var",
+          "relatedUrls": [
+            {
+              "description" : "This URL points to some text data.",
+              "urlContentType" : "DistributionURL",
+              "type" : "GET DATA" ,
+              "url" : "http://example.com/file649.txt"
+            }
+          ]
         }
       ],
       "granules": [

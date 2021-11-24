@@ -6,6 +6,8 @@
 - [ ] Update [CHANGELOG.md](CHANGELOG.md)
 - [ ] Add a migration to [data-operation.ts](../../models/data-operation.ts)
 - [ ] Add getters, setters, and any other necessary logic to to [DataOperation](../../models/data-operation.ts)
+- [ ] Update [test/resources/data-operation-samples/valid-operation-input.json](../../../test/resources/data-operation-samples/valid-operation-input.json) to reference the updated schema and have any new or required fields
+- [ ] Update [test/helpers/workflow-steps.ts](../../../test/helpers/workflow-steps.ts) to point to the latest schema
 - [ ] Update [test/models/data-operation.ts](../../../test/models/data-operation.ts) to point to the latest schema and list the new schema
 - [ ] Add a new example for the new schema to [test/resources/data-operation-samples](../../../test/resources/data-operation-samples)
 - [ ] Update [example/service-operation.json](../../../example/service-operation.json) to reference the updated schema and have any required fields
