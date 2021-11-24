@@ -5,10 +5,10 @@
   "main": "index.ts",
   "scripts": {
     "start": "ts-node app/server.ts",
-    "test": "eslint --ext .ts . && nyc mocha && npm audit --audit-level=high --production",
-    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
+    "test": "eslint --ext .ts . && nyc mocha --timeout 5000 && npm audit --audit-level=high --production",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha --timeout 5000",
     "lint": "eslint --ext .ts .",
-    "coverage": "nyc mocha",
+    "coverage": "nyc mocha --timeout 5000",
     "build": "tsc && docker build --tag harmonyservices/service-runner:${VERSION:-latest} ."
   },
   "engines": {
@@ -18,7 +18,7 @@
   "author": "NASA EOSDIS Harmony team",
   "license": "Apache-2.0",
   "dependencies": {
-    "@kubernetes/client-node": "^0.16.0",
+    "@kubernetes/client-node": "^0.16.1",
     "agentkeepalive": "^4.1.4",
     "aws-sdk": "^2.1029.0",
     "axios": "^0.24.0",

@@ -14,6 +14,7 @@ spec:
       labels:
         name: sds-maskfill
     spec:
+      terminationGracePeriodSeconds: $DEFAULT_ARGO_POD_TIMEOUT_SECS
       containers:
         - name: worker
           imagePullPolicy: $SDS_MASKFILL_IMAGE_PULL_POLICY
@@ -34,6 +35,8 @@ spec:
           volumeMounts:
             - mountPath: /tmp/metadata
               name: test-volume
+            - mountPath: /tmp
+              name: ephemeral-volume
           command: ["/bin/sh", "-c"]
           args:
             - while true; do
@@ -83,6 +86,8 @@ spec:
           volumeMounts:
             - mountPath: /tmp/metadata
               name: test-volume
+            - mountPath: /tmp
+              name: ephemeral-volume
       volumes:
       - name: test-volume
         hostPath:
@@ -90,6 +95,8 @@ spec:
           path: $HOST_VOLUME_PATH
           # this field is optional
           type: DirectoryOrCreate
+      - name: ephemeral-volume
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
