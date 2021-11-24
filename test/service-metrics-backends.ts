@@ -19,12 +19,12 @@ describe('Backend service metrics endpoint', function () {
     });
 
     it('returns expected message', function () {
-      expect(this.res.text).to.equal(`required parameter \"serviceID\" was not provided`);
+      expect(this.res.text).to.equal('required parameter "serviceID" was not provided');
     });
   });
 
   describe('when hitting the service/metrics endpoint with a non-existing serviceID', function () {
-    const serviceID = "noexisting/service:version";
+    const serviceID = 'noexisting/service:version';
     hookServiceMetrics(serviceID);
 
     it('returns 404 status code', function () {
@@ -41,7 +41,7 @@ describe('Backend service metrics endpoint', function () {
   });
 
   describe('when hitting the service/metrics endpoint with an existing serviceID', function () {
-    const serviceID = "harmony/query-cmr:latest";
+    const serviceID = 'harmony/query-cmr:latest';
     hookServiceMetrics(serviceID);
 
     it('returns 200 status code', function () {
@@ -53,7 +53,7 @@ describe('Backend service metrics endpoint', function () {
     });
 
     it('returns expected message', function () {
-      expect(JSON.stringify(this.res.body)).to.equal(JSON.stringify({availableWorkItems: 0}));
+      expect(JSON.stringify(this.res.body)).to.equal(JSON.stringify({ availableWorkItems: 0 }));
     });
   });
 
