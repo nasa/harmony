@@ -422,3 +422,29 @@ export async function workItemCountForJobID(
   }
   return workItemCount;
 }
+
+/**
+ *  Returns the number of existing work items for a specific service id and given statuses
+ * @param tx - the transaction to use for querying
+ * @param serviceID - the ID of the service
+ */
+export async function workItemCountByServiceIDAndStatus(
+  tx: Transaction,
+  serviceID: string,
+  statuses: WorkItemStatus[],
+): Promise<number> {
+  const count = await tx(WorkItem.table)
+    .select()
+    .count('id')
+    .where({ serviceID })
+    .whereIn(`${WorkItem.table}.status`, statuses)
+    ;
+
+  let workItemCount;
+  if (db.client.config.client === 'pg') {
+    workItemCount = Number(count[0].count);
+  } else {
+    workItemCount = Number(count[0]['count(`id`)']);
+  }
+  return workItemCount;
+}
