@@ -8,6 +8,8 @@ import WorkItem, { WorkItemStatus, WorkItemRecord } from '../../../../app/models
 import logger from '../../../../app/util/log';
 import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
+import path from 'path';
+import { promises as fs } from 'fs';
 
 const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
 const activeSocketKeepAlive = 6_000;
@@ -18,7 +20,9 @@ let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
 
-// retry twice for tests and 1200 (2 mintues) for real
+const LOCKFILE_DIR = '/tmp';
+
+// retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 
 const keepaliveAgent = new Agent({
@@ -95,7 +99,23 @@ async function _doWork(
  * @param repeat - if true the function will loop forever (added for testing purposes)
  */
 async function _pullAndDoWork(repeat = true): Promise<void> {
+  const workingFilePath = path.join(LOCKFILE_DIR, 'WORKING');
   try {
+    // write out the WORKING file to prevent pod termination while working
+    await fs.writeFile(workingFilePath, '1');
+
+    // check to see if we are terminating
+    const terminationFilePath = path.join(LOCKFILE_DIR, 'TERMINATING');
+    try {
+      await fs.access(terminationFilePath);
+      // TERMINATING file exists so PreStop handler is requesting termination
+      logger.debug('RECEIVED TERMINATION REQUEST');
+      // removing the WORKING file is done in the `finally` block at the end of this function
+      return;
+    } catch {
+      // expected if file does not exist
+    }
+
     pullCounter += 1;
     if (pullCounter === pullLogPeriod) {
       logger.debug('Polling for work');
@@ -151,6 +171,13 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
   } catch (e) {
     logger.error(e.message);
   } finally {
+    // remove the WORKING file
+    try {
+      await fs.unlink(workingFilePath);
+    } catch {
+      // log this, but don't let it stop things
+      logger.error('Failed to delete /tmp/WORKING');
+    }
     if (repeat) {
       setTimeout(_pullAndDoWork, 500);
     }

@@ -10,6 +10,7 @@ import { hookGetWorkRequest } from './helpers/pull-worker';
 import * as pullWorker from '../app/workers/pull-worker';
 import PullWorker from '../app/workers/pull-worker';
 import * as serviceRunner from '../app/service/service-runner';
+import { existsSync, writeFileSync } from 'fs';
 
 const {
   _pullWork,
@@ -171,7 +172,28 @@ describe('Pull Worker', async function () {
     });
   });
 
-  describe('_pullAndDoWork()', async function () {
+  describe('_pullAndDoWork()', function () {
+
+    describe('when the pod is terminating', async function () {
+      let pullWorkSpy: sinon.SinonSpy;
+      let doWorkSpy: sinon.SinonSpy;
+      beforeEach(function () {
+        pullWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_pullWork');
+        doWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_doWork');
+        writeFileSync('/tmp/TERMINATING', '1');
+      });
+      afterEach(function () {
+        pullWorkSpy.restore();
+        doWorkSpy.restore();
+      });
+
+      it('does not call pullWork or doWork', async function () {
+        await _pullAndDoWork(false);
+        expect(pullWorkSpy.called).to.be.false;
+        expect(doWorkSpy.called).to.be.false;
+      });
+    });
+
     describe('when _pullWork throws an exception', async function () {
       let pullStub: SinonStub;
       let doWorkStub: SinonStub;
@@ -191,6 +213,11 @@ describe('Pull Worker', async function () {
         mock.restore();
       });
 
+      it('deletes the WORKING lock file', async function () {
+        await _pullAndDoWork(false);
+        expect(existsSync('/tmp/WORKING')).to.be.false;
+      });
+
       it('does not throw', async function () {
         const call = (): Promise<void> => _pullAndDoWork(false);
         expect(call).to.not.throw();
@@ -205,15 +232,21 @@ describe('Pull Worker', async function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function (): Promise<{ item?: WorkItem; status?: number; error?: string }> {
           return {};
         });
-        doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(async function (): Promise<WorkItem> {
+        doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(function (): Promise<WorkItem> {
           throw new Error('something bad happened');
         });
+
         mock.onPut().reply(200, 'OK');
       });
       this.afterEach(function () {
         pullStub.restore();
         doWorkStub.restore();
         mock.restore();
+      });
+
+      it('deletes the WORKING lock file', async function () {
+        await _pullAndDoWork(false);
+        expect(existsSync('/tmp/WORKING')).to.be.false;
       });
 
       it('does not throw', async function () {
