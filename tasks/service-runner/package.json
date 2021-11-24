@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "ts-node app/server.ts",
-    "test": "eslint --ext .ts . && nyc mocha && npm audit --production",
+    "test": "eslint --ext .ts . && nyc mocha && npm audit --audit-level=high --production",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",

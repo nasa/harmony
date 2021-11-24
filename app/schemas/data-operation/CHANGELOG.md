@@ -1,3 +1,7 @@
+## [0.12.0] - 2021-11-23
+### Added
+- variable.relatedUrls - Related URLs for a variable as provided by CMR.
+
 ## [0.11.0] - UNMERGED
 ### Changed
 - DataOperation.sources[].granules are now optional

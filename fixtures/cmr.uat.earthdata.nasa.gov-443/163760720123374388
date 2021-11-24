@@ -1,0 +1,29 @@
+POST /search/variables.umm_json_v1_8
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1234599990-ASF\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1234600037-ASF\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1234600145-ASF\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1234600147-ASF\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2000\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.8; charset=utf-8
+content-length: 3497
+connection: close
+date: Mon, 22 Nov 2021 18:53:19 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 8bc1001b-5e41-4cbc-b9c0-1bd057186661
+strict-transport-security: max-age=31536000
+cmr-search-after: ["science/grids/data/unwrappedphase","ASF","science/grids/data/unwrappedPhase","ASF"]
+cmr-hits: 4
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 432
+x-request-id: 8bc1001b-5e41-4cbc-b9c0-1bd057186661
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 4f2fdf2ba20f9ce71aed4e27ec6e9ce3.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: GO2N2mjxDXZ2jN8hb7saBeiR9BCLDkNs4Olmhq9k2T7PKT6ojCeLTA==
+
+{"hits":4,"took":431,"items":[{"meta":{"revision-id":66,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"ASF","user-id":"cirrusasf","native-id":"amplitude","concept-id":"V1234599990-ASF","revision-date":"2020-08-11T23:40:57.404Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"float32","Offset":0,"Scale":1,"Sets":[{"Name":"data","Type":"data","Size":4,"Index":4}],"Dimensions":[{"Name":"latitude","Size":2166,"Type":"LATITUDE_DIMENSION"},{"Name":"longitude","Size":4061,"Type":"LONGITUDE_DIMENSION"}],"Definition":"2D Amplitude of IFG","Name":"science/grids/data/amplitude","ValidRanges":[{"Min":0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8","Name":"UMM-Var","Version":"1.8"},"Units":"watt","LongName":"Amplitude"},"associations":{"collections":[{"concept-id":"C1225776654-ASF"}]}},{"meta":{"revision-id":52,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"ASF","user-id":"cirrusasf","native-id":"coherence","concept-id":"V1234600037-ASF","revision-date":"2020-08-11T23:41:00.319Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"float32","Offset":0,"Scale":1,"Sets":[{"Name":"data","Type":"data","Size":4,"Index":2}],"Dimensions":[{"Name":"latitude","Size":2166,"Type":"LATITUDE_DIMENSION"},{"Name":"longitude","Size":4061,"Type":"LONGITUDE_DIMENSION"}],"Definition":"2D Coherence [0-1] from filtered IFG","Name":"science/grids/data/coherence","ValidRanges":[{"Min":0,"Max":1}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8","Name":"UMM-Var","Version":"1.8"},"LongName":"Coherence"},"associations":{"collections":[{"concept-id":"C1225776654-ASF"}]}},{"meta":{"revision-id":51,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"ASF","user-id":"cirrusasf","native-id":"connectedComponents","concept-id":"V1234600145-ASF","revision-date":"2020-08-11T23:41:02.682Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"float32","Offset":0,"Scale":1,"Sets":[{"Name":"data","Type":"data","Size":4,"Index":3}],"Dimensions":[{"Name":"latitude","Size":2166,"Type":"LATITUDE_DIMENSION"},{"Name":"longitude","Size":4061,"Type":"LONGITUDE_DIMENSION"}],"Definition":"2D Connected component file","Name":"science/grids/data/connectedComponents","ValidRanges":[{"Min":0,"Max":20}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8","Name":"UMM-Var","Version":"1.8"},"LongName":"Snaphu connected components"},"associations":{"collections":[{"concept-id":"C1225776654-ASF"}]}},{"meta":{"revision-id":50,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"ASF","user-id":"cirrusasf","native-id":"unwrappedPhase","concept-id":"V1234600147-ASF","revision-date":"2020-08-11T23:41:05.456Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"float32","Offset":0,"Scale":1,"Sets":[{"Name":"data","Type":"data","Size":4,"Index":1}],"Dimensions":[{"Name":"latitude","Size":2166,"Type":"LATITUDE_DIMENSION"},{"Name":"longitude","Size":4061,"Type":"LONGITUDE_DIMENSION"}],"Definition":"2D Filtered unwrapped IFG geocoded","Name":"science/grids/data/unwrappedPhase","MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8","Name":"UMM-Var","Version":"1.8"},"Units":"rad","LongName":"Unwrapped Phase"},"associations":{"collections":[{"concept-id":"C1225776654-ASF"}]}}]}
