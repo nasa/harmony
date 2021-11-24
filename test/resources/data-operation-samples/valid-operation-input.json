@@ -8,7 +8,15 @@
       "variables": [{
         "id": "V1233801717-EEDTEST",
         "name": "alpha_var",
-        "fullPath": "data/colors/red_var"
+        "fullPath": "data/colors/red_var",
+        "relatedUrls": [
+          {
+            "description" : "This URL points to some text data.",
+            "urlContentType" : "DistributionURL",
+            "type" : "GET DATA" ,
+            "url" : "http://example.com/file649.txt"
+          }    
+        ]
       }],
       "granules": [
         {
@@ -75,5 +83,5 @@
     "start": "1999-01-01T10:00:00.000Z",
     "end": "2020-02-20T15:00:00.000Z"
   },
-  "version": "0.10.0"
+  "version": "0.12.0"
 }

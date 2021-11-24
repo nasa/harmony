@@ -97,13 +97,18 @@ export interface CmrUmmVariable {
   umm: {
     Name: string;
     LongName?: string;
+    RelatedURLs?: CmrRelatedUrl[]
   };
 }
 
-export interface CmrVariable {
-  concept_id: string;
-  name: string;
-  long_name: string;
+export interface CmrRelatedUrl {
+  URL: string;
+  URLContentType: string;
+  Type: string;
+  Subtype?: string;
+  Description?: string;
+  Format?: string;
+  MimeType?: string;
 }
 
 export interface CmrQuery
@@ -345,7 +350,7 @@ async function _cmrPost(
 async function queryVariables(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVariable>> {
-  const variablesResponse = await _cmrPost('/search/variables.umm_json_v1_7', query, token) as CmrVariablesResponse;
+  const variablesResponse = await _cmrPost('/search/variables.umm_json_v1_8', query, token) as CmrVariablesResponse;
   return variablesResponse.data.items;
 }
 
