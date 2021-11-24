@@ -5,6 +5,7 @@ import { getServiceConfigs } from '../models/services';
 import { ServiceConfig } from '../models/services/base-service';
 import { ArgoServiceParams } from '../models/services/argo-service';
 import db from '../util/db';
+import { NotFoundError, RequestValidationError } from '../util/errors';
 
 /**
  * Express.js handler that returns the number of work items in the 'READY' state for the given serviceID
@@ -24,13 +25,13 @@ export async function getReadyWorkItemCountForServiceID(
   });
 
   const serviceID = req.query.serviceID as string;
-  logger.info(`Get job status for job ${serviceID} in READY state`);
+  logger.info(`Get work item count for service ${serviceID} in READY state`);
 
   // Return 400 if serviceID not provided in query
   if (!serviceID) {
     const err_message = 'required parameter "serviceID" was not provided';
     logger.error(err_message);
-    res.status(400).send(err_message);
+    next(new RequestValidationError(err_message));
     return;
   }
 
@@ -41,7 +42,7 @@ export async function getReadyWorkItemCountForServiceID(
   if (serviceNameList.indexOf(serviceID) === -1) {
     const err_message = `service [${serviceID}] does not exist`; 
     logger.error(err_message);
-    res.status(404).send(err_message);
+    next(new NotFoundError(err_message));
     return;
   }
 

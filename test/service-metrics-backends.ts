@@ -14,12 +14,12 @@ describe('Backend service metrics endpoint', function () {
       expect(this.res.statusCode).to.equal(400);
     });
 
-    it('returns text content', function () {
-      expect(this.res.get('Content-Type')).to.equal('text/html; charset=utf-8');
+    it('returns JSON content', function () {
+      expect(this.res.get('Content-Type')).to.equal('application/json; charset=utf-8');
     });
 
     it('returns expected message', function () {
-      expect(this.res.text).to.equal('required parameter "serviceID" was not provided');
+      expect(this.res.text).to.equal('{"code":"harmony.RequestValidationError","description":"Error: required parameter \\"serviceID\\" was not provided"}');
     });
   });
 
@@ -31,12 +31,12 @@ describe('Backend service metrics endpoint', function () {
       expect(this.res.statusCode).to.equal(404);
     });
 
-    it('returns text content', function () {
-      expect(this.res.get('Content-Type')).to.equal('text/html; charset=utf-8');
+    it('returns JSON content', function () {
+      expect(this.res.get('Content-Type')).to.equal('application/json; charset=utf-8');
     });
 
     it('returns expected message', function () {
-      expect(this.res.text).to.equal(`service [${serviceID}] does not exist`);
+      expect(this.res.text).to.equal(`{"code":"harmony.NotFoundError","description":"Error: service [${serviceID}] does not exist"}`);
     });
   });
 

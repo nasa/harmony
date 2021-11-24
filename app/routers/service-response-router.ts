@@ -26,8 +26,10 @@ export default function router(): Router {
   result.use((err, _req, _res, _next) => {
     if (err) {
       log.error(err);
+      _next(err);
     } else {
       log.error('404');
+      _next();
     }
   });
   return result;
