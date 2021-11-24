@@ -49,7 +49,7 @@ export async function getReadyWorkItemCountForServiceID(
   try {
     let workItemCount;
     await db.transaction(async (tx) => {
-      (workItemCount = await workItemCountByServiceIDAndStatus(tx, serviceID, [WorkItemStatus.READY]));
+      workItemCount = await workItemCountByServiceIDAndStatus(tx, serviceID, [WorkItemStatus.READY]);
     });
     if (!workItemCount) workItemCount = 0;
     const response = {
