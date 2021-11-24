@@ -5,7 +5,7 @@ import { truncateAll } from './db';
 import { parseSchemaFile } from './data-operation';
 import DataOperation from '../../app/models/data-operation';
 
-export const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json')).serialize('0.11.0');
+export const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json')).serialize('0.12.0');
 
 const exampleProps = {
   jobID: '1',

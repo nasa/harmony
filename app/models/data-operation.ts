@@ -38,6 +38,22 @@ function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
     {
+      version: '0.12.0',
+      schema: readSchema('0.12.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        revertedModel.sources.forEach((s) => {
+          if (s.variables) {
+            s.variables.forEach((v) => {
+              delete v.relatedUrls; // eslint-disable-line no-param-reassign
+            });
+          }
+        });
+
+        return revertedModel;
+      },
+    },
+    {
       version: '0.11.0',
       schema: readSchema('0.11.0'),
       down: (model): unknown => model,
@@ -146,6 +162,18 @@ function validator(): Ajv {
 export interface HarmonyVariable {
   id: string;
   name: string;
+  fullPath: string;
+  relatedUrls?: HarmonyRelatedUrl[];
+}
+
+export interface HarmonyRelatedUrl {
+  url: string;
+  urlContentType: string;
+  type: string;
+  subtype?: string;
+  description?: string;
+  format?: string;
+  mimeType?: string;
 }
 
 export interface TemporalRange {
@@ -306,11 +334,28 @@ export default class DataOperation {
     vars?: CmrUmmVariable[],
     granules?: HarmonyGranule[],
   ): void {
-    const variables = vars ? vars.map(({ umm, meta }) => ({
-      id: meta['concept-id'],
-      name: umm.Name,
-      fullPath: umm.Name,
-    })) : undefined;
+    const variables = vars ? vars.map(({ umm, meta }) => {
+      const schemaVar: HarmonyVariable = {
+        id: meta['concept-id'],
+        name: umm.Name,
+        fullPath: umm.Name,
+      };
+      if (umm.RelatedURLs) {
+        schemaVar.relatedUrls = umm.RelatedURLs
+          .map((relatedUrl) => {
+            return {
+              url: relatedUrl.URL,
+              urlContentType: relatedUrl.URLContentType,
+              type: relatedUrl.Type,
+              subtype: relatedUrl.Subtype,
+              description: relatedUrl.Description,
+              format: relatedUrl.Format,
+              mimeType:relatedUrl.MimeType,
+            };
+          });
+      }
+      return schemaVar;
+    }) : undefined;
     this.model.sources.push({ collection, variables, granules });
   }
 

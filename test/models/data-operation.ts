@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { CURRENT_SCHEMA_VERSION, parseSchemaFile, versions } from '../helpers/data-operation';
 import DataOperation from '../../app/models/data-operation';
+import { CmrRelatedUrl } from '../../app/util/cmr';
 
 const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 // bbox has one too many numbers
@@ -241,9 +242,40 @@ describe('DataOperation', () => {
       url: 'https://example.com/foo',
       temporal: {},
     }];
+    const relatedUrls = [
+      {
+        Description: 'This related URL points to a color map',
+        URLContentType: 'VisualizationURL',
+        Type: 'Color Map',
+        Subtype: 'Harmony GDAL',
+        URL: 'https://example.com/colormap123.txt',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      },
+      {
+        Description: 'This related URL points to some data',
+        URLContentType: 'DistributionURL',
+        Type: 'GET DATA',
+        Subtype: 'EOSDIS DATA POOL',
+        URL: 'https://example.com/colormap123.nc4',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      },
+      {
+        Description: 'Related URL',
+        Subtype: 'EOSDIS DATA POOL',
+        URL: 'https://example.com/colormap123.nc4',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      } as CmrRelatedUrl,
+    ];
     const variables = [{
       meta: { 'concept-id': 'V123-BAR' },
-      umm: { Name: 'the/nested/name', LongName: 'A long name' },
+      umm: { 
+        Name: 'the/nested/name', 
+        LongName: 'A long name',
+        RelatedURLs: relatedUrls,
+      },
     }];
 
     describe('when adding a source', () => {
@@ -268,6 +300,43 @@ describe('DataOperation', () => {
 
       it('uses the variable name as the fullPath', () => {
         expect(operation.model.sources[0].variables[0].fullPath).to.equal('the/nested/name');
+      });
+
+      it('sets the Color Map related URL', () => {
+        expect(operation.model.sources[0].variables[0].relatedUrls[0]).to.deep.equal(
+          {
+            description: 'This related URL points to a color map',
+            urlContentType: 'VisualizationURL',
+            type: 'Color Map',
+            subtype: 'Harmony GDAL',
+            url: 'https://example.com/colormap123.txt',
+            mimeType: 'text/plain',
+            format: 'ASCII',
+          },
+        );
+        expect(operation.model.sources[0].variables[0].relatedUrls[1]).to.deep.equal(
+          {
+            description: 'This related URL points to some data',
+            urlContentType: 'DistributionURL',
+            type: 'GET DATA',
+            subtype: 'EOSDIS DATA POOL',
+            url: 'https://example.com/colormap123.nc4',
+            mimeType: 'text/plain',
+            format: 'ASCII',
+          },
+        );
+        expect(operation.model.sources[0].variables[0].relatedUrls[2]).to.deep.equal(
+          {
+            description: 'Related URL',
+            urlContentType: undefined,
+            type: undefined,
+            subtype: 'EOSDIS DATA POOL',
+            url: 'https://example.com/colormap123.nc4',
+            mimeType: 'text/plain',
+            format: 'ASCII',
+          },
+        );
+        expect(operation.model.sources[0].variables[0].relatedUrls.length).length.to.equal(3);
       });
     });
   });

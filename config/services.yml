@@ -25,7 +25,7 @@ x-argo-config: &default-argo-config
 
 https://cmr.earthdata.nasa.gov:
   - name: asfdataservices/gdal-subsetter
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -64,7 +64,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
 
   - name: harmony/netcdf-to-zarr
-    data_operation_version: '0.10.0'
+    data_operation_version: '0.12.0'
     batch_size: 20
     type:
       <<: *default-argo-config
@@ -182,7 +182,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
 
   - name: harmony/service-example
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -212,7 +212,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -260,7 +260,7 @@ https://cmr.earthdata.nasa.gov:
 
   - name: sds/HOSS
     # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -293,7 +293,7 @@ https://cmr.earthdata.nasa.gov:
 https://cmr.uat.earthdata.nasa.gov:
 
   - name: asfdataservices/gdal-subsetter
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -367,7 +367,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
 
   - name: harmony/service-example
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     batch_size: 10
     type:
       <<: *default-argo-config
@@ -399,7 +399,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -460,7 +460,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
   - name: podaac/concise
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -488,7 +488,7 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -523,7 +523,7 @@ https://cmr.uat.earthdata.nasa.gov:
           exists: ['concatenate']
 
   - name: sds/swot-reproject
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     batch_size: 1
     type:
       <<: *default-argo-config
@@ -557,7 +557,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: sds/variable-subsetter
     # The Variable Subsetter provides _only_ variable subsetting
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -587,7 +587,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: sds/HOSS
     # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -617,7 +617,7 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['variableSubset', 'spatialSubset']
 
   - name: sds/maskfill
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -641,7 +641,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${SDS_MASKFILL_IMAGE}
 
   - name: sds/trajectory-subsetter
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     type:
       <<: *default-argo-config
       params:
@@ -673,7 +673,7 @@ https://cmr.uat.earthdata.nasa.gov:
   # the frontend callback server.
   # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
   - name: harmony/example
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     type:
       name: http
@@ -695,7 +695,7 @@ https://cmr.uat.earthdata.nasa.gov:
   # This is an example service and backend from example/http-backend.js mounted by
   # the frontend callback server.
   - name: harmony/chaining-example
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     batch_size: 2000
     type:
       name: argo
@@ -722,7 +722,7 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: true
 
   - name: harmony/netcdf-to-zarr
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     batch_size: 20
     type:
       <<: *default-argo-config
@@ -804,7 +804,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   # CHAINED SERVICES BELOW HERE
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     batch_size: 20
     type:
       <<: *default-argo-config
@@ -844,7 +844,7 @@ https://cmr.uat.earthdata.nasa.gov:
           format: ['application/x-zarr']
 
   - name: harmony/swot-repr-netcdf-to-zarr
-    data_operation_version: '0.11.0'
+    data_operation_version: '0.12.0'
     batch_size: 1
     type:
       <<: *default-argo-config
