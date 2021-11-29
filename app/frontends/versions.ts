@@ -1,7 +1,8 @@
 import { Response } from 'express';
-import { defaultContainerRegistry, ECR } from 'util/container-registry';
 import { Logger } from 'winston';
-import { toISODateTime } from 'util/date';
+import { inEcr, sanitizeImage } from '../util/string';
+import { defaultContainerRegistry, ECR } from '../util/container-registry';
+import { toISODateTime } from '../util/date';
 import { getServiceConfigs } from '../models/services';
 import { ServiceConfig } from '../models/services/base-service';
 import HarmonyRequest from '../models/harmony-request';
@@ -15,29 +16,6 @@ interface ServiceVersion {
   imagePullPolicy: string;
   imageDigest?: string;
   lastUpdated?: string;
-}
-
-/**
- * Removes AWS account ECR information or *.earthdata.nasa.gov from the image name
- * since we may not want to expose that information.
- *
- * @param image - The image name to sanitize
- * @returns the sanitized image name
- */
-function sanitizeImage(image: string): string {
-  return image
-    .replace(/.*amazonaws.com\//, '')
-    .replace(/.*earthdata.nasa.gov\//, '');
-}
-
-/**
- * Returns true if the image repository for the given image is ECR
- *
- * @param image - the full image string
- * @returns true if the image is in ECR and false otherwise
- */
-function inECR(image: string): boolean {
-  return /.*amazonaws.com\//.test(image);
 }
 
 /**
@@ -62,7 +40,7 @@ async function getServiceForDisplay(
     imagePullPolicy,
   };
 
-  if (inECR(image)) {
+  if (inEcr(image)) {
     try {
       const { lastUpdated, imageDigest } = await ecr.describeImage(imageName, imageTag);
       serviceInfo.lastUpdated = toISODateTime(lastUpdated);

@@ -1,10 +1,10 @@
 import { describe, it, beforeEach, afterEach, after } from 'mocha';
 import { expect } from 'chai';
 import request from 'supertest';
-import Sinon, { SinonStub } from 'sinon';
-import { Job, JobStatus } from 'models/job';
+import { stub, SinonStub } from 'sinon';
 import { HTTPError } from 'superagent';
-import JobLink from 'models/job-link';
+import { Job, JobStatus } from '../app/models/job';
+import JobLink from '../app/models/job-link';
 import { truncateAll } from './helpers/db';
 import hookServersStartStop from './helpers/servers';
 import { rangesetRequest } from './helpers/ogc-api-coverages';
@@ -24,7 +24,7 @@ describe('Backend Callbacks', function () {
 
   beforeEach(function () {
     // Avoid signing objects, which mock-aws-s3 cannot do the way we need it to
-    Sinon.stub(S3ObjectStore.prototype, 'signGetObject')
+    stub(S3ObjectStore.prototype, 'signGetObject')
       .callsFake(async (s3Uri) => `signed+${s3Uri}`);
   });
 

@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 import { before, after, beforeEach, afterEach } from 'mocha';
-import sinon, { SinonStub } from 'sinon';
+import { stub, SinonStub } from 'sinon';
 import request from 'superagent';
-import BaseService, { ServiceConfig } from 'models/services/base-service';
-import * as services from 'models/services/index';
 import { Logger } from 'winston';
-import { CallbackQuery } from 'backends/service-response';
+import { CallbackQuery } from '../../app/backends/service-response';
+import BaseService, { ServiceConfig } from '../../app/models/services/base-service';
+import * as services from '../../app/models/services/index';
 import DataOperation from '../../app/models/data-operation';
 import InvocationResult from '../../app/models/services/invocation-result';
 
@@ -110,7 +110,7 @@ export default class StubService extends BaseService<void> {
   static beforeHook(callbackOptions: object = { params: { redirect: 'http://example.com' } }): () => void {
     return function (): void {
       const ctx = this;
-      sinon.stub(services, 'buildService')
+      stub(services, 'buildService')
         .callsFake((config, operation) => {
           ctx.service = new StubService(callbackOptions, operation, config.name);
           return ctx.service;
@@ -167,7 +167,7 @@ export function hookServices(serviceConfigs: ServiceConfig<unknown>[]): void {
   let stubService;
 
   before(function () {
-    stubService = sinon.stub(services, 'getServiceConfigs')
+    stubService = stub(services, 'getServiceConfigs')
       .returns(serviceConfigs);
   });
 

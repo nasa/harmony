@@ -1,10 +1,10 @@
 import { describe, it, beforeEach } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { Job, JobRecord, JobStatus } from 'models/job';
 import MockDate from 'mockdate';
-import { buildJob } from 'test/helpers/jobs';
-import JobLink from 'models/job-link';
+import { buildJob } from '../helpers/jobs';
+import { Job, JobRecord, JobStatus } from '../../app/models/job';
+import JobLink from '../../app/models/job-link';
 import { hookTransactionEach } from '../helpers/db';
 
 const exampleProps = {

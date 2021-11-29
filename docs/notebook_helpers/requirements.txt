@@ -1,3 +1,4 @@
+python-dateutil ~= 2.7.5
 requests >= 2.23.0
 CacheControl >= 0.12.6
 matplotlib >= 3.2.1

@@ -2,12 +2,12 @@ import * as mustache from 'mustache';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
-import DataOperation from 'models/data-operation';
-import * as urlUtil from 'util/url';
-import { keysToLowerCase } from 'util/object';
-import { RequestValidationError, NotFoundError } from 'util/errors';
-import * as services from 'models/services';
 import { NextFunction } from 'express';
+import DataOperation from '../models/data-operation';
+import * as urlUtil from '../util/url';
+import { keysToLowerCase } from '../util/object';
+import { RequestValidationError, NotFoundError } from '../util/errors';
+import * as services from '../models/services';
 import { createDecrypter, createEncrypter } from '../util/crypto';
 import parseMultiValueParameter from '../util/parameter-parsing';
 import parseCRS from '../util/crs';
@@ -279,7 +279,7 @@ export default async function wmsFrontend(req, res, next: NextFunction): Promise
     }
     if (wmsRequest === 'GetMap') {
       validateParamIn(query, 'version', ['1.3.0']);
-      return await getMap(req, res, next);
+      return getMap(req, res, next);
     }
     throw new Error(`Unrecognized operation: ${wmsRequest}`);
   } catch (e) {

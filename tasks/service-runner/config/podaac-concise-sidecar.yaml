@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podaac-concise
+  labels:
+    name: podaac-concise
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: podaac-concise
+  template:
+    metadata:
+      labels:
+        name: podaac-concise
+    spec:
+      terminationGracePeriodSeconds: $DEFAULT_ARGO_POD_TIMEOUT_SECS
+      containers:
+        - name: worker
+          imagePullPolicy: $PODAAC_CONCISE_IMAGE_PULL_POLICY
+          image: $PODAAC_CONCISE_IMAGE
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
+          resources:
+            limits:
+              memory: $PODAAC_CONCISE_LIMITS_MEMORY
+            requests:
+              memory: $PODAAC_CONCISE_REQUESTS_MEMORY
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          env:
+            - name: TEXT_LOGGER
+              value: "false"
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+            - mountPath: /tmp
+              name: ephemeral-volume
+          command: ["/bin/sh", "-c"]
+          args:
+            - trap "exit 0" TERM;
+              while true; do
+                date;
+                sleep 10;
+              done
+        - name: manager
+          imagePullPolicy: IfNotPresent
+          image: $SERVICE_RUNNER_IMAGE
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
+          resources:
+            limits:
+              memory: $SERVICE_RUNNER_LIMITS_MEMORY
+            requests:
+              memory: $SERVICE_RUNNER_REQUESTS_MEMORY
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          env:
+          - name: BACKEND_HOST
+            value: $BACKEND_HOST
+          - name: BACKEND_PORT
+            value: "$BACKEND_PORT"
+          - name: HARMONY_SERVICE
+            value: $PODAAC_CONCISE_IMAGE
+          - name: INVOCATION_ARGS
+            value: |-
+              concise_harmony
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+            - mountPath: /tmp
+              name: ephemeral-volume
+      volumes:
+      - name: test-volume
+        hostPath:
+          # directory location on host
+          path: $HOST_VOLUME_PATH
+          # this field is optional
+          type: DirectoryOrCreate
+      - name: ephemeral-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podaac-concise
+spec:
+  ports:
+    - name: frontend
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    name: podaac-concise
+  type: ClusterIP

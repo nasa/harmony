@@ -1,0 +1,28 @@
+#!/bin/bash
+# create back end services for Harmony
+
+env_save=$(export -p)
+set -a
+source "env-defaults"
+source ".env"
+set +a
+eval "$env_save"
+
+if [[ -z "${HOST_VOLUME_PATH}" ]]; then
+  echo "HOST_VOLUME_PATH must be set before running this script"
+  exit 1
+fi
+
+. ./bin/create-k8s-config-maps-and-secrets
+
+# for file in tasks/service-runner/config/*.yaml
+for service in ${LOCALLY_DEPLOYED_SERVICES//,/ } query-cmr
+do
+  file="tasks/service-runner/config/${service}-sidecar.yaml"
+  if [ ! -f "$file" ]; then
+    echo "Invalid LOCALLY_DEPLOYED_SERVICES environment variable. $file was not found."
+    exit 1
+  fi
+  echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
+  envsubst < $file | kubectl apply -f - -n argo
+done

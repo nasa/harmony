@@ -1,10 +1,10 @@
-import DataOperation from 'models/data-operation';
 import { Response, NextFunction } from 'express';
+import DataOperation from '../../models/data-operation';
 import { keysToLowerCase } from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import wrap from '../../util/array';
 import parseVariables from './util/variable-parsing';
-import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
+import { parseBoolean, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
 import { parseAcceptHeader } from '../../util/content-negotiation';
 import parseMultiValueParameter from '../../util/parameter-parsing';
 import HarmonyRequest from '../../models/harmony-request';
@@ -32,6 +32,16 @@ export default function getCoverageRangeset(
   const encrypter = createEncrypter(env.sharedSecretKey);
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(null, encrypter, decrypter);
+
+  try {
+    operation.shouldConcatenate = parseBoolean(query.concatenate);
+  } catch (e) {
+    if (e instanceof ParameterParseError) {
+      // Turn parsing exceptions into 400 errors pinpointing the source parameter
+      throw new RequestValidationError(`query parameter "concatenate" ${e.message}`);
+    }
+    throw e;
+  }
 
   if (query.format) {
     operation.outputFormat = query.format;

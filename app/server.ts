@@ -5,25 +5,30 @@ import expressWinston from 'express-winston';
 import * as path from 'path';
 import favicon from 'serve-favicon';
 import { promisify } from 'util';
-import errorHandler from 'middleware/error-handler';
-import router, { RouterConfig } from 'routers/router';
-import RequestContext from 'models/request-context';
 import { Server } from 'http';
-import HarmonyRequest from 'models/harmony-request';
 import { Logger } from 'winston';
+import errorHandler from './middleware/error-handler';
+import logForRoutes from './middleware/log-for-routes';
+import router, { RouterConfig } from './routers/router';
+import RequestContext from './models/request-context';
+import HarmonyRequest from './models/harmony-request';
 import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/service-response-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import WorkflowTerminationListener from './workers/workflow-termination-listener';
 import JobReaper from './workers/job-reaper';
+import WorkReaper from './workers/work-reaper';
+import WorkFailer from './workers/work-failer';
+import cmrCollectionReader from './middleware/cmr-collection-reader';
 
 /**
  * Returns middleware to add a request specific logger
  *
  * @param appLogger - Request specific application logger
+ * @param ignorePaths - Don't log the request url and method if the req.path matches these patterns
  */
-function addRequestLogger(appLogger: Logger): RequestHandler {
+function addRequestLogger(appLogger: Logger, ignorePaths: RegExp[] = []): RequestHandler {
   const requestFilter = (req, propName): unknown => {
     if (propName === 'headers') {
       return { ...req[propName], cookie: '<redacted>' };
@@ -34,22 +39,22 @@ function addRequestLogger(appLogger: Logger): RequestHandler {
     winstonInstance: appLogger,
     requestFilter,
     dynamicMeta(req: HarmonyRequest) { return { requestId: req.context.id }; },
+    ignoreRoute(req) { return ignorePaths.some((p) => req.path.match(p)); },
   });
 }
 
 /**
  * Returns middleware to set a requestID for a request if the request does not already
- * have one set.
+ * have one set. Also adds requestUrl to the logger info object.
  *
  * @param appLogger - Request specific application logger
- * @param appName - The name of the listener - either frontend or backend
  */
-function addRequestId(appLogger: Logger, appName: string): RequestHandler {
+function addRequestId(appLogger: Logger): RequestHandler {
   return (req: HarmonyRequest, res: Response, next: NextFunction): void => {
     const requestId = req.context?.id || uuid();
+    const requestUrl = req.url;
     const context = new RequestContext(requestId);
-    context.logger = appLogger.child({ requestId });
-    context.logger.info(`timing.${appName}-request.start`);
+    context.logger = appLogger.child({ requestId, requestUrl });
     req.context = context;
     next();
   };
@@ -75,10 +80,17 @@ function buildBackendServer(port: number): Server {
   const app = express();
 
   app.use('/service/:requestId/*', setRequestId);
-  app.use(addRequestId(appLogger, 'backend'));
-  app.use(addRequestLogger(appLogger));
+  app.use(addRequestId(appLogger));
 
-  app.use(favicon(path.join(__dirname, '..', 'public', 'favicon.ico')));
+  // we don't need express-winston to log every service work polling request
+  const servicePollingRegexp = /^\/service\/work$/;
+  app.use(addRequestLogger(appLogger, [servicePollingRegexp]));
+
+  // currently, only this service response route is timed (for the backend)
+  const serviceResponseRegexp = /^\/service\/[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}\/response$/i;
+  app.use(logForRoutes('timing.backend-request.start', 'allow', [serviceResponseRegexp]));
+
+  app.use(favicon(path.join(__dirname, '..', 'public/assets/images', 'favicon.ico')));
   app.use('/service', serviceResponseRouter());
   app.get('/', ((req, res) => res.send('OK')));
   app.use(errorHandler);
@@ -97,11 +109,13 @@ function buildBackendServer(port: number): Server {
 function buildFrontendServer(port: number, config: RouterConfig): Server {
   const appLogger = logger.child({ application: 'frontend' });
   const app = express();
-
-  app.use(addRequestId(appLogger, 'frontend'));
+  app.use(addRequestId(appLogger));
   app.use(addRequestLogger(appLogger));
 
-  app.use(favicon(path.join(__dirname, '..', 'public', 'favicon.ico')));
+  // currently, only service requests are timed (for the frontend)
+  app.use(logForRoutes('timing.frontend-request.start', 'allow', [cmrCollectionReader.collectionRegex]));
+
+  app.use(favicon(path.join(__dirname, '..', 'public/assets/images', 'favicon.ico')));
 
   // Setup mustache as a templating engine for HTML views
   app.engine('mustache.html', mustacheExpress());
@@ -139,6 +153,8 @@ export function start(config: Record<string, string>): {
   backend: Server;
   workflowTerminationListener: WorkflowTerminationListener;
   jobReaper: JobReaper;
+  workReaper: WorkReaper;
+  workFailer: WorkFailer;
 } {
   const appPort = +config.PORT;
   const backendPort = +config.BACKEND_PORT;
@@ -162,16 +178,34 @@ export function start(config: Record<string, string>): {
     listener.start();
   }
 
-  let reaper;
+  let jobReaper;
   if (config.startJobReaper !== 'false') {
     const reaperConfig = {
       logger: logger.child({ application: 'workflow-events' }),
     };
-    reaper = new JobReaper(reaperConfig);
-    reaper.start();
+    jobReaper = new JobReaper(reaperConfig);
+    jobReaper.start();
   }
 
-  return { frontend, backend, workflowTerminationListener: listener, jobReaper: reaper };
+  let workReaper;
+  if (config.startWorkReaper !== 'false') {
+    const reaperConfig = {
+      logger: logger.child({ application: 'work-reaper' }),
+    };
+    workReaper = new WorkReaper(reaperConfig);
+    workReaper.start();
+  }
+
+  let workFailer;
+  if (config.startWorkFailer !== 'false') {
+    const failerConfig = {
+      logger: logger.child({ application: 'work-failer' }),
+    };
+    workFailer = new WorkFailer(failerConfig);
+    workFailer.start();
+  }
+
+  return { frontend, backend, workflowTerminationListener: listener, jobReaper, workReaper, workFailer };
 }
 
 /**
@@ -181,18 +215,21 @@ export function start(config: Record<string, string>): {
  * @param backend - http.Server object as returned by start()
  * @param workflowTerminationListener - listener for workflow termination events
  * @param jobReaper - service that checks for orphan jobs and marks them as canceled
+ * @param workReaper - service that checks for old work items and workflow steps and deletes them
  * @returns A promise that completes when the servers close
  */
 export async function stop({
   frontend,
   backend,
   workflowTerminationListener,
-  jobReaper }): Promise<void> {
+  jobReaper,
+  workReaper }): Promise<void> {
   await Promise.all([
     promisify(frontend.close.bind(frontend))(),
     promisify(backend.close.bind(backend))(),
     workflowTerminationListener?.stop(),
     jobReaper?.stop(),
+    workReaper?.stop(),
   ]);
 }
 

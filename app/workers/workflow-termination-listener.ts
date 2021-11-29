@@ -1,4 +1,4 @@
-import cancelAndSaveJob from 'util/job';
+import cancelAndSaveJob from '../util/job';
 import { WorkflowListener, WorkflowEvent, WorkflowListenerConfig, EventType } from './workflow-listener';
 import { getWorkflowByName } from '../util/workflows';
 

@@ -1,4 +1,4 @@
-import { TemporalRange } from 'models/data-operation';
+import { TemporalRange } from '../../../models/data-operation';
 
 const rangeSeparator = ':';
 const unbounded = '*';
@@ -72,6 +72,21 @@ const dimensionConfig: DimensionConfig = {
  *
  */
 export class ParameterParseError extends Error {}
+
+/**
+ * Helper function for parameters that parses and validates boolean values. A null value  
+ * defaults to false.
+ * 
+ * @param valueStr - the unparsed boolean as it appears in the input
+ * @returns the parsed result
+ * @throws ParameterParserError - if there are errors while parsing
+ */
+export function parseBoolean(valueStr: string): boolean {
+  if (!valueStr) return false;
+  if (valueStr.toLowerCase() === 'true') return true;
+  if (valueStr.toLowerCase() === 'false') return false;
+  throw new ParameterParseError('must be \'false\' or \'true\'');
+}
 
 /**
  * Helper function for subset parameters that parses and validates numeric values

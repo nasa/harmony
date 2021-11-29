@@ -1,9 +1,9 @@
 import { describe } from 'mocha';
 import * as fc from 'fast-check';
-import ArgoService, { ArgoServiceParams } from 'models/services/argo-service';
-import { ServiceConfig } from 'models/services/base-service';
-import DataOperation from 'models/data-operation';
-import sinon from 'sinon';
+import { stub } from 'sinon';
+import ArgoService, { ArgoServiceParams } from '../app/models/services/argo-service';
+import { ServiceConfig } from '../app/models/services/base-service';
+import DataOperation from '../app/models/data-operation';
 import env from '../app/util/env';
 
 describe('ArgoService utility functions property based tests', function () {
@@ -28,9 +28,9 @@ describe('ArgoService utility functions property based tests', function () {
               maxResults: opMaxResults,
             } as DataOperation;
             const service = new ArgoService(config, op);
-            const stub = sinon.stub(env, 'defaultBatchSize').get(() => Number.MAX_SAFE_INTEGER);
+            const stubEnv = stub(env, 'defaultBatchSize').get(() => Number.MAX_SAFE_INTEGER);
             const batchSize = service.chooseBatchSize(maxGranules);
-            stub.restore();
+            stubEnv.restore();
             const maxResults = opMaxResults || Number.MAX_SAFE_INTEGER;
             return batchSize === Math.min(cBatchSizeNorm, maxGranules, maxResults);
           },
@@ -57,9 +57,9 @@ describe('ArgoService utility functions property based tests', function () {
               maxResults: opMaxResults,
             } as DataOperation;
             const service = new ArgoService(config, op);
-            const stub = sinon.stub(env, 'cmrMaxPageSize').get(() => envPageSize);
+            const stubEnv = stub(env, 'cmrMaxPageSize').get(() => envPageSize);
             const pageSize = service.choosePageSize(maxGranules);
-            stub.restore();
+            stubEnv.restore();
             const maxResults = opMaxResults || Number.MAX_SAFE_INTEGER;
             return pageSize === Math.min(envPageSize, maxGranules, maxResults);
           },

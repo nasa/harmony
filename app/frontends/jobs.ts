@@ -1,9 +1,8 @@
 import { Response, NextFunction } from 'express';
-import { Job, JobStatus, JobQuery } from 'models/job';
-import { keysToLowerCase } from 'util/object';
-import isUUID from 'util/uuid';
-import cancelAndSaveJob from 'util/job';
-import JobLink from 'models/job-link';
+import { Job, JobStatus, JobQuery } from '../models/job';
+import { keysToLowerCase } from '../util/object';
+import cancelAndSaveJob, { validateJobId } from '../util/job';
+import JobLink from '../models/job-link';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
 import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink, Link } from '../util/links';
@@ -131,16 +130,6 @@ export async function getJobsListing(
   } catch (e) {
     req.context.logger.error(e);
     next(e);
-  }
-}
-
-/**
- * Throws an exception if the JobID is not in the valid format for a jobID.
- * @param jobID - The jobID to validate
- */
-function validateJobId(jobID: string): void {
-  if (!isUUID(jobID)) {
-    throw new RequestValidationError(`Invalid format for Job ID '${jobID}'. Job ID must be a UUID.`);
   }
 }
 

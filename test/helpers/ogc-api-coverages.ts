@@ -107,13 +107,16 @@ export function rangesetRequest(
  * @param collection - The CMR Collection ID to perform a service on
  * @param coverageId - The coverage ID(s) / variable name(s), or "all"
  * @param form - The form parameters to pass to the request
+ * @param queryString - The query string parameters to pass to the request
  * @returns An 'awaitable' object that resolves to a Response
  */
 export function postRangesetRequest(
-  app: Express.Application, version: string, collection: string, coverageId: string, form: object,
+  app: Express.Application, version: string, collection: string, coverageId: string, form: object, queryString = '',
 ): request.Test {
+  let urlPathAndParam = `/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`;
+  if (queryString) urlPathAndParam += `?${queryString}`;
   const req = request(app)
-    .post(`/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`);
+    .post(urlPathAndParam);
 
   Object.keys(form).forEach((key) => {
     if (key === 'shapefile') {
@@ -199,9 +202,10 @@ export function hookSyncRangesetRequest(
  * @param collection - The CMR Collection ID to perform a service on
  * @param coverageId - The coverage ID(s) / variable name(s), or "all"
  * @param form - The form data to be POST'd
+ * @param queryString - The query string parameters to pass to the request
  */
 export function hookPostRangesetRequest(
-  version: string, collection: string, coverageId: string, form: object,
+  version: string, collection: string, coverageId: string, form: object, queryString = '',
 ): void {
   before(async function () {
     this.res = await postRangesetRequest(
@@ -210,38 +214,41 @@ export function hookPostRangesetRequest(
       collection,
       coverageId,
       form,
+      queryString,
     );
 
-    const shapefileHeader = this.res.headers['set-cookie'].filter((cookie) => {
-      const decoded = decodeURIComponent(cookie);
-      const parsed = parse(decoded);
-      return parsed.shapefile;
-    })[0];
+    if (this.res.headers['set-cookie']) {
+      const shapefileHeader = this.res.headers['set-cookie'].filter((cookie) => {
+        const decoded = decodeURIComponent(cookie);
+        const parsed = parse(decoded);
+        return parsed.shapefile;
+      })[0];
 
-    const value = cookieValue(shapefileHeader, 'shapefile');
-    const cookies = { shapefile: value };
+      const value = cookieValue(shapefileHeader, 'shapefile');
+      const cookies = { shapefile: value };
 
-    const redirectHeader = this.res.headers['set-cookie'].filter((cookie) => {
-      const decoded = decodeURIComponent(cookie);
-      const parsed = parse(decoded);
-      return !parsed.shapefile;
-    })[0];
+      const redirectHeader = this.res.headers['set-cookie'].filter((cookie) => {
+        const decoded = decodeURIComponent(cookie);
+        const parsed = parse(decoded);
+        return !parsed.shapefile;
+      })[0];
 
-    if (redirectHeader) {
-      const redirect = cookieValue(redirectHeader, 'redirect');
-      // HARMONY-290 Should be query parmams, not a string
-      const query = redirect.split('?')[1];
+      if (redirectHeader) {
+        const redirect = cookieValue(redirectHeader, 'redirect');
+        // HARMONY-290 Should be query parmams, not a string
+        const query = redirect.split('?')[1];
 
-      this.res = await rangesetRequest(
-        this.frontend,
-        version,
-        collection,
-        coverageId,
-        {
-          query: query as unknown as object, // Fix along with HARMONY-290 to parse query params
-          cookies,
-        },
-      ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+        this.res = await rangesetRequest(
+          this.frontend,
+          version,
+          collection,
+          coverageId,
+          {
+            query: query as unknown as object, // Fix along with HARMONY-290 to parse query params
+            cookies,
+          },
+        ).use(auth({ username: 'fakeUsername', extraCookies: cookies }));
+      }
     }
   });
   after(function () {

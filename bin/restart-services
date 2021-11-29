@@ -1,0 +1,17 @@
+#!/bin/bash
+
+env_save=$(export -p)
+set -a
+source "env-defaults"
+source ".env"
+set +a
+eval "$env_save"
+
+for service in ${LOCALLY_DEPLOYED_SERVICES//,/ } query-cmr
+do
+  echo "stopping $service"
+  kubectl delete deployment "$service" -n argo
+  kubectl delete service "$service" -n argo
+done
+
+./bin/deploy-services

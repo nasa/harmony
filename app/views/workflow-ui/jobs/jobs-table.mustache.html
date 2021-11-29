@@ -1,0 +1,28 @@
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th scope="col">jobID</th>
+            <th scope="col">request</th>
+            <th scope="col">status</th>
+            <th scope="col">message</th>
+            <th scope="col">numInputGranules</th>
+            <th scope="col">progress</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#jobs}}
+        <tr clas='job-table-row'>
+            <th scope="row"><a href="workflow-ui/{{jobID}}">{{jobID}}</a></th>
+            <td class="mw-40ch">
+                <small><code class="text-truncate d-block" title="{{request}}" data-bs-toggle="tooltip"
+                    data-bs-placement="right">{{jobUrl}}</code></small>
+            </td>
+            <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
+            <td class="mw-40ch"><small><code class="text-truncate d-block" title="{{message}}" data-bs-toggle="tooltip"
+                        data-bs-placement="right">{{message}}</code></small></td>
+            <td><span class="badge rounded-pill bg-warning text-dark">{{numInputGranules}}</span></td>
+            <td>{{progress}}%</td>
+        </tr>
+        {{/jobs}}
+    </tbody>
+</table>

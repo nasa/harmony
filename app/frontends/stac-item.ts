@@ -1,7 +1,19 @@
 import { v4 as uuid } from 'uuid';
 import { pick } from 'lodash';
 
-import JobLink from 'models/job-link';
+import JobLink from '../models/job-link';
+
+/**
+ * An asset within a STAC item
+ * https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#asset-object
+ */
+export interface StacAsset {
+  href: string;
+  title?: string;
+  description?: string;
+  type?: string;
+  roles?: ('thumbnail' | 'overview' | 'data' | 'metadata' | string)[];
+}
 
 export class HarmonyItem {
   id: string;
@@ -25,7 +37,7 @@ export class HarmonyItem {
     datetime?: string;
   };
 
-  assets: {};
+  assets: Record<string, StacAsset>;
 
   links: JobLink[];
 
@@ -56,8 +68,8 @@ export class HarmonyItem {
    * @param bbox - GeoJSON bounding box
    */
   addSpatialExtent(bbox: number[]): void {
-    // Validate bounding box; should compliant with GeoJSON spec
-    if (bbox.length < 4) {
+    // Validate bounding box; should be compliant with GeoJSON spec
+    if (!bbox || bbox.length < 4) {
       throw new TypeError('Bounding box');
     }
 

@@ -1,6 +1,6 @@
 import fs, { promises } from 'fs';
 import path from 'path';
-import sinon, { SinonStub } from 'sinon';
+import { stub, spy, SinonStub } from 'sinon';
 
 import main, { parser } from '../../app/cli';
 import * as query from '../../app/query';
@@ -76,11 +76,11 @@ export function hookCliParser(...args): void {
 export function hookCliMain(args, output): void {
   let outputDir = null;
   before(async function () {
-    sinon.stub(query, 'queryGranules').callsFake((...callArgs) => {
+    stub(query, 'queryGranules').callsFake((...callArgs) => {
       this.callArgs = callArgs;
       return Promise.resolve(output);
     });
-    sinon.spy(promises, 'mkdir');
+    spy(promises, 'mkdir');
 
     outputDir = args[args.indexOf('--output-dir') + 1];
     await main(args);

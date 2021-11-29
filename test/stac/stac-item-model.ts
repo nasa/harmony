@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import create, { HarmonyItem } from 'frontends/stac-item';
-import { buildJob } from 'test/helpers/jobs';
+import create, { HarmonyItem } from '../../app/frontends/stac-item';
+import { buildJob } from '../helpers/jobs';
 
 // Prop for testing
 const jobProps = {

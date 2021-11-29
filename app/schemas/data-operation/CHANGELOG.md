@@ -1,3 +1,11 @@
+## [0.12.0] - 2021-11-23
+### Added
+- variable.relatedUrls - Related URLs for a variable as provided by CMR.
+
+## [0.11.0] - UNMERGED
+### Changed
+- DataOperation.sources[].granules are now optional
+
 ## [0.10.0] - UNMERGED
 ### Added
 - DataOperation.srs - An object with keys 'proj4', 'wkt', and 'epsg'. 'epsg' may be an empty string if unknown.

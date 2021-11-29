@@ -1,16 +1,13 @@
 import FormData from 'form-data';
-import fs from 'fs';
+import * as fs from 'fs';
 import { get } from 'lodash';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
-import * as util from 'util';
 import { CmrError } from './errors';
 import { objectStoreForProtocol } from './object-store';
 import logger from './log';
 
 import env = require('./env');
-
-const unlink = util.promisify(fs.unlink);
 
 const clientIdHeader = {
   'Client-id': `${env.harmonyClientId}`,
@@ -75,6 +72,7 @@ export interface CmrGranule {
   title: string;
   time_start: string;
   time_end: string;
+  collection_concept_id?: string;
 }
 
 export interface CmrGranuleLink {
@@ -89,6 +87,7 @@ export interface CmrGranuleLink {
 export interface CmrGranuleHits {
   hits: number;
   granules: CmrGranule[];
+  scrollID?: string;
 }
 
 export interface CmrUmmVariable {
@@ -98,13 +97,18 @@ export interface CmrUmmVariable {
   umm: {
     Name: string;
     LongName?: string;
+    RelatedURLs?: CmrRelatedUrl[]
   };
 }
 
-export interface CmrVariable {
-  concept_id: string;
-  name: string;
-  long_name: string;
+export interface CmrRelatedUrl {
+  URL: string;
+  URLContentType: string;
+  Type: string;
+  Subtype?: string;
+  Description?: string;
+  Format?: string;
+  MimeType?: string;
 }
 
 export interface CmrQuery
@@ -112,6 +116,7 @@ export interface CmrQuery
   concept_id?: string | string[];
   page_size?: number;
   downloadable?: boolean;
+  scroll?: string;
 }
 
 export interface CmrAclQuery extends CmrQuery {
@@ -270,10 +275,14 @@ async function processGeoJson(geoJsonUrl: string, formData: FormData): Promise<s
  * @param path - The absolute path on the CMR API to the resource being queried
  * @param form - An object with keys and values representing the parameters for the query
  * @param token - Access token for the user
+ * @param extraHeaders - Additional headers to pass with the request
  * @returns The CMR query result
  */
 export async function cmrPostBase(
-  path: string, form: object, token: string,
+  path: string,
+  form: object,
+  token: string,
+  extraHeaders = {},
 ): Promise<CmrResponse> {
   const formData = new FormData();
   let shapefile = null;
@@ -296,13 +305,14 @@ export async function cmrPostBase(
     ..._makeTokenHeader(token),
     ...acceptJsonHeader,
     ...formData.getHeaders(),
+    ...extraHeaders,
   };
 
   try {
     return module.exports.fetchPost(path, formData, headers);
   } finally {
     if (shapefile) {
-      unlink(shapefile);
+      await fs.promises.unlink(shapefile);
     }
   }
 }
@@ -314,11 +324,17 @@ export async function cmrPostBase(
  * @param path - The absolute path on the cmR API to the resource being queried
  * @param form - An object with keys and values representing the parameters for the query
  * @param token - Access token for the user
+ * @param extraHeaders - Additional headers to pass with the request
  * @returns The CMR query result
  * @throws CmrError - If the CMR returns an error status
  */
-async function _cmrPost(path: string, form: CmrQuery, token: string): Promise<CmrResponse> {
-  const response = await module.exports.cmrPostBase(path, form, token);
+async function _cmrPost(
+  path: string,
+  form: CmrQuery,
+  token: string,
+  extraHeaders = {},
+): Promise<CmrResponse> {
+  const response = await module.exports.cmrPostBase(path, form, token, extraHeaders);
   _handleCmrErrors(response);
 
   return response;
@@ -334,7 +350,7 @@ async function _cmrPost(path: string, form: CmrQuery, token: string): Promise<Cm
 async function queryVariables(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVariable>> {
-  const variablesResponse = await _cmrPost('/search/variables.umm_json_v1_7', query, token) as CmrVariablesResponse;
+  const variablesResponse = await _cmrPost('/search/variables.umm_json_v1_8', query, token) as CmrVariablesResponse;
   return variablesResponse.data.items;
 }
 
@@ -358,18 +374,22 @@ async function queryCollections(
  * @param form - The key/value pairs to search including a `shapefile` parameter
  * pointing to a file on the file system
  * @param token - Access token for user request
+ * @param extraHeaders - Additional headers to pass with the request
  * @returns The granule search results
  */
 async function queryGranuleUsingMultipartForm(
   form: CmrQuery,
   token: string,
+  extraHeaders = {},
 ): Promise<CmrGranuleHits> {
   // TODO: Paging / hits
-  const granuleResponse = await _cmrPost('/search/granules.json', form, token) as CmrGranulesResponse;
+  const granuleResponse = await _cmrPost('/search/granules.json', form, token, extraHeaders) as CmrGranulesResponse;
   const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
+  const scrollID = granuleResponse.headers.get('cmr-scroll-id');
   return {
     hits: cmrHits,
     granules: granuleResponse.data.feed.entry,
+    scrollID,
   };
 }
 
@@ -469,6 +489,57 @@ export function queryGranulesForCollection(
     ...baseQuery,
     ...query,
   }, token);
+}
+
+/**
+ * Queries and returns the CMR JSON granules for the given collection ID with the given query
+ * params.  Uses multipart/form-data POST to accommodate large queries and shapefiles.
+ *
+ * @param collectionId - The ID of the collection whose granules should be searched
+ * @param query - The CMR granule query parameters to pass
+ * @param token - Access token for user request
+ * @param limit - The maximum number of granules to return
+ * @returns The granules associated with the input collection
+ */
+export function initateGranuleScroll(
+  collectionId: string,
+  query: CmrQuery,
+  token: string,
+  limit = 10,
+): Promise<CmrGranuleHits> {
+  const baseQuery = {
+    collection_concept_id: collectionId,
+    page_size: limit,
+    scroll: 'defer',
+  };
+
+  return queryGranuleUsingMultipartForm({
+    ...baseQuery,
+    ...query,
+  }, token);
+}
+
+/**
+ * Queries and returns the CMR JSON granules for the given scrollId.
+ *
+ * @param scrollId - Scroll session id used in the CMR-Scroll-Id header
+ * @param token - Access token for user request
+ * @param limit - The maximum number of granules to return
+ * @returns The granules associated with the input collection
+ */
+export function queryGranulesForScrollId(
+  scrollId: string, token: string, limit = 2000,
+): Promise<CmrGranuleHits> {
+  const cmrQuery = {
+    page_size: limit,
+    scroll: 'true',
+  };
+
+  return queryGranuleUsingMultipartForm(
+    cmrQuery,
+    token,
+    { 'CMR-scroll-id': scrollId },
+  );
 }
 
 /**

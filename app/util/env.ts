@@ -83,6 +83,8 @@ interface HarmonyEnv {
   defaultParallelism: number;
   harmonyClientId: string;
   jobReaperPeriodSec: number;
+  workReaperPeriodSec: number;
+  workFailerPeriodSec: number;
   localstackHost: string;
   logLevel: string;
   maxGranuleLimit: number;
@@ -96,6 +98,8 @@ interface HarmonyEnv {
   oauthUid: string;
   objectStoreType: string;
   reapableJobAgeMinutes: number;
+  reapableWorkAgeMinutes: number;
+  failableWorkAgeMinutes: number;
   sameRegionAccessRole: string;
   servicesYml: string;
   sharedSecretKey: string;
@@ -103,6 +107,7 @@ interface HarmonyEnv {
   syncRequestPollIntervalMs: number;
   uploadBucket: string;
   useLocalstack: boolean;
+  hostVolumePath: string;
 }
 
 // special cases

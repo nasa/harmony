@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { parseAcceptHeader, isMimeTypeAccepted } from 'util/content-negotiation';
+import { parseAcceptHeader, isMimeTypeAccepted } from '../../app/util/content-negotiation';
 
 describe('util/content-negotiation', function () {
   describe('parseAcceptHeader', function () {

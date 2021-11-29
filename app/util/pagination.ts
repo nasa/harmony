@@ -1,11 +1,9 @@
 import { Request, Response } from 'express';
-import { IPagination as Pagination } from 'knex-paginate';
+import { ILengthAwarePagination } from 'knex-paginate';
 import { Link } from './links';
 import { RequestValidationError } from './errors';
 import { getRequestUrl } from './url';
 import env from './env';
-
-export { Pagination };
 
 export interface PagingParams {
   page: number;
@@ -72,7 +70,7 @@ export function getPagingParams(req: Request, defaultPageSize: number): PagingPa
  */
 function getPagingLink(
   req: Request,
-  pagination: Pagination,
+  pagination: ILengthAwarePagination,
   page: number,
   rel: string,
   relName: string = rel,
@@ -93,9 +91,10 @@ function getPagingLink(
  * @param pagination - the pagination information as returned by, e.g. knex-paginate
  * @returns the links to paginate
  */
-export function getPagingLinks(req: Request, pagination: Pagination): Link[] {
+export function getPagingLinks(req: Request, pagination: ILengthAwarePagination): Link[] {
   const result = [];
   const { currentPage, lastPage, perPage } = pagination;
+  // const { currentPage, lastPage, perPage } = pagination as unknown as { lastPage: number; perPage; number; currentPage: number; total: number; };
   if (perPage > 0 && currentPage > 2) result.push(getPagingLink(req, pagination, 1, 'first'));
   if (perPage > 0 && currentPage > 1) result.push(getPagingLink(req, pagination, currentPage - 1, 'prev', 'previous'));
   result.push(getPagingLink(req, pagination, currentPage, 'self', 'current'));
@@ -109,6 +108,6 @@ export function getPagingLinks(req: Request, pagination: Pagination): Link[] {
  * @param res - The Express response where paging params should be set
  * @param pagination - Paging information about the request
  */
-export function setPagingHeaders(res: Response, pagination: Pagination): void {
+export function setPagingHeaders(res: Response, pagination: ILengthAwarePagination): void {
   res.set('Harmony-Hits', pagination.total.toString());
 }
