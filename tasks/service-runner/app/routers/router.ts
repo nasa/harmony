@@ -15,5 +15,9 @@ export default function router(): express.Router {
     res.send('OK');
   });
 
+  result.get('/metrics', async (req, res, _next: NextFunction): Promise<void> => {
+    res.send('OK');
+  });
+
   return result;
 }
