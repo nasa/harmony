@@ -62,20 +62,22 @@ async function _handleWorkItemResults(
     const items = readCatalogItems(localLocation);
 
     for await (const item of items) {
-      const { href, type, title } = item.assets.data;
-      const link = new JobLink({
-        jobID: job.jobID,
-        href,
-        type,
-        title,
-        rel: 'data',
-        temporal: {
-          start: new Date(item.properties.start_datetime),
-          end: new Date(item.properties.end_datetime),
-        },
-        bbox: item.bbox,
-      });
-      await link.save(tx);
+      for (const [_, asset] of Object.entries(item.assets)) {
+        const { href, type, title } = asset;
+        const link = new JobLink({
+          jobID: job.jobID,
+          href,
+          type,
+          title,
+          rel: 'data',
+          temporal: {
+            start: new Date(item.properties.start_datetime),
+            end: new Date(item.properties.end_datetime),
+          },
+          bbox: item.bbox,
+        });
+        await link.save(tx);
+      }
     }
   }
 }
