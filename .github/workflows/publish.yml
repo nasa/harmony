@@ -41,7 +41,7 @@ jobs:
           # build and publish harmony
           VERSION="${VERSION}" npm run build
           VERSION="${VERSION}" npm run publish
-          # build and publish query-cmr (cmr granule locator)
+          # build and publish images for all tasks
           VERSION="${VERSION}" lerna run build
           VERSION="${VERSION}" lerna run publish
           
