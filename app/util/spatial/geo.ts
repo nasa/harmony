@@ -495,14 +495,12 @@ export function dividePolygon(latLngs: LatLng[][]): SplitPoly {
       ];
     }
 
-    // for (const extra of extras) {
-    // eslint-disable-next-line no-loop-func
-    extras.forEach((extra) => {
+    for (const extra of extras) {
       [lat, lng] = Array.from(extra);
       split.push({ lat, lng });
       maxCrossingLat = Math.max(lat, maxCrossingLat);
       minCrossingLat = Math.min(lat, minCrossingLat);
-    });
+    }
   }
 
   // Did we insert anything?

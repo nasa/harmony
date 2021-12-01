@@ -2,10 +2,17 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { CURRENT_SCHEMA_VERSION, parseSchemaFile, versions } from '../helpers/data-operation';
 import DataOperation from '../../app/models/data-operation';
+import { CmrRelatedUrl } from '../../app/util/cmr';
 
 const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
 // bbox has one too many numbers
 const invalidOperation = new DataOperation(parseSchemaFile('invalid-operation-input.json'));
+const expectedOutput = parseSchemaFile(`valid-operation-v${versions[0]}.json`);
+// The fields that all operations should contain
+const baseFields = new Set([
+  'client', 'callback', 'stagingLocation', 'sources', 'format', 'user', 'accessToken',
+  'isSynchronous', 'requestId', 'temporal', 'version',
+]);
 
 describe('DataOperation', () => {
   describe('#serialize', () => {
@@ -25,7 +32,6 @@ describe('DataOperation', () => {
       });
 
       it('returns its JSON-serialized model', () => {
-        const expectedOutput = parseSchemaFile(`valid-operation-v${versions[0]}.json`);
         expect(JSON.parse(call())).to.eql(expectedOutput);
       });
     });
@@ -71,6 +77,161 @@ describe('DataOperation', () => {
         }
       });
     });
+
+    describe('when specifying fields to include', () => {
+      describe('reproject', () => {
+        const serializedOperation = validOperation.serialize(CURRENT_SCHEMA_VERSION, ['reproject']);
+
+        it('includes reprojection fields for the operation', () => {
+          const parsedOperation = JSON.parse(serializedOperation);
+          expect(parsedOperation.format.crs).to.eql('CRS84');
+          expect(parsedOperation.format.srs).to.eql(expectedOutput.format.srs);
+        });
+
+        it('does not include reformatting fields for the operation', () => {
+          expect(JSON.parse(serializedOperation).format.mime).to.be.undefined;
+        });
+
+        it('does not include variables for the operation', () => {
+          expect(JSON.parse(serializedOperation).sources[0].variables).to.be.undefined;
+        });
+
+        it('includes all of the base fields for the operation', () => {
+          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(baseFields);
+        });
+      });
+
+      describe('reformat', () => {
+        const serializedOperation = validOperation.serialize(CURRENT_SCHEMA_VERSION, ['reformat']);
+
+        it('does not include reprojection fields for the operation', () => {
+          const parsedOperation = JSON.parse(serializedOperation);
+          expect(parsedOperation.format.crs).to.be.undefined;
+          expect(parsedOperation.format.srs).to.be.undefined;
+        });
+
+        it('includes reformatting fields for the operation', () => {
+          expect(JSON.parse(serializedOperation).format.mime).to.equal('image/png');
+        });
+
+        it('does not include variables for the operation', () => {
+          expect(JSON.parse(serializedOperation).sources[0].variables).to.be.undefined;
+        });
+
+        it('includes all of the base fields for the operation', () => {
+          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(baseFields);
+        });
+      });
+
+      describe('variableSubset', () => {
+        const serializedOperation = validOperation.serialize(CURRENT_SCHEMA_VERSION, ['variableSubset']);
+
+        it('does not include reprojection fields for the operation', () => {
+          const parsedOperation = JSON.parse(serializedOperation);
+          expect(parsedOperation.format.crs).to.be.undefined;
+          expect(parsedOperation.format.srs).to.be.undefined;
+        });
+
+        it('does not include reformatting fields for the operation', () => {
+          expect(JSON.parse(serializedOperation).format.mime).to.be.undefined;
+        });
+
+        it('includes variables for the operation', () => {
+          expect(JSON.parse(serializedOperation).sources[0].variables).to.eql(expectedOutput.sources[0].variables);
+        });
+
+        it('includes all of the base fields for the operation', () => {
+          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(baseFields);
+        });
+      });
+
+      describe('spatialSubset', () => {
+        const serializedOperation = validOperation.serialize(CURRENT_SCHEMA_VERSION, ['spatialSubset']);
+
+        it('includes the bbox subset for the operation', () => {
+          expect(JSON.parse(serializedOperation).subset.bbox).to.eql(expectedOutput.subset.bbox);
+        });
+
+        it('does not include reprojection fields for the operation', () => {
+          const parsedOperation = JSON.parse(serializedOperation);
+          expect(parsedOperation.format.crs).to.be.undefined;
+          expect(parsedOperation.format.srs).to.be.undefined;
+        });
+
+        it('does not include reformatting fields for the operation', () => {
+          expect(JSON.parse(serializedOperation).format.mime).to.be.undefined;
+        });
+
+        it('does not include variables for the operation', () => {
+          expect(JSON.parse(serializedOperation).sources[0].variables).to.be.undefined;
+        });
+
+        it('includes all of the base fields for the operation and the subset field', () => {
+          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(new Set(baseFields.add('subset')) );
+        });
+      });
+
+      describe('shapefileSubset', () => {
+        const serializedOperation = validOperation.serialize(CURRENT_SCHEMA_VERSION, ['shapefileSubset']);
+
+        it('includes the shapefile subset for the operation', () => {
+          expect(JSON.parse(serializedOperation).subset.shape).to.eql(expectedOutput.subset.shape);
+        });
+
+        it('does not include reprojection fields for the operation', () => {
+          const parsedOperation = JSON.parse(serializedOperation);
+          expect(parsedOperation.format.crs).to.be.undefined;
+          expect(parsedOperation.format.srs).to.be.undefined;
+        });
+
+        it('does not include reformatting fields for the operation', () => {
+          expect(JSON.parse(serializedOperation).format.mime).to.be.undefined;
+        });
+
+        it('does not include variables for the operation', () => {
+          expect(JSON.parse(serializedOperation).sources[0].variables).to.be.undefined;
+        });
+
+        it('includes all of the base fields for the operation and the subset field', () => {
+          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(new Set(baseFields.add('subset')) );
+        });
+      });
+
+      describe('spatialSubset and variableSubset', () => {
+        const serializedOperation = validOperation.serialize(CURRENT_SCHEMA_VERSION, ['spatialSubset', 'variableSubset']);
+
+        it('includes the bbox subset for the operation', () => {
+          expect(JSON.parse(serializedOperation).subset.bbox).to.eql(expectedOutput.subset.bbox);
+        });
+
+        it('does not include reprojection fields for the operation', () => {
+          const parsedOperation = JSON.parse(serializedOperation);
+          expect(parsedOperation.format.crs).to.be.undefined;
+          expect(parsedOperation.format.srs).to.be.undefined;
+        });
+
+        it('does not include reformatting fields for the operation', () => {
+          expect(JSON.parse(serializedOperation).format.mime).to.be.undefined;
+        });
+
+        it('includes variables for the operation', () => {
+          expect(JSON.parse(serializedOperation).sources[0].variables).to.eql(expectedOutput.sources[0].variables);
+        });
+
+        it('includes all of the base fields for the operation and the subset field', () => {
+          expect(new Set(Object.keys(JSON.parse(serializedOperation)))).to.eql(new Set(baseFields.add('subset')) );
+        });
+      });
+
+      describe('all fields requested', () => {
+        const serializedOperation = validOperation.serialize(CURRENT_SCHEMA_VERSION, ['spatialSubset', 'variableSubset', 'reformat', 'reproject', 'shapefileSubset']);
+
+        it('includes all of the fields for the operation', () => {
+          expect(JSON.parse(serializedOperation)).to.eql(expectedOutput);
+        });
+      });
+
+    });
   });
 
   describe('#addSource', () => {
@@ -81,9 +242,40 @@ describe('DataOperation', () => {
       url: 'https://example.com/foo',
       temporal: {},
     }];
+    const relatedUrls = [
+      {
+        Description: 'This related URL points to a color map',
+        URLContentType: 'VisualizationURL',
+        Type: 'Color Map',
+        Subtype: 'Harmony GDAL',
+        URL: 'https://example.com/colormap123.txt',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      },
+      {
+        Description: 'This related URL points to some data',
+        URLContentType: 'DistributionURL',
+        Type: 'GET DATA',
+        Subtype: 'EOSDIS DATA POOL',
+        URL: 'https://example.com/colormap123.nc4',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      },
+      {
+        Description: 'Related URL',
+        Subtype: 'EOSDIS DATA POOL',
+        URL: 'https://example.com/colormap123.nc4',
+        MimeType: 'text/plain',
+        Format: 'ASCII',
+      } as CmrRelatedUrl,
+    ];
     const variables = [{
       meta: { 'concept-id': 'V123-BAR' },
-      umm: { Name: 'the/nested/name', LongName: 'A long name' },
+      umm: { 
+        Name: 'the/nested/name', 
+        LongName: 'A long name',
+        RelatedURLs: relatedUrls,
+      },
     }];
 
     describe('when adding a source', () => {
@@ -108,6 +300,43 @@ describe('DataOperation', () => {
 
       it('uses the variable name as the fullPath', () => {
         expect(operation.model.sources[0].variables[0].fullPath).to.equal('the/nested/name');
+      });
+
+      it('sets the Color Map related URL', () => {
+        expect(operation.model.sources[0].variables[0].relatedUrls[0]).to.deep.equal(
+          {
+            description: 'This related URL points to a color map',
+            urlContentType: 'VisualizationURL',
+            type: 'Color Map',
+            subtype: 'Harmony GDAL',
+            url: 'https://example.com/colormap123.txt',
+            mimeType: 'text/plain',
+            format: 'ASCII',
+          },
+        );
+        expect(operation.model.sources[0].variables[0].relatedUrls[1]).to.deep.equal(
+          {
+            description: 'This related URL points to some data',
+            urlContentType: 'DistributionURL',
+            type: 'GET DATA',
+            subtype: 'EOSDIS DATA POOL',
+            url: 'https://example.com/colormap123.nc4',
+            mimeType: 'text/plain',
+            format: 'ASCII',
+          },
+        );
+        expect(operation.model.sources[0].variables[0].relatedUrls[2]).to.deep.equal(
+          {
+            description: 'Related URL',
+            urlContentType: undefined,
+            type: undefined,
+            subtype: 'EOSDIS DATA POOL',
+            url: 'https://example.com/colormap123.nc4',
+            mimeType: 'text/plain',
+            format: 'ASCII',
+          },
+        );
+        expect(operation.model.sources[0].variables[0].relatedUrls.length).length.to.equal(3);
       });
     });
   });

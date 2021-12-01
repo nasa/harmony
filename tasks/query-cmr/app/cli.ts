@@ -82,7 +82,7 @@ export function parser(): yargs.Argv<HarmonyArgv> {
 export default async function main(args: string[]): Promise<void> {
   const startTime = new Date().getTime();
   const appLogger = logger.child({ application: 'cmr-granule-locator' });
-  const options = parser().parse(args);
+  const options = parser().parse(args) as HarmonyArgv;
   const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
   const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
@@ -114,7 +114,7 @@ export default async function main(args: string[]): Promise<void> {
   await Promise.all(promises);
 
   await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
-  await fs.writeFile(catalogCountFilename, catalogFilenames.length);
+  await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
 
   const durationMs = new Date().getTime() - startTime;
   timingLogger.info('timing.cmr-granule-locator.end', { durationMs });
@@ -123,6 +123,6 @@ export default async function main(args: string[]): Promise<void> {
 if (require.main === module) {
   main(process.argv.slice(2)).catch((e) => {
     console.error(e); // eslint-disable-line no-console
-    process.exit(1);
+    throw (e);
   });
 }

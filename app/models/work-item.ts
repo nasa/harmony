@@ -1,5 +1,5 @@
 import { subMinutes } from 'date-fns';
-import { IPagination } from 'knex-paginate';
+import { ILengthAwarePagination } from 'knex-paginate';
 import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
@@ -15,6 +15,9 @@ export enum WorkItemStatus {
   FAILED = 'failed',
   CANCELED = 'canceled',
 }
+
+// Future-proofing for when we have other success statuses like 'SUCCESSFUL_WITH_WARNINGS'
+export const SUCCESSFUL_WORK_ITEM_STATUSES = [WorkItemStatus.SUCCESSFUL];
 
 // The fields to save to the database
 const serializedFields = [
@@ -115,13 +118,15 @@ export async function getNextWorkItem(
     workItemData = await tx(WorkItem.table)
       .forUpdate()
       .select(...tableFields, `${WorkflowStep.table}.operation`)
-      // eslint-disable-next-line func-names
       .join(WorkflowStep.table, function () {
         this
           .on(`${WorkflowStep.table}.stepIndex`, `${WorkItem.table}.workflowStepIndex`)
           .on(`${WorkflowStep.table}.jobID`, `${WorkItem.table}.jobID`);
       })
-      .where({ 'work_items.serviceID': serviceID, status: WorkItemStatus.READY })
+      .join(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      .where({ 'work_items.serviceID': serviceID, 'work_items.status': WorkItemStatus.READY })
+      .whereIn('jobs.status', [JobStatus.RUNNING, JobStatus.ACCEPTED])
       .orderBy([`${WorkItem.table}.id`])
       .first();
 
@@ -166,6 +171,47 @@ export async function updateWorkItemStatus(
 }
 
 /**
+ * Update the statuses in the database for the given WorkItem ids
+ * @param tx - the transaction to use for querying
+ * @param ids - the ids of the WorkItems
+ * @param status - the status to set for the WorkItems
+ */
+export async function updateWorkItemStatuses(
+  tx: Transaction,
+  ids: number[],
+  status: WorkItemStatus,
+): Promise<void> {
+  await tx(WorkItem.table)
+    .update({ status, updatedAt: new Date() })
+    .whereIn(`${WorkItem.table}.id`, ids);
+}
+
+/**
+ * Update the status of work items by job ID.
+ * @param tx - the transaction to use for the update
+ * @param jobID - the jobID associated with the work items
+ * @param oldStatuses - restricts the updates to work items where the status is in oldStatuses
+ * @param newStatus - the value of the updated status
+ */
+export async function updateWorkItemStatusesByJobId(
+  tx: Transaction,
+  jobID: string,
+  oldStatuses: WorkItemStatus[],
+  newStatus: WorkItemStatus,
+): Promise<void> {
+  const updatedAt = new Date();
+  return tx(WorkItem.table)
+    .where({ jobID })
+    .modify((queryBuilder) => {
+      if (oldStatuses.length) {
+        queryBuilder
+          .whereIn('status', oldStatuses);
+      }
+    })
+    .update({ status: newStatus, updatedAt });
+}
+
+/**
  * Returns the next work item to process for a service
  * @param tx - the transaction to use for querying
  * @param id - the work item ID
@@ -201,10 +247,41 @@ export async function getWorkItemsByJobId(
   currentPage = 0,
   perPage = 10,
   sortOrder: 'asc' | 'desc' = 'asc',
-): Promise<{ workItems: WorkItem[]; pagination: IPagination }> {
+): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
   const result = await tx(WorkItem.table)
     .select()
     .where({ jobID })
+    .orderBy('id', sortOrder)
+    .paginate({ currentPage, perPage, isLengthAware: true });
+
+  return {
+    workItems: result.data.map((i) => new WorkItem(i)),
+    pagination: result.pagination,
+  };
+}
+
+/**
+ * Returns work items for a job step
+ * @param tx - the transaction to use for querying
+ * @param jobID - the job ID
+ * @param workflowStepIndex - the index of the workflow step
+ * @param currentPage - the page of work items to get
+ * @param perPage - number of results to include per page
+ * @param sortOrder - orderBy string (desc or asc)
+ *
+ * @returns A promise with the work items array
+ */
+export async function getWorkItemsByJobIdAndStepIndex(
+  tx: Transaction,
+  jobID: string,
+  workflowStepIndex: number,
+  currentPage = 0,
+  perPage = 100,
+  sortOrder: 'asc' | 'desc' = 'asc',
+): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
+  const result = await tx(WorkItem.table)
+    .select()
+    .where({ jobID, workflowStepIndex })
     .orderBy('id', sortOrder)
     .paginate({ currentPage, perPage, isLengthAware: true });
 
@@ -241,6 +318,28 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
 }
 
 /**
+ * Get all WorkItems older than a particular age (minutes), that also have a particular status.
+ * @param tx - the transaction to use for querying
+ * @param olderThanMinutes - retrieve WorkItems with createdAt older than olderThanMinutes
+ * @param statuses - only WorkItems with these statuses will be retrieved
+ * @returns - all WorkItems that meet the olderThanMinutes and status constraints
+*/
+export async function getWorkItemsByAgeAndStatus(
+  tx: Transaction,
+  olderThanMinutes: number,
+  statuses: WorkItemStatus[],
+): Promise<WorkItem[]> {
+  const pastDate = subMinutes(new Date(), olderThanMinutes);
+  const workItems = (await tx(WorkItem.table)
+    .select()
+    .where(`${WorkItem.table}.createdAt`, '<', pastDate)
+    .whereIn(`${WorkItem.table}.status`, statuses))
+    .map((item) => new WorkItem(item));
+
+  return workItems;
+}
+
+/**
  * Delete all work items that have an id in the ids array.
  * @param tx - the transaction to use for querying
  * @param ids - the ids associated with work items that will be deleted
@@ -261,22 +360,85 @@ export async function deleteWorkItemsById(
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the job that created this work item
  * @param stepIndex - the index of the step in the workflow
- * @param status - if provided only work items with this status will be counted
+ * @param status - a single status or list of statuses. If provided only work items with this status
+ * (or status in the list) will be counted
  */
 export async function workItemCountForStep(
   tx: Transaction,
   jobID: string,
   stepIndex: number,
-  status?: WorkItemStatus,
+  status?: WorkItemStatus | WorkItemStatus[],
 ): Promise<number> {
-  let whereClause: {} = {
+  // Record<string, unknown> clashes with imported database Record class
+  // so we use '{}' causing a linter error
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  const whereClause: {} = {
     jobID, workflowStepIndex: stepIndex,
   };
-  whereClause = status ? { ...whereClause, status } : whereClause;
+  const statusArray = Array.isArray(status) ? status : [status];
+  let count;
+
+  if (status) {
+    count = await tx(WorkItem.table)
+      .select()
+      .count('id')
+      .where(whereClause)
+      .whereIn('status', statusArray);
+  } else {
+    count = await tx(WorkItem.table)
+      .select()
+      .count('id')
+      .where(whereClause);
+  }
+
+  let workItemCount;
+  if (db.client.config.client === 'pg') {
+    workItemCount = Number(count[0].count);
+  } else {
+    workItemCount = Number(count[0]['count(`id`)']);
+  }
+  return workItemCount;
+}
+
+/**
+ *  Returns the number of existing work items for a specific job id
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the job that created this work item
+ */
+export async function workItemCountForJobID(
+  tx: Transaction,
+  jobID: string,
+): Promise<number> {
   const count = await tx(WorkItem.table)
     .select()
     .count('id')
-    .where(whereClause);
+    .where({ jobID });
+
+  let workItemCount;
+  if (db.client.config.client === 'pg') {
+    workItemCount = Number(count[0].count);
+  } else {
+    workItemCount = Number(count[0]['count(`id`)']);
+  }
+  return workItemCount;
+}
+
+/**
+ *  Returns the number of existing work items for a specific service id and given statuses
+ * @param tx - the transaction to use for querying
+ * @param serviceID - the ID of the service
+ */
+export async function workItemCountByServiceIDAndStatus(
+  tx: Transaction,
+  serviceID: string,
+  statuses: WorkItemStatus[],
+): Promise<number> {
+  const count = await tx(WorkItem.table)
+    .select()
+    .count('id')
+    .where({ serviceID })
+    .whereIn(`${WorkItem.table}.status`, statuses)
+    ;
 
   let workItemCount;
   if (db.client.config.client === 'pg') {

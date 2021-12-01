@@ -1,5 +1,5 @@
 import { Logger } from 'winston';
-import { JobStatus } from '../models/job';
+import { JobStatus, terminalStates } from '../models/job';
 import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from '../models/work-item';
 import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from '../models/workflow-steps';
 import env from '../util/env';
@@ -11,6 +11,10 @@ export interface WorkReaperConfig {
   logger: Logger;
 }
 
+/**
+ * Delete the work items and workflow steps associated with terminal jobs 
+ * that haven't been updated for a configurable amount of minutes.
+ */
 export default class WorkReaper implements Worker {
   isRunning: boolean;
 
@@ -57,11 +61,7 @@ export default class WorkReaper implements Worker {
       try {
         await this.deleteTerminalWork(
           env.reapableWorkAgeMinutes,
-          [
-            JobStatus.FAILED,
-            JobStatus.SUCCESSFUL,
-            JobStatus.CANCELED,
-          ],
+          terminalStates,
         );
       } catch (e) {
         this.logger.error('Work reaper failed to delete terminal work');

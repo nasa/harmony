@@ -1,12 +1,115 @@
 import { expect } from 'chai';
-import { WorkItemStatus } from '../app/models/work-item';
+import { getWorkItemsByJobId, WorkItemRecord, WorkItemStatus } from '../app/models/work-item';
 import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
-import { Job } from '../app/models/job';
+import env from '../app/util/env';
+import { Job, JobStatus } from '../app/models/job';
 import { hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
-import { getWorkForService, hookGetWorkForService, updateWorkItem } from './helpers/work-items';
+import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
+import { buildWorkflowStep } from './helpers/workflow-steps';
+import { buildJob } from './helpers/jobs';
+import { PATH_TO_CONTAINER_ARTIFACTS } from '../app/backends/workflow-orchestration';
+import path from 'path';
+import { promises as fs } from 'fs';
+
+describe('When a workflow contains an aggregating step', async function () {
+  const aggregateService = 'bar';
+  hookServersStartStop();
+
+  beforeEach(async function () {
+    const job = buildJob();
+    await job.save(db);
+    this.jobID = job.jobID;
+
+    await buildWorkflowStep({
+      jobID: job.jobID,
+      serviceID: 'foo',
+      stepIndex: 1,
+      workItemCount: 2,
+    }).save(db);
+
+    await buildWorkflowStep({
+      jobID: job.jobID,
+      serviceID: aggregateService,
+      stepIndex: 2,
+      hasAggregatedOutput: true,
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: job.jobID,
+      serviceID: 'foo',
+      workflowStepIndex: 1,
+    }).save(db);
+
+    await buildWorkItem({
+      jobID: job.jobID,
+      serviceID: 'foo',
+      workflowStepIndex: 1,
+    }).save(db);
+    const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
+    const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+    savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
+    savedWorkItem.results = [
+      'test/resources/worker-response-sample/catalog0.json',
+    ];
+    await fakeServiceStacOutput(job.jobID, savedWorkItem.id);
+    await updateWorkItem(this.backend, savedWorkItem);
+  });
+
+  this.afterEach(async function () {
+    await db.table('work_items').del();
+    await fs.rmdir(path.join(env.hostVolumePath, this.jobID), { recursive: true });
+  });
+
+  describe('and a work item for the first step is completed', async function () {
+    describe('and it is not the last work item for the step', async function () {
+      it('does not supply work for the next step', async function () {
+
+        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(nextStepWorkResponse.statusCode).to.equal(404);
+      });
+    });
+
+    describe('and it is the last work item for the step', async function () {
+      it('supplies exactly one work item for the next step', async function () {
+        const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
+        const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+        savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
+        savedWorkItem.results = [
+          'test/resources/worker-response-sample/catalog0.json',
+        ];
+        await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
+        await updateWorkItem(this.backend, savedWorkItem);
+
+        // one work item available
+        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(nextStepWorkResponse.statusCode).to.equal(200);
+
+        const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        expect(secondNextStepWorkResponse.statusCode).to.equal(404);
+      });
+
+      it('provides all the outputs of the preceding step to the aggregating step', async function () {
+        const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
+        const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+        savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
+        savedWorkItem.results = [
+          'test/resources/worker-response-sample/catalog0.json',
+        ];
+        await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
+        await updateWorkItem(this.backend, savedWorkItem);
+        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+        const workItem = JSON.parse(nextStepWorkResponse.text) as WorkItemRecord;
+        const filePath = workItem.stacCatalogLocation.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
+        const catalog = JSON.parse((await fs.readFile(filePath)).toString());
+        const items = catalog.links.filter(link => link.rel === 'item');
+        expect(items.length).to.equal(2);
+      });
+    });
+  });
+});
 
 describe('Workflow chaining for a collection configured for swot reprojection and netcdf-to-zarr', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -52,6 +155,11 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
       expect(workflowSteps[2].serviceID).to.equal('harmonyservices/netcdf-to-zarr:latest');
+    });
+
+    it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.message).to.equal('CMR query identified 177 granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults.');
     });
 
     // Verify it only queues a work item for the query-cmr task
@@ -139,6 +247,79 @@ describe('Workflow chaining for a collection configured for swot reprojection an
             });
           });
         });
+      });
+    });
+  });
+
+  describe('when making a request and the job fails while in progress', function () {
+    const reprojectAndZarrQuery = {
+      maxResults: 3,
+      outputCrs: 'EPSG:4326',
+      interpolation: 'near',
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+      format: 'application/x-zarr',
+      turbo: true,
+    };
+
+    hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
+    hookRedirect('joe');
+
+    before(async function () {
+      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+      const workItem = JSON.parse(res.text);
+      workItem.status = WorkItemStatus.SUCCESSFUL;
+      workItem.results = [
+        'test/resources/worker-response-sample/catalog0.json',
+        'test/resources/worker-response-sample/catalog1.json',
+        'test/resources/worker-response-sample/catalog2.json',
+      ];
+      await updateWorkItem(this.backend, workItem);
+      // since there were multiple query cmr results,
+      // multiple work items should be generated for the next step
+      const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
+      expect(currentWorkItems.length).to.equal(4);
+      expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+    });
+
+    describe('when the first swot-reprojection service work item fails', function () {
+      let firstSwotItem;
+
+      before(async function () {
+        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        firstSwotItem = JSON.parse(res.text);
+        firstSwotItem.status = WorkItemStatus.FAILED;
+        firstSwotItem.results = [];
+        await updateWorkItem(this.backend, firstSwotItem);
+      });
+
+      it('fails the job, and all further work items are canceled', async function () {
+        // work item failure should trigger job failure
+        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        expect(job.status === JobStatus.FAILED);
+        // job failure should trigger cancellation of any pending work items
+        const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
+        expect(currentWorkItems.length).to.equal(4);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+      });
+
+      it('does not find any further swot-reproject work', async function () {
+        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        expect(res.status).to.equal(404);
+      });
+
+      it('does not allow any further work item updates', async function () {
+        firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
+        const res = await await updateWorkItem(this.backend, firstSwotItem);
+        expect(res.status).to.equal(409);
+
+        const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
+        expect(currentWorkItems.length).to.equal(4);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
       });
     });
   });

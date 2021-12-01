@@ -1,6 +1,8 @@
 FROM node:12-alpine
 
-RUN apk add bash vim
+RUN apk add bash vim curl git
+RUN git config --global url."https://".insteadOf ssh://
+RUN npm install -g npm@7
 
 RUN mkdir -p /service-runner
 RUN mkdir -p /tmp/metadata

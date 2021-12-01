@@ -1,12 +1,16 @@
+import axios from 'axios';
+import MockAdapter from 'axios-mock-adapter';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
+import { SinonStub } from 'sinon';
 import env from '../app/util/env';
 import WorkItem from '../../../app/models/work-item';
 import { hookGetWorkRequest } from './helpers/pull-worker';
 import * as pullWorker from '../app/workers/pull-worker';
 import PullWorker from '../app/workers/pull-worker';
 import * as serviceRunner from '../app/service/service-runner';
+import { existsSync, writeFileSync } from 'fs';
 
 const {
   _pullWork,
@@ -49,6 +53,35 @@ describe('Pull Worker', async function () {
         await worker.start(false);
         expect(serviceSpy.called).to.be.true;
       });
+    });
+  });
+
+  describe('on start with primer errors', async function () {
+    let queryCMRStub: SinonStub;
+    let exitStub: SinonStub;
+    const { harmonyService } = env;
+
+    beforeEach(async function () {
+      exitStub = sinon.stub(process, 'exit');
+      queryCMRStub = sinon.stub(pullWorker.exportedForTesting, '_primeCmrService').callsFake(
+        async function () {
+          throw new Error('primer failed');
+        },
+      );
+      env.harmonyService = 'harmonyservices/query-cmr:latest';
+    });
+
+    afterEach(function () {
+      exitStub.restore();
+      queryCMRStub.restore();
+      env.harmonyService = harmonyService;
+    });
+
+    it('tries two times then exits the program', async function () {
+      const worker = new PullWorker();
+      await worker.start(false);
+      expect(exitStub.called).to.be.true;
+      expect(queryCMRStub.callCount).to.equal(2);
     });
   });
 
@@ -96,7 +129,7 @@ describe('Pull Worker', async function () {
     const invocArgs = env.invocationArgs;
     beforeEach(function () {
       queryCmrSpy = sinon.spy(serviceRunner, 'runQueryCmrFromPull');
-      serviceSpy = sinon.spy(serviceRunner, 'runPythonServiceFromPull');
+      serviceSpy = sinon.spy(serviceRunner, 'runServiceFromPull');
 
       env.invocationArgs = 'abc\n123';
     });
@@ -131,10 +164,94 @@ describe('Pull Worker', async function () {
           operation: { requestID: 'foo' },
           id: 1,
         });
-        it('calls runPythonServiceFromPull', async function () {
+        it('calls runServiceFromPull', async function () {
           await _doWork(workItem);
           expect(serviceSpy.called).to.be.true;
         });
+      });
+    });
+  });
+
+  describe('_pullAndDoWork()', function () {
+
+    describe('when the pod is terminating', async function () {
+      let pullWorkSpy: sinon.SinonSpy;
+      let doWorkSpy: sinon.SinonSpy;
+      beforeEach(function () {
+        pullWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_pullWork');
+        doWorkSpy = sinon.spy(pullWorker.exportedForTesting, '_doWork');
+        writeFileSync('/tmp/TERMINATING', '1');
+      });
+      afterEach(function () {
+        pullWorkSpy.restore();
+        doWorkSpy.restore();
+      });
+
+      it('does not call pullWork or doWork', async function () {
+        await _pullAndDoWork(false);
+        expect(pullWorkSpy.called).to.be.false;
+        expect(doWorkSpy.called).to.be.false;
+      });
+    });
+
+    describe('when _pullWork throws an exception', async function () {
+      let pullStub: SinonStub;
+      let doWorkStub: SinonStub;
+      const mock = new MockAdapter(axios);
+      beforeEach(function () {
+        pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () {
+          throw new Error('something bad happened');
+        });
+        doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(async function (): Promise<WorkItem> {
+          return new WorkItem({});
+        });
+        mock.onPut().reply(200, 'OK');
+      });
+      this.afterEach(function () {
+        pullStub.restore();
+        doWorkStub.restore();
+        mock.restore();
+      });
+
+      it('deletes the WORKING lock file', async function () {
+        await _pullAndDoWork(false);
+        expect(existsSync('/tmp/WORKING')).to.be.false;
+      });
+
+      it('does not throw', async function () {
+        const call = (): Promise<void> => _pullAndDoWork(false);
+        expect(call).to.not.throw();
+      });
+    });
+
+    describe('when _doWork throws an exception', async function () {
+      let pullStub: SinonStub;
+      let doWorkStub: SinonStub;
+      const mock = new MockAdapter(axios);
+      beforeEach(function () {
+        pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function (): Promise<{ item?: WorkItem; status?: number; error?: string }> {
+          return {};
+        });
+        doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(function (): Promise<WorkItem> {
+          throw new Error('something bad happened');
+        });
+
+        mock.onPut().reply(200, 'OK');
+      });
+      this.afterEach(function () {
+        pullStub.restore();
+        doWorkStub.restore();
+        mock.restore();
+      });
+
+      it('deletes the WORKING lock file', async function () {
+        await _pullAndDoWork(false);
+        expect(existsSync('/tmp/WORKING')).to.be.false;
+      });
+
+      it('does not throw', async function () {
+        const call = (): Promise<void> => _pullAndDoWork(false);
+        expect(call).to.not.throw();
       });
     });
   });
@@ -145,7 +262,7 @@ describe('Pull Worker', async function () {
     const invocArgs = env.invocationArgs;
     beforeEach(function () {
       queryCmrSpy = sinon.spy(serviceRunner, 'runQueryCmrFromPull');
-      serviceSpy = sinon.spy(serviceRunner, 'runPythonServiceFromPull');
+      serviceSpy = sinon.spy(serviceRunner, 'runServiceFromPull');
 
       env.invocationArgs = 'abc\n123';
     });
@@ -164,7 +281,7 @@ describe('Pull Worker', async function () {
     });
 
     describe('When a service is primed', async function () {
-      it('calls runPythonServiceFromPull', async function () {
+      it('calls runServiceFromPull', async function () {
         await _primeService();
         expect(serviceSpy.called).to.be.true;
       });

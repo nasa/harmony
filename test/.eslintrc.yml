@@ -5,3 +5,5 @@ rules:
   func-names: "off"
   no-unused-expressions: "off" # Required for chai `to.be.empty`
   "@typescript-eslint/no-unused-expressions": ["off"]
+  "@typescript-eslint/no-loop-func": ["off"]
+  "@typescript-eslint/ban-types": ["off"]

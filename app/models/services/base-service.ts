@@ -7,11 +7,12 @@ import InvocationResult from './invocation-result';
 import { Job, JobStatus } from '../job';
 import DataOperation from '../data-operation';
 import { defaultObjectStore } from '../../util/object-store';
-import { ServerError } from '../../util/errors';
+import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
 
 export interface ServiceCapabilities {
+  concatenation?: boolean;
   subsetting?: {
     bbox?: boolean;
     variable?: boolean;
@@ -82,7 +83,28 @@ function serviceImageToId(image: string): string {
 const conditionToOperationField = {
   reproject: 'crs',
   reformat: 'outputFormat',
+  variableSubset: 'shouldVariableSubset',
+  spatialSubset: 'shouldSpatialSubset',
+  temporalSubset: 'shouldTemporalSubset',
+  concatenate: 'concatenate',
 };
+
+/**
+ * Step operations that are aggregating steps
+ */
+const aggregatingOperations = [
+  'concatenate',
+];
+
+/**
+ *  Returns true if the workflow step aggregates output from the previous step
+ * (and therefore must wait for all output before executing)
+ * @param step - the step in a workflow
+ * @returns true if the step is an aggregating step, false otherwise
+ */
+function stepHasAggregatedOutput(step: ServiceStep): boolean {
+  return _.intersection(aggregatingOperations, step.operations).length > 0;
+}
 
 /**
  * Returns true if the workflow step is required for the given operation. If any
@@ -131,6 +153,8 @@ export default abstract class BaseService<ServiceParamType> {
 
   invocation: Promise<boolean>;
 
+  logger: Logger;
+
   /**
    * Creates an instance of BaseService.
    * @param config - The service configuration from config/services.yml
@@ -171,9 +195,10 @@ export default abstract class BaseService<ServiceParamType> {
   async invoke(
     logger?: Logger, harmonyRoot?: string, requestUrl?: string,
   ): Promise<InvocationResult> {
+    this.logger = logger;
     logger.info('Invoking service for operation', { operation: this.operation });
     const job = this._createJob(requestUrl);
-    await this._createAndSaveWorkflow(logger, job);
+    await this._createAndSaveWorkflow(job);
 
     const { isAsync, requestId } = job;
     this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
@@ -290,6 +315,23 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
+   * Return the number of work items that should be created for a given step
+   * 
+   * @param step - workflow service step
+   * @returns  the number of work items for the given step
+   */
+  protected _workItemCountForStep(step: ServiceStep): number {
+    const regex = /query\-cmr/;
+    // query-cmr number of work items is a function of the page size and total granules
+    if (step.image.match(regex)) {
+      return Math.ceil(this.numInputGranules / env.cmrMaxPageSize);
+    } else if (stepHasAggregatedOutput(step)) {
+      return 1;
+    }
+    return this.numInputGranules;
+  }
+
+  /**
    * Creates the workflow steps objects for this request
    *
    * @returns The created WorkItem for the query CMR job
@@ -306,14 +348,17 @@ export default abstract class BaseService<ServiceParamType> {
             jobID: this.operation.requestId,
             serviceID: serviceImageToId(step.image),
             stepIndex: i,
-            workItemCount: this.numInputGranules,
+            workItemCount: this._workItemCountForStep(step),
             operation: this.operation.serialize(
               this.config.data_operation_version,
               step.operations || [],
             ),
+            hasAggregatedOutput: stepHasAggregatedOutput(step),
           }));
         }
       }));
+    } else {
+      throw new RequestValidationError(`Service: ${this.config.name} does not yet support Turbo.`);
     }
     return workflowSteps;
   }
@@ -326,18 +371,24 @@ export default abstract class BaseService<ServiceParamType> {
    * @param requestUrl - the request the end user sent
    */
   protected async _createAndSaveWorkflow(
-    logger: Logger,
     job: Job,
   ): Promise<void> {
-    try {
-      const startTime = new Date().getTime();
-      const workflowSteps = this._createWorkflowSteps();
-      const firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+    const startTime = new Date().getTime();
+    const isTurbo = (this.operation.scrollIDs.length > 0);
+    let workflowSteps = [];
+    let firstStepWorkItems = [];
 
-      logger.info('timing.save-job-to-database.start');
+    if (isTurbo) {
+      this.logger.debug('Creating workflow steps');
+      workflowSteps = this._createWorkflowSteps();
+      firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+    }
+
+    try {
+      this.logger.info('timing.save-job-to-database.start');
       await db.transaction(async (tx) => {
         await job.save(tx);
-        if (this.operation.scrollIDs.length > 0) {
+        if (isTurbo) {
           // New workflow style bypassing Argo
           for await (const step of workflowSteps) {
             await step.save(tx);
@@ -351,9 +402,9 @@ export default abstract class BaseService<ServiceParamType> {
       });
 
       const durationMs = new Date().getTime() - startTime;
-      logger.info('timing.save-job-to-database.end', { durationMs });
+      this.logger.info('timing.save-job-to-database.end', { durationMs });
     } catch (e) {
-      logger.error(e.stack);
+      this.logger.error(e.stack);
       throw new ServerError('Failed to save job to database.');
     }
   }

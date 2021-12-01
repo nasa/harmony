@@ -147,6 +147,12 @@ WORK_REAPER_PERIOD_SEC=360
 # WorkItems and WorkflowSteps (in a terminal state) older than this many minutes are checked by the work reaper
 REAPABLE_WORK_AGE_MINUTES=1440
 
+# The time (in seconds) between invocations of the work failer service
+WORK_FAILER_PERIOD_SEC=360
+
+# WorkItems and associated job (in a running state) older than this many minutes are set to failed by the work failer
+FAILABLE_WORK_AGE_MINUTES=240
+
 # The number of seconds before timing out a single step (pod) in an Argo workflow
 DEFAULT_ARGO_POD_TIMEOUT_SECS=14400
 
@@ -227,7 +233,7 @@ ASF_GDAL_SUBSETTER_PARALLELISM=2
 ASF_GDAL_SUBSETTER_REQUESTS_CPU=128m
 ASF_GDAL_SUBSETTER_REQUESTS_MEMORY=128Mi
 ASF_GDAL_SUBSETTER_LIMITS_CPU=128m
-ASF_GDAL_SUBSETTER_LIMITS_MEMORY=512Mi
+ASF_GDAL_SUBSETTER_LIMITS_MEMORY=8Gi
 
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
 HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY='IfNotPresent'
@@ -261,7 +267,7 @@ VAR_SUBSETTER_REQUESTS_MEMORY=128Mi
 VAR_SUBSETTER_LIMITS_CPU=128m
 VAR_SUBSETTER_LIMITS_MEMORY=512Mi
 
-SDS_MASKFILL_IMAGE=sds/maskfill-harmony
+SDS_MASKFILL_IMAGE=sds/maskfill-harmony:latest
 SDS_MASKFILL_IMAGE_PULL_POLICY='IfNotPresent'
 SDS_MASKFILL_PARALLELISM=2
 SDS_MASKFILL_REQUESTS_CPU=128m
@@ -269,7 +275,23 @@ SDS_MASKFILL_REQUESTS_MEMORY=128Mi
 SDS_MASKFILL_LIMITS_CPU=128m
 SDS_MASKFILL_LIMITS_MEMORY=512Mi
 
-PODAAC_L2_SUBSETTER_IMAGE=podaac/podaac-cloud/podaac-subsetter:latest
+TRAJECTORY_SUBSETTER_IMAGE=sds/trajectory-subsetter:latest
+TRAJECTORY_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
+TRAJECTORY_SUBSETTER_PARALLELISM=2
+TRAJECTORY_SUBSETTER_REQUESTS_CPU=128m
+TRAJECTORY_SUBSETTER_REQUESTS_MEMORY=128Mi
+TRAJECTORY_SUBSETTER_LIMITS_CPU=128m
+TRAJECTORY_SUBSETTER_LIMITS_MEMORY=512Mi
+
+PODAAC_CONCISE_IMAGE=ghcr.io/podaac/concise:sit
+PODAAC_CONCISE_IMAGE_PULL_POLICY='IfNotPresent'
+PODAAC_CONCISE_PARALLELISM=2
+PODAAC_CONCISE_REQUESTS_CPU=128m
+PODAAC_CONCISE_REQUESTS_MEMORY=128Mi
+PODAAC_CONCISE_LIMITS_CPU=128m
+PODAAC_CONCISE_LIMITS_MEMORY=512Mi
+
+PODAAC_L2_SUBSETTER_IMAGE=ghcr.io/podaac/l2ss-py:sit
 PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
 PODAAC_L2_SUBSETTER_PARALLELISM=2
 PODAAC_L2_SUBSETTER_REQUESTS_CPU=128m
@@ -299,6 +321,17 @@ CMR_GRANULE_LOCATOR_REQUESTS_CPU=128m
 CMR_GRANULE_LOCATOR_REQUESTS_MEMORY=128Mi
 CMR_GRANULE_LOCATOR_LIMITS_CPU=128m
 CMR_GRANULE_LOCATOR_LIMITS_MEMORY=512Mi
+
+# The services to deploy locally. A comma-separated list of services that the bin/deploy-services
+# script should attempt to deploy. By default only a couple of harmony example services are deployed.
+# When specifying another service to be deployed make sure the name matches the prefix for the
+# sidecar file in tasks/service-runner-config and the name of the service in that file. For example
+# to deploy the SWOT reprojection service which has a sidecar file swot-reproject-sidecar.yaml
+# and service-name of swot-reproject, specify swot-reproject. query-cmr is required for all services,
+# so it will always be deployed, and does not need to be specified. Make sure if the image for the
+# service is not publicly available that you have built the docker image locally, otherwise the
+# service will fail to start.
+LOCALLY_DEPLOYED_SERVICES=harmony-service-example,netcdf-to-zarr
 
 # page size to use with CMR calls
 CMR_MAX_PAGE_SIZE=2000

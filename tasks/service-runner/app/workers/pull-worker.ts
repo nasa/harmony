@@ -1,17 +1,29 @@
 import axios from 'axios';
 import Agent from 'agentkeepalive';
+import { exit } from 'process';
 import { Worker } from '../../../../app/workers/worker';
+import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import WorkItem, { WorkItemStatus, WorkItemRecord } from '../../../../app/models/work-item';
 import logger from '../../../../app/util/log';
-import { runPythonServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
+import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
+import path from 'path';
+import { promises as fs } from 'fs';
 
 const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
 const activeSocketKeepAlive = 6_000;
 const maxSockets = 1;
 const maxFreeSockets = 1;
 const maxRetries = 3;
+let pullCounter = 0;
+// how many pulls to execute before logging - used to keep log message count reasonable
+const pullLogPeriod = 10;
+
+const LOCKFILE_DIR = '/tmp';
+
+// retry twice for tests and 1200 (2 minutes) for real
+const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 
 const keepaliveAgent = new Agent({
   keepAlive: true,
@@ -23,7 +35,7 @@ const keepaliveAgent = new Agent({
 
 const workUrl = `http://${env.backendHost}:${env.backendPort}/service/work`;
 logger.debug(`WORK URL: ${workUrl}`);
-logger.debug(`HARMONY_SERVICE: ${env.harmonyService}`);
+logger.debug(`HARMONY_SERVICE: ${sanitizeImage(env.harmonyService)}`);
 logger.debug(`INVOCATION_ARGS: ${env.invocationArgs}`);
 
 /**
@@ -66,7 +78,7 @@ async function _doWork(
 ): Promise<WorkItem> {
   const newWorkItem = workItem;
   // work items with a scrollID are only for the query-cmr service
-  const workFunc = newWorkItem.scrollID ? runQueryCmrFromPull : runPythonServiceFromPull;
+  const workFunc = newWorkItem.scrollID ? runQueryCmrFromPull : runServiceFromPull;
   logger.debug('Calling work function');
   const serviceResponse = await workFunc(newWorkItem);
   logger.debug('Finished work');
@@ -87,45 +99,88 @@ async function _doWork(
  * @param repeat - if true the function will loop forever (added for testing purposes)
  */
 async function _pullAndDoWork(repeat = true): Promise<void> {
-  const work = await _pullWork();
-  if (!work.error) {
-    if (work.item) {
-      const workItem = await _doWork(work.item);
-      // call back to Harmony to mark the work unit as complete or failed
-      logger.debug(`Sending response to Harmony for results work item id ${workItem.id} and job id ${workItem.jobID}`);
-      let tries = 0;
-      let complete = false;
-      while (tries < maxRetries && !complete) {
-        tries += 1;
-        try {
-          const response = await axios.put(`${workUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
-          if (response.status >= 400) {
-            logger.error(`Error: received status [${response.status}] when updating WorkItem ${workItem.id}`);
-            logger.error(`Error: ${response.statusText}`);
-          } else {
+  const workingFilePath = path.join(LOCKFILE_DIR, 'WORKING');
+  try {
+    // write out the WORKING file to prevent pod termination while working
+    await fs.writeFile(workingFilePath, '1');
+
+    // check to see if we are terminating
+    const terminationFilePath = path.join(LOCKFILE_DIR, 'TERMINATING');
+    try {
+      await fs.access(terminationFilePath);
+      // TERMINATING file exists so PreStop handler is requesting termination
+      logger.debug('RECEIVED TERMINATION REQUEST');
+      // removing the WORKING file is done in the `finally` block at the end of this function
+      return;
+    } catch {
+      // expected if file does not exist
+    }
+
+    pullCounter += 1;
+    if (pullCounter === pullLogPeriod) {
+      logger.debug('Polling for work');
+      pullCounter = 0;
+    }
+
+    const work = await _pullWork();
+    if (!work.error) {
+      if (work.item) {
+        const workItem = await _doWork(work.item);
+        // call back to Harmony to mark the work unit as complete or failed
+        logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
+        let tries = 0;
+        let complete = false;
+        while (tries < maxRetries && !complete) {
+          tries += 1;
+          try {
+            await axios.put(`${workUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
             complete = true;
+          } catch (e) {
+            const status = e.response?.status;
+            if (status) {
+              if (status === 409) {
+                logger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
+                complete = true;
+              } else if (status >= 400) {
+                logger.error(`Error: received status [${status}] with message [${e.response.data}] when updating WorkItem ${workItem.id}`);
+                logger.error(`Error: ${e.response.statusText}`);
+              }
+            } else {
+              logger.error(e);
+            }
           }
-        } catch (e) {
-          logger.error(e);
-        }
-        if (tries < maxRetries && !complete) {
-          logger.info(`Retrying failure to update work item id ${workItem.id} and job id ${workItem.jobID}`);
-          await sleep(1000);
+          if (!complete) {
+            if (tries < maxRetries) {
+              logger.info(`Retrying failure to update work item with id ${workItem.id} for job id ${workItem.jobID}`);
+              await sleep(1000);
+            } else {
+              logger.error(`Failed to update work item with id ${workItem.id} for job id ${workItem.jobID}`);
+            }
+          }
         }
       }
+    } else if (work.error === `timeout of ${timeout}ms exceeded`) {
+      // timeouts are expected - just try again after a short delay
+      logger.debug('Polling timeout - retrying');
+    } else if (work.status !== 404) {
+      // something bad happened
+      logger.error(`Full details: ${JSON.stringify(work)}`);
+      logger.error(`Unexpected error while pulling work: ${work.error}`);
+      await sleep(3000);
     }
-  } else if (work.error === `timeout of ${timeout}ms exceeded`) {
-    // timeouts are expected - just try again after a short delay (100 ms)
-    logger.debug('Polling timeout - retrying');
-  } else if (work.status !== 404) {
-    // something bad happened
-    logger.error(`Full details: ${JSON.stringify(work)}`);
-    logger.error(`Unexpected error while pulling work: ${work.error}`);
-    await sleep(3000);
-  }
-
-  if (repeat) {
-    setTimeout(_pullAndDoWork, 500);
+  } catch (e) {
+    logger.error(e.message);
+  } finally {
+    // remove the WORKING file
+    try {
+      await fs.unlink(workingFilePath);
+    } catch {
+      // log this, but don't let it stop things
+      logger.error('Failed to delete /tmp/WORKING');
+    }
+    if (repeat) {
+      setTimeout(_pullAndDoWork, 500);
+    }
   }
 }
 
@@ -161,7 +216,7 @@ async function _primeService(): Promise<void> {
     operation: { requestId: 'abc' },
   } as WorkItemRecord;
 
-  runPythonServiceFromPull(new WorkItem(exampleWorkItemProps)).catch((e) => {
+  runServiceFromPull(new WorkItem(exampleWorkItemProps)).catch((e) => {
     logger.error('Failed to prime service');
     throw e;
   });
@@ -178,12 +233,29 @@ export const exportedForTesting = {
 export default class PullWorker implements Worker {
   async start(repeat = true): Promise<void> {
     // workaround for k8s client bug https://github.com/kubernetes-client/javascript/issues/714
-    if (env.harmonyService.includes('harmonyservices/query-cmr')) {
-      // called this way to support sinon spy
-      await exportedForTesting._primeCmrService();
-    } else {
-      // called this way to support sinon spy
-      await exportedForTesting._primeService();
+    let isPrimed = false;
+    let primeCount = 0;
+    while (!isPrimed && primeCount < maxPrimeRetries) {
+      try {
+        if (env.harmonyService.includes('harmonyservices/query-cmr')) {
+          // called this way to support sinon spy
+          await exportedForTesting._primeCmrService();
+        } else {
+          // called this way to support sinon spy
+          await exportedForTesting._primeService();
+        }
+        isPrimed = true;
+      } catch (e) {
+        primeCount += 1;
+        if (primeCount === maxPrimeRetries) {
+          logger.error('Failed to prime service');
+          // kill this process which will cause the container to get restarted
+          exit(1);
+        } else {
+          // wait 100 ms before trying again
+          sleep(100);
+        }
+      }
     }
 
     // poll the Harmony work endpoint

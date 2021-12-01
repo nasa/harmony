@@ -1,5 +1,5 @@
 import { before, after } from 'mocha';
-import sinon, { SinonStub } from 'sinon';
+import { stub, SinonStub } from 'sinon';
 import fs from 'fs';
 import mockAws, { S3 } from 'mock-aws-s3';
 import * as tmp from 'tmp';
@@ -22,16 +22,16 @@ S3MockPrototype.upload = function (...args): mockAws.S3.ManagedUpload {
  */
 export function hookMockS3(_buckets?: string[]): void {
   let dir;
-  let stub;
+  let stubObject;
   before(function () {
     dir = tmp.dirSync({ unsafeCleanup: true });
     mockAws.config.basePath = dir.name;
-    stub = sinon.stub(S3ObjectStore.prototype, '_getS3')
+    stubObject = stub(S3ObjectStore.prototype, '_getS3')
       .callsFake(() => new mockAws.S3());
   });
 
   after(function () {
-    stub.restore();
+    stubObject.restore();
     dir.removeCallback();
   });
 }
@@ -44,7 +44,7 @@ export function hookMockS3(_buckets?: string[]): void {
 export function hookSignS3Object(): string {
   const prefix = 'https://example.com/s3/signed/';
   before(function () {
-    sinon.stub(S3ObjectStore.prototype, 'signGetObject')
+    stub(S3ObjectStore.prototype, 'signGetObject')
       .callsFake(async (url, params) => `${prefix}${params['A-userid']}`);
   });
   after(function () {

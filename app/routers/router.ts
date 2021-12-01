@@ -2,7 +2,7 @@ import process from 'process';
 import express, { RequestHandler } from 'express';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import log from '../util/log';
 
 // Middleware requires in outside-in order
@@ -11,7 +11,8 @@ import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-a
 import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
 import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
-import { getJobsListing, getJobStatus, cancelJob, getJobsForWorkflowUI, getJobForWorkflowUI, getWorkItemsForWorkflowUI } from '../frontends/jobs';
+import { getJobsListing, getJobStatus, cancelJob } from '../frontends/jobs';
+import { getJobs, getJob, getWorkItemsTable } from '../frontends/workflow-ui';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
@@ -58,7 +59,7 @@ function logged(fn: RequestHandler): RequestHandler {
     const startTime = new Date().getTime();
     try {
       child.debug('Invoking middleware');
-      return await fn(req, res, next);
+      return fn(req, res, next);
     } finally {
       const msTaken = new Date().getTime() - startTime;
       child.debug('Completed middleware', { durationMs: msTaken });
@@ -122,6 +123,7 @@ const authorizedRoutes = [
   '/service-results/*',
   '/cloud-access*',
   '/stac*',
+  '/workflow-ui*',
 ];
 
 /**
@@ -192,15 +194,17 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/jobs', getJobsListing);
   result.get('/jobs/:jobID', getJobStatus);
   result.post('/jobs/:jobID/cancel', cancelJob);
-  result.get('/workflow-ui/jobs', getJobsForWorkflowUI);
-  result.get('/workflow-ui/jobs/:jobID', getJobForWorkflowUI);
-  result.get('/workflow-ui/jobs/:jobID/work-items', getWorkItemsForWorkflowUI);
+
   result.get('/admin/jobs', getJobsListing);
   result.get('/admin/jobs/:jobID', getJobStatus);
   result.post('/admin/jobs/:jobID/cancel', cancelJob);
-  result.get('/admin/workflow-ui/jobs', getJobsForWorkflowUI);
-  result.get('/admin/workflow-ui/jobs/:jobID', getJobForWorkflowUI);
-  result.get('/admin/workflow-ui/jobs/:jobID/work-items', getWorkItemsForWorkflowUI);
+
+  result.get('/workflow-ui', getJobs);
+  result.get('/workflow-ui/:jobID', getJob);
+  result.get('/workflow-ui/:jobID/work-items', getWorkItemsTable);
+  result.get('/admin/workflow-ui', getJobs);
+  result.get('/admin/workflow-ui/:jobID', getJob);
+  result.get('/admin/workflow-ui/:jobID/work-items', getWorkItemsTable);
 
   // Allow canceling with a GET in addition to POST to workaround issues with redirects using EDL
   result.get('/jobs/:jobID/cancel', cancelJob);

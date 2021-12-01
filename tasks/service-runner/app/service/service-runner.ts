@@ -1,6 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import { readdirSync } from 'fs';
 import stream from 'stream';
+import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import logger from '../../../../app/util/log';
 import WorkItem from '../../../../app/models/work-item';
@@ -55,16 +56,20 @@ function _getStacCatalogs(dir: string): string[] {
  */
 function _getErrorMessage(logStr: string): string {
   // expect JSON logs entries
-  const regex = /\{"message":.*?"application":.*?\}/g;
-  const matches = logStr.match(regex);
-  for (const match of matches) {
-    const logEntry = JSON.parse(match);
-    if (logEntry.level === 'ERROR') {
-      return logEntry.message;
+  try {
+    const regex = /\{.*?\}/gs;
+    const matches = logStr?.match(regex) || [];
+    for (const match of matches) {
+      const logEntry = JSON.parse(match);
+      if (logEntry.level?.toUpperCase() === 'ERROR') {
+        return logEntry.message;
+      }
     }
+    return 'Unknown error';
+  } catch (e) {
+    logger.error(e.message);
+    return e.message;
   }
-
-  return 'Unknown error';
 }
 
 /**
@@ -72,63 +77,71 @@ function _getErrorMessage(logStr: string): string {
   * @param operation - The requested operation
   * @param callback - Function to call with result
   */
-export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse> {
-  const { operation, scrollID } = workItem;
-  const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
-  const args = [
-    'tasks/query-cmr/app/cli',
-    '--harmony-input',
-    `${JSON.stringify(operation)}`,
-    '--scroll-id',
-    scrollID,
-    '--output-dir',
-    catalogDir,
-  ];
+export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse> {
+  try {
+    const { operation, scrollID } = workItem;
+    const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
+    const args = [
+      'tasks/query-cmr/app/cli',
+      '--harmony-input',
+      `${JSON.stringify(operation)}`,
+      '--scroll-id',
+      scrollID,
+      '--output-dir',
+      catalogDir,
+    ];
 
-  return new Promise<ServiceResponse>((resolve) => {
-    logger.debug('CALLING WORKER');
-    // create a writable stream to capture stdout from the exec call
-    // using stdout instead of stderr because the service library seems to log ERROR to stdout
-    const stdOut = new LogStream();
+    return await new Promise<ServiceResponse>((resolve) => {
+      logger.debug('CALLING WORKER');
+      // create a writable stream to capture stdout from the exec call
+      // using stdout instead of stderr because the service library seems to log ERROR to stdout
+      const stdOut = new LogStream();
 
-    // timeout if things take too long
-    const timeout = setTimeout(() => {
-      resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
-    }, workerTimeout);
+      // timeout if things take too long
+      const timeout = setTimeout(() => {
+        resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
+      }, workerTimeout);
 
-    exec.exec(
-      'argo',
-      env.myPodName,
-      'worker',
-      [
-        'node',
-        ...args,
-      ],
-      stdOut,
-      process.stderr as stream.Writable,
-      process.stdin as stream.Readable,
-      true,
-      (status: k8s.V1Status) => {
-        logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
-        if (status.status === 'Success') {
-          clearTimeout(timeout);
-          logger.debug('Getting STAC catalogs');
-          const catalogs = _getStacCatalogs(`${catalogDir}`);
-          resolve({ batchCatalogs: catalogs });
-        } else {
-          clearTimeout(timeout);
-          const logErr = _getErrorMessage(stdOut.logStr);
-          const errMsg = `${env.harmonyService}: ${logErr}`;
-          stdOut.destroy();
-          resolve({ error: errMsg });
-        }
-      },
-    ).catch((e) => {
-      clearTimeout(timeout);
-      logger.error(e.message);
-      resolve({ error: e.message });
+      exec.exec(
+        'argo',
+        env.myPodName,
+        'worker',
+        [
+          'node',
+          ...args,
+        ],
+        stdOut,
+        process.stderr as stream.Writable,
+        process.stdin as stream.Readable,
+        true,
+        (status: k8s.V1Status) => {
+          logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
+          try {
+            if (status.status === 'Success') {
+              clearTimeout(timeout);
+              logger.debug('Getting STAC catalogs');
+              const catalogs = _getStacCatalogs(`${catalogDir}`);
+              resolve({ batchCatalogs: catalogs });
+            } else {
+              clearTimeout(timeout);
+              const logErr = _getErrorMessage(stdOut.logStr);
+              const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
+              stdOut.destroy();
+              resolve({ error: errMsg });
+            }
+          } catch (e) {
+            resolve({ error: e.message });
+          }
+        },
+      ).catch((e) => {
+        clearTimeout(timeout);
+        logger.error(e.message);
+        resolve({ error: e.message });
+      });
     });
-  });
+  } catch (e) {
+    return { error: e.message };
+  }
 }
 
 /**
@@ -136,63 +149,70 @@ export function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse
  * @param operation - The requested operation
  * @param callback - Function to call with result
  */
-export async function runPythonServiceFromPull(workItem: WorkItem): Promise<ServiceResponse> {
-  const { operation, stacCatalogLocation } = workItem;
-  const commandLine = env.invocationArgs.split('\n');
-  logger.debug(`Working dir: ${env.workingDir}`);
+export async function runServiceFromPull(workItem: WorkItem): Promise<ServiceResponse> {
+  try {
+    const { operation, stacCatalogLocation } = workItem;
+    const commandLine = env.invocationArgs.split('\n');
+    logger.debug(`Working dir: ${env.workingDir}`);
 
-  const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
+    const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
 
-  return new Promise<ServiceResponse>((resolve) => {
-    logger.debug('CALLING WORKER');
-    // create a writable stream to capture stdout from the exec call
-    // using stdout instead of stderr because the service library seems to log ERROR to stdout
-    const stdOut = new LogStream();
-    // timeout if things take too long
-    const timeout = setTimeout(async () => {
-      resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
-    }, workerTimeout);
+    return await new Promise<ServiceResponse>((resolve) => {
+      logger.debug('CALLING WORKER');
+      // create a writable stream to capture stdout from the exec call
+      // using stdout instead of stderr because the service library seems to log ERROR to stdout
+      const stdOut = new LogStream();
+      // timeout if things take too long
+      const timeout = setTimeout(async () => {
+        resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
+      }, workerTimeout);
 
-    exec.exec(
-      'argo',
-      env.myPodName,
-      'worker',
-      [
-        'python',
-        ...commandLine,
-        '--harmony-action',
-        'invoke',
-        '--harmony-input',
-        `${JSON.stringify(operation)}`,
-        '--harmony-sources',
-        stacCatalogLocation,
-        '--harmony-metadata-dir',
-        `${catalogDir}`,
-      ],
-      stdOut,
-      process.stderr as stream.Writable,
-      process.stdin as stream.Readable,
-      true,
-      (status: k8s.V1Status) => {
-        logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
-        if (status.status === 'Success') {
-          clearTimeout(timeout);
-          logger.debug('Getting STAC catalogs');
-          const catalogs = _getStacCatalogs(`${catalogDir}`);
-          resolve({ batchCatalogs: catalogs });
-        } else {
-          clearTimeout(timeout);
-          const logErr = _getErrorMessage(stdOut.logStr);
-          const errMsg = `${env.harmonyService}: ${logErr}`;
-          resolve({ error: errMsg });
-        }
-      },
-    ).catch((e) => {
-      clearTimeout(timeout);
-      logger.error(e.message);
-      resolve({ error: e.message });
+      exec.exec(
+        'argo',
+        env.myPodName,
+        'worker',
+        [
+          ...commandLine,
+          '--harmony-action',
+          'invoke',
+          '--harmony-input',
+          `${JSON.stringify(operation)}`,
+          '--harmony-sources',
+          stacCatalogLocation,
+          '--harmony-metadata-dir',
+          `${catalogDir}`,
+        ],
+        stdOut,
+        process.stderr as stream.Writable,
+        process.stdin as stream.Readable,
+        true,
+        (status: k8s.V1Status) => {
+          logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
+          try {
+            if (status.status === 'Success') {
+              clearTimeout(timeout);
+              logger.debug('Getting STAC catalogs');
+              const catalogs = _getStacCatalogs(`${catalogDir}`);
+              resolve({ batchCatalogs: catalogs });
+            } else {
+              clearTimeout(timeout);
+              const logErr = _getErrorMessage(stdOut.logStr);
+              const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
+              resolve({ error: errMsg });
+            }
+          } catch (e) {
+            resolve({ error: e.message });
+          }
+        },
+      ).catch((e) => {
+        clearTimeout(timeout);
+        logger.error(e.message);
+        resolve({ error: e.message });
+      });
     });
-  });
+  } catch (e) {
+    return { error: e.message };
+  }
 }
 
 export const exportedForTesting = {

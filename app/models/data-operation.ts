@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 import _ from 'lodash';
 import logger from '../util/log';
 import { CmrUmmVariable } from '../util/cmr';
@@ -36,6 +37,22 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.12.0',
+      schema: readSchema('0.12.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        revertedModel.sources.forEach((s) => {
+          if (s.variables) {
+            s.variables.forEach((v) => {
+              delete v.relatedUrls; // eslint-disable-line no-param-reassign
+            });
+          }
+        });
+
+        return revertedModel;
+      },
+    },
     {
       version: '0.11.0',
       schema: readSchema('0.11.0'),
@@ -128,13 +145,14 @@ function schemaVersions(): SchemaVersion[] {
   return _schemaVersions;
 }
 
-let _validator: Ajv.Ajv;
+let _validator: Ajv;
 /**
  * @returns a memoized validator for the data operations schema
  */
-function validator(): Ajv.Ajv {
+function validator(): Ajv {
   if (_validator) return _validator;
-  _validator = new Ajv({ schemaId: 'auto' });
+  _validator = new Ajv({ strict: false });
+  addFormats(_validator);
   for (const { schema, version } of schemaVersions()) {
     _validator.addSchema(schema, version);
   }
@@ -144,6 +162,18 @@ function validator(): Ajv.Ajv {
 export interface HarmonyVariable {
   id: string;
   name: string;
+  fullPath: string;
+  relatedUrls?: HarmonyRelatedUrl[];
+}
+
+export interface HarmonyRelatedUrl {
+  url: string;
+  urlContentType: string;
+  type: string;
+  subtype?: string;
+  description?: string;
+  format?: string;
+  mimeType?: string;
 }
 
 export interface TemporalRange {
@@ -204,6 +234,8 @@ export default class DataOperation {
 
   message: string;
 
+  concatenate?: boolean;
+
   requestStartTime: Date; // The time that the initial request to harmony was received
 
   /**
@@ -229,6 +261,35 @@ export default class DataOperation {
 
     this.encrypter = encrypter;
     this.decrypter = decrypter;
+  }
+
+
+  /**
+   * Returns true if the operation is requesting spatial subsetting
+   *
+   * @returns true if the operation requests spatial subsetting
+   */
+  get shouldSpatialSubset(): boolean {
+    return !!this.model.subset?.bbox;
+  }
+
+  /**
+   * Returns true if the operation is requesting temporal subsetting
+   *
+   * @returns true if the operation requests temporal subsetting
+   */
+  get shouldTemporalSubset(): boolean {
+    return !_.isEmpty(this.model.temporal);
+  }
+
+  /**
+   * Returns true if the operation is requesting variable subsetting
+   *
+   * @returns true if the operation requests variable subsetting
+   */
+  get shouldVariableSubset(): boolean {
+    const varSources = this.sources.filter((s) => s.variables && s.variables.length > 0);
+    return varSources.length > 0;
   }
 
   /**
@@ -273,12 +334,43 @@ export default class DataOperation {
     vars?: CmrUmmVariable[],
     granules?: HarmonyGranule[],
   ): void {
-    const variables = vars ? vars.map(({ umm, meta }) => ({
-      id: meta['concept-id'],
-      name: umm.Name,
-      fullPath: umm.Name,
-    })) : undefined;
+    const variables = vars ? vars.map(({ umm, meta }) => {
+      const schemaVar: HarmonyVariable = {
+        id: meta['concept-id'],
+        name: umm.Name,
+        fullPath: umm.Name,
+      };
+      if (umm.RelatedURLs) {
+        schemaVar.relatedUrls = umm.RelatedURLs
+          .map((relatedUrl) => {
+            return {
+              url: relatedUrl.URL,
+              urlContentType: relatedUrl.URLContentType,
+              type: relatedUrl.Type,
+              subtype: relatedUrl.Subtype,
+              description: relatedUrl.Description,
+              format: relatedUrl.Format,
+              mimeType:relatedUrl.MimeType,
+            };
+          });
+      }
+      return schemaVar;
+    }) : undefined;
     this.model.sources.push({ collection, variables, granules });
+  }
+
+  /**
+   * Gets whether or not the data should be concatenated
+   */
+  get shouldConcatenate(): boolean {
+    return !!this.concatenate;
+  }
+
+  /**
+   * Sets whether or not the data should be concatenated
+   */
+  set shouldConcatenate(value: boolean) {
+    this.concatenate = value;
   }
 
   /**
@@ -674,11 +766,13 @@ export default class DataOperation {
    * to the provided JSON schema version ID (default: highest available)
    *
    * @param version - The version to serialize
+   * @param fieldsToInclude - The fields to include in the serialized operation. An empty array
+   * indicates that all fields should be included.
    * @returns The serialized data operation in the requested version
    * @throws TypeError - If validate is `true` and validation fails, or if version is not provided
    * @throws RangeError - If the provided version cannot be serialized
    */
-  serialize(version: string, fields: string[] = []): string {
+  serialize(version: string, fieldsToInclude: string[] = []): string {
     if (!version) {
       throw new TypeError('Schema version is required to serialize DataOperation objects');
     }
@@ -711,26 +805,30 @@ export default class DataOperation {
       throw new TypeError(`Invalid JSON produced: ${JSON.stringify(validatorInstance.errors)}`);
     }
 
-    if (fields.length > 0) {
-      if (!fields.includes('reproject')) {
+    if (fieldsToInclude.length > 0) {
+      if (!fieldsToInclude.includes('reproject')) {
         delete toWrite.format.crs;
         delete toWrite.format.srs;
         delete toWrite.format.interpolation;
         delete toWrite.format.scaleExtent;
       }
-      if (!fields.includes('reformat')) {
+      if (!fieldsToInclude.includes('reformat')) {
         delete toWrite.format.mime;
       }
-      if (!fields.includes('variable')) {
+      if (!fieldsToInclude.includes('variableSubset')) {
         for (const source of toWrite.sources) {
           delete source.variables;
         }
       }
-      if (!fields.includes('spatial')) {
+      if (!fieldsToInclude.includes('spatialSubset')) {
         delete toWrite.subset.bbox;
       }
-      if (!fields.includes('shape')) {
+      if (!fieldsToInclude.includes('shapefileSubset')) {
         delete toWrite.subset.shape;
+      }
+
+      if (Object.keys(toWrite.subset).length === 0) {
+        delete toWrite.subset;
       }
     }
 
