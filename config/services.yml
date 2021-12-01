@@ -470,6 +470,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/podaac/concise
+    umm_s:
+      - S1242328818-POCLOUD
     collections:
       - C1234208436-POCLOUD
       - C1234208437-POCLOUD
