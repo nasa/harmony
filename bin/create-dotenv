@@ -1,9 +1,9 @@
 #!/bin/sh
 
 if [ -f .env ]; then
-  echo "Skipping generating .env file because it already exists."
+    echo "Skipping generating .env file because it already exists."
 else
-  cat <<EOF > .env
+    cat <<EOF > .env
 # Random string used to sign cookies.
 COOKIE_SECRET=$(hexdump -n 128 -e '"%08x"' /dev/random)
 
@@ -11,17 +11,41 @@ COOKIE_SECRET=$(hexdump -n 128 -e '"%08x"' /dev/random)
 # sent to backend services
 SHARED_SECRET_KEY=$(hexdump -n 16 -e '"%08x"' /dev/random)
 
-# See the "OAuth 2 (Earthdata Login)" section in the env-defaults file
-# Contact a harmony developer if unsure what values to use
-OAUTH_CLIENT_ID=
-OAUTH_UID=
-OAUTH_PASSWORD=
 EOF
+    cat <<PROMPT_EDL
+Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions for this or do not understand what this means, please contact the Harmony team for help. Once you have your EDL application created, please enter the credentials as prompted.
 
-  OS=`uname`
-  if [ "Linux" = "$OS" ]; then
-    echo "\n# Detected running on Linux so setting Linux specific env" >> .env
-    echo "CALLBACK_URL_ROOT=http://localhost:3001" >> .env
-    echo "BACKEND_HOST=localhost" >> .env
-  fi
+PROMPT_EDL
+    
+    # prompt for the users EDL app credentials
+    read -p "EDL Application Client ID: " OAUTH_CLIENT_ID
+    echo ""
+    read -s -p "EDL Application UID: " OAUTH_UID
+    echo ""
+    read -s -p "EDL Application Password: " OAUTH_PASSWORD
+    echo ""
+    
+cat << EOF >> .env
+OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
+OAUTH_UID=$OAUTH_UID
+OAUTH_PASSWORD=$OAUTH_PASSWORD
+EOF
+    echo "\n# Env vars used for turbo mode" >> .env
+    # Add locally LOCALLY_DEPLOYED_SERVICES if it is defined (not zero length)
+    if [ ! -z "${LOCALLY_DEPLOYED_SERVICES}" ]; then
+        echo "LOCALLY_DEPLOYED_SERVICES=${LOCALLY_DEPLOYED_SERVICES}" >> .env
+    fi
+    
+    # Add locally HOST_VOLUME_PATH if it is defined (not zero length)
+    if [ ! -z "${HOST_VOLUME_PATH}" ]; then
+        echo "HOST_VOLUME_PATH=${HOST_VOLUME_PATH}\n" >> .env
+    fi
+    
+    OS=`uname`
+    if [ "Linux" = "$OS" ]; then
+        echo "\n# Detected running on Linux so setting Linux specific env" >> .env
+        echo "CALLBACK_URL_ROOT=http://localhost:3001" >> .env
+        echo "BACKEND_HOST=localhost" >> .env
+        echo "KUBE_CONTEXT=minikube" >> .env
+    fi
 fi

@@ -84,19 +84,31 @@ argo version
    ``` bash
    export HOST_VOLUME_PATH=<full path to some directory under your home directory>
    ```
-   b. Build the service wrapper image
+   b. (optional) define the services you want to deploy locally using the `LOCALLY_DEPLOYED_SERVICES`
+   environment variable. 
+   Refer to the `env-defaults` file for a full explanation of this variable and how to define it.
+   For example: 
+   ```bash
+   export LOCALLY_DEPLOYED_SERVICES=harmony-service-example
+   ```
+5. (optional) run the `create-dotenv` script in the `bin` directory nd answer the prompts to 
+   create a `.env` file.
   ```bash
-  pushd harmony/tasks/service-runner && npm run build && popd
+  pushd harmony && ./bin/create-dotenv && popd
   ```
+   Edit the `.env` file to add any custom image tags (see the `env-defaults` file).
 
-5. Run the bootstrap script and answer the prompts
+   This step is only needed if you want to use custom service image tags. You can skip this step
+   if you just want to use the default service tags for now. You can make changes to .env later.
+
+6. Run the bootstrap script and answer the prompts (if any)
 ```bash
 cd harmony && ./bin/bootstrap-harmony
 ```
 
 Linux Only (Handled automatically by Docker Desktop)
 
-6. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
+7. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
 ```bash
 kubectl port-forward service/harmony 3000:3000 -n argo
 ```
@@ -107,7 +119,16 @@ kubectl port-forward service/argo-server 2746:2746 -n argo
 **NOTE** The workflow listener will fail repeatedly (restarts every 30 seconds) when Harmony is run
 in Kubernetes on Linux. This is a known bug and is to addressed in Jira ticket HARMONY-849.
 
-Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `argo` namespace. If you installed
+Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `argo` namespace. 
+
+**NOTE** It may take a while for all the pods to start if this is the first time you have started 
+Harmony. You can check on the status by running the following command:
+
+```bash
+kubectl get pods -n argo
+```
+
+When all the pods are in the 'Running' state then Harmony is ready to go. If you installed
 the example harmony service you can test it with the following (requires a [.netrc](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html) file):
 
 ```bash
