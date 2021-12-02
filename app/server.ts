@@ -79,16 +79,6 @@ function buildBackendServer(port: number): Server {
 
   const app = express();
 
-  let gauge = 0;
-  app.get('/metrics', (function (req, res) {
-    gauge += 1;
-    const prom_metric = 
-   `# HELP custom_metric An example of a custom metric, using the gauge type.
-    # TYPE custom_metric gauge
-    custom_metric{service_id="harmony-service-example-latest"} ${gauge}`;
-    return res.send(prom_metric);
-  }));
-
   app.use('/service/:requestId/*', setRequestId);
   app.use(addRequestId(appLogger));
 
