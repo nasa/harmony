@@ -147,10 +147,7 @@ If you have not yet cloned the Harmony repository, run
 $ git clone https://github.com/nasa/harmony.git
 ```
 
-Ensure envsubst is available .
-```
-$  envsubst --v
-```
+Ensure envsubst is installed on system 
 
 Ensure node is available and is the correct version, 12.x.y, where "x" >= 14.
 
