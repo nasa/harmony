@@ -201,6 +201,7 @@ Required:
 * PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
 * Earthdata Login application in UAT (Details below in the 'Set up Earthdata Login application for your local Harmony instance' section)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
+* [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files. 
 
 
 Highly Recommended:
@@ -219,6 +220,8 @@ If you have not yet cloned the Harmony repository, run
 ```
 $ git clone https://github.com/nasa/harmony.git
 ```
+
+Ensure envsubst is installed on system. 
 
 Ensure node is available and is the correct version, 12.x.y, where "x" >= 14.
 
