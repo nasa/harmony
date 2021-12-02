@@ -127,7 +127,7 @@ Required:
 * PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
 * Earthdata Login application in UAT (Details below in the 'Set up Earthdata Login application for your local Harmony instance' section)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
-* [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files . 
+* [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files. 
 
 
 Highly Recommended:
