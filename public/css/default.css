@@ -1,0 +1,11 @@
+footer a {
+    color: #92bfec;
+}
+a .badge-dark {
+    text-decoration: none;
+    color: #fff;
+}
+
+.mw-40ch {
+    max-width: 40ch;
+}

@@ -1,6 +1,6 @@
 import { before, after } from 'mocha';
 import * as sinon from 'sinon';
-import { ForbiddenError } from 'util/errors';
+import { ForbiddenError } from '../../app/util/errors';
 import * as edlAuth from '../../app/middleware/earthdata-login-token-authorizer';
 
 /**

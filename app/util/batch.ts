@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import DataOperation from 'models/data-operation';
+import DataOperation from '../models/data-operation';
 
 /**
  * Return the total number of granules in the given operation

@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { describe, it, beforeEach } from 'mocha';
 import { stub } from 'sinon';
-import { getMaxSynchronousGranules } from 'models/services/base-service';
-import StubService from 'test/helpers/stub-service';
-import { hookRangesetRequest } from 'test/helpers/ogc-api-coverages';
-import hookServersStartStop from 'test/helpers/servers';
+import StubService from '../helpers/stub-service';
+import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
+import hookServersStartStop from '../helpers/servers';
+import { getMaxSynchronousGranules } from '../../app/models/services/base-service';
 import DataOperation from '../../app/models/data-operation';
 import { chooseServiceConfig, buildService } from '../../app/models/services';
 import env from '../../app/util/env';

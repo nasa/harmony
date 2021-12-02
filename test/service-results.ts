@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
+import { stub } from 'sinon';
 import { describe, it, before, after } from 'mocha';
-import { createPublicPermalink } from 'frontends/service-results';
-import { S3ObjectStore } from 'util/object-store';
+import { createPublicPermalink } from '../app/frontends/service-results';
+import { S3ObjectStore } from '../app/util/object-store';
 import hookServersStartStop from './helpers/servers';
 import { hookUrl } from './helpers/hooks';
 
@@ -64,22 +64,22 @@ describe('service-results', function () {
 
   describe('getServiceResult', function () {
     describe('when given a valid bucket and key', function () {
-      let stub;
+      let stubObject;
       before(function () {
-        stub = sinon.stub(S3ObjectStore.prototype, 'signGetObject')
+        stubObject = stub(S3ObjectStore.prototype, 'signGetObject')
           .callsFake(async (url, params) => `https://example.com/signed/${params['A-userid']}`);
       });
       hookUrl('/service-results/some-bucket/public/some/path.tif', 'jdoe');
       after(function () {
-        stub.restore();
+        stubObject.restore();
       });
 
       it('signs the S3 URL indicated by the path', function () {
-        expect(stub.getCall(0).args[0]).to.equal('s3://some-bucket/public/some/path.tif');
+        expect(stubObject.getCall(0).args[0]).to.equal('s3://some-bucket/public/some/path.tif');
       });
 
       it("passes the user's Earthdata Login username to the signing function for tracking", function () {
-        expect(stub.getCall(0).args[1]).to.eql({ 'A-userid': 'jdoe' });
+        expect(stubObject.getCall(0).args[1]).to.eql({ 'A-userid': 'jdoe' });
       });
 
       it('redirects temporarily to a presigned URL', function () {
@@ -93,13 +93,13 @@ describe('service-results', function () {
     });
 
     describe('when given a valid bucket and key that cannot be signed', function () {
-      let stub;
+      let stubObject;
       before(function () {
-        stub = sinon.stub(S3ObjectStore.prototype, 'signGetObject').throws();
+        stubObject = stub(S3ObjectStore.prototype, 'signGetObject').throws();
       });
       hookUrl('/service-results/some-bucket/public/some/path.tif', 'jdoe');
       after(function () {
-        stub.restore();
+        stubObject.restore();
       });
 
       it('returns a 404 response', function () {

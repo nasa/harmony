@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -ex
+
+image="harmonyservices/service-runner"
+tag=${1:-latest}
+
+region=${AWS_DEFAULT_REGION-"us-west-2"}
+
+account=$(aws sts get-caller-identity --output text --query 'Account')
+# Need to remove \r returned on all aws commands run from Bamboo
+account=${account//$'\r'/}
+
+login_command=$(aws ecr get-login --no-include-email --region ${region})
+# Need to remove \r returned on all aws commands run from Bamboo
+login_command=${login_command//$'\r'/}
+$login_command
+
+docker tag ${image}:${tag} ${account}.dkr.ecr.${region}.amazonaws.com/${image}:${tag}
+
+# Create ECR repo if it doesn't exist
+aws ecr describe-repositories --repository-names ${image} || aws ecr create-repository --repository-name ${image}
+
+docker push ${account}.dkr.ecr.${region}.amazonaws.com/${image}:${tag}

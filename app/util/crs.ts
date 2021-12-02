@@ -18,7 +18,7 @@ export default function parseCRS(
 ): [string, SRS] {
   try {
     let queryCRS: string = null;
-    let epsg: string = null;
+    let epsg = '';
 
     // detect opengis.net PURLs
     const purl = /www.opengis.net\/def\/crs\/EPSG\/0\/(\d+)$/i.exec(queryCRS_);

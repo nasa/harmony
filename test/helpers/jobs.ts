@@ -2,13 +2,12 @@ import request, { Test } from 'supertest';
 import { it } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { Transaction } from 'knex';
 import { Application } from 'express';
-import JobLink from 'models/job-link';
 import _ from 'lodash';
+import JobLink from '../../app/models/job-link';
 import { Job, JobStatus, JobRecord } from '../../app/models/job';
 import { JobListing } from '../../app/frontends/jobs';
-import db from '../../app/util/db';
+import db, { Transaction } from '../../app/util/db';
 import { hookRequest } from './hooks';
 import { truncateAll } from './db';
 
@@ -327,7 +326,7 @@ export function hookJobCreation(
 ): void {
   beforeFn(async function () {
     this.job = buildJob(props);
-    this.job.save(db);
+    await this.job.save(db);
   });
 
   afterFn(async function () {

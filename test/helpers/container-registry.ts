@@ -1,5 +1,5 @@
-import sinon, { SinonStub } from 'sinon';
-import { ECR, ImageDetails } from 'util/container-registry';
+import { stub, SinonStub } from 'sinon';
+import { ECR, ImageDetails } from '../../app/util/container-registry';
 
 /**
  * Adds before and after hooks to the ECR describe image call.
@@ -8,7 +8,7 @@ import { ECR, ImageDetails } from 'util/container-registry';
  */
 export default function hookDescribeImage(imageResponse: ImageDetails): void {
   before(function () {
-    sinon.stub(ECR.prototype, 'describeImage')
+    stub(ECR.prototype, 'describeImage')
       .resolves(imageResponse);
   });
   after(function () {

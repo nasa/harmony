@@ -1,4 +1,4 @@
-import { getRequestUrl } from 'util/url';
+import { getRequestUrl } from '../../util/url';
 
 /**
  *  Returns the URL of the request with no trailing slash

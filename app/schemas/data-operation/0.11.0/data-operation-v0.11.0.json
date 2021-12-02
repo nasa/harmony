@@ -1,0 +1,410 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.11.0.json",
+  "$ref": "#/definitions/DataOperation",
+  "definitions": {
+    "DataOperation": {
+      "type": "object",
+      "title": "DataOperation",
+      "description": "Describes an operation to be performed by backend services",
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "description": "JSON schema location",
+          "type": "string"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Source"
+          }
+        },
+        "format": {
+          "$ref": "#/definitions/Format"
+        },
+        "subset": {
+          "$ref": "#/definitions/Subset"
+        },
+        "temporal": {
+          "description": "The time which should be used as the range for temporal subsetting",
+          "$ref": "#/definitions/Temporal"
+        },
+        "callback": {
+          "name": "Callback URL",
+          "description": "The URL that non-HTTP services must POST to when their execution is complete (HTTP services simply return a response).  Set query param \"redirect=\" with a URL to redirect the user to a service result (preferred).  Set the Content-Type header and POST bytes in order to send a file directly to the user.  Set query param \"error=\" with a message to provide a service error.",
+          "type": "string",
+          "format": "uri",
+          "qt-uri-protocols": [
+            "http",
+            "https"
+          ]
+        },
+        "stagingLocation": {
+          "name": "Result staging prefix",
+          "description": "An object store (S3) URL prefix under which services may elect to put their output.  Services must have write access to the Harmony staging bucket for the deployed environment to use this value.  The location will be unique per Harmony request but services are responsible for ensuring no name clashes occur within a single request.  The prefix will end in a \"/\" character",
+          "type": "string",
+          "examples": [
+            "s3://example-bucket/public/organization-name/service-name/1234567/"
+          ]
+        },
+        "user": {
+          "name": "Earthdata Login Username",
+          "description": "The name of the user on behalf of whom Harmony is acting",
+          "type": "string"
+        },
+        "accessToken": {
+          "name": "Earthdata Login Token",
+          "description": "The encrypted EDL token of the user on behalf of whom Harmony is acting",
+          "type": "string"
+        },
+        "client": {
+          "name": "Client ID",
+          "description": "An identifier indicating the client submitting the request",
+          "type": "string"
+        },
+        "version": {
+          "name": "Version number",
+          "description": "Identifies which schema version and Harmony callback protocol is being used",
+          "type": "string"
+        },
+        "isSynchronous": {
+          "name": "Synchronous request mode",
+          "description": "True if the request is going to be returned synchronously back to the end user. Note a backend service can still use a callback URL to indicate completion.",
+          "type": "boolean"
+        },
+        "requestId": {
+          "name": "Request identifier",
+          "description": "UUID to uniquely identify a request.",
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "format",
+        "sources",
+        "subset",
+        "user",
+        "accessToken",
+        "client",
+        "version",
+        "requestId",
+        "stagingLocation"
+      ]
+    },
+    "Format": {
+      "type": "object",
+      "title": "Format",
+      "description": "Service parameters pertaining to the output file's format",
+      "additionalProperties": false,
+      "properties": {
+        "crs": {
+          "type": "string",
+          "description": "The requested output projection in Proj4",
+          "examples": [
+            "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+          ]
+        },
+        "srs": {
+          "type": ["object", "null"],
+          "description": "SRS / CRS information for requested output projection",
+          "additionalProperties": false,
+          "properties": {
+            "proj4": {
+              "type": "string",
+              "description": "The requested output projection in Proj4",
+              "examples": [
+                "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+              ]
+            },
+            "wkt": {
+              "type": "string",
+              "description": "The requested output projection in WKT",
+              "examples": [
+                "PROJCS[ ... ]"
+              ]
+            },
+            "epsg": {
+              "type": "string",
+              "description": "The requested output projection in EPSG. Optional; empty string when absent.",
+              "examples": [
+                "EPSG:7030"
+              ]
+            }
+          },
+          "required": []
+        },
+        "isTransparent": {
+          "type": "boolean",
+          "description": "If set to true, no data areas should be set to transparent in the output"
+        },
+        "mime": {
+          "type": "string",
+          "description": "The requested mime type of the output file",
+          "examples": [
+            "image/tiff",
+            "application/x-netcdf4"
+          ]
+        },
+        "width": {
+          "type": "number",
+          "description": "For image output, the requested image width in pixels"
+        },
+        "height": {
+          "type": "number",
+          "description": "For image output, the requested image height in pixels"
+        },
+        "dpi": {
+          "type": "integer",
+          "description": "For image output, the dots-per-inch resolution of the output image"
+        },
+        "interpolation": {
+          "type": "string",
+          "description": "The interpolation method to be used during reprojection and scaling",
+          "examples": [
+            "near",
+            "bilinear"
+          ]
+        },
+        "scaleExtent": {
+          "$ref": "#/definitions/ScaleExtent"
+        },
+        "scaleSize": {
+          "$ref": "#/definitions/ScaleSize"
+        }
+      },
+      "required": []
+    },
+    "Source": {
+      "type": "object",
+      "title": "Source",
+      "description": "A group of files which come from a common collection and will have a common set of variables operated on",
+      "additionalProperties": false,
+      "properties": {
+        "collection": {
+          "type": "string",
+          "description": "The CMR Collection ID that has the variables and granules in this data source",
+          "examples": ["C1233800302-EEDTEST"]
+        },
+        "variables": {
+          "type": "array",
+          "description": "A list of variables the caller would like provided in the output.  If this attribute is null or absent, the service should provide all available variables in the output.",
+          "default": "all",
+          "items": {
+            "$ref": "#/definitions/Variable"
+          }
+        },
+        "granules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Granule"
+          }
+        }
+      },
+      "required": [
+        "collection"
+      ]
+    },
+    "Granule": {
+      "type": "object",
+      "title": "Granule",
+      "description": "A granule file the caller would like included in the output.",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The CMR granule identifier",
+          "examples": [
+            "G1233800343-EEDTEST"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the granule (GranuleID, GranuleUR), typically corresponding to the data file name",
+          "examples": [
+            "001_00_7f00ff_global.nc"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL or relative file path where the granule data file can be accessed.  This may be behind Earthdata Login."
+        },
+        "bbox": {
+          "description": "The bounding box for the granule.  Coordinates are [West, South, East, North].",
+          "examples": [
+            [-100.5, 30.4, -99.5, 31.4]
+          ],
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "temporal": {
+          "description": "Time range for the granule",
+          "$ref": "#/definitions/Temporal"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "url"
+      ]
+    },
+    "Variable": {
+      "type": "object",
+      "title": "Variable",
+      "description": "A variable which the caller would like provided in the output",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The CMR ID of the variable",
+          "examples": [ "V1233801695-EEDTEST" ]
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the variable in the data file",
+          "examples": [ "red_var" ]
+        },
+        "fullPath": {
+          "type": "string",
+          "description": "The variable's absolute path within the file, including hierarchy.  Derived from UMM-Var group path combined with name.  If the group path is not set, this is the name",
+          "examples": [ "data/colors/red_var", "red_var" ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "fullPath"
+      ]
+    },
+    "Subset": {
+      "type": "object",
+      "title": "Subset",
+      "description": "Subsetting request parameters",
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "name": "Bounding Box",
+          "description": "The bounding box which should be used for spatial subsetting.  Coordinates are [West, South, East, North].",
+          "examples": [
+            [-100.5, 30.4, -99.5, 31.4]
+          ],
+          "default": [-180, -90, 180, 90],
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "shape": {
+          "description": "Reference to a location containing a shape within which the service should spatially subset.  If present, the resource will always be GeoJSON (application/geo+json) in an object store (S3)",
+          "$ref": "#/definitions/RemoteResource"
+        }
+      },
+      "required": []
+    },
+    "Temporal": {
+      "type": "object",
+      "title": "Temporal",
+      "description": "Temporal parameters for a date/time range",
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "name": "Start time",
+          "description": "The start date/time. The format is an RFC-3339 datetime.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "name": "End time",
+          "description": "The end date/time. The format is an RFC-3339 datetime.",
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": []
+    },
+    "ScaleExtent": {
+      "type": "object",
+      "title": "ScaleExtent",
+      "description": "Target grid extent",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "object",
+          "description": "X dimension scale extent.",
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "number",
+              "description": "Minimum x of the scale extent."
+            },
+            "max": {
+              "type": "number",
+              "description": "Maximum x of the scale extent."
+            }
+          },
+          "required": []
+        },
+        "y": {
+          "type": "object",
+          "description": "Y dimension scale extent.",
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "number",
+              "description": "Minimum y of the scale extent."
+            },
+            "max": {
+              "type": "number",
+              "description": "Maximum y of the scale extent."
+            }
+          },
+          "required": []
+        }
+      },
+      "required": []
+    },
+    "ScaleSize": {
+      "type": "object",
+      "title": "ScaleSize",
+      "description": "Target grid scale size",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "Row scale size"
+        },
+        "y": {
+          "type": "number",
+          "description": "Column scale size."
+        }
+      },
+      "required": []
+    },
+    "RemoteResource": {
+      "type": "object",
+      "description": "A remote resource which needs to be downloaded before use",
+      "additionalProperties": false,
+      "properties": {
+        "href": {
+          "type": "string",
+          "description": "The URI of the remote resource",
+          "examples": [ "s3://example-bucket/some/path/resource.ext" ]
+        },
+        "type": {
+          "type": "string",
+          "description": "The content type of the resource",
+          "examples": [ "application/geo+json" ]
+        }
+      },
+      "required": [
+        "href",
+        "type"
+      ]
+    }
+  }
+}

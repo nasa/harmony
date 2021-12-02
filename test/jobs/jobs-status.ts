@@ -3,8 +3,8 @@ import { stub } from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
-import { Job } from 'models/job';
-import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from 'test/helpers/job-status';
+import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from '../helpers/job-status';
+import { Job } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
 import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob } from '../helpers/jobs';
@@ -318,7 +318,7 @@ describe('Individual job status route', function () {
       it('rejects the update', async function () {
         expect(this.res.status).to.equal(400);
         const body = JSON.parse(this.res.text);
-        expect(body.message).to.equal('Job is invalid: ["Job progress must be between 0 and 100"]');
+        expect(body.message).to.equal('Job is invalid: ["Invalid progress -1. Job progress must be between 0 and 100."]');
       });
     });
 

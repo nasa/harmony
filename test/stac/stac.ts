@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { describe, it, before } from 'mocha';
 import { v4 as uuid } from 'uuid';
-import { JobStatus } from 'models/job';
-import { buildJob } from 'test/helpers/jobs';
 import url from 'url';
+import { JobStatus } from '../../app/models/job';
+import { buildJob } from '../helpers/jobs';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction } from '../helpers/db';
 import { stacCatalog, hookStacCatalog } from '../helpers/stac';

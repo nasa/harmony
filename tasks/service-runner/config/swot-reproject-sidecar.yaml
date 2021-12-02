@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swot-reproject
+  labels:
+    name: swot-reproject
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: swot-reproject
+  template:
+    metadata:
+      labels:
+        name: swot-reproject
+    spec:
+      terminationGracePeriodSeconds: $DEFAULT_ARGO_POD_TIMEOUT_SECS
+      containers:
+        - name: worker
+          imagePullPolicy: $SWOT_REPROJECT_IMAGE_PULL_POLICY
+          image: $SWOT_REPROJECT_IMAGE
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
+          resources:
+            limits:
+              memory: $SWOT_REPROJECT_LIMITS_MEMORY
+            requests:
+              memory: $SWOT_REPROJECT_REQUESTS_MEMORY
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          env:
+            - name: TEXT_LOGGER
+              value: "false"
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+            - mountPath: /tmp
+              name: ephemeral-volume
+          command: ["/bin/sh", "-c"]
+          args:
+            - trap "exit 0" TERM;
+              while true; do
+                date;
+                sleep 10;
+              done
+        - name: manager
+          imagePullPolicy: IfNotPresent
+          image: $SERVICE_RUNNER_IMAGE
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
+          resources:
+            limits:
+              memory: $SERVICE_RUNNER_LIMITS_MEMORY
+            requests:
+              memory: $SERVICE_RUNNER_REQUESTS_MEMORY
+          envFrom:
+          - configMapRef:
+              name: harmony-env
+          - secretRef:
+              name: harmony-secrets
+          env:
+          - name: BACKEND_HOST
+            value: $BACKEND_HOST
+          - name: BACKEND_PORT
+            value: "$BACKEND_PORT"
+          - name: HARMONY_SERVICE
+            value: $SWOT_REPROJECT_IMAGE
+          - name: WORKING_DIR
+            value: "/home"
+          - name: INVOCATION_ARGS
+            value: |-
+              python
+              swotrepr.py
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - mountPath: /tmp/metadata
+              name: test-volume
+            - mountPath: /tmp
+              name: ephemeral-volume
+      volumes:
+      - name: test-volume
+        hostPath:
+          # directory location on host
+          path: $HOST_VOLUME_PATH
+          # this field is optional
+          type: DirectoryOrCreate
+      - name: ephemeral-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: swot-reproject
+spec:
+  ports:
+    - name: frontend
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    name: swot-reproject
+  type: ClusterIP

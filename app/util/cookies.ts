@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { mergeParameters } from './parameter-parsing';
 import * as urlUtil from './url';
 import HarmonyRequest from '../models/harmony-request';
 
@@ -40,10 +41,10 @@ function _shapefile(req: HarmonyRequest): string[] {
  * @returns a tuple containing the name and value for the cookie
  */
 function _redirect(req: HarmonyRequest): string[] {
-  if (req.files) {
-    // copy other form parameter to the query field on req so they get used
+  if (req.files || req.body) {
+    // merge form parameters into the query on req so they get used
     // when building the redirect
-    req.query = req.body;
+    mergeParameters(req);
   }
 
   return ['redirect', urlUtil.getRequestUrl(req)];

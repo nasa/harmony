@@ -1,7 +1,7 @@
 import { afterEach, beforeEach } from 'mocha';
-import { Job } from 'models/job';
 import request from 'supertest';
 import url from 'url';
+import { Job } from '../../app/models/job';
 import db from '../../app/util/db';
 import { getNextCallback } from '../../example/http-backend';
 

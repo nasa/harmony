@@ -1,8 +1,8 @@
 import { pick } from 'lodash';
-import { IPagination } from 'knex-paginate'; // For types only
+import { ILengthAwarePagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
-import { removeEmptyProperties } from 'util/object';
-import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from 'util/cmr';
+import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from '../util/cmr';
+import { removeEmptyProperties } from '../util/object';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
@@ -28,6 +28,11 @@ const serializedJobFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID',
 ];
 
+const jobRecordFields = [
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request', 'numInputGranules',
+  'jobID', 'requestId', 'batchesCompleted', 'isAsync',
+];
+
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
 
 export enum JobStatus {
@@ -38,7 +43,7 @@ export enum JobStatus {
   CANCELED = 'canceled',
 }
 
-const terminalStates = [JobStatus.SUCCESSFUL, JobStatus.FAILED, JobStatus.CANCELED];
+export const terminalStates = [JobStatus.SUCCESSFUL, JobStatus.FAILED, JobStatus.CANCELED];
 
 export interface JobRecord {
   id?: number;
@@ -91,7 +96,7 @@ export interface JobQuery {
  *   - createdAt: (Date) the date / time at which the job was created
  *   - updatedAt: (Date) the date / time at which the job was last updated
  */
-export class Job extends Record {
+export class Job extends Record implements JobRecord {
   static table = 'jobs';
 
   static statuses: JobStatus;
@@ -138,7 +143,7 @@ export class Job extends Record {
     getLinks = true,
     currentPage = 0,
     perPage = 10,
-  ): Promise<{ data: Job[]; pagination: IPagination }> {
+  ): Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     const items = await transaction('jobs')
       .select()
       .where(constraints)
@@ -174,7 +179,7 @@ export class Job extends Record {
     currentPage = 0,
     perPage = 10,
   ):
-    Promise<{ data: Job[]; pagination: IPagination }> {
+    Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     const pastDate = subMinutes(new Date(), minutes);
     const items = await transaction('jobs')
       .select()
@@ -205,8 +210,20 @@ export class Job extends Record {
    * @returns a list of all of the user's jobs
    */
   static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
-  Promise<{ data: Job[]; pagination: IPagination }> {
+  Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     return this.queryAll(transaction, { username }, true, currentPage, perPage);
+  }
+
+  /**
+  * Returns a Job with the given jobID using the given transaction
+  *
+  * @param transaction - the transaction to use for querying
+  * @param jobID - the jobID for the job that should be retrieved
+  * @returns the Job with the given JobID or null if not found
+  */
+  static async byJobID(transaction: Transaction, jobID: string): Promise<Job | null> {
+    const jobList = await this.queryAll(transaction, { jobID }, true, 0, 1);
+    return jobList.data.shift();
   }
 
   /**
@@ -229,7 +246,7 @@ export class Job extends Record {
     includeLinks = true,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: IPagination }> {
+  ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
     const result = await transaction('jobs').select().where({ username, requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
@@ -255,7 +272,7 @@ export class Job extends Record {
     requestId,
     currentPage = 0,
     perPage = env.defaultResultPageSize,
-  ): Promise<{ job: Job; pagination: IPagination }> {
+  ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
     const result = await transaction('jobs').select().where({ requestId }).forUpdate();
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
@@ -297,10 +314,10 @@ export class Job extends Record {
   validate(): string[] {
     const errors = [];
     if (this.progress < 0 || this.progress > 100) {
-      errors.push('Job progress must be between 0 and 100');
+      errors.push(`Invalid progress ${this.progress}. Job progress must be between 0 and 100.`);
     }
     if (this.batchesCompleted < 0) {
-      errors.push('Job batchesCompleted must be greater than or equal to 0');
+      errors.push(`Invalid batchesCompleted ${this.batchesCompleted}. Job batchesCompleted must be greater than or equal to 0.`);
     }
     if (!this.request.match(/^https?:\/\/.+$/)) {
       errors.push(`Invalid request ${this.request}. Job request must be a URL.`);
@@ -403,6 +420,24 @@ export class Job extends Record {
     if (this.status === JobStatus.SUCCESSFUL) {
       this.progress = 100;
     }
+  }
+
+  /**
+   * Updates the job progress based on a single batch completing
+   * You must call `#save` to persist the change
+   *
+   * @param totalItemCount - the number of items in total that need to be processed for the job
+   * to complete.
+   */
+  completeBatch(totalItemCount: number = this.numInputGranules): void {
+    this.batchesCompleted += 1;
+    // Only allow progress to be set to 100 when the job status is set to successful
+    let progress = Math.min(100 * (this.batchesCompleted / totalItemCount), 99);
+    // don't allow negative progress
+    progress = Math.max(0, progress);
+    // progress must be an integer
+    progress = Math.floor(progress);
+    this.progress = progress;
   }
 
   /**
@@ -511,24 +546,19 @@ export class Job extends Record {
     this.validateStatus();
     this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
-    const { links, originalStatus, collectionIds } = this;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-    // @ts-ignore so that we can store stringified json
-    this.collectionIds = JSON.stringify(this.collectionIds || []);
-    delete this.links;
-    delete this.originalStatus;
-    await super.save(transaction);
+    // Cannot say Record<string, unknown> because of conflict with imported database Record class
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dbRecord = pick(this, jobRecordFields) as any;
+    dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
+    await super.save(transaction, dbRecord);
     const promises = [];
-    for (const link of links) {
+    for (const link of this.links) {
       // Note we will not update existing links in the database - only add new ones
       if (!link.id) {
         promises.push(link.save(transaction));
       }
     }
     await Promise.all(promises);
-    this.links = links;
-    this.originalStatus = originalStatus;
-    this.collectionIds = collectionIds;
   }
 
   /**
