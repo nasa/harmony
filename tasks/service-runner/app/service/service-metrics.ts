@@ -1,4 +1,6 @@
 import { Response, Request, NextFunction } from 'express';
+import env from '../util/env';
+import { sanitizeImage } from '../../../../app/util/string';
 import logger from '../../../../app/util/log';
 
 /**
@@ -14,6 +16,9 @@ export async function generateMetricsForPrometheus(
 ): Promise<void> {
 
   logger.info('generates the Prometheus compatible metrics');
+
+  const workUrl = `http://${env.backendHost}:${env.backendPort}/service/metrics`;
+  const serviceName = sanitizeImage(env.harmonyService);
 
   const response = {
     dummyKey: 'dummyValue'
