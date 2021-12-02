@@ -257,7 +257,7 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-      
+
   - name: podaac/concise
     data_operation_version: '0.12.0'
     type:
@@ -271,6 +271,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/concise
     umm_s:
       - S2153799015-POCLOUD
+    collections: []
     capabilities:
       concatenation: true
       subsetting:
