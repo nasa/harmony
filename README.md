@@ -91,7 +91,7 @@ argo version
    ```bash
    export LOCALLY_DEPLOYED_SERVICES=harmony-service-example
    ```
-5. (optional) run the `create-dotenv` script in the `bin` directory nd answer the prompts to 
+5. (optional) run the `create-dotenv` script in the `bin` directory and answer the prompts to 
    create a `.env` file.
   ```bash
   pushd harmony && ./bin/create-dotenv && popd
