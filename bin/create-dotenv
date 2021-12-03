@@ -3,17 +3,17 @@
 if [ -f .env ]; then
     echo "Skipping generating .env file because it already exists."
 else
-    cat <<EOF > .env
-# Random string used to sign cookies.
-COOKIE_SECRET=$(hexdump -n 128 -e '"%08x"' /dev/random)
+    cat <<-EOF > .env
+    # Random string used to sign cookies.
+    COOKIE_SECRET=$(hexdump -n 128 -e '"%08x"' /dev/random)
 
-# Random string used for encrypting and decrypting Earthdata login tokens
-# sent to backend services
-SHARED_SECRET_KEY=$(hexdump -n 16 -e '"%08x"' /dev/random)
+    # Random string used for encrypting and decrypting Earthdata login tokens
+    # sent to backend services
+    SHARED_SECRET_KEY=$(hexdump -n 16 -e '"%08x"' /dev/random)
 
 EOF
-    cat <<PROMPT_EDL
-Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions for this or do not understand what this means, please contact the Harmony team for help. Once you have your EDL application created, please enter the credentials as prompted.
+    cat <<-PROMPT_EDL
+    Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions for this or do not understand what this means, please contact the Harmony team for help. Once you have your EDL application created, please enter the credentials as prompted.
 
 PROMPT_EDL
     
@@ -25,10 +25,10 @@ PROMPT_EDL
     read -s -p "EDL Application Password: " OAUTH_PASSWORD
     echo ""
     
-cat << EOF >> .env
-OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
-OAUTH_UID=$OAUTH_UID
-OAUTH_PASSWORD=$OAUTH_PASSWORD
+    cat <<-EOF >> .env
+    OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
+    OAUTH_UID=$OAUTH_UID
+    OAUTH_PASSWORD=$OAUTH_PASSWORD
 EOF
     echo "\n# Env vars used for turbo mode" >> .env
     # Add locally LOCALLY_DEPLOYED_SERVICES if it is defined (not zero length)
