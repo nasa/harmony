@@ -1,4 +1,6 @@
 import { Response, Request, NextFunction } from 'express';
+import axios from 'axios';
+import Agent from 'agentkeepalive';
 import env from '../util/env';
 import { sanitizeImage } from '../../../../app/util/string';
 import logger from '../../../../app/util/log';
@@ -15,13 +17,40 @@ export async function generateMetricsForPrometheus(
   req: Request, res: Response, next: NextFunction,
 ): Promise<void> {
 
-  logger.info('generates the Prometheus compatible metrics');
-
   const workUrl = `http://${env.backendHost}:${env.backendPort}/service/metrics`;
   const serviceName = sanitizeImage(env.harmonyService);
 
-  const response = {
-    dummyKey: 'dummyValue'
-  };
-  res.json(response);
+  logger.info(`generates the Prometheus compatible metrics for ${serviceName}`);
+
+  const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
+  const activeSocketKeepAlive = 6_000;
+  const maxSockets = 1;
+  const maxFreeSockets = 1;
+  const keepaliveAgent = new Agent({
+    keepAlive: true,
+    maxSockets,
+    maxFreeSockets,
+    timeout: activeSocketKeepAlive, // active socket keepalive for 60 seconds
+    freeSocketTimeout: timeout, // free socket keepalive for 30 seconds
+  });
+  const response = await axios
+    .get(workUrl, {
+        params: { serviceID: serviceName }, //'harmonyservices/netcdf-to-zarr:latest' },
+        timeout,
+        responseType: 'json',
+        httpAgent: keepaliveAgent,
+        validateStatus(status) {
+            return status === 200; //[200, 400, 404].includes(status);
+        },
+    });
+  logger.info(`New QUERY: ${workUrl} now`)
+  logger.info(`GOT: ${response.status} ,${response.data}`);
+
+  let gauge = 0;
+  gauge += 1;
+  const prom_metric = 
+ `# HELP custom_metric An example of a custom metric, using the gauge type.
+  # TYPE custom_metric gauge
+  custom_metric{service_id="query-cmr-latest"} ${gauge}`;
+  res.send(prom_metric);
 }
