@@ -20,6 +20,7 @@ if [[ -f ".env" ]]; then
     source .env
 else
     ./bin/create-dotenv
+    source .env
 fi
 
 # run argo, localstack, and harmony in kubernetes
