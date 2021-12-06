@@ -1,6 +1,0 @@
-#!/bin/bash
-
-kubectl apply -f ./config/prometheus/monitoring-namespace.yaml
-kubectl apply -f ./config/prometheus/prometheus-config.yaml
-kubectl apply -f ./config/prometheus/prometheus-roles.yaml
-kubectl apply -f ./config/prometheus/prometheus-deployment.yaml
