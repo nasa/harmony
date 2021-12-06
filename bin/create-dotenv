@@ -4,42 +4,57 @@ if [ -f .env ]; then
     echo "Skipping generating .env file because it already exists."
 else
     cat <<-EOF > .env
-    # Random string used to sign cookies.
-    COOKIE_SECRET=$(hexdump -n 128 -e '"%08x"' /dev/random)
+		# Random string used to sign cookies.
+		COOKIE_SECRET=$(hexdump -n 128 -e '"%08x"' /dev/random)
 
-    # Random string used for encrypting and decrypting Earthdata login tokens
-    # sent to backend services
-    SHARED_SECRET_KEY=$(hexdump -n 16 -e '"%08x"' /dev/random)
+		# Random string used for encrypting and decrypting Earthdata login tokens
+		# sent to backend services
+		SHARED_SECRET_KEY=$(hexdump -n 16 -e '"%08x"' /dev/random)
 
 EOF
     cat <<-PROMPT_EDL
-    Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions for this or do not understand what this means, please contact the Harmony team for help. Once you have your EDL application created, please enter the credentials as prompted.
+		Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions for this or do not understand what this means, please contact the Harmony team for help. Once you have your EDL application created, please enter the credentials as prompted.
 
 PROMPT_EDL
-    
+    echo "# See the \"OAuth 2 (Earthdata Login)\" section in the env-defaults file" >> .env
+    echo "# Contact a harmony developer if unsure what values to use" >> .env
     # prompt for the users EDL app credentials
     read -p "EDL Application Client ID: " OAUTH_CLIENT_ID
-    echo ""
     read -s -p "EDL Application UID: " OAUTH_UID
     echo ""
     read -s -p "EDL Application Password: " OAUTH_PASSWORD
     echo ""
     
     cat <<-EOF >> .env
-    OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
-    OAUTH_UID=$OAUTH_UID
-    OAUTH_PASSWORD=$OAUTH_PASSWORD
+		OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID
+		OAUTH_UID=$OAUTH_UID
+		OAUTH_PASSWORD=$OAUTH_PASSWORD
 EOF
+    # prompt for HOST_VOLUME_PATH
+    echo "\nEnter the full path to the directory to use for service metadata output."
+    echo "The directory MUST be under your home directory and will be created if it does not exist."
+    read -p "Hit <Enter> for <${HOME}/metadata>: " HOST_VOLUME_PATH
+    echo ""
+    
     echo "\n# Env vars used for turbo mode" >> .env
-    # Add locally LOCALLY_DEPLOYED_SERVICES if it is defined (not zero length)
-    if [ ! -z "${LOCALLY_DEPLOYED_SERVICES}" ]; then
-        echo "LOCALLY_DEPLOYED_SERVICES=${LOCALLY_DEPLOYED_SERVICES}" >> .env
+    # Add HOST_VOLUME_PATH if it is defined (not zero length)
+    if [ ! -z "${HOST_VOLUME_PATH}" ]; then
+        echo "HOST_VOLUME_PATH=${HOST_VOLUME_PATH}" >> .env
+        mkdir -p "${HOST_VOLUME_PATH}"
+    else
+        echo "HOST_VOLUME_PATH=${HOME}/metadata" >> .env
+        mkdir -p "${HOME}/metadata"
     fi
     
-    # Add locally HOST_VOLUME_PATH if it is defined (not zero length)
-    if [ ! -z "${HOST_VOLUME_PATH}" ]; then
-        echo "HOST_VOLUME_PATH=${HOST_VOLUME_PATH}\n" >> .env
+    # prompt for LOCALLY_DEPLOYED_SERVICES
+    echo "Enter services to deploy (comma separated list):"
+    read -p "Hit <Enter> to use the default services: " LOCALLY_DEPLOYED_SERVICES
+    
+    # Add locally LOCALLY_DEPLOYED_SERVICES if it is defined (not zero length)
+    if [ ! -z "${LOCALLY_DEPLOYED_SERVICES}" ]; then
+        echo "LOCALLY_DEPLOYED_SERVICES=${LOCALLY_DEPLOYED_SERVICES}\n" >> .env
     fi
+    
     
     OS=`uname`
     if [ "Linux" = "$OS" ]; then

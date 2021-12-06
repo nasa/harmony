@@ -14,7 +14,7 @@ if ! command -v "kubectl" &> /dev/null; then
     exit 1;
 fi
 
-# read EDL credentials from .env file if it exists, otherwise prompt for them
+# read EDL credentials and other vars from .env file if it exists, otherwise prompt for them
 
 if [[ -f ".env" ]]; then
     source .env

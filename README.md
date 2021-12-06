@@ -68,30 +68,7 @@ See the [Minimum System Requirement](#minimum-system-requirements) above.
 git clone https://github.com/nasa/harmony.git
 ```
 
-3. Install the Argo CLI (if not already installed)
-```bash
-curl -f -sSL -o argo https://github.com/argoproj/argo-workflows/releases/download/v2.9.5/argo-darwin-amd64
-chmod +x argo
-mv ./argo /usr/local/bin/argo
-argo version
-```
-
-4. (ONLY IF USING THE NEW TURBO WORKFLOWS)
-   a. export `HOST_VOLUME_PATH` to point to a directory under your home directory to use a volume
-   for the service containers (the directory will be created if it does not exist). This must be
-   the full path, e.g., `/Users/username/metadata` (Mac) or `/home/username/metadata` (Linux), not
-   a path using `~`, .e.g., `~/metadata`.
-   ``` bash
-   export HOST_VOLUME_PATH=<full path to some directory under your home directory>
-   ```
-   b. (optional) define the services you want to deploy locally using the `LOCALLY_DEPLOYED_SERVICES`
-   environment variable. 
-   Refer to the `env-defaults` file for a full explanation of this variable and how to define it.
-   For example: 
-   ```bash
-   export LOCALLY_DEPLOYED_SERVICES=harmony-service-example
-   ```
-5. (optional) run the `create-dotenv` script in the `bin` directory and answer the prompts to 
+3. (optional) run the `create-dotenv` script in the `bin` directory and answer the prompts to 
    create a `.env` file.
   ```bash
   pushd harmony && ./bin/create-dotenv && popd
@@ -101,19 +78,16 @@ argo version
    This step is only needed if you want to use custom service image tags. You can skip this step
    if you just want to use the default service tags for now. You can make changes to .env later.
 
-6. Run the bootstrap script and answer the prompts (if any)
+4. Run the bootstrap script and answer the prompts (if any)
 ```bash
 cd harmony && ./bin/bootstrap-harmony
 ```
 
 Linux Only (Handled automatically by Docker Desktop)
 
-7. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
+5. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
 ```bash
 kubectl port-forward service/harmony 3000:3000 -n argo
-```
-```bash
-kubectl port-forward service/argo-server 2746:2746 -n argo
 ```
 
 **NOTE** The workflow listener will fail repeatedly (restarts every 30 seconds) when Harmony is run
@@ -144,7 +118,7 @@ You can update Harmony by running the `bin/update-harmony` script. This will pul
 restart Harmony.
 
 **NOTE** This will recreate the jobs database, so old links to job statuses will no longer work. Also, since it
-pulls the hamrony image from DockerHub it will overwrite any local changes you have made to the image. This is also
+pulls the harmony image from DockerHub it will overwrite any local changes you have made to the image. This is also
 true for the query-cmr image. This script is intended for service developers not working directly on the harmony
 source code.
 
