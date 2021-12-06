@@ -34,29 +34,24 @@ export async function generateMetricsForPrometheus(
     freeSocketTimeout: timeout, // free socket keepalive for 30 seconds
   });
 
-  try {
-    const response = await axios
-        .get(workUrl, {
-            params: { serviceID: serviceName }, //'harmonyservices/netcdf-to-zarr:latest' },
-            timeout,
-            responseType: 'json',
-            httpAgent: keepaliveAgent,
-            validateStatus(status) {
-                return [200, 400, 404].includes(status);
-            },
-        });
-    logger.info(`New QUERY: ${workUrl} now`)
-    logger.info(`GOT: ${response.status} ,${response.data}`);
+  const response = await axios
+      .get(workUrl, {
+          params: { serviceID: serviceName }, //'harmonyservices/netcdf-to-zarr:latest' },
+          timeout,
+          responseType: 'json',
+          httpAgent: keepaliveAgent,
+          validateStatus(status) {
+              return status === 200;
+          },
+      });
+  logger.info(`New QUERY: ${workUrl} now`)
+  logger.info(`GOT: ${response.status} ,${response.data.availableWorkItems}`);
 
-    let gauge = 0;
-    gauge += 1;
-    const prom_metric = 
-    `# HELP custom_metric An example of a custom metric, using the gauge type.
-    # TYPE custom_metric gauge
-    custom_metric{service_id="query-cmr-latest"} ${gauge}`;
-    res.send(prom_metric);
-
-  } catch (e) {
-        next(e);
-  }
+  let gauge = 0;
+  gauge += 1;
+  const prom_metric = 
+  `# HELP custom_metric An example of a custom metric, using the gauge type.
+  # TYPE custom_metric gauge
+  custom_metric{service_id="query-cmr-latest"} ${response.data.availableWorkItems}`;
+  res.send(prom_metric);
 }
