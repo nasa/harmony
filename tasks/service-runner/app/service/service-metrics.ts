@@ -36,7 +36,7 @@ export async function generateMetricsForPrometheus(
 
   const response = await axios
       .get(workUrl, {
-          params: { serviceID: serviceName }, //'harmonyservices/netcdf-to-zarr:latest' },
+          params: { serviceID: serviceName },
           timeout,
           responseType: 'json',
           httpAgent: keepaliveAgent,
@@ -44,14 +44,10 @@ export async function generateMetricsForPrometheus(
               return status === 200;
           },
       });
-  logger.info(`New QUERY: ${workUrl} now`)
-  logger.info(`GOT: ${response.status} ,${response.data.availableWorkItems}`);
 
-  let gauge = 0;
-  gauge += 1;
-  const prom_metric = 
-  `# HELP custom_metric An example of a custom metric, using the gauge type.
-  # TYPE custom_metric gauge
-  custom_metric{service_id="query-cmr-latest"} ${response.data.availableWorkItems}`;
-  res.send(prom_metric);
+  const harmony_metric = 
+      `# HELP waiting_work_items_count An example of a custom metric, using the gauge type.
+      # TYPE waiting_work_items_count gauge
+      waiting_work_items_count{service_id="${serviceName}"} ${response.data.availableWorkItems}`;
+  res.send(harmony_metric);
 }
