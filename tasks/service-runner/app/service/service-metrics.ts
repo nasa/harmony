@@ -46,8 +46,8 @@ export async function generateMetricsForPrometheus(
       });
 
   const harmony_metric = 
-      `# HELP waiting_work_items_count An example of a custom metric, using the gauge type.
-      # TYPE waiting_work_items_count gauge
-      waiting_work_items_count{service_id="${serviceName}"} ${response.data.availableWorkItems}`;
+      `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
+      # TYPE ready_work_items_count gauge
+      ready_work_items_count{service_id="${serviceName}"} ${response.data.availableWorkItems}`;
   res.send(harmony_metric);
 }
