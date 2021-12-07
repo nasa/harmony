@@ -932,7 +932,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
 
   hookServersStartStop();
 
-  // TODO Added for HARMONY-976. Remove this when working HARMONY-968
+  // TODO Added for HARMONY-1030. Remove this when working HARMONY-968
   describe('when running in turbo mode', function () {
     hookRangesetRequest(version, collection, 'all', { username: 'joe', query: { turbo: true } });
     it('returns a 200 successful response', function () {
