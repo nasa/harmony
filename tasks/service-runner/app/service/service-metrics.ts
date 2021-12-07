@@ -20,7 +20,7 @@ export async function generateMetricsForPrometheus(
   const workUrl = `http://${env.backendHost}:${env.backendPort}/service/metrics`;
   const serviceName = sanitizeImage(env.harmonyService);
 
-  logger.info(`generates the Prometheus compatible metrics for ${serviceName}`);
+  logger.info(`Generate the Prometheus compatible metrics for ${serviceName}`);
 
   const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
   const activeSocketKeepAlive = 6_000;
