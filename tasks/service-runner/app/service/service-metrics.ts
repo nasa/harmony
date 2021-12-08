@@ -3,16 +3,13 @@ import axios from 'axios';
 import Agent from 'agentkeepalive';
 import env from '../util/env';
 import { sanitizeImage } from '../../../../app/util/string';
-import logger from '../../../../app/util/log';
 
 export const exportedForTesting = {
   _getHarmonyMetric,
 };
 
 /**
- * Call a service to perform some work
- *
- * @param workItem - the work to be done
+* Get harmony metric from backend
  */
  async function _getHarmonyMetric(): Promise<string> {
 
@@ -61,6 +58,9 @@ export async function generateMetricsForPrometheus(
   req: Request, res: Response, next: NextFunction,
 ): Promise<void> {
 
-  const harmony_metric = _getHarmonyMetric(); 
+  // Get harmony metric for the present service
+  const harmony_metric = _getHarmonyMetric();
+
+  // Send response
   res.send(harmony_metric);
 }
