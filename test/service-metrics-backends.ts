@@ -27,8 +27,8 @@ describe('Backend service metrics endpoint', function () {
     const serviceID = 'noexisting/service:version';
     hookServiceMetrics(serviceID);
 
-    it('returns 404 status code', function () {
-      expect(this.res.statusCode).to.equal(404);
+    it('returns 200 status code', function () {
+      expect(this.res.statusCode).to.equal(200);
     });
 
     it('returns JSON content', function () {
@@ -36,7 +36,7 @@ describe('Backend service metrics endpoint', function () {
     });
 
     it('returns expected message', function () {
-      expect(this.res.text).to.equal(`{"code":"harmony.NotFoundError","description":"Error: service [${serviceID}] does not exist"}`);
+      expect(JSON.stringify(this.res.body)).to.equal(JSON.stringify({ availableWorkItems: 0 }));
     });
   });
 
