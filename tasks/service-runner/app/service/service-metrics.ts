@@ -8,12 +8,11 @@ export const exportedForTesting = {
 };
 
 /**
-* Get harmony metric from backend
+ * Get prometheus-compatible metric message from harmony backend
+ * @param serviceID - The service name (essentially the image name)
+ * @returns Promise of prometheus-compatible metric message
  */
- async function _getHarmonyMetric(): Promise<string> {
-
-  const workUrl = `http://${env.backendHost}:${env.backendPort}/service/metrics`;
-  const serviceName = env.harmonyService;
+ async function _getHarmonyMetric(serviceID: string): Promise<string> {
 
   const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
   const activeSocketKeepAlive = 6_000;
@@ -27,9 +26,10 @@ export const exportedForTesting = {
     freeSocketTimeout: timeout, // free socket keepalive for 30 seconds
   });
 
+  const workUrl = `http://${env.backendHost}:${env.backendPort}/service/metrics`;
   const response = await axios
       .get(workUrl, {
-          params: { serviceID: serviceName },
+          params: { serviceID },
           timeout,
           responseType: 'json',
           httpAgent: keepaliveAgent,
@@ -38,11 +38,11 @@ export const exportedForTesting = {
           },
       });
 
-  const harmony_metric = `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
+  const metric_message = `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
 # TYPE ready_work_items_count gauge
-ready_work_items_count{service_id="${serviceName}"} ${response.data.availableWorkItems}`;
+ready_work_items_count{service_id="${serviceID}"} ${response.data.availableWorkItems}`;
 
-  return harmony_metric;
+  return metric_message;
 }
 
 /**
@@ -58,8 +58,9 @@ export async function generateMetricsForPrometheus(
 ): Promise<void> {
 
   // Get harmony metric for the present service
-  const harmony_metric = await _getHarmonyMetric();
+  const serviceID = env.harmonyService;
+  const metric_message = await _getHarmonyMetric(serviceID);
 
   // Send response
-  res.send(harmony_metric);
+  res.send(metric_message);
 }
