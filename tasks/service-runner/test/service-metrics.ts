@@ -6,17 +6,13 @@ import * as sinon from 'sinon';
 import { SinonStub } from 'sinon';
 import env from '../app/util/env';
 import { exportedForTesting } from '../app/service/service-metrics';
-
 import request from 'supertest';
-
-const { _getHarmonyMetric } = exportedForTesting;
-
-
 
 describe('Service Metrics', async function () {
 
-  let mock;
   const serviceID = 'harmonyservices/query-cmr:latest';
+  const { _getHarmonyMetric } = exportedForTesting;
+  let mock;
   before(function () {
     mock = new MockAdapter(axios);
     env.harmonyService = serviceID;
