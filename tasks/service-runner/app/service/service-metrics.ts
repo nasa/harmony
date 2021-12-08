@@ -58,7 +58,7 @@ export async function generateMetricsForPrometheus(
 ): Promise<void> {
 
   // Get harmony metric for the present service
-  const harmony_metric = _getHarmonyMetric();
+  const harmony_metric = await _getHarmonyMetric();
 
   // Send response
   res.send(harmony_metric);
