@@ -5,6 +5,10 @@ import env from '../util/env';
 import { sanitizeImage } from '../../../../app/util/string';
 import logger from '../../../../app/util/log';
 
+export const exportedForTesting = {
+  _getHarmonyMetric,
+};
+
 /**
  * Call a service to perform some work
  *
@@ -39,8 +43,8 @@ import logger from '../../../../app/util/log';
       });
 
   const harmony_metric = `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
-  # TYPE ready_work_items_count gauge
-  ready_work_items_count{service_id="${serviceName}"} ${response.data.availableWorkItems}`;
+# TYPE ready_work_items_count gauge
+ready_work_items_count{service_id="${serviceName}"} ${response.data.availableWorkItems}`;
 
   return harmony_metric;
 }
