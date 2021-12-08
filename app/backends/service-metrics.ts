@@ -1,9 +1,7 @@
 import { Response, Request, NextFunction } from 'express';
-import log from '../util/log';
 import { workItemCountByServiceIDAndStatus, WorkItemStatus } from '../models/work-item';
 import db from '../util/db';
 import { RequestValidationError } from '../util/errors';
-import { sanitizeImage } from '../../app/util/string';
 
 /**
  * Express.js handler that returns the number of work items in the 'READY' state for the given serviceID
@@ -16,15 +14,8 @@ import { sanitizeImage } from '../../app/util/string';
 export async function getReadyWorkItemCountForServiceID(
   req: Request, res: Response, next: NextFunction,
 ): Promise<void> {
-
-  const logger = log.child({
-    component: 'service/metrics',
-    application: 'backend',
-  });
-
+ 
   const serviceID = req.query.serviceID as string;
-  const serviceIDSanitized = sanitizeImage(serviceID) as string;
-  logger.info(`Get work item count for service ${sanitizeImage(serviceIDSanitized)} in READY state`);
 
   // Return 400 if serviceID not provided in query
   if (!serviceID) {
