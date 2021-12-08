@@ -43,9 +43,8 @@ export async function generateMetricsForPrometheus(
           },
       });
 
-  const harmony_metric = 
-      `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
-      # TYPE ready_work_items_count gauge
-      ready_work_items_count{service_id="${serviceName}"} ${response.data.availableWorkItems}`;
+  const harmony_metric = `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
+# TYPE ready_work_items_count gauge
+ready_work_items_count{service_id="${serviceName}"} ${response.data.availableWorkItems}`;
   res.send(harmony_metric);
 }
