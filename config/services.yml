@@ -258,6 +258,90 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
+  - name: podaac/concise
+    data_operation_version: '0.12.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        image: !Env ${PODAAC_CONCISE_IMAGE}
+        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/podaac/concise
+    umm_s:
+      - S2153799015-POCLOUD
+    collections: []
+    capabilities:
+      concatenation: true
+      subsetting:
+        bbox: false
+        variable: false
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${PODAAC_CONCISE_IMAGE}
+        operations: ['concatenate']
+
+  - name: podaac/l2-subsetter-concise
+    data_operation_version: '0.12.0'
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        image: !Env ${PODAAC_CONCISE_IMAGE}
+        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
+        template_type: chaining
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/podaac/l2-subsetter-concise
+    collections:
+      - C1996881807-POCLOUD
+      - C1996881636-POCLOUD
+      - C2036878029-POCLOUD
+      - C1996881456-POCLOUD
+      - C1940473819-POCLOUD
+      - C1940475563-POCLOUD
+      - C2036879048-POCLOUD
+      - C1996880725-POCLOUD
+      - C1996880450-POCLOUD
+      - C2036880717-POCLOUD
+      - C1940466008-POCLOUD
+      - C2036882072-POCLOUD
+      - C2036880739-POCLOUD
+      - C1968979997-POCLOUD
+      - C1968979762-POCLOUD
+      - C2075141559-POCLOUD
+      - C1968980549-POCLOUD
+      - C1968979566-POCLOUD
+      - C1968979550-POCLOUD
+      - C1968980583-POCLOUD
+      - C1968980576-POCLOUD
+      - C1968979597-POCLOUD
+      - C1968979561-POCLOUD
+      - C1968980609-POCLOUD
+      - C1996881752-POCLOUD
+    capabilities:
+      concatenation: true
+      subsetting:
+        bbox: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
+        operations: ['spatialSubset', 'variableSubset']
+        conditional:
+          exists: ['spatialSubset', 'variableSubset']
+      - image: !Env ${PODAAC_CONCISE_IMAGE}
+        operations: ['concatenate']
+        conditional:
+          exists: ['concatenate']
+
   - name: sds/HOSS
     # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
     data_operation_version: '0.12.0'
@@ -470,6 +554,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-argo-env
           STAGING_PATH: public/podaac/concise
+    umm_s:
+      - S1242328818-POCLOUD
     collections:
       - C1234208436-POCLOUD
       - C1234208437-POCLOUD

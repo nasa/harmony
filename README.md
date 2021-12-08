@@ -68,46 +68,41 @@ See the [Minimum System Requirement](#minimum-system-requirements) above.
 git clone https://github.com/nasa/harmony.git
 ```
 
-3. Install the Argo CLI (if not already installed)
-```bash
-curl -f -sSL -o argo https://github.com/argoproj/argo-workflows/releases/download/v2.9.5/argo-darwin-amd64
-chmod +x argo
-mv ./argo /usr/local/bin/argo
-argo version
-```
-
-4. (ONLY IF USING THE NEW TURBO WORKFLOWS)
-   a. export `HOST_VOLUME_PATH` to point to a directory under your home directory to use a volume
-   for the service containers (the directory will be created if it does not exist). This must be
-   the full path, e.g., `/Users/username/metadata` (Mac) or `/home/username/metadata` (Linux), not
-   a path using `~`, .e.g., `~/metadata`.
-   ``` bash
-   export HOST_VOLUME_PATH=<full path to some directory under your home directory>
-   ```
-   b. Build the service wrapper image
+3. (optional) run the `create-dotenv` script in the `bin` directory and answer the prompts to 
+   create a `.env` file.
   ```bash
-  pushd harmony/tasks/service-runner && npm run build && popd
+  pushd harmony && ./bin/create-dotenv && popd
   ```
+   Edit the `.env` file to add any custom image tags (see the `env-defaults` file).
 
-5. Run the bootstrap script and answer the prompts
+   This step is only needed if you want to use custom service image tags. You can skip this step
+   if you just want to use the default service tags for now. You can make changes to .env later.
+
+4. Run the bootstrap script and answer the prompts (if any)
 ```bash
 cd harmony && ./bin/bootstrap-harmony
 ```
 
 Linux Only (Handled automatically by Docker Desktop)
 
-6. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
+5. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
 ```bash
 kubectl port-forward service/harmony 3000:3000 -n argo
-```
-```bash
-kubectl port-forward service/argo-server 2746:2746 -n argo
 ```
 
 **NOTE** The workflow listener will fail repeatedly (restarts every 30 seconds) when Harmony is run
 in Kubernetes on Linux. This is a known bug and is to addressed in Jira ticket HARMONY-849.
 
-Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `argo` namespace. If you installed
+Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `argo` namespace. 
+
+**NOTE** It may take a while for all the pods to start if this is the first time you have started 
+Harmony. You can check on the status by running the following command:
+
+```bash
+kubectl get pods -n argo
+```
+
+When all the pods are in the 'Running' state then Harmony is ready to go. If you installed
 the example harmony service you can test it with the following (requires a [.netrc](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html) file):
 
 ```bash
@@ -123,7 +118,7 @@ You can update Harmony by running the `bin/update-harmony` script. This will pul
 restart Harmony.
 
 **NOTE** This will recreate the jobs database, so old links to job statuses will no longer work. Also, since it
-pulls the hamrony image from DockerHub it will overwrite any local changes you have made to the image. This is also
+pulls the harmony image from DockerHub it will overwrite any local changes you have made to the image. This is also
 true for the query-cmr image. This script is intended for service developers not working directly on the harmony
 source code.
 
@@ -201,6 +196,7 @@ Required:
 * PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
 * Earthdata Login application in UAT (Details below in the 'Set up Earthdata Login application for your local Harmony instance' section)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
+* [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files. 
 
 
 Highly Recommended:
@@ -219,6 +215,8 @@ If you have not yet cloned the Harmony repository, run
 ```
 $ git clone https://github.com/nasa/harmony.git
 ```
+
+Ensure envsubst is installed on system. 
 
 Ensure node is available and is the correct version, 12.x.y, where "x" >= 14.
 
