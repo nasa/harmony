@@ -2,11 +2,8 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import * as sinon from 'sinon';
-import { SinonStub } from 'sinon';
 import env from '../app/util/env';
 import { exportedForTesting } from '../app/service/service-metrics';
-import request from 'supertest';
 
 describe('Service Metrics', async function () {
 
@@ -31,17 +28,14 @@ ready_work_items_count{service_id="${serviceID}"} 0`;
       expect(res).to.equal(harmony_metric);
     });
 
-  /*
-    it('Get error response', async function () {
-      const serviceID = 'harmonyservices/query-cmr:latest';
+    it('fails with error', async function () {
       mock.onGet().reply(500);
-      const res = await _getHarmonyMetric();
-      expect(_getHarmonyMetric).to.throw();
+      expect(function(){
+        _getHarmonyMetric(serviceID);
+      }).to.throw;
     });
-  */
-    afterEach(function () {
-      mock.restore();
-      });
   });
-
+  after(function () {
+    mock.restore();
+  });
 });
