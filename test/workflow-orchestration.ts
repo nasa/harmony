@@ -233,11 +233,16 @@ describe('Workflow chaining for a collection configured for swot reprojection an
             });
 
             describe('when checking the jobs listing', function () {
-              it('marks the job as successful and progress of 100', async function () {
+              it('marks the job as successful and progress of 100 with 5 links', async function () {
                 const jobs = await Job.forUser(db, 'anonymous');
                 const job = jobs.data[0];
                 expect(job.status).to.equal('successful');
                 expect(job.progress).to.equal(100);
+                // 5 links:
+                //   1 for s3 access instructions,
+                //   2 for the two assets returned from fake sds/swot-reproject:latest response
+                //   2 for the two assets returned from fake harmonyservices/netcdf-to-zarr:latest response
+                expect(job.links.length).to.equal(5);
               });
             });
           });
