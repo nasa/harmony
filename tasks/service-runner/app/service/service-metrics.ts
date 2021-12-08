@@ -2,7 +2,6 @@ import { Response, Request, NextFunction } from 'express';
 import axios from 'axios';
 import Agent from 'agentkeepalive';
 import env from '../util/env';
-import { sanitizeImage } from '../../../../app/util/string';
 
 export const exportedForTesting = {
   _getHarmonyMetric,
@@ -14,7 +13,7 @@ export const exportedForTesting = {
  async function _getHarmonyMetric(): Promise<string> {
 
   const workUrl = `http://${env.backendHost}:${env.backendPort}/service/metrics`;
-  const serviceName = sanitizeImage(env.harmonyService);
+  const serviceName = env.harmonyService;
 
   const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
   const activeSocketKeepAlive = 6_000;
