@@ -3,6 +3,7 @@ import log from '../util/log';
 import { workItemCountByServiceIDAndStatus, WorkItemStatus } from '../models/work-item';
 import db from '../util/db';
 import { RequestValidationError } from '../util/errors';
+import { sanitizeImage } from '../../app/util/string';
 
 /**
  * Express.js handler that returns the number of work items in the 'READY' state for the given serviceID
@@ -22,7 +23,8 @@ export async function getReadyWorkItemCountForServiceID(
   });
 
   const serviceID = req.query.serviceID as string;
-  logger.info(`Get work item count for service ${serviceID} in READY state`);
+  const serviceIDSanitized = sanitizeImage(serviceID) as string;
+  logger.info(`Get work item count for service ${sanitizeImage(serviceIDSanitized)} in READY state`);
 
   // Return 400 if serviceID not provided in query
   if (!serviceID) {
