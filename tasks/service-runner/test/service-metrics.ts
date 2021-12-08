@@ -19,22 +19,27 @@ describe('Service Metrics', async function () {
       env.harmonyService = serviceID;
     });
 
-    it('runs successfully', async function () {
-      mock.onGet().reply(200, { availableWorkItems: 0 });
-      const res = await _getHarmonyMetric(serviceID);
-      const expected_harmony_metric = `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
+    describe('and harmony returns a valid metric', async function () {
+      it('returns a valid metric string', async function () {
+        mock.onGet().reply(200, { availableWorkItems: 0 });
+        const res = await _getHarmonyMetric(serviceID);
+        const expected_harmony_metric = `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
 # TYPE ready_work_items_count gauge
 ready_work_items_count{service_id="${serviceID}"} 0`;
-      expect(res).to.equal(expected_harmony_metric);
+        expect(res).to.equal(expected_harmony_metric);
+      });
     });
 
-    it('fails with error', async function () {
-      mock.onGet().reply(500);
-      expect(function (){
-        _getHarmonyMetric(serviceID);
-      }).to.throw;
+    describe('and harmony returns an error', async function () {
+      it('throws an error', async function () {
+        mock.onGet().reply(500);
+        expect(function (){
+          _getHarmonyMetric(serviceID);
+        }).to.throw;
+      });
     });
   });
+
   after(function () {
     mock.restore();
   });
