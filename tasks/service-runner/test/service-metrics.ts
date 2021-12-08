@@ -14,20 +14,25 @@ const { _getHarmonyMetric } = exportedForTesting;
 
 
 describe('Service Metrics', async function () {
-   describe('on start', async function () {
 
-    describe('when the service is query-cmr', async function () {
-      it('primes the CMR service', async function () {
-        const harmonyService = 'harmonyservices/query-cmr:latest';
-        env.harmonyService = harmonyService;
-        const mock = new MockAdapter(axios);
-        const expected_message = `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
+  let mock;
+  before(function () {
+    mock = new MockAdapter(axios);
+  });
+
+  it('Get 200 response', async function () {
+    const harmonyService = 'harmonyservices/query-cmr:latest';
+    env.harmonyService = harmonyService;
+    const harmony_metric = `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
 # TYPE ready_work_items_count gauge
 ready_work_items_count{service_id="${harmonyService}"} 0`;
-        mock.onGet().reply(200, expected_message);
-        _getHarmonyMetric();
-        mock.restore();
-      });
-    });
+    mock.onGet().reply(200, {availableWorkItems: 0});
+    const res = await _getHarmonyMetric();
+    expect(res).to.equal(harmony_metric);
   });
+
+  afterEach(function () {
+    mock.restore();
+  });
+
 });
