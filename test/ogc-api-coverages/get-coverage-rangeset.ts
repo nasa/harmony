@@ -932,6 +932,46 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
 
   hookServersStartStop();
 
+  // TODO Added for HARMONY-1030. Remove this when working HARMONY-968
+  describe('when running in turbo mode', function () {
+    hookRangesetRequest(version, collection, 'all', { username: 'joe', query: { turbo: true } });
+    it('returns a 200 successful response', function () {
+      expect(this.res.status).to.equal(200);
+    });
+    it('returns a JSON body in the format of a job status without a job ID', function () {
+      const job = JSON.parse(this.res.text);
+      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
+    });
+    it('returns a successful status', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.status).to.eql('successful');
+    });
+    it('returns 100 for progress', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.progress).to.eql(100);
+    });
+    it('returns the number of CMR hits as the number of input granules', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.numInputGranules).to.eql(39);
+    });
+    it('returns a message when results are truncated', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446474-ORNL_DAAC.');
+    });
+    it('returns granule links', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.links.length).to.equal(39);
+    });
+    it('granule links include a title of the granuleId', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.links[0].title).to.equal('G1239610894-ORNL_DAAC');
+    });
+    it('granule links include a download link', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.links[0].href).to.not.equal(undefined);
+    });
+  });
+
   describe('when provided a valid set of parameters', function () {
     hookRangesetRequest(version, collection, 'all', { username: 'joe' });
 
