@@ -23,7 +23,7 @@ describe('Argo invocations', function () {
         const postStub = axios.default.post as SinonStub;
         if (postStub.restore) postStub.restore();
         post = stub(axios.default, 'post');
-        get = stub(env, 'cmrGranuleLocatorImagePullPolicy').get(() => 'FOO');
+        get = stub(env, 'queryCmrImagePullPolicy').get(() => 'FOO');
       });
 
       after(function () {
@@ -55,9 +55,9 @@ describe('Argo invocations', function () {
         expect(source.granules).to.be.undefined;
       });
 
-      it('passes cmr-granule-locator-image-pull-policy to the Argo workflow', async function () {
+      it('passes query-cmr-image-pull-policy to the Argo workflow', async function () {
         const [, body] = post.args[0];
-        const template = body.workflow.spec.arguments.parameters.find((t) => t.name === 'cmr-granule-locator-image-pull-policy');
+        const template = body.workflow.spec.arguments.parameters.find((t) => t.name === 'query-cmr-image-pull-policy');
         const policy = template.value;
         expect(policy).to.equal('FOO');
       });

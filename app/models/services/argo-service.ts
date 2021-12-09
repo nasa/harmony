@@ -15,7 +15,7 @@ export interface ArgoServiceParams {
   template_ref?: string;
   embedded_template?: string;
   image_pull_policy?: string;
-  cmr_granule_locator_image_pull_policy?: string;
+  query_cmr_image_pull_policy?: string;
   parallelism?: number;
   postBatchStepCount?: number;
   env: { [key: string]: string };
@@ -103,8 +103,8 @@ export default class ArgoService extends BaseService<ArgoServiceParams> {
         value: this.params.image_pull_policy || env.defaultImagePullPolicy,
       },
       {
-        name: 'cmr-granule-locator-image-pull-policy',
-        value: env.cmrGranuleLocatorImagePullPolicy || env.defaultImagePullPolicy,
+        name: 'query-cmr-image-pull-policy',
+        value: env.queryCmrImagePullPolicy || env.defaultImagePullPolicy,
       },
       {
         name: 'timeout',

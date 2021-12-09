@@ -17,17 +17,17 @@ spec:
       terminationGracePeriodSeconds: $DEFAULT_ARGO_POD_TIMEOUT_SECS
       containers:
         - name: worker
-          imagePullPolicy: $CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY
-          image: $CMR_GRANULE_LOCATOR_IMAGE
+          imagePullPolicy: $QUERY_CMR_IMAGE_PULL_POLICY
+          image: $QUERY_CMR_IMAGE
           lifecycle:
             preStop:
               exec:
                 command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
           resources:
             limits:
-              memory: $CMR_GRANULE_LOCATOR_LIMITS_MEMORY
+              memory: $QUERY_CMR_LIMITS_MEMORY
             requests:
-              memory: $CMR_GRANULE_LOCATOR_REQUESTS_MEMORY
+              memory: $QUERY_CMR_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -71,7 +71,7 @@ spec:
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: "$CMR_GRANULE_LOCATOR_IMAGE"
+            value: "$QUERY_CMR_IMAGE"
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
