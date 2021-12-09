@@ -73,7 +73,7 @@ spec:
           - name: HARMONY_SERVICE
             value: $HARMONY_NETCDF_TO_ZARR_IMAGE
           - name: WORKING_DIR
-            value: "/opt/harmony-harmony-netcdf-to-zarr"
+            value: "/opt/harmony-netcdf-to-zarr"
           - name: INVOCATION_ARGS
             value: |-
               python
