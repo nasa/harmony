@@ -1,7 +1,7 @@
 import { Response, Request, NextFunction } from 'express';
 import axios from 'axios';
-import Agent from 'agentkeepalive';
 import env from '../util/env';
+import { keepaliveAgent } from '../workers/pull-worker';
 
 /**
  * Get prometheus-compatible metric message from harmony backend
@@ -11,16 +11,6 @@ import env from '../util/env';
 async function _getHarmonyMetric(serviceID: string): Promise<string> {
 
   const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
-  const activeSocketKeepAlive = 6_000;
-  const maxSockets = 1;
-  const maxFreeSockets = 1;
-  const keepaliveAgent = new Agent({
-    keepAlive: true,
-    maxSockets,
-    maxFreeSockets,
-    timeout: activeSocketKeepAlive, // active socket keepalive for 60 seconds
-    freeSocketTimeout: timeout, // free socket keepalive for 30 seconds
-  });
 
   const workUrl = `http://${env.backendHost}:${env.backendPort}/service/metrics`;
   const response = await axios
