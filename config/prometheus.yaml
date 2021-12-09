@@ -54,10 +54,11 @@ data:
       scrape_interval:     15s
     scrape_configs:
       - job_name: 'prometheus'
-        scrape_interval: 15s
+        scrape_interval: $PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL
         static_configs:
           - targets: ['localhost:9090']
-      - job_name: 'kubernetes-pods'
+      - job_name: 'pod-manager'
+        scrape_interval: $PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL
         kubernetes_sd_configs:
         - role: pod
         relabel_configs:
@@ -108,6 +109,15 @@ spec:
       - name: prometheus
         image: quay.io/prometheus/prometheus:v2.0.0
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            ephemeral-storage: $PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE
+            memory: $PROMETHEUS_REQUESTS_MEMORY
+            cpu: $PROMETHEUS_REQUESTS_CPU
+          limits:
+            ephemeral-storage: $PROMETHEUS_LIMITS_EPHEMERAL_STORAGE
+            memory: $PROMETHEUS_LIMITS_MEMORY
+            cpu: $PROMETHEUS_LIMITS_CPU
         args:
           - '--storage.tsdb.retention=6h'
           - '--storage.tsdb.path=/prometheus'
