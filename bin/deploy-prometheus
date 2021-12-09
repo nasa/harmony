@@ -1,0 +1,12 @@
+#!/bin/bash
+# create Prometheus deployment
+
+env_save=$(export -p)
+set -a
+source "env-defaults"
+source ".env"
+set +a
+eval "$env_save"
+
+envsubst < "config/prometheus.yaml" | kubectl apply -f -
+

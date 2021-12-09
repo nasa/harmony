@@ -378,6 +378,22 @@ MAX_POST_FILE_PARTS=100
 # containers for any services to read and save STAC catalogs.
 HOST_VOLUME_PATH=
 
+###########################################################################
+#                             Prometheus Config                           #
+#                                                                         #
+# Variables that get used in the k8s Prometheus deployment                #
+#                                                                         #
+###########################################################################
+
+PROMETHEUS_REQUESTS_CPU=128m
+PROMETHEUS_REQUESTS_MEMORY=150Mi
+PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE=300Mi
+PROMETHEUS_LIMITS_CPU=128m
+PROMETHEUS_LIMITS_MEMORY=300Mi
+PROMETHEUS_LIMITS_EPHEMERAL_STORAGE=500Mi
+PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
+PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
+
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
 #                                                                           #
