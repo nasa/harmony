@@ -25,7 +25,7 @@ const LOCKFILE_DIR = '/tmp';
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 
-const keepaliveAgent = new Agent({
+export const keepaliveAgent = new Agent({
   keepAlive: true,
   maxSockets,
   maxFreeSockets,

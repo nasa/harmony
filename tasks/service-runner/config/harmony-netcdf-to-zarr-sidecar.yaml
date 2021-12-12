@@ -13,6 +13,9 @@ spec:
     metadata:
       labels:
         name: harmony-netcdf-to-zarr
+      annotations:
+        prometheus.io/port: "5000"
+        prometheus.io/scrape: "true"
     spec:
       terminationGracePeriodSeconds: $DEFAULT_ARGO_POD_TIMEOUT_SECS
       containers:
