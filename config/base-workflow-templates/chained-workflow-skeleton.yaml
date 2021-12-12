@@ -21,9 +21,9 @@ spec:
       value: "{{inputs.parameters.batch-size}}"
     - name: image-pull-policy
       value: "{{inputs.parameters.image-pull-policy}}"
-    - name: cmr-granule-locator-image-pull-policy
-      value: "{{inputs.parameters.cmr-granule-locator-image-pull-policy}}"
-    
+    - name: query-cmr-image-pull-policy
+      value: "{{inputs.parameters.query-cmr-image-pull-policy}}"
+
   templates:
     - name: chained-workflow
       inputs:
@@ -38,10 +38,10 @@ spec:
           - name: post-batch-step-count
           - name: STAGING_PATH
       steps:
-      - - name: cmr-granule-locator
-          templateRef: 
-            name: cmr-granule-locator
-            template: cmr-granule-locator
+      - - name: query-cmr
+          templateRef:
+            name: query-cmr
+            template: query-cmr
           arguments:
             parameters:
             - name: operation
@@ -57,20 +57,20 @@ spec:
             - name: timeout
               value: "{{inputs.parameters.timeout}}"
       - - name: main-loop
-          templateRef: 
+          templateRef:
             name: <placeholder-template>
             template: <placeholder-template>
           arguments:
             artifacts:
               - name: metadata
-                from: "{{steps.cmr-granule-locator.outputs.artifacts.metadata}}"
+                from: "{{steps.query-cmr.outputs.artifacts.metadata}}"
             parameters:
             - name: stac-catalog-link
               value: "{{item}}"
             - name: operation
               value: "{{inputs.parameters.operation}}"
             - name: batch-count
-              value: "{{steps.cmr-granule-locator.outputs.parameters.batch-count}}"
+              value: "{{steps.query-cmr.outputs.parameters.batch-count}}"
             - name: post-batch-step-count
               value: "{{inputs.parameters.post-batch-step-count}}"
             - name: callback
@@ -81,7 +81,7 @@ spec:
               value: "{{inputs.parameters.timeout}}"
             - name: STAGING_PATH
               value: "{{inputs.parameters.STAGING_PATH}}"
-          withParam: "{{steps.cmr-granule-locator.outputs.parameters.batch-catalogs}}"
+          withParam: "{{steps.query-cmr.outputs.parameters.batch-catalogs}}"
     - name: exit-handler
       steps:
       - - name: exit-handler
@@ -100,4 +100,4 @@ spec:
               value: "{{workflow.parameters.callback}}"
             - name: timeout
               value: "{{workflow.parameters.timeout}}"
-            
+

@@ -315,12 +315,12 @@ PODAAC_NETCDF_CONVERTER_REQUESTS_MEMORY=128Mi
 PODAAC_NETCDF_CONVERTER_LIMITS_CPU=128m
 PODAAC_NETCDF_CONVERTER_LIMITS_MEMORY=512Mi
 
-CMR_GRANULE_LOCATOR_IMAGE=harmonyservices/query-cmr:latest
-CMR_GRANULE_LOCATOR_IMAGE_PULL_POLICY='IfNotPresent'
-CMR_GRANULE_LOCATOR_REQUESTS_CPU=128m
-CMR_GRANULE_LOCATOR_REQUESTS_MEMORY=128Mi
-CMR_GRANULE_LOCATOR_LIMITS_CPU=128m
-CMR_GRANULE_LOCATOR_LIMITS_MEMORY=512Mi
+QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
+QUERY_CMR_IMAGE_PULL_POLICY='IfNotPresent'
+QUERY_CMR_REQUESTS_CPU=128m
+QUERY_CMR_REQUESTS_MEMORY=128Mi
+QUERY_CMR_LIMITS_CPU=128m
+QUERY_CMR_LIMITS_MEMORY=512Mi
 
 # The services to deploy locally. A comma-separated list of services that the bin/deploy-services
 # script should attempt to deploy. By default only a couple of harmony example services are deployed.
@@ -377,6 +377,22 @@ MAX_POST_FILE_PARTS=100
 # The location on the file system to save the work items that will be mounted into the
 # containers for any services to read and save STAC catalogs.
 HOST_VOLUME_PATH=
+
+###########################################################################
+#                             Prometheus Config                           #
+#                                                                         #
+# Variables that get used in the k8s Prometheus deployment                #
+#                                                                         #
+###########################################################################
+
+PROMETHEUS_REQUESTS_CPU=128m
+PROMETHEUS_REQUESTS_MEMORY=150Mi
+PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE=300Mi
+PROMETHEUS_LIMITS_CPU=128m
+PROMETHEUS_LIMITS_MEMORY=300Mi
+PROMETHEUS_LIMITS_EPHEMERAL_STORAGE=500Mi
+PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
+PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
 
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #

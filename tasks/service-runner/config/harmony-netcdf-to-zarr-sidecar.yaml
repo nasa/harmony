@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: asf-gdal-service
+  name: harmony-netcdf-to-zarr
   labels:
-    name: asf-gdal-service
+    name: harmony-netcdf-to-zarr
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: asf-gdal-service
+      name: harmony-netcdf-to-zarr
   template:
     metadata:
       labels:
-        name: asf-gdal-service
+        name: harmony-netcdf-to-zarr
       annotations:
         prometheus.io/port: "5000"
         prometheus.io/scrape: "true"
@@ -20,17 +20,17 @@ spec:
       terminationGracePeriodSeconds: $DEFAULT_ARGO_POD_TIMEOUT_SECS
       containers:
         - name: worker
-          imagePullPolicy: $ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY
-          image: $ASF_GDAL_SUBSETTER_IMAGE
+          imagePullPolicy: $HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY
+          image: $HARMONY_NETCDF_TO_ZARR_IMAGE
           lifecycle:
             preStop:
               exec:
                 command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
           resources:
             limits:
-              memory: $ASF_GDAL_SUBSETTER_LIMITS_MEMORY
+              memory: $HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY
             requests:
-              memory: $ASF_GDAL_SUBSETTER_REQUESTS_MEMORY
+              memory: $HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -74,14 +74,14 @@ spec:
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: "$ASF_GDAL_SUBSETTER_IMAGE"
+            value: $HARMONY_NETCDF_TO_ZARR_IMAGE
           - name: WORKING_DIR
-            value: "/home"
+            value: "/opt/harmony-netcdf-to-zarr"
           - name: INVOCATION_ARGS
             value: |-
               python
               -m
-              gdal_subsetter
+              harmony_netcdf_to_zarr
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -114,13 +114,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: asf-gdal-service
+  name: harmony-netcdf-to-zarr
 spec:
   ports:
     - name: frontend
-      port: 5001
+      port: 5000
       targetPort: 5000
       protocol: TCP
   selector:
-    name: asf-gdal-service
+    name: harmony-netcdf-to-zarr
   type: ClusterIP

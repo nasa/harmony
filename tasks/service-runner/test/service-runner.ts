@@ -8,7 +8,7 @@ const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
 const errorLog = `
 {
-  "application": "cmr-granule-locator",
+  "application": "query-cmr",
   "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
   "message": "found granules",
   "level": "info",
@@ -16,7 +16,7 @@ const errorLog = `
   "env_name": "harmony-unknown"
 }
 {
-  "application": "cmr-granule-locator",
+  "application": "query-cmr",
   "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
   "message": "bad stuff",
   "level": "error",
@@ -24,7 +24,7 @@ const errorLog = `
   "env_name": "harmony-unknown"
 }
 {
-  "application": "cmr-granule-locator",
+  "application": "query-cmr",
   "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
   "message": "second error",
   "level": "error",
@@ -35,7 +35,7 @@ const errorLog = `
 
 const nonErrorLog = `
 {
-  "application": "cmr-granule-locator",
+  "application": "query-cmr",
   "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
   "message": "found granules",
   "level": "info",

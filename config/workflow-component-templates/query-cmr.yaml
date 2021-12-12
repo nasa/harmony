@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: cmr-granule-locator
+  name: query-cmr
 spec:
   templates:
-    - name: cmr-granule-locator
+    - name: query-cmr
       inputs:
         parameters:
           - name: operation

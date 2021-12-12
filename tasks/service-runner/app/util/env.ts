@@ -65,6 +65,5 @@ interface HarmonyEnv {
 // special cases
 
 envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
-envVars.port = 1234;
 
 export = envVars;
