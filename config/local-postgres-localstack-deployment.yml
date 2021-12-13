@@ -1,0 +1,147 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: clusterworkflowtemplates.argoproj.io
+spec:
+  group: argoproj.io
+  names:
+    kind: ClusterWorkflowTemplate
+    listKind: ClusterWorkflowTemplateList
+    plural: clusterworkflowtemplates
+    shortNames:
+      - clusterwftmpl
+      - cwft
+    singular: clusterworkflowtemplate
+  scope: Cluster
+  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: localstack-pod
+  labels:
+    name: localstack-pod
+spec:
+  containers:
+    - name: localstack
+      image: localstack/localstack:0.11.1
+      ports:
+        - containerPort: 4566
+        - containerPort: 4572
+        - containerPort: 4592
+        - containerPort: 8080
+      volumeMounts:
+        - mountPath: /docker-entrypoint-initaws.d
+          name: localstack-start
+      env:
+        - name: LOCALSTACK_SERVICES
+          value: "s3,sts"
+        - name: LOCALSTACK_DEBUG
+          value: "1"
+  volumes:
+    - name: localstack-start
+      configMap:
+        # Mount startup.sh script created by start-argo into the volume
+        name: localstack-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: localstack
+  labels:
+    name: localstack
+spec:
+  ports:
+    - name: "ui"
+      port: 8080
+      targetPort: 8080
+    - name: "edge"
+      port: 4566
+      targetPort: 4566
+    - name: "s3"
+      port: 4572
+      targetPort: 4572
+    - name: "sts"
+      port: 4592
+      targetPort: 4592
+  selector:
+    name: localstack-pod
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: localstack-creds
+type: Opaque
+data:
+  # Fake credentials for localstack that Argo uses so it avoids looking up IAM
+  accessKey: c2hoaGhoaGg=
+  secretKey: aXRzYXNlY3JldA==
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app: postgres
+  name: argo-postgres-config
+stringData:
+  password: password
+  username: postgres
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: postgres
+  name: postgres
+spec:
+  ports:
+  - port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    app: postgres
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: postgres
+  name: postgres
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+      name: postgres
+    spec:
+      containers:
+      - env:
+        - name: POSTGRES_PASSWORD
+          value: password
+        image: postgres:12-alpine
+        name: main
+        ports:
+        - containerPort: 5432
+        readinessProbe:
+          exec:
+            command:
+            - psql
+            - -U
+            - postgres
+            - -c
+            - SELECT 1
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+      nodeSelector:
+        kubernetes.io/os: linux
+---

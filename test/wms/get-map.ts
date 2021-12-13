@@ -9,7 +9,6 @@ import { hookSignS3Object } from '../helpers/object-store';
 describe('WMS GetMap', function () {
   const collection = 'C1234088182-EEDTEST';
   const variable = 'V1234088187-EEDTEST';
-  const defaultGranuleId = 'G1234088196-EEDTEST';
 
   hookServersStartStop();
 
@@ -26,12 +25,11 @@ describe('WMS GetMap', function () {
         expect(this.service.operation.boundingRectangle).to.eql([-180, -90, 180, 90]);
       });
 
-      it('passes the source collection, variables, and granules to the backend', function () {
+      it('passes the source collection and variables to the backend', function () {
         const source = this.service.operation.sources[0];
         expect(source.collection).to.equal(collection);
         expect(source.variables[0].id).to.equal(variable);
-        expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal(defaultGranuleId);
+
       });
 
       it('passes the crs parameter to the backend', function () {
@@ -146,8 +144,6 @@ describe('WMS GetMap', function () {
         const source = this.service.operation.sources[0];
         expect(source.collection).to.equal(collection);
         expect(source.variables[0].id).to.equal(variable);
-        expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal(specificGranuleId);
       });
     });
   });

@@ -53,25 +53,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(source.variables[0].id).to.equal(variableId);
       });
 
-      it('passes the source granule to the backend', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal(granuleId);
-      });
-
-      it('adds the bbox field to the granules', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.granules[0].bbox).to.eql([-180.0, -90.0, 180.0, 90.0]);
-      });
-
-      it('adds the temporal field to the granules', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.granules[0].temporal).to.eql({
-          start: '2020-01-02T00:00:00.000Z',
-          end: '2020-01-02T01:59:59.000Z',
-        });
-      });
-
       it('passes the outputCrs parameter to the backend in Proj4 format', function () {
         expect(this.service.operation.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
       });
@@ -218,12 +199,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(end).to.equal('2020-01-02T01:00:00.000Z');
       });
 
-      it('identifies the correct granule based on time range', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal('G1233800352-EEDTEST');
-      });
-
       it('successfully queries CMR and accepts the request', function () {
         expect(this.res.status).to.be.lessThan(400);
       });
@@ -349,12 +324,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(start).to.equal('2020-01-02T00:00:00.000Z');
         expect(end).to.equal('2020-01-02T01:00:00.000Z');
       });
-
-      it('identifies the correct granule based on time range', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal('G1233800352-EEDTEST');
-      });
     });
   });
 
@@ -409,7 +378,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('set to "1"', function () {
       const maxResults = 1;
-      hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
+      hookRangesetRequest(version, collection, variableName, { query: { maxResults, turbo: false } });
 
       it('performs the request synchronously', function () {
         expect(this.service.operation.isSynchronous).to.equal(true);
@@ -427,10 +396,6 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('performs the request asynchronously', function () {
         expect(this.service.operation.isSynchronous).to.equal(false);
-      });
-
-      it('includes two granules in the request', function () {
-        expect(this.service.operation.sources[0].granules.length).to.equal(2);
       });
     });
 
@@ -560,6 +525,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   describe('when the granule spatial metadata is defined by polygons instead of a bbox', function () {
     const query = {
       granuleid: 'G1235282638-ASF',
+      turbo: false,
     };
 
     const cmrResp = _.set(_.cloneDeep(cmrGranuleResp), ['granules', 0, 'polygons'], [['0 35 0 40 10 40 10 35 0 35']]);
@@ -579,6 +545,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   describe('when the granule spatial metadata is defined by lines instead of a bbox', function () {
     const query = {
       granuleid: 'G1235282638-ASF',
+      turbo: false,
     };
 
     const cmrResp = _.set(_.cloneDeep(cmrGranuleResp), ['granules', 0, 'lines'], ['0 35 10 50']);
@@ -597,6 +564,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   describe('when the granule spatial metadata is defined by points instead of a bbox', function () {
     const query = {
       granuleid: 'G1235282638-ASF',
+      turbo: false,
     };
 
     const cmrResp = _.set(_.cloneDeep(cmrGranuleResp), ['granules', 0, 'points'], ['0, 35']);
@@ -616,6 +584,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   describe('when the granule spatial metadata does not exist', function () {
     const query = {
       granuleid: 'G1235282638-ASF',
+      turbo: false,
     };
 
     describe('calling the backend service', function () {
@@ -637,6 +606,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   describe('when the granule spatial metadata does not exist', function () {
     const query = {
       granuleid: 'G1235282638-ASF',
+      turbo: false,
     };
 
     describe('calling the backend service', function () {

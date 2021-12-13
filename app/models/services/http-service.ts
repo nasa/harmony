@@ -18,6 +18,11 @@ export interface HttpServiceParams {
  */
 export default class HttpService extends BaseService<HttpServiceParams> {
   /**
+   * Only support non-turbo runs for the stub service
+   */
+  isTurbo(): boolean { return false; }
+
+  /**
    * Calls the HTTP backend and returns a promise for its result
    * @returns A promise resolving to the result of the callback.
    */
