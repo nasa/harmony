@@ -73,18 +73,17 @@ interface HarmonyEnv {
   builtInTaskVersion: string;
   callbackUrlRoot: string;
   cmrEndpoint: string;
-  cmrGranuleLocatorImagePullPolicy: string;
   cmrMaxPageSize: number;
   defaultArgoPodTimeoutSecs: number;
   defaultBatchSize: number;
   defaultImagePullPolicy: string;
   defaultJobListPageSize: number;
-  defaultResultPageSize: number;
   defaultParallelism: number;
+  defaultResultPageSize: number;
+  failableWorkAgeMinutes: number;
   harmonyClientId: string;
+  hostVolumePath: string;
   jobReaperPeriodSec: number;
-  workReaperPeriodSec: number;
-  workFailerPeriodSec: number;
   localstackHost: string;
   logLevel: string;
   maxGranuleLimit: number;
@@ -97,9 +96,9 @@ interface HarmonyEnv {
   oauthHost: string;
   oauthUid: string;
   objectStoreType: string;
+  queryCmrImagePullPolicy: string;
   reapableJobAgeMinutes: number;
   reapableWorkAgeMinutes: number;
-  failableWorkAgeMinutes: number;
   sameRegionAccessRole: string;
   servicesYml: string;
   sharedSecretKey: string;
@@ -107,7 +106,8 @@ interface HarmonyEnv {
   syncRequestPollIntervalMs: number;
   uploadBucket: string;
   useLocalstack: boolean;
-  hostVolumePath: string;
+  workFailerPeriodSec: number;
+  workReaperPeriodSec: number;
 }
 
 // special cases

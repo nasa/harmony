@@ -81,13 +81,13 @@ export function parser(): yargs.Argv<HarmonyArgv> {
  */
 export default async function main(args: string[]): Promise<void> {
   const startTime = new Date().getTime();
-  const appLogger = logger.child({ application: 'cmr-granule-locator' });
+  const appLogger = logger.child({ application: 'query-cmr' });
   const options = parser().parse(args) as HarmonyArgv;
   const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
   const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
   const timingLogger = appLogger.child({ requestId: operation.requestId });
-  timingLogger.info('timing.cmr-granule-locator.start');
+  timingLogger.info('timing.query-cmr.start');
   await fs.mkdir(options.outputDir, { recursive: true });
 
   const catalogs = options.scrollId
@@ -117,7 +117,7 @@ export default async function main(args: string[]): Promise<void> {
   await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
 
   const durationMs = new Date().getTime() - startTime;
-  timingLogger.info('timing.cmr-granule-locator.end', { durationMs });
+  timingLogger.info('timing.query-cmr.end', { durationMs });
 }
 
 if (require.main === module) {
