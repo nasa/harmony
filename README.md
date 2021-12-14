@@ -140,7 +140,7 @@ your service. You can do this with the following steps:
    `netcdf-to-zarr-sidecar.yaml` file and modifying it for your service.
   a. Change `netcdf-to-zarr` everywhere in the file to the name of your service
   b. Add environment variables for your service to the `env-defaults` file in the top-level directory
-  of the Harmony repository. See the NETCF_TO_ZARR entries to know what variables must be declared.
+  of the Harmony repository. See the NETCDF_TO_ZARR entries to know what variables must be declared.
   d. Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run
   your service with Python from the command line. For example, if you had a module named `my-service`
   in the working directory, then you would run the service using
