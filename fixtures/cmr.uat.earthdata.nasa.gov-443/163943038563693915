@@ -1,0 +1,27 @@
+GET /search/collections.json?concept_id=C1225996408-POCUMULUS&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 208
+connection: close
+date: Mon, 13 Dec 2021 21:19:37 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 429618ae-8002-47c7-99ba-afc502cc719e
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 6
+x-request-id: 429618ae-8002-47c7-99ba-afc502cc719e
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 a3cc6ada872dd8799739f0e62dddda7d.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: 4aXOk_T364HlbHzyFHkruwID-Y5Y9S0eHi5hgKt_7jraeZYFddqAkw==
+
+{"feed":{"updated":"2021-12-13T21:19:37.854Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1225996408-POCUMULUS&page_size=2000","title":"ECHO dataset metadata","entry":[]}}

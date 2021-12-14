@@ -37,7 +37,7 @@ describe('Backend Callbacks', function () {
 
   describe('for synchronous requests with asynchronous-style backend responses', function () {
     hookHttpBackendEach(function () {
-      return wmsRequest(this.frontend, collection, { ...validGetMapQuery, crs: 'ASYNC', layers: collection }).ok(() => true);
+      return wmsRequest(this.frontend, collection, { ...validGetMapQuery, crs: 'ASYNC', layers: collection, turbo: false }).ok(() => true);
     });
 
     describe('when the service does not provide any results', function () {
@@ -99,7 +99,7 @@ describe('Backend Callbacks', function () {
 
   describe('for synchronous jobs that complete on another host', function () {
     hookHttpBackendEach(function () {
-      return wmsRequest(this.frontend, collection, { ...validGetMapQuery, crs: 'ASYNC', layers: collection }).ok(() => true);
+      return wmsRequest(this.frontend, collection, { ...validGetMapQuery, crs: 'ASYNC', layers: collection, turbo: false }).ok(() => true);
     });
 
     describe('when the backend receives an error on another host', function () {
@@ -134,7 +134,7 @@ describe('Backend Callbacks', function () {
 
   describe('POST body callbacks', function () {
     hookHttpBackendEach(function () {
-      return wmsRequest(this.frontend, collection, { ...validGetMapQuery, crs: 'ASYNC', layers: collection }).ok(() => true);
+      return wmsRequest(this.frontend, collection, { ...validGetMapQuery, crs: 'ASYNC', layers: collection, turbo: false }).ok(() => true);
     });
 
     describe('when the callback contains an error parameter', function () {
@@ -333,7 +333,7 @@ describe('Backend Callbacks', function () {
   });
 
   describe('for asynchronous requests', function () {
-    hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', {}); });
+    hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', { query: { turbo: false } }); });
 
     describe('when a POST body item is received', function () {
       hookCallbackEach((r) => r
@@ -410,7 +410,7 @@ describe('Backend Callbacks', function () {
     });
 
     describe('bbox validation', function () {
-      hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', {}); });
+      hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', { query: { turbo: false } }); });
 
       it('rejects bbox params containing invalid numbers', async function () {
         const response = await request(this.backend).post(this.callback).query({

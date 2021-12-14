@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# DEPRECATED
+
 set -e
 
 SELF=$(basename $0)

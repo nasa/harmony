@@ -23,9 +23,12 @@ else
     source .env
 fi
 
-# run argo, localstack, and harmony in kubernetes
+# run localstack and harmony in kubernetes
 ./bin/start-all
 
+# deploy the services
+echo ""
+echo "Deploying services"
 if [[ -n "$HOST_VOLUME_PATH" ]]; then
     mkdir -p "$HOST_VOLUME_PATH"
     ./bin/deploy-services

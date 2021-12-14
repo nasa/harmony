@@ -364,6 +364,14 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
+   *  Check to see if the service is invoked in turbo mode
+   * @returns true if the service is being invoked in turbo mode
+   */
+  protected isTurbo(): boolean {
+    return this.operation.scrollIDs.length > 0;
+  }
+
+  /**
    * Creates all of the database entries associated with starting a workflow
    *
    * @param service - The instantiation of a service for this operation
@@ -374,11 +382,10 @@ export default abstract class BaseService<ServiceParamType> {
     job: Job,
   ): Promise<void> {
     const startTime = new Date().getTime();
-    const isTurbo = (this.operation.scrollIDs.length > 0);
     let workflowSteps = [];
     let firstStepWorkItems = [];
 
-    if (isTurbo) {
+    if (this.isTurbo()) {
       this.logger.debug('Creating workflow steps');
       workflowSteps = this._createWorkflowSteps();
       firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
@@ -388,7 +395,7 @@ export default abstract class BaseService<ServiceParamType> {
       this.logger.info('timing.save-job-to-database.start');
       await db.transaction(async (tx) => {
         await job.save(tx);
-        if (isTurbo) {
+        if (this.isTurbo()) {
           // New workflow style bypassing Argo
           for await (const step of workflowSteps) {
             await step.save(tx);

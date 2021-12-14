@@ -31,7 +31,7 @@ describe('Argo invocations', function () {
         if (get.restore) get.restore();
       });
 
-      hookRangesetRequest(version, collection, 'all');
+      hookRangesetRequest(version, collection, 'all', { query: { turbo: false } });
 
       it('passes CMR query locations to the Query CMR task', async function () {
         const [, body] = post.args[0];

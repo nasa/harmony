@@ -36,7 +36,7 @@ describe('Argo Callbacks', function () {
   // test progress is updated correctly
   describe('when the result handler sends a batch completion notice', function () {
     hookHttpBackendEach(function () {
-      return wmsRequest(this.frontend, collection, { ...validGetMapQuery, crs: 'ASYNC', layers: collection }).ok(() => true);
+      return wmsRequest(this.frontend, collection, { ...validGetMapQuery, crs: 'ASYNC', layers: collection, turbo: false }).ok(() => true);
     });
 
     describe('and the callback contains completion data', function () {
@@ -147,7 +147,7 @@ describe('Argo Callbacks', function () {
     });
 
     describe('and the items contain a bbox', function () {
-      hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', {}); });
+      hookHttpBackendEach(function () { return rangesetRequest(this.frontend, '1.0.0', collection, 'all', { query: { turbo: false } }); });
 
       it('rejects bbox params containing invalid numbers', async function () {
         const response = await request(this.backend).post(this.argoCallback).type('json')

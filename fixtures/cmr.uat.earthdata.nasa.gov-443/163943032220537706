@@ -1,0 +1,27 @@
+GET /search/collections.json?include_tags=harmony.has-eula&concept_id=C1233860183-EEDTEST&page_size=2000
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+connection: close
+date: Mon, 13 Dec 2021 21:18:34 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: e13657b6-88f4-4fc7-886c-ff6101015d16
+strict-transport-security: max-age=31536000
+cmr-search-after: ["harmony example l2 data","EEDTEST","harmony_example_l2","1",1233860183,1]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 11
+x-request-id: e13657b6-88f4-4fc7-886c-ff6101015d16
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 2b0c54ffe9876882253b010d44184bdd.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P2
+x-amz-cf-id: Aj_X7sSKoC7qKDuszLKjo0FAHGPU6loIGPoyGvPpEtKz3QKbSVxDfQ==
+
+{"feed":{"updated":"2021-12-13T21:18:34.424Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?include_tags=harmony.has-eula&concept_id=C1233860183-EEDTEST&page_size=2000","title":"ECHO dataset metadata","entry":[{"tags":{"harmony.has-eula":{"data":true}},"time_start":"1970-06-26T00:00:00.000Z","version_id":"1","updated":"2000-01-01T00:00:00.000Z","dataset_id":"Harmony Example L2 Data","has_spatial_subsetting":false,"has_transforms":true,"associations":{"variables":["V1233969752-EEDTEST","V1233969753-EEDTEST","V1233969754-EEDTEST","V1233969755-EEDTEST"],"services":["S1237974711-EEDTEST","S1237980031-EEDTEST","S1240999847-EEDTEST"]},"has_variables":true,"data_center":"EEDTEST","short_name":"harmony_example_l2","title":"Harmony Example L2 Data","summary":"  Covers 3 continents (Africa, Asia, Europe) with test data with useful properties  Variables:    red_var:      - 255 around the perimeter (2px on the sides, 5px start and stop)      - 255 for the central 5 px along the swath      - nodata (127) elsewhere    green_var:      - Over land: An alternating gradient radiating out diagonally from the center of the swath, from 1-16.      - Over water: nodata (255)      - Scale factor of 2      - Offset will vary by granule, increasing with newer granules, making them brighter green if colorized    blue_var:      - Same as green, with land and water flipped    alpha_var:      - 255 (fully opaque) over land      - 127 (50% translucent) over water    This allows testing of:      - Scale values      - Offset values      - Nodata values      - Differing values for all of the above by variable  ","service_features":{"harmony":{"has_formats":true,"has_variables":false,"has_transforms":true,"has_spatial_subsetting":false,"has_temporal_subsetting":false},"opendap":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false},"esi":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false}},"orbit_parameters":{},"id":"C1233860183-EEDTEST","has_formats":true,"original_format":"ECHO10","has_temporal_subsetting":false,"browse_flag":false,"platforms":[],"online_access_flag":false}]}}
