@@ -1,49 +1,43 @@
 /**
- * Handles polling for work items and loading the work items
- * table as a job is in progress.
+ * Query the Harmony backend for an up to date version of 
+ * a single page of the work items table.
+ * @param {string} jobId - id of the job that the work items are linked to
+ * @param {number} page - page number for the work items
+ * @param {number} limit - limit on the number of work items in a page
+ * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
+ * @returns Boolean indicating whether the job is still running. 
  */
-export class WorkItemsTable {
+async function loadTable(jobId, page, limit, checkJobStatus) {
+  const tableUrl = `./${jobId}/work-items?page=${page}&limit=${limit}`;
+  const res = await fetch(tableUrl + `&checkJobStatus=${checkJobStatus}`);
+  if (res.status === 200) {
+    const template = await res.text();
+    document.getElementById('workflow-items-table-container').innerHTML = template;
+    return true;
+  } else {
+    return false;
+  }
+}
 
-  constructor(jobId, page, limit) {
+export default {
+
+  /**
+   * Update the work items table while the job is processing.
+   * @param {string} jobId - id of the job that the work items are linked to
+   * @param {number} page - page number for the work items
+   * @param {number} limit - limit on the number of work items in a page
+   * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
+   */
+  async init(jobId, page, limit) {
     const fiveSeconds = 5 * 1000;
-    this.tableUrl = `./${jobId}/work-items?page=${page}&limit=${limit}`;
-    this._startPolling(fiveSeconds, true);
-  }
-
-  /**
-   * Start polling for the work items table, every interval ms.
-   * @param {number} interval - polling interval in ms
-   * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
-   */
-  async _startPolling(interval, checkJobStatus) {
-    this._loadTable(checkJobStatus);
-    this.intervalId = setInterval(() => this._loadTable(checkJobStatus), interval);
-  }
-
-  /**
-   * Stop polling for the work items table.
-   */
-  _stopPolling() {
-    clearInterval(this.intervalId);
-    this.intervalId = null;
-  }
-
-  /**
-   * Query the Harmony backend for an up to date version of 
-   * a single page of the work items table.
-   * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
-   */
-  async _loadTable(checkJobStatus) {
-    const res = await fetch(this.tableUrl + `&checkJobStatus=${checkJobStatus}`);
-    if (res.status === 200) {
-      const template = await res.text();
-      document.getElementById('workflow-items-table-container').innerHTML = template;
-    } else {
-      // the job likely has finished, so back off on the polling interval
-      // but keep polling in case work items are still being updated
-      const fifteenSeconds = 15 * 1000;
-      this._stopPolling();
-      this._startPolling(fifteenSeconds, false);
+    await loadTable(jobId, page, limit, false);
+    let jobIsRunning = true;
+    while (jobIsRunning) {
+      await new Promise(res => setTimeout(res, fiveSeconds));
+      jobIsRunning = await loadTable(jobId, page, limit, true);
     }
+    // back off now since the work items are likely
+    // close to being complete
+    setInterval(async () => await loadTable(jobId, page, limit, false), fiveSeconds * 3);
   }
 }
