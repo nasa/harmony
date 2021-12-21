@@ -52,6 +52,7 @@ export async function getJobs(
       ],
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() { return (this.href || ''); },
+      isAdminRoute: req.context.isAdminAccess,
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -87,7 +88,7 @@ export async function getJob(
         job,
         page,
         limit,
-        adminRoute: req.context.isAdminAccess ? '/admin' : '',
+        isAdminRoute: req.context.isAdminAccess,
       });
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
