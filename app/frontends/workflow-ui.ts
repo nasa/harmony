@@ -7,6 +7,7 @@ import { NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
+import version from '../util/version';
 import env = require('../util/env');
 
 /**
@@ -40,6 +41,7 @@ export async function getJobs(
     setPagingHeaders(res, pagination);
     res.render('workflow-ui/jobs/index', {
       jobs,
+      version,
       jobBadge() { return badgeClasses[this.status]; },
       jobUrl() {
         const url = new URL(this.request);
@@ -88,6 +90,7 @@ export async function getJob(
         job,
         page,
         limit,
+        version,
         isAdminRoute: req.context.isAdminAccess,
       });
     } else {
