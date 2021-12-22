@@ -6,6 +6,7 @@
             <th scope="col">username</th>
             {{/isAdminRoute}}
             <th scope="col">request</th>
+            <th scope="col">mode</th>
             <th scope="col">status</th>
             <th scope="col">message</th>
             <th scope="col">numInputGranules</th>
@@ -24,6 +25,7 @@
                 <small><code class="text-truncate d-block" title="{{request}}" data-bs-toggle="tooltip"
                     data-bs-placement="right">{{jobUrl}}</code></small>
             </td>
+            <td class="mode-td" data-job-url="{{jobUrl}}"></td>
             <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
             <td class="mw-40ch"><small><code class="text-truncate d-block" title="{{message}}" data-bs-toggle="tooltip"
                         data-bs-placement="right">{{message}}</code></small></td>

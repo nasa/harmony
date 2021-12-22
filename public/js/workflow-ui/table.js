@@ -12,6 +12,17 @@ function formatDates() {
   );
 }
 
+/**
+ * Initialize all bootstrap tooltips with a given querySelector.
+ */
+function initTooltips(querySelector) {
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll(querySelector));
+  tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+}
+
 export {
-  formatDates
+  formatDates,
+  initTooltips,
 }
