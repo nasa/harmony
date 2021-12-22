@@ -1,7 +1,7 @@
 import { formatDates, initTooltips } from "../table.js";
 
 /**
- * Format all of the dates in the user's browser timezone.
+ * Display indicators of whether a turbo flag was addded to a request.
  */
 function decorateTurboRequests() {
   const requestCodes = document.getElementsByClassName('mode-td');
