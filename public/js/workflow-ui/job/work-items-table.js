@@ -1,3 +1,5 @@
+import { formatDates } from "../table.js";
+
 /**
  * Query the Harmony backend for an up to date version of 
  * a single page of the work items table.
@@ -7,12 +9,13 @@
  * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
  * @returns Boolean indicating whether the job is still running. 
  */
-async function loadTable(jobId, page, limit, checkJobStatus) {
+async function load(jobId, page, limit, checkJobStatus) {
   const tableUrl = `./${jobId}/work-items?page=${page}&limit=${limit}`;
   const res = await fetch(tableUrl + `&checkJobStatus=${checkJobStatus}`);
   if (res.status === 200) {
     const template = await res.text();
     document.getElementById('workflow-items-table-container').innerHTML = template;
+    formatDates();
     return true;
   } else {
     return false;
@@ -30,14 +33,17 @@ export default {
    */
   async init(jobId, page, limit) {
     const fiveSeconds = 5 * 1000;
-    await loadTable(jobId, page, limit, false);
+    await load(jobId, page, limit, false);
     let jobIsRunning = true;
     while (jobIsRunning) {
       await new Promise(res => setTimeout(res, fiveSeconds));
-      jobIsRunning = await loadTable(jobId, page, limit, true);
+      jobIsRunning = await load(jobId, page, limit, true);
     }
     // back off now since the work items are likely
     // close to being complete
-    setInterval(async () => await loadTable(jobId, page, limit, false), fiveSeconds * 3);
+    setInterval(
+      async () => await load(jobId, page, limit, false), 
+      fiveSeconds * 3,
+    );
   }
 }

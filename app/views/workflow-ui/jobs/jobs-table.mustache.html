@@ -10,6 +10,7 @@
             <th scope="col">message</th>
             <th scope="col">numInputGranules</th>
             <th scope="col">progress</th>
+            <th scope="col">createdAt</th>
         </tr>
     </thead>
     <tbody>
@@ -28,6 +29,7 @@
                         data-bs-placement="right">{{message}}</code></small></td>
             <td><span class="badge rounded-pill bg-warning text-dark">{{numInputGranules}}</span></td>
             <td>{{progress}}%</td>
+            <td class="date-td" data-time="{{jobCreatedAt}}"></td>
         </tr>
         {{/jobs}}
     </tbody>

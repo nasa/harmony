@@ -48,6 +48,7 @@ export async function getJobs(
         const path = url.pathname + url.search;
         return path;
       },
+      jobCreatedAt() { return this.createdAt.getTime(); },
       links: [
         { ...previousPage, linkTitle: 'previous' },
         { ...nextPage, linkTitle: 'next' },
@@ -145,10 +146,10 @@ export async function getWorkItemsTable(
       setPagingHeaders(res, pagination);
       res.render('workflow-ui/job/work-items-table', {
         workItems,
-        workflowItemUpdated() { return (new Date(this.updatedAt).toISOString()); },
-        workflowItemCreated() { return (new Date(this.createdAt).toISOString()); },
         workflowItemBadge() { return badgeClasses[this.status]; },
         workflowItemStep() { return sanitizeImage(this.serviceID); },
+        workflowItemCreatedAt() { return this.createdAt.getTime(); },
+        workflowItemUpdatedAt() { return this.updatedAt.getTime(); },
         links: [
           { ...previousPage, linkTitle: 'previous' },
           { ...nextPage, linkTitle: 'next' },
