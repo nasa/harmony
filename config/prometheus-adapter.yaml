@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: adapter-config
+  namespace: monitoring
 data:
   config.yaml: |
     rules:
@@ -21,6 +22,7 @@ metadata:
   labels:
     app: custom-metrics-apiserver
   name: custom-metrics-apiserver
+  namespace: monitoring
 spec:
   replicas: 1
   selector:
@@ -41,7 +43,7 @@ spec:
         - --tls-cert-file=/var/run/serving-cert/serving.crt
         - --tls-private-key-file=/var/run/serving-cert/serving.key
         - --logtostderr=true
-        - --prometheus-url=http://10.1.6.219:9090/
+        - --prometheus-url=http://10.1.6.225:9090/
         - --metrics-relist-interval=10s
         - --v=10
         - --config=/etc/adapter/config.yaml
@@ -66,7 +68,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: custom-metrics-apiserver
-  namespace: default
+  namespace: monitoring
 spec:
   ports:
   - port: 443
@@ -81,7 +83,7 @@ metadata:
 spec:
   service:
     name: custom-metrics-apiserver
-    namespace: default
+    namespace: monitoring
   group: custom.metrics.k8s.io
   version: v1beta1
   insecureSkipTLSVerify: true
