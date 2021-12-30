@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: adapter-config
+  name: prometheus-adapter-config
   namespace: monitoring
 data:
   config.yaml: |
@@ -62,7 +62,7 @@ spec:
           secretName: etcd-tls-client-certs
       - name: config
         configMap:
-          name: adapter-config
+          name: prometheus-adapter-config
 ---
 apiVersion: v1
 kind: Service
