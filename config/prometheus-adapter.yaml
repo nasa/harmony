@@ -43,7 +43,7 @@ spec:
         - --tls-cert-file=/var/run/serving-cert/serving.crt
         - --tls-private-key-file=/var/run/serving-cert/serving.key
         - --logtostderr=true
-        - --prometheus-url=http://10.1.6.225:9090/
+        - --prometheus-url=http://prometheus:9090/
         - --metrics-relist-interval=10s
         - --v=10
         - --config=/etc/adapter/config.yaml
