@@ -21,12 +21,14 @@ CMD="openssl req -x509 -sha256 -new -nodes -days 365 -newkey rsa:2048 -keyout me
 	 echo '{\"CN\":\"'${SERVICE_NAME}'\",\"hosts\":[${ALT_NAMES}],\"key\":{\"algo\":\"rsa\",\"size\":2048}}' > metrics-ca-crs.json; \
 	 cat metrics-ca-crs.json; \
      cfssl gencert -ca=metrics-ca.crt -ca-key=metrics-ca.key -config=metrics-ca-config.json metrics-ca-crs.json | \
-     cfssljson -bare /workdir/mm"
+     cfssljson -bare /workdir/apiserver"
 
 docker run --entrypoint=/bin/bash \
     -v $tmp_dir:/workdir/ \
     -i cfssl/cfssl \
     -c "${CMD}"
+
+kubectl create secret generic --from-file=serving.crt=${tmp_dir}/apiserver.pem --from-file=serving.key=${tmp_dir}/apiserver-key.pem etcd-tls-client-certs
 
 # Remove the temp directory
 rm -rf $tmp_dir
