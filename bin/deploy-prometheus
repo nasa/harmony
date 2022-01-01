@@ -41,3 +41,6 @@ kubectl create secret generic \
 
 # Remove the temp directory
 rm -rf $tmp_dir
+
+# Deploy prometheus adapter
+envsubst < "config/prometheus-adapter.yaml" | kubectl apply -f -
