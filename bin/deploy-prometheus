@@ -19,7 +19,7 @@ CFSSL_IMAGENAME="cfssl/cfssl:latest"
 SERVICE_NAME="custom-metrics-apiserver"
 ALT_NAMES="\"custom-metrics-apiserver.monitoring\",\"custom-metrics-apiserver.monitoring.svc\""
 CMD="openssl req -x509 -sha256 -new -nodes -days 365 -newkey rsa:2048 -keyout metrics-ca.key -out metrics-ca.crt -subj \"/CN=ca\"; \
-	 echo '{\"signing\":{\"default\":{\"expiry\":\"43800h\",\"usages\":[\"signing\",\"key encipherment\",\"'metrics'\"]}}}' > \"metrics-ca-config.json\"; \
+	 echo '{\"signing\":{\"default\":{\"expiry\":\"43800h\",\"usages\":[\"signing\",\"key encipherment\",\"'metrics'\"]}}}' > metrics-ca-config.json; \
 	 echo '{\"CN\":\"'${SERVICE_NAME}'\",\"hosts\":[${ALT_NAMES}],\"key\":{\"algo\":\"rsa\",\"size\":2048}}' > metrics-ca-crs.json; \
 	 cat metrics-ca-crs.json; \
      cfssl gencert -ca=metrics-ca.crt -ca-key=metrics-ca.key -config=metrics-ca-config.json metrics-ca-crs.json | \
