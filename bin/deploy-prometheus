@@ -28,7 +28,9 @@ docker run --entrypoint=/bin/bash \
     -i cfssl/cfssl \
     -c "${CMD}"
 
-kubectl create secret generic --from-file=serving.crt=${tmp_dir}/apiserver.pem --from-file=serving.key=${tmp_dir}/apiserver-key.pem etcd-tls-client-certs
+# Create secret
+kubectl delete secret etcd-tls-client-certs -n monitoring --ignore-not-found
+kubectl create secret generic --from-file=serving.crt=${tmp_dir}/apiserver.pem --from-file=serving.key=${tmp_dir}/apiserver-key.pem etcd-tls-client-certs -n monitoring
 
 # Remove the temp directory
 rm -rf $tmp_dir
