@@ -1,5 +1,4 @@
 #!/bin/bash
-# create Prometheus deployment
 
 env_save=$(export -p)
 set -a
@@ -8,13 +7,13 @@ source ".env"
 set +a
 eval "$env_save"
 
+# Deploy prometheus
 envsubst < "config/prometheus.yaml" | kubectl apply -f -
 
 # Create a temp directory to hold the certificates
 tmp_dir=$(mktemp -d)
-echo $tmp_dir
  
-# Create certifcate from docker
+# Create certifcate/key files from docker
 CFSSL_IMAGENAME="cfssl/cfssl:latest"
 SERVICE_NAME="custom-metrics-apiserver"
 ALT_NAMES="\"custom-metrics-apiserver.monitoring\",\"custom-metrics-apiserver.monitoring.svc\""
@@ -29,18 +28,22 @@ docker run --entrypoint=/bin/bash \
     -i ${CFSSL_IMAGENAME} \
     -c "${CMD}"
 
-# Create secret
-kubectl delete secret etcd-tls-client-certs \
-    -n monitoring \
-    --ignore-not-found
-kubectl create secret generic \
-    --from-file=serving.crt=${tmp_dir}/apiserver.pem \
-    --from-file=serving.key=${tmp_dir}/apiserver-key.pem \
-    etcd-tls-client-certs \
-    -n monitoring
+# Generate certificate/key
+case `uname` in
+        Darwin)
+            b64_opts='-b=0'
+            ;; 
+        *)
+            b64_opts='--wrap=0'
+esac
+export apiserver_crt_content=$(cat ${tmp_dir}/apiserver.pem | base64 ${b64_opts})
+export apiserver_key_content=$(cat ${tmp_dir}/apiserver-key.pem | base64 ${b64_opts})
 
-# Remove the temp directory
-rm -rf $tmp_dir
 
 # Deploy prometheus adapter
 envsubst < "config/prometheus-adapter.yaml" | kubectl apply -f -
+
+# Clean up
+rm -rf $tmp_dir
+unset apiserver_crt_content
+unset apiserver_key_content

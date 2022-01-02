@@ -16,6 +16,16 @@ data:
         as: "${1}_per_second"
       metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[2m])) by (<<.GroupBy>>)'
 ---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: etcd-tls-client-certs
+  namespace: monitoring
+data:
+  serving.crt: ${apiserver_crt_content}
+  serving.key: ${apiserver_key_content}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
