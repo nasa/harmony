@@ -278,7 +278,7 @@ async function cmrGranuleLocatorArgo(
 export default async function cmrGranuleLocator(
   req: HarmonyRequest, res: ServerResponse, next: NextFunction,
 ): Promise<void> {
-  if (req.query.turbo === 'true' && !(req.context.serviceConfig.name === 'noOpService')) {
+  if (req.query.turbo !== 'false' && !(req.context?.serviceConfig?.name === 'noOpService')) {
     await cmrGranuleLocatorNew(req, res, next);
   } else {
     await cmrGranuleLocatorArgo(req, res, next);

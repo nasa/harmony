@@ -83,7 +83,7 @@ function buildBackendServer(port: number): Server {
   app.use(addRequestId(appLogger));
 
   // we don't need express-winston to log every service work polling request
-  const servicePollingRegexp = /^\/service\/work$/;
+  const servicePollingRegexp = /^\/service\/(work|metrics)$/;
   app.use(addRequestLogger(appLogger, [servicePollingRegexp]));
 
   // currently, only this service response route is timed (for the backend)

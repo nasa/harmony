@@ -17,32 +17,27 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
   - [Quick Start](#quick-start)
     - [Updating the Local Harmony Instance](#updating-the-local-harmony-instance)
     - [Reloading the Services Configuration](#reloading-the-services-configuration)
-    - [Developing Services for Harmony Turbo](#developing-services-for-harmony-turbo)
-  - [Development Prerequisites](#development-prerequisites)
+    - [Developing Services for Harmony](#developing-services-for-harmony)
+  - [Harmony Development Prerequisites](#harmony-development-prerequisites)
     - [Earthdata Login Application Requirement](#earthdata-login-application-requirement)
     - [Software Requirements](#software-requirements)
-  - [Running Harmony](#running-harmony)
+  - [Running Harmony (Not From Quick Start)](#running-harmony-not-from-quick-start)
     - [Set up Environment](#set-up-environment)
     - [Set Up Environment Variables](#set-up-environment-variables)
       - [Advanced Configuration](#advanced-configuration)
     - [Run Tests](#run-tests)
       - [Test Fixtures](#test-fixtures)
     - [Set Up A Database](#set-up-a-database)
-    - [Set Up and Run Argo, Localstack](#set-up-and-run-argo-localstack)
+    - [Set Up and Run Postgres and Localstack](#set-up-and-run-postgres-and-localstack)
       - [Prerequisites](#prerequisites)
-      - [Installing and running Argo and Localstack on Kubernetes](#installing-and-running-argo-and-localstack-on-kubernetes)
+      - [Installing and running Postgres and Localstack on Kubernetes](#installing-and-running-postgres-and-localstack-on-kubernetes)
       - [Deleting applications and stopping Kubernetes](#deleting-applications-and-stopping-kubernetes)
       - [(minikube only) Configuring the callback URL for backend services](#minikube-only-configuring-the-callback-url-for-backend-services)
-    - [Add A Service Backend](#add-a-service-backend)
-    - [Deploy Turbo Services](#deploy-turbo-services)
     - [Run Harmony](#run-harmony)
+    - [Add A Service](#add-a-service)
+    - [Deploy Services](#deploy-services)
     - [Connect A Client](#connect-a-client)
   - [Building and Publishing the Harmony Docker Image](#building-and-publishing-the-harmony-docker-image)
-  - [Local Development Of Workflows Using Visual Studio Code](#local-development-of-workflows-using-visual-studio-code)
-      - [Prerequisites](#prerequisites-1)
-    - [Mounting a local directory to a pod running in a workflow](#mounting-a-local-directory-to-a-pod-running-in-a-workflow)
-    - [Attaching a debugger to a running workflow](#attaching-a-debugger-to-a-running-workflow)
-    - [Updating development resources after pulling new code](#updating-development-resources-after-pulling-new-code)
   - [Contributing to Harmony](#contributing-to-harmony)
     - [Submitting a Pull Request](#submitting-a-pull-request)
   - [Additional Resources](#additional-resources)
@@ -52,7 +47,6 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
 * A running [Kubernetes](https://kubernetes.io/) cluster with the [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
 built-in Kubernetes cluster (including `kubectl`) which can be enabled in preferences.
-* The [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5)
 
 ## Quick Start
 (Mac OS X / Linux)
@@ -108,7 +102,6 @@ the example harmony service you can test it with the following (requires a [.net
 ```bash
 curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?granuleId=G1233800343-EEDTEST" -o file.tif
 ```
-You can view the workflow running in [Argo](https://argoproj.github.io/projects/argo) by opening the Argo UI at [http://localhost:2746](http://localhost:2746).
 
 We recommend using [harmony-py](https://github.com/nasa/harmony-py) and its example notebook when working with Harmony.
 
@@ -137,22 +130,17 @@ If you modify the `services.yml` file Harmony will need to be restarted. You can
 ```
 **NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
 
-### Developing Services for Harmony Turbo
-**NOTE** This is alpha level functionality and likely to change.
+### Developing Services for Harmony
+If you are developing a service and wish to test it locally with Harmony then you must
+create a Kubernetes deployment manifest yaml file that describes a service runner that invokes
+your service. You can do this with the following steps:
 
-If you are developing a service and wish to test it locally with Harmony turbo mode then you must build a service wrapper
-image using the following steps before executing step 4 of the Quick Start instructions:
-
-1. Build the image for your service as you would for the (non-Turbo Harmony)
-2. Add a Dockerfile to harmony/tasks/service-runner to build the wrapper for your image by copying
-   an existing one such as `Dockerfile.netcdf-to-zarr` and modifying it to fit your base image.
-3. Create a service wrapper YAML file in harmony/tasks/service-runner/config by copying the `netcdf-to-zar-wrapper.yaml`
-   file and modifying it for your service.
+1. Build the image for your service
+2. Create a sidecar YAML file in harmony/tasks/service-runner/config by copying the 
+   `netcdf-to-zarr-sidecar.yaml` file and modifying it for your service.
   a. Change `netcdf-to-zarr` everywhere in the file to the name of your service
-  b. Set `image` under `containers` to the Docker image you want to wrap. Do the same for the
-  `HARMONY_SERVICE` environment variable entry
-  c. Set the `WORKING_DIR` environment variable to the directory where in your container that the code should
-  execute. This defaults to `/home`, so you can remove this variable if that works for your service.
+  b. Add environment variables for your service to the `env-defaults` file in the top-level directory
+  of the Harmony repository. See the NETCDF_TO_ZARR entries to know what variables must be declared.
   d. Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run
   your service with Python from the command line. For example, if you had a module named `my-service`
   in the working directory, then you would run the service using
@@ -166,7 +154,7 @@ image using the following steps before executing step 4 of the Quick Start instr
       -m
       my-service
   ```
-## Development Prerequisites
+## Harmony Development Prerequisites
 
 For developing Harmony on Windows follow this document as well as the information in [docs/dev_container/README.md](docs/dev_container/README.md).
 
@@ -208,7 +196,7 @@ Optional:
 * [awscli-local](https://github.com/localstack/awscli-local) - CLI helpers for interacting with localstack
 * [Python](https://www.python.org) version 3.7 - Useful for locally running and testing harmony-docker and other backend services
 
-## Running Harmony
+## Running Harmony (Not From Quick Start)
 
 ### Set up Environment
 If you have not yet cloned the Harmony repository, run
@@ -272,7 +260,6 @@ Mac OS X
 ```
 LOCALSTACK_HOST=localhost
 BACKEND_HOST=host.docker.internal
-ARGO_URL=http://localhost:2746
 CALLBACK_URL_ROOT=http://host.docker.internal:3001
 ```
 
@@ -280,7 +267,6 @@ Linux
 ```
 LOCALSTACK_HOST=localhost
 BACKEND_HOST=localhost
-ARGO_URL=http://localhost:2746
 CALLBACK_URL_ROOT=http://localhost:3001
 ```
 
@@ -327,9 +313,9 @@ database, you can create and/or migrate your database by setting `NODE_ENV=produ
 $ npx knex --cwd db migrate:latest
 ```
 
-### Set Up and Run Argo, Localstack
+### Set Up and Run Postgres and Localstack
 
-Harmony uses [Argo Workflows](https://github.com/argoproj/argo) to manage job executions.  In development, we use [Localstack](https://github.com/localstack/localstack) to avoid allocating AWS resources.
+In development Harmony uses Localstack](https://github.com/localstack/localstack) to avoid allocating AWS resources. Postgres is also installed (but not used by default).
 
 #### Prerequisites
 
@@ -337,49 +323,32 @@ Harmony uses [Argo Workflows](https://github.com/argoproj/argo) to manage job ex
   * Install [Docker Desktop] https://www.docker.com/products/docker-desktop. Docker Desktop comes bundled with Kubernetes and `kubectl`.
     If you encounter issues running `kubectl` commands, first make sure you are running the version bunedled with Docker Desktop.
   * Run Kubernetes in Docker Desktop by selecting Preferences -> Kubernetes -> Enable Kubernetes
-  * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
 * Linux / Generic:
   * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node Kubernetes cluster useful for local development
   * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to Kubernetes.
-  * Install the [Argo CLI](https://github.com/argoproj/argo/releases/tag/v2.9.5), the command line interface to Argo
 
-#### Installing and running Argo and Localstack on Kubernetes
-
-```
-$ ./bin/start-argo
-```
-
-This will install Argo and forward port 2746 to localhost. It will take a few minutes the first time you run it. You will know when it has completed when it prints
+#### Installing and running Postgres and Localstack on Kubernetes
 
 ```
-Handling connection for 2746
+$ ./bin/start-postgres-localstack
 ```
 
-You can then connect to the Argo Server UI at `http://localhost:2746'.
-
-You can change the startup port by adding the `-p` option like so for port 8080:
+This will install Postgres and Localstack and forward their ports to localhost. It will take a few minutes the first time you run it. You will know when it has completed when it prints
 
 ```
-$ ./bin/start-argo -p 8080
+Localstack has started at http://localhost:4566/
+Postgres has started at localhost:5432
 ```
-
-`minikube` will default to using the `docker` driver. You can change the driver used by minikube by using the `-d` option with `start-argo` like so
-
-```
-$ ./bin/start-argo -d DRIVER
-```
-
-where `DRIVER` is one of the supported VM drivers found [here](https://kubernetes.io/docs/setup/learning-environment/minikube/#specifying-the-vm-driver).
 
 #### Deleting applications and stopping Kubernetes
 
-To delete the argo and localstack deployment, run:
+To delete the postgres and localstack deployment, run:
 
 ```
 $ kubectl delete namespaces argo
 ```
 
-`minikube` users can stop Kubernetes by pressing `ctrl-C` on the `bin/start-argo` process or run `minikube stop`.  Docker Desktop users will
+`minikube` users can stop Kubernetes by running `minikube stop`.  Docker Desktop users will
 need to close Docker or disable Kubernetes support in the UI.  Note that the latter uninstalls `kubectl`.
 
 #### (minikube only) Configuring the callback URL for backend services
@@ -391,37 +360,6 @@ minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
 ```
 
 This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
-
-### Add A Service Backend
-
-Clone the Harmony service example repository into a peer directory of the main Harmony repo
-```
-$ cd ..
-$ git clone https://github.com/nasa/harmony-service-example.git
-```
-
-(minikube only) From the harmony-service-example project root, run
-```bash
-eval $(minikube docker-env)
-```
-
-This will set up the proper environment for building the image so that it may be used in minikube and Argo. Next run the following command to build and locally install the image:
-
-```bash
-./bin/build-image
-```
-
-This may take some time, but ultimately it will produce a local docker image tagged `harmonyservices/service-example:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
-
-### Deploy Turbo Services
-
-To run service(s) in turbo mode, you need to create a k8s deployment for each service. Only services currently listed in `tasks/service-runner/config/*.yaml` can be run in turbo mode. The docker images for each service must be available locally in order for the k8s deployment to succeed:
-- first follow step **4** under "Quick Start"
-- then run `./bin/deploy-services` (deploys to k8s)
-
-These services will run in tandem with the argo-deployed services.
-
-Passing the `turbo=true` flag to a request will cause a request to run via turbo workflows (not argo). 
 
 ### Run Harmony
 
@@ -435,6 +373,35 @@ In production, we use `$ npm run start` which does the same but does not add the
 
 You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend application receives requests from users, while the backend application receives callbacks from services.
 
+### Add A Service
+
+Clone the Harmony service example repository into a peer directory of the main Harmony repo
+```
+$ cd ..
+$ git clone https://github.com/nasa/harmony-service-example.git
+```
+
+(minikube only) From the harmony-service-example project root, run
+```bash
+eval $(minikube docker-env)
+```
+
+This will set up the proper environment for building the image so that it may be used in minikube. 
+
+Next run the following command to build and locally install the image:
+
+```bash
+./bin/build-image
+```
+
+This may take some time, but ultimately it will produce a local docker image tagged `harmonyservices/service-example:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](docs/adapting-new-services.md).
+
+### Deploy Services
+
+To run service(s) you need to create a k8s deployment for each service. Only services currently listed in `tasks/service-runner/config/*.yaml` can be run. The docker images for each service must be available locally in order for the k8s deployment to succeed:
+- first follow the instructions in [Developing Services for Harmony](#developing-services-for-harmony)
+- then run `./bin/deploy-services` (deploys to k8s)
+
 ### Connect A Client
 
 You should now be able to view the outputs of performing a simple transformation request.  Harmony has its own test collection
@@ -447,8 +414,6 @@ dialog when adding a new WMS connection.  Thereafter, expanding the connection s
 GetCapabilities call to the test server, and double-clicking a layer should add it to a map, making a WMS call to retrieve an appropriate
 PNG from the test server.
 
-You can also use the Argo dashboard at http://localhost:2746 to visualize the workflows that were kicked off from your Harmony transformation requests.
-
 ## Building and Publishing the Harmony Docker Image
 The Harmony Docker image can be built with the following command:
 ```bash
@@ -459,120 +424,6 @@ The image can be deployed to DockerHub using the following commands:
 ```bash
 npm run publish
 ```
-
-## Local Development Of Workflows Using Visual Studio Code
-
-This section describes a VS Code based approach to local development. The general ideas are, however, applicable to other editors.
-
-There are two components to local development. The first is mounting your local project directory to a pod in a workflow so that changes to your code are automatically picked up whenever you run the workflow. The second is attaching a debugger to code running in a pod container (unless you prefer the print-debug method, in which case you can use the logs).
-
-#### Prerequisites
-* [Visual Studio Code](https://code.visualstudio.com/) and the [Kubernetes plugin](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools)
-
-### Mounting a local directory to a pod running in a workflow
-
-This is accomplished in two steps. The first step is to mount a local directory to a node in your `kubernetes/minikube` cluster. On a mac using the `virtualbox` driver the `/Users` directory is automatically mounted as `/Uses` on the single node in `minikube`. On Linux using the `virtualbox`driver the `/home` directory is automatically mounted at `/hosthome`. Other options for mounting a local directory can be found [here](https://minikube.sigs.k8s.io/docs/handbook/mount/).
-
-The second step is to mount the directory on the node to a directory on the pod in your workflow. This can be done using a [hostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath) volume defined in your workflow template. The following snippet creates a volume using the `/Users/username/project_folder` directory from the `node` on which the pod runs, _not directory from the local filesystem_. Again, on a mac using `virtualbox` the local `/Users` folder is conveniently mounted to the `/Users` folder on the node.
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: hello-world-
-spec:
-  volumes:
-  - name: test-volume
-    hostPath:
-      path: /Users/username/project_folder
-  ...
-```
-
-You can then mount the volume in your pod using a `volumeMounts` entry in you container configuration:
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: hello-world-
-spec:
-  volumes:
-  - name: test-volume
-    hostPath:
-      path: /Users/username/project_folder
-  entrypoint: hello
-  arguments:
-    parameters:
-    - name: message
-      value: James
-  templates:
-  - name: hello
-    inputs:
-      parameters:
-      - name: message
-    container:
-      image: node
-      volumeMounts:
-      - mountPath: /test-mount
-        name: test-volume
-```
-
-Now the pod will be able to access local code directly in the `/test-mount` directory. Updates to code in the developers local project will immediately show up in workflows.
-
-### Attaching a debugger to a running workflow
-
-Argo Workflow steps run as Kubernetes [jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/), which means that the containers that run them are short-lived. This complicates the process of attaching a debugger to them somewhat. In order to attach the debugger to code running in a container in a workflow you have to start the code in a manner that will pause the code on the first line when it runs and wait for a debugger to attach.
-
-For NodeJS code this is easily done by passing the `--inspect-brk` option to the `node` command. workflow template building on our previous example is given here
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: hello-world-
-spec:
-  volumes:
-  - name: test-volume
-    hostPath:
-      path: /Users/username/project_folder
-  entrypoint: hello
-  arguments:
-    parameters:
-    - name: message
-      value: James
-  templates:
-  - name: hello
-    inputs:
-      parameters:
-      - name: message
-    container:
-      image: node
-      volumeMounts:
-      - mountPath: /test-mount
-        name: test-volume
-      command: [node]
-      args: ["--inspect-brk", "/test-mount/index.js", "{{inputs.parameters.message}}"]
-```
-
-In this example the starting point for the step is in the `index.js` file.
-
-Similar approaches are available for Python and Java, although they might require changes to the code.
-
-Once you launch your workflow it will pause at the step (wait for the icon in the UI to change from yellow to blue and spinning), and you can attach the debugger. For VS Code this is easily done using the `Kubernetes` plugin.
-
-Open the plugin by clicking on the `Kubernetes` icon in the left sidebar. Expend the `CLUSTERS` tree to show the pods in `CLUSTERS>minikube>Nodes>minikube` then ctrl+click on the pod with the same name as the step in your workflow, e.g., `hello-world-9th8k` (you may need to refresh the view). Select `Debug (Attach)` from the menu, then selecting the `wait` container (not `main`), and select the runtime environment (java, nodejs, or python).
-
-At this point the editor should open the file that is the starting point for your applications and it should be stopped on the first line of code to be run. You can then perform all the usual debugging operations such as stepping trough code and examining variables.
-
-### Updating development resources after pulling new code
-
-Once up and running, if you update code, you can ensure dependencies are correct, Argo is deployed, and necessary Docker images are built
-by running
-
-```
-$ npm run update-dev
-```
-
 ## Contributing to Harmony
 
 We welcome Pull Requests from developers not on the Harmony

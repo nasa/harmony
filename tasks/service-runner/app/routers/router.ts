@@ -1,4 +1,5 @@
 import express, { NextFunction } from 'express';
+import { generateMetricsForPrometheus } from '../service/service-metrics';
 
 /**
  *
@@ -14,6 +15,8 @@ export default function router(): express.Router {
   result.get('/readiness', async (req, res, _next: NextFunction): Promise<void> => {
     res.send('OK');
   });
+
+  result.get('/metrics', generateMetricsForPrometheus);
 
   return result;
 }

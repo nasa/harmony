@@ -38,7 +38,13 @@ export default class StubService extends BaseService<void> {
     this.isComplete = false;
     this.isRun = false;
     this.name = serviceName;
+
   }
+
+  /**
+   * Only support non-turbo runs for the stub service
+   */
+  isTurbo(): boolean { return false; }
 
   /**
    * Runs the service.  For synchronous services, this will callback immediately.  For async,

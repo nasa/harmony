@@ -42,12 +42,6 @@ describe('EOSS GetGranule', function () {
         expect(source.variables[0].id).to.equal(variableId);
       });
 
-      it('passes the source granule to the backend', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal(granule);
-      });
-
       it('passes the crs parameter to the backend', function () {
         expect(this.service.operation.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
       });

@@ -44,9 +44,9 @@ https://cmr.earthdata.nasa.gov:
       - C1808440897-ASF
       - C2011599335-ASF
       - C1239324659-POCUMULUS
-      - C1239379702-POCLOUD
+      - C1990404801-POCLOUD
       - C1238618571-POCUMULUS
-      - C1238621141-POCLOUD
+      - C1996881146-POCLOUD
     capabilities:
       subsetting:
         shape: true
@@ -60,7 +60,7 @@ https://cmr.earthdata.nasa.gov:
         - image/gif
       reprojection: true
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
 
   - name: harmony/netcdf-to-zarr
@@ -178,7 +178,7 @@ https://cmr.earthdata.nasa.gov:
       output_formats:
         - application/x-zarr
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
 
   - name: harmony/service-example
@@ -208,7 +208,7 @@ https://cmr.earthdata.nasa.gov:
         - image/gif
       reprojection: true
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
@@ -255,7 +255,7 @@ https://cmr.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
   - name: podaac/concise
@@ -281,7 +281,7 @@ https://cmr.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         operations: ['concatenate']
 
@@ -332,7 +332,7 @@ https://cmr.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
         operations: ['spatialSubset', 'variableSubset']
         conditional:
@@ -369,7 +369,7 @@ https://cmr.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset']
 
@@ -447,7 +447,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/gif
       reprojection: true
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
 
   - name: harmony/service-example
@@ -479,7 +479,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/gif
       reprojection: true
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
@@ -540,7 +540,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
   - name: podaac/concise
@@ -569,7 +569,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         operations: ['concatenate']
 
@@ -589,6 +589,11 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1234208436-POCLOUD
       - C1234208437-POCLOUD
       - C1234208438-POCLOUD
+      - C1234724470-POCLOUD
+      - C1234724471-POCLOUD
+      - C1238621102-POCLOUD
+      - C1234071416-POCLOUD
+      - C1238658052-POCLOUD
     capabilities:
       concatenation: true
       subsetting:
@@ -598,7 +603,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
         operations: ['spatialSubset', 'variableSubset']
         conditional:
@@ -638,7 +643,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-netcdf4
       reprojection: true
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${SWOT_REPROJECT_IMAGE}
 
   - name: sds/variable-subsetter
@@ -667,7 +672,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
         operations: ['variableSubset']
 
@@ -698,7 +703,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset']
 
@@ -723,7 +728,7 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         shape: true
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${SDS_MASKFILL_IMAGE}
 
   - name: sds/trajectory-subsetter
@@ -751,7 +756,7 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/x-hdf
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset']
 
@@ -885,7 +890,7 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/x-zarr
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
 
   # CHAINED SERVICES BELOW HERE
@@ -919,7 +924,7 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - application/x-zarr
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
         operations: ['spatialSubset', 'variableSubset']
         conditional:
@@ -963,7 +968,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - application/x-zarr
       reprojection: true
     steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+      - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${SWOT_REPROJECT_IMAGE}
         operations: ['reproject']
         conditional:

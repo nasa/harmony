@@ -7,7 +7,6 @@ import { Response, Test } from 'supertest';
 import * as fs from 'fs';
 import { Application } from 'express';
 import isUUID from '../../app/util/uuid';
-import { CmrError } from '../../app/util/errors';
 import hookServersStartStop from '../helpers/servers';
 import StubService from '../helpers/stub-service';
 import { auth } from '../helpers/auth';
@@ -44,7 +43,6 @@ function commonValidationSteps(
 
 describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   const collection = 'C1233800302-EEDTEST';
-  const expectedGranuleId = 'G1233800352-EEDTEST';
   const expectedVariableId = 'V1233801695-EEDTEST';
   const variableName = 'red_var';
   const version = '1.0.0';
@@ -81,12 +79,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
         const source = this.service.operation.sources[0];
         expect(source.variables.length === 1);
         expect(source.variables[0].id).to.equal(expectedVariableId);
-      });
-
-      it('correctly identifies the granules based on the shapefile', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal(expectedGranuleId);
       });
 
       it('passes the outputCrs parameter to the backend in Proj4 format', function () {
@@ -151,12 +143,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookPostRangesetRequest(version, collection, variableName, shapeForm);
 
-      it('correctly identifies the granules based on the shapefile', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal(expectedGranuleId);
-      });
-
       it('passes a URL to the ESRI Shapefile converted to GeoJSON to the backend', async function () {
         expect(this.service.operation.geojson).to.match(new RegExp('^s3://[^/]+/temp-user-uploads/[^/]+.geojson$'));
 
@@ -204,12 +190,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
       const shapeForm = { ...form, shapefile: { path: './test/resources/complex_multipoly.kml', mimetype: 'application/vnd.google-earth.kml+xml' } };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookPostRangesetRequest(version, collection, variableName, shapeForm);
-
-      it('correctly identifies the granules based on the shapefile', function () {
-        const source = this.service.operation.sources[0];
-        expect(source.granules.length === 1);
-        expect(source.granules[0].id).to.equal(expectedGranuleId);
-      });
 
       it('passes a URL to the KML converted to GeoJSON to the backend', async function () {
         expect(this.service.operation.geojson).to.match(new RegExp('^s3://[^/]+/temp-user-uploads/[^/]+.geojson$'));
@@ -275,32 +255,6 @@ describe('OGC API Coverages - getCoverageRangeset with shapefile', function () {
   });
 
   describe('Validation', function () {
-    describe('when the CMR returns a 4xx', function () {
-      const cmrErrorMessage = 'Corrupt GeoJSON';
-      const cmrStatus = 400;
-      hookCmr('queryGranulesForCollection', () => { throw new CmrError(cmrStatus, cmrErrorMessage); });
-      it('returns an HTTP 400 "Bad Request" error with message reflecting the original shapefile type',
-        async function () {
-          let res = await postRangesetRequest(
-            this.frontend,
-            version,
-            collection,
-            variableName,
-            { shapefile: { path: './test/resources/complex_multipoly.zip', mimetype: 'application/shapefile+zip' } },
-          );
-          // we get redirected to EDL before the shapefile gets processed
-          expect(res.status).to.equal(303);
-
-          // we fake and follow the EDL response here
-          res = await commonValidationSteps(this.frontend, res, version, collection, variableName);
-
-          expect(res.status).to.equal(cmrStatus);
-          expect(res.body).to.eql({
-            code: 'harmony.CmrError',
-            description: 'Error: Corrupt GeoJSON (converted from the provided ESRI Shapefile)',
-          });
-        });
-    });
 
     describe('when the CMR returns a 5xx', function () {
       hookCmr('cmrPostBase', { status: 500 });
