@@ -434,8 +434,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - C1239379702-POCLOUD
       - C1238618571-POCUMULUS
       - C1238621141-POCLOUD
-      - C1233800302-EEDTEST
-      - C1234088182-EEDTEST
     capabilities:
       subsetting:
         shape: true
