@@ -2,17 +2,24 @@
     <thead>
         <tr>
             <th scope="col">jobID</th>
+            {{#isAdminRoute}}
+            <th scope="col">username</th>
+            {{/isAdminRoute}}
             <th scope="col">request</th>
             <th scope="col">status</th>
             <th scope="col">message</th>
             <th scope="col">numInputGranules</th>
             <th scope="col">progress</th>
+            <th scope="col">createdAt</th>
         </tr>
     </thead>
     <tbody>
         {{#jobs}}
         <tr clas='job-table-row'>
             <th scope="row"><a href="workflow-ui/{{jobID}}">{{jobID}}</a></th>
+            {{#isAdminRoute}}
+            <td>{{username}}</td>
+            {{/isAdminRoute}}
             <td class="mw-40ch">
                 <small><code class="text-truncate d-block" title="{{request}}" data-bs-toggle="tooltip"
                     data-bs-placement="right">{{jobUrl}}</code></small>
@@ -22,6 +29,7 @@
                         data-bs-placement="right">{{message}}</code></small></td>
             <td><span class="badge rounded-pill bg-warning text-dark">{{numInputGranules}}</span></td>
             <td>{{progress}}%</td>
+            <td class="date-td" data-time="{{jobCreatedAt}}"></td>
         </tr>
         {{/jobs}}
     </tbody>
