@@ -16,8 +16,8 @@
             <td><small><code>{{workflowItemStep}}</code></small></td>
             <td>{{id}}</td>
             <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
-            <td>{{workflowItemCreated}}</td>
-            <td>{{workflowItemUpdated}}</td>
+            <td class="date-td" data-time="{{workflowItemCreatedAt}}"></td>
+            <td class="date-td" data-time="{{workflowItemUpdatedAt}}"></td>
         </tr>
         {{/workItems}}
     </tbody>
