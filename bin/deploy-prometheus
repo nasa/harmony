@@ -10,40 +10,10 @@ eval "$env_save"
 # Deploy prometheus
 envsubst < "config/prometheus.yaml" | kubectl apply -f -
 
-# Create a temp directory to hold the certificates
-tmp_dir=$(mktemp -d)
- 
-# Create certifcate/key files from docker
-CFSSL_IMAGENAME="cfssl/cfssl:latest"
-SERVICE_NAME="custom-metrics-apiserver"
-ALT_NAMES="\"custom-metrics-apiserver.monitoring\",\"custom-metrics-apiserver.monitoring.svc\""
-CMD="openssl req -x509 -sha256 -new -nodes -days 365 -newkey rsa:2048 -keyout metrics-ca.key -out metrics-ca.crt -subj \"/CN=ca\"; \
-	 echo '{\"signing\":{\"default\":{\"expiry\":\"43800h\",\"usages\":[\"signing\",\"key encipherment\",\"'metrics'\"]}}}' > metrics-ca-config.json; \
-	 echo '{\"CN\":\"'${SERVICE_NAME}'\",\"hosts\":[${ALT_NAMES}],\"key\":{\"algo\":\"rsa\",\"size\":2048}}' > metrics-ca-crs.json; \
-	 cat metrics-ca-crs.json; \
-     cfssl gencert -ca=metrics-ca.crt -ca-key=metrics-ca.key -config=metrics-ca-config.json metrics-ca-crs.json | \
-     cfssljson -bare /workdir/apiserver"
-docker run --entrypoint=/bin/bash \
-    -v $tmp_dir:/workdir/ \
-    -i ${CFSSL_IMAGENAME} \
-    -c "${CMD}"
-
-# Generate certificate/key
-case `uname` in
-        Darwin)
-            b64_opts='-b=0'
-            ;; 
-        *)
-            b64_opts='--wrap=0'
-esac
-export apiserver_crt_content=$(cat ${tmp_dir}/apiserver.pem | base64 ${b64_opts})
-export apiserver_key_content=$(cat ${tmp_dir}/apiserver-key.pem | base64 ${b64_opts})
-
-
 # Deploy prometheus adapter
-envsubst < "config/prometheus-adapter.yaml" | kubectl apply -f -
-
-# Clean up
-rm -rf $tmp_dir
-unset apiserver_crt_content
-unset apiserver_key_content
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install -f ./config/prometheus-adapter-helm-values.yaml \
+             -n monitoring \
+             harmony-prometheus-adapter \
+             prometheus-community/prometheus-adapter
