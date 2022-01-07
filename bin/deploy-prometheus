@@ -10,10 +10,37 @@ eval "$env_save"
 # Deploy prometheus
 envsubst < "config/prometheus.yaml" | kubectl apply -f -
 
+# Check for helm
+if ! command -v "helm" &> /dev/null; then
+    echo "'helm' command not found. Prometheus adapter needs to be deployed via helm."
+    exit 1;
+fi
+
 # Deploy prometheus adapter
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
-helm install -f ./config/prometheus-adapter-helm-values.yaml \
-             -n monitoring \
-             harmony-prometheus-adapter \
-             prometheus-community/prometheus-adapter
+PROMETHEUS_NAMESPACE=monitoring
+PROMETHEUS_ADAPTER_HELM_NAME=harmony-prometheus-adapter
+if [[ `helm list -q -n ${PROMETHEUS_NAMESPACE}` = ${PROMETHEUS_ADAPTER_HELM_NAME} ]]; then
+    echo "prometheus adapter was already installed via helm (${PROMETHEUS_ADAPTER_HELM_NAME})."
+    while ! [[ $answer =~ ^[YyNn]$ ]]; do
+        read -p "Do you wish to delete and re-install it? [Y]" answer
+        answer=${answer:-Y}
+        case  $answer in
+            Y|y)
+                helm delete ${PROMETHEUS_ADAPTER_HELM_NAME} -n ${PROMETHEUS_NAMESPACE}
+                ;;
+            N|n)
+                ;;
+            *)
+                echo "Please type Y/y/N/n"
+                ;;
+        esac
+    done
+fi
+if [[ -z $answer || $answer =~ ^[Yy]$ ]]; then
+    helm install -f ./config/prometheus-adapter-helm-values.yaml \
+                 -n ${PROMETHEUS_NAMESPACE} \
+                 ${PROMETHEUS_ADAPTER_HELM_NAME} \
+                 prometheus-community/prometheus-adapter
+fi
