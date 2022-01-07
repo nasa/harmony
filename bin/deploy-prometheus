@@ -21,7 +21,8 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 PROMETHEUS_NAMESPACE=monitoring
 PROMETHEUS_ADAPTER_HELM_NAME=harmony-prometheus-adapter
-if [[ `helm list -q -n ${PROMETHEUS_NAMESPACE}` = ${PROMETHEUS_ADAPTER_HELM_NAME} ]]; then
+if [[ `helm list -q -n ${PROMETHEUS_NAMESPACE} -f ${PROMETHEUS_ADAPTER_HELM_NAME}` \
+        = ${PROMETHEUS_ADAPTER_HELM_NAME} ]]; then
     echo "prometheus adapter was already installed via helm (${PROMETHEUS_ADAPTER_HELM_NAME})."
     while ! [[ $answer =~ ^[YyNn]$ ]]; do
         read -p "Do you wish to delete and re-install it? [Y]" answer
