@@ -1,10 +1,11 @@
 # Url to access prometheus
 prometheus:
-  # Value is templated
   url: http://prometheus.monitoring
   port: 9090
-  path: ""
 
+# Rules for custom metrics
+# Currently if just provides an example
+# and more rules need to be added when harmony HPA is implemented based on custom metrics
 rules:
   custom:
   - seriesQuery: 'http_requests_total{kubernetes_namespace!="",kubernetes_pod_name!=""}'
