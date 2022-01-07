@@ -14,7 +14,7 @@ const woodyJob1 = buildJob({
   message: 'Completed successfully',
   progress: 100,
   links: [{ href: 'http://example.com/woody1', rel: 'link', type: 'text/plain' }],
-  request: 'http://example.com/harmony?request=woody1&turbo=true',
+  request: 'http://example.com/harmony?request=woody1&turbo=false',
   isAsync: true,
   numInputGranules: 3,
 });
@@ -152,6 +152,12 @@ describe('Workflow UI jobs route', function () {
           [woodyJob1.request, woodyJob2.request, woodySyncJob.request, buzzJob1.request]
             .forEach((req) => expect(listing).to.contain(mustache.render('{{req}}', { req })));
           expect((listing.match(/job-table-row/g) || []).length).to.equal(4);
+        });
+
+        it('shows the users that submitted those jobs', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('woody');
+          expect(listing).to.contain('buzz');
         });
       });
 

@@ -7,6 +7,7 @@ import { NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
+import version from '../util/version';
 import env = require('../util/env');
 
 /**
@@ -40,18 +41,21 @@ export async function getJobs(
     setPagingHeaders(res, pagination);
     res.render('workflow-ui/jobs/index', {
       jobs,
+      version,
       jobBadge() { return badgeClasses[this.status]; },
       jobUrl() {
         const url = new URL(this.request);
         const path = url.pathname + url.search;
         return path;
       },
+      jobCreatedAt() { return this.createdAt.getTime(); },
       links: [
         { ...previousPage, linkTitle: 'previous' },
         { ...nextPage, linkTitle: 'next' },
       ],
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() { return (this.href || ''); },
+      isAdminRoute: req.context.isAdminAccess,
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -87,7 +91,8 @@ export async function getJob(
         job,
         page,
         limit,
-        adminRoute: req.context.isAdminAccess ? '/admin' : '',
+        version,
+        isAdminRoute: req.context.isAdminAccess,
       });
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
@@ -141,10 +146,10 @@ export async function getWorkItemsTable(
       setPagingHeaders(res, pagination);
       res.render('workflow-ui/job/work-items-table', {
         workItems,
-        workflowItemUpdated() { return (new Date(this.updatedAt).toISOString()); },
-        workflowItemCreated() { return (new Date(this.createdAt).toISOString()); },
         workflowItemBadge() { return badgeClasses[this.status]; },
         workflowItemStep() { return sanitizeImage(this.serviceID); },
+        workflowItemCreatedAt() { return this.createdAt.getTime(); },
+        workflowItemUpdatedAt() { return this.updatedAt.getTime(); },
         links: [
           { ...previousPage, linkTitle: 'previous' },
           { ...nextPage, linkTitle: 'next' },

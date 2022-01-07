@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../../../css/eui.min.css">
     <link rel="stylesheet" href="../../../css/default.css">
-    <script src="https://unpkg.com/vue@next"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
         integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
         crossorigin="anonymous" defer></script>
@@ -39,8 +38,8 @@
             <li class="breadcrumb-item active" aria-current="page">Jobs</li>
         </ol>
     </nav>
-    <div class="container-lg">
-        <div class="row pb-4">
+    <div class="container-fluid">
+        <div class="row pb-4 px-4">
             {{> workflow-ui/jobs/jobs-table}}
             <nav aria-label="Page navigation" class="d-flex flex-column align-items-center">
                 <ul class="pagination px-0 mx-auto">

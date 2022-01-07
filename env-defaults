@@ -331,7 +331,7 @@ QUERY_CMR_LIMITS_MEMORY=512Mi
 # so it will always be deployed, and does not need to be specified. Make sure if the image for the
 # service is not publicly available that you have built the docker image locally, otherwise the
 # service will fail to start.
-LOCALLY_DEPLOYED_SERVICES=harmony-service-example,netcdf-to-zarr
+LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
 
 # page size to use with CMR calls
 CMR_MAX_PAGE_SIZE=2000
