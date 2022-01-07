@@ -42,5 +42,12 @@ if [[ -z $answer || $answer =~ ^[Yy]$ ]]; then
     helm install -f ./config/prometheus-adapter-helm-values.yaml \
                  -n ${PROMETHEUS_NAMESPACE} \
                  ${PROMETHEUS_ADAPTER_HELM_NAME} \
-                 prometheus-community/prometheus-adapter
+                 prometheus-community/prometheus-adapter \
+|| cat << EndOfMessage
+Prometheus adapter may not be deleted completely by helm.
+You may want to run the following and try again:
+
+helm delete ${PROMETHEUS_ADAPTER_HELM_NAME} -n ${PROMETHEUS_NAMESPACE}
+
+EndOfMessage
 fi
