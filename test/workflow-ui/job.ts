@@ -107,7 +107,7 @@ describe('Workflow UI job route', function () {
 
         it('returns a breadcrumb that includes the admin path', async function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('<a href="{{adminRoute}}/workflow-ui">Jobs</a>', { adminRoute: '/admin' }));
+          expect(listing).to.contain(mustache.render('<a href="/admin/workflow-ui">Jobs</a>', {}));
         });
       });
 
