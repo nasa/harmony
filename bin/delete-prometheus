@@ -1,0 +1,16 @@
+#!/bin/bash
+
+env_save=$(export -p)
+set -a
+source "env-defaults"
+source ".env"
+set +a
+eval "$env_save"
+
+# Delete prometheus adapter
+PROMETHEUS_NAMESPACE=monitoring
+PROMETHEUS_ADAPTER_HELM_NAME=harmony-prometheus-adapter
+helm delete ${PROMETHEUS_ADAPTER_HELM_NAME} -n ${PROMETHEUS_NAMESPACE}
+
+# Delete prometheus
+envsubst < "config/prometheus.yaml" | kubectl delete -f -
