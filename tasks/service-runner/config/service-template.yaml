@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: swot-reproject
+  name: $SERVICE_NAME
   labels:
-    name: swot-reproject
+    name: $SERVICE_NAME
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: swot-reproject
+      name: $SERVICE_NAME
   template:
     metadata:
       labels:
-        name: swot-reproject
+        name: $SERVICE_NAME
       annotations:
         prometheus.io/port: "5000"
         prometheus.io/scrape: "true"
@@ -20,17 +20,17 @@ spec:
       terminationGracePeriodSeconds: $DEFAULT_ARGO_POD_TIMEOUT_SECS
       containers:
         - name: worker
-          imagePullPolicy: $SWOT_REPROJECT_IMAGE_PULL_POLICY
-          image: $SWOT_REPROJECT_IMAGE
+          imagePullPolicy: $SERVICE_IMAGE_PULL_POLICY
+          image: $SERVICE_IMAGE
           lifecycle:
             preStop:
               exec:
                 command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
           resources:
             limits:
-              memory: $SWOT_REPROJECT_LIMITS_MEMORY
+              memory: $SERVICE_LIMITS_MEMORY
             requests:
-              memory: $SWOT_REPROJECT_REQUESTS_MEMORY
+              memory: $SERVICE_REQUESTS_MEMORY
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -74,13 +74,11 @@ spec:
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
           - name: HARMONY_SERVICE
-            value: $SWOT_REPROJECT_IMAGE
+            value: $SERVICE_IMAGE
           - name: WORKING_DIR
-            value: "/home"
+            value: $SERVICE_WORKING_DIR
           - name: INVOCATION_ARGS
-            value: |-
-              python
-              swotrepr.py
+            value: $SERVICE_INVOCATION_ARGS
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -113,7 +111,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: swot-reproject
+  name: $SERVICE_NAME
 spec:
   ports:
     - name: frontend
@@ -121,5 +119,5 @@ spec:
       targetPort: 5000
       protocol: TCP
   selector:
-    name: swot-reproject
+    name: $SERVICE_NAME
   type: ClusterIP

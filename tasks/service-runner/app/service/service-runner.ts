@@ -152,8 +152,11 @@ export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceRe
 export async function runServiceFromPull(workItem: WorkItem): Promise<ServiceResponse> {
   try {
     const { operation, stacCatalogLocation } = workItem;
-    const commandLine = env.invocationArgs.split('\n');
-    logger.debug(`Working dir: ${env.workingDir}`);
+    // support invocation args specified with newline separator or space separator
+    let commandLine = env.invocationArgs.split('\n');
+    if (commandLine.length == 1) {
+      commandLine = env.invocationArgs.split(' ');
+    }
 
     const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
 
