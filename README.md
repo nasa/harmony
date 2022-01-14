@@ -132,28 +132,32 @@ If you modify the `services.yml` file Harmony will need to be restarted. You can
 
 ### Developing Services for Harmony
 If you are developing a service and wish to test it locally with Harmony then you must
-create a Kubernetes deployment manifest yaml file that describes a service runner that invokes
-your service. You can do this with the following steps:
+define the environment variables needed to run the service and execute the local deployment script.
+You can do this with the following steps:
 
 1. Build the image for your service
-2. Create a sidecar YAML file in harmony/tasks/service-runner/config by copying the 
-   `netcdf-to-zarr-sidecar.yaml` file and modifying it for your service.
-  a. Change `netcdf-to-zarr` everywhere in the file to the name of your service
-  b. Add environment variables for your service to the `env-defaults` file in the top-level directory
-  of the Harmony repository. See the NETCDF_TO_ZARR entries to know what variables must be declared.
-  d. Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run
-  your service with Python from the command line. For example, if you had a module named `my-service`
+2. Add entries into the `env-defaults` file for your service. See the `HARMONY_SERVICE_EXAMPLE`
+   entries for examples. Be sure to prefix the entries with the name of your service.
+   Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run
+  your service from the command line. For example, if you had a python module named `my-service`
   in the working directory, then you would run the service using
   ```bash
   python -m my-service
   ```
   So your entry for `INVOCATION_ARGS` would be
-  ```yaml
-  - name: INVOCATION_ARGS
-    value: |-
-      -m
-      my-service
+  ```shell
+  MY_SERVICE_INVOCATION_ARGS='python -m my-service'
   ```
+3. Add an entry for your service (lowercase) to the `.env` file:
+```shell
+LOCALLY_DEPLOYED_SERVICES=my-service
+```
+Note that the name used must be the kebab case version of the environment variable prefix used
+in `env-defaults`.
+4. Run 
+```bash
+./bin/deploy-services
+```
 ## Harmony Development Prerequisites
 
 For developing Harmony on Windows follow this document as well as the information in [docs/dev_container/README.md](docs/dev_container/README.md).

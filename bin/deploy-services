@@ -15,14 +15,50 @@ fi
 
 . ./bin/create-k8s-config-maps-and-secrets
 
-# for file in tasks/service-runner/config/*.yaml
-for service in ${LOCALLY_DEPLOYED_SERVICES//,/ } query-cmr
+# create the query-cmr service
+file="tasks/service-runner/config/query-cmr-sidecar.yaml"
+if [ ! -f "$file" ]; then
+  echo "query-cmr-sidecar.yml was not found."
+  exit 1
+fi
+echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
+envsubst < $file | kubectl apply -f - -n argo
+
+# create the other services
+file="tasks/service-runner/config/service-template.yaml"
+for service in ${LOCALLY_DEPLOYED_SERVICES//,/ }
 do
-  file="tasks/service-runner/config/${service}-sidecar.yaml"
-  if [ ! -f "$file" ]; then
-    echo "Invalid LOCALLY_DEPLOYED_SERVICES environment variable. $file was not found."
-    exit 1
-  fi
-  echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
+  # set up enviornment variables for service
+  export SERVICE_NAME=${service}
+  var_prefix=`echo $service | tr 'a-z' 'A-Z' | tr '-' '_'`
+  declare ${var_prefix}_IMAGE
+  varname=${var_prefix}_IMAGE
+  export SERVICE_IMAGE=${!varname}
+  declare ${var_prefix}_IMAGE_PULL_POLICY
+  varname=${var_prefix}_IMAGE_PULL_POLICY
+  export SERVICE_IMAGE_PULL_POLICY=${!varname}
+  declare ${var_prefix}_PARALLELISM
+  varname=${var_prefix}_PARALLELISM
+  export SERVICE_PARALLELISM=${!varname}
+  declare ${var_prefix}_REQUESTS_CPU
+  varname=${var_prefix}_REQUESTS_CPU
+  export SERVICE_REQUESTS_CPU=${!varname}
+  declare ${var_prefix}_REQUESTS_MEMORY
+  varname=${var_prefix}_REQUESTS_MEMORY
+  export SERVICE_REQUESTS_MEMORY=${!varname}
+  declare ${var_prefix}_LIMITS_CPU
+  varname=${var_prefix}_LIMITS_CPU
+  export SERVICE_LIMITS_CPU=${!varname}
+  declare ${var_prefix}_LIMITS_MEMORY
+  varname=${var_prefix}_LIMITS_MEMORY
+  export SERVICE_LIMITS_MEMORY=${!varname}
+  declare ${var_prefix}_WORKING_DIR
+  varname=${var_prefix}_WORKING_DIR
+  export SERVICE_WORKING_DIR=${!varname}
+  declare ${var_prefix}_INVOCATION_ARGS
+  varname=${var_prefix}_INVOCATION_ARGS
+  export SERVICE_INVOCATION_ARGS=${!varname}
+
+  echo "Deploying $service using volume mount path $HOST_VOLUME_PATH"
   envsubst < $file | kubectl apply -f - -n argo
 done
