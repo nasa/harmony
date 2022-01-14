@@ -1,7 +1,6 @@
 import { Router, json } from 'express';
 import { getWork, updateWorkItem } from '../backends/workflow-orchestration';
 import { responseHandler } from '../backends/service-response';
-import argoResponsehandler from '../backends/argo-response';
 import { getReadyWorkItemCountForServiceID } from '../backends/service-metrics';
 import log from '../util/log';
 
@@ -17,7 +16,6 @@ export default function router(): Router {
     type: 'application/json',
   }));
   result.post('/:requestId/response', responseHandler);
-  result.post('/:requestId/argo-response', argoResponsehandler);
   result.get('/work', getWork);
   result.put('/work/:id', updateWorkItem);
 
