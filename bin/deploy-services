@@ -28,6 +28,7 @@ envsubst < $file | kubectl apply -f - -n argo
 file="tasks/service-runner/config/service-template.yaml"
 for service in ${LOCALLY_DEPLOYED_SERVICES//,/ }
 do
+<<<<<<< 3f3878d7a797f3752f1d7e9d40107423bf0d9607
   # set up enviornment variables for service
   export SERVICE_NAME=${service}
   var_prefix=`echo $service | tr 'a-z' 'A-Z' | tr '-' '_'`
@@ -61,4 +62,13 @@ do
 
   echo "Deploying $service using volume mount path $HOST_VOLUME_PATH"
   envsubst < $file | kubectl apply -f - -n argo
+=======
+  file="tasks/service-runner/config/${service}-sidecar.yaml"
+  if [ ! -f "$file" ]; then
+    echo "Invalid LOCALLY_DEPLOYED_SERVICES environment variable. $file was not found."
+    exit 1
+  fi
+  echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
+  envsubst < $file | kubectl apply -f - -n harmony
+>>>>>>> HARMONY-977: Remove argo setup scripts and change k8s argo namespace to harmony.
 done
