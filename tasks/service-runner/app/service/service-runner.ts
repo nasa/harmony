@@ -103,7 +103,7 @@ export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceRe
       }, workerTimeout);
 
       exec.exec(
-        'argo',
+        'harmony',
         env.myPodName,
         'worker',
         [
@@ -171,7 +171,7 @@ export async function runServiceFromPull(workItem: WorkItem): Promise<ServiceRes
       }, workerTimeout);
 
       exec.exec(
-        'argo',
+        'harmony',
         env.myPodName,
         'worker',
         [
