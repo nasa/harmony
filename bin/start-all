@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# start postgress, localstack, and harmony in the argo namespace in the local kubernetes cluster
+# start postgress, localstack, and harmony in the harmony namespace in the local kubernetes cluster
 
 ./bin/start-postgres-localstack
 ./bin/start-harmony
 echo ''
 echo 'Run `bin/reload-service-configs` to restart harmony.'
-echo 'Run `kubectl delete namespace argo` to remove all local resources'
+echo 'Run `kubectl delete namespace harmony` to remove all local resources'
