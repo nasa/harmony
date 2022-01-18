@@ -55,7 +55,7 @@ describe('Versions endpoint', function () {
       {
         name: 'nexus-service',
         type: {
-          name: 'argo',
+          name: 'turbo',
           params: {
             image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
             image_pull_policy: 'Whenever I feel like it',
@@ -65,7 +65,7 @@ describe('Versions endpoint', function () {
       {
         name: 'my/dockerhub-service',
         type: {
-          name: 'argo',
+          name: 'turbo',
           params: {
             image: 'dockerhub-service/foo:v1.0.1',
             image_pull_policy: '¯\\_(ツ)_/¯',
@@ -75,7 +75,7 @@ describe('Versions endpoint', function () {
       {
         name: 'aws/ecr-service-no-pull-policy',
         type: {
-          name: 'argo',
+          name: 'turbo',
           params: {
             image: '1234567890.dkr.ecr.us-west-2.amazonaws.com/harmonyservices/example-service:latest',
           },

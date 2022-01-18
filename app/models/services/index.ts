@@ -96,7 +96,7 @@ export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collecti
 
 const serviceTypesToServiceClasses = {
   http: HttpService,
-  argo: TurboService,
+  turbo: TurboService,
   noOp: NoOpService,
 };
 

@@ -5,8 +5,7 @@ import InvocationResult from './invocation-result';
 
 
 export interface TurboServiceParams {
-  argo_url: string;
-  namespace: string;
+  // namespace: string;
   template: string;
   template_type?: string;
   template_ref?: string;

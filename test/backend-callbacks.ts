@@ -41,7 +41,7 @@ describe('Backend Callbacks', function () {
     });
 
     describe('when the service does not provide any results', function () {
-      hookCallbackEach((r) => r.query({ status: 'successful', argo: 'true' }), true);
+      hookCallbackEach((r) => r.query({ status: 'successful', httpBackend: 'true' }), true);
 
       it('sends a synchronous failure explaining that there were no results', async function () {
         expect(this.userResp.statusCode).to.equal(500);
@@ -51,7 +51,7 @@ describe('Backend Callbacks', function () {
 
     describe('when the service provides exactly one result', function () {
       hookCallbackEach((r) => r.query({ item: { href: 'https://example.com/1' } }));
-      hookCallbackEach((r) => r.query({ status: 'successful', argo: 'true' }), true);
+      hookCallbackEach((r) => r.query({ status: 'successful', httpBackend: 'true' }), true);
 
       it('redirects to the result', function () {
         expect(this.userResp.statusCode).to.eql(303);
@@ -62,7 +62,7 @@ describe('Backend Callbacks', function () {
     describe('when the service provides multiple results', function () {
       hookCallbackEach((r) => r.query({ item: { href: 'https://example.com/1' } }));
       hookCallbackEach((r) => r.query({ item: { href: 'https://example.com/2' } }));
-      hookCallbackEach((r) => r.query({ status: 'successful', argo: 'true' }), true);
+      hookCallbackEach((r) => r.query({ status: 'successful', httpBackend: 'true' }), true);
 
       it('sends a synchronous failure explaining that there were too many results', function () {
         expect(this.userResp.statusCode).to.equal(500);

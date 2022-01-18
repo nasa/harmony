@@ -66,7 +66,6 @@ if (missingVars.length > 0) {
 
 interface HarmonyEnv {
   adminGroupId: string;
-  argoUrl: string;
   artifactBucket: string;
   awsDefaultRegion: string;
   builtInTaskPrefix: string;
