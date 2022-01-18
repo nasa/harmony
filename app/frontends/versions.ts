@@ -65,7 +65,7 @@ export default async function getVersions(req: HarmonyRequest, res: Response): P
   const ecr = defaultContainerRegistry();
   const logger = req.context.logger.child({ component: 'versions.getVersions' });
   const turboServices = await Promise.all((getServiceConfigs() as ServiceConfig<TurboServiceParams>[])
-    .filter((s) => s.type.name === 'argo')
+    .filter((s) => s.type.name === 'turbo')
     .map((service) => getServiceForDisplay(service, ecr, logger)));
   res.json(turboServices);
 }
