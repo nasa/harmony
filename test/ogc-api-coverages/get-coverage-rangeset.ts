@@ -377,7 +377,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     describe('set to "1"', function () {
       const maxResults = 1;
-      hookRangesetRequest(version, collection, variableName, { query: { maxResults, turbo: false } });
+      hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
 
       it('performs the request synchronously', function () {
         expect(this.service.operation.isSynchronous).to.equal(true);
@@ -710,7 +710,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
 
   // TODO Added for HARMONY-1030. Remove this when working HARMONY-968
   describe('when running in turbo mode', function () {
-    hookRangesetRequest(version, collection, 'all', { username: 'joe', query: { turbo: true } });
+    hookRangesetRequest(version, collection, 'all', { username: 'joe' });
     it('returns a 200 successful response', function () {
       expect(this.res.status).to.equal(200);
     });

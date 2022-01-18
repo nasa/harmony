@@ -123,7 +123,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       scaleExtent: '0,2500000.3,1500000,3300000',
       scaleSize: '1.1,2',
       format: 'application/x-zarr',
-      turbo: true,
     };
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
@@ -259,7 +258,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       scaleExtent: '0,2500000.3,1500000,3300000',
       scaleSize: '1.1,2',
       format: 'application/x-zarr',
-      turbo: true,
     };
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
@@ -328,7 +326,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
     const zarrOnlyQuery = {
       maxResults: 2,
       format: 'application/x-zarr',
-      turbo: true,
     };
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: zarrOnlyQuery, username: 'joe' });
@@ -364,7 +361,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       scaleExtent: '0,2500000.3,1500000,3300000',
       scaleSize: '1.1,2',
       format: 'application/x-netcdf4',
-      turbo: true,
     };
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectOnlyQuery });
