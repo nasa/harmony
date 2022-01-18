@@ -6,7 +6,7 @@ import { toISODateTime } from '../util/date';
 import { getServiceConfigs } from '../models/services';
 import { ServiceConfig } from '../models/services/base-service';
 import HarmonyRequest from '../models/harmony-request';
-import { ArgoServiceParams } from '../models/services/argo-service';
+import { TurboServiceParams } from '../models/services/turbo-service';
 import env = require('../util/env');
 
 interface ServiceVersion {
@@ -26,7 +26,7 @@ interface ServiceVersion {
  * @returns The version information for the service
  */
 async function getServiceForDisplay(
-  service: ServiceConfig<ArgoServiceParams>, ecr: ECR, logger: Logger,
+  service: ServiceConfig<TurboServiceParams>, ecr: ECR, logger: Logger,
 ): Promise<ServiceVersion> {
   const { image } = service.type.params;
   const imagePullPolicy = service.type.params.image_pull_policy || env.defaultImagePullPolicy;
@@ -64,8 +64,8 @@ async function getServiceForDisplay(
 export default async function getVersions(req: HarmonyRequest, res: Response): Promise<void> {
   const ecr = defaultContainerRegistry();
   const logger = req.context.logger.child({ component: 'versions.getVersions' });
-  const argoServices = await Promise.all((getServiceConfigs() as ServiceConfig<ArgoServiceParams>[])
+  const turboServices = await Promise.all((getServiceConfigs() as ServiceConfig<TurboServiceParams>[])
     .filter((s) => s.type.name === 'argo')
     .map((service) => getServiceForDisplay(service, ecr, logger)));
-  res.json(argoServices);
+  res.json(turboServices);
 }
