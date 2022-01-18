@@ -84,7 +84,7 @@ describe('Backend Callbacks', function () {
     hookJobCreationEach();
 
     beforeEach(async function () {
-      this.res = await request(this.backend).post(`/service/${this.job.requestId}/response`).query({ status: 'successful', argo: 'true' });
+      this.res = await request(this.backend).post(`/service/${this.job.requestId}/response`).query({ status: 'successful', httpBackend: 'true' });
     });
 
     it('accepts the callback', function () {
