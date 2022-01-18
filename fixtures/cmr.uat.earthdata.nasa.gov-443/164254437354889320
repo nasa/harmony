@@ -1,0 +1,29 @@
+POST /search/variables.umm_json_v1_8
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801695-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801696-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801716-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801717-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2000\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.8; charset=utf-8
+content-length: 3955
+connection: close
+date: Tue, 18 Jan 2022 22:19:33 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 4460489c-5cf9-4752-9be6-eed03ced0280
+strict-transport-security: max-age=31536000
+cmr-search-after: ["red_var","EEDTEST","red_var","EEDTEST"]
+cmr-hits: 4
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 331
+x-request-id: 4460489c-5cf9-4752-9be6-eed03ced0280
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 25e2963eb5d8a7965bc8b98c455aab48.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: 2yKYBHwI7ztG8loq8rK4cNW-n3ZKsyxiut-NjTDaptdDXo3V2M5mOQ==
+
+{"hits":4,"took":329,"items":[{"meta":{"revision-id":3,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"pquinn","native-id":"mmt_variable_3972","concept-id":"V1233801717-EEDTEST","revision-date":"2020-05-11T21:29:29.646Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":4.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Alpha channel value","Name":"alpha_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8","Name":"UMM-Var","Version":"1.8"},"LongName":"Alpha channel "},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"scantrell8277","native-id":"mmt_variable_3971","concept-id":"V1233801716-EEDTEST","revision-date":"2020-02-25T20:19:42.497Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":3.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Blue channel value","Name":"blue_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8","Name":"UMM-Var","Version":"1.8"},"LongName":"Blue channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}},{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"scantrell8277","native-id":"mmt_variable_3970","concept-id":"V1233801696-EEDTEST","revision-date":"2020-02-25T20:17:27.645Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":2.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Green channel value","Name":"green_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8","Name":"UMM-Var","Version":"1.8"},"LongName":"Green channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}},{"meta":{"revision-id":4,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"vinverso","native-id":"mmt_variable_3969","concept-id":"V1233801695-EEDTEST","revision-date":"2021-11-22T16:52:38.675Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","RelatedURLs":[{"Description":"This is a sample way of designating a colormap for a specific variable record.","URLContentType":"VisualizationURL","Type":"Color Map","Subtype":"Harmony GDAL","URL":"https://colormap_server.earthdata.nasa.gov/sea_surface_temperature/green-based","Format":"XML","MimeType":"application/XML"}],"Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":1.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Red channel value","Name":"red_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8","Name":"UMM-Var","Version":"1.8"},"LongName":"Red Channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}}]}
