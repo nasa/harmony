@@ -79,13 +79,14 @@ function getResultsLimitedMessage(operation: DataOperation): string {
 /**
  * Express.js middleware which extracts parameters from the Harmony operation
  * and performs a granule query on them, determining which files are applicable
- * to the given operation.
+ * to the given operation. Adds a CMR scrolling ID to be used by the query-cmr
+ * task to retrieve the granules as part of a turbo workflow.
  *
  * @param req - The client request, containing an operation
  * @param res - The client response
  * @param next - The next function in the middleware chain
  */
-async function cmrGranuleLocatorNew(
+async function cmrGranuleLocatorTurbo(
   req: HarmonyRequest, res: ServerResponse, next: NextFunction,
 ): Promise<void> {
   // Same boilerplate as before
@@ -163,11 +164,13 @@ async function cmrGranuleLocatorNew(
  * and performs a granule query on them, determining which files are applicable
  * to the given operation.
  *
+ * Still used for the NoOpService and for HTTP based services
+ *
  * @param req - The client request, containing an operation
  * @param res - The client response
  * @param next - The next function in the middleware chain
  */
-async function cmrGranuleLocatorArgo(
+async function cmrGranuleLocatorNonTurbo(
   req: HarmonyRequest, res: ServerResponse, next: NextFunction,
 ): Promise<void> {
   const { operation } = req;
@@ -278,9 +281,9 @@ async function cmrGranuleLocatorArgo(
 export default async function cmrGranuleLocator(
   req: HarmonyRequest, res: ServerResponse, next: NextFunction,
 ): Promise<void> {
-  if (req.query.turbo !== 'false' && !(req.context?.serviceConfig?.name === 'noOpService')) {
-    await cmrGranuleLocatorNew(req, res, next);
+  if (req.context?.serviceConfig?.type?.name === 'turbo') {
+    await cmrGranuleLocatorTurbo(req, res, next);
   } else {
-    await cmrGranuleLocatorArgo(req, res, next);
+    await cmrGranuleLocatorNonTurbo(req, res, next);
   }
 }
