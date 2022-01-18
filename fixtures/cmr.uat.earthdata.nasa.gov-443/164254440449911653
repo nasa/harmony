@@ -1,0 +1,30 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC446474-ORNL_DAAC\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n350\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"temporal\"\r\n\r\n1987-05-29T00:00:00.000Z,1987-05-30T00:00:00.000Z\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"bounding_box\"\r\n\r\n-100,30,0,40\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: close
+vary: Accept-Encoding
+date: Tue, 18 Jan 2022 22:20:04 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: c5d2f495-4ad1-4fbd-8185-fd6e0cf12124
+strict-transport-security: max-age=31536000
+cmr-search-after: ["ornl_daac",546825600000,1239610886]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 40
+x-request-id: c5d2f495-4ad1-4fbd-8185-fd6e0cf12124
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 316ff1e97338bc9bbb335af58b00d0aa.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: qO3drCdMr3IIky779kk6vDCQ55E1h1E_ymrd9PR8-Tp5TXgmNbun5Q==
+
+{"feed":{"updated":"2022-01-18T22:20:04.477Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[{"time_start":"1987-05-01T00:00:00.000Z","updated":"2021-01-06T23:12:19.000Z","dataset_id":"15 Minute Stream Flow Data: USGS (FIFE)","points":["39.1019 -96.595"],"data_center":"ORNL_DAAC","title":"FIFE_STRM_15M.71211715.s15","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"1987-06-01T00:00:00.000Z","id":"G1239610886-ORNL_DAAC","original_format":"ECHO10","granule_size":"0.009377","browse_flag":false,"collection_concept_id":"C446474-ORNL_DAAC","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","title":"Download 71211715.s15","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/fife/data/hydrolgy/strm_15m/y1987/71211715.s15"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","title":"ORNL DAAC Data Set Documentation (USERS GUIDE)","hreflang":"en-US","href":"https://daac.ornl.gov/FIFE/guides/15_min_strm_flow.html"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","title":"Data set Landing Page DOI URL (DATA SET LANDING PAGE)","hreflang":"en-US","href":"https://dx.doi.org/10.3334/ORNLDAAC/1"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","title":"Data Set Documentation (GENERAL DOCUMENTATION)","hreflang":"en-US","href":"https:/daac.ornl.gov/daacdata/fife/document/hydrolgy/15_min_strm_flow.pdf"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","title":"Data Set Documentation (GENERAL DOCUMENTATION)","hreflang":"en-US","href":"https:/daac.ornl.gov/daacdata/fife/document/hydrolgy/strm_15m.doc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","title":"Data Set Documentation (GENERAL DOCUMENTATION)","hreflang":"en-US","href":"https:/daac.ornl.gov/daacdata/fife/data/hydrolgy/strm_15m/strm_15m.tdf"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/fife/"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/FIFE/guides/15_min_strm_flow.html"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/metadata#","hreflang":"en-US","href":"https://doi.org/10.3334/ORNLDAAC/1"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/fife/document/hydrolgy/15_min_strm_flow.pdf"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/fife/document/hydrolgy/strm_15m.doc"},{"inherited":true,"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://daac.ornl.gov/daacdata/fife/data/hydrolgy/strm_15m/strm_15m.tdf"}]}]}}
