@@ -18,7 +18,6 @@ describe('CONCISE workflow', function () {
       const query = {
         concatenate: true,
         maxResults: 2,
-        turbo: true,
       };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest('1.0.0', collection, 'all', { query, username: 'joe' });
@@ -30,7 +29,6 @@ describe('CONCISE workflow', function () {
     describe('and it is not set', function () {
       const query = {
         maxResults: 2,
-        turbo: true,
       };
       hookRangesetRequest('1.0.0', collection, 'all', { query, username: 'joe' });
       hookRedirect('joe');
@@ -54,7 +52,6 @@ describe('CONCISE workflow', function () {
       const query = {
         concatenate: false,
         maxResults: 2,
-        turbo: true,
       };
       hookRangesetRequest('1.0.0', collection, 'all', { query, username: 'joe' });
       hookRedirect('joe');
@@ -78,7 +75,6 @@ describe('CONCISE workflow', function () {
       const query = {
         concatenate: true,
         maxResults: 2,
-        turbo: true,
       };
       hookRangesetRequest('1.0.0', collection, 'all', { query, username: 'joe' });
       hookRedirect('joe');
@@ -102,7 +98,6 @@ describe('CONCISE workflow', function () {
       const badQuery = {
         concatenate: 'random',
         maxResults: 2,
-        turbo: true,
       };
 
       hookRangesetRequest('1.0.0', collection, 'all', { query: badQuery, username: 'joe' });
@@ -122,7 +117,6 @@ describe('CONCISE workflow', function () {
       const query = {
         concatenate: 'true',
         maxResults: 2,
-        turbo: true,
       };
 
       hookRangesetRequest('1.0.0', nonConcatCollection, 'all', { query, username: 'joe' });
