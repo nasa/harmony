@@ -160,7 +160,7 @@ describe('Individual job status route', function () {
     });
 
     describe('when the job has completed successfully', function () {
-      StubService.hook({ params: { status: 'successful', argo: 'true' } });
+      StubService.hook({ params: { status: 'successful', httpBackend: 'true' } });
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe3' });
       before(async function () {
         await this.service.complete();
@@ -492,7 +492,7 @@ describe('Individual job status route', function () {
       before(async function () {
         const id = this.res.headers.location.split('/').pop();
         await request(this.frontend)
-          .get('/example/status').query({ id, status: 'successful', argo: 'true' });
+          .get('/example/status').query({ id, status: 'successful', httpBackend: 'true' });
       });
 
       describe('retrieving its job status', function () {
