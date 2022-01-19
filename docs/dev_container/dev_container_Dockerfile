@@ -8,7 +8,7 @@ ARG TZ=America/Chicago
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
 #
-# Update and install system packages; runs before certificate work below because we must have ca-certificates package installed first 
+# Update and install system packages; runs before certificate work below because we must have ca-certificates package installed first
 #
 RUN apt update && apt upgrade -y && apt install -y bind9-host bsdmainutils ca-certificates curl git iputils-ping libpq-dev postgresql sqlite3 sudo unzip vim
 
@@ -76,16 +76,6 @@ RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -
     && echo alias kubectl=\"kubectl -s $KUBERNETES_URL\" >> ~/.bash_aliases
 # needed for the dev container to authenticate to the kubernetes API
 COPY .kube/config ~/.kube/config
-
-#
-# Argo CLI, command for interfacing with Argo
-#
-WORKDIR /home/dockeruser/downloads
-RUN curl -sLO https://github.com/argoproj/argo/releases/download/v2.11.6/argo-linux-amd64.gz \
-    && gunzip argo-linux-amd64.gz \
-    && chmod +x ./argo-linux-amd64 \
-    && sudo mv ./argo-linux-amd64 /usr/local/bin/argo \
-    && argo version
 
 #
 # GDAL

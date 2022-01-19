@@ -36,11 +36,13 @@
 
 # Requirements for Harmony Services
 In order for a service to run in Harmony several things need to be provided as covered in the following sections. A simple reference service, [harmony-service-example](https://github.com/nasa/harmony-service-example), provides examples of each. This document describes how to fulfill these requirements in depth.
+
 ## 1. Allowing Harmony to invoke services
 
 Harmony provides a Python library, [harmony-service-lib-py](https://github.com/nasa/harmony-service-lib-py), to ease the process of adapting Harmony messages to service code. It provides helpers for message parsing, command line interactions, data staging, reading and writing STAC catalogs, and Harmony callbacks. Full details as well as an example can be found in the project's README and code. *This is the preferred way for services to interact with Harmony as it handles much of the work for the service and makes it easy for services to stay up-to-date with Harmony.*
 
 For service providers that do not want to use the service library (perhaps because the service is not implemented in Python), details about Harmony internals can be found in [Appendix A](#appendix-a---harmony-internals).
+
 ## 2. Accepting Harmony requests
 
 When invoking a service, Harmony provides an input detailing the specific operations the service should perform and the URLs of the data it should perform the operations on. Each new service will need to adapt this message into an actual service invocation, typically transforming the JSON input into method calls, command-line invocations, or HTTP requests. See the latest [Harmony data-operation schema](../app/schemas/) for details on Harmony's JSON input format.
@@ -48,13 +50,27 @@ When invoking a service, Harmony provides an input detailing the specific operat
 Ideally, this adaptation would consist only of necessary complexity peculiar to the service in question. Please let the team know if there are components that can make this process easier and consider sending a pull request or publishing your code if you believe it can help future services.
 
 ## 3. Sending results to Harmony
+
 This is handled automatically by the service library using the output of the service invocation. Alternatively a service can provide results directly as discussed in [Appendix A](#appendix-a---harmony-internals).
 
 ## 4. Canceled requests
 
 Canceled requests are handled internally by Harmony. Harmony will prevent further work from being sent to a service on behalf of a canceled request, but will not otherwise interact with a service that is already processing data on behalf of a request. For services employing the service library nothing needs to be done to support request cancellation. For services not employing the service library, see the section in [Appendix A](#appendix-a---harmony-internals) regarding cancellation.
 
-## 5. Registering services in services.yml
+## 5. Defining environment variables in env-defaults
+
+Add environment variables specific to the service to [env-defaults](../env-defaults). See the harmony-service-example for an example of the environment variables needed:
+
+```
+HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
+HARMONY_SERVICE_EXAMPLE_REQUESTS_CPU=128m
+HARMONY_SERVICE_EXAMPLE_REQUESTS_MEMORY=128Mi
+HARMONY_SERVICE_EXAMPLE_LIMITS_CPU=128m
+HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY=512Mi
+HARMONY_SERVICE_EXAMPLE_INVOCATION_ARGS='python -m harmony_service_example'
+```
+
+## 6. Registering services in services.yml
 
 Add an entry to [services.yml](../config/services.yml) under each CMR environment that has collections / granules appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance.
 
@@ -72,16 +88,11 @@ The structure of an entry in the [services.yml](../config/services.yml) file is 
 - name: harmony/service-example     # A unique identifier string for the service, conventionally <team>/<service>
   data_operation_version: '0.12.0' # The version of the data-operation messaging schema to use
   type:                            # Configuration for service invocation
-      <<: *default-argo-config     # To reduce boilerplate, services.yml includes default configuration suitable for all Argo based services. This is ignored for Turbo services.
+      <<: *default-turbo-config     # To reduce boilerplate, services.yml includes default configuration suitable for all Docker based services.
       params:
-        <<: *default-argo-params             # Always include the default argo parameters for Argo services
-        template: harmony-service-example    # Name of the argo workflow template
-        template_type: chaining              # All new services should use the 'chaining' workflow template type, which utilizes a docker service to query the CMR for granules and STAC catalogs to read inputs and provide outputs. It allows multiple services to be chained together within a single workflow. There may be a few existing services that use the deprecated 'legacy' type only allowing for a single service in a workflow.
-        image: !Env ${HARMONY_EXAMPLE_IMAGE} # The docker image and tag to use for the service. Use an environment variable in order to allow changing the image and tag in different environments.
-        image_pull_policy: !Env ${HARMONY_EXAMPLE_IMAGE_PULL_POLICY} # The image pull policy to use to determine when a docker image should be pulled prior to starting a pod to execute a service. See the TBD section describing pull policies.
-        parallelism: !Env ${HARMONY_EXAMPLE_PARALLELISM} # The maximum number of concurrent batches that can be executed for a workflow. Use an environment variable to allow for different configuration in different environments.
+        <<: *default-turbo-params             # Always include the default parameters for docker services
         env:
-          <<: *default-argo-env                        # Always include the default Argo environment variables and then add service specific env
+          <<: *default-turbo-env                        # Always include the default docker environment variables and then add service specific env
           STAGING_PATH: public/harmony/service-example # The S3 prefix where artifacts generated by the service will be stored
   umm_s:                          # A list of CMR service IDs for the service (optional)
     - S1234-EXAMPLE
@@ -102,8 +113,8 @@ The structure of an entry in the [services.yml](../config/services.yml) file is 
     reprojection: true            # The service supports reprojection
   # Turbo config
   steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
-      - image: !Env ${HARMONY_EXAMPLE_IMAGE}
+      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE} # The image to use for the first step in the chain
+      - image: !Env ${HARMONY_EXAMPLE_IMAGE} # The image to use for the second step in the chain
 ```
 
 This format is under active development. In the long-term a large portion of it is likely to be editable and discoverable through the CMR via UMM-S. As of this writing, collections on which a service works can
@@ -143,246 +154,21 @@ Services that provide aggregation, e.g., concatenation for CONCISE, require that
 available when they are run. Harmony infers this from the `operations` field in the associated step.
 Currently the only supported aggregation operation is `concatenate`.
 
-## 6. Creating a workflow template for the service (deprecated soon)
-
-Docker based services are invoked from within Argo or using Turbo workflows. Argo uses workflow templates to provide the instructions for executing a request. Harmony provides templates for common steps within workflows such as querying the CMR for granules and providing those as inputs to later steps and responding back to Harmony to provide outputs.
-
-In order to create a template that executes a single service create a new workflow template YAML file in the `config/workflow-templates` directory. The name of the file is important. It needs to be `<service_name>.yaml` where service_name matches the the template name defined in services.yml.
-
-The structure of the file is below. The easiest way to create the template is to copy/paste the harmony-service-example.yaml template and replace all instances of 'harmony-service-example' with the name of the new service since there is a large amount of boilerplate in each workflow template file:
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: WorkflowTemplate
-metadata:
-  name: harmony-service-example
-spec:
-  entrypoint: harmony-service-example-steps
-  templates:
-    - name: harmony-service-example-steps
-      inputs:
-        artifacts:
-        - name: metadata
-        parameters:
-          - name: operation
-          - name: stac-catalog-link
-          - name: image-pull-policy
-          - name: timeout
-          - name: STAGING_PATH
-      steps:
-      - - name: last-step
-          template: harmony-service-example-service
-          arguments:
-            artifacts:
-            - name: metadata
-              from: "{{inputs.artifacts.metadata}}"
-            parameters:
-            - name: operation
-              value: "{{inputs.parameters.operation}}"
-            - name: stac-catalog-link
-              value: "{{inputs.parameters.stac-catalog-link}}"
-            - name: image-pull-policy
-              value: "{{inputs.parameters.image-pull-policy}}"
-            - name: timeout
-              value: "{{inputs.parameters.timeout}}"
-            - name: STAGING_PATH
-              value: "{{inputs.parameters.STAGING_PATH}}"
-      outputs:
-        artifacts:
-          - name: metadata
-            from: "{{steps.last-step.outputs.artifacts.metadata}}"
-        parameters:
-          - name: stac-catalog-link
-            valueFrom:
-              parameter: "{{steps.last-step.outputs.parameters.stac-catalog-link}}"
-    - name: harmony-service-example-service
-      inputs:
-        artifacts:
-        - name: metadata
-          path: /tmp/metadata
-        parameters:
-          - name: operation
-          - name: stac-catalog-link
-          - name: image-pull-policy
-          - name: timeout
-          - name: STAGING_PATH
-      outputs:
-        artifacts:
-        # generate metadata artifact from /tmp/outputs directory
-          - name: metadata
-            path: /tmp/outputs/metadata
-        parameters:
-          - name: stac-catalog-link
-            value: catalog.json
-          - name: operation
-            valueFrom:
-              path: /tmp/outputs/metadata/message.json
-      podSpecPatch: '{"activeDeadlineSeconds":{{inputs.parameters.timeout}}}'
-      container:
-        image: "<DOCKER_IMAGE>"
-        command: ["python3"]           # Command to run on container startup
-        args:
-          [
-            "-m",
-            "harmony_service_example", # Replace this with the command to run the service
-            "--harmony-action",
-            "invoke",
-            "--harmony-input",
-            "{{inputs.parameters.operation}}",
-            "--harmony-sources",
-            "{{inputs.artifacts.metadata.path}}/{{inputs.parameters.stac-catalog-link}}",
-            "--harmony-metadata-dir",
-            "{{outputs.artifacts.metadata.path}}"
-          ]
-        envFrom:
-          - configMapRef:
-              name: harmony-env
-          - secretRef:
-              name: harmony-secrets
-        env:
-          - name: STAGING_PATH
-            value: "{{inputs.parameters.STAGING_PATH}}"
-          - name: APP_NAME
-            value: "harmony-service-example"
-```
-
-## 7. Creating a Kubernetes service template for local deployments (optional - Turbo only)
-It can be useful to test a service running in Harmony locally during development. This can be accomplished by adding a Kubernetes template that defines a deployment and (Kubernetes) service to the `tasks/service-runner/config` directory in the `harmony` repository. The deployment/service will be created when the `bin/deploy-services` script is run, e.g., when running `bin/bootstrap-harmony` to start the whole system.
-
-The template for the Harmony Service Example is given below:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: harmony-service-example
-  labels:
-    name: harmony-service-example
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      name: harmony-service-example
-  template:
-    metadata:
-      labels:
-        name: harmony-service-example
-    spec:
-      containers:
-        - name: worker
-          image: $HARMONY_SERVICE_EXAMPLE_IMAGE
-          resources:
-            limits:
-              memory: $HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY
-            requests:
-              memory: $HARMONY_SERVICE_EXAMPLE_REQUESTS_MEMORY
-          envFrom:
-          - configMapRef:
-              name: harmony-env
-          - secretRef:
-              name: harmony-secrets
-          env:
-            - name: TEXT_LOGGER
-              value: "false"
-          volumeMounts:
-            - mountPath: /tmp/metadata
-              name: test-volume
-          command: ["/bin/sh", "-c"]
-          args:
-            - while true; do
-                date;
-                sleep 10;
-              done
-        - name: manager
-          imagePullPolicy: Always
-          image: $SERVICE_RUNNER_IMAGE
-          resources:
-            limits:
-              memory: $SERVICE_RUNNER_LIMITS_MEMORY
-            requests:
-              memory: $SERVICE_RUNNER_REQUESTS_MEMORY
-          envFrom:
-          - configMapRef:
-              name: harmony-env
-          - secretRef:
-              name: harmony-secrets
-          env:
-          - name: BACKEND_HOST
-            value: $BACKEND_HOST
-          - name: BACKEND_PORT
-            value: "$BACKEND_PORT"
-          - name: HARMONY_SERVICE
-            value: $HARMONY_SERVICE_EXAMPLE_IMAGE
-          - name: INVOCATION_ARGS
-            value: |-
-              python
-              -m
-              harmony_service_example
-          - name: MY_POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: MY_POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          - name: MY_POD_IP
-            valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
-          ports:
-            - containerPort: 5000
-          volumeMounts:
-            - mountPath: /tmp/metadata
-              name: test-volume
-      volumes:
-      - name: test-volume
-        hostPath:
-          # directory location on host
-          path: $HOST_VOLUME_PATH
-          # this field is optional
-          type: DirectoryOrCreate
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: harmony-service-example
-spec:
-  ports:
-    - name: frontend
-      port: 5000
-      targetPort: 5000
-      protocol: TCP
-  selector:
-    name: harmony-service-example
-  type: ClusterIP
-
-```
-
-There are two sections to this template. The first and larger section defines the Kubernetes deployment to be created - it defines the pod that is used in the deployment including the two containers running in the pod - the `worker` and the `manager`. The worker container is created using the service image provided by the service developer as discussed in the [Docker Container Images](#8-docker-container-images) section.
-
-The second section of the template defines the Kubernetes service to manage the pods created in the deployment. This service is responsible for restarting pods that fail.
-
-The template is parameterized with values replaced by environment variables, which can be defined directory or added to the `env-defaults` file. Any values starting with a `$` well be replaced. For example, `$HOST_VOLUME_PATH` will be replaced with the environment variable `HOST_VOLUME_PATH`, which should be the path to the directory on localhost to be used to hold the data generated by services. This directory is shared by Harmony and all the various services and simulates the function of EFS in AWS.
-This should be set to a directory in the user's home directory, .e.g., `/Users/username/metadata`. Most of the parameterized values can be left to the defaults provided in `env-defaults`.
-
-A non-parameterized field that must be hard-coded is the `INVOCATION_ARGS` value. This is the command(s) to run to invoke the service in the Docker container. Typically this is the same as the `ENTRYPOINT` of the Docker image.
-
-## 8. Docker Container Images
+## 7. Docker Container Images
 
 The service and all necessary code and dependencies to allow it to run should be packaged in a Docker container image. Docker images can be staged anywhere Harmony can reach them, e.g. ghcr.io, Dockerhub or AWS ECR. If the image cannot be made publicly available, contact the harmony team to determine how to provide access to the image.
 
-Harmony uses the same image to run the container in Argo as well as in Harmony Turbo. *No changes to existing images are needed to support Turbo.*
-
 Harmony will run the Docker image, passing the following command-line parameters:
 
-`--harmony-action <action> --harmony-input <input> --harmony-sources <sources-file>`
+`--harmony-action <action> --harmony-input <input> --harmony-sources <sources-file> --harmony-metadata-dir <output-dir>`
 
 `<action>` is the action Harmony wants the service to perform. Currently, Harmony only uses `invoke`, which requests that the service be run and exit. The service library Harmony provides also supports a `start` action with parameter `--harmony-queue-url <url>`, which requests that the service be started as a long running service that reads requests from an SQS queue. This is likely to be deprecated.
 
 `<input>` is a JSON string containing the details of the service operation to be run. See the latest [Harmony data-operation schema](../app/schemas/) for format details.
 
-`<sources-file>` is an optional file path that may contain a JSON document whose root-level keys should override keys in `<input>`. The intent of this file is to allow Harmony to externalize the potentially very long list of input sources to avoid command line limits while retaining the remainder of the message on the command line for easier manipulation in workflow definitions.
+`<sources-file>` file path that contains a STAC catalog with items and metadata to be processed by the service. The intent of this file is to allow Harmony to externalize the potentially very long list of input sources to avoid command line limits while retaining the remainder of the message on the command line for easier manipulation in workflow definitions.
+
+`<output-dir>` is the file path where output metadata should be written. The resulting STAC catalog will be written to catalog.json in the supplied dir with child resources in the same directory or a descendant directory.
 
 The `Dockerfile` in the harmony-service-example project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.
 
@@ -431,7 +217,7 @@ Synchronous requests are ones where a user has made a call to Harmony and the co
 
 #### For Docker services
 
-Docker based services are no longer required to call back to harmony in order to provide service responses. This is handled by Argo or the Turbo workflow management. However, services can optionally call back to Harmony as described below using an HTTP POST to the URL provided in the `callback` field of the Harmony input.
+Docker based services are no longer required to call back to harmony in order to provide service responses. This is handled internally by harmony. However, services can optionally call back to Harmony as described below using an HTTP POST to the URL provided in the `callback` field of the Harmony input.
 
 The following are the options for how to call back to the Harmony URL:
 
