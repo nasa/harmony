@@ -3,17 +3,7 @@ import { Logger } from 'winston';
 import BaseService from './base-service';
 import InvocationResult from './invocation-result';
 
-
 export interface TurboServiceParams {
-  // namespace: string;
-  template: string;
-  template_type?: string;
-  template_ref?: string;
-  embedded_template?: string;
-  image_pull_policy?: string;
-  query_cmr_image_pull_policy?: string;
-  parallelism?: number;
-  postBatchStepCount?: number;
   env: { [key: string]: string };
   image?: string;
 }
@@ -31,6 +21,5 @@ export default class TurboService extends BaseService<TurboServiceParams> {
    */
   async _run(_logger: Logger): Promise<InvocationResult> {
     return null;
-
   }
 }

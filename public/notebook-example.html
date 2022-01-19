@@ -13470,13 +13470,11 @@ to a <code>.netrc</code> (<code>_netrc</code> on Windows) file in your home dire
 <pre># Order for each CMR endpoint in this file will reflect precedence of the service when
 # multiple services handle a collection
 
-# Default argo configuration
-x-argo-config: &amp;default-argo-config
-  name: argo
-  params: &amp;default-argo-params
-    argo_url: !Env ${ARGO_URL}
-    namespace: argo
-    env: &amp;default-argo-env
+# Default turbo configuration
+x-turbo-config: &amp;default-turbo-config
+  name: turbo
+  params: &amp;default-turbo-params
+    env: &amp;default-turbo-env
       USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
       AWS_DEFAULT_REGION: us-west-2
       STAGING_BUCKET: !Env ${STAGING_BUCKET}
@@ -13495,15 +13493,15 @@ https://cmr.earthdata.nasa.gov:
   - name: asfdataservices/gdal-subsetter
     data_operation_version: &#39;0.9.0&#39;
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: asf-gdal-subsetter
         image: !Env ${ASF_GDAL_IMAGE}
         image_pull_policy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
         parallelism: !Env ${ASF_GDAL_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
     collections:
       - C1595422627-ASF
@@ -13523,15 +13521,15 @@ https://cmr.earthdata.nasa.gov:
   - name: harmony/gdal
     data_operation_version: &#39;0.9.0&#39;
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: harmony-gdal
         image: !Env ${GDAL_IMAGE}
         image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
         parallelism: !Env ${GDAL_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/harmony/gdal
     collections:
       - C1756916832-XYZ_PROV
@@ -13549,15 +13547,15 @@ https://cmr.earthdata.nasa.gov:
   - name: podaac/l2-subsetter
     data_operation_version: &#39;0.9.0&#39;
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: podaac-l2-subsetter
         image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter
     collections:
       - C1940473819-POCLOUD
@@ -13576,15 +13574,15 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: asfdataservices/gdal-subsetter
     data_operation_version: &#39;0.9.0&#39;
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: asf-gdal-subsetter
         image: !Env ${ASF_GDAL_IMAGE}
         image_pull_policy: !Env ${ASF_GDAL_IMAGE_PULL_POLICY}
         parallelism: !Env ${ASF_GDAL_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
     collections:
       - C1225776654-ASF
@@ -13604,15 +13602,15 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: harmony/gdal
     data_operation_version: &#39;0.9.0&#39;
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: harmony-gdal
         image: !Env ${GDAL_IMAGE}
         image_pull_policy: !Env ${GDAL_IMAGE_PULL_POLICY}
         parallelism: !Env ${GDAL_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/harmony/gdal
     collections:
       - C1233800302-EEDTEST
@@ -13631,15 +13629,15 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: podaac/l2-subsetter
     data_operation_version: &#39;0.9.0&#39;
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: podaac-l2-subsetter
         image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter
     collections:
       - C1234208436-POCLOUD
@@ -13660,15 +13658,15 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: &#39;0.9.0&#39;
     batch_size: 1
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: swot-reproject
         image: !Env ${SWOT_REPR_IMAGE}
         image_pull_policy: !Env ${SWOT_REPR_IMAGE_PULL_POLICY}
         parallelism: !Env ${SWOT_REPR_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/sds/swot-reproject
     collections:
       - C1233860183-EEDTEST
@@ -13693,15 +13691,15 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: sds/variable-subsetter
     data_operation_version: &#39;0.9.0&#39;
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: var-subsetter
         image: !Env ${VAR_SUBSETTER_IMAGE}
         image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/sds/variable-subsetter
     collections:
       - C1234714691-EEDTEST  # ATL03
@@ -13742,14 +13740,14 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: &#39;0.9.0&#39;
     batch_size: 2000
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         # Minimal parameters for current partial chaining implementation
         image: harmony/query-cmr:latest
         template_type: chaining
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
     collections:
       # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
       # Good example, being in UAT, global, many public non-global granules,
@@ -13768,15 +13766,15 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: &#39;0.9.0&#39;
     batch_size: 2
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         image: harmony/query-cmr:latest
         template: test-chain-with-result-handler
         image_pull_policy: !Env ${DEFAULT_IMAGE_PULL_POLICY}
         parallelism: !Env ${DEFAULT_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/harmony/result-handler-example
     collections:
       # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
@@ -13799,15 +13797,15 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: podaac/ps3
     data_operation_version: &#39;0.9.0&#39;
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: podaac-ps3
         image: !Env ${PODAAC_PS3_IMAGE}
         image_pull_policy: !Env ${PODAAC_PS3_IMAGE_PULL_POLICY}
         parallelism: !Env ${PODAAC_PS3_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/podaac/ps3
     collections:
       - C1234530532-EEDTEST
@@ -13823,15 +13821,15 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: podaac/netcdf-converter
     data_operation_version: &#39;0.9.0&#39;
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: podaac-netcdf-converter
         image: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE}
         image_pull_policy: !Env ${PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY}
         parallelism: !Env ${PODAAC_NETCDF_CONVERTER_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/podaac/netcdf-converter
     collections:
       - C1234410736-POCLOUD
@@ -13846,15 +13844,15 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: harmony/netcdf-to-zarr
     data_operation_version: &#39;0.9.0&#39;
     type:
-      &lt;&lt;: *default-argo-config
+      &lt;&lt;: *default-turbo-config
       params:
-        &lt;&lt;: *default-argo-params
+        &lt;&lt;: *default-turbo-params
         template: harmony-netcdf-to-zarr
         image: !Env ${NETCDF_TO_ZARR_IMAGE}
         image_pull_policy: !Env ${NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
         parallelism: !Env ${NETCDF_TO_ZARR_PARALLELISM}
         env:
-          &lt;&lt;: *default-argo-env
+          &lt;&lt;: *default-turbo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
     collections:
       - C1234088182-EEDTEST
