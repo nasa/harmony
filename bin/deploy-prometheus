@@ -18,17 +18,25 @@ if ! command -v "helm" &> /dev/null; then
     exit 1;
 fi
 
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
 # Deploy prometheus adapter
 PROMETHEUS_NAMESPACE=monitoring
 PROMETHEUS_ADAPTER_HELM_NAME=harmony-prometheus-adapter
 if [[ `helm list -q -n ${PROMETHEUS_NAMESPACE} -f ${PROMETHEUS_ADAPTER_HELM_NAME}` \
         = ${PROMETHEUS_ADAPTER_HELM_NAME} ]]; then
-    echo "deleteing previous helm installation"
-    helm delete ${PROMETHEUS_ADAPTER_HELM_NAME} -n ${PROMETHEUS_NAMESPACE}
-fi
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install -f ./config/prometheus-adapter-helm-values.yaml \
+    echo "prometheus adapter (${PROMETHEUS_ADAPTER_HELM_NAME}) was already installed via helm - updating"
+    helm upgrade -f ./config/prometheus-adapter-helm-values.yaml \
                 -n ${PROMETHEUS_NAMESPACE} \
                 ${PROMETHEUS_ADAPTER_HELM_NAME} \
                 prometheus-community/prometheus-adapter
+else
+    echo "installing prometheus"
+    helm install -f ./config/prometheus-adapter-helm-values.yaml \
+                    -n ${PROMETHEUS_NAMESPACE} \
+                    ${PROMETHEUS_ADAPTER_HELM_NAME} \
+                    prometheus-community/prometheus-adapter
+
+fi
+
