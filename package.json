@@ -10,7 +10,7 @@
     "start": "ts-node -r tsconfig-paths/register app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views --respawn app/server",
     "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn app/server",
-    "update-dev": "npm install && lerna run build && bin/start-argo",
+    "update-dev": "npm install && lerna run build && bin/restart-services",
     "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
     "watch-debug": "nodemon --inspect=5858 -e ts,tsx --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
     "postinstall": "if test \"$NODE_ENV\" != \"production\" ; then lerna exec -- npm install; fi",

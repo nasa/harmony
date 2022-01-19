@@ -79,7 +79,7 @@ Once completed, test `kubectl` by running the following:
 
 If you can retrieve node information then you're good to go. These steps will need to be repeated if you re-deploy Kubernetes or re-install Docker Desktop.
 
-### Argo, Localstack, and Harmony
+### Localstack and Harmony
 
 After starting each of these services (the first two via Kubernetes and Harmony manually) you will need to forward host ports via VSCode's Remote Explorer interface.
 

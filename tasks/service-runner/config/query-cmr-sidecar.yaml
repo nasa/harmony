@@ -20,7 +20,7 @@ spec:
       terminationGracePeriodSeconds: $DEFAULT_POD_GRACE_PERIOD_SECS
       containers:
         - name: worker
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           image: $QUERY_CMR_IMAGE
           lifecycle:
             preStop:
