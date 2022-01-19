@@ -28,11 +28,6 @@ https://cmr.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: asf-gdal-subsetter
-        template_type: chaining
-        image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${ASF_GDAL_SUBSETTER_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
@@ -68,11 +63,6 @@ https://cmr.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: harmony-netcdf-to-zarr
-        template_type: chaining
-        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
@@ -185,11 +175,6 @@ https://cmr.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: harmony-service-example
-        template_type: chaining
-        image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
-        image_pull_policy: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_SERVICE_EXAMPLE_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
@@ -215,11 +200,6 @@ https://cmr.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: podaac-l2-subsetter
-        template_type: chaining
-        image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter
@@ -262,8 +242,6 @@ https://cmr.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        image: !Env ${PODAAC_CONCISE_IMAGE}
-        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/concise
@@ -289,9 +267,6 @@ https://cmr.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        image: !Env ${PODAAC_CONCISE_IMAGE}
-        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
-        template_type: chaining
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
@@ -347,11 +322,6 @@ https://cmr.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: var-subsetter
-        template_type: chaining
-        image: !Env ${VAR_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/HOSS
@@ -380,11 +350,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: asf-gdal-subsetter
-        template_type: chaining
-        image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${ASF_GDAL_SUBSETTER_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
@@ -455,11 +420,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: harmony-service-example
-        template_type: chaining
-        image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
-        image_pull_policy: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_SERVICE_EXAMPLE_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
@@ -486,11 +446,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: podaac-l2-subsetter
-        template_type: chaining
-        image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter
@@ -547,8 +502,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        image: !Env ${PODAAC_CONCISE_IMAGE}
-        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/concise
@@ -577,9 +530,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        image: !Env ${PODAAC_CONCISE_IMAGE}
-        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
-        template_type: chaining
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
@@ -618,11 +568,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: swot-reproject
-        template_type: chaining
-        image: !Env ${SWOT_REPROJECT_IMAGE}
-        image_pull_policy: !Env ${SWOT_REPROJECT_IMAGE_PULL_POLICY}
-        parallelism: !Env ${SWOT_REPROJECT_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/swot-reproject
@@ -651,11 +596,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: var-subsetter
-        template_type: chaining
-        image: !Env ${VAR_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/variable-subsetter
@@ -681,11 +621,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: var-subsetter
-        template_type: chaining
-        image: !Env ${VAR_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/HOSS
@@ -711,11 +646,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: sds-maskfill
-        template_type: chaining
-        image: !Env ${SDS_MASKFILL_IMAGE}
-        image_pull_policy: !Env ${SDS_MASKFILL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${SDS_MASKFILL_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/maskfill
@@ -735,11 +665,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: trajectory-subsetter
-        template_type: chaining
-        image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${TRAJECTORY_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${TRAJECTORY_SUBSETTER_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/sds/trajectory-subsetter
@@ -781,33 +706,6 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
       reprojection: true
 
-  # This is an example service and backend from example/http-backend.js mounted by
-  # the frontend callback server.
-  - name: harmony/chaining-example
-    data_operation_version: '0.12.0'
-    batch_size: 2000
-    type:
-      name: turbo
-      params:
-        # Minimal parameters for current partial chaining implementation
-        image: harmony/query-cmr:latest
-        template_type: chaining
-        env:
-          <<: *default-turbo-env
-          LOCALSTACK_HOST: !Env ${BACKEND_HOST}
-    collections:
-      # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
-      # Good example, being in UAT, global, many public non-global granules,
-      # and not yet on the services roadmap.
-      - C1096-PVC_TS2
-    capabilities:
-      subsetting:
-        variable: true
-        bbox: true
-      output_formats:
-        - image/tiff
-      reprojection: true
-
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.12.0'
     batch_size: 20
@@ -815,11 +713,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: harmony-netcdf-to-zarr
-        template_type: chaining
-        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
@@ -897,11 +790,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: podaac-l2-subsetter-netcdf-to-zarr
-        template_type: chaining
-        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/podaac-l2-subsetter-netcdf-to-zarr
@@ -937,11 +825,6 @@ https://cmr.uat.earthdata.nasa.gov:
       <<: *default-turbo-config
       params:
         <<: *default-turbo-params
-        template: swot-reproject-netcdf-to-zarr
-        template_type: chaining
-        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/swot-repr-netcdf-to-zarr

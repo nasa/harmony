@@ -7,13 +7,15 @@ import { getServiceConfigs } from '../models/services';
 import { ServiceConfig } from '../models/services/base-service';
 import HarmonyRequest from '../models/harmony-request';
 import { TurboServiceParams } from '../models/services/turbo-service';
-import env = require('../util/env');
 
 interface ServiceVersion {
   name: string;
+  images: ImageInfo[];
+}
+
+interface ImageInfo {
   image: string;
   tag: string;
-  imagePullPolicy: string;
   imageDigest?: string;
   lastUpdated?: string;
 }
@@ -28,29 +30,34 @@ interface ServiceVersion {
 async function getServiceForDisplay(
   service: ServiceConfig<TurboServiceParams>, ecr: ECR, logger: Logger,
 ): Promise<ServiceVersion> {
-  const { image } = service.type.params;
-  const imagePullPolicy = service.type.params.image_pull_policy || env.defaultImagePullPolicy;
-  const tagSeparatorIndex = image.lastIndexOf(':');
-  const imageName = sanitizeImage(image.substring(0, tagSeparatorIndex));
-  const imageTag = image.substring(tagSeparatorIndex + 1, image.length);
-  const serviceInfo: ServiceVersion = {
-    name: service.name,
-    image: imageName,
-    tag: imageTag,
-    imagePullPolicy,
-  };
-
-  if (inEcr(image)) {
-    try {
-      const { lastUpdated, imageDigest } = await ecr.describeImage(imageName, imageTag);
-      serviceInfo.lastUpdated = toISODateTime(lastUpdated);
-      serviceInfo.imageDigest = imageDigest;
-    } catch (e) {
-      logger.warn('Failed to retrieve image information from ECR');
-      logger.warn(e);
-    }
+  const imagesInSteps = service.steps?.map((s) => s.image) || [];
+  if (imagesInSteps.length === 0) {
+    logger.warn(`${service.name} does not have any steps configured for a turbo service. Likely a misconfiguration in services.yml.`);
   }
-  return serviceInfo;
+  const images = [];
+  for (const image of imagesInSteps) {
+    const tagSeparatorIndex = image.lastIndexOf(':');
+    const imageName = sanitizeImage(image.substring(0, tagSeparatorIndex));
+    const imageTag = image.substring(tagSeparatorIndex + 1, image.length);
+    const imageInfo: ImageInfo = {
+      image: imageName,
+      tag: imageTag,
+    };
+
+    if (inEcr(image)) {
+      try {
+        const { lastUpdated, imageDigest } = await ecr.describeImage(imageName, imageTag);
+        imageInfo.lastUpdated = toISODateTime(lastUpdated);
+        imageInfo.imageDigest = imageDigest;
+      } catch (e) {
+        logger.warn('Failed to retrieve image information from ECR');
+        logger.warn(e);
+      }
+    }
+    images.push(imageInfo);
+  }
+
+  return { name: service.name, images };
 }
 
 /**

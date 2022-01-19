@@ -316,7 +316,7 @@ export default abstract class BaseService<ServiceParamType> {
 
   /**
    * Return the number of work items that should be created for a given step
-   * 
+   *
    * @param step - workflow service step
    * @returns  the number of work items for the given step
    */
@@ -396,7 +396,6 @@ export default abstract class BaseService<ServiceParamType> {
       await db.transaction(async (tx) => {
         await job.save(tx);
         if (this.isTurbo()) {
-          // New workflow style bypassing Argo
           for await (const step of workflowSteps) {
             await step.save(tx);
           }

@@ -17,10 +17,10 @@ spec:
         prometheus.io/port: "5000"
         prometheus.io/scrape: "true"
     spec:
-      terminationGracePeriodSeconds: $DEFAULT_ARGO_POD_TIMEOUT_SECS
+      terminationGracePeriodSeconds: $DEFAULT_POD_GRACE_PERIOD_SECS
       containers:
         - name: worker
-          imagePullPolicy: $SERVICE_IMAGE_PULL_POLICY
+          imagePullPolicy: Always
           image: $SERVICE_IMAGE
           lifecycle:
             preStop:
@@ -52,7 +52,7 @@ spec:
                 sleep 10;
               done
         - name: manager
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           image: $SERVICE_RUNNER_IMAGE
           lifecycle:
             preStop:
