@@ -3,7 +3,9 @@
 env_save=$(export -p)
 set -a
 source "env-defaults"
+if [ -f ".env" ]; then
 source ".env"
+fi
 set +a
 eval "$env_save"
 
@@ -21,34 +23,12 @@ PROMETHEUS_NAMESPACE=monitoring
 PROMETHEUS_ADAPTER_HELM_NAME=harmony-prometheus-adapter
 if [[ `helm list -q -n ${PROMETHEUS_NAMESPACE} -f ${PROMETHEUS_ADAPTER_HELM_NAME}` \
         = ${PROMETHEUS_ADAPTER_HELM_NAME} ]]; then
-    echo "prometheus adapter was already installed via helm (${PROMETHEUS_ADAPTER_HELM_NAME})."
-    while ! [[ $answer =~ ^[YyNn]$ ]]; do
-        read -p "Do you wish to delete and re-install it? [Y]" answer
-        answer=${answer:-Y}
-        case  $answer in
-            Y|y)
-                helm delete ${PROMETHEUS_ADAPTER_HELM_NAME} -n ${PROMETHEUS_NAMESPACE}
-                ;;
-            N|n)
-                ;;
-            *)
-                echo "Please type Y/y/N/n"
-                ;;
-        esac
-    done
+    echo "deleteing previous helm installation"
+    helm delete ${PROMETHEUS_ADAPTER_HELM_NAME} -n ${PROMETHEUS_NAMESPACE}
 fi
-if [[ -z $answer || $answer =~ ^[Yy]$ ]]; then
-    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-    helm repo update
-    helm install -f ./config/prometheus-adapter-helm-values.yaml \
-                 -n ${PROMETHEUS_NAMESPACE} \
-                 ${PROMETHEUS_ADAPTER_HELM_NAME} \
-                 prometheus-community/prometheus-adapter \
-    || cat << EndOfMessage
-Prometheus adapter may not be deleted completely by helm.
-You may want to run the following and try again:
-
-helm delete ${PROMETHEUS_ADAPTER_HELM_NAME} -n ${PROMETHEUS_NAMESPACE}
-
-EndOfMessage
-fi
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install -f ./config/prometheus-adapter-helm-values.yaml \
+                -n ${PROMETHEUS_NAMESPACE} \
+                ${PROMETHEUS_ADAPTER_HELM_NAME} \
+                prometheus-community/prometheus-adapter
