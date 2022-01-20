@@ -170,7 +170,7 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     const fields = _.merge({}, query, queryOverrides);
     if (job.isAsync && fields.status === JobStatus.SUCCESSFUL && !fields.httpBackend) {
       // This is temporary until we decide how we want to use callbacks. We avoid updating
-      // job status when the callback doesn't come from and HTTP backend
+      // job status when the callback doesn't come from an HTTP backend
       delete fields.status;
     }
     delete fields.httpBackend;
