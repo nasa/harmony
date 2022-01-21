@@ -20,7 +20,7 @@ spec:
       terminationGracePeriodSeconds: $DEFAULT_POD_GRACE_PERIOD_SECS
       containers:
         - name: worker
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: $QUERY_CMR_IMAGE_PULL_POLICY
           image: $QUERY_CMR_IMAGE
           lifecycle:
             preStop:
@@ -52,7 +52,7 @@ spec:
                 sleep 10;
               done
         - name: manager
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: $SERVICE_RUNNER_IMAGE_PULL_POLICY
           image: $SERVICE_RUNNER_IMAGE
           lifecycle:
             preStop:
