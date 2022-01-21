@@ -37,9 +37,6 @@ do
   declare ${var_prefix}_IMAGE_PULL_POLICY
   varname=${var_prefix}_IMAGE_PULL_POLICY
   export SERVICE_IMAGE_PULL_POLICY=${!varname}
-  declare ${var_prefix}_PARALLELISM
-  varname=${var_prefix}_PARALLELISM
-  export SERVICE_PARALLELISM=${!varname}
   declare ${var_prefix}_REQUESTS_CPU
   varname=${var_prefix}_REQUESTS_CPU
   export SERVICE_REQUESTS_CPU=${!varname}

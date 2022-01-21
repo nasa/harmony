@@ -80,8 +80,6 @@ Note that you will need to define 3 environment variables for your service as we
 
 \<service name\>_IMAGE_PULL_POLICY  # Default this value to 'IfNotPresent' locally. Other values are described in `env-defaults`.
 
-\<service name\>_PARALLELISM        # The maximum number of batches to concurrently run for a workflow for this service. Generally default to 2.
-
 The structure of an entry in the [services.yml](../config/services.yml) file is as follows:
 
 ```yaml
