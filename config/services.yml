@@ -1,13 +1,11 @@
 # Order for each CMR endpoint in this file will reflect precedence of the service when
 # multiple services handle a collection
 
-# Default argo configuration
-x-argo-config: &default-argo-config
-  name: argo
-  params: &default-argo-params
-    argo_url: !Env ${ARGO_URL}
-    namespace: argo
-    env: &default-argo-env
+# Default turbo configuration
+x-turbo-config: &default-turbo-config
+  name: turbo
+  params: &default-turbo-params
+    env: &default-turbo-env
       USE_LOCALSTACK: !Env ${USE_LOCALSTACK}
       LOCALSTACK_HOST: !Env ${BACKEND_HOST}
       AWS_DEFAULT_REGION: us-west-2
@@ -27,16 +25,11 @@ https://cmr.earthdata.nasa.gov:
   - name: asfdataservices/gdal-subsetter
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: asf-gdal-subsetter
-        template_type: chaining
-        image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${ASF_GDAL_SUBSETTER_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
     collections:
       - C1595422627-ASF
@@ -67,16 +60,11 @@ https://cmr.earthdata.nasa.gov:
     data_operation_version: '0.12.0'
     batch_size: 20
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: harmony-netcdf-to-zarr
-        template_type: chaining
-        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
     umm_s:
       - S2009180097-POCLOUD
@@ -184,16 +172,11 @@ https://cmr.earthdata.nasa.gov:
   - name: harmony/service-example
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: harmony-service-example
-        template_type: chaining
-        image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
-        image_pull_policy: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_SERVICE_EXAMPLE_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
     collections:
       - C1756916832-XYZ_PROV
@@ -214,16 +197,11 @@ https://cmr.earthdata.nasa.gov:
   - name: podaac/l2-subsetter
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: podaac-l2-subsetter
-        template_type: chaining
-        image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter
     umm_s:
       - S1962070864-POCLOUD
@@ -261,13 +239,11 @@ https://cmr.earthdata.nasa.gov:
   - name: podaac/concise
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        image: !Env ${PODAAC_CONCISE_IMAGE}
-        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/podaac/concise
     umm_s:
       - S2153799015-POCLOUD
@@ -288,14 +264,11 @@ https://cmr.earthdata.nasa.gov:
   - name: podaac/l2-subsetter-concise
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        image: !Env ${PODAAC_CONCISE_IMAGE}
-        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
-        template_type: chaining
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
     collections:
       - C1996881807-POCLOUD
@@ -346,16 +319,11 @@ https://cmr.earthdata.nasa.gov:
     # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: var-subsetter
-        template_type: chaining
-        image: !Env ${VAR_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/sds/HOSS
     umm_s:
       - S2164732315-XYZ_PROV
@@ -379,16 +347,11 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: asfdataservices/gdal-subsetter
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: asf-gdal-subsetter
-        template_type: chaining
-        image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${ASF_GDAL_SUBSETTER_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
     collections:
       - C1225776654-ASF
@@ -454,16 +417,11 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.12.0'
     batch_size: 10
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: harmony-service-example
-        template_type: chaining
-        image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
-        image_pull_policy: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_SERVICE_EXAMPLE_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
     collections:
       - C1233800302-EEDTEST
@@ -485,16 +443,11 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: podaac/l2-subsetter
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: podaac-l2-subsetter
-        template_type: chaining
-        image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${PODAAC_L2_SUBSETTER_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter
     umm_s:
       - S1234899453-POCLOUD
@@ -546,13 +499,11 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: podaac/concise
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        image: !Env ${PODAAC_CONCISE_IMAGE}
-        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/podaac/concise
     umm_s:
       - S1242328818-POCLOUD
@@ -576,14 +527,11 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: podaac/l2-subsetter-concise
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        image: !Env ${PODAAC_CONCISE_IMAGE}
-        image_pull_policy: !Env ${PODAAC_CONCISE_IMAGE_PULL_POLICY}
-        template_type: chaining
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
     collections:
       - C1234208436-POCLOUD
@@ -617,16 +565,11 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.12.0'
     batch_size: 1
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: swot-reproject
-        template_type: chaining
-        image: !Env ${SWOT_REPROJECT_IMAGE}
-        image_pull_policy: !Env ${SWOT_REPROJECT_IMAGE_PULL_POLICY}
-        parallelism: !Env ${SWOT_REPROJECT_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/sds/swot-reproject
     umm_s:
       - S1237974711-EEDTEST
@@ -650,16 +593,11 @@ https://cmr.uat.earthdata.nasa.gov:
     # The Variable Subsetter provides _only_ variable subsetting
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: var-subsetter
-        template_type: chaining
-        image: !Env ${VAR_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/sds/variable-subsetter
     umm_s:
       - S1237976118-EEDTEST
@@ -680,16 +618,11 @@ https://cmr.uat.earthdata.nasa.gov:
     # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: var-subsetter
-        template_type: chaining
-        image: !Env ${VAR_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${VAR_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${VAR_SUBSETTER_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/sds/HOSS
     umm_s:
       - S1240682712-EEDTEST
@@ -710,16 +643,11 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: sds/maskfill
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: sds-maskfill
-        template_type: chaining
-        image: !Env ${SDS_MASKFILL_IMAGE}
-        image_pull_policy: !Env ${SDS_MASKFILL_IMAGE_PULL_POLICY}
-        parallelism: !Env ${SDS_MASKFILL_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/sds/maskfill
     umm_s:
       - S1240151795-EEDTEST
@@ -734,16 +662,11 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: sds/trajectory-subsetter
     data_operation_version: '0.12.0'
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: trajectory-subsetter
-        template_type: chaining
-        image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
-        image_pull_policy: !Env ${TRAJECTORY_SUBSETTER_IMAGE_PULL_POLICY}
-        parallelism: !Env ${TRAJECTORY_SUBSETTER_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/sds/trajectory-subsetter
     umm_s:
       - S1242315633-EEDTEST
@@ -783,49 +706,15 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
       reprojection: true
 
-  # This is an example service and backend from example/http-backend.js mounted by
-  # the frontend callback server.
-  - name: harmony/chaining-example
-    data_operation_version: '0.12.0'
-    batch_size: 2000
-    type:
-      name: argo
-      params:
-        # Minimal parameters for current partial chaining implementation
-        image: harmony/query-cmr:latest
-        template_type: chaining
-        argo_url: !Env ${ARGO_URL}
-        namespace: argo
-        env:
-          <<: *default-argo-env
-          LOCALSTACK_HOST: !Env ${BACKEND_HOST}
-    collections:
-      # AMSR-E/Aqua L2A Global Swath Spatially-Resampled Brightness Temperatures (Tb) V086
-      # Good example, being in UAT, global, many public non-global granules,
-      # and not yet on the services roadmap.
-      - C1096-PVC_TS2
-    capabilities:
-      subsetting:
-        variable: true
-        bbox: true
-      output_formats:
-        - image/tiff
-      reprojection: true
-
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.12.0'
     batch_size: 20
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: harmony-netcdf-to-zarr
-        template_type: chaining
-        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/harmony/netcdf-to-zarr
     umm_s:
       - S1237980031-EEDTEST # Just NetCDF-to-Zarr
@@ -898,16 +787,11 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.12.0'
     batch_size: 20
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: podaac-l2-subsetter-netcdf-to-zarr
-        template_type: chaining
-        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/harmony/podaac-l2-subsetter-netcdf-to-zarr
     maximum_sync_granules: 0
     collections:
@@ -938,16 +822,11 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.12.0'
     batch_size: 1
     type:
-      <<: *default-argo-config
+      <<: *default-turbo-config
       params:
-        <<: *default-argo-params
-        template: swot-reproject-netcdf-to-zarr
-        template_type: chaining
-        image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        image_pull_policy: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY}
-        parallelism: !Env ${HARMONY_NETCDF_TO_ZARR_PARALLELISM}
+        <<: *default-turbo-params
         env:
-          <<: *default-argo-env
+          <<: *default-turbo-env
           STAGING_PATH: public/harmony/swot-repr-netcdf-to-zarr
     umm_s:
       - S1240999847-EEDTEST

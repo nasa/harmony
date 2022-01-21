@@ -132,9 +132,6 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 # The CMR concept ID for the group whose users can access the admin interface
 ADMIN_GROUP_ID=AG1222736883-EEDTEST
 
-# The URL to use for interacting with Argo
-ARGO_URL=http://argo-server:2746
-
 # The time (in seconds) between invocations of the job reaper service
 JOB_REAPER_PERIOD_SEC=360
 
@@ -153,8 +150,8 @@ WORK_FAILER_PERIOD_SEC=360
 # WorkItems and associated job (in a running state) older than this many minutes are set to failed by the work failer
 FAILABLE_WORK_AGE_MINUTES=240
 
-# The number of seconds before timing out a single step (pod) in an Argo workflow
-DEFAULT_ARGO_POD_TIMEOUT_SECS=14400
+# The number of seconds to allow a pod to continue processing an active request before terminating a pod
+DEFAULT_POD_GRACE_PERIOD_SECS=14400
 
 # The number of ms to wait between polling to check whether a synchronous request completed
 SYNC_REQUEST_POLL_INTERVAL_MS=100
@@ -163,61 +160,25 @@ SYNC_REQUEST_POLL_INTERVAL_MS=100
 # minikube users should set it to "minikube"
 KUBE_CONTEXT=docker-desktop
 
+# How long (in ms) to let a worker run on a work item before timing out and reporting an error
+# default is 4 hours
+WORKER_TIMEOUT=14400000
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #
 # Variables defined in config/services.yml that get passed to backend     #
 # services on invocation                                                  #
+#                                                                         #
+# IMAGE_PULL_POLICY configuration:                                        #
+# In deployed environments the pull policy used for images is 'Always'    #
+# to ensure an up to date image is pulled as part of deploying. When      #
+# developing locally the pull policy used is 'IfNotPresent' to            #
+# prevent Kubernetes from pulling the image and overwriting any locally   #
+# built images. Note if you want to pull an image update rather than      #
+# building it you need to run `docker pull <IMAGE>` to update your local  #
+# copy.                                                                   #
 ###########################################################################
-
-# Docker image:tag names for services referenced in config/services.yml.
-# Set to an image:tag available locally, on ECR, on DockerHub, etc.
-#
-# For Argo services, the image's pull policy variable controls the
-# Kubernetes imagePullPolicy used for that service in a given
-# environment. See the Kubernetes Container Images documentation for
-# the possible imagePullPolicy values and their behavior:
-#
-#   https://kubernetes.io/docs/concepts/configuration/overview/#container-images
-#
-# Summary:
-#
-# Always:       Pulls new image (if available) on each container startup
-# IfNotPresent: Pulls new image if it is not available locally
-# Never:        Image is assumed to exist locally, it is never pulled
-#
-# Recommended pull policies by environment:
-#
-# Environment    Pull Policy    Behavior
-# -----------------------------------------------------------------------
-# Local          IfNotPresent   The image:tag will be pulled if it doesn't
-#                               exist locally. If it has been pulled
-#                               manually, it will always use that image.
-#                               If it is built locally, it will use that
-#                               image.
-# Sandbox        Always         The image:tag will be pulled each time a
-#                               workflow runs which needs the image. Note
-#                               that K8S will check the image hash to determine
-#                               if an image:tag has been changed, and only
-#                               pull it if so.
-# SIT            Always         The image:tag is pulled on each workflow run.
-# UAT            Always         The image:tag is pulled on each workflow run.
-# PROD           IfNotPresent   The image:tag is only pulled if it does not
-#                               exist locally.
-#
-# For Local development, 'IfNotPresent' is recommended since this will use
-# the new version of a local image that you are working on locally, while
-# pulling any other images not currently under development.
-
-# The image pull policy to use for any images which do not have an explicit
-# pull policy configured. See the above table for the recommend value to use
-# for the given environment.
-DEFAULT_IMAGE_PULL_POLICY='IfNotPresent'
-DEFAULT_PARALLELISM=2
-
-# How long (in ms) to let a worker run on a work item before timing out and reporting an error
-# default is 4 hours
-WORKER_TIMEOUT=14400000
 
 # The service runner image used as a sidecar for polling for work for
 SERVICE_RUNNER_REQUESTS_CPU=128m
@@ -228,8 +189,6 @@ SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:latest
 
 # backend services
 ASF_GDAL_SUBSETTER_IMAGE=asfdataservices/gdal-subsetter:latest
-ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
-ASF_GDAL_SUBSETTER_PARALLELISM=2
 ASF_GDAL_SUBSETTER_REQUESTS_CPU=128m
 ASF_GDAL_SUBSETTER_REQUESTS_MEMORY=128Mi
 ASF_GDAL_SUBSETTER_LIMITS_CPU=128m
@@ -237,8 +196,6 @@ ASF_GDAL_SUBSETTER_LIMITS_MEMORY=8Gi
 ASF_GDAL_SUBSETTER_INVOCATION_ARGS='python -m gdal_subsetter'
 
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
-HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY='IfNotPresent'
-HARMONY_SERVICE_EXAMPLE_PARALLELISM=2
 HARMONY_SERVICE_EXAMPLE_REQUESTS_CPU=128m
 HARMONY_SERVICE_EXAMPLE_REQUESTS_MEMORY=128Mi
 HARMONY_SERVICE_EXAMPLE_LIMITS_CPU=128m
@@ -246,8 +203,6 @@ HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY=512Mi
 HARMONY_SERVICE_EXAMPLE_INVOCATION_ARGS='python -m harmony_service_example'
 
 HARMONY_NETCDF_TO_ZARR_IMAGE=harmonyservices/netcdf-to-zarr:latest
-HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY='IfNotPresent'
-HARMONY_NETCDF_TO_ZARR_PARALLELISM=2
 HARMONY_NETCDF_TO_ZARR_REQUESTS_CPU=128m
 HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY=128Mi
 HARMONY_NETCDF_TO_ZARR_LIMITS_CPU=128m
@@ -255,8 +210,6 @@ HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY=512Mi
 HARMONY_NETCDF_TO_ZARR_INVOCATION_ARGS='python -m harmony_netcdf_to_zarr'
 
 SWOT_REPROJECT_IMAGE=sds/swot-reproject:latest
-SWOT_REPROJECT_IMAGE_PULL_POLICY='IfNotPresent'
-SWOT_REPROJECT_PARALLELISM=2
 SWOT_REPROJECT_REQUESTS_CPU=128m
 SWOT_REPROJECT_REQUESTS_MEMORY=128Mi
 SWOT_REPROJECT_LIMITS_CPU=128m
@@ -264,8 +217,6 @@ SWOT_REPROJECT_LIMITS_MEMORY=512Mi
 SWOT_REPROJECT_INVOCATION_ARGS='python swotrepr.py'
 
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
-VAR_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
-VAR_SUBSETTER_PARALLELISM=2
 VAR_SUBSETTER_REQUESTS_CPU=128m
 VAR_SUBSETTER_REQUESTS_MEMORY=128Mi
 VAR_SUBSETTER_LIMITS_CPU=128m
@@ -273,8 +224,6 @@ VAR_SUBSETTER_LIMITS_MEMORY=512Mi
 VAR_SUBSETTER_INVOCATION_ARGS='python subsetter.py'
 
 SDS_MASKFILL_IMAGE=sds/maskfill-harmony:latest
-SDS_MASKFILL_IMAGE_PULL_POLICY='IfNotPresent'
-SDS_MASKFILL_PARALLELISM=2
 SDS_MASKFILL_REQUESTS_CPU=128m
 SDS_MASKFILL_REQUESTS_MEMORY=128Mi
 SDS_MASKFILL_LIMITS_CPU=128m
@@ -282,8 +231,6 @@ SDS_MASKFILL_LIMITS_MEMORY=512Mi
 SDS_MASKFILL_INVOCATION_ARGS='python harmony_adapter.py'
 
 TRAJECTORY_SUBSETTER_IMAGE=sds/trajectory-subsetter:latest
-TRAJECTORY_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
-TRAJECTORY_SUBSETTER_PARALLELISM=2
 TRAJECTORY_SUBSETTER_REQUESTS_CPU=128m
 TRAJECTORY_SUBSETTER_REQUESTS_MEMORY=128Mi
 TRAJECTORY_SUBSETTER_LIMITS_CPU=128m
@@ -291,8 +238,6 @@ TRAJECTORY_SUBSETTER_LIMITS_MEMORY=512Mi
 TRAJECTORY_SUBSETTER_INVOCATION_ARGS='python harmony_service/adapter.py'
 
 PODAAC_CONCISE_IMAGE=ghcr.io/podaac/concise:sit
-PODAAC_CONCISE_IMAGE_PULL_POLICY='IfNotPresent'
-PODAAC_CONCISE_PARALLELISM=2
 PODAAC_CONCISE_REQUESTS_CPU=128m
 PODAAC_CONCISE_REQUESTS_MEMORY=128Mi
 PODAAC_CONCISE_LIMITS_CPU=128m
@@ -300,8 +245,6 @@ PODAAC_CONCISE_LIMITS_MEMORY=512Mi
 PODAAC_CONCISE_INVOCATION_ARGS='concise_harmony'
 
 PODAAC_L2_SUBSETTER_IMAGE=ghcr.io/podaac/l2ss-py:sit
-PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY='IfNotPresent'
-PODAAC_L2_SUBSETTER_PARALLELISM=2
 PODAAC_L2_SUBSETTER_REQUESTS_CPU=128m
 PODAAC_L2_SUBSETTER_REQUESTS_MEMORY=128Mi
 PODAAC_L2_SUBSETTER_LIMITS_CPU=128m
@@ -309,23 +252,18 @@ PODAAC_L2_SUBSETTER_LIMITS_MEMORY=512Mi
 PODAAC_L2_SUBSETTER_INVOCATION_ARGS='./docker-entrypoint.sh'
 
 PODAAC_PS3_IMAGE=podaac/podaac-cloud/podaac-shapefile-subsetter:latest
-PODAAC_PS3_IMAGE_PULL_POLICY='IfNotPresent'
-PODAAC_PS3_PARALLELISM=2
 PODAAC_PS3_REQUESTS_CPU=128m
 PODAAC_PS3_REQUESTS_MEMORY=128Mi
 PODAAC_PS3_LIMITS_CPU=128m
 PODAAC_PS3_LIMITS_MEMORY=512Mi
 
 PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
-PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='IfNotPresent'
-PODAAC_NETCDF_CONVERTER_PARALLELISM=2
 PODAAC_NETCDF_CONVERTER_REQUESTS_CPU=128m
 PODAAC_NETCDF_CONVERTER_REQUESTS_MEMORY=128Mi
 PODAAC_NETCDF_CONVERTER_LIMITS_CPU=128m
 PODAAC_NETCDF_CONVERTER_LIMITS_MEMORY=512Mi
 
 QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
-QUERY_CMR_IMAGE_PULL_POLICY='IfNotPresent'
 QUERY_CMR_REQUESTS_CPU=128m
 QUERY_CMR_REQUESTS_MEMORY=128Mi
 QUERY_CMR_LIMITS_CPU=128m

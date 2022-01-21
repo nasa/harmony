@@ -1,6 +1,6 @@
 # Harmony built-in workflow tasks
 
-This folder contains docker-based tasks for driving Harmony's Argo workflows
+This folder contains docker-based tasks for driving Harmony's workflows
 
 To run all of their tests using lerna:
 

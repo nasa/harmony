@@ -20,14 +20,13 @@ export function hookHttpBackendEach(fn): void {
     this.userPromise.then(); // The supertest request won't get sent until `then` is called
     const callbackRoot = await callbackPromise;
     this.callback = `${new url.URL(callbackRoot).pathname}/response`;
-    this.argoCallback = `${new url.URL(callbackRoot).pathname}/argo-response`;
   });
 
   afterEach(async function () {
     // Both of these should succeed, but their sequence depends on async vs sync, so use Promise.all
     await Promise.all([
       this.userPromise,
-      request(this.backend).post(this.callback).query({ status: 'successful', argo: 'true' }),
+      request(this.backend).post(this.callback).query({ status: 'successful', httpBackend: 'true' }),
     ]);
   });
 }
@@ -42,24 +41,6 @@ export function hookHttpBackendEach(fn): void {
 export function hookCallbackEach(fn: (req: request.Test) => request.Test, finish = false): void {
   beforeEach(async function () {
     this.callbackRes = await fn(request(this.backend).post(this.callback));
-    if (finish) {
-      this.userResp = await this.userPromise;
-    }
-  });
-}
-
-/**
- * Adds a beforeEach hook to provide a result-handler callback and await its processing
- *
- * @param fn - A function that takes a callback request and returns it augmented with any query
- *   params, post bodies, etc
- * @param finish - True if the hook should wait for the user request to finish
- */
-export function hookArgoCallbackEach(
-  fn: (req: request.Test) => request.Test, finish = false,
-): void {
-  beforeEach(async function () {
-    this.callbackRes = await fn(request(this.backend).post(this.argoCallback).type('json'));
     if (finish) {
       this.userResp = await this.userPromise;
     }

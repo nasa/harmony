@@ -15,5 +15,5 @@ if [[ -z "${HOST_VOLUME_PATH}" ]]; then
   exit 1
 fi
 
-envsubst < ./config/harmony-k8s.yaml | kubectl apply -f - -n argo > /dev/null
+envsubst < ./config/harmony-k8s.yaml | kubectl apply -f - -n harmony > /dev/null
 echo 'Harmony has started at http://localhost:3000/'

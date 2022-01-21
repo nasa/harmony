@@ -74,12 +74,8 @@ class BaseHarmonyUser(HttpUser):
             )
         return status
 
-    def _sync_request(self, name, collection, variable, params, turbo, test_number):
-        workflow_type = 'Turbo' if turbo else 'Argo'
-        full_name = f'{test_number:03}: {workflow_type}: {name}'
-
-        if turbo:
-            params['turbo'] = 'true'
+    def _sync_request(self, name, collection, variable, params, test_number):
+        full_name = f'{test_number:03}: {name}'
 
         self.client.get(
             self.coverages_root.format(
@@ -88,14 +84,8 @@ class BaseHarmonyUser(HttpUser):
             params=params,
             name=full_name)
 
-    def _async_request(self, name, collection, variable, params, turbo, test_number):
-        workflow_type = 'Turbo' if turbo else 'Argo'
-        full_name = f'{test_number:03}: {workflow_type}: {name}'
-
-        if turbo:
-          params['turbo'] = 'true'
-        else:
-          params['turbo'] = 'false'
+    def _async_request(self, name, collection, variable, params, test_number):
+        full_name = f'{test_number:03}: {name}'
 
         start_time = time()
         response = self.client.get(

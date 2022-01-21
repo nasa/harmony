@@ -16,8 +16,6 @@ import * as ogcCoveragesApi from './frontends/ogc-coverages';
 import serviceResponseRouter from './routers/service-response-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
-import WorkflowTerminationListener from './workers/workflow-termination-listener';
-import JobReaper from './workers/job-reaper';
 import WorkReaper from './workers/work-reaper';
 import WorkFailer from './workers/work-failer';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
@@ -151,8 +149,6 @@ function buildFrontendServer(port: number, config: RouterConfig): Server {
 export function start(config: Record<string, string>): {
   frontend: Server;
   backend: Server;
-  workflowTerminationListener: WorkflowTerminationListener;
-  jobReaper: JobReaper;
   workReaper: WorkReaper;
   workFailer: WorkFailer;
 } {
@@ -167,25 +163,6 @@ export function start(config: Record<string, string>): {
 
   // Setup the backend server to accept callbacks from backend services
   const backend = buildBackendServer(backendPort);
-
-  let listener;
-  if (config.startWorkflowTerminationListener !== 'false') {
-    const workflowTerminationListenerConfig = {
-      namespace: 'argo',
-      logger: logger.child({ application: 'workflow-events' }),
-    };
-    listener = new WorkflowTerminationListener(workflowTerminationListenerConfig);
-    listener.start();
-  }
-
-  let jobReaper;
-  if (config.startJobReaper !== 'false') {
-    const reaperConfig = {
-      logger: logger.child({ application: 'workflow-events' }),
-    };
-    jobReaper = new JobReaper(reaperConfig);
-    jobReaper.start();
-  }
 
   let workReaper;
   if (config.startWorkReaper !== 'false') {
@@ -205,7 +182,7 @@ export function start(config: Record<string, string>): {
     workFailer.start();
   }
 
-  return { frontend, backend, workflowTerminationListener: listener, jobReaper, workReaper, workFailer };
+  return { frontend, backend, workReaper, workFailer };
 }
 
 /**
@@ -213,22 +190,16 @@ export function start(config: Record<string, string>): {
  *
  * @param frontend - http.Server object as returned by start()
  * @param backend - http.Server object as returned by start()
- * @param workflowTerminationListener - listener for workflow termination events
- * @param jobReaper - service that checks for orphan jobs and marks them as canceled
  * @param workReaper - service that checks for old work items and workflow steps and deletes them
  * @returns A promise that completes when the servers close
  */
 export async function stop({
   frontend,
   backend,
-  workflowTerminationListener,
-  jobReaper,
   workReaper }): Promise<void> {
   await Promise.all([
     promisify(frontend.close.bind(frontend))(),
     promisify(backend.close.bind(backend))(),
-    workflowTerminationListener?.stop(),
-    jobReaper?.stop(),
     workReaper?.stop(),
   ]);
 }

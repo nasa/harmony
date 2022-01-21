@@ -26,7 +26,7 @@ Most but not all network operations will be able to use this. One thing known to
 
 ```
 gyp WARN install got an error, rolling back install
-gyp ERR! configure error 
+gyp ERR! configure error
 gyp ERR! stack Error: unable to get local issuer certificate
 gyp ERR! stack     at TLSSocket.onConnectSecure (_tls_wrap.js:1502:34)
 gyp ERR! stack     at TLSSocket.emit (events.js:314:20)
@@ -37,12 +37,12 @@ gyp ERR! command "/home/dockeruser/.nvm/versions/node/v12.19.0/bin/node" "/home/
 gyp ERR! cwd /home/dockeruser/.nvm/versions/node/v12.19.0/lib/node_modules/libpq
 gyp ERR! node -v v12.19.0
 gyp ERR! node-gyp -v v5.1.0
-gyp ERR! not ok 
+gyp ERR! not ok
 npm ERR! code ELIFECYCLE
 npm ERR! errno 1
 npm ERR! libpq@1.8.9 install: `node-gyp rebuild`
 npm ERR! Exit status 1
-npm ERR! 
+npm ERR!
 npm ERR! Failed at the libpq@1.8.9 install script.
 npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
 ```
@@ -79,7 +79,7 @@ Once completed, test `kubectl` by running the following:
 
 If you can retrieve node information then you're good to go. These steps will need to be repeated if you re-deploy Kubernetes or re-install Docker Desktop.
 
-### Argo, Localstack, and Harmony
+### Localstack and Harmony
 
 After starting each of these services (the first two via Kubernetes and Harmony manually) you will need to forward host ports via VSCode's Remote Explorer interface.
 
@@ -88,7 +88,6 @@ After starting each of these services (the first two via Kubernetes and Harmony 
 In addition to the instructions regarding the .env file in the primary README.md, you will need the following:
 
 ```
-ARGO_URL=http://host.docker.internal:2746
 BACKEND_HOST=host.docker.internal
 DIND=true
 KUBE_CONTEXT=kubernetes-admin@kubernetes

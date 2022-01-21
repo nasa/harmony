@@ -68,7 +68,7 @@ export default class StubService extends BaseService<void> {
     // by only executing this if something has tried to run the service and has not called back yet.
     if (!this.isRun || this.isComplete) return;
     this.isComplete = true;
-    await this.sendResponse({ argo: 'true' });
+    await this.sendResponse({ httpBackend: 'true' });
   }
 
   /**
@@ -81,9 +81,9 @@ export default class StubService extends BaseService<void> {
    */
   sendResponse(query?: CallbackQuery): request.SuperAgentRequest {
     const options = typeof this.callbackOptions === 'function' ? this.callbackOptions() : this.callbackOptions;
-    const argo = query?.argo;
+    const httpBackend = query?.httpBackend;
     let params = query;
-    if (argo || !query) {
+    if (httpBackend || !query) {
       // eslint-disable-next-line prefer-destructuring
       params = options.params;
     }
@@ -94,8 +94,8 @@ export default class StubService extends BaseService<void> {
       req = req.set(headers);
     }
     if (params) {
-      if (argo) {
-        params.argo = 'true';
+      if (httpBackend) {
+        params.httpBackend = 'true';
       }
       req = req.query(params);
     }

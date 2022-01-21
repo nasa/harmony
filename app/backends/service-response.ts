@@ -20,7 +20,7 @@ export interface CallbackQueryItem {
 export interface CallbackQuery {
   item?: CallbackQueryItem;
   error?: string;
-  argo?: string; // This is temporary until we decide what to do with callbacks
+  httpBackend?: string; // This is temporary until we decide what to do with callbacks
   redirect?: string;
   status?: string;
   progress?: string;
@@ -168,15 +168,15 @@ export async function responseHandler(req: Request, res: Response): Promise<void
     }
 
     const fields = _.merge({}, query, queryOverrides);
-    if (job.isAsync && fields.status === JobStatus.SUCCESSFUL && !fields.argo) {
+    if (job.isAsync && fields.status === JobStatus.SUCCESSFUL && !fields.httpBackend) {
       // This is temporary until we decide how we want to use callbacks. We avoid updating
-      // job status when the callback doesn't come from Argo
+      // job status when the callback doesn't come from an HTTP backend
       delete fields.status;
     }
-    delete fields.argo;
+    delete fields.httpBackend;
     logger.info(`Updating job ${job.id}`, { fields });
 
-    if (!query.error && query.argo?.toLowerCase() === 'true') {
+    if (!query.error && query.httpBackend?.toLowerCase() === 'true') {
       // this is temporary until we decide how we want to use callbacks
       job.succeed();
     }
