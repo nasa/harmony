@@ -171,14 +171,14 @@ WORKER_TIMEOUT=14400000
 # services on invocation                                                  #
 #                                                                         #
 # IMAGE_PULL_POLICY configuration:                                        #
-# In deployed environments the default pull policy of 'Always' should be  #
-# used to ensure an up to date image is pulled as part of deploying. When #
-# developing locally and wanting to use a locally built image for that    #
-# service change the service's IMAGE_PULL_POLICY to 'IfNotPresent' to     #
-# prevent Kubernetes from pulling the image and overwriting your locally  #
-# built image.                                                            #
+# In deployed environments the pull policy used for images is 'Always'    #
+# to ensure an up to date image is pulled as part of deploying. When      #
+# developing locally the pull policy used is 'IfNotPresent' to            #
+# prevent Kubernetes from pulling the image and overwriting any locally   #
+# built images. Note if you want to pull an image update rather than      #
+# building it you need to run `docker pull <IMAGE>` to update your local  #
+# copy.                                                                   #
 ###########################################################################
-
 
 # The service runner image used as a sidecar for polling for work for
 SERVICE_RUNNER_REQUESTS_CPU=128m
@@ -186,11 +186,9 @@ SERVICE_RUNNER_REQUESTS_MEMORY=128Mi
 SERVICE_RUNNER_LIMITS_CPU=1024m
 SERVICE_RUNNER_LIMITS_MEMORY=512Mi
 SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:latest
-SERVICE_RUNNER_IMAGE_PULL_POLICY='Always'
 
 # backend services
 ASF_GDAL_SUBSETTER_IMAGE=asfdataservices/gdal-subsetter:latest
-ASF_GDAL_SUBSETTER_IMAGE_PULL_POLICY='Always'
 ASF_GDAL_SUBSETTER_REQUESTS_CPU=128m
 ASF_GDAL_SUBSETTER_REQUESTS_MEMORY=128Mi
 ASF_GDAL_SUBSETTER_LIMITS_CPU=128m
@@ -198,7 +196,6 @@ ASF_GDAL_SUBSETTER_LIMITS_MEMORY=8Gi
 ASF_GDAL_SUBSETTER_INVOCATION_ARGS='python -m gdal_subsetter'
 
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
-HARMONY_SERVICE_EXAMPLE_IMAGE_PULL_POLICY='Always'
 HARMONY_SERVICE_EXAMPLE_REQUESTS_CPU=128m
 HARMONY_SERVICE_EXAMPLE_REQUESTS_MEMORY=128Mi
 HARMONY_SERVICE_EXAMPLE_LIMITS_CPU=128m
@@ -206,7 +203,6 @@ HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY=512Mi
 HARMONY_SERVICE_EXAMPLE_INVOCATION_ARGS='python -m harmony_service_example'
 
 HARMONY_NETCDF_TO_ZARR_IMAGE=harmonyservices/netcdf-to-zarr:latest
-HARMONY_NETCDF_TO_ZARR_IMAGE_PULL_POLICY='Always'
 HARMONY_NETCDF_TO_ZARR_REQUESTS_CPU=128m
 HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY=128Mi
 HARMONY_NETCDF_TO_ZARR_LIMITS_CPU=128m
@@ -214,7 +210,6 @@ HARMONY_NETCDF_TO_ZARR_LIMITS_MEMORY=512Mi
 HARMONY_NETCDF_TO_ZARR_INVOCATION_ARGS='python -m harmony_netcdf_to_zarr'
 
 SWOT_REPROJECT_IMAGE=sds/swot-reproject:latest
-SWOT_REPROJECT_IMAGE_PULL_POLICY='Always'
 SWOT_REPROJECT_REQUESTS_CPU=128m
 SWOT_REPROJECT_REQUESTS_MEMORY=128Mi
 SWOT_REPROJECT_LIMITS_CPU=128m
@@ -222,7 +217,6 @@ SWOT_REPROJECT_LIMITS_MEMORY=512Mi
 SWOT_REPROJECT_INVOCATION_ARGS='python swotrepr.py'
 
 VAR_SUBSETTER_IMAGE=sds/variable-subsetter:latest
-VAR_SUBSETTER_IMAGE_PULL_POLICY='Always'
 VAR_SUBSETTER_REQUESTS_CPU=128m
 VAR_SUBSETTER_REQUESTS_MEMORY=128Mi
 VAR_SUBSETTER_LIMITS_CPU=128m
@@ -230,7 +224,6 @@ VAR_SUBSETTER_LIMITS_MEMORY=512Mi
 VAR_SUBSETTER_INVOCATION_ARGS='python subsetter.py'
 
 SDS_MASKFILL_IMAGE=sds/maskfill-harmony:latest
-SDS_MASKFILL_IMAGE_PULL_POLICY='Always'
 SDS_MASKFILL_REQUESTS_CPU=128m
 SDS_MASKFILL_REQUESTS_MEMORY=128Mi
 SDS_MASKFILL_LIMITS_CPU=128m
@@ -238,7 +231,6 @@ SDS_MASKFILL_LIMITS_MEMORY=512Mi
 SDS_MASKFILL_INVOCATION_ARGS='python harmony_adapter.py'
 
 TRAJECTORY_SUBSETTER_IMAGE=sds/trajectory-subsetter:latest
-TRAJECTORY_SUBSETTER_IMAGE_PULL_POLICY='Always'
 TRAJECTORY_SUBSETTER_REQUESTS_CPU=128m
 TRAJECTORY_SUBSETTER_REQUESTS_MEMORY=128Mi
 TRAJECTORY_SUBSETTER_LIMITS_CPU=128m
@@ -246,7 +238,6 @@ TRAJECTORY_SUBSETTER_LIMITS_MEMORY=512Mi
 TRAJECTORY_SUBSETTER_INVOCATION_ARGS='env PYTHONPATH=/home python harmony_service/adapter.py'
 
 PODAAC_CONCISE_IMAGE=ghcr.io/podaac/concise:sit
-PODAAC_CONCISE_IMAGE_PULL_POLICY='Always'
 PODAAC_CONCISE_REQUESTS_CPU=128m
 PODAAC_CONCISE_REQUESTS_MEMORY=128Mi
 PODAAC_CONCISE_LIMITS_CPU=128m
@@ -254,7 +245,6 @@ PODAAC_CONCISE_LIMITS_MEMORY=512Mi
 PODAAC_CONCISE_INVOCATION_ARGS='concise_harmony'
 
 PODAAC_L2_SUBSETTER_IMAGE=ghcr.io/podaac/l2ss-py:sit
-PODAAC_L2_SUBSETTER_IMAGE_PULL_POLICY='Always'
 PODAAC_L2_SUBSETTER_REQUESTS_CPU=128m
 PODAAC_L2_SUBSETTER_REQUESTS_MEMORY=128Mi
 PODAAC_L2_SUBSETTER_LIMITS_CPU=128m
@@ -262,21 +252,18 @@ PODAAC_L2_SUBSETTER_LIMITS_MEMORY=512Mi
 PODAAC_L2_SUBSETTER_INVOCATION_ARGS='./docker-entrypoint.sh'
 
 PODAAC_PS3_IMAGE=podaac/podaac-cloud/podaac-shapefile-subsetter:latest
-PODAAC_PS3_IMAGE_PULL_POLICY='Always'
 PODAAC_PS3_REQUESTS_CPU=128m
 PODAAC_PS3_REQUESTS_MEMORY=128Mi
 PODAAC_PS3_LIMITS_CPU=128m
 PODAAC_PS3_LIMITS_MEMORY=512Mi
 
 PODAAC_NETCDF_CONVERTER_IMAGE=podaac/podaac-cloud/podaac-netcdf-converter:latest
-PODAAC_NETCDF_CONVERTER_IMAGE_PULL_POLICY='Always'
 PODAAC_NETCDF_CONVERTER_REQUESTS_CPU=128m
 PODAAC_NETCDF_CONVERTER_REQUESTS_MEMORY=128Mi
 PODAAC_NETCDF_CONVERTER_LIMITS_CPU=128m
 PODAAC_NETCDF_CONVERTER_LIMITS_MEMORY=512Mi
 
 QUERY_CMR_IMAGE=harmonyservices/query-cmr:latest
-QUERY_CMR_IMAGE_PULL_POLICY='Always'
 QUERY_CMR_REQUESTS_CPU=128m
 QUERY_CMR_REQUESTS_MEMORY=128Mi
 QUERY_CMR_LIMITS_CPU=128m
