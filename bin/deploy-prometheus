@@ -18,6 +18,7 @@ if ! command -v "helm" &> /dev/null; then
     exit 1;
 fi
 
+helm repo add "stable" "https://charts.helm.sh/stable" --force-update
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 
@@ -32,7 +33,7 @@ if [[ `helm list -q -n ${PROMETHEUS_NAMESPACE} -f ${PROMETHEUS_ADAPTER_HELM_NAME
                 ${PROMETHEUS_ADAPTER_HELM_NAME} \
                 prometheus-community/prometheus-adapter
 else
-    echo "installing prometheus"
+    echo "installing prometheus adapter"
     helm install -f ./config/prometheus-adapter-helm-values.yaml \
                     -n ${PROMETHEUS_NAMESPACE} \
                     ${PROMETHEUS_ADAPTER_HELM_NAME} \
