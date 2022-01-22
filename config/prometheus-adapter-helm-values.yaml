@@ -25,4 +25,4 @@ rules:
     name:
       matches: "num_ready_work_items"
       as: "num_ready_work_items_avg"
-    metricsQuery: 'avg_over_time(<<.Series>>{<<.LabelMatchers>>}[2m]) by (<<.GroupBy>>)'
+    metricsQuery: 'avg_over_time(<<.Series>>{<<.LabelMatchers>>}[2m])'
