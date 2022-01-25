@@ -13,7 +13,6 @@ eval "$env_save"
 file="config/hpa.yaml"
 
 # create the query-cmr autoscaler
-echo "Deploying HPA for query-cmr"
 export SERVICE_NAME="query-cmr"
 envsubst < $file | kubectl apply -f - -n harmony
 
@@ -22,6 +21,5 @@ for service in ${LOCALLY_DEPLOYED_SERVICES//,/ }
 do
   # set up enviornment variables for service
   export SERVICE_NAME=${service}
-  echo "Deploying HPA for $service"
   envsubst < $file | kubectl apply -f - -n harmony
 done
