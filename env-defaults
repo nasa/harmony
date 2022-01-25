@@ -341,6 +341,17 @@ PROMETHEUS_LIMITS_EPHEMERAL_STORAGE=500Mi
 PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
 PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
 
+###########################################################################
+#             Horizontal Pod Autoscaling Config                           #
+#                                                                         #
+# Variables that are used to configure scaling for service pods           #
+#                                                                         #
+###########################################################################
+
+HPA_MIN_REPLICAS=1
+HPA_MAX_REPLICAS=4
+HPA_TARGET_VALUE=100
+
 #############################################################################
 #                        OAuth 2 (Earthdata Login)                          #
 #                                                                           #
