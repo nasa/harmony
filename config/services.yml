@@ -80,7 +80,16 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/gesdisc/giovanni
     collections:
       - C1225808238-GES_DISC:
-        - V2144697547-GES_DISC
+        - V2144690146-GES_DISC
+        - V2144682160-GES_DISC
+        - V2144444407-GES_DISC
+        - V2144674651-GES_DISC
+        - V2144680005-GES_DISC
+        - V2144683811-GES_DISC
+        - V2144672700-GES_DISC
+        - V2144443981-GES_DISC
+        - V2144677987-GES_DISC
+        - V2144685939-GES_DISC
     capabilities:
       subsetting:
         bbox: true
@@ -496,7 +505,16 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/gesdisc/giovanni
     collections:
       - C1225808238-GES_DISC:
-        - V2144697547-GES_DISC
+        - V2144690146-GES_DISC
+        - V2144682160-GES_DISC
+        - V2144444407-GES_DISC
+        - V2144674651-GES_DISC
+        - V2144680005-GES_DISC
+        - V2144683811-GES_DISC
+        - V2144672700-GES_DISC
+        - V2144443981-GES_DISC
+        - V2144677987-GES_DISC
+        - V2144685939-GES_DISC
     capabilities:
       subsetting:
         bbox: true
