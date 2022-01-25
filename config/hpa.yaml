@@ -4,6 +4,23 @@ metadata:
   name: $SERVICE_NAME
   namespace: harmony
 spec:
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 5
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 5
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 5
+      - type: Pods
+        value: 4
+        periodSeconds: 5
+      selectPolicy: Max
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
@@ -11,10 +28,15 @@ spec:
   minReplicas: $HPA_MIN_REPLICAS
   maxReplicas: $HPA_MAX_REPLICAS
   metrics:
-  - type: Pods
-    pods:
+  - type: Object
+    object:
+      describedObject:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: $SERVICE_NAME
       target:
         type: AverageValue
         averageValue: $HPA_TARGET_VALUE
       metric:
-        name: num_ready_work_items_avg
+        name: num_ready_work_items
+        selector: {matchLabels: {name: $SERVICE_NAME}}

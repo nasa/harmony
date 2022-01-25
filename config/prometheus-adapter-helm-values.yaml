@@ -11,7 +11,8 @@ rules:
       overrides:
         kubernetes_namespace: {resource: "namespace"}
         kubernetes_pod_name: {resource: "pod"}
+        name: {group: "apps", resource: "deployment"}
     name:
       matches: "num_ready_work_items"
-      as: "num_ready_work_items_avg"
-    metricsQuery: 'avg_over_time(<<.Series>>{<<.LabelMatchers>>}[2m])'
+      as: "num_ready_work_items"
+    metricsQuery: '<<.Series>>{<<.LabelMatchers>>}'
