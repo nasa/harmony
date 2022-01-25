@@ -79,7 +79,7 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/gesdisc/giovanni
     collections:
-      - C1225808238-GES_DISC
+      - C1225808238-GES_DISC:
         - V2144697547-GES_DISC
     capabilities:
       subsetting:
@@ -495,7 +495,7 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/gesdisc/giovanni
     collections:
-      - C1225808238-GES_DISC
+      - C1225808238-GES_DISC:
         - V2144697547-GES_DISC
     capabilities:
       subsetting:
