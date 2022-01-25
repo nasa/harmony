@@ -65,6 +65,7 @@ https://cmr.earthdata.nasa.gov:
 
   - name: gesdisc/giovanni
     data_operation_version: '0.12.0'
+    enabled: !Env ${EXAMPLE_SERVICES}
     type:
       <<: *default-argo-config
       params:
@@ -477,6 +478,35 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
+
+  - name: gesdisc/giovanni
+    data_operation_version: '0.12.0'
+    enabled: !Env ${EXAMPLE_SERVICES}
+    type:
+      <<: *default-argo-config
+      params:
+        <<: *default-argo-params
+        template: gesdisc-giovanni
+        template_type: chaining
+        image: !Env ${GESDISC_GIOVANNI_IMAGE}
+        image_pull_policy: !Env ${GESDISC_GIOVANNI_IMAGE_PULL_POLICY}
+        parallelism: !Env ${GESDISC_GIOVANNI_PARALLELISM}
+        env:
+          <<: *default-argo-env
+          STAGING_PATH: public/gesdisc/giovanni
+    collections:
+      - C1225808238-GES_DISC
+        - V2144697547-GES_DISC
+    capabilities:
+      subsetting:
+        bbox: true
+        variable: true
+        multiple_variable: false
+      output_formats:
+        - text/csv
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${GESDISC_GIOVANNI_IMAGE}
 
   - name: harmony/service-example
     data_operation_version: '0.12.0'
