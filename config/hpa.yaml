@@ -4,23 +4,6 @@ metadata:
   name: $SERVICE_NAME
   namespace: harmony
 spec:
-  behavior:
-    scaleDown:
-      stabilizationWindowSeconds: 5
-      policies:
-      - type: Percent
-        value: 100
-        periodSeconds: 5
-    scaleUp:
-      stabilizationWindowSeconds: 0
-      policies:
-      - type: Percent
-        value: 100
-        periodSeconds: 5
-      - type: Pods
-        value: 4
-        periodSeconds: 5
-      selectPolicy: Max
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
