@@ -10,6 +10,9 @@ fi
 set +a
 eval "$env_save"
 
+# ensure that prometheus and the prometheus adapter have started
+. ./bin/deploy-prometheus
+
 file="config/hpa.yaml"
 
 # create the query-cmr autoscaler
