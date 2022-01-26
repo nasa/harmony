@@ -38,6 +38,9 @@ else
                     -n ${PROMETHEUS_NAMESPACE} \
                     ${PROMETHEUS_ADAPTER_HELM_NAME} \
                     prometheus-community/prometheus-adapter
-
 fi
+
+# Deploy kube-state-metrics service to support monitoring
+echo "deploying kube-state-metrics service"
+kubectl apply -f ./config/kube-state-metrics
 
