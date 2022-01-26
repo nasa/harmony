@@ -456,6 +456,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         expect(serviceConfig.name).to.equal('variable-based-service');
       });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
+        expect(service.constructor.name).to.equal('ArgoService');
+      });
     });
   });
 });
