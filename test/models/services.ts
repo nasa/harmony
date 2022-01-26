@@ -425,6 +425,39 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
     });
   });
+
+  describe('when the collection match includes variables for variable-based service', function () {
+    const collectionId = 'C123-TEST';
+    const variableId = 'V123-TEST';
+    beforeEach(function () {
+      this.config = [
+        {
+          name: 'variable-based-service',
+          type: { name: 'argo' },
+          capabilities: {
+            subsetting: { variable: true },
+            output_formats: ['text/csv'],
+          },
+          collections: [
+            {
+              [collectionId]: [ variableId ],
+            },
+          ],
+        },
+      ];
+    });
+
+    describe('requesting variable-based service', function () {
+      const operation = new DataOperation();
+      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
+      operation.outputFormat = 'text/csv';
+
+      it('returns the service configured for variable-based service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('variable-based-service');
+      });
+    });
+  });
 });
 
 describe('granule limits', function () {
