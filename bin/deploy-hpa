@@ -19,7 +19,6 @@ envsubst < $file | kubectl apply -f - -n harmony
 # create the other autoscalers
 for service in ${LOCALLY_DEPLOYED_SERVICES//,/ }
 do
-  # set up enviornment variables for service
   export SERVICE_NAME=${service}
   envsubst < $file | kubectl apply -f - -n harmony
 done
