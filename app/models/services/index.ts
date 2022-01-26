@@ -142,7 +142,15 @@ function isCollectionMatch(
   operation: DataOperation,
   serviceConfig: ServiceConfig<unknown>,
 ): boolean {
-  return operation.sources.every((source) => serviceConfig.collections.includes(source.collection));
+  return operation.sources.every((source) => {
+    let matchedCollection;
+    if ( serviceConfig.collections.includes(source.collection) ) return true;
+    else if ( matchedCollection = serviceConfig.collections.find(x => x[source.collection]) ) {
+      let b = source.variables.every(x => matchedCollection[source.collection].includes(x.id));
+      return b;
+    }
+    else return false;
+  });
 }
 
 /**
