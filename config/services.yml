@@ -79,7 +79,7 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-argo-env
           STAGING_PATH: public/gesdisc/giovanni
     collections:
-      - C1225808238-GES_DISC:
+      - C1598621093-GES_DISC:
         - V2144690146-GES_DISC
         - V2144682160-GES_DISC
         - V2144444407-GES_DISC
@@ -505,16 +505,16 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/gesdisc/giovanni
     collections:
       - C1225808238-GES_DISC:
-        - V2144690146-GES_DISC
-        - V2144682160-GES_DISC
-        - V2144444407-GES_DISC
-        - V2144674651-GES_DISC
-        - V2144680005-GES_DISC
-        - V2144683811-GES_DISC
-        - V2144672700-GES_DISC
-        - V2144443981-GES_DISC
-        - V2144677987-GES_DISC
-        - V2144685939-GES_DISC
+        - V1240788781-GES_DISC
+        - V1242222137-GES_DISC
+        - V1240788730-GES_DISC
+        - V1242222299-GES_DISC
+        - V1242222009-GES_DISC
+        - V1242222265-GES_DISC
+        - V1242222196-GES_DISC
+        - V1242222340-GES_DISC
+        - V1242222234-GES_DISC
+        - V1242222036-GES_DISC
     capabilities:
       subsetting:
         bbox: true
