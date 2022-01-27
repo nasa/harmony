@@ -35,18 +35,9 @@ that is scraped by Prometheus, `num_ready_work_items`, which is the number of wo
 given service that are in the 'READY' state (i.e., available to be worked but not yet being worked).
 It can be accessed via the Prometheus UI.
 
-Additionally, Harmony deploys the [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-adapter)
-to generate a custom metric based on the average value of `num_ready_work_items` over a two minute
-window. This metric, `num_ready_work_items_avg`, is used by the 
-[Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
-to scale the number of pods for a given service up or down in response to load. 
-
-It is not available in the Prometheus UI, but can be accessed
-using `kubectl` as follows:
-
-```
-kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/harmony/pods/*/num_ready_work_items_avg" [--kubeconfig <config file>]
-```
+Harmony deploys the [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-adapter)
+to make this metric available to the [Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+to scale the number of pods for a given service up or down in response to load.
 
 #### Monitoring the Number of Pods for Each Service
 
