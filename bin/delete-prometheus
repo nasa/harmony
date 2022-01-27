@@ -8,10 +8,7 @@ set +a
 eval "$env_save"
 
 # Delete kube-state-metrics service
-kubectl delete deployment kube-state-metrics -n monitoring
-kubectl delete service kube-state-metrics -n monitoring
-kubectl delete clusterrolebinding kube-state-metrics
-kubectl delete clusterrole kube-state-metrics
+kubectl delete -f ./config/kube-state-metrics
 
 # Delete prometheus adapter
 PROMETHEUS_NAMESPACE=monitoring
