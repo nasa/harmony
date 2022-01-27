@@ -460,7 +460,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('uses the correct service class when building the service', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         const service = buildService(serviceConfig, operation);
-        expect(service.constructor.name).to.equal('ArgoService');
+        expect(service.constructor.name).to.equal('TurboService');
       });
     });
   });
