@@ -145,9 +145,9 @@ function isCollectionMatch(
   return operation.sources.every((source) => {
     let matchedCollection;
     if ( serviceConfig.collections.includes(source.collection) ) return true;
-    else if ( matchedCollection = serviceConfig.collections.find(x => x[source.collection]) ) {
+    if ( matchedCollection = serviceConfig.collections.find(x => x[source.collection]) ) {
       return source.variables.every(x => matchedCollection[source.collection].includes(x.id));
-    } else return false;
+    }
   });
 }
 
