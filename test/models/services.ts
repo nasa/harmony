@@ -447,7 +447,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       ];
     });
 
-    describe('requesting variable-based service', function () {
+    describe('requesting service with variable subsetting', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'text/csv';
@@ -461,6 +461,23 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('TurboService');
+      });
+    });
+
+    describe('requesting service without variable subsetting', function () {
+      const operation = new DataOperation();
+      operation.addSource(collectionId);
+      operation.outputFormat = 'text/csv';
+
+      it('does not return the service configured for variable-based service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('uses the NoOp service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
+        expect(service.constructor.name).to.equal('NoOpService');
       });
     });
   });
