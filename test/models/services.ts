@@ -433,7 +433,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'variable-based-service',
-          type: { name: 'argo' },
+          type: { name: 'turbo' },
           capabilities: {
             subsetting: { variable: true },
             output_formats: ['text/csv'],
