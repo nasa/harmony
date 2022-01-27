@@ -8,7 +8,7 @@ import { NotFoundError } from '../../util/errors';
 import { isMimeTypeAccepted, allowsAny } from '../../util/content-negotiation';
 import { CmrCollection } from '../../util/cmr';
 import { listToText, Conjunction, isInteger } from '../../util/string';
-import ArgoService from './argo-service';
+import TurboService from './turbo-service';
 import HttpService from './http-service';
 import NoOpService from './no-op-service';
 import DataOperation from '../data-operation';
@@ -96,7 +96,7 @@ export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collecti
 
 const serviceTypesToServiceClasses = {
   http: HttpService,
-  argo: ArgoService,
+  turbo: TurboService,
   noOp: NoOpService,
 };
 

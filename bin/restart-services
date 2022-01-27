@@ -10,16 +10,16 @@ eval "$env_save"
 for service in ${LOCALLY_DEPLOYED_SERVICES//,/ } query-cmr
 do
     echo "stopping $service"
-    kubectl delete deployment "$service" -n argo
-    kubectl delete service "$service" -n argo
+    kubectl delete deployment "$service" -n harmony
+    kubectl delete service "$service" -n harmony
 done
 
 ./bin/deploy-services
 
 # redeploy the harmony service if it is running
-kubectl get service harmony 2> /dev/null
+kubectl get service harmony -n harmony 2> /dev/null
 if [ $? = 0 ]; then
-    kubectl delete deployment harmony -n argo
-    kubectl delete service harmony -n argo
+    kubectl delete deployment harmony -n harmony
+    kubectl delete service harmony -n harmony
     ./bin/start-harmony
 fi

@@ -22,7 +22,7 @@ if [ ! -f "$file" ]; then
   exit 1
 fi
 echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
-envsubst < $file | kubectl apply -f - -n argo
+envsubst < $file | kubectl apply -f - -n harmony
 
 # create the other services
 file="tasks/service-runner/config/service-template.yaml"
@@ -34,12 +34,6 @@ do
   declare ${var_prefix}_IMAGE
   varname=${var_prefix}_IMAGE
   export SERVICE_IMAGE=${!varname}
-  declare ${var_prefix}_IMAGE_PULL_POLICY
-  varname=${var_prefix}_IMAGE_PULL_POLICY
-  export SERVICE_IMAGE_PULL_POLICY=${!varname}
-  declare ${var_prefix}_PARALLELISM
-  varname=${var_prefix}_PARALLELISM
-  export SERVICE_PARALLELISM=${!varname}
   declare ${var_prefix}_REQUESTS_CPU
   varname=${var_prefix}_REQUESTS_CPU
   export SERVICE_REQUESTS_CPU=${!varname}
@@ -60,5 +54,5 @@ do
   export SERVICE_INVOCATION_ARGS=${!varname}
 
   echo "Deploying $service using volume mount path $HOST_VOLUME_PATH"
-  envsubst < $file | kubectl apply -f - -n argo
+  envsubst < $file | kubectl apply -f - -n harmony
 done

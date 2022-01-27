@@ -1,0 +1,27 @@
+#!/bin/bash
+# deploy horizontal pod autoscalers for locally deployed services and query-cmr
+
+env_save=$(export -p)
+set -a
+source "env-defaults"
+if [ -f ".env" ]; then
+source ".env"
+fi
+set +a
+eval "$env_save"
+
+# ensure that prometheus and the prometheus adapter have started
+. ./bin/deploy-prometheus
+
+file="config/hpa.yaml"
+
+# create the query-cmr autoscaler
+export SERVICE_NAME="query-cmr"
+envsubst < $file | kubectl apply -f - -n harmony
+
+# create the other autoscalers
+for service in ${LOCALLY_DEPLOYED_SERVICES//,/ }
+do
+  export SERVICE_NAME=${service}
+  envsubst < $file | kubectl apply -f - -n harmony
+done

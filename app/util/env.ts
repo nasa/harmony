@@ -66,7 +66,6 @@ if (missingVars.length > 0) {
 
 interface HarmonyEnv {
   adminGroupId: string;
-  argoUrl: string;
   artifactBucket: string;
   awsDefaultRegion: string;
   builtInTaskPrefix: string;
@@ -74,9 +73,8 @@ interface HarmonyEnv {
   callbackUrlRoot: string;
   cmrEndpoint: string;
   cmrMaxPageSize: number;
-  defaultArgoPodTimeoutSecs: number;
+  defaultPodGracePeriodSecs: number;
   defaultBatchSize: number;
-  defaultImagePullPolicy: string;
   defaultJobListPageSize: number;
   defaultParallelism: number;
   defaultResultPageSize: number;
@@ -96,7 +94,6 @@ interface HarmonyEnv {
   oauthHost: string;
   oauthUid: string;
   objectStoreType: string;
-  queryCmrImagePullPolicy: string;
   reapableJobAgeMinutes: number;
   reapableWorkAgeMinutes: number;
   sameRegionAccessRole: string;

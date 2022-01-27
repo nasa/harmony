@@ -1,7 +1,7 @@
 {
   "name": "@harmony/query-cmr",
   "version": "0.0.0",
-  "description": "Harmony Argo task that queries the CMR for an incoming message and produces a sources file as output",
+  "description": "Harmony task that queries the CMR for an incoming message and produces a sources file as output",
   "main": "app/query-granules.ts",
   "scripts": {
     "test": "eslint --ext .ts . && nyc mocha && npm audit --audit-level=high --production",

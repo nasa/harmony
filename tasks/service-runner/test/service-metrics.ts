@@ -23,9 +23,9 @@ describe('Service Metrics', async function () {
       it('returns a valid metric string', async function () {
         mock.onGet().reply(200, { availableWorkItems: 0 });
         const res = await _getHarmonyMetric(serviceID);
-        const expected_harmony_metric = `# HELP ready_work_items_count Ready work items count for a harmony task-runner service.
-# TYPE ready_work_items_count gauge
-ready_work_items_count{service_id="${serviceID}"} 0`;
+        const expected_harmony_metric = `# HELP num_ready_work_items Ready work items count for a harmony task-runner service.
+# TYPE num_ready_work_items gauge
+num_ready_work_items{service_id="${serviceID}"} 0`;
         expect(res).to.equal(expected_harmony_metric);
       });
     });

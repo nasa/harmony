@@ -69,10 +69,10 @@ if [[ "$KUBE_CONTEXT" == "minikube" ]]; then
 fi
 kubectl config use-context $KUBE_CONTEXT
 
-argo_namespace=$(kubectl get namespace | grep argo | cut -d ' ' -f1)
+harmony_namespace=$(kubectl get namespace | grep harmony | cut -d ' ' -f1)
 
-if [ -z "$argo_namespace" ]; then
-  kubectl create namespace argo
+if [ -z "$harmony_namespace" ]; then
+  kubectl create namespace harmony
 fi
 
 STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
@@ -85,16 +85,16 @@ awslocal s3 mb s3://${ARTIFACT_BUCKET}
 awslocal s3 mb s3://${UPLOAD_BUCKET}"
 
 # For some develpers using Linux, artifact repositories were not working correctly without
-# setting the default argo account as a cluster admin
-kubectl -n argo delete rolebinding default-admin 2>/dev/null || true
-kubectl -n argo create rolebinding default-admin --clusterrole=admin --serviceaccount=argo:default
+# setting the default harmony account as a cluster admin
+kubectl -n harmony delete rolebinding default-admin 2>/dev/null || true
+kubectl -n harmony create rolebinding default-admin --clusterrole=admin --serviceaccount=harmony:default
 
-kubectl -n argo delete configmap localstack-config 2>/dev/null || true
-kubectl -n argo create configmap localstack-config --from-literal=startup.sh="${localstack_startup_script}"
+kubectl -n harmony delete configmap localstack-config 2>/dev/null || true
+kubectl -n harmony create configmap localstack-config --from-literal=startup.sh="${localstack_startup_script}"
 
 . ./bin/create-k8s-config-maps-and-secrets
 
-kubectl apply -n argo -f ./config/local-postgres-localstack-deployment.yml
+kubectl apply -n harmony -f ./config/local-postgres-localstack-deployment.yml
 
 [[ $USE_LOCALSTACK = 'true' ]] && s3_endpoint="localstack:4572" || s3_endpoint="s3.amazonaws.com"
 

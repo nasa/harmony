@@ -3,16 +3,11 @@ import _ from 'lodash';
 import { buildJob } from '../helpers/jobs';
 import { buildWorkItem } from '../helpers/work-items';
 import { hookTransaction } from '../helpers/db';
-import { stubTerminateWorkflows } from '../helpers/workflows';
 import cancelAndSaveJob from '../../app/util/job';
 import { JobStatus } from '../../app/models/job';
 import { getWorkItemsByJobId, WorkItemStatus } from '../../app/models/work-item';
 import db from '../../app/util/db';
 import log from '../../app/util/log';
-
-const anArgoJob = buildJob({ username: 'joe' });
-
-const anotherArgoJob = buildJob({ username: 'joe' });
 
 const aTurboJob = buildJob({ username: 'doe' });
 const firstTurboWorkItem = buildWorkItem({ jobID: aTurboJob.jobID });
@@ -48,10 +43,7 @@ const failedTurboWorkItem = buildWorkItem({
 
 describe('Canceling a job', async function () {
   hookTransaction();
-  let terminateWorkflowsStub: sinon.SinonStub;
   before(async function () {
-    await anArgoJob.save(this.trx);
-    await anotherArgoJob.save(this.trx);
     await aTurboJob.save(this.trx);
     await anotherTurboJob.save(this.trx);
     await acceptedTurboJob.save(this.trx);
@@ -66,25 +58,6 @@ describe('Canceling a job', async function () {
     await failedTurboWorkItem.save(this.trx);
     this.trx.commit();
     this.trx = null;
-  });
-
-  beforeEach(function () {
-    terminateWorkflowsStub = stubTerminateWorkflows();
-  });
-  afterEach(function () {
-    if (terminateWorkflowsStub.restore) terminateWorkflowsStub.restore();
-  });
-
-  describe('when workflow termination is requested', async function () {
-    it('terminates the workflow', async function () {
-      await cancelAndSaveJob(anArgoJob.requestId, 'Canceled by admin', log, true, 'joe');
-      expect(terminateWorkflowsStub.callCount).to.equal(1);
-    });
-
-    it('does not terminates the workflow', async function () {
-      await cancelAndSaveJob(anotherArgoJob.requestId, 'Canceled by admin', log, false, 'joe');
-      expect(terminateWorkflowsStub.callCount).to.equal(0);
-    });
   });
 
   describe('when cancelation is requested for a turbo workflow', async function () {
@@ -102,12 +75,8 @@ describe('Canceling a job', async function () {
       expect(workItems[2].status).to.equal(WorkItemStatus.FAILED);
     });
 
-    it('does not terminates the workflow', async function () {
-      await cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
-      expect(terminateWorkflowsStub.callCount).to.equal(0);
-    });
-
     it('fails to cancel an already-canceled workflow', async function () {
+      await cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by user', log, true, 'doe');
       await expect(
         cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by admin', log, true, 'doe'),
       ).to.be.rejectedWith('Job status cannot be updated from canceled to canceled.');

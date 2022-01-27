@@ -30,7 +30,7 @@ class LogStream extends stream.Writable {
     const chunkStr = chunk.toString('utf8');
     this.logStr += chunkStr;
     if (this.shouldLog) {
-      logger.debug(`FROM WORKER LOG: ${chunkStr}`);
+      logger.debug(chunkStr, { worker: true });
     }
     next();
   }
@@ -103,7 +103,7 @@ export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceRe
       }, workerTimeout);
 
       exec.exec(
-        'argo',
+        'harmony',
         env.myPodName,
         'worker',
         [
@@ -161,7 +161,7 @@ export async function runServiceFromPull(workItem: WorkItem): Promise<ServiceRes
     const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
 
     return await new Promise<ServiceResponse>((resolve) => {
-      logger.debug('CALLING WORKER');
+      logger.debug(`CALLING WORKER for pod ${env.myPodName}`);
       // create a writable stream to capture stdout from the exec call
       // using stdout instead of stderr because the service library seems to log ERROR to stdout
       const stdOut = new LogStream();
@@ -171,7 +171,7 @@ export async function runServiceFromPull(workItem: WorkItem): Promise<ServiceRes
       }, workerTimeout);
 
       exec.exec(
-        'argo',
+        'harmony',
         env.myPodName,
         'worker',
         [

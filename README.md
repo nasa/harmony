@@ -62,7 +62,7 @@ See the [Minimum System Requirement](#minimum-system-requirements) above.
 git clone https://github.com/nasa/harmony.git
 ```
 
-3. (optional) run the `create-dotenv` script in the `bin` directory and answer the prompts to 
+3. (optional) run the `create-dotenv` script in the `bin` directory and answer the prompts to
    create a `.env` file.
   ```bash
   pushd harmony && ./bin/create-dotenv && popd
@@ -81,19 +81,19 @@ Linux Only (Handled automatically by Docker Desktop)
 
 5. Expose the kubernetes services to the local host. These commands will block so they must be run in separate terminals.
 ```bash
-kubectl port-forward service/harmony 3000:3000 -n argo
+kubectl port-forward service/harmony 3000:3000 -n harmony
 ```
 
 **NOTE** The workflow listener will fail repeatedly (restarts every 30 seconds) when Harmony is run
 in Kubernetes on Linux. This is a known bug and is to addressed in Jira ticket HARMONY-849.
 
-Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `argo` namespace. 
+Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `harmony` namespace.
 
-**NOTE** It may take a while for all the pods to start if this is the first time you have started 
+**NOTE** It may take a while for all the pods to start if this is the first time you have started
 Harmony. You can check on the status by running the following command:
 
 ```bash
-kubectl get pods -n argo
+kubectl get pods -n harmony
 ```
 
 When all the pods are in the 'Running' state then Harmony is ready to go. If you installed
@@ -154,7 +154,7 @@ LOCALLY_DEPLOYED_SERVICES=my-service
 ```
 Note that the name used must be the kebab case version of the environment variable prefix used
 in `env-defaults`.
-4. Run 
+4. Run
 ```bash
 ./bin/deploy-services
 ```
@@ -188,7 +188,7 @@ Required:
 * PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
 * Earthdata Login application in UAT (Details below in the 'Set up Earthdata Login application for your local Harmony instance' section)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
-* [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files. 
+* [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files.
 
 
 Highly Recommended:
@@ -208,7 +208,7 @@ If you have not yet cloned the Harmony repository, run
 $ git clone https://github.com/nasa/harmony.git
 ```
 
-Ensure envsubst is installed on system. 
+Ensure envsubst is installed on system.
 
 Ensure node is available and is the correct version, 12.x.y, where "x" >= 14.
 
@@ -349,7 +349,7 @@ Postgres has started at localhost:5432
 To delete the postgres and localstack deployment, run:
 
 ```
-$ kubectl delete namespaces argo
+$ kubectl delete namespaces harmony
 ```
 
 `minikube` users can stop Kubernetes by running `minikube stop`.  Docker Desktop users will
@@ -390,7 +390,7 @@ $ git clone https://github.com/nasa/harmony-service-example.git
 eval $(minikube docker-env)
 ```
 
-This will set up the proper environment for building the image so that it may be used in minikube. 
+This will set up the proper environment for building the image so that it may be used in minikube.
 
 Next run the following command to build and locally install the image:
 

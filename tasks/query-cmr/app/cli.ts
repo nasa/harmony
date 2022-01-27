@@ -57,7 +57,7 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       type: 'number',
       default: 2000,
     })
-    // if present, we are using a non-Argo workflow, and will ignore params like page-size,
+    // if present, we are using a turbo style workflow, and will ignore params like page-size,
     // batch-size, max-pages, query
     .option('scroll-id', {
       alias: 's',

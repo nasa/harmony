@@ -4,16 +4,15 @@ prometheus:
   port: 9090
 
 # Rules for custom metrics
-# Currently if just provides an example
-# and more rules need to be added when harmony HPA is implemented based on custom metrics
 rules:
   custom:
-  - seriesQuery: 'http_requests_total{kubernetes_namespace!="",kubernetes_pod_name!=""}'
+  - seriesQuery: 'num_ready_work_items{kubernetes_namespace!="",kubernetes_pod_name!=""}'
     resources:
       overrides:
         kubernetes_namespace: {resource: "namespace"}
         kubernetes_pod_name: {resource: "pod"}
+        name: {group: "apps", resource: "deployment"}
     name:
-      matches: "^(.*)_total"
-      as: "${1}_per_second"
-    metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[2m])) by (<<.GroupBy>>)'
+      matches: "num_ready_work_items"
+      as: "num_ready_work_items"
+    metricsQuery: '<<.Series>>{<<.LabelMatchers>>}'

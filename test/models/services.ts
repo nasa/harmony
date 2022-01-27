@@ -19,7 +19,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'first-service',
-          type: { name: 'argo' },
+          type: { name: 'turbo' },
           collections: [collectionId],
           capabilities: {
             output_formats: ['image/tiff', 'application/x-netcdf4'],
@@ -41,7 +41,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         },
         {
           name: 'third-service',
-          type: { name: 'argo' },
+          type: { name: 'turbo' },
           collections: [collectionId],
           capabilities: {
             output_formats: ['image/tiff', 'image/png'],
@@ -64,7 +64,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('uses the correct service class when building the service', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         const service = buildService(serviceConfig, this.operation);
-        expect(service.constructor.name).to.equal('ArgoService');
+        expect(service.constructor.name).to.equal('TurboService');
       });
     });
 
@@ -213,12 +213,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'non-matching-service',
-          type: { name: 'argo' },
+          type: { name: 'turbo' },
           collections: ['C456-NOMATCH'],
         },
         {
           name: 'matching-service',
-          type: { name: 'argo' },
+          type: { name: 'turbo' },
           collections: [collectionId],
         },
       ];
@@ -232,7 +232,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     it('uses the correct service class when building the service', function () {
       const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
       const service = buildService(serviceConfig, this.operation);
-      expect(service.constructor.name).to.equal('ArgoService');
+      expect(service.constructor.name).to.equal('TurboService');
     });
   });
 
@@ -242,7 +242,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'variable-subsetter',
-          type: { name: 'argo' },
+          type: { name: 'turbo' },
           capabilities: {
             subsetting: { variable: true },
             output_formats: ['image/tiff'],
@@ -251,7 +251,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         },
         {
           name: 'non-variable-subsetter',
-          type: { name: 'argo' },
+          type: { name: 'turbo' },
           capabilities: {
             subsetting: { variable: false },
             output_formats: ['application/x-zarr'],
@@ -274,7 +274,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('uses the correct service class when building the service', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         const service = buildService(serviceConfig, operation);
-        expect(service.constructor.name).to.equal('ArgoService');
+        expect(service.constructor.name).to.equal('TurboService');
       });
     });
 
@@ -342,7 +342,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'non-matching-service',
-          type: { name: 'argo' },
+          type: { name: 'turbo' },
           collections: ['C456-NOMATCH'],
         },
       ];
@@ -375,7 +375,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'a-service',
-          type: { name: 'argo' },
+          type: { name: 'turbo' },
           collections: [collectionId],
         },
       ];

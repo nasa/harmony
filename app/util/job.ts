@@ -5,7 +5,6 @@ import { Job, JobStatus, terminalStates } from '../models/job';
 import env from './env';
 import { updateWorkItemStatusesByJobId, WorkItemStatus } from '../models/work-item';
 import { ConflictError, NotFoundError, RequestValidationError } from './errors';
-import { terminateWorkflows, checkIfTurboWorkflow } from './workflows';
 import isUUID from './uuid';
 
 /**
@@ -89,11 +88,6 @@ export default async function cancelAndSaveJob(
     if (job) {
       if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
         await completeJob(tx, job, JobStatus.CANCELED, logger, message);
-        // The following can be removed once Argo is removed
-        const isArgoWorkflow = !await checkIfTurboWorkflow(tx, jobID, logger);
-        if (isArgoWorkflow && shouldTerminateWorkflows) {
-          await terminateWorkflows(job, logger);
-        }
       } else {
         logger.warn(`Ignoring repeated cancel request for job ${jobID}`);
       }
