@@ -425,6 +425,62 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
     });
   });
+
+  describe('when the collection match includes variables for variable-based service', function () {
+    const collectionId = 'C123-TEST';
+    const variableId = 'V123-TEST';
+    beforeEach(function () {
+      this.config = [
+        {
+          name: 'variable-based-service',
+          type: { name: 'turbo' },
+          capabilities: {
+            subsetting: { variable: true },
+            output_formats: ['text/csv'],
+          },
+          collections: [
+            {
+              [collectionId]: [ variableId ],
+            },
+          ],
+        },
+      ];
+    });
+
+    describe('requesting service with variable subsetting', function () {
+      const operation = new DataOperation();
+      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
+      operation.outputFormat = 'text/csv';
+
+      it('returns the service configured for variable-based service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('variable-based-service');
+      });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
+        expect(service.constructor.name).to.equal('TurboService');
+      });
+    });
+
+    describe('requesting service without variable subsetting', function () {
+      const operation = new DataOperation();
+      operation.addSource(collectionId);
+      operation.outputFormat = 'text/csv';
+
+      it('does not return the service configured for variable-based service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('uses the NoOp service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
+        expect(service.constructor.name).to.equal('NoOpService');
+      });
+    });
+  });
 });
 
 describe('granule limits', function () {
