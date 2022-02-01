@@ -108,6 +108,7 @@ export async function getJobsListing(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
+    req.context.logger.info(`Get jobs listing for user ${req.user}`);
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const query: JobQuery = {};
