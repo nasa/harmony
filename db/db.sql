@@ -61,6 +61,8 @@ CREATE TABLE `workflow_steps` (
 );
 
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);
+CREATE INDEX jobs_updatedAt_id ON jobs(updatedAt);
+CREATE INDEX jobs_username_idx ON jobs(username);
 CREATE INDEX job_links_jobID_idx ON job_links(jobID);
 CREATE INDEX work_items_jobID_idx ON work_items(jobID);
 CREATE INDEX work_items_serviceID_idx ON work_items(serviceID);
