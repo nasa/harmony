@@ -66,6 +66,7 @@ CREATE INDEX jobs_username_idx ON jobs(username);
 CREATE INDEX job_links_jobID_idx ON job_links(jobID);
 CREATE INDEX work_items_jobID_idx ON work_items(jobID);
 CREATE INDEX work_items_serviceID_idx ON work_items(serviceID);
+CREATE INDEX work_items_status_idx ON work_items(status);
 CREATE INDEX workflow_steps_jobID_idx ON workflow_steps(jobID);
 CREATE INDEX workflow_steps_jobID_StepIndex_idx ON workflow_steps(jobID, stepIndex);
 CREATE INDEX workflow_steps_serviceID_idx ON workflow_steps(serviceID);
