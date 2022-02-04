@@ -509,7 +509,7 @@ export function initateGranuleScroll(
 ): Promise<CmrGranuleHits> {
   const baseQuery = {
     collection_concept_id: collectionId,
-    page_size: limit,
+    page_size: Math.min(limit, 2000),
     scroll: 'defer',
   };
 

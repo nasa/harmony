@@ -35,6 +35,7 @@ export interface ServiceConfig<ServiceParamType> {
   batch_size?: number;
   name?: string;
   data_operation_version?: string;
+  has_granule_limit?: boolean;
   type?: {
     name: string;
     params?: ServiceParamType;
