@@ -42,7 +42,7 @@ function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Boundi
 function getMaxGranules(req: HarmonyRequest): number {
   const query = keysToLowerCase(req.query);
 
-  if ( ! req.context.serviceConfig.has_granule_limit ) return Number.MAX_SAFE_INTEGER;
+  if ( req.context.serviceConfig.has_granule_limit == false ) return Number.MAX_SAFE_INTEGER;
 
   let maxResults = env.maxGranuleLimit;
   if ('maxresults' in query) {
