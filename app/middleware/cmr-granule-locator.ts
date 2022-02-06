@@ -57,7 +57,12 @@ function getMaxGranules(req: HarmonyRequest): number {
  * @returns a warning message if not all matching granules will be processed, or undefined
  * if not applicable
  */
-function getResultsLimitedMessage(operation: DataOperation): string {
+function getResultsLimitedMessage(req: HarmonyRequest): string {
+  const { operation } = req;
+  let message;
+
+  if ( req.context.serviceConfig.has_granule_limit == false ) return;
+
   let numGranules = operation.cmrHits;
   if (operation.maxResults) {
     numGranules = Math.min(numGranules, operation.maxResults, env.maxGranuleLimit);
@@ -65,7 +70,6 @@ function getResultsLimitedMessage(operation: DataOperation): string {
     numGranules = Math.min(numGranules, env.maxGranuleLimit);
   }
 
-  let message;
   if (operation.cmrHits > numGranules) {
     message = `CMR query identified ${operation.cmrHits} granules, but the request has been limited `
      + `to process only the first ${numGranules} granules`;
@@ -141,7 +145,7 @@ async function cmrGranuleLocatorTurbo(
       operation.cmrHits += hits;
       operation.scrollIDs.push(scrollID);
 
-      const limitedMessage = getResultsLimitedMessage(operation);
+      const limitedMessage = getResultsLimitedMessage(req);
       if (limitedMessage) {
         req.context.messages.push(limitedMessage);
       }
@@ -253,7 +257,7 @@ async function cmrGranuleLocatorNonTurbo(
 
     await Promise.all(queries);
     operation.cmrQueryLocations = operation.cmrQueryLocations.sort();
-    const limitedMessage = getResultsLimitedMessage(operation);
+    const limitedMessage = getResultsLimitedMessage(req);
     if (limitedMessage) {
       req.context.messages.push(limitedMessage);
     }
