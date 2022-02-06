@@ -61,7 +61,7 @@ function getResultsLimitedMessage(req: HarmonyRequest): string {
   const { operation } = req;
   let message;
 
-  if ( req.context.serviceConfig.has_granule_limit == false ) return;
+  if ( req.context.serviceConfig.has_granule_limit == false ) return message;
 
   let numGranules = operation.cmrHits;
   if (operation.maxResults) {
