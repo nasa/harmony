@@ -426,7 +426,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     });
   });
 
-  describe('when the collection match includes variables for variable-based service', function () {
+  describe('when requesting variable-based service with one variable', function () {
     const collectionId = 'C123-TEST';
     const variableId = 'V123-TEST';
     beforeEach(function () {
@@ -495,6 +495,64 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('NoOpService');
+      });
+    });
+  });
+
+  describe('when requesting variable-based service with multiple variables', function () {
+    const collectionId = 'C123-TEST';
+    const variableId_1 = 'V123-TEST';
+    const variableId_2 = 'V456-TEST';
+    beforeEach(function () {
+      this.config = [
+        {
+          name: 'variable-based-service',
+          type: { name: 'turbo' },
+          capabilities: {
+            subsetting: { variable: true },
+            output_formats: ['text/csv'],
+          },
+          collections: [
+            {
+              [collectionId]: [ variableId_1, variableId_2 ],
+            },
+          ],
+        },
+      ];
+    });
+
+    describe('requesting service with one variable subsetting', function () {
+      const operation = new DataOperation();
+      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId_1 }, umm: { Name: 'the-var' } }]);
+      operation.outputFormat = 'text/csv';
+
+      it('returns the service configured for variable-based service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('variable-based-service');
+      });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
+        expect(service.constructor.name).to.equal('TurboService');
+      });
+    });
+
+    describe('requesting service with two variable subsetting', function () {
+      const operation = new DataOperation();
+      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId_1 }, umm: { Name: 'the-var-1' } },
+                                         { meta: { 'concept-id': variableId_2 }, umm: { Name: 'the-var-2' } }]);
+      operation.outputFormat = 'text/csv';
+
+      it('returns the service configured for variable-based service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('variable-based-service');
+      });
+
+      it('uses the correct service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
+        expect(service.constructor.name).to.equal('TurboService');
       });
     });
   });
