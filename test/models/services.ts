@@ -503,6 +503,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     const collectionId = 'C123-TEST';
     const variableId_1 = 'V123-TEST';
     const variableId_2 = 'V456-TEST';
+    const variableId_3 = 'V789-TEST';
     beforeEach(function () {
       this.config = [
         {
@@ -538,7 +539,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       });
     });
 
-    describe('requesting service with two variable subsetting', function () {
+    describe('requesting service with two variable subsetting and both matches', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId, [{ meta: { 'concept-id': variableId_1 }, umm: { Name: 'the-var-1' } },
                                          { meta: { 'concept-id': variableId_2 }, umm: { Name: 'the-var-2' } }]);
@@ -553,6 +554,24 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('TurboService');
+      });
+    });
+  
+    describe('requesting service with two variable subsetting and only one matches', function () {
+      const operation = new DataOperation();
+      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId_1 }, umm: { Name: 'the-var-1' } },
+                                         { meta: { 'concept-id': variableId_3 }, umm: { Name: 'the-var-3' } }]);
+      operation.outputFormat = 'text/csv';
+
+      it('does not return the service configured for variable-based service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('uses the NoOp service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
+        expect(service.constructor.name).to.equal('NoOpService');
       });
     });
   });
