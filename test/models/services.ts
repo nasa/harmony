@@ -480,6 +480,23 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         expect(service.constructor.name).to.equal('NoOpService');
       });
     });
+
+    describe('requesting service with no variable matches', function () {
+      const operation = new DataOperation();
+      operation.addSource(collectionId, [{ meta: { 'concept-id': 'wrong-variable-Id' }, umm: { Name: 'wrong-var' } }]);
+      operation.outputFormat = 'text/csv';
+
+      it('does not return the service configured for variable-based service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('noOpService');
+      });
+
+      it('uses the NoOp service class when building the service', function () {
+        const serviceConfig = chooseServiceConfig(operation, {}, this.config);
+        const service = buildService(serviceConfig, operation);
+        expect(service.constructor.name).to.equal('NoOpService');
+      });
+    });
   });
 });
 
