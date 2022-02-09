@@ -1,5 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
-import { readdirSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import stream from 'stream';
 import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
@@ -49,14 +49,25 @@ function _getStacCatalogs(dir: string): string[] {
 }
 
 /**
- * Parse an error message out of an error log
+ * Parse an error message out of an error log. First check for error.json, and
+ * extract the message from the entry there. Otherwise, parse the full STDOUT
+ * error logs for any ERROR level message. Note, the current regular expression
+ * for the latter option has issues handling error messages containing curly
+ * braces.
  *
  * @param logStr - A string that contains error logging
+ * @param catalogDir - A string path for the outputs directory of the WorkItem.
  * @returns An error message parsed from the log
  */
-function _getErrorMessage(logStr: string): string {
+function _getErrorMessage(logStr: string, catalogDir: string): string {
   // expect JSON logs entries
   try {
+    const errorFile = `${catalogDir}/error.json`;
+    if (existsSync(errorFile)) {
+      const logEntry = JSON.parse(readFileSync(errorFile).toString());
+      return logEntry.error;
+    }
+
     const regex = /\{.*?\}/gs;
     const matches = logStr?.match(regex) || [];
     for (const match of matches) {
@@ -124,7 +135,7 @@ export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceRe
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = _getErrorMessage(stdOut.logStr);
+              const logErr = _getErrorMessage(stdOut.logStr, catalogDir);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               stdOut.destroy();
               resolve({ error: errMsg });
@@ -199,7 +210,7 @@ export async function runServiceFromPull(workItem: WorkItem): Promise<ServiceRes
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = _getErrorMessage(stdOut.logStr);
+              const logErr = _getErrorMessage(stdOut.logStr, catalogDir);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }
