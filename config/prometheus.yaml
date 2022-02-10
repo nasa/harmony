@@ -283,7 +283,7 @@ metadata:
   namespace: monitoring
 spec:
   selector:
-    app: prometheus
+    app: alertmanager
   ports:
     - protocol: TCP
       port: 9093
