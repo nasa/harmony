@@ -5,11 +5,12 @@ import { v4 as uuid } from 'uuid';
 import { Application } from 'express';
 import _ from 'lodash';
 import JobLink from '../../app/models/job-link';
-import { Job, JobStatus, JobRecord } from '../../app/models/job';
+import { Job, JobStatus, JobRecord, jobRecordFields } from '../../app/models/job';
 import { JobListing } from '../../app/frontends/jobs';
 import db, { Transaction } from '../../app/util/db';
 import { hookRequest } from './hooks';
 import { truncateAll } from './db';
+import { RecordConstructor } from '../../app/models/record';
 
 export const adminUsername = 'adam';
 
@@ -29,6 +30,23 @@ const exampleProps = {
   numInputGranules: 100,
   isAsync: true,
 } as JobRecord;
+
+/**
+ * Create a JobRecord from an array of data
+ * @param data - The array of data containing the JobRecord elements
+ * @returns a partial record containing the supplied elements
+ */
+export function makePartialJobRecord(data): Partial<JobRecord> {
+  return {
+    jobID: data[0],
+    username: data[1],
+    status: data[2],
+    createdAt: data[3],
+    updatedAt: data[3],
+    numInputGranules: 1,
+    collectionIds: [],
+  };
+}
 
 /**
  * Creates a job with default values for fields that are not passed in
@@ -56,6 +74,30 @@ export function buildJob(fields: Partial<JobRecord> = {}): Job {
       }
     }
   }
+  return job;
+}
+
+/**
+ * Save a job without validating or updating createdAt/updatedAt
+ * @param tx - The transaction to use for saving the job
+ * @param fields - The fields to save to the database, defaults to example values
+ * @returns The saved job
+ * @throws Error - if the save to the database fails
+ */
+export async function rawSaveJob(tx: Transaction, fields: Partial<JobRecord> = {}): Promise<Job> {
+  const job = buildJob(fields);
+  job.jobID = fields.jobID || job.jobID;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const jobFields = _.pick(job, jobRecordFields) as any;
+  jobFields.collectionIds = JSON.stringify(job.collectionIds || []);
+  let stmt = tx((job.constructor as RecordConstructor).table)
+    .insert(jobFields);
+  if (db.client.config.client === 'pg') {
+    stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
+  }
+
+  [job.id] = await stmt;
+
   return job;
 }
 

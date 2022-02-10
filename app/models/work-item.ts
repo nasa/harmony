@@ -52,6 +52,12 @@ export interface WorkItemRecord {
 
   // The location of the resulting STAC catalog(s) (not serialized)
   results?: string[];
+
+  // The last time the record was updated
+  updatedAt: Date;
+
+  // When the item was created
+  createdAt: Date;
 }
 
 /**
@@ -137,7 +143,7 @@ export async function getNextWorkItem(
         .where({ id: workItemData.id });
     }
   } catch (e) {
-    logger.error('Error getting next work item');
+    logger.error(`Error getting next work item for service [${serviceID}]`);
     throw e;
   }
 

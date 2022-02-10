@@ -28,7 +28,7 @@ const serializedJobFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID',
 ];
 
-const jobRecordFields = [
+export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request', 'numInputGranules',
   'jobID', 'requestId', 'batchesCompleted', 'isAsync',
 ];
