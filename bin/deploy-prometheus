@@ -10,7 +10,7 @@ set +a
 eval "$env_save"
 
 # Deploy prometheus
-envsubst < "config/prometheus.yaml" | kubectl apply -f -
+envsubst < "config/prometheus.yaml" | sed -e 's/§/$/g' | kubectl apply -f -
 
 # Check for helm
 if ! command -v "helm" &> /dev/null; then
