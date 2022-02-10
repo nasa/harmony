@@ -49,7 +49,7 @@ metadata:
   name: prometheus-config
   namespace: monitoring
 data:
-  # for template values that shouldn't be replaced by envsubst, use '§' prefix
+  # for template variables that shouldn't be replaced by envsubst, use '§' prefix instead of '$'
   prometheus.rules: |-
     groups:
     - name: Pod Alerts
