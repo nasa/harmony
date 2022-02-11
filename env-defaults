@@ -350,6 +350,7 @@ PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
 # Your email address must also be subscribed to the topic in order to receive alerts.
 PROMETHEUS_ALERTS_ARN=
 
+# how long before the specified alert is triggered/firing
 PROMETHEUS_POD_NOT_HEALTHY_DURATION=5m
 PROMETHEUS_NODE_NOT_READY_DURATION=5m
 
