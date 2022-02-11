@@ -30,6 +30,7 @@ import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-
 
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
+import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
 
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
@@ -182,7 +183,9 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   });
   result.use(logged(shapefileConverter));
   result.use(logged(parameterValidation));
+  result.use(logged(preServiceConcatenationHandler));
   result.use(logged(chooseService));
+  result.use(logged(postServiceConcatenationHandler));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(addRequestContextToOperation));
 
