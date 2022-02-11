@@ -289,8 +289,11 @@ BUILT_IN_TASK_PREFIX=
 # Version to use for all built-in tasks.  "latest" (local / sandbox), "sit", "uat", or "prod"
 BUILT_IN_TASK_VERSION=latest
 
-# AWS region where harmony is deployed, irrelevant for local development
+# Set these to your harmony sandbox credentials (in your .env file) if you plan to deploy Prometheus for local development.
+# AWS region where harmony is deployed.
 AWS_DEFAULT_REGION=us-west-2
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
 
 # The object store used for storing shapefiles. Only S3 is supported currently.
 OBJECT_STORE_TYPE=s3
@@ -338,8 +341,16 @@ PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE=300Mi
 PROMETHEUS_LIMITS_CPU=128m
 PROMETHEUS_LIMITS_MEMORY=300Mi
 PROMETHEUS_LIMITS_EPHEMERAL_STORAGE=500Mi
+
 PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
 PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
+PROMETHEUS_POD_NOT_HEALTHY_DURATION=1m
+PROMETHEUS_NODE_NOT_READY_DURATION=1m
+
+# Set this to the ARN of the prometheus-alerts AWS SNS topic from harmony sandbox
+# (in your .env file) if you plan to deploy Prometheus for local development.
+# Your email address must also be subscribed to the topic in order to receive alerts.
+PROMETHEUS_ALERTS_ARN=
 
 ###########################################################################
 #             Horizontal Pod Autoscaling Config                           #
