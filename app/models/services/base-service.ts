@@ -433,7 +433,7 @@ export default abstract class BaseService<ServiceParamType> {
       return operation.isSynchronous;
     }
 
-    if (typeof this.config.force_sync == "boolean") return this.config.force_sync;
+    if (typeof this.config.force_sync == 'boolean') return this.config.force_sync;
 
     let numResults = this.operation.cmrHits;
 
