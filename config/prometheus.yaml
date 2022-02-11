@@ -195,7 +195,6 @@ metadata:
   name: alertmanager-config
   namespace: monitoring
 data:
-  # https://prometheus.io/docs/alerting/latest/configuration/
   config.yml: |-
     global:
     templates:
@@ -210,12 +209,11 @@ data:
     receivers:
       - name: 'default'
         sns_configs:
-        - topic_arn: 
+        - topic_arn: $PROMETHEUS_ALERTS_ARN
           sigv4:
-            region: us-east-2
-          attributes:
-            key: key1
-            value: value1
+            region: $AWS_DEFAULT_REGION
+            access_key: $AWS_ACCESS_KEY_ID
+            secret_key: $AWS_SECRET_ACCESS_KEY
 ---
 apiVersion: v1
 kind: ConfigMap
