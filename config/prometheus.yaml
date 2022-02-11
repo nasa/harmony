@@ -59,16 +59,18 @@ data:
         expr: min_over_time(sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"})[$PROMETHEUS_POD_NOT_HEALTHY_DURATION:1m]) > 0
         for: 0m
         labels:
-          severity: critical
+          environment: $CLIENT_ID
+          duration: $PROMETHEUS_POD_NOT_HEALTHY_DURATION
         annotations:
-          summary: "Pod {{ §labels.pod }} has been in a non-ready phase (Pending|Unknown|Failed) for at least $PROMETHEUS_POD_NOT_HEALTHY_DURATION."
+          summary: "AlertManager has detected pod(s) in a non-ready phase (Pending|Unknown|Failed)."
       - alert: KubernetesNodeNotReady
         expr: kube_node_status_condition{condition="Ready",status="true"} == 0
         for: $PROMETHEUS_NODE_NOT_READY_DURATION
         labels:
-          severity: critical
+          environment: $CLIENT_ID
+          duration: $PROMETHEUS_NODE_NOT_READY_DURATION
         annotations:
-          summary: "Node {{ §labels.node }} has been unready for at least $PROMETHEUS_NODE_NOT_READY_DURATION."
+          summary: "AlertManager has detected Node(s) in an unready state."
   prometheus.yml: |
     global:
       scrape_interval:     15s
@@ -209,7 +211,7 @@ data:
       - name: 'default'
         sns_configs:
         - topic_arn: $PROMETHEUS_ALERTS_ARN
-          subject: '[AlertManager Firing: $CLIENT_ID] {{ .GroupLabels.alertname }}'
+          subject: '[AlertManager Firing][$CLIENT_ID] {{ .GroupLabels.alertname }}'
           sigv4:
             region: $AWS_DEFAULT_REGION
             access_key: $AWS_ACCESS_KEY_ID
