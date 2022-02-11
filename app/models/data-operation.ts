@@ -7,6 +7,8 @@ import logger from '../util/log';
 import { CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 
+export const CURRENT_SCHEMA_VERSION = '0.13.0';
+
 /**
  * Synchronously reads and parses the JSON Schema at the given path
  *
@@ -37,6 +39,18 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.13.0',
+      schema: readSchema('0.13.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        if ('concatenate' in revertedModel) {
+          delete revertedModel.concatenate; // eslint-disable-line no-param-reassign
+        }
+
+        return revertedModel;
+      },
+    },
     {
       version: '0.12.0',
       schema: readSchema('0.12.0'),
@@ -234,8 +248,6 @@ export default class DataOperation {
 
   message: string;
 
-  concatenate?: boolean;
-
   requestStartTime: Date; // The time that the initial request to harmony was received
 
   /**
@@ -363,14 +375,14 @@ export default class DataOperation {
    * Gets whether or not the data should be concatenated
    */
   get shouldConcatenate(): boolean {
-    return !!this.concatenate;
+    return !!this.model.concatenate;
   }
 
   /**
    * Sets whether or not the data should be concatenated
    */
   set shouldConcatenate(value: boolean) {
-    this.concatenate = value;
+    this.model.concatenate = value;
   }
 
   /**

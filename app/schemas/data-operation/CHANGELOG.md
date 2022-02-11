@@ -1,3 +1,7 @@
+## [0.13.0] - 2021-02-04
+### Added
+- concatenate - true/false - true if the service should concatenate multiple input files into a single output file
+
 ## [0.12.0] - 2021-11-23
 ### Added
 - variable.relatedUrls - Related URLs for a variable as provided by CMR.
