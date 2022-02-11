@@ -254,11 +254,11 @@ spec:
           containerPort: 9093
         resources:
             requests:
-              cpu: 500m
-              memory: 500M
+              memory: $PROMETHEUS_ALERT_MANAGER_REQUESTS_MEMORY
+              cpu: $PROMETHEUS_ALERT_MANAGER_REQUESTS_CPU
             limits:
-              cpu: 1
-              memory: 1Gi
+              memory: $PROMETHEUS_ALERT_MANAGER_LIMITS_MEMORY
+              cpu: $PROMETHEUS_ALERT_MANAGER_LIMITS_CPU
         volumeMounts:
         - name: config-volume
           mountPath: /etc/alertmanager
