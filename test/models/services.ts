@@ -8,7 +8,7 @@ import { getMaxSynchronousGranules } from '../../app/models/services/base-servic
 import DataOperation from '../../app/models/data-operation';
 import { chooseServiceConfig, buildService } from '../../app/models/services';
 import env from '../../app/util/env';
-import TurboService from 'app/models/services/turbo-service';
+import TurboService from '../../app/models/services/turbo-service';
 
 describe('services.chooseServiceConfig and services.buildService', function () {
   describe("when the operation's collection is configured for two services", function () {
@@ -456,7 +456,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       operation.outputFormat = 'text/csv';
 
       it('sets to synchronous when constructing the service', function () {
-        const service = new TurboService(this.config[0], operation);
+        new TurboService(this.config[0], operation);
         expect(operation.isSynchronous).to.equal(true);
       });
 
@@ -509,9 +509,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
   describe('when requesting variable-based service with multiple variables', function () {
     const collectionId = 'C123-TEST';
-    const variableId_1 = 'V123-TEST';
-    const variableId_2 = 'V456-TEST';
-    const variableId_3 = 'V789-TEST';
+    const variableId1 = 'V123-TEST';
+    const variableId2 = 'V456-TEST';
+    const variableId3 = 'V789-TEST';
     beforeEach(function () {
       this.config = [
         {
@@ -523,7 +523,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           },
           collections: [
             {
-              [collectionId]: [ variableId_1, variableId_2 ],
+              [collectionId]: [ variableId1, variableId2 ],
             },
           ],
         },
@@ -532,7 +532,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting service with one variable subsetting', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId_1 }, umm: { Name: 'the-var' } }]);
+      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'text/csv';
 
       it('returns the service configured for variable-based service', function () {
@@ -549,8 +549,8 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting service with two variable subsetting and both matches', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId_1 }, umm: { Name: 'the-var-1' } },
-                                         { meta: { 'concept-id': variableId_2 }, umm: { Name: 'the-var-2' } }]);
+      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var-1' } },
+        { meta: { 'concept-id': variableId2 }, umm: { Name: 'the-var-2' } }]);
       operation.outputFormat = 'text/csv';
 
       it('returns the service configured for variable-based service', function () {
@@ -567,8 +567,8 @@ describe('services.chooseServiceConfig and services.buildService', function () {
   
     describe('requesting service with two variable subsetting and only one matches', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId_1 }, umm: { Name: 'the-var-1' } },
-                                         { meta: { 'concept-id': variableId_3 }, umm: { Name: 'the-var-3' } }]);
+      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var-1' } },
+        { meta: { 'concept-id': variableId3 }, umm: { Name: 'the-var-3' } }]);
       operation.outputFormat = 'text/csv';
 
       it('does not return the service configured for variable-based service', function () {

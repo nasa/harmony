@@ -4,7 +4,7 @@ import _ from 'lodash';
 import { keysToLowerCase } from '../util/object';
 import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
-import DataOperation, { HarmonyGranule } from '../models/data-operation';
+import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { computeMbr } from '../util/spatial/mbr';
 import { BoundingBox } from '../util/bounding-box';
