@@ -61,16 +61,14 @@ data:
         labels:
           severity: critical
         annotations:
-          summary: Kubernetes Pod not healthy ({{ §labels.pod }})
-          description: "Pod has been in a non-ready state for longer than $PROMETHEUS_POD_NOT_HEALTHY_DURATION.\n  VALUE = {{ §value }}\n  LABELS = {{ §labels }}"
+          summary: "Pod {{ §labels.pod }} has been in a non-ready phase (Pending|Unknown|Failed) for at least $PROMETHEUS_POD_NOT_HEALTHY_DURATION."
       - alert: KubernetesNodeNotReady
         expr: kube_node_status_condition{condition="Ready",status="true"} == 0
         for: $PROMETHEUS_NODE_NOT_READY_DURATION
         labels:
           severity: critical
         annotations:
-          summary: Kubernetes Node not ready ({{ §labels.node }})
-          description: "Node {{ §labels.node }} has been unready for $PROMETHEUS_NODE_NOT_READY_DURATION.\n  VALUE = {{ §value }}\n  LABELS = {{ §labels }}"
+          summary: "Node {{ §labels.node }} has been unready for at least $PROMETHEUS_NODE_NOT_READY_DURATION."
   prometheus.yml: |
     global:
       scrape_interval:     15s
