@@ -60,7 +60,7 @@ data:
         labels:
           severity: critical
         annotations:
-          summary: Kubernetes Pod not healthy (instance {{ §labels.instance }})
+          summary: Kubernetes Pod not healthy ({{ §labels.pod }})
           description: "Pod has been in a non-ready state for longer than $PROMETHEUS_POD_NOT_HEALTHY_DURATION.\n  VALUE = {{ §value }}\n  LABELS = {{ §labels }}"
       - alert: KubernetesNodeNotReady
         expr: kube_node_status_condition{condition="Ready",status="true"} == 0
@@ -68,7 +68,7 @@ data:
         labels:
           severity: critical
         annotations:
-          summary: Kubernetes Node not ready (instance {{ §labels.instance }})
+          summary: Kubernetes Node not ready ({{ §labels.pod }})
           description: "Node {{ §labels.node }} has been unready for $PROMETHEUS_NODE_NOT_READY_DURATION.\n  VALUE = {{ §value }}\n  LABELS = {{ §labels }}"
   prometheus.yml: |
     global:
