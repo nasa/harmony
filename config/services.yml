@@ -60,6 +60,7 @@ https://cmr.earthdata.nasa.gov:
     data_operation_version: '0.12.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     has_granule_limit: false
+    force_sync: true
     type:
       <<: *default-turbo-config
       params:
@@ -451,6 +452,7 @@ https://cmr.uat.earthdata.nasa.gov:
     data_operation_version: '0.12.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     has_granule_limit: false
+    force_sync: true
     type:
       <<: *default-turbo-config
       params:

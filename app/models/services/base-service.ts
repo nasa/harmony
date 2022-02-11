@@ -36,6 +36,7 @@ export interface ServiceConfig<ServiceParamType> {
   name?: string;
   data_operation_version?: string;
   has_granule_limit?: boolean;
+  force_sync?: boolean;
   type?: {
     name: string;
     params?: ServiceParamType;
