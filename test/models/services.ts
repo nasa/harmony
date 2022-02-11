@@ -8,6 +8,7 @@ import { getMaxSynchronousGranules } from '../../app/models/services/base-servic
 import DataOperation from '../../app/models/data-operation';
 import { chooseServiceConfig, buildService } from '../../app/models/services';
 import env from '../../app/util/env';
+import TurboService from 'app/models/services/turbo-service';
 
 describe('services.chooseServiceConfig and services.buildService', function () {
   describe("when the operation's collection is configured for two services", function () {
@@ -433,6 +434,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.config = [
         {
           name: 'variable-based-service',
+          has_granule_limit: false,
           type: { name: 'turbo' },
           capabilities: {
             subsetting: { variable: true },
@@ -451,6 +453,11 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'text/csv';
+
+      it('sets to synchronous when constructing the service', function () {
+        const service = new TurboService(this.config[0], operation);
+        expect(operation.isSynchronous).to.equal(true);
+      });
 
       it('returns the service configured for variable-based service', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
