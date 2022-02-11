@@ -211,7 +211,7 @@ data:
       - name: 'default'
         sns_configs:
         - topic_arn: $PROMETHEUS_ALERTS_ARN
-          subject: '[AlertManager Firing][$CLIENT_ID] {{ .GroupLabels.alertname }}'
+          subject: '[Alert Manager $CLIENT_ID] {{ .GroupLabels.alertname }}'
           sigv4:
             region: $AWS_DEFAULT_REGION
             access_key: $AWS_ACCESS_KEY_ID
