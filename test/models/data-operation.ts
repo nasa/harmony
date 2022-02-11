@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { CURRENT_SCHEMA_VERSION, parseSchemaFile, versions } from '../helpers/data-operation';
-import DataOperation from '../../app/models/data-operation';
+import { parseSchemaFile, versions } from '../helpers/data-operation';
+import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 import { CmrRelatedUrl } from '../../app/util/cmr';
 
 const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
@@ -11,7 +11,7 @@ const expectedOutput = parseSchemaFile(`valid-operation-v${versions[0]}.json`);
 // The fields that all operations should contain
 const baseFields = new Set([
   'client', 'callback', 'stagingLocation', 'sources', 'format', 'user', 'accessToken',
-  'isSynchronous', 'requestId', 'temporal', 'version',
+  'isSynchronous', 'requestId', 'temporal', 'version', 'concatenate',
 ]);
 
 describe('DataOperation', () => {
@@ -271,8 +271,8 @@ describe('DataOperation', () => {
     ];
     const variables = [{
       meta: { 'concept-id': 'V123-BAR' },
-      umm: { 
-        Name: 'the/nested/name', 
+      umm: {
+        Name: 'the/nested/name',
         LongName: 'A long name',
         RelatedURLs: relatedUrls,
       },
