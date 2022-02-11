@@ -240,6 +240,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/l2-subsetter
     umm_s:
       - S1962070864-POCLOUD
+      - S2214242245-GES_DISC
     collections:
       - C1940473819-POCLOUD
       - C1940475563-POCLOUD
@@ -519,6 +520,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/podaac/l2-subsetter
     umm_s:
       - S1234899453-POCLOUD
+      - S1242721133-GES_DISC
     collections:
       - C1234208436-POCLOUD
       - C1234208437-POCLOUD
