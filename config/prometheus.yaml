@@ -68,7 +68,7 @@ data:
         labels:
           severity: critical
         annotations:
-          summary: Kubernetes Node not ready ({{ §labels.pod }})
+          summary: Kubernetes Node not ready ({{ §labels.node }})
           description: "Node {{ §labels.node }} has been unready for $PROMETHEUS_NODE_NOT_READY_DURATION.\n  VALUE = {{ §value }}\n  LABELS = {{ §labels }}"
   prometheus.yml: |
     global:
@@ -201,7 +201,7 @@ data:
       - '/etc/alertmanager/*.tmpl'
     route:
       receiver: default
-      group_by: [cluster, alertname]
+      group_by: [alertname]
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 2h
@@ -210,6 +210,7 @@ data:
       - name: 'default'
         sns_configs:
         - topic_arn: $PROMETHEUS_ALERTS_ARN
+          subject: 'AlertManager Firing: {{ .GroupLabels.alertname }}'
           sigv4:
             region: $AWS_DEFAULT_REGION
             access_key: $AWS_ACCESS_KEY_ID
