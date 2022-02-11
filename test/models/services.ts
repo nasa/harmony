@@ -435,6 +435,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         {
           name: 'variable-based-service',
           has_granule_limit: false,
+          force_sync: true,
           type: { name: 'turbo' },
           capabilities: {
             subsetting: { variable: true },

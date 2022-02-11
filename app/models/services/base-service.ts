@@ -433,7 +433,7 @@ export default abstract class BaseService<ServiceParamType> {
       return operation.isSynchronous;
     }
 
-    if (this.config.has_granule_limit == false) return true;
+    if (this.config.force_sync == true) return true;
 
     let numResults = this.operation.cmrHits;
 
