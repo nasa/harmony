@@ -448,7 +448,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           ],
         },
         {
-          name: 'another-dummy-service',
+          name: 'variable-based-async-service',
           force_sync: false,
           type: { name: 'turbo' },
           capabilities: {
@@ -466,7 +466,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     describe('requesting service with variable subsetting', function () {
       let operation;
 
-      it('sets to synchronous for the variable-based service', function () {
+      it('sets to synchronous for the variable-based-service', function () {
         operation = new DataOperation();
         operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
         operation.outputFormat = 'text/csv';
@@ -474,7 +474,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         expect(operation.isSynchronous).to.equal(true);
       });
 
-      it('sets to asynchronous for the dummy service', function () {
+      it('sets to asynchronous for the variable-based-async-service', function () {
         operation = new DataOperation();
         operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
         operation.outputFormat = 'text/csv';
