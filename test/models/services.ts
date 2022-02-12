@@ -447,25 +447,53 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             },
           ],
         },
+        {
+          name: 'another-dummy-service',
+          force_sync: false,
+          type: { name: 'turbo' },
+          capabilities: {
+            output_formats: ['image/tiff'],
+          },
+          collections: [
+            {
+              [collectionId]: [ variableId ],
+            },
+          ],
+        },
       ];
     });
 
     describe('requesting service with variable subsetting', function () {
-      const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
-      operation.outputFormat = 'text/csv';
+      let operation;
 
-      it('sets to synchronous when constructing the service', function () {
+      it('sets to synchronous for the variable-based service', function () {
+        operation = new DataOperation();
+        operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
+        operation.outputFormat = 'text/csv';
         new TurboService(this.config[0], operation);
         expect(operation.isSynchronous).to.equal(true);
       });
 
+      it('sets to asynchronous for the dummy service', function () {
+        operation = new DataOperation();
+        operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
+        operation.outputFormat = 'text/csv';
+        new TurboService(this.config[1], operation);
+        expect(operation.isSynchronous).to.equal(false);
+      });
+
       it('returns the service configured for variable-based service', function () {
+        operation = new DataOperation();
+        operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
+        operation.outputFormat = 'text/csv';
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         expect(serviceConfig.name).to.equal('variable-based-service');
       });
 
       it('uses the correct service class when building the service', function () {
+        operation = new DataOperation();
+        operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
+        operation.outputFormat = 'text/csv';
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         const service = buildService(serviceConfig, operation);
         expect(service.constructor.name).to.equal('TurboService');
