@@ -470,16 +470,16 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         operation = new DataOperation();
         operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
         operation.outputFormat = 'text/csv';
-        new TurboService(this.config[0], operation);
-        expect(operation.isSynchronous).to.equal(true);
+        const service = new TurboService(this.config[0], operation);
+        expect(service.isSynchronous).to.equal(true);
       });
 
       it('sets to asynchronous for the variable-based-async-service', function () {
         operation = new DataOperation();
         operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
         operation.outputFormat = 'text/csv';
-        new TurboService(this.config[1], operation);
-        expect(operation.isSynchronous).to.equal(false);
+        const service = new TurboService(this.config[1], operation);
+        expect(service.isSynchronous).to.equal(false);
       });
 
       it('returns the service configured for variable-based service', function () {
