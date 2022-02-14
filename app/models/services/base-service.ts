@@ -36,6 +36,8 @@ export interface ServiceConfig<ServiceParamType> {
   batch_size?: number;
   name?: string;
   data_operation_version?: string;
+  has_granule_limit?: boolean;
+  default_sync?: boolean;
   type?: {
     name: string;
     params?: ServiceParamType;
@@ -433,6 +435,8 @@ export default abstract class BaseService<ServiceParamType> {
     if (operation.isSynchronous !== undefined) {
       return operation.isSynchronous;
     }
+
+    if (this.config.default_sync !== undefined) return this.config.default_sync;
 
     let numResults = this.operation.cmrHits;
 
