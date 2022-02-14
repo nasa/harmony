@@ -49,8 +49,6 @@ metadata:
   name: prometheus-config
   namespace: monitoring
 data:
-  # for Go template variables that shouldn't be replaced by envsubst, use '§' prefix instead of '$'
-  # '§' will be replaced with '$' after running envsubst but before passing the yaml to kubectl
   prometheus.rules: |-
     groups:
     - name: default
