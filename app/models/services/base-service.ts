@@ -13,6 +13,7 @@ import env from '../../util/env';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
+  concatenate_by_default?: boolean;
   subsetting?: {
     bbox?: boolean;
     variable?: boolean;
@@ -99,13 +100,14 @@ const aggregatingOperations = [
 ];
 
 /**
- *  Returns true if the workflow step aggregates output from the previous step
+ * Returns true if the workflow step aggregates output from the previous step
  * (and therefore must wait for all output before executing)
  * @param step - the step in a workflow
+ * @param operation - The operation
  * @returns true if the step is an aggregating step, false otherwise
  */
-function stepHasAggregatedOutput(step: ServiceStep): boolean {
-  return _.intersection(aggregatingOperations, step.operations).length > 0;
+function stepHasAggregatedOutput(step: ServiceStep, operation: DataOperation): boolean {
+  return operation.shouldConcatenate && _.intersection(aggregatingOperations, step.operations).length > 0;
 }
 
 /**
@@ -320,14 +322,15 @@ export default abstract class BaseService<ServiceParamType> {
    * Return the number of work items that should be created for a given step
    *
    * @param step - workflow service step
+   * @param operation - the operation
    * @returns  the number of work items for the given step
    */
-  protected _workItemCountForStep(step: ServiceStep): number {
+  protected _workItemCountForStep(step: ServiceStep, operation: DataOperation): number {
     const regex = /query\-cmr/;
     // query-cmr number of work items is a function of the page size and total granules
     if (step.image.match(regex)) {
       return Math.ceil(this.numInputGranules / env.cmrMaxPageSize);
-    } else if (stepHasAggregatedOutput(step)) {
+    } else if (stepHasAggregatedOutput(step, operation)) {
       return 1;
     }
     return this.numInputGranules;
@@ -350,12 +353,12 @@ export default abstract class BaseService<ServiceParamType> {
             jobID: this.operation.requestId,
             serviceID: serviceImageToId(step.image),
             stepIndex: i,
-            workItemCount: this._workItemCountForStep(step),
+            workItemCount: this._workItemCountForStep(step, this.operation),
             operation: this.operation.serialize(
               this.config.data_operation_version,
               step.operations || [],
             ),
-            hasAggregatedOutput: stepHasAggregatedOutput(step),
+            hasAggregatedOutput: stepHasAggregatedOutput(step, this.operation),
           }));
         }
       }));

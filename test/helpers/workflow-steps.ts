@@ -3,9 +3,9 @@ import WorkflowStep, { WorkflowStepRecord } from '../../app/models/workflow-step
 import db from '../../app/util/db';
 import { truncateAll } from './db';
 import { parseSchemaFile } from './data-operation';
-import DataOperation from '../../app/models/data-operation';
+import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 
-export const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json')).serialize('0.12.0');
+export const validOperation = new DataOperation(parseSchemaFile('valid-operation-input.json')).serialize(CURRENT_SCHEMA_VERSION);
 
 const exampleProps = {
   jobID: '1',

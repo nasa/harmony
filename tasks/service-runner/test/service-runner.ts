@@ -44,30 +44,38 @@ const nonErrorLog = `
 }
 `;
 
+const workItemWithErrorJson = './test/fixtures/error-messages';
+const workItemWithoutErrorJson = './test/fixtures/empty-dir';
 const emptyLog = '';
 
 describe('Service Runner', function () {
   describe('_getErrorMessage()', function () {
+    describe('when there is an error.json file associated with the WorkItem', function () {
+      const errorMessage = _getErrorMessage(errorLog, workItemWithErrorJson);
+      it('returns the error message from error.json', function () {
+        expect(errorMessage).equal('Service error message');
+      });
+    });
     describe('when the error log has ERROR level entries', function () {
-      const errorMessage = _getErrorMessage(errorLog);
+      const errorMessage = _getErrorMessage(errorLog, workItemWithoutErrorJson);
       it('returns the first error log entry', function () {
         expect(errorMessage).equal('bad stuff');
       });
     });
     describe('when the error log has no ERROR level entries', function () {
-      const errorMessage = _getErrorMessage(nonErrorLog);
+      const errorMessage = _getErrorMessage(nonErrorLog, workItemWithoutErrorJson);
       it('returns "unknown error"', function () {
         expect(errorMessage).equal('Unknown error');
       });
     });
     describe('when the error log is empty', function () {
-      const errorMessage = _getErrorMessage(emptyLog);
+      const errorMessage = _getErrorMessage(emptyLog, workItemWithoutErrorJson);
       it('returns "unknown error"', function () {
         expect(errorMessage).equal('Unknown error');
       });
     });
     describe('when the error log is null', function () {
-      const errorMessage = _getErrorMessage(null);
+      const errorMessage = _getErrorMessage(null, workItemWithoutErrorJson);
       it('returns "unknown error"', function () {
         expect(errorMessage).equal('Unknown error');
       });
