@@ -123,6 +123,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       scaleExtent: '0,2500000.3,1500000,3300000',
       scaleSize: '1.1,2',
       format: 'application/x-zarr',
+      concatenate: false, // Aggregated workflows are tested above
     };
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
@@ -201,7 +202,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         });
 
         describe('when checking to see if netcdf-to-zarr work is queued', function () {
-          it('finds a net-cdf-to-zarr service work item and can complete it', async function () {
+          it('finds a netcdf-to-zarr service work item and can complete it', async function () {
             const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
             expect(res.status).to.equal(200);
             const workItem = JSON.parse(res.text);
