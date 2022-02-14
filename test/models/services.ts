@@ -435,7 +435,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         {
           name: 'variable-based-service',
           has_granule_limit: false,
-          force_sync: true,
+          default_sync: true,
           type: { name: 'turbo' },
           capabilities: {
             subsetting: { variable: true },
@@ -449,7 +449,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         },
         {
           name: 'variable-based-async-service',
-          force_sync: false,
+          default_sync: false,
           type: { name: 'turbo' },
           capabilities: {
             output_formats: ['image/tiff'],
