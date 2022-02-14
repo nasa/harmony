@@ -48,8 +48,6 @@ const workItemData = [
   ['job9', 'bar', 'ready', 12340],
 ];
 
-
-
 describe('Fair Queueing', function () {
 
   const jobRecords = jobData.map(makePartialJobRecord);

@@ -106,7 +106,7 @@ export default class WorkItem extends Record implements WorkItemRecord {
   }
 }
 
-const tableFields = serializedFields.map((field) => `${WorkItem.table}.${field}`);
+const tableFields = serializedFields.map((field) => `w.${field}`);
 
 /**
  * Returns the next work item to process for a service
@@ -121,26 +121,46 @@ export async function getNextWorkItem(
 ): Promise<WorkItem> {
   let workItemData;
   try {
-    workItemData = await tx(WorkItem.table)
+    const subQuery =
+      tx(Job.table)
+        .select('username')
+        .join(`${WorkItem.table} as w`, `${Job.table}.jobID`, 'w.jobID')
+        .where({ 'w.status': 'ready', serviceID });
+    const userData = await tx(Job.table)
       .forUpdate()
-      .select(...tableFields, `${WorkflowStep.table}.operation`)
-      .join(WorkflowStep.table, function () {
-        this
-          .on(`${WorkflowStep.table}.stepIndex`, `${WorkItem.table}.workflowStepIndex`)
-          .on(`${WorkflowStep.table}.jobID`, `${WorkItem.table}.jobID`);
-      })
-      .join(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      .where({ 'work_items.serviceID': serviceID, 'work_items.status': WorkItemStatus.READY })
-      .whereIn('jobs.status', [JobStatus.RUNNING, JobStatus.ACCEPTED])
-      .orderBy([`${WorkItem.table}.id`])
+      .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
+      .select(['username', 'serviceID', `${WorkItem.table}.serviceID`])
+      .max(`${Job.table}.updatedAt`, { as: 'm' })
+      .whereIn('username', subQuery)
+      .groupBy('username')
+      .orderBy('m', 'asc')
       .first();
+    if (userData?.username) {
+      workItemData = await tx(`${WorkItem.table} as w`)
+        .forUpdate()
+        .join(`${Job.table} as j`, 'w.jobID', 'j.jobID')
+        .join(`${WorkflowStep.table} as wf`, 'w.jobID', 'wf.jobID')
+        .select(...tableFields, 'wf.operation')
+        .whereIn('j.status', ['running', 'accepted'])
+        .where('w.status', '=', 'ready')
+        .where('w.serviceID', '=', serviceID)
+        .whereRaw('w.workflowStepIndex = wf.stepIndex')
+        .where('j.username', '=', userData.username)
+        .orderBy('j.updatedAt', 'asc')
+        .first();
 
-    if (workItemData) {
-      workItemData.operation = JSON.parse(workItemData.operation);
-      await tx(WorkItem.table)
-        .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
-        .where({ id: workItemData.id });
+      if (workItemData) {
+        workItemData.operation = JSON.parse(workItemData.operation);
+        await tx(WorkItem.table)
+          .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
+          .where({ id: workItemData.id });
+        // need to update the job otherwise long running jobs won't count against 
+        // the user's priority
+        await tx(Job.table)
+          .update({ updatedAt: new Date() })
+          .where({ jobID: workItemData.jobID });
+      }
+
     }
   } catch (e) {
     logger.error(`Error getting next work item for service [${serviceID}]`);
@@ -313,8 +333,8 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
   jobStatus: JobStatus[],
 ): Promise<number[]> {
   const pastDate = subMinutes(new Date(), notUpdatedForMinutes);
-  const workItemIds = (await tx(WorkItem.table)
-    .innerJoin(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
+  const workItemIds = (await tx(`${WorkItem.table} as w`)
+    .innerJoin(Job.table, 'w.jobID', '=', `${Job.table}.jobID`)
     .select(...tableFields)
     .where(`${Job.table}.updatedAt`, '<', pastDate)
     .whereIn(`${Job.table}.status`, jobStatus))
