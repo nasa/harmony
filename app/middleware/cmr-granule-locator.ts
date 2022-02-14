@@ -4,7 +4,7 @@ import _ from 'lodash';
 import { keysToLowerCase } from '../util/object';
 import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
-import DataOperation, { HarmonyGranule } from '../models/data-operation';
+import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
 import { computeMbr } from '../util/spatial/mbr';
 import { BoundingBox } from '../util/bounding-box';
@@ -42,6 +42,10 @@ function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Boundi
 function getMaxGranules(req: HarmonyRequest): number {
   const query = keysToLowerCase(req.query);
 
+  if ( req.context.serviceConfig.has_granule_limit === false ) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
   let maxResults = env.maxGranuleLimit;
   if ('maxresults' in query) {
     maxResults = Math.min(env.maxGranuleLimit, query.maxresults);
@@ -55,7 +59,12 @@ function getMaxGranules(req: HarmonyRequest): number {
  * @returns a warning message if not all matching granules will be processed, or undefined
  * if not applicable
  */
-function getResultsLimitedMessage(operation: DataOperation): string {
+function getResultsLimitedMessage(req: HarmonyRequest): string {
+  const { operation } = req;
+  let message;
+
+  if ( req.context.serviceConfig.has_granule_limit == false ) return message;
+
   let numGranules = operation.cmrHits;
   if (operation.maxResults) {
     numGranules = Math.min(numGranules, operation.maxResults, env.maxGranuleLimit);
@@ -63,7 +72,6 @@ function getResultsLimitedMessage(operation: DataOperation): string {
     numGranules = Math.min(numGranules, env.maxGranuleLimit);
   }
 
-  let message;
   if (operation.cmrHits > numGranules) {
     message = `CMR query identified ${operation.cmrHits} granules, but the request has been limited `
      + `to process only the first ${numGranules} granules`;
@@ -139,7 +147,7 @@ async function cmrGranuleLocatorTurbo(
       operation.cmrHits += hits;
       operation.scrollIDs.push(scrollID);
 
-      const limitedMessage = getResultsLimitedMessage(operation);
+      const limitedMessage = getResultsLimitedMessage(req);
       if (limitedMessage) {
         req.context.messages.push(limitedMessage);
       }
@@ -251,7 +259,7 @@ async function cmrGranuleLocatorNonTurbo(
 
     await Promise.all(queries);
     operation.cmrQueryLocations = operation.cmrQueryLocations.sort();
-    const limitedMessage = getResultsLimitedMessage(operation);
+    const limitedMessage = getResultsLimitedMessage(req);
     if (limitedMessage) {
       req.context.messages.push(limitedMessage);
     }

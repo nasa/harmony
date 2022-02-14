@@ -23,6 +23,8 @@ const acceptJsonHeader = {
   Accept: 'application/json',
 };
 
+const cmrMaxPageSize = 2000;
+
 export enum CmrPermission {
   Read = 'read',
   Update = 'update',
@@ -410,7 +412,7 @@ export function getCollectionsByIds(
     ...(includeTags && { include_tags: includeTags }),
     ...{
       concept_id: ids,
-      page_size: 2000,
+      page_size: cmrMaxPageSize,
     },
   };
   return queryCollections(query, token);
@@ -428,7 +430,7 @@ export function getCollectionsByShortName(
 ): Promise<Array<CmrCollection>> {
   return queryCollections({
     short_name: shortName,
-    page_size: 2000,
+    page_size: cmrMaxPageSize,
     sort_key: '-revisionDate',
   }, token);
 }
@@ -446,7 +448,7 @@ export function getVariablesByIds(
 ): Promise<Array<CmrUmmVariable>> {
   return queryVariables({
     concept_id: ids,
-    page_size: 2000,
+    page_size: cmrMaxPageSize,
   }, token);
 }
 
@@ -509,7 +511,7 @@ export function initateGranuleScroll(
 ): Promise<CmrGranuleHits> {
   const baseQuery = {
     collection_concept_id: collectionId,
-    page_size: limit,
+    page_size: Math.min(limit, cmrMaxPageSize),
     scroll: 'defer',
   };
 
@@ -528,7 +530,7 @@ export function initateGranuleScroll(
  * @returns The granules associated with the input collection
  */
 export function queryGranulesForScrollId(
-  scrollId: string, token: string, limit = 2000,
+  scrollId: string, token: string, limit = cmrMaxPageSize,
 ): Promise<CmrGranuleHits> {
   const cmrQuery = {
     page_size: limit,
