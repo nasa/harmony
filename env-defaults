@@ -350,7 +350,7 @@ PROMETHEUS_ALERT_MANAGER_LIMITS_MEMORY=1Gi
 PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
 PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
 
-# Set this to the ARN of the prometheus-alerts AWS SNS topic from harmony sandbox
+# Set this to the ARN of the prometheus-alerts-local AWS SNS topic from harmony sandbox
 # (in your .env file) if you plan to deploy Prometheus for local development.
 # Your email address must also be subscribed to the topic in order to receive alerts.
 PROMETHEUS_ALERTS_ARN=
