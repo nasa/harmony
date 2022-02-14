@@ -33,17 +33,10 @@ When a worker requests a work item for a given service
 
 1. Identify all the users actively requesting work to be done on the service
 2. From the list of identified users, determine which user had work performed (for any service) least recently
-3. From that user's list of jobs (only those invoking the service) identify the job that has been worked least recently and return a work item for that job for the given service
+3. From that user's list of jobs (only those invoking the service) sort the jobs by the `isAsync` column to favor synchronous jobs, then sort by the `updatedAt` column to identify the job that has been worked least recently - return a work item for that job for the given service
 4. Update the work item and job timestamps in the database to indicate work being done at the current point in time
 
 All of the above are done inside a database transaction with locking to prevent a
 work item from being issued more than once.
 
-Note that this satisfies the first requirement as there will only be one user identified in step 1. Note also that this satisfies the second requirement including prioritizing 
-synchronous calls in the following way:
-
-Consider the case where a user has a long running asynchronous job involving many work 
-items for a given service. If a user then executes a synchronous request, the job
-associated with this request will become the oldest job with respect to
-step three above as soon as one of the running service workers completes a work item. 
-So the work item associated with the synchronous request will get processed next.
+Note that this implicitly satisfies the first requirement as there will only be one user identified in step 1. Note also that this satisfies the second requirement including prioritizing synchronous calls.

@@ -146,6 +146,7 @@ export async function getNextWorkItem(
         .where('w.serviceID', '=', serviceID)
         .whereRaw('w.workflowStepIndex = wf.stepIndex')
         .where('j.username', '=', userData.username)
+        .orderBy('j.isAsync', 'asc')
         .orderBy('j.updatedAt', 'asc')
         .first();
 

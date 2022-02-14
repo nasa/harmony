@@ -41,8 +41,9 @@ export function makePartialJobRecord(data): Partial<JobRecord> {
     jobID: data[0],
     username: data[1],
     status: data[2],
-    createdAt: data[3],
-    updatedAt: data[3],
+    isAsync: data[3],
+    createdAt: data[4],
+    updatedAt: data[4],
     numInputGranules: 1,
     collectionIds: [],
   };

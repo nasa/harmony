@@ -10,16 +10,20 @@ import { makePartialWorkflowStepRecord, rawSaveWorkflowStep } from '../helpers/w
 import { truncateAll } from '../helpers/db';
 
 const jobData = [
-  // jobID, username, status, updatedAt
-  ['job1', 'Bob', 'running', 12345],
-  ['job2', 'Bob', 'accepted', 12352],
-  ['job3', 'Bob', 'accepted', 12344],
-  ['job4', 'Joe', 'running', 12345],
-  ['job5', 'Joe', 'accepted', 12350],
-  ['job6', 'Bill', 'running', 12347],
-  ['job7', 'Bill', 'accepted', 12348],
-  ['job8', 'Bill', 'successful', 12355],
-  ['job8', 'John', 'accepted', 12340],
+  // jobID, username, status, isAsync, updatedAt
+  ['job1', 'Bob', 'accepted', true, 12345],
+  ['job2', 'Bob', 'accepted', true, 12352],
+  // this next job for Bob is more recent than job 1, but it is synchronous so it
+  // should get selected before job 1
+  ['job3', 'Bob', 'accepted', false, 12346],
+  // Joe has waited the longest for work and this is his oldest job, so one it its work
+  // items should be the first returned
+  ['job4', 'Joe', 'running', true, 12345],
+  ['job5', 'Joe', 'accepted', true, 12350],
+  ['job6', 'Bill', 'running', true, 12347],
+  ['job7', 'Bill', 'accepted', true, 12348],
+  ['job8', 'Bill', 'successful', true, 12355],
+  ['job8', 'John', 'accepted', true, 12340],
 ];
 
 const workflowStepData = [
@@ -72,11 +76,14 @@ describe('Fair Queueing', function () {
 
     after(truncateAll);
 
-    describe('when one user has waited longer than other users to have work done', function () {
-      hookGetWorkForService('foo');
+    describe('when one user has waited longer than other users to have work done', async function () {
+      hookGetWorkForService('foo', beforeEach, afterEach);
 
-      it('returns the work item for the oldest worked job for that user', function () {
+      it('returns the work item for the oldest worked job for that user', async function () {
         expect(this.res.body.jobID).to.equal('job4');
+      });
+      it('returns work items for synchronous jobs ahead of older asynchronous jobs', async function () {
+        expect(this.res.body.jobID).to.equal('job3');
       });
     });
   });

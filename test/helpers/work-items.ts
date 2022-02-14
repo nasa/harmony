@@ -192,8 +192,6 @@ export function getWorkForService(app: Application, serviceID: string): Test {
 
 export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForService);
 
-
-
 /**
  * Create fake output STAC catalogs/items to mock the execution of a service
  * 
