@@ -289,11 +289,8 @@ BUILT_IN_TASK_PREFIX=
 # Version to use for all built-in tasks.  "latest" (local / sandbox), "sit", "uat", or "prod"
 BUILT_IN_TASK_VERSION=latest
 
-# Set these to your harmony sandbox credentials (in your .env file) if you plan to deploy Prometheus for local development.
-# AWS region where harmony is deployed.
+# AWS region where harmony is deployed, irrelevant for local development
 AWS_DEFAULT_REGION=us-west-2
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
 
 # The object store used for storing shapefiles. Only S3 is supported currently.
 OBJECT_STORE_TYPE=s3
@@ -331,8 +328,8 @@ HOST_VOLUME_PATH=
 ###########################################################################
 #                             Prometheus Config                           #
 #                                                                         #
-# Variables that get used in the k8s Prometheus deployment                #
-#                                                                         #
+# This section is irrelevant for local development unless you are a       #
+# harmony core developer who plans to deploy Prometheus locally           #
 ###########################################################################
 
 PROMETHEUS_REQUESTS_CPU=128m
@@ -346,18 +343,20 @@ PROMETHEUS_ALERT_MANAGER_REQUESTS_MEMORY=500M
 PROMETHEUS_ALERT_MANAGER_LIMITS_CPU=1
 PROMETHEUS_ALERT_MANAGER_LIMITS_MEMORY=1Gi
 
-
 PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
 PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
-
-# Set this to the ARN of the prometheus-alerts-local AWS SNS topic from harmony sandbox
-# (in your .env file) if you plan to deploy Prometheus for local development.
-# Your email address must also be subscribed to the topic in order to receive alerts.
-PROMETHEUS_ALERTS_ARN=
 
 # how long before the specified alert is triggered/firing
 PROMETHEUS_POD_NOT_HEALTHY_DURATION=5m
 PROMETHEUS_NODE_NOT_READY_DURATION=5m
+
+# If you're a harmony core developer who plans to run Prometheus locally,
+# in your .env file you'll also need to set AWS_ACCESS_KEY_ID 
+# and AWS_SECRET_ACCESS_KEY to your harmony sandbox credentials
+
+# The ARN of the prometheus-alerts-local AWS SNS topic from harmony sandbox
+# (Your email address must also be subscribed to the topic in order to receive alerts.)
+PROMETHEUS_ALERTS_ARN=
 
 ###########################################################################
 #             Horizontal Pod Autoscaling Config                           #
