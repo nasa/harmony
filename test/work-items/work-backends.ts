@@ -1,14 +1,14 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { Job, JobRecord, JobStatus } from '../app/models/job';
-import { WorkItemRecord, WorkItemStatus, getWorkItemById } from '../app/models/work-item';
-import { WorkflowStepRecord } from '../app/models/workflow-steps';
-import hookServersStartStop from './helpers/servers';
-import db from '../app/util/db';
-import { hookJobCreation } from './helpers/jobs';
-import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation } from './helpers/work-items';
-import { hookWorkflowStepCreation, validOperation } from './helpers/workflow-steps';
+import { Job, JobRecord, JobStatus } from '../../app/models/job';
+import { WorkItemRecord, WorkItemStatus, getWorkItemById } from '../../app/models/work-item';
+import { WorkflowStepRecord } from '../../app/models/workflow-steps';
+import hookServersStartStop from '../helpers/servers';
+import db from '../../app/util/db';
+import { hookJobCreation } from '../helpers/jobs';
+import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation } from '../helpers/work-items';
+import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();
