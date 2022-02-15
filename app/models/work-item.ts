@@ -145,6 +145,8 @@ export async function getNextWorkItem(
         .whereIn('j.status', ['running', 'accepted'])
         .where('w.status', '=', 'ready')
         .where('w.serviceID', '=', serviceID)
+        // Had to use `whereRaw` here because `where` tried to tread `wf.stepIndex` as a
+        // column name instead of a table alias + column name
         .whereRaw('w.workflowStepIndex = wf.stepIndex')
         .where('j.username', '=', userData.username)
         .orderBy('j.isAsync', 'asc')
