@@ -106,6 +106,7 @@ export default class WorkItem extends Record implements WorkItemRecord {
   }
 }
 
+// 'w' here is the alias for the 'work_items' table
 const tableFields = serializedFields.map((field) => `w.${field}`);
 
 /**
