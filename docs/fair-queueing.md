@@ -27,7 +27,7 @@ requesting work. More generally, it answers the question, "of the users needing 
 performed by a given service, which user should go next?". 
  
 # The Algorithm
-The steps to perform fair queuing in harmony can be summarized as follows:
+The steps to perform fair queueing in harmony can be summarized as follows:
 
 When a worker requests a work item for a given service
 
