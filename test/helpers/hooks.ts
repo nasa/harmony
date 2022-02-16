@@ -82,14 +82,18 @@ export function hookRequest(
  * and setting the result to this.res
  *
  * @param requestFn - The request function to execute
+ * @param beforeFn - The mocha `before` function to use, i.e. `before` or `beforeEach`
+ * @param afterFn - The mocha `after` function to use, i.e. `after` or `afterEach`
  */
 export function hookBackendRequest(
   requestFn: Function, options = { },
+  beforeFn = before,
+  afterFn = after,
 ): void {
-  before(async function () {
+  beforeFn(async function () {
     this.res = await requestFn(this.backend, options);
   });
-  after(function () {
+  afterFn(function () {
     delete this.res;
   });
 }

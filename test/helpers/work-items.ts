@@ -5,11 +5,12 @@ import { promises as fs } from 'fs';
 import request, { Test } from 'supertest';
 import _ from 'lodash';
 import WorkItem, { WorkItemRecord, WorkItemStatus } from '../../app/models/work-item';
-import db from '../../app/util/db';
+import db, { Transaction } from '../../app/util/db';
 import env from '../../app/util/env';
 import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';
 import { buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach } from './workflow-steps';
+import { RecordConstructor } from '../../app/models/record';
 
 export const exampleWorkItemProps = {
   jobID: '1',
@@ -19,6 +20,21 @@ export const exampleWorkItemProps = {
 } as WorkItemRecord;
 
 /**
+ * Create a partial WorkItemRecord from an array of data
+ * @param data - The array of data containing the WorkItemRecord elements
+ * @returns a record containing the supplied elements
+ */
+export function makePartialWorkItemRecord(data): Partial<WorkItemRecord> {
+  return {
+    jobID: data[0],
+    serviceID: data[1],
+    status: data[2],
+    updatedAt: data[3],
+    createdAt: data[3],
+  };
+}
+
+/**
  *  Creates a work item with default values for fields that are not passed in
  *
  * @param fields - fields to use for the work item record
@@ -26,6 +42,26 @@ export const exampleWorkItemProps = {
  */
 export function buildWorkItem(fields: Partial<WorkItemRecord> = {}): WorkItem {
   return new WorkItem({ ...exampleWorkItemProps, ...fields });
+}
+
+/**
+ * Save a work item without validating or updating createdAt/updatedAt
+ * @param tx - The transaction to use for saving the job
+ * @param fields - The fields to save to the database, defaults to example values
+ * @returns The saved work item
+ * @throws Error - if the save to the database fails
+ */
+export async function rawSaveWorkItem(tx: Transaction, fields: Partial<WorkItemRecord> = {}): Promise<WorkItem> {
+  const workItem = buildWorkItem(fields);
+  let stmt = tx((workItem.constructor as RecordConstructor).table)
+    .insert(workItem);
+  if (db.client.config.client === 'pg') {
+    stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
+  }
+
+  [workItem.id] = await stmt;
+
+  return workItem;
 }
 
 /**
@@ -155,8 +191,6 @@ export function getWorkForService(app: Application, serviceID: string): Test {
 }
 
 export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForService);
-
-
 
 /**
  * Create fake output STAC catalogs/items to mock the execution of a service

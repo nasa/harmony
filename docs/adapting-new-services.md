@@ -85,6 +85,8 @@ The structure of an entry in the [services.yml](../config/services.yml) file is 
 ```yaml
 - name: harmony/service-example     # A unique identifier string for the service, conventionally <team>/<service>
   data_operation_version: '0.13.0' # The version of the data-operation messaging schema to use
+  has_granule_limit: true          # Optional flag indicating whether we will impose granule limts for the request. Default to true.
+  default_sync: false              # Optional flag indicating whether we will force the request to run synchrously. Default to false.
   type:                            # Configuration for service invocation
       <<: *default-turbo-config     # To reduce boilerplate, services.yml includes default configuration suitable for all Docker based services.
       params:
