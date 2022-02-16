@@ -7,7 +7,6 @@ import DataOperation from './data-operation';
 import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
-import sleep from '../util/sleep';
 
 export enum WorkItemStatus {
   READY = 'ready',
