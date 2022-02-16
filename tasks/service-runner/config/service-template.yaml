@@ -5,7 +5,7 @@ metadata:
   labels:
     name: $SERVICE_NAME
 spec:
-  replicas: 5
+  replicas: 1
   selector:
     matchLabels:
       name: $SERVICE_NAME
