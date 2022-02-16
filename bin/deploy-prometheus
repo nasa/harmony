@@ -9,11 +9,12 @@ fi
 set +a
 eval "$env_save"
 
-# Deploy prometheus, using a different alert-manager-config depending on the environment where Prometheus is running.
-# In the case where we're running locally, we need to pass AWS credentials to the ConfigMap.
-ALERTS_CONFIG_ENV=$([ "$CLIENT_ID" == "harmony-local" ] && echo "local" || echo "deployed")
-envsubst < "config/alert-manager-config-${ALERTS_CONFIG_ENV}.yaml" | kubectl apply -f -
+# Deploy prometheus
+# In the case where we're running in a deployed environment, also deploy alert manager
 envsubst < "config/prometheus.yaml" | kubectl apply -f -
+if [ "$NODE_ENV" != "development" ]; then
+    envsubst < "config/alert-manager.yaml" | kubectl apply -f -
+fi
 
 # Check for helm
 if ! command -v "helm" &> /dev/null; then

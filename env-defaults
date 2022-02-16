@@ -113,7 +113,7 @@ MAX_GRANULE_LIMIT=350
 #  - "test" for unit / integration tests
 # This is a conventional identifier to switch application behavior but is
 # currently only used to determine which database connection to use in
-# db/knexfile.js
+# db/knexfile.js and whether to deploy the alert manager
 NODE_ENV=development
 
 # Connection string to use to connect to the database.  Used for
@@ -332,16 +332,13 @@ HOST_VOLUME_PATH=
 # harmony core developer who plans to deploy Prometheus locally           #
 ###########################################################################
 
+# Prometheus deployment variables
 PROMETHEUS_REQUESTS_CPU=128m
 PROMETHEUS_REQUESTS_MEMORY=150Mi
 PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE=300Mi
 PROMETHEUS_LIMITS_CPU=128m
 PROMETHEUS_LIMITS_MEMORY=300Mi
 PROMETHEUS_LIMITS_EPHEMERAL_STORAGE=500Mi
-PROMETHEUS_ALERT_MANAGER_REQUESTS_CPU=500m
-PROMETHEUS_ALERT_MANAGER_REQUESTS_MEMORY=500M
-PROMETHEUS_ALERT_MANAGER_LIMITS_CPU=1
-PROMETHEUS_ALERT_MANAGER_LIMITS_MEMORY=1Gi
 
 PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
 PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
@@ -350,13 +347,16 @@ PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
 PROMETHEUS_POD_NOT_HEALTHY_DURATION=5m
 PROMETHEUS_NODE_NOT_READY_DURATION=5m
 
-# If you're a harmony core developer who plans to run Prometheus locally,
-# in your .env file you'll also need to set AWS_ACCESS_KEY_ID 
-# and AWS_SECRET_ACCESS_KEY to your harmony sandbox credentials
+# Alert manager variables (irrelevant to local development).
+# To see/test whether alerts are firing locally, kubectl port-forward {prometheus-pod} 9090:9090 -n monitoring
+# and navigate to the prometheus UI http://localhost:9090/alerts
+ALERT_MANAGER_REQUESTS_CPU=500m
+ALERT_MANAGER_REQUESTS_MEMORY=500M
+ALERT_MANAGER_LIMITS_CPU=1
+ALERT_MANAGER_LIMITS_MEMORY=1Gi
 
-# The ARN of the prometheus-alerts-local AWS SNS topic from harmony sandbox
-# (Your email address must also be subscribed to the topic in order to receive alerts.)
-PROMETHEUS_ALERTS_ARN=
+ALERT_MANAGER_TOPIC_ARN=
+ALERT_MANAGER_ROLE_ARN=
 
 ###########################################################################
 #             Horizontal Pod Autoscaling Config                           #

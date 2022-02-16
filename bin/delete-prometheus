@@ -16,6 +16,7 @@ PROMETHEUS_ADAPTER_HELM_NAME=harmony-prometheus-adapter
 helm delete ${PROMETHEUS_ADAPTER_HELM_NAME} -n ${PROMETHEUS_NAMESPACE}
 
 # Delete prometheus
-ALERTS_CONFIG_ENV=$([ "$CLIENT_ID" == "harmony-local" ] && echo "local" || echo "deployed")
-envsubst < "config/alert-manager-config-${ALERTS_CONFIG_ENV}.yaml" | kubectl delete -f -
 envsubst < "config/prometheus.yaml" | kubectl delete -f -
+if [ "$NODE_ENV" != "development" ]; then
+    envsubst < "config/alert-manager.yaml" | kubectl delete -f -
+fi
