@@ -356,7 +356,6 @@ ALERT_MANAGER_LIMITS_CPU=1
 ALERT_MANAGER_LIMITS_MEMORY=1Gi
 
 ALERT_MANAGER_TOPIC_ARN=
-ALERT_MANAGER_ROLE_ARN=
 
 ###########################################################################
 #             Horizontal Pod Autoscaling Config                           #
