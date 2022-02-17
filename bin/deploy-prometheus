@@ -40,6 +40,9 @@ else
                     prometheus-community/prometheus-adapter
 fi
 
+# Force prometheus to restart to ensure configuration changes are always applied immediately
+kubectl -n monitoring rollout restart deployment prometheus
+
 # Deploy kube-state-metrics service to support monitoring
 echo "deploying kube-state-metrics service"
 kubectl apply -f ./config/kube-state-metrics
