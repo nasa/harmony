@@ -127,10 +127,16 @@ export async function getNextWorkItem(
         .select('username')
         .join(`${WorkItem.table} as w`, `${Job.table}.jobID`, 'w.jobID')
         .where({ 'w.status': 'ready', serviceID });
-    const userData = await tx(Job.table)
+    // lock rows in the jobs table for users requesting this service - needed as a workaround
+    // for postgres limitation (https://stackoverflow.com/questions/5272412/group-by-in-update-from-clause)
+    await tx(Job.table)
       .forUpdate()
       .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
       .select(['username', 'serviceID', `${WorkItem.table}.serviceID`])
+      .whereIn('username', subQuery);
+    const userData = await tx(Job.table)
+      .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
+      .select(['username'])
       .max(`${Job.table}.updatedAt`, { as: 'm' })
       .whereIn('username', subQuery)
       .groupBy('username')
@@ -140,14 +146,14 @@ export async function getNextWorkItem(
       workItemData = await tx(`${WorkItem.table} as w`)
         .forUpdate()
         .join(`${Job.table} as j`, 'w.jobID', 'j.jobID')
-        .join(`${WorkflowStep.table} as wf`, 'w.jobID', 'wf.jobID')
+        .join(`${WorkflowStep.table} as wf`, function () {
+          this.on('w.jobID', '=', 'wf.jobID')
+            .on('w.workflowStepIndex', '=', 'wf.stepIndex');
+        })
         .select(...tableFields, 'wf.operation')
         .whereIn('j.status', ['running', 'accepted'])
         .where('w.status', '=', 'ready')
         .where('w.serviceID', '=', serviceID)
-        // Had to use `whereRaw` here because `where` tried to tread `wf.stepIndex` as a
-        // column name instead of a table alias + column name
-        .whereRaw('w.workflowStepIndex = wf.stepIndex')
         .where('j.username', '=', userData.username)
         .orderBy('j.isAsync', 'asc')
         .orderBy('j.updatedAt', 'asc')
