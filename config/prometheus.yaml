@@ -83,7 +83,7 @@ data:
           action: replace
           target_label: kubernetes_pod_name
       - job_name: 'kube-state-metrics'
-        static_configs: 
+        static_configs:
         - targets: ['kube-state-metrics:8080']
 ---
 apiVersion: apps/v1
@@ -111,7 +111,7 @@ spec:
       serviceAccountName: prometheus
       containers:
       - name: prometheus
-        image: quay.io/prometheus/prometheus:v2.0.0
+        image: quay.io/prometheus/prometheus:v2.33.1
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -123,9 +123,10 @@ spec:
             memory: $PROMETHEUS_LIMITS_MEMORY
             cpu: $PROMETHEUS_LIMITS_CPU
         args:
-          - '--storage.tsdb.retention=6h'
-          - '--storage.tsdb.path=/prometheus'
-          - '--config.file=/etc/prometheus/prometheus.yml'
+          - "--storage.tsdb.retention.time=$PROMETHEUS_RETENTION_TIME"
+          - "--storage.tsdb.retention.size=$PROMETHEUS_RETENTION_SIZE"
+          - "--storage.tsdb.path=/prometheus"
+          - "--config.file=/etc/prometheus/prometheus.yml"
         command:
         - /bin/prometheus
         ports:
