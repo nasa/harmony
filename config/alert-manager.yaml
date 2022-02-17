@@ -22,7 +22,6 @@ data:
           subject: '[Alert Manager $CLIENT_ID] {{ .GroupLabels.alertname }}'
           sigv4:
             region: $AWS_DEFAULT_REGION
-            role_arn: $ALERT_MANAGER_ROLE_ARN
 ---
 apiVersion: v1
 kind: ConfigMap
