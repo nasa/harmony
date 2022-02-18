@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import _, { get as getIn } from 'lodash';
+import _, { get as getIn, partial } from 'lodash';
 
 import logger from '../../util/log';
 import { NotFoundError } from '../../util/errors';
@@ -11,8 +11,8 @@ import { listToText, Conjunction, isInteger } from '../../util/string';
 import TurboService from './turbo-service';
 import HttpService from './http-service';
 import NoOpService from './no-op-service';
-import DataOperation from '../data-operation';
-import BaseService, { ServiceConfig } from './base-service';
+import DataOperation, { DataSource } from '../data-operation';
+import BaseService, { ServiceCollection, ServiceConfig } from './base-service';
 import RequestContext from '../request-context';
 import env from '../../util/env';
 
@@ -92,7 +92,7 @@ export function getServiceConfigs(): ServiceConfig<unknown>[] {
 // Load config at require-time to ensure presence / validity early
 loadServiceConfigs();
 serviceConfigs.forEach(validateServiceConfig);
-export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collections));
+export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collections.map((sc) => sc.id)));
 
 const serviceTypesToServiceClasses = {
   http: HttpService,
@@ -130,6 +130,21 @@ function supportsConcatenation(configs: ServiceConfig<unknown>[]): ServiceConfig
 }
 
 /**
+ * Determines whether or not a given ServiceCollection supports a given DataSource, i.e.,
+ * the Service Collection has a matching collection id and variables
+ * 
+ * @param source - The DataSource from an operation
+ * @param servColl - The ServiceCollection defined in services.yml
+ * @returns `true` if the collections are the same and if variables are not defined
+ * for the service collection or all the variables in the source are also in the service
+ * collection, `false` otherwise
+ */
+function isServiceCollectionMatch(source: DataSource, servColl: ServiceCollection): boolean {
+  return servColl.id === source.collection &&
+    (!servColl.variables || source.variables?.every((v) => servColl.variables?.includes(v.id)));
+}
+
+/**
  * Returns true if all of the collections in the given operation can be operated on by
  * the given service.
  *
@@ -143,12 +158,7 @@ function isCollectionMatch(
   serviceConfig: ServiceConfig<unknown>,
 ): boolean {
   return operation.sources.every((source) => {
-    let matchedCollection;
-    if ( serviceConfig.collections.includes(source.collection) ) return true;
-    if ( matchedCollection = serviceConfig.collections.find(x => x[source.collection]) ) {
-      if (source.variables) return source.variables.every(x => matchedCollection[source.collection].includes(x.id));
-      return false;
-    }
+    return serviceConfig.collections.some(partial(isServiceCollectionMatch, source));
   });
 }
 
@@ -598,7 +608,7 @@ const bestEffortMessage = 'Data in output files may extend outside the spatial b
  * @returns true if the collection has available backends, false otherwise
  */
 export function isCollectionSupported(collection: CmrCollection): boolean {
-  return serviceConfigs.find((sc) => sc.collections.includes(collection.id)) !== undefined;
+  return serviceConfigs.some((sc) => sc.collections.map((c) => c.id).includes(collection.id));
 }
 
 /**
