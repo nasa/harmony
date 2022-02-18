@@ -6,9 +6,9 @@ import { expectedNoOpJobKeys, itIncludesRequestUrl } from '../helpers/jobs';
 import { hookSignS3Object } from '../helpers/object-store';
 import { hookPostRangesetRequest, hookRangesetRequest, rangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
-// import StubService, { hookServices } from '../helpers/stub-service';
-import StubService from '../helpers/stub-service';
-// import { ServiceConfig } from '../../app/models/services/base-service';
+import StubService, { hookServices } from '../helpers/stub-service';
+import { ServiceConfig } from '../../app/models/services/base-service';
+import { hookRedirect } from '../helpers/hooks';
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -374,79 +374,39 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
-  // describe('when passing a maxResults parameter', function () {
-  //   const serviceConfigs: ServiceConfig<unknown>[] = [
-  //     {
-  //       name: 'nexus-service',
-  //       collections: [
-  //         {
-  //           id: collection,
-  //           granuleLimit: 5,
-  //         },
-  //       ],
-  //       type: {
-  //         name: 'turbo',
-  //       },
-  //       steps: [{
-  //         image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
-  //       }],
-  //     }];
-  //   hookServices(serviceConfigs);
-  //   StubService.hook({ params: { redirect: 'http://example.com' } });
+  describe('when passing a maxResults parameter', function () {
+    const serviceConfigs: ServiceConfig<unknown>[] = [
+      {
+        name: 'nexus-service',
+        collections: [
+          {
+            id: collection,
+            granuleLimit: 5,
+          },
+        ],
+        type: {
+          name: 'turbo',
+        },
+        steps: [{
+          image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
+        }],
+      }];
+    hookServices(serviceConfigs);
+    StubService.hook({ params: { redirect: 'http://example.com' } });
 
-  //   describe('set to "1"', function () {
-  //     const maxResults = 1;
-  //     hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
+    describe('set to a value greater than the granuleLimit for the collection', function () {
+      const maxResults = 10;
 
-  //     it('performs the request synchronously', function () {
-  //       expect(this.service.operation.isSynchronous).to.equal(true);
-  //     });
-  //   });
-
-  //   describe('set to "2"', function () {
-  //     const maxResults = 2;
-
-  //     hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
-
-  //     it('performs the request asynchronously', function () {
-  //       expect(this.service.operation.isSynchronous).to.equal(false);
-  //     });
-  //   });
-
-  //   describe('set to "0"', function () {
-  //     const maxResults = 0;
-
-  //     hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
-
-  //     it('returns a 400 error', function () {
-  //       expect(this.res.statusCode).to.equal(400);
-  //     });
-
-  //     it('includes text explaining max results needs to be greater than 0', function () {
-  //       expect(JSON.parse(this.res.text)).to.eql({
-  //         code: 'openapi.ValidationError',
-  //         description: 'Error: query parameter "maxResults" should be >= 1',
-  //       });
-  //     });
-  //   });
-
-  //   describe('set to "invalid"', function () {
-  //     const maxResults = 'invalid';
-
-  //     hookRangesetRequest(version, collection, variableName, { query: { maxResults } });
-
-  //     it('returns a 400 error', function () {
-  //       expect(this.res.statusCode).to.equal(400);
-  //     });
-
-  //     it('includes text explaining the invalid value', function () {
-  //       expect(JSON.parse(this.res.text)).to.eql({
-  //         code: 'openapi.ValidationError',
-  //         description: 'Error: query parameter "maxResults" should be integer',
-  //       });
-  //     });
-  //   });
-  // });
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('You requested 10 granules, but the request has been limited to process only the first 5 granules because that is the collection granule limit.');
+        });
+      });
+    });
+  });
 
   describe('when requesting output formats', function () {
     const tiff = 'image/tiff';
