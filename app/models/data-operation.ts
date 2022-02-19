@@ -40,6 +40,18 @@ function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
     {
+      version: '0.14.0',
+      schema: readSchema('0.14.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        if ('concatenate' in revertedModel) {
+          delete revertedModel.concatenate; // eslint-disable-line no-param-reassign
+        }
+
+        return revertedModel;
+      },
+    },
+    {
       version: '0.13.0',
       schema: readSchema('0.13.0'),
       down: (model): unknown => {
@@ -527,7 +539,7 @@ export default class DataOperation {
    * @param point - The subsetting spatial point, [ Longitude, Latitude ]
    */
      set spatialPoint(point: Array<number>) {
-      this.model.subset.point = point;
+      this.model.point = point;
     }
 
     /**
@@ -537,7 +549,7 @@ export default class DataOperation {
      * @returns The subsetting spatial point, [ Longitude, Latitude ]
      */
     get spatialPoint(): Array<number> {
-      return this.model.subset.point;
+      return this.model.point;
     }
 
   /**
