@@ -1,3 +1,4 @@
+
 import { TemporalRange } from '../../../models/data-operation';
 
 const rangeSeparator = ':';
@@ -158,6 +159,46 @@ function _getDimensionName(value: string): string {
   } catch (e) {
     throw new ParameterParseError(`unable to parse subset dimension from value "${value}"`);
   }
+}
+
+/**
+ * Parses the provided point parameters and ensures they are valid, throwing an error message
+ * if not
+ *
+ * @param values - An array of all the specified subset= parameters from the request
+ * @param dimConfig - A mapping of dimension names to min, max, and data type values,
+ *   see `dimensionInfo` (the default value) in this file.  Usually should not be specified,
+ *   except for testing.
+ * @returns An array with two elements corresponding to [longitude, latitude]
+ * @throws ParameterParseError - if a subset parameter cannot be parsed, has unrecognized
+ *   axis names, or is otherwise invalid
+ */
+export function parsePointParam(
+  values: string,
+  dimConfig: DimensionConfig = dimensionConfig,
+): number[] {
+  let coordinate, coordinates;
+  try {
+    coordinates = values.split(',').map( v => +v );
+  } catch (e) {
+    throw new ParameterParseError(`unable to parse spatial coordinates from "${values}"`);
+  }
+  if ( coordinates.length !== 2 )
+    throw new ParameterParseError(`wrong number of spatial coordinates provided in "${values}"`);
+
+  coordinates = ['lon', 'lat'].map( (dimName, idx): number => {
+    const dim = dimConfig[dimName];
+    coordinate = coordinates[idx];
+    if (Number.isNaN(coordinate)) {
+      throw new ParameterParseError(`dimension "${dimName}" has an invalid numeric value "${coordinate}"`);
+    }
+    if (coordinate < dim.min || coordinate > dim.max) {
+      throw new ParameterParseError(`dimension "${dimName}" value must be between ${dim.min} and ${dim.max}`);
+    }
+    return coordinate;
+  });
+
+  return coordinates;
 }
 
 /**
