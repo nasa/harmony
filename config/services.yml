@@ -57,7 +57,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
 
   - name: gesdisc/giovanni
-    data_operation_version: '0.13.0'
+    data_operation_version: '0.14.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     has_granule_limit: false
     default_sync: true
@@ -452,7 +452,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
 
   - name: gesdisc/giovanni
-    data_operation_version: '0.13.0'
+    data_operation_version: '0.14.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     has_granule_limit: false
     default_sync: true
