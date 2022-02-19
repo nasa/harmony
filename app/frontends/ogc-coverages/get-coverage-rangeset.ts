@@ -4,7 +4,7 @@ import { keysToLowerCase } from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import wrap from '../../util/array';
 import parseVariables from './util/variable-parsing';
-import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
+import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
 import { parseAcceptHeader } from '../../util/content-negotiation';
 import parseMultiValueParameter from '../../util/parameter-parsing';
 import HarmonyRequest from '../../models/harmony-request';
@@ -65,11 +65,16 @@ export default function getCoverageRangeset(
     operation.isSynchronous = false;
   }
   try {
+    const point = parsePointParam(query.point);
+    if (point) {
+      operation.spatialPoint = point;
+    }
     const subset = parseSubsetParams(wrap(query.subset));
     const bbox = subsetParamsToBbox(subset);
     if (bbox) {
       operation.boundingRectangle = bbox;
     }
+    //if (point && bbox) throw;
     const { start, end } = subsetParamsToTemporal(subset);
     if (start || end) {
       operation.temporal = { start, end };
