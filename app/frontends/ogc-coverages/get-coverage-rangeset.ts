@@ -65,16 +65,16 @@ export default function getCoverageRangeset(
     operation.isSynchronous = false;
   }
   try {
-    const point = parsePointParam(query.point);
-    if (point) {
-      operation.spatialPoint = point;
-    }
     const subset = parseSubsetParams(wrap(query.subset));
     const bbox = subsetParamsToBbox(subset);
     if (bbox) {
       operation.boundingRectangle = bbox;
     }
-    //if (point && bbox) throw;
+    const point = parsePointParam(query.point);
+    if (point) {
+      if (bbox) throw new RequestValidationError('both bounding_box and point query parameters found');
+      operation.spatialPoint = point;
+    }
     const { start, end } = subsetParamsToTemporal(subset);
     if (start || end) {
       operation.temporal = { start, end };
