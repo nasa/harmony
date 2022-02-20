@@ -177,28 +177,30 @@ export function parsePointParam(
   values: string,
   dimConfig: DimensionConfig = dimensionConfig,
 ): number[] {
+  let results;
   let coordinate, coordinates;
-  try {
-    coordinates = values.split(',').map( v => +v );
-  } catch (e) {
-    throw new ParameterParseError(`unable to parse spatial coordinates from "${values}"`);
+  if (values !== undefined){
+    try {
+      coordinates = values.split(',').map( v => +v );
+    } catch (e) {
+      throw new ParameterParseError(`unable to parse spatial coordinates from "${values}"`);
+    }
+    if ( coordinates.length !== 2 )
+      throw new ParameterParseError(`wrong number of spatial coordinates provided in "${values}"`);
+
+      results = ['lon', 'lat'].map( (dimName, idx): number => {
+      const dim = dimConfig[dimName];
+      coordinate = coordinates[idx];
+      if (Number.isNaN(coordinate)) {
+        throw new ParameterParseError(`dimension "${dimName}" has an invalid numeric value "${coordinate}"`);
+      }
+      if (coordinate < dim.min || coordinate > dim.max) {
+        throw new ParameterParseError(`dimension "${dimName}" value must be between ${dim.min} and ${dim.max}`);
+      }
+      return coordinate;
+    });
   }
-  if ( coordinates.length !== 2 )
-    throw new ParameterParseError(`wrong number of spatial coordinates provided in "${values}"`);
-
-  coordinates = ['lon', 'lat'].map( (dimName, idx): number => {
-    const dim = dimConfig[dimName];
-    coordinate = coordinates[idx];
-    if (Number.isNaN(coordinate)) {
-      throw new ParameterParseError(`dimension "${dimName}" has an invalid numeric value "${coordinate}"`);
-    }
-    if (coordinate < dim.min || coordinate > dim.max) {
-      throw new ParameterParseError(`dimension "${dimName}" value must be between ${dim.min} and ${dim.max}`);
-    }
-    return coordinate;
-  });
-
-  return coordinates;
+  return results;
 }
 
 /**
