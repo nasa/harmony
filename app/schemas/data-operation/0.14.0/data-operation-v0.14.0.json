@@ -345,7 +345,7 @@
       "SpatialPoint": {
         "type": "array",
         "title": "Point",
-        "description": "The spatial point for the granule.  Coordinates are [Longitude, Latitude].",
+        "description": "Spatial point query parameter. Coordinates are [Longitude, Latitude].",
         "examples": [
           [-100.5, 31.4]
         ],
