@@ -113,6 +113,9 @@ async function cmrGranuleLocatorTurbo(
   if (operation.boundingRectangle) {
     cmrQuery.bounding_box = operation.boundingRectangle.join(',');
   }
+  else if (operation.spatialPoint) {
+    cmrQuery.point = operation.spatialPoint.join(',');
+  }
 
   cmrQuery.concept_id = operation.granuleIds;
 
@@ -197,6 +200,9 @@ async function cmrGranuleLocatorNonTurbo(
   }
   if (operation.boundingRectangle) {
     cmrQuery.bounding_box = operation.boundingRectangle.join(',');
+  }
+  else if (operation.spatialPoint) {
+    cmrQuery.point = operation.spatialPoint.join(',');
   }
 
   cmrQuery.concept_id = operation.granuleIds;
