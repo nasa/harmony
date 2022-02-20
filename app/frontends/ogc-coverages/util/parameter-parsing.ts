@@ -188,7 +188,7 @@ export function parsePointParam(
     if ( coordinates.length !== 2 )
       throw new ParameterParseError(`wrong number of spatial coordinates provided in "${values}"`);
 
-      results = ['lon', 'lat'].map( (dimName, idx): number => {
+    results = ['lon', 'lat'].map( (dimName, idx): number => {
       const dim = dimConfig[dimName];
       coordinate = coordinates[idx];
       if (Number.isNaN(coordinate)) {
