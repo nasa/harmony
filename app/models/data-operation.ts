@@ -7,7 +7,7 @@ import logger from '../util/log';
 import { CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 
-export const CURRENT_SCHEMA_VERSION = '0.13.0';
+export const CURRENT_SCHEMA_VERSION = '0.14.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -44,8 +44,8 @@ function schemaVersions(): SchemaVersion[] {
       schema: readSchema('0.14.0'),
       down: (model): unknown => {
         const revertedModel = _.cloneDeep(model);
-        if ('concatenate' in revertedModel) {
-          delete revertedModel.concatenate; // eslint-disable-line no-param-reassign
+        if ('point' in revertedModel) {
+          delete revertedModel.point; // eslint-disable-line no-param-reassign
         }
 
         return revertedModel;
