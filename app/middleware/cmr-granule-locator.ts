@@ -15,10 +15,10 @@ import { defaultObjectStore } from '../util/object-store';
  * returns
  */
 enum GranuleLimitReason {
-  Collection,
-  MaxResults,
-  System,
-  None,
+  Collection, // limited by the collection configuration
+  MaxResults, // limited by the maxResults query parameter
+  System,     // limited by the system environment
+  None,       // not limited
 }
 
 /**
