@@ -1,0 +1,25 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\nNaN\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"scroll\"\r\n\r\ndefer\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 400 Bad Request
+content-type: application/json
+content-length: 60
+connection: close
+date: Tue, 22 Feb 2022 18:16:51 GMT
+access-control-allow-origin: *
+cmr-request-id: f8e1ec60-0073-4c6d-8410-953b279db57b
+x-request-id: Vpn84n8k3rmBeg-rXNWrYgiHJJBtQGl8JwDFXlA2lhvpGwtpEGcPTQ==
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+server: ServerTokens ProductOnly
+x-cache: Error from cloudfront
+via: 1.1 573f3bf892e6baf323888f7038237db2.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P2
+x-amz-cf-id: Vpn84n8k3rmBeg-rXNWrYgiHJJBtQGl8JwDFXlA2lhvpGwtpEGcPTQ==
+
+{"errors":["page_size must be a number between 0 and 2000"]}

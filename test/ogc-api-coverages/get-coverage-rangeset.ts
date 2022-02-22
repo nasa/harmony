@@ -9,6 +9,8 @@ import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
 import { ServiceConfig } from '../../app/models/services/base-service';
 import { hookRedirect } from '../helpers/hooks';
+import { stub } from 'sinon';
+import env from '../../app/util/env';
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -374,7 +376,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
-  describe('when passing a maxResults parameter', function () {
+  describe('when a granule limit is set on a collection', function () {
     const serviceConfigs: ServiceConfig<unknown>[] = [
       {
         name: 'nexus-service',
@@ -390,20 +392,87 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         steps: [{
           image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
         }],
+        capabilities: {
+          subsetting: {
+            variable: true,
+          },
+        },
       }];
     hookServices(serviceConfigs);
     StubService.hook({ params: { redirect: 'http://example.com' } });
 
-    describe('set to a value greater than the granuleLimit for the collection', function () {
+    describe('and maxResults is not set for the query', function () {
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5\.$/);
+        });
+
+        it('returns up to the granule limit configured for the collection', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(5);
+        });
+      });
+    });
+
+    describe('and maxResults from the a query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
       describe('retrieving its job status', function () {
         hookRedirect('jdoe1');
-        it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
+        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.equal('You requested 10 granules, but the request has been limited to process only the first 5 granules because that is the collection granule limit.');
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5\.$/);
         });
+
+        it('returns up to the granule limit configured for the collection', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(5);
+        });
+      });
+    });
+
+    describe('and maxResults from the a query is set to a value less than the granule limit for the collection', function () {
+      const maxResults = 2;
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\.$/);
+        });
+
+        it('returns up to maxGraunules', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(2);
+        });
+      });
+    });
+
+    describe('when the collection granule limit is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
+      before(function () {
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 3);
+      });
+      after(function () {
+        this.glStub.restore();
+      });
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      hookRedirect('jdoe1');
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
+      });
+
+      it('limits the input granules to the system limit', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.numInputGranules).to.equal(3);
       });
     });
   });
