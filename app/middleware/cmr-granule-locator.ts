@@ -11,7 +11,10 @@ import { BoundingBox } from '../util/bounding-box';
 import env from '../util/env';
 import { defaultObjectStore } from '../util/object-store';
 
-export enum GranuleLimitReason {
+/** Reasons why the number of processed granules might be limited to less than what the CMR
+ * returns
+ */
+enum GranuleLimitReason {
   Collection,
   MaxResults,
   System,
