@@ -10,7 +10,11 @@ set +a
 eval "$env_save"
 
 # Deploy prometheus
+# In the case where we're running in a deployed environment, also deploy alert manager
 envsubst < "config/prometheus.yaml" | kubectl apply -f -
+if [ "$NODE_ENV" != "development" ]; then
+    envsubst < "config/alert-manager.yaml" | kubectl apply -f -
+fi
 
 # Check for helm
 if ! command -v "helm" &> /dev/null; then
