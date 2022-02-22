@@ -44,6 +44,7 @@ function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Boundi
 }
 
 /**
+ * Get the maximum number of granules that should be used from the CMR results
  * 
  * @param req - The client request, containing an operation
  * @param collection - The id of the collection to which the granules belong
@@ -79,10 +80,12 @@ export function getMaxGranules(req: HarmonyRequest, collection: string): [number
 }
 
 /**
- * Returns a warning message if not all matching granules will be processed for the request
- *
+ * Create a message indicating that the results have been limited and why - if necessary
+ * 
+ * @param req - The client request, containing an operation
+ * @param collection - The id of the collection to which the granules belong
  * @returns a warning message if not all matching granules will be processed, or undefined
- * if not applicable
+ * if not applicable 
  */
 function getResultsLimitedMessage(req: HarmonyRequest, collection: string): string {
   const { operation } = req;
@@ -90,13 +93,7 @@ function getResultsLimitedMessage(req: HarmonyRequest, collection: string): stri
 
   if ( req.context.serviceConfig.has_granule_limit == false ) return message;
 
-  // if (operation.maxResults) {
-  //   numGranules = Math.min(numGranules, operation.maxResults, env.maxGranuleLimit);
-  // } else {
-  //   numGranules = Math.min(numGranules, env.maxGranuleLimit);
-  // }
   const [numGranules, reason] = getMaxGranules(req, collection);
-  // numGranules = Math.min(operation.cmrHits, numGranules);
 
   if (operation.cmrHits > numGranules) {
     message = `CMR query identified ${operation.cmrHits} granules, but the request has been limited `

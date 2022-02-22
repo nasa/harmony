@@ -59,6 +59,5 @@ export default function chooseService(
     return next(e);
   }
   context.serviceConfig = serviceConfig;
-  // setCollectionGranuleLimitMessage(req);
   return next();
 }
