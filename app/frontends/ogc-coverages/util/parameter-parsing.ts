@@ -180,11 +180,7 @@ export function parsePointParam(
   let results;
   let coordinate, coordinates;
   if (values !== undefined){
-    try {
-      coordinates = values.split(',').map( v => +v );
-    } catch (e) {
-      throw new ParameterParseError(`unable to parse spatial coordinates from "${values}"`);
-    }
+    coordinates = values;
     if ( coordinates.length !== 2 )
       throw new ParameterParseError(`wrong number of spatial coordinates provided in "${values}"`);
 
