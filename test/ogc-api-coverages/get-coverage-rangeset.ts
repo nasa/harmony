@@ -408,7 +408,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5\.$/);
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5 for the nexus-service service\.$/);
         });
 
         it('returns up to the granule limit configured for the collection', function () {
@@ -426,7 +426,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         hookRedirect('jdoe1');
         it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
           const job = JSON.parse(this.res.text);
-          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5\.$/);
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 5 granules because collection C1233800302-EEDTEST is limited to 5 for the nexus-service service\.$/);
         });
 
         it('returns up to the granule limit configured for the collection', function () {

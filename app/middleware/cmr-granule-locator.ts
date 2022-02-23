@@ -108,7 +108,7 @@ function getResultsLimitedMessage(req: HarmonyRequest, collection: string): stri
         break;
 
       case GranuleLimitReason.Collection:
-        message += ` because collection ${collection} is limited to ${numGranules}.`;
+        message += ` because collection ${collection} is limited to ${numGranules} for the ${req.context.serviceConfig.name} service.`;
         break;
 
       default:
