@@ -72,7 +72,7 @@ export default function getCoverageRangeset(
     }
     const point = parsePointParam(query.point);
     if (point) {
-      if (bbox) throw new RequestValidationError('both bounding_box and point query parameters found');
+      if (bbox) throw new RequestValidationError('bounding_box and point query parameters should not co-exist');
       operation.spatialPoint = point;
     }
     const { start, end } = subsetParamsToTemporal(subset);
