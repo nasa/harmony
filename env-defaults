@@ -353,6 +353,7 @@ PROMETHEUS_RETENTION_SIZE=1750MB
 
 # how long before the specified alert is triggered/firing
 PROMETHEUS_POD_NOT_HEALTHY_DURATION=10m
+PROMETHEUS_POD_NOT_HEALTHY_WAIT_FOR=5m
 PROMETHEUS_NODE_NOT_READY_DURATION=10m
 
 # Alert manager variables (irrelevant to local development).
