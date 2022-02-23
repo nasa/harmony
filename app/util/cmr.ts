@@ -484,7 +484,7 @@ export function queryGranulesForCollection(
 ): Promise<CmrGranuleHits> {
   const baseQuery = {
     collection_concept_id: collectionId,
-    page_size: limit,
+    page_size: Math.min(limit, cmrMaxPageSize),
   };
 
   return queryGranuleUsingMultipartForm({
