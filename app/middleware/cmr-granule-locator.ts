@@ -54,7 +54,7 @@ function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Boundi
  * @returns a tuple containing the maximum number of granules to return from the CMR and the
  * reason why it is being limited
  */
-export function getMaxGranules(req: HarmonyRequest, collection: string): [number, GranuleLimitReason] {
+function getMaxGranules(req: HarmonyRequest, collection: string): [number, GranuleLimitReason] {
   let reason = GranuleLimitReason.None;
   let maxResults = Number.MAX_SAFE_INTEGER;
 
