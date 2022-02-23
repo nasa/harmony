@@ -853,7 +853,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
 
   describe('when performing point-based query', function () {
     const query = {
-      point: [-96.595,39.1019],
+      point: [-96.595, 39.1019],
     };
     hookRangesetRequest(version, collection, 'all', { query });
 
