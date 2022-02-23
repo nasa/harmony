@@ -351,10 +351,12 @@ PROMETHEUS_RETENTION_TIME=180d
 # pod may be evicted due to running out of ephemeral space.
 PROMETHEUS_RETENTION_SIZE=1750MB
 
-# how long before the specified alert is triggered/firing
+# how many consecutive minutes to sample in the PromQL query for KubernetesPodNotHealthy
 PROMETHEUS_POD_NOT_HEALTHY_DURATION=10m
+
+# how long the specified alert must be firing before being sent to the Alert Manager
 PROMETHEUS_POD_NOT_HEALTHY_WAIT_FOR=5m
-PROMETHEUS_NODE_NOT_READY_DURATION=10m
+PROMETHEUS_NODE_NOT_READY_WAIT_FOR=10m
 
 # Alert manager variables (irrelevant to local development).
 # To see/test whether alerts are firing locally, kubectl port-forward {prometheus-pod} 9090:9090 -n monitoring

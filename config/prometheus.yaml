@@ -63,10 +63,10 @@ data:
           summary: "AlertManager has detected pod(s) in a non-ready phase (Pending|Unknown|Failed)."
       - alert: KubernetesNodeNotReady
         expr: kube_node_status_condition{condition="Ready",status="true"} == 0
-        for: $PROMETHEUS_NODE_NOT_READY_DURATION
+        for: $PROMETHEUS_NODE_NOT_READY_WAIT_FOR
         labels:
           environment: $CLIENT_ID
-          duration: $PROMETHEUS_NODE_NOT_READY_DURATION
+          duration: $PROMETHEUS_NODE_NOT_READY_WAIT_FOR
         annotations:
           summary: "AlertManager has detected Node(s) in an unready state."
   prometheus.yml: |
