@@ -1,0 +1,29 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n100\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"scroll\"\r\n\r\ndefer\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"temporal\"\r\n\r\n2020-01-02T00:00:00.000Z,2020-01-02T01:00:00.000Z\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"shapefile\"; filename=\"shapefile\"\r\nContent-Type: application/geo+json\r\n\r\n{\n  \"type\": \"FeatureCollection\",\n  \"features\": [\n    {\n      \"type\": \"Feature\",\n      \"properties\": {\n        \"id\": null\n      },\n      \"geometry\": {\n        \"type\": \"Polygon\",\n        \"coordinates\": [\n          [\n            [\n              -14.0948,\n              31.3277\n            ],\n            [\n              -21.8726,\n              8.9666\n            ],\n            [\n              20.3218,\n              -40.6167\n            ],\n            [\n              30.6274,\n              -40.6167\n            ],\n            [\n              58.4329,\n              13.4388\n            ],\n            [\n              35.0996,\n              35.7999\n            ],\n            [\n              5.5441,\n              39.4943\n            ],\n            [\n              -14.0948,\n              31.3277\n            ]\n          ],\n          [\n            [\n              -10.5948,\n              13.8277\n            ],\n            [\n              2.433,\n              32.2999\n            ],\n            [\n              29.8496,\n              30.7443\n            ],\n            [\n              51.4329,\n              13.4388\n            ],\n            [\n              29.8496,\n              -34.9778\n            ],\n            [\n              21.0996,\n              -37.5056\n            ],\n            [\n              -16.2337,\n              7.411\n            ],\n            [\n              -10.5948,\n              13.8277\n            ]\n          ]\n        ]\n      }\n    },\n    {\n      \"type\": \"Feature\",\n      \"properties\": {\n        \"id\": null\n      },\n      \"geometry\": {\n        \"type\": \"Polygon\",\n        \"coordinates\": [\n          [\n            [\n              -57.8447,\n              37.7443\n            ],\n            [\n              -33.5392,\n              12.661\n            ],\n            [\n              11.7663,\n              48.2443\n            ],\n            [\n              -18.1781,\n              71.9665\n            ],\n            [\n              -57.8447,\n              37.7443\n            ]\n          ]\n        ]\n      }\n    }\n  ]\n}\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 157
+connection: close
+date: Thu, 24 Feb 2022 21:37:30 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: e941fe00-9317-41c3-bef5-98e959f2deaf
+strict-transport-security: max-age=31536000
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 106
+x-request-id: KIar1Fbjqti7AbcvtXKBS0A0DFAvwbmWQ-MO6lJIjKZGA3Qa3x8-3Q==
+cmr-scroll-id: -643927450
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 96d147941ae6bca8fe66457104d07bb6.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR53-C2
+x-amz-cf-id: KIar1Fbjqti7AbcvtXKBS0A0DFAvwbmWQ-MO6lJIjKZGA3Qa3x8-3Q==
+
+{"feed":{"updated":"2022-02-24T21:37:30.677Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[]}}

@@ -500,8 +500,8 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/service-example
     collections:
       - id: C1233800302-EEDTEST
-            granuleLimit: 100 # added to test collection granule limits for HARMONY-795
       - id: C1234088182-EEDTEST
+        granuleLimit: 100 # added to test collection granule limits for HARMONY-795
     capabilities:
       subsetting:
         bbox: true
