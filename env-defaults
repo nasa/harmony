@@ -332,6 +332,11 @@ HOST_VOLUME_PATH=
 # harmony core developer who plans to deploy Prometheus locally           #
 ###########################################################################
 
+# For Prometheus time variables, "m" postfix means "minutes".
+# https://prometheus.io/docs/prometheus/latest/querying/basics/#time-durations
+# For k8s CPU or memory variables, see this link for unit explanations:
+# https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu
+
 # Prometheus deployment variables
 PROMETHEUS_REQUESTS_CPU=128m
 PROMETHEUS_REQUESTS_MEMORY=150Mi
@@ -379,7 +384,7 @@ HPA_MIN_REPLICAS=1
 HPA_MAX_REPLICAS=10
 
 # See https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/#Quantity
-# for an explanation of the "m" suffix
+# for an explanation of the "m" suffix (e.g. 1.5 will be serialized as "1500m")
 HPA_TARGET_VALUE=10000m
 
 #############################################################################
