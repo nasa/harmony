@@ -8,11 +8,10 @@
   - [2. Accepting Harmony requests](#2-accepting-harmony-requests)
   - [3. Sending results to Harmony](#3-sending-results-to-harmony)
   - [4. Canceled requests](#4-canceled-requests)
-  - [5. Registering services in services.yml](#5-registering-services-in-servicesyml)
+  - [5. Defining environment variables in env-defaults](#5-defining-environment-variables-in-env-defaults)
+  - [6. Registering services in services.yml](#6-registering-services-in-servicesyml)
     - [Aggregation Steps](#aggregation-steps)
-  - [6. Creating a workflow template for the service (deprecated soon)](#6-creating-a-workflow-template-for-the-service-deprecated-soon)
-  - [7. Creating a Kubernetes service template for local deployments (optional - Turbo only)](#7-creating-a-kubernetes-service-template-for-local-deployments-optional---turbo-only)
-  - [8. Docker Container Images](#8-docker-container-images)
+  - [7. Docker Container Images](#7-docker-container-images)
   - [9. Recommendations for service implementations](#9-recommendations-for-service-implementations)
 - [Appendix A - Harmony Internals](#appendix-a---harmony-internals)
   - [Sending results to Harmony](#sending-results-to-harmony)
@@ -97,7 +96,11 @@ The structure of an entry in the [services.yml](../config/services.yml) file is 
   umm_s:                          # A list of CMR service IDs for the service (optional)
     - S1234-EXAMPLE
   collections:                    # A list of CMR collection IDs that the service works on
-    - C1234-EXAMPLE
+    - id: C1234-EXAMPLE
+      granuleLimit: 1000          # A limit on the number of granules that can be processed for the collection (OPTIONAL - defaults to no limit)
+      variables:                  # A list of variables provided by the collection (OPTIONAL)
+        - v1
+        - v2
   batch_size: 1                   # The number of granules in each batch operation (defaults to 0 which means unlimited)
   maximum_sync_granules: 1        # Optional limit for the maximum number of granules for a request to be handled synchronously. Defaults to 1. Set to 0 to only allow async requests.
   maximum_async_granules: 500     # Optional limit for the maximum number of granules allowed for a single async request. Harmony has a MAX_GRANULE_LIMIT enforced for all services.
@@ -127,6 +130,8 @@ in a service config in `services.yml`.
 The second method is now the preferred approach to adding collections to a service as it allows
 collections to be added/removed to/from an existing service without requiring a pull request or
 deployment.
+
+**NOTE:** Currently `granuleLimit` cannot be configured for collections using UMM-S/UMM-C associations.
 
 If you intend for Harmony job results that include this collection to be shareable, make sure that guests have `read` permission on the collection (via [CMR ACLs endpoints](https://cmr.earthdata.nasa.gov/access-control/site/docs/access-control/api.html)), and if no EULAs are present that the `harmony.has-eula` tag is associated with the collection and set to `false` via the CMR `/search/tags/harmony.has-eula/associations` endpoint. Example request body: `[{"concept_id": "C1233860183-EEDTEST", "data": false}]`. All collections used in the Harmony job must meet these two requirements in order for the job to be shareable.
 
