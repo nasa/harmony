@@ -55,7 +55,7 @@ data:
       rules:
       - alert: KubernetesPodNotHealthy
         expr: min_over_time(sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"})[$PROMETHEUS_POD_NOT_HEALTHY_DURATION:1m]) > 0
-        for: 0m
+        for: $PROMETHEUS_POD_NOT_HEALTHY_WAIT_FOR
         labels:
           environment: $CLIENT_ID
           duration: $PROMETHEUS_POD_NOT_HEALTHY_DURATION
@@ -63,10 +63,10 @@ data:
           summary: "AlertManager has detected pod(s) in a non-ready phase (Pending|Unknown|Failed)."
       - alert: KubernetesNodeNotReady
         expr: kube_node_status_condition{condition="Ready",status="true"} == 0
-        for: $PROMETHEUS_NODE_NOT_READY_DURATION
+        for: $PROMETHEUS_NODE_NOT_READY_WAIT_FOR
         labels:
           environment: $CLIENT_ID
-          duration: $PROMETHEUS_NODE_NOT_READY_DURATION
+          duration: $PROMETHEUS_NODE_NOT_READY_WAIT_FOR
         annotations:
           summary: "AlertManager has detected Node(s) in an unready state."
   prometheus.yml: |
