@@ -32,6 +32,12 @@ export interface ServiceStep {
   };
 }
 
+export interface ServiceCollection {
+  id: string;
+  granuleLimit?: number;
+  variables?: string[]
+}
+
 export interface ServiceConfig<ServiceParamType> {
   batch_size?: number;
   name?: string;
@@ -43,7 +49,7 @@ export interface ServiceConfig<ServiceParamType> {
     params?: ServiceParamType;
   };
   umm_s?: string[];
-  collections?: string[];
+  collections?: ServiceCollection[];
   capabilities?: ServiceCapabilities;
   concurrency?: number;
   message?: string;

@@ -21,7 +21,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         {
           name: 'first-service',
           type: { name: 'turbo' },
-          collections: [collectionId],
+          collections: [{ id: collectionId }],
           capabilities: {
             output_formats: ['image/tiff', 'application/x-netcdf4'],
             subsetting: {
@@ -32,7 +32,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         {
           name: 'second-service',
           type: { name: 'http' },
-          collections: [collectionId],
+          collections: [{ id: collectionId }],
           capabilities: {
             output_formats: ['image/tiff', 'image/png'],
             subsetting: {
@@ -43,7 +43,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         {
           name: 'third-service',
           type: { name: 'turbo' },
-          collections: [collectionId],
+          collections: [{ id: collectionId }],
           capabilities: {
             output_formats: ['image/tiff', 'image/png'],
             reprojection: true,
@@ -215,12 +215,12 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         {
           name: 'non-matching-service',
           type: { name: 'turbo' },
-          collections: ['C456-NOMATCH'],
+          collections: [{ id: 'C456-NOMATCH' }],
         },
         {
           name: 'matching-service',
           type: { name: 'turbo' },
-          collections: [collectionId],
+          collections: [{ id: collectionId }],
         },
       ];
     });
@@ -248,7 +248,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             subsetting: { variable: true },
             output_formats: ['image/tiff'],
           },
-          collections: [collectionId],
+          collections: [{ id: collectionId }],
         },
         {
           name: 'non-variable-subsetter',
@@ -257,7 +257,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             subsetting: { variable: false },
             output_formats: ['application/x-zarr'],
           },
-          collections: [collectionId],
+          collections: [{ id: collectionId }],
         },
       ];
     });
@@ -344,7 +344,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         {
           name: 'non-matching-service',
           type: { name: 'turbo' },
-          collections: ['C456-NOMATCH'],
+          collections: [{ id: 'C456-NOMATCH' }],
         },
       ];
     });
@@ -377,7 +377,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         {
           name: 'a-service',
           type: { name: 'turbo' },
-          collections: [collectionId],
+          collections: [{ id: collectionId }],
         },
       ];
     });
@@ -442,9 +442,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             output_formats: ['text/csv'],
           },
           collections: [
-            {
-              [collectionId]: [ variableId ],
-            },
+            { id: collectionId, variables: [variableId] },
           ],
         },
         {
@@ -455,9 +453,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
             output_formats: ['image/tiff'],
           },
           collections: [
-            {
-              [collectionId]: [ variableId ],
-            },
+            { id: collectionId, variables: [variableId] },
           ],
         },
       ];
@@ -551,7 +547,8 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           },
           collections: [
             {
-              [collectionId]: [ variableId1, variableId2 ],
+              id: collectionId,
+              variables: [variableId1, variableId2],
             },
           ],
         },

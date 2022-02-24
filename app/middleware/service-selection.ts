@@ -20,14 +20,14 @@ function addCollectionsToServicesByAssociation(req: HarmonyRequest): ServiceConf
         // if the service config contains a 'umm_s' entry that includes the current service id
         if (config.umm_s?.includes(serviceId)) {
           if (config.collections) {
-            if (!config.collections.includes(coll.id)) {
+            if (!config.collections.map((sc) => sc.id).includes(coll.id)) {
               // add the collection to the service config if it isn't there already
-              config.collections.push(coll.id);
+              config.collections.push({ id: coll.id });
             }
           } else {
             // create the collections array using the collection id - this is for the case
             // where no collections are declared for a service in services.yml
-            config.collections = [coll.id];
+            config.collections = [{ id: coll.id }];
           }
         }
       }

@@ -32,14 +32,14 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
     collections:
-      - C1595422627-ASF
-      - C1214354031-ASF
-      - C1808440897-ASF
-      - C2011599335-ASF
-      - C1239324659-POCUMULUS
-      - C1990404801-POCLOUD
-      - C1238618571-POCUMULUS
-      - C1996881146-POCLOUD
+      - id: C1595422627-ASF
+      - id: C1214354031-ASF
+      - id: C1808440897-ASF
+      - id: C2011599335-ASF
+      - id: C1239324659-POCUMULUS
+      - id: C1990404801-POCLOUD
+      - id: C1238618571-POCUMULUS
+      - id: C1996881146-POCLOUD
     capabilities:
       subsetting:
         shape: true
@@ -69,7 +69,8 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
     collections:
-      - C1598621093-GES_DISC:
+      - id: C1598621093-GES_DISC
+        variables:
         - V2144690146-GES_DISC
         - V2144682160-GES_DISC
         - V2144444407-GES_DISC
@@ -104,96 +105,96 @@ https://cmr.earthdata.nasa.gov:
     umm_s:
       - S2009180097-POCLOUD
     collections:
-      - C1996881146-POCLOUD
-      - C2006849995-POCLOUD
-      - C2006849866-POCLOUD
-      - C2006849650-POCLOUD
-      - C2006849794-POCLOUD
-      - C2006849345-POCLOUD
-      - C2006849488-POCLOUD
-      - C2006849571-POCLOUD
-      - C2006849257-POCLOUD
-      - C2006849087-POCLOUD
-      - C2006849706-POCLOUD
-      - C1940468263-POCLOUD
-      - C1938032626-POCLOUD
-      - C1940473819-POCLOUD
-      - C1940473819-POCLOUD
-      - C1990404801-POCLOUD
-      - C1990404814-POCLOUD
-      - C1991543823-POCLOUD
-      - C1991543805-POCLOUD
-      - C1990404807-POCLOUD
-      - C1990404805-POCLOUD
-      - C1991543824-POCLOUD
-      - C1991543745-POCLOUD
-      - C1990404793-POCLOUD
-      - C1990404798-POCLOUD
-      - C1991543727-POCLOUD
-      - C1991543735-POCLOUD
-      - C1990404818-POCLOUD
-      - C1990404792-POCLOUD
-      - C1991543820-POCLOUD
-      - C1991543803-POCLOUD
-      - C1991543729-POCLOUD
-      - C1991543819-POCLOUD
-      - C1991543742-POCLOUD
-      - C1990404788-POCLOUD
-      - C1990404812-POCLOUD
-      - C1991543712-POCLOUD
-      - C1991543811-POCLOUD
-      - C1990404810-POCLOUD
-      - C1990404819-POCLOUD
-      - C1991543734-POCLOUD
-      - C1991543741-POCLOUD
-      - C1990404797-POCLOUD
-      - C1990404791-POCLOUD
-      - C1991543737-POCLOUD
-      - C1991543806-POCLOUD
-      - C1991543804-POCLOUD
-      - C1991543726-POCLOUD
-      - C1991543702-POCLOUD
-      - C1991543814-POCLOUD
-      - C1991543752-POCLOUD
-      - C1991543812-POCLOUD
-      - C1991543740-POCLOUD
-      - C1991543699-POCLOUD
-      - C1991543739-POCLOUD
-      - C1991543818-POCLOUD
-      - C1991543733-POCLOUD
-      - C1990404811-POCLOUD
-      - C1990404823-POCLOUD
-      - C1991543808-POCLOUD
-      - C1991543732-POCLOUD
-      - C1991543766-POCLOUD
-      - C1990404815-POCLOUD
-      - C1990404820-POCLOUD
-      - C1991543763-POCLOUD
-      - C1991543764-POCLOUD
-      - C1991543821-POCLOUD
-      - C1991543731-POCLOUD
-      - C1991543724-POCLOUD
-      - C1991543807-POCLOUD
-      - C1991543730-POCLOUD
-      - C1990404817-POCLOUD
-      - C1990404790-POCLOUD
-      - C1991543765-POCLOUD
-      - C1991543700-POCLOUD
-      - C1991543768-POCLOUD
-      - C1990404813-POCLOUD
-      - C1990404799-POCLOUD
-      - C1991543744-POCLOUD
-      - C1991543813-POCLOUD
-      - C1991543817-POCLOUD
-      - C1990404808-POCLOUD
-      - C1990404796-POCLOUD
-      - C1991543704-POCLOUD
-      - C1991543760-POCLOUD
-      - C1990404821-POCLOUD
-      - C1990404795-POCLOUD
-      - C1991543736-POCLOUD
-      - C1991543728-POCLOUD
-      - C1991543757-POCLOUD
+      - id: C1996881146-POCLOUD
+      - id: C2006849995-POCLOUD
+      - id: C2006849866-POCLOUD
+      - id: C2006849650-POCLOUD
+      - id: C2006849794-POCLOUD
+      - id: C2006849345-POCLOUD
+      - id: C2006849488-POCLOUD
+      - id: C2006849571-POCLOUD
+      - id: C2006849257-POCLOUD
+      - id: C2006849087-POCLOUD
+      - id: C2006849706-POCLOUD
+      - id: C1940468263-POCLOUD
+      - id: C1938032626-POCLOUD
+      - id: C1940473819-POCLOUD
+      - id: C1940473819-POCLOUD
+      - id: C1990404801-POCLOUD
+      - id: C1990404814-POCLOUD
+      - id: C1991543823-POCLOUD
+      - id: C1991543805-POCLOUD
+      - id: C1990404807-POCLOUD
+      - id: C1990404805-POCLOUD
+      - id: C1991543824-POCLOUD
+      - id: C1991543745-POCLOUD
+      - id: C1990404793-POCLOUD
+      - id: C1990404798-POCLOUD
+      - id: C1991543727-POCLOUD
+      - id: C1991543735-POCLOUD
+      - id: C1990404818-POCLOUD
+      - id: C1990404792-POCLOUD
+      - id: C1991543820-POCLOUD
+      - id: C1991543803-POCLOUD
+      - id: C1991543729-POCLOUD
+      - id: C1991543819-POCLOUD
+      - id: C1991543742-POCLOUD
+      - id: C1990404788-POCLOUD
+      - id: C1990404812-POCLOUD
+      - id: C1991543712-POCLOUD
+      - id: C1991543811-POCLOUD
+      - id: C1990404810-POCLOUD
+      - id: C1990404819-POCLOUD
+      - id: C1991543734-POCLOUD
+      - id: C1991543741-POCLOUD
+      - id: C1990404797-POCLOUD
+      - id: C1990404791-POCLOUD
+      - id: C1991543737-POCLOUD
+      - id: C1991543806-POCLOUD
+      - id: C1991543804-POCLOUD
+      - id: C1991543726-POCLOUD
+      - id: C1991543702-POCLOUD
+      - id: C1991543814-POCLOUD
+      - id: C1991543752-POCLOUD
+      - id: C1991543812-POCLOUD
+      - id: C1991543740-POCLOUD
+      - id: C1991543699-POCLOUD
+      - id: C1991543739-POCLOUD
+      - id: C1991543818-POCLOUD
+      - id: C1991543733-POCLOUD
+      - id: C1990404811-POCLOUD
+      - id: C1990404823-POCLOUD
+      - id: C1991543808-POCLOUD
+      - id: C1991543732-POCLOUD
+      - id: C1991543766-POCLOUD
+      - id: C1990404815-POCLOUD
+      - id: C1990404820-POCLOUD
+      - id: C1991543763-POCLOUD
+      - id: C1991543764-POCLOUD
+      - id: C1991543821-POCLOUD
+      - id: C1991543731-POCLOUD
+      - id: C1991543724-POCLOUD
+      - id: C1991543807-POCLOUD
+      - id: C1991543730-POCLOUD
+      - id: C1990404817-POCLOUD
+      - id: C1990404790-POCLOUD
+      - id: C1991543765-POCLOUD
+      - id: C1991543700-POCLOUD
+      - id: C1991543768-POCLOUD
+      - id: C1990404813-POCLOUD
+      - id: C1990404799-POCLOUD
+      - id: C1991543744-POCLOUD
+      - id: C1991543813-POCLOUD
+      - id: C1991543817-POCLOUD
+      - id: C1990404808-POCLOUD
+      - id: C1990404796-POCLOUD
+      - id: C1991543704-POCLOUD
+      - id: C1991543760-POCLOUD
+      - id: C1990404821-POCLOUD
+      - id: C1990404795-POCLOUD
+      - id: C1991543736-POCLOUD
+      - id: C1991543728-POCLOUD
+      - id: C1991543757-POCLOUD
     maximum_sync_granules: 0
     capabilities:
       concatenation: true
@@ -216,7 +217,7 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
     collections:
-      - C1756916832-XYZ_PROV
+      - id: C1756916832-XYZ_PROV
     capabilities:
       subsetting:
         bbox: true
@@ -244,25 +245,25 @@ https://cmr.earthdata.nasa.gov:
       - S1962070864-POCLOUD
       - S2214242245-GES_DISC
     collections:
-      - C1940473819-POCLOUD
-      - C1940475563-POCLOUD
-      - C1940466008-POCLOUD
-      - C1968979997-POCLOUD
-      - C1968979762-POCLOUD
-      - C1996880450-POCLOUD
-      - C1996881456-POCLOUD
-      - C1996881636-POCLOUD
-      - C1996880725-POCLOUD
-      - C1996881807-POCLOUD
-      - C1968980549-POCLOUD
-      - C1968979566-POCLOUD
-      - C1968979550-POCLOUD
-      - C1968980583-POCLOUD
-      - C1968980576-POCLOUD
-      - C1968979597-POCLOUD
-      - C1968979561-POCLOUD
-      - C1968980609-POCLOUD
-      - C1996881752-POCLOUD
+      - id: C1940473819-POCLOUD
+      - id: C1940475563-POCLOUD
+      - id: C1940466008-POCLOUD
+      - id: C1968979997-POCLOUD
+      - id: C1968979762-POCLOUD
+      - id: C1996880450-POCLOUD
+      - id: C1996881456-POCLOUD
+      - id: C1996881636-POCLOUD
+      - id: C1996880725-POCLOUD
+      - id: C1996881807-POCLOUD
+      - id: C1968980549-POCLOUD
+      - id: C1968979566-POCLOUD
+      - id: C1968979550-POCLOUD
+      - id: C1968980583-POCLOUD
+      - id: C1968980576-POCLOUD
+      - id: C1968979597-POCLOUD
+      - id: C1968979561-POCLOUD
+      - id: C1968980609-POCLOUD
+      - id: C1996881752-POCLOUD
     capabilities:
       subsetting:
         bbox: true
@@ -309,31 +310,31 @@ https://cmr.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
     collections:
-      - C1996881807-POCLOUD
-      - C1996881636-POCLOUD
-      - C2036878029-POCLOUD
-      - C1996881456-POCLOUD
-      - C1940473819-POCLOUD
-      - C1940475563-POCLOUD
-      - C2036879048-POCLOUD
-      - C1996880725-POCLOUD
-      - C1996880450-POCLOUD
-      - C2036880717-POCLOUD
-      - C1940466008-POCLOUD
-      - C2036882072-POCLOUD
-      - C2036880739-POCLOUD
-      - C1968979997-POCLOUD
-      - C1968979762-POCLOUD
-      - C2075141559-POCLOUD
-      - C1968980549-POCLOUD
-      - C1968979566-POCLOUD
-      - C1968979550-POCLOUD
-      - C1968980583-POCLOUD
-      - C1968980576-POCLOUD
-      - C1968979597-POCLOUD
-      - C1968979561-POCLOUD
-      - C1968980609-POCLOUD
-      - C1996881752-POCLOUD
+      - id: C1996881807-POCLOUD
+      - id: C1996881636-POCLOUD
+      - id: C2036878029-POCLOUD
+      - id: C1996881456-POCLOUD
+      - id: C1940473819-POCLOUD
+      - id: C1940475563-POCLOUD
+      - id: C2036879048-POCLOUD
+      - id: C1996880725-POCLOUD
+      - id: C1996880450-POCLOUD
+      - id: C2036880717-POCLOUD
+      - id: C1940466008-POCLOUD
+      - id: C2036882072-POCLOUD
+      - id: C2036880739-POCLOUD
+      - id: C1968979997-POCLOUD
+      - id: C1968979762-POCLOUD
+      - id: C2075141559-POCLOUD
+      - id: C1968980549-POCLOUD
+      - id: C1968979566-POCLOUD
+      - id: C1968979550-POCLOUD
+      - id: C1968980583-POCLOUD
+      - id: C1968980576-POCLOUD
+      - id: C1968979597-POCLOUD
+      - id: C1968979561-POCLOUD
+      - id: C1968980609-POCLOUD
+      - id: C1996881752-POCLOUD
     capabilities:
       concatenation: true
       subsetting:
@@ -392,49 +393,49 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/asfdataservices/gdal-subsetter
     collections:
-      - C1225776654-ASF
-      - C1207038647-ASF
-      - C1233629671-ASF
-      - C1207181535-ASF
-      - C1208013295-ASF
-      - C1239927797-ASF
-      - C1215664073-GES_DISC
-      - C1215664076-GES_DISC
-      - C1215802948-GES_DISC
-      - C1225808241-GES_DISC
-      - C1221131370-GES_DISC
-      - C1225808237-GES_DISC
-      - C1216382991-GES_DISC
-      - C1224264723-GES_DISC
-      - C1236380582-GES_DISC
-      - C1215726323-GES_DISC
-      - C1215802935-GES_DISC
-      - C1215802938-GES_DISC
-      - C1225808243-GES_DISC
-      - C1233603862-GES_DISC
-      - C1215802911-GES_DISC
-      - C1215802943-GES_DISC
-      - C1215802918-GES_DISC
-      - C1215720780-GES_DISC
-      - C1225808239-GES_DISC
-      - C1215802915-GES_DISC
-      - C1225808242-GES_DISC
-      - C1225808240-GES_DISC
-      - C1215802921-GES_DISC
-      - C1215802970-GES_DISC
-      - C1215802941-GES_DISC
-      - C1236380583-GES_DISC
-      - C1215802914-GES_DISC
-      - C1215802973-GES_DISC
-      - C1215802956-GES_DISC
-      - C1215802920-GES_DISC
-      - C1215139640-GES_DISC
-      - C1215802932-GES_DISC
-      - C1221312185-GES_DISC
-      - C1239324659-POCUMULUS
-      - C1239379702-POCLOUD
-      - C1238618571-POCUMULUS
-      - C1238621141-POCLOUD
+      - id: C1225776654-ASF
+      - id: C1207038647-ASF
+      - id: C1233629671-ASF
+      - id: C1207181535-ASF
+      - id: C1208013295-ASF
+      - id: C1239927797-ASF
+      - id: C1215664073-GES_DISC
+      - id: C1215664076-GES_DISC
+      - id: C1215802948-GES_DISC
+      - id: C1225808241-GES_DISC
+      - id: C1221131370-GES_DISC
+      - id: C1225808237-GES_DISC
+      - id: C1216382991-GES_DISC
+      - id: C1224264723-GES_DISC
+      - id: C1236380582-GES_DISC
+      - id: C1215726323-GES_DISC
+      - id: C1215802935-GES_DISC
+      - id: C1215802938-GES_DISC
+      - id: C1225808243-GES_DISC
+      - id: C1233603862-GES_DISC
+      - id: C1215802911-GES_DISC
+      - id: C1215802943-GES_DISC
+      - id: C1215802918-GES_DISC
+      - id: C1215720780-GES_DISC
+      - id: C1225808239-GES_DISC
+      - id: C1215802915-GES_DISC
+      - id: C1225808242-GES_DISC
+      - id: C1225808240-GES_DISC
+      - id: C1215802921-GES_DISC
+      - id: C1215802970-GES_DISC
+      - id: C1215802941-GES_DISC
+      - id: C1236380583-GES_DISC
+      - id: C1215802914-GES_DISC
+      - id: C1215802973-GES_DISC
+      - id: C1215802956-GES_DISC
+      - id: C1215802920-GES_DISC
+      - id: C1215139640-GES_DISC
+      - id: C1215802932-GES_DISC
+      - id: C1221312185-GES_DISC
+      - id: C1239324659-POCUMULUS
+      - id: C1239379702-POCLOUD
+      - id: C1238618571-POCUMULUS
+      - id: C1238621141-POCLOUD
     capabilities:
       subsetting:
         shape: true
@@ -464,7 +465,8 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/gesdisc/giovanni
     collections:
-      - C1225808238-GES_DISC:
+      - id: C1225808238-GES_DISC
+        variables:
         - V1240788781-GES_DISC
         - V1242222137-GES_DISC
         - V1240788730-GES_DISC
@@ -497,8 +499,8 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/harmony/service-example
     collections:
-      - C1233800302-EEDTEST
-      - C1234088182-EEDTEST
+      - id: C1233800302-EEDTEST
+      - id: C1234088182-EEDTEST
     capabilities:
       subsetting:
         bbox: true
@@ -526,39 +528,39 @@ https://cmr.uat.earthdata.nasa.gov:
       - S1234899453-POCLOUD
       - S1242721133-GES_DISC
     collections:
-      - C1234208436-POCLOUD
-      - C1234208437-POCLOUD
-      - C1234208438-POCLOUD
-      - C1234724471-POCLOUD
-      - C1234071416-POCLOUD
-      - C1238543220-POCLOUD
-      - C1238543223-POCLOUD
-      - C1238538240-POCLOUD
-      - C1238621102-POCLOUD
-      - C1238538225-POCLOUD
-      - C1238538224-POCLOUD
-      - C1238538231-POCLOUD
-      - C1238538230-POCLOUD
-      - C1238538233-POCLOUD
-      - C1238538232-POCLOUD
-      - C1238538241-POCLOUD
-      - C1233979242-GES_DISC
-      - C1234666374-GES_DISC
-      - C1234666469-GES_DISC
-      - C1215720341-GES_DISC
-      - C1215720436-GES_DISC
-      - C1229679244-GES_DISC
-      - C1236276783-GES_DISC
-      - C1239396233-GES_DISC
-      - C1239396234-GES_DISC
-      - C1220280439-GES_DISC
-      - C1236469823-GES_DISC
-      - C1224136965-GES_DISC
-      - C1225808903-GES_DISC
-      - C1232995291-GES_DISC
-      - C1232998567-GES_DISC
-      - C1238658049-POCLOUD
-      - C1238570311-POCLOUD
+      - id: C1234208436-POCLOUD
+      - id: C1234208437-POCLOUD
+      - id: C1234208438-POCLOUD
+      - id: C1234724471-POCLOUD
+      - id: C1234071416-POCLOUD
+      - id: C1238543220-POCLOUD
+      - id: C1238543223-POCLOUD
+      - id: C1238538240-POCLOUD
+      - id: C1238621102-POCLOUD
+      - id: C1238538225-POCLOUD
+      - id: C1238538224-POCLOUD
+      - id: C1238538231-POCLOUD
+      - id: C1238538230-POCLOUD
+      - id: C1238538233-POCLOUD
+      - id: C1238538232-POCLOUD
+      - id: C1238538241-POCLOUD
+      - id: C1233979242-GES_DISC
+      - id: C1234666374-GES_DISC
+      - id: C1234666469-GES_DISC
+      - id: C1215720341-GES_DISC
+      - id: C1215720436-GES_DISC
+      - id: C1229679244-GES_DISC
+      - id: C1236276783-GES_DISC
+      - id: C1239396233-GES_DISC
+      - id: C1239396234-GES_DISC
+      - id: C1220280439-GES_DISC
+      - id: C1236469823-GES_DISC
+      - id: C1224136965-GES_DISC
+      - id: C1225808903-GES_DISC
+      - id: C1232995291-GES_DISC
+      - id: C1232998567-GES_DISC
+      - id: C1238658049-POCLOUD
+      - id: C1238570311-POCLOUD
     capabilities:
       subsetting:
         bbox: true
@@ -582,9 +584,9 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s:
       - S1242328818-POCLOUD
     collections:
-      - C1234208436-POCLOUD
-      - C1234208437-POCLOUD
-      - C1234208438-POCLOUD
+      - id: C1234208436-POCLOUD
+      - id: C1234208437-POCLOUD
+      - id: C1234208438-POCLOUD
     capabilities:
       concatenation: true
       subsetting:
@@ -608,14 +610,14 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
     collections:
-      - C1234208436-POCLOUD
-      - C1234208437-POCLOUD
-      - C1234208438-POCLOUD
-      - C1234724470-POCLOUD
-      - C1234724471-POCLOUD
-      - C1238621102-POCLOUD
-      - C1234071416-POCLOUD
-      - C1238658052-POCLOUD
+      - id: C1234208436-POCLOUD
+      - id: C1234208437-POCLOUD
+      - id: C1234208438-POCLOUD
+      - id: C1234724470-POCLOUD
+      - id: C1234724471-POCLOUD
+      - id: C1238621102-POCLOUD
+      - id: C1234071416-POCLOUD
+      - id: C1238658052-POCLOUD
     capabilities:
       concatenation: true
       subsetting:
@@ -771,7 +773,7 @@ https://cmr.uat.earthdata.nasa.gov:
       # AMSR-E/Aqua L2B Global Swath Ocean Products derived from Wentz Algorithm V086
       # Good example, being in UAT, global, many public non-global granules,
       # and not yet on the services roadmap.
-      - C1104-PVC_TS2
+      - id: C1104-PVC_TS2
     capabilities:
       subsetting:
         variable: true
@@ -795,57 +797,57 @@ https://cmr.uat.earthdata.nasa.gov:
       - S1240999847-EEDTEST # NetCDF-to-Zarr + swotrepr
       - S1241248230-POCLOUD # PODDAC just netcdf to zarr
     collections:
-      - C1234088182-EEDTEST
+      - id: C1234088182-EEDTEST
       # DO NOT UNCOMMENT THE FOLLOWING LINE - this collection is added via UMM-S and is left here
       # to prevent re-adding. This is needed for tests related to HARMONY-875
-      # - C1233800302-EEDTEST
-      - C1234410736-POCLOUD
-      - C1234082763-POCLOUD
-      - C1234071416-POCLOUD
-      - C1234208437-POCLOUD
-      - C1234208436-POCLOUD
-      - C1234208438-POCLOUD
-      - C1234724471-POCLOUD
-      - C1239379704-POCLOUD
-      - C1238621141-POCLOUD
-      - C1238618570-POCUMULUS
-      - C1215664073-GES_DISC
-      - C1215664076-GES_DISC
-      - C1215802948-GES_DISC
-      - C1225808241-GES_DISC
-      - C1221131370-GES_DISC
-      - C1225808238-GES_DISC
-      - C1225808237-GES_DISC
-      - C1216382991-GES_DISC
-      - C1224264723-GES_DISC
-      - C1236380582-GES_DISC
-      - C1215802944-GES_DISC
-      - C1215726323-GES_DISC
-      - C1215802935-GES_DISC
-      - C1215802938-GES_DISC
-      - C1225808243-GES_DISC
-      - C1233603862-GES_DISC
-      - C1215802911-GES_DISC
-      - C1215802943-GES_DISC
-      - C1215802918-GES_DISC
-      - C1215720780-GES_DISC
-      - C1225808239-GES_DISC
-      - C1215802915-GES_DISC
-      - C1225808242-GES_DISC
-      - C1225808240-GES_DISC
-      - C1215802921-GES_DISC
-      - C1215802970-GES_DISC
-      - C1215802941-GES_DISC
-      - C1236380583-GES_DISC
-      - C1215802914-GES_DISC
-      - C1215802980-GES_DISC
-      - C1224264724-GES_DISC
-      - C1215802973-GES_DISC
-      - C1215802956-GES_DISC
-      - C1215802920-GES_DISC
-      - C1215139640-GES_DISC
-      - C1215802932-GES_DISC
-      - C1221312185-GES_DISC
+      # - id: C1233800302-EEDTEST
+      - id: C1234410736-POCLOUD
+      - id: C1234082763-POCLOUD
+      - id: C1234071416-POCLOUD
+      - id: C1234208437-POCLOUD
+      - id: C1234208436-POCLOUD
+      - id: C1234208438-POCLOUD
+      - id: C1234724471-POCLOUD
+      - id: C1239379704-POCLOUD
+      - id: C1238621141-POCLOUD
+      - id: C1238618570-POCUMULUS
+      - id: C1215664073-GES_DISC
+      - id: C1215664076-GES_DISC
+      - id: C1215802948-GES_DISC
+      - id: C1225808241-GES_DISC
+      - id: C1221131370-GES_DISC
+      - id: C1225808238-GES_DISC
+      - id: C1225808237-GES_DISC
+      - id: C1216382991-GES_DISC
+      - id: C1224264723-GES_DISC
+      - id: C1236380582-GES_DISC
+      - id: C1215802944-GES_DISC
+      - id: C1215726323-GES_DISC
+      - id: C1215802935-GES_DISC
+      - id: C1215802938-GES_DISC
+      - id: C1225808243-GES_DISC
+      - id: C1233603862-GES_DISC
+      - id: C1215802911-GES_DISC
+      - id: C1215802943-GES_DISC
+      - id: C1215802918-GES_DISC
+      - id: C1215720780-GES_DISC
+      - id: C1225808239-GES_DISC
+      - id: C1215802915-GES_DISC
+      - id: C1225808242-GES_DISC
+      - id: C1225808240-GES_DISC
+      - id: C1215802921-GES_DISC
+      - id: C1215802970-GES_DISC
+      - id: C1215802941-GES_DISC
+      - id: C1236380583-GES_DISC
+      - id: C1215802914-GES_DISC
+      - id: C1215802980-GES_DISC
+      - id: C1224264724-GES_DISC
+      - id: C1215802973-GES_DISC
+      - id: C1215802956-GES_DISC
+      - id: C1215802920-GES_DISC
+      - id: C1215139640-GES_DISC
+      - id: C1215802932-GES_DISC
+      - id: C1221312185-GES_DISC
     maximum_sync_granules: 0
     capabilities:
       concatenation: true
@@ -871,12 +873,12 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/harmony/podaac-l2-subsetter-netcdf-to-zarr
     maximum_sync_granules: 0
     collections:
-      - C1234208436-POCLOUD
-      - C1234208437-POCLOUD
-      - C1234208438-POCLOUD
-      - C1234724470-POCLOUD
-      - C1234724471-POCLOUD
-      - C1234071416-POCLOUD
+      - id: C1234208436-POCLOUD
+      - id: C1234208437-POCLOUD
+      - id: C1234208438-POCLOUD
+      - id: C1234724470-POCLOUD
+      - id: C1234724471-POCLOUD
+      - id: C1234071416-POCLOUD
     capabilities:
       concatenation: true
       concatenate_by_default: true
@@ -908,8 +910,8 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s:
       - S1240999847-EEDTEST
     collections:
-      - C1233800302-EEDTEST
-      - C1234724470-POCLOUD
+      - id: C1233800302-EEDTEST
+      - id: C1234724470-POCLOUD
     maximum_sync_granules: 0
     capabilities:
       concatenation: true
