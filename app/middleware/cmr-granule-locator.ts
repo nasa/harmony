@@ -11,6 +11,16 @@ import { BoundingBox } from '../util/bounding-box';
 import env from '../util/env';
 import { defaultObjectStore } from '../util/object-store';
 
+/** Reasons why the number of processed granules might be limited to less than what the CMR
+ * returns
+ */
+enum GranuleLimitReason {
+  Collection, // limited by the collection configuration
+  MaxResults, // limited by the maxResults query parameter
+  System,     // limited by the system environment
+  None,       // not limited
+}
+
 /**
  * Gets collection from request that matches the given id
  * @param req - The client request
@@ -37,48 +47,73 @@ function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): Boundi
 }
 
 /**
- * Returns from the maximum number of granules to return from the CMR.
+ * Get the maximum number of granules that should be used from the CMR results
+ * 
+ * @param req - The client request, containing an operation
+ * @param collection - The id of the collection to which the granules belong
+ * @returns a tuple containing the maximum number of granules to return from the CMR and the
+ * reason why it is being limited
  */
-function getMaxGranules(req: HarmonyRequest): number {
-  const query = keysToLowerCase(req.query);
+function getMaxGranules(req: HarmonyRequest, collection: string): { maxGranules: number; reason: GranuleLimitReason; } {
+  let reason = GranuleLimitReason.None;
+  let maxResults = Number.MAX_SAFE_INTEGER;
 
-  if ( req.context.serviceConfig.has_granule_limit === false ) {
-    return Number.MAX_SAFE_INTEGER;
+  if (req.context.serviceConfig.has_granule_limit !== false) {
+    const query = keysToLowerCase(req.query);
+    const { context } = req;
+    maxResults = env.maxGranuleLimit;
+    reason = GranuleLimitReason.System;
+
+    if ('maxresults' in query && query.maxresults < maxResults) {
+      maxResults = query.maxresults;
+      reason = GranuleLimitReason.MaxResults;
+    }
+
+    const { serviceConfig } = context;
+    const serviceCollection = serviceConfig.collections?.find((sc) => sc.id === collection);
+    if (serviceCollection &&
+      serviceCollection.granuleLimit &&
+      serviceCollection.granuleLimit < maxResults) {
+      maxResults = serviceCollection.granuleLimit;
+      reason = GranuleLimitReason.Collection;
+    }
   }
 
-  let maxResults = env.maxGranuleLimit;
-  if ('maxresults' in query) {
-    maxResults = Math.min(env.maxGranuleLimit, query.maxresults);
-  }
-  return maxResults;
+  return { maxGranules: maxResults, reason };
 }
 
 /**
- * Returns a warning message if not all matching granules will be processed for the request
- *
+ * Create a message indicating that the results have been limited and why - if necessary
+ * 
+ * @param req - The client request, containing an operation
+ * @param collection - The id of the collection to which the granules belong
  * @returns a warning message if not all matching granules will be processed, or undefined
- * if not applicable
+ * if not applicable 
  */
-function getResultsLimitedMessage(req: HarmonyRequest): string {
+function getResultsLimitedMessage(req: HarmonyRequest, collection: string): string {
   const { operation } = req;
   let message;
 
   if ( req.context.serviceConfig.has_granule_limit == false ) return message;
 
-  let numGranules = operation.cmrHits;
-  if (operation.maxResults) {
-    numGranules = Math.min(numGranules, operation.maxResults, env.maxGranuleLimit);
-  } else {
-    numGranules = Math.min(numGranules, env.maxGranuleLimit);
-  }
+  const { maxGranules, reason } = getMaxGranules(req, collection);
 
-  if (operation.cmrHits > numGranules) {
+  if (operation.cmrHits > maxGranules) {
     message = `CMR query identified ${operation.cmrHits} granules, but the request has been limited `
-     + `to process only the first ${numGranules} granules`;
-    if (operation.maxResults && operation.maxResults < env.maxGranuleLimit) {
-      message += ` because you requested ${operation.maxResults} maxResults.`;
-    } else {
-      message += ' because of system constraints.';
+      + `to process only the first ${maxGranules} granules`;
+
+    switch (reason) {
+      case GranuleLimitReason.MaxResults:
+        message += ` because you requested ${operation.maxResults} maxResults.`;
+        break;
+
+      case GranuleLimitReason.Collection:
+        message += ` because collection ${collection} is limited to ${maxGranules} for the ${req.context.serviceConfig.name} service.`;
+        break;
+
+      default:
+        message += ' because of system constraints.';
+        break;
     }
   }
   return message;
@@ -126,19 +161,19 @@ async function cmrGranuleLocatorTurbo(
     const queries = sources.map(async (source) => {
       logger.info(`Querying granules for ${source.collection}`, { cmrQuery, collection: source.collection });
       const startTime = new Date().getTime();
-      const maxResults = getMaxGranules(req);
+      const { maxGranules } = getMaxGranules(req, source.collection);
 
-      operation.maxResults = maxResults;
+      operation.maxResults = maxGranules;
 
       if (operation.geojson) {
         cmrQuery.geojson = operation.geojson;
       }
 
-      const { hits, scrollID } = await cmr.initateGranuleScroll(
+      const { hits, scrollID } = await cmr.initiateGranuleScroll(
         source.collection,
         cmrQuery,
         req.accessToken,
-        maxResults,
+        maxGranules,
       );
       if (hits === 0) {
         throw new RequestValidationError('No matching granules found.');
@@ -149,7 +184,7 @@ async function cmrGranuleLocatorTurbo(
       operation.cmrHits += hits;
       operation.scrollIDs.push(scrollID);
 
-      const limitedMessage = getResultsLimitedMessage(req);
+      const limitedMessage = getResultsLimitedMessage(req, source.collection);
       if (limitedMessage) {
         req.context.messages.push(limitedMessage);
       }
@@ -212,9 +247,9 @@ async function cmrGranuleLocatorNonTurbo(
     const queries = sources.map(async (source, i) => {
       logger.info(`Querying granules for ${source.collection}`, { cmrQuery, collection: source.collection });
       const startTime = new Date().getTime();
-      const maxResults = getMaxGranules(req);
+      const { maxGranules } = getMaxGranules(req, source.collection);
 
-      operation.maxResults = maxResults;
+      operation.maxResults = maxGranules;
 
       if (operation.geojson) {
         cmrQuery.geojson = operation.geojson;
@@ -223,7 +258,7 @@ async function cmrGranuleLocatorNonTurbo(
         source.collection,
         cmrQuery,
         req.accessToken,
-        maxResults,
+        maxGranules,
       );
 
       const indexStr = `${i}`.padStart(5, '0');
@@ -258,15 +293,15 @@ async function cmrGranuleLocatorNonTurbo(
       if (granules.length === 0) {
         throw new RequestValidationError('No matching granules found.');
       }
+      const limitedMessage = getResultsLimitedMessage(req, source.collection);
+      if (limitedMessage) {
+        req.context.messages.push(limitedMessage);
+      }
       return Object.assign(source, { granules });
     });
 
     await Promise.all(queries);
     operation.cmrQueryLocations = operation.cmrQueryLocations.sort();
-    const limitedMessage = getResultsLimitedMessage(req);
-    if (limitedMessage) {
-      req.context.messages.push(limitedMessage);
-    }
   } catch (e) {
     if (e instanceof RequestValidationError || e instanceof CmrError) {
       // Avoid giving confusing errors about GeoJSON due to upstream converted files

@@ -219,7 +219,7 @@ export interface HarmonyGranule {
   bbox?: number[];
 }
 
-interface DataSource {
+export interface DataSource {
   collection: string;
   granules: HarmonyGranule[];
   variables: HarmonyVariable[];

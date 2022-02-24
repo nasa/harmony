@@ -171,7 +171,6 @@ export default class StubService extends BaseService<void> {
  */
 export function hookServices(serviceConfigs: ServiceConfig<unknown>[]): void {
   let stubService;
-
   before(function () {
     stubService = stub(services, 'getServiceConfigs')
       .returns(serviceConfigs);

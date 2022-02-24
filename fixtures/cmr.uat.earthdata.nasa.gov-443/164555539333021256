@@ -1,0 +1,25 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\nNaN\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"scroll\"\r\n\r\ndefer\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 400 Bad Request
+content-type: application/json
+content-length: 60
+connection: close
+date: Tue, 22 Feb 2022 18:42:55 GMT
+access-control-allow-origin: *
+cmr-request-id: a1e9fda7-8c01-4488-a50d-bde41a20073b
+x-request-id: JiXS_YjVYMMhha4cnMwx5m4zAi12lgHYLKI2IijmuSjFASM0SvZjQg==
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+server: ServerTokens ProductOnly
+x-cache: Error from cloudfront
+via: 1.1 68d323cfd4a0f1ae252f92c083654190.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P2
+x-amz-cf-id: JiXS_YjVYMMhha4cnMwx5m4zAi12lgHYLKI2IijmuSjFASM0SvZjQg==
+
+{"errors":["page_size must be a number between 0 and 2000"]}

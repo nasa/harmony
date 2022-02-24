@@ -26,7 +26,7 @@ spec:
             cpu: 128m
             memory: 250Mi
         args:
-        - --resources=pods
+        - --resources=pods,nodes
         - --metric-labels-allowlist=pods=[name,app]
         image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.3.0
         livenessProbe:

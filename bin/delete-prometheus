@@ -17,4 +17,6 @@ helm delete ${PROMETHEUS_ADAPTER_HELM_NAME} -n ${PROMETHEUS_NAMESPACE}
 
 # Delete prometheus
 envsubst < "config/prometheus.yaml" | kubectl delete -f -
-
+if [ "$NODE_ENV" != "development" ]; then
+    envsubst < "config/alert-manager.yaml" | kubectl delete -f -
+fi
