@@ -1,8 +1,36 @@
+import * as _ from 'lodash';
 import * as winston from 'winston';
-
 import env = require('./env');
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
+
+/**
+ * Redact sensitive keys from an object.
+ * @param obj - the object to inspect
+ */
+function redact(obj: object): void {
+  const sensitiveKeys = [
+    /token/i,
+  ];
+  Object.keys(obj).forEach(function (key) {
+    if (typeof obj[key] === 'object') {
+      redact(obj[key]);
+    } else {
+      if (sensitiveKeys.some(regex => regex.test(key))) {
+        obj[key] = '<redacted>';
+      }
+    }
+  });
+}
+
+/**
+ * Formatter to help remove sensitive values from logs.
+ */
+const redactor = winston.format((info) => {
+  const redacted = _.cloneDeep(info);
+  redact(redacted);
+  return redacted;
+});
 
 /**
  * Creates a logger that logs messages in JSON format.
@@ -14,6 +42,7 @@ function createJsonLogger(): winston.Logger {
     format: winston.format.combine(
       winston.format.timestamp(),
       envNameFormat(),
+      redactor(),
       winston.format.json(),
     ),
     transports: [
@@ -55,6 +84,7 @@ function createTextLogger(): winston.Logger {
       winston.format.timestamp(),
       winston.format.prettyPrint(),
       winston.format.colorize({ colors: { error: 'red', info: 'blue' } }),
+      redactor(),
       textformat,
     ),
     transports: [
