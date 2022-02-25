@@ -5,7 +5,7 @@ import env = require('./env');
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
 
 /**
- * Redact sensitive keys from an object.
+ * Redact sensitive key values from an object.
  * @param obj - the object to inspect
  * @param sensitiveKeys - which keys to remove
  */
