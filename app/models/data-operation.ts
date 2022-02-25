@@ -45,7 +45,7 @@ function schemaVersions(): SchemaVersion[] {
       down: (model): unknown => {
         const revertedModel = _.cloneDeep(model);
         if ('point' in revertedModel) {
-          delete revertedModel.point; // eslint-disable-line no-param-reassign
+          delete revertedModel.subset.point; // eslint-disable-line no-param-reassign
         }
 
         return revertedModel;
@@ -539,7 +539,7 @@ export default class DataOperation {
    * @param point - The spatial point in form of [ Longitude, Latitude ]
    */
   set spatialPoint(point: Array<number>) {
-    this.model.point = point;
+    this.model.subset.point = point;
   }
 
   /**
@@ -549,7 +549,7 @@ export default class DataOperation {
    * @returns The spatial point in form of [ Longitude, Latitude ]
    */
   get spatialPoint(): Array<number> {
-    return this.model.point;
+    return this.model.subset.point;
   }
 
   /**

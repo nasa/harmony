@@ -72,6 +72,10 @@
       130,
       45
     ],
+    "point": [
+      -130,
+      45
+    ],
     "shape": {
       "href": "s3://example-bucket/some/path/resource.ext",
       "type": "application/geo+json"
@@ -83,10 +87,6 @@
     "start": "1999-01-01T10:00:00.000Z",
     "end": "2020-02-20T15:00:00.000Z"
   },
-  "point": [
-    -130,
-    45
-  ],
   "concatenate": false,
   "version": "0.14.0"
 }

@@ -29,9 +29,6 @@
             "description": "The time which should be used as the range for temporal subsetting",
             "$ref": "#/definitions/Temporal"
           },
-          "point": {
-            "$ref": "#/definitions/SpatialPoint"
-          },
           "callback": {
             "name": "Callback URL",
             "description": "The URL that non-HTTP services must POST to when their execution is complete (HTTP services simply return a response).  Set query param \"redirect=\" with a URL to redirect the user to a service result (preferred).  Set the Content-Type header and POST bytes in order to send a file directly to the user.  Set query param \"error=\" with a message to provide a service error.",
@@ -313,6 +310,10 @@
             },
             "minItems": 4,
             "maxItems": 4
+          },
+          "point": {
+            "description": "Spatial point query parameter. Coordinates are [Longitude, Latitude].",
+            "$ref": "#/definitions/SpatialPoint"
           },
           "shape": {
             "description": "Reference to a location containing a shape within which the service should spatially subset.  If present, the resource will always be GeoJSON (application/geo+json) in an object store (S3)",
