@@ -503,7 +503,7 @@ export function queryGranulesForCollection(
  * @param limit - The maximum number of granules to return
  * @returns The granules associated with the input collection
  */
-export function initateGranuleScroll(
+export function initiateGranuleScroll(
   collectionId: string,
   query: CmrQuery,
   token: string,

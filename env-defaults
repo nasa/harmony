@@ -113,7 +113,7 @@ MAX_GRANULE_LIMIT=350
 #  - "test" for unit / integration tests
 # This is a conventional identifier to switch application behavior but is
 # currently only used to determine which database connection to use in
-# db/knexfile.js
+# db/knexfile.js and whether to deploy the alert manager
 NODE_ENV=development
 
 # Connection string to use to connect to the database.  Used for
@@ -328,18 +328,42 @@ HOST_VOLUME_PATH=
 ###########################################################################
 #                             Prometheus Config                           #
 #                                                                         #
-# Variables that get used in the k8s Prometheus deployment                #
-#                                                                         #
+# This section is irrelevant for local development unless you are a       #
+# harmony core developer who plans to deploy Prometheus locally           #
 ###########################################################################
 
+# Prometheus deployment variables
 PROMETHEUS_REQUESTS_CPU=128m
 PROMETHEUS_REQUESTS_MEMORY=150Mi
-PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE=300Mi
+PROMETHEUS_REQUESTS_EPHEMERAL_STORAGE=600Mi
 PROMETHEUS_LIMITS_CPU=128m
-PROMETHEUS_LIMITS_MEMORY=300Mi
-PROMETHEUS_LIMITS_EPHEMERAL_STORAGE=500Mi
+
+PROMETHEUS_LIMITS_MEMORY=600Mi
+PROMETHEUS_LIMITS_EPHEMERAL_STORAGE=2000Mi
 PROMETHEUS_PROMETHEUS_SCRAPE_INTERVAL=15s
 PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL=15s
+
+# See https://prometheus.io/docs/prometheus/latest/storage/ for details on retention metrics.
+# How long to keep prometheus metrics before cleaning up
+PROMETHEUS_RETENTION_TIME=180d
+# Maximum amount of space to use for Prometheus metrics before deleting oldest metrics
+# Be sure to set this value to less than PROMETHEUS_LIMITS_EPHEMERAL_STORAGE otherwise the
+# pod may be evicted due to running out of ephemeral space.
+PROMETHEUS_RETENTION_SIZE=1750MB
+
+# how long before the specified alert is triggered/firing
+PROMETHEUS_POD_NOT_HEALTHY_DURATION=10m
+PROMETHEUS_NODE_NOT_READY_DURATION=10m
+
+# Alert manager variables (irrelevant to local development).
+# To see/test whether alerts are firing locally, kubectl port-forward {prometheus-pod} 9090:9090 -n monitoring
+# and navigate to the prometheus UI http://localhost:9090/alerts
+ALERT_MANAGER_REQUESTS_CPU=500m
+ALERT_MANAGER_REQUESTS_MEMORY=500M
+ALERT_MANAGER_LIMITS_CPU=1
+ALERT_MANAGER_LIMITS_MEMORY=1Gi
+
+ALERT_MANAGER_TOPIC_ARN=
 
 ###########################################################################
 #             Horizontal Pod Autoscaling Config                           #
@@ -352,7 +376,7 @@ HPA_MIN_REPLICAS=1
 HPA_MAX_REPLICAS=10
 
 # See https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/#Quantity
-# for an explanation of the "m" suffix 
+# for an explanation of the "m" suffix
 HPA_TARGET_VALUE=10000m
 
 #############################################################################
