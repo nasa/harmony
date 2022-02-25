@@ -44,7 +44,7 @@ function schemaVersions(): SchemaVersion[] {
       schema: readSchema('0.14.0'),
       down: (model): unknown => {
         const revertedModel = _.cloneDeep(model);
-        if ('point' in revertedModel) {
+        if ('point' in revertedModel.subset) {
           delete revertedModel.subset.point; // eslint-disable-line no-param-reassign
         }
 
