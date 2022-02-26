@@ -1,6 +1,6 @@
 ## [0.14.0] - 2022-02-19
 ### Added
-- DataOperation.point - Spatial point provided by the CMR
+- DataOperation.subset.point - Spatial point provided by the CMR
 
 ## [0.13.0] - 2021-02-04
 ### Added
