@@ -166,7 +166,7 @@ function _getDimensionName(value: string): string {
  *
  * @param values - An array of all the specified point parameters from the request
  * @param dimConfig - A mapping of dimension names to min, max, and data type values,
- *   see `dimensionInfo` (the default value) in this file.  Usually should not be specified,
+ *   see `dimensionConfig` (the default value) in this file.  Usually should not be specified,
  *   except for testing.
  * @returns An array with two elements corresponding to [longitude, latitude]
  * @throws ParameterParseError - if a subset parameter cannot be parsed, has unrecognized
