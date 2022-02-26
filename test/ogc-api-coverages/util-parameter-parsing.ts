@@ -128,6 +128,10 @@ describe('OGC API Coverages - Utilities', function () {
         expect(parsePointParamFn([-160.2, 90.2])).to.throw(ParameterParseError, 'dimension "lat" value must be between -90 and 90');
       });
 
+      it('throws a parse error when wrong number of point values are provided', function () {
+        expect(parsePointParamFn([-160.2, 80.2, 36.8])).to.throw(ParameterParseError, 'should point 2 values in "point" but got "-160.2,80.2,36.8" instead.');
+      });
+
     });
 
     describe('time subsets', function () {
