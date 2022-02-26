@@ -501,6 +501,7 @@ https://cmr.uat.earthdata.nasa.gov:
     collections:
       - id: C1233800302-EEDTEST
       - id: C1234088182-EEDTEST
+        granuleLimit: 100 # added to test collection granule limits for HARMONY-795
     capabilities:
       subsetting:
         bbox: true
