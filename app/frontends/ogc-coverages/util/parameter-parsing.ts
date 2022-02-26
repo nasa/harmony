@@ -173,7 +173,7 @@ function _getDimensionName(value: string): string {
  *   axis names, or is otherwise invalid
  */
 export function parsePointParam(
-  values: string,
+  values: number[],
   dimConfig: DimensionConfig = dimensionConfig,
 ): number[] {
   let results;
