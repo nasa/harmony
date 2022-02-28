@@ -899,6 +899,27 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     itIncludesRequestUrl('C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
   });
 
+  describe('when performing point-based query', function () {
+    const query = {
+      point: [-96.595, 39.1019],
+    };
+    hookRangesetRequest(version, collection, 'all', { query });
+
+    it('returns a 200 successful response', function () {
+      expect(this.res.status).to.equal(200);
+    });
+    it('returns a JSON body in the format of a job status without a job ID', function () {
+      const job = JSON.parse(this.res.text);
+      expect(Object.keys(job)).to.eql(expectedNoOpJobKeys);
+    });
+    it('limits results to only those that match the point-based query', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.links.length).to.equal(39);
+    });
+
+    itIncludesRequestUrl('C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?point=-96.595&point=39.1019');
+  });
+
   describe('when specifying an invalid variable', function () {
     hookRangesetRequest(version, collection, 'badVar', {});
 

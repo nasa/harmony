@@ -4,6 +4,7 @@ import * as path from 'path';
 export const samplesDir = './test/resources/data-operation-samples';
 
 export const versions = [
+  '0.14.0',
   '0.13.0',
   '0.12.0',
   '0.11.0',

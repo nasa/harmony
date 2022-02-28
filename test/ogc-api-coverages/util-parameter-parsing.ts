@@ -2,6 +2,7 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import {
   parseSubsetParams,
+  parsePointParam,
   subsetParamsToBbox,
   subsetParamsToTemporal,
   ParameterParseError,
@@ -12,6 +13,7 @@ describe('OGC API Coverages - Utilities', function () {
     // Function that returns a function that calls parseSubsetParams with the given value,
     // necessary for setting mocha expectations about exceptions.
     const parseSubsetParamsFn = (value) => (): object => parseSubsetParams(value);
+    const parsePointParamFn = (value) => (): object => parsePointParam(value);
 
     describe('lat subsets', function () {
       it('returns a parsed object with "lat" info when passed a valid range', function () {
@@ -103,6 +105,33 @@ describe('OGC API Coverages - Utilities', function () {
       it('throws a parse error when the lon parameter range cannot be parsed because of missing beginning paren', function () {
         expect(parseSubsetParamsFn(['lon-10:10)'])).to.throw(ParameterParseError, 'unable to parse subset dimension from value "lon-10:10)"');
       });
+    });
+
+    describe('point subsets', function () {
+      it('returns a parsed object with "point" info when passed a valid range', function () {
+        expect(parsePointParam([-160.2, 80.2])).to.eql([-160.2, 80.2]);
+      });
+
+      it('throws a parse error when the passed lon value is smaller than -180', function () {
+        expect(parsePointParamFn([-180.2, 80.2])).to.throw(ParameterParseError, 'dimension "lon" value must be between -180 and 180');
+      });
+
+      it('throws a parse error when the passed lon value is greater than 180', function () {
+        expect(parsePointParamFn([180.2, 80.2])).to.throw(ParameterParseError, 'dimension "lon" value must be between -180 and 180');
+      });
+
+      it('throws a parse error when the passed lat value is smaller than -90', function () {
+        expect(parsePointParamFn([-160.2, -90.2])).to.throw(ParameterParseError, 'dimension "lat" value must be between -90 and 90');
+      });
+
+      it('throws a parse error when the passed lat value is greater than 90', function () {
+        expect(parsePointParamFn([-160.2, 90.2])).to.throw(ParameterParseError, 'dimension "lat" value must be between -90 and 90');
+      });
+
+      it('throws a parse error when wrong number of point values are provided', function () {
+        expect(parsePointParamFn([-160.2, 80.2, 36.8])).to.throw(ParameterParseError, 'should point 2 values in "point" but got "-160.2,80.2,36.8" instead.');
+      });
+
     });
 
     describe('time subsets', function () {

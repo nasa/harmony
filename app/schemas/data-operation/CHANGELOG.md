@@ -1,3 +1,7 @@
+## [0.14.0] - 2022-02-19
+### Added
+- DataOperation.subset.point - Spatial point provided by the CMR
+
 ## [0.13.0] - 2021-02-04
 ### Added
 - concatenate - true/false - true if the service should concatenate multiple input files into a single output file
