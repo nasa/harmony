@@ -22,12 +22,6 @@ describe('util/log', function () {
       expect(objToRedact).to.deep.equal({ accessToken: '<redacted>', nested: { apiKey: '<redacted>' } });
     });
 
-    it('redacts access tokens from nested objects', function () {
-      const objToRedact = { nested: { accessToken: 'token-that-should-be-redacted' } };
-      redact(objToRedact, [/token/i]);
-      expect(objToRedact).to.deep.equal({ nested: { accessToken: '<redacted>' } });
-    });
-
     it('redacts access tokens from DataOperations', function () {
       const objToRedact = new DataOperation();
       objToRedact.model.accessToken = 'token-that-should-be-redacted';
