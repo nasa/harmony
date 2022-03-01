@@ -11,6 +11,15 @@ describe('util/log', function () {
       expect(objToRedact).to.deep.equal({ accessToken: '<redacted>' });
     });
 
+    it('redacts multiple sensitive values from the same object', function () {
+      const objToRedact = { 
+        accessToken: 'token-that-should-be-redacted',
+        apiKey: 'api-key-that-should-be-redacted',
+      };
+      redact(objToRedact, [/token/i, /apiKey/i]);
+      expect(objToRedact).to.deep.equal({ accessToken: '<redacted>', apiKey: '<redacted>' });
+    });
+
     it('redacts access tokens from nested objects', function () {
       const objToRedact = { nested: { accessToken: 'token-that-should-be-redacted' } };
       redact(objToRedact, [/token/i]);
