@@ -12,7 +12,7 @@ describe('util/log', function () {
     });
 
     it('redacts access tokens from nested objects', function () {
-      const objToRedact = { nested: { accessToken: 'abc' } };
+      const objToRedact = { nested: { accessToken: 'token-that-should-be-redacted' } };
       redact(objToRedact, [/token/i]);
       expect(objToRedact).to.deep.equal({ nested: { accessToken: '<redacted>' } });
     });
