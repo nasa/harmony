@@ -9,7 +9,7 @@ const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmony
  * @param obj - the object to inspect
  * @param sensitiveKeys - keys for which values will be redacted
  */
-function redact(obj: object, sensitiveKeys: RegExp[]): void {
+export function redact(obj: object, sensitiveKeys: RegExp[]): void {
   Object.keys(obj).forEach(function (key) {
     if (typeof obj[key] === 'object') {
       redact(obj[key], sensitiveKeys);
