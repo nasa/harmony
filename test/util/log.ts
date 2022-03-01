@@ -5,7 +5,7 @@ import DataOperation from '../../app/models/data-operation';
 
 describe('util/log', function () {
   describe('redact', function () {
-    it('redacts access tokens from any object', function () {
+    it('redacts access tokens when the token is a top level key', function () {
       const objToRedact = { accessToken: 'token-that-should-be-redacted' };
       redact(objToRedact, [/token/i]);
       expect(objToRedact).to.deep.equal({ accessToken: '<redacted>' });
