@@ -82,7 +82,6 @@ function createTextLogger(): winston.Logger {
       winston.format.timestamp(),
       winston.format.prettyPrint(),
       winston.format.colorize({ colors: { error: 'red', info: 'blue' } }),
-      redactor(),
       textformat,
     ),
     transports: [
