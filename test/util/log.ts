@@ -41,6 +41,7 @@ describe('util/log', function () {
       };
       objToRedact.circularRef = objToRedact;
       redact(objToRedact, [/token/i]);
+      expect(objToRedact.accessToken).to.equal('<redacted>');
     });
   });
 });
