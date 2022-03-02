@@ -37,11 +37,15 @@ export function redact(obj: object, sensitiveKeys: RegExp[]): void {
 
 /**
  * Formatter to help remove sensitive values from logs.
+ * The redactor will search all keys according 
+ * to desired regexp patterns and replace their values with <redacted>.
  */
 const redactor = winston.format((info) => {
-  const redacted = _.cloneDeep(info);
-  redact(redacted, [/token/i]);
-  return redacted;
+  // clone the info so that we don't mess with the state of 
+  // any objects that we're using elsewhere
+  const redactedClone = _.cloneDeep(info);
+  redact(redactedClone, [/token/i]);
+  return redactedClone;
 });
 
 /**
