@@ -16,7 +16,7 @@ export function redact(obj: object, sensitiveKeys: RegExp[]): void {
   Object.keys(obj).forEach(function (key) {
     if (sensitiveKeys.some(regex => regex.test(key))) {
       obj[key] = '<redacted>';
-    } else if ((typeof obj[key] === 'object')) {
+    } else if (typeof obj[key] === 'object') {
       if (seenObjects.has(obj[key])) return;
       redact(obj[key], sensitiveKeys);
     } 
