@@ -27,5 +27,14 @@ describe('util/log', function () {
         subset: {},
       }));
     });
+
+    it('does not loop infinitely if a circular reference is encountered', function () {
+      const objToRedact = { 
+        accessToken: 'token-that-should-be-redacted',
+        circularRef: null,
+      };
+      objToRedact.circularRef = objToRedact;
+      redact(objToRedact, [/token/i]);
+    });
   });
 });

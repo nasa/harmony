@@ -6,18 +6,21 @@ const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmony
 
 /**
  * Redact sensitive key values from an object.
+ * Redacts values with non-object types (string, number, etc.)
+ * 
  * @param obj - the object to inspect
  * @param sensitiveKeys - keys for which values will be redacted
  */
 export function redact(obj: object, sensitiveKeys: RegExp[]): void {
+  const seenObjects = new Map();
+  seenObjects.set(obj, true);
   Object.keys(obj).forEach(function (key) {
-    if (typeof obj[key] === 'object') {
+    if (sensitiveKeys.some(regex => regex.test(key))) {
+      obj[key] = '<redacted>';
+    } else if ((typeof obj[key] === 'object')) {
+      if (seenObjects.has(obj[key])) return;
       redact(obj[key], sensitiveKeys);
-    } else {
-      if (sensitiveKeys.some(regex => regex.test(key))) {
-        obj[key] = '<redacted>';
-      }
-    }
+    } 
   });
 }
 
