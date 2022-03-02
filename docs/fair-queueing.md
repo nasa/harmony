@@ -3,16 +3,18 @@
 **IMPORTANT! This documentation concerns features under active development. The algorithm described here may undergo changes in the future.**
 
 ## Table of Contents<!-- omit in toc -->
+- [Introduction](#introduction)
+- [Background](#background)
+- [The Algorithm](#the-algorithm)
 
-
-# Introduction
+## Introduction
 Harmony supports two goals with regard to processing work for users. These are referred to
 collectively as _fair queueing_:
 
 * When a user performs a Harmony request and no other users are currently in the system, Harmony provides all available resources to that user
 * When a user performs a Harmony request and other users currently have requests pending in the system, Harmony shares available resources evenly between the user requests (prioritizing synchronous calls)
 
-# Background
+## Background
 Harmony orchestrates multiple services that can be invoked on data. These services
 can be chained together (where appropriate) to form complex workflows involving both
 sequential services chains in which the output of one service becomes the input of the
@@ -26,7 +28,7 @@ Fair queueing is the process by which Harmony decides which work item to send to
 requesting work. More generally, it answers the question, "of the users needing work 
 performed by a given service, which user should go next?". 
  
-# The Algorithm
+## The Algorithm
 The steps to perform fair queueing in harmony can be summarized as follows:
 
 When a worker requests a work item for a given service
