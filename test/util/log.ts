@@ -12,8 +12,14 @@ describe('util/log', function () {
           apiKey: 'api-key-that-should-be-redacted',
         },
       };
+      const objAfterRedaction = { 
+        accessToken: '<redacted>', 
+        nested: { 
+          apiKey: '<redacted>',
+        }, 
+      };
       redact(objToRedact, [/token/i, /apiKey/i]);
-      expect(objToRedact).to.deep.equal({ accessToken: '<redacted>', nested: { apiKey: '<redacted>' } });
+      expect(objToRedact).to.deep.equal(objAfterRedaction);
     });
 
     it('redacts access tokens from DataOperations', function () {
