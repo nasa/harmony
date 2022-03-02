@@ -6,6 +6,7 @@
 - [Introduction](#introduction)
 - [Background](#background)
 - [The Algorithm](#the-algorithm)
+
 ## Introduction
 Harmony supports two goals with regard to processing work for users. These are referred to
 collectively as _fair queueing_:
