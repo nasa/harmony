@@ -37,9 +37,11 @@ describe('util/log', function () {
     it('does not loop infinitely if a circular reference is encountered', function () {
       const objToRedact = { 
         accessToken: 'token-that-should-be-redacted',
-        circularRef: null,
+        anObject: {
+          circularRef: null,
+        },
       };
-      objToRedact.circularRef = objToRedact;
+      objToRedact.anObject.circularRef = objToRedact;
       redact(objToRedact, [/token/i]);
       expect(objToRedact.accessToken).to.equal('<redacted>');
     });
