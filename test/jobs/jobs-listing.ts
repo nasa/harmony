@@ -208,7 +208,7 @@ describe('Jobs listing route', function () {
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
             code: 'harmony.RequestValidationError',
-            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 10000.',
+            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
           });
         });
       });
@@ -220,7 +220,7 @@ describe('Jobs listing route', function () {
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
             code: 'harmony.RequestValidationError',
-            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 10000.',
+            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
           });
         });
       });
@@ -232,7 +232,7 @@ describe('Jobs listing route', function () {
           expect(this.res.statusCode).to.equal(400);
           expect(error).to.eql({
             code: 'harmony.RequestValidationError',
-            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 10000.',
+            description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
           });
         });
       });
