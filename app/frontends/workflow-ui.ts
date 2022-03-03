@@ -49,6 +49,8 @@ export async function getJobs(
           const path = url.pathname + url.search;
           return path;
         } catch (e) {
+          req.context.logger.error(`Could not form a valid URL from job.request: ${this.request}`);
+          req.context.logger.error(e);
           return this.request;
         }
       },
