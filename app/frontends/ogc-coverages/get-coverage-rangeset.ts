@@ -4,7 +4,7 @@ import { keysToLowerCase } from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import wrap from '../../util/array';
 import parseVariables from './util/variable-parsing';
-import { parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
+import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
 import { parseAcceptHeader } from '../../util/content-negotiation';
 import parseMultiValueParameter from '../../util/parameter-parsing';
 import HarmonyRequest from '../../models/harmony-request';
@@ -69,6 +69,12 @@ export default function getCoverageRangeset(
     const bbox = subsetParamsToBbox(subset);
     if (bbox) {
       operation.boundingRectangle = bbox;
+    }
+    const point = parsePointParam(query.point);
+    if (point) {
+      if (bbox || req.rawHeaders.filter((x) => new RegExp('shapefile=*').test(x)).length)
+        throw new RequestValidationError('bounding_box and point query parameters should not co-exist');
+      operation.spatialPoint = point;
     }
     const { start, end } = subsetParamsToTemporal(subset);
     if (start || end) {
