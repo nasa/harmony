@@ -44,9 +44,13 @@ export async function getJobs(
       version,
       jobBadge() { return badgeClasses[this.status]; },
       jobUrl() {
-        const url = new URL(this.request);
-        const path = url.pathname + url.search;
-        return path;
+        try {
+          const url = new URL(this.request);
+          const path = url.pathname + url.search;
+          return path;
+        } catch (e) {
+          return this.request;
+        }
       },
       jobCreatedAt() { return this.createdAt.getTime(); },
       links: [
