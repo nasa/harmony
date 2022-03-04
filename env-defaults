@@ -269,6 +269,12 @@ QUERY_CMR_REQUESTS_MEMORY=128Mi
 QUERY_CMR_LIMITS_CPU=128m
 QUERY_CMR_LIMITS_MEMORY=512Mi
 
+GIOVANNI_ADAPTER_IMAGE=harmonyservices/giovanni-adapter:latest
+GIOVANNI_ADAPTER_REQUESTS_CPU=128m
+GIOVANNI_ADAPTER_REQUESTS_MEMORY=128Mi
+GIOVANNI_ADAPTER_LIMITS_CPU=128m
+GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
+
 # The services to deploy locally. A comma-separated list of services that the bin/deploy-services
 # script should attempt to deploy. By default only a couple of harmony example services are deployed.
 # When specifying another service to be deployed make sure the name matches the prefix for the
