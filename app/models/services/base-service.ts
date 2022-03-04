@@ -444,7 +444,9 @@ export default abstract class BaseService<ServiceParamType> {
 
     if (this.config.default_sync !== undefined) return this.config.default_sync;
 
-    let numResults = this.operation.cmrHits;
+    // If first step is not query-cmr, cmrHits will not be set in operation
+    // set numResults to be a huge number in this case
+    let numResults = this.operation.cmrHits || Number.MAX_SAFE_INTEGER;
 
     if (operation.maxResults) {
       numResults = Math.min(numResults, operation.maxResults);
