@@ -27,7 +27,7 @@ export function redact( /* eslint-disable @typescript-eslint/no-explicit-any */
       if (!infoClone) {
         infoClone = _.cloneDeep(info);
       }
-      infoClone[key].accessToken = '<redacted>';
+      infoClone[key].model.accessToken = '<redacted>';
     }
   });
   if (infoClone) {
