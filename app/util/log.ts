@@ -20,6 +20,10 @@ export function redact( /* eslint-disable @typescript-eslint/no-explicit-any */
     const infoClone = _.cloneDeep(info);
     infoClone.accessToken = '<redacted>';
     return infoClone;
+  } else if (info.model && info.model.accessToken) {
+    const infoClone = _.cloneDeep(info);
+    infoClone.model.accessToken = '<redacted>';
+    return infoClone;
   }
   let infoClone;
   Object.keys(info).forEach(function (key) {
