@@ -89,8 +89,7 @@ https://cmr.earthdata.nasa.gov:
       output_formats:
         - text/csv
     steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${GESDISC_GIOVANNI_IMAGE}
+      - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
 
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.14.0'
@@ -485,8 +484,7 @@ https://cmr.uat.earthdata.nasa.gov:
       output_formats:
         - text/csv
     steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${GESDISC_GIOVANNI_IMAGE}
+      - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
 
   - name: harmony/service-example
     data_operation_version: '0.14.0'
