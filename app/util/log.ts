@@ -15,7 +15,7 @@ const redactor = winston.format((info) => {
 
 /**
  * Creates a logger that logs messages in JSON format.
- *@param transports - the transports to use
+ *@param transports - the transports to write to
  * 
  * @returns The JSON Winston logger
  */
@@ -27,7 +27,7 @@ export function createJsonLogger(transports: winston.transport[]): winston.Logge
       redactor(),
       winston.format.json(),
     ),
-    transports: transports,
+    transports,
   });
 
   return jsonLogger;
@@ -54,10 +54,11 @@ const textformat = winston.format.printf(
 /**
  * Creates a logger that log messages as a text string. Useful when testing locally and viewing
  * logs via a terminal.
+ * @param transports - the transports to write to
  *
  * @returns The text string Winston logger
  */
-function createTextLogger(): winston.Logger {
+export function createTextLogger(transports: winston.transport[]): winston.Logger {
   const textLogger = winston.createLogger({
     defaultMeta: {},
     format: winston.format.combine(
@@ -66,17 +67,14 @@ function createTextLogger(): winston.Logger {
       winston.format.colorize({ colors: { error: 'red', info: 'blue' } }),
       textformat,
     ),
-    transports: [
-      new winston.transports.Console({ level: env.logLevel }),
-    ],
+    transports,
   });
 
   return textLogger;
 }
 
-const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger() : createJsonLogger([
-  new winston.transports.Console({ level: env.logLevel }),
-]);
+const transport = new winston.transports.Console({ level: env.logLevel });
+const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger([transport]) : createJsonLogger([transport]);
 
 /**
  * Configures logs so that they are written to the file with the given name, also suppressing

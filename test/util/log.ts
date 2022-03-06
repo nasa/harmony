@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { createJsonLoggerForTest } from '../helpers/log';
+import { createLoggerForTest } from '../helpers/log';
 import DataOperation from '../../app/models/data-operation';
 
 describe('util/log', function () {
@@ -8,7 +8,7 @@ describe('util/log', function () {
 
     let testLogger, getTestLogs;
     beforeEach(function () {
-      ({ getTestLogs, testLogger } = createJsonLoggerForTest());
+      ({ getTestLogs, testLogger } = createLoggerForTest());
     });
 
     afterEach(function () {
