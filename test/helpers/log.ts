@@ -1,14 +1,14 @@
 import * as winston from 'winston';
 import { Writable } from 'stream';
-import { createJsonLogger } from '../../app/util/log';
+import { createJsonLogger, createTextLogger } from '../../app/util/log';
 
 /**
- * Create a JSON logger for unit testing.
+ * Create a logger for unit testing.
  * 
  * @returns an object containing the logger 
  * and getTestLogs function for obtaining the log messages
  */
-export function createJsonLoggerForTest(): {
+export function createLoggerForTest(logJson = true): {
   getTestLogs: () => string,
   testLogger: winston.Logger
 } {
@@ -20,7 +20,7 @@ export function createJsonLoggerForTest(): {
     next();
   };
   const streamTransport = new winston.transports.Stream({ stream });
-  const testLogger = createJsonLogger([streamTransport]);
+  const testLogger = logJson ? createJsonLogger([streamTransport]) : createTextLogger([streamTransport]);
   
   return { getTestLogs, testLogger };
 }
