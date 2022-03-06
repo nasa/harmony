@@ -8,19 +8,15 @@ function redactObject(obj, objPath, info, infoClone): object {
   // obj may be an instance of a particular harmony class (e.g. DataOperation), or an
   // object that has similar data properties but is not a direct instantiation of that class
   if (obj?.accessToken) { // DataOperation model
-    if (!infoClone) {
-      infoClone = _.cloneDeep(info);
-    }
+    infoClone = infoClone || _.cloneDeep(info);
     _.set(infoClone, [...objPath, 'accessToken'], '<redacted>');
-  } else if (obj?.model?.accessToken) { // DataOperation
-    if (!infoClone) {
-      infoClone = _.cloneDeep(info);
-    }
+  }
+  if (obj?.model?.accessToken) { // DataOperation
+    infoClone = infoClone || _.cloneDeep(info);
     _.set(infoClone, [...objPath, 'model', 'accessToken'], '<redacted>');
-  } else if (obj?.operation?.model?.accessToken) { // HarmonyRequest or BaseService
-    if (!infoClone) {
-      infoClone = _.cloneDeep(info);
-    }
+  }
+  if (obj?.operation?.model?.accessToken) { // HarmonyRequest or BaseService
+    infoClone = infoClone || _.cloneDeep(info);
     _.set(infoClone, [...objPath, 'operation', 'model', 'accessToken'], '<redacted>');
   }
   return infoClone;
