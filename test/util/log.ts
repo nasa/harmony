@@ -19,7 +19,7 @@ describe('util/log', function () {
       testLogger.close();
     });
 
-    it('logs a <redacted> token when given a DataOperation', function () {
+    it('logs a <redacted> token when given a DataOperation or DataOperation model', function () {
       const objToLog = new DataOperation({
         accessToken: 'tokenToRedact',
         sources: [],
@@ -30,6 +30,11 @@ describe('util/log', function () {
       testLogger.info('A message', { 'dataOperation': objToLog });
       testLogger.info('A message', { 'k': 'v', ...objToLog });
       testLogger.info('A message', objToLog);
+
+      testLogger.info(objToLog.model);
+      testLogger.info('A message', { 'dataOperationModel': objToLog.model });
+      testLogger.info('A message', { 'k': 'v', ...objToLog.model });
+      testLogger.info('A message', objToLog.model);
 
       expect(getTestLogs()).to.include('"accessToken":"<redacted>"');
       expect(getTestLogs()).to.not.include('"accessToken":"tokenToRedact"');
@@ -43,30 +48,6 @@ describe('util/log', function () {
       }));
     });
 
-    it('logs a <redacted> token when given a DataOperation model', function () {
-      const objToLog = new DataOperation({
-        accessToken: 'tokenToRedact',
-        sources: [],
-        format: {},
-        subset: {},
-      }).model;
-      testLogger.info(objToLog);
-      testLogger.info('A message', { 'dataOperationModel': objToLog });
-      testLogger.info('A message', { 'k': 'v', ...objToLog });
-      testLogger.info('A message', objToLog);
-
-      expect(getTestLogs()).to.include('"accessToken":"<redacted>"');
-      expect(getTestLogs()).to.not.include('"accessToken":"tokenToRedact"');
-
-      // check that the original object wasn't modified
-      expect(objToLog).to.deep.equal(new DataOperation({
-        accessToken: 'tokenToRedact',
-        sources: [],
-        format: {},
-        subset: {},
-      }).model);
-    });
-
     it('logs a <redacted> token when given a HarmonyRequest-like object', function () {
       const objToLog = {
         operation: new DataOperation({
@@ -76,7 +57,6 @@ describe('util/log', function () {
           subset: {},
         }),
       };
-
       testLogger.info(objToLog);
       testLogger.info('A message', { 'harmonyRequest': objToLog });
       testLogger.info('A message', { 'k': 'v', ...objToLog });
