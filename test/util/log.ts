@@ -1,43 +1,41 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { redact } from '../../app/util/log';
+import { createJsonLoggerForTest } from '../helpers/log';
 import DataOperation from '../../app/models/data-operation';
 
 describe('util/log', function () {
-  describe('redact', function () {
-    it('returns a cloned and redacted object when accessToken is present', function () {
-      const objToRedact = { 
-        accessToken: 'tokenToRedact',
-        otherKey: 'other logged info',
-      };
-      const redactedClone = redact(objToRedact);
-      expect(redactedClone).to.deep.equal({ 
-        accessToken: '<redacted>', 
-        otherKey: 'other logged info',
-      });
-      // check that the original object wasn't modified
-      expect(objToRedact).to.deep.equal({ 
-        accessToken: 'tokenToRedact',
-        otherKey: 'other logged info',
-      });
+  describe('jsonLogger', function () {
+
+    let testLogger, getTestLogs;
+    beforeEach(function () {
+      ({ getTestLogs, testLogger } = createJsonLoggerForTest());
     });
 
-    it('returns a cloned and redacted DataOperation when given a DataOperation', function () {
-      const objToRedact = new DataOperation({ 
+    afterEach(function () {
+      console.log(`The test logger output string was:\n${getTestLogs()}`);
+      for (const transport of testLogger.transports) {
+        transport.close;
+      }
+      testLogger.close();
+    });
+
+    it('logs a <redacted> token when given a DataOperation', function () {
+      const objToLog = new DataOperation({
         accessToken: 'tokenToRedact',
         sources: [],
         format: {},
         subset: {},
       });
-      const redactedClone = redact(objToRedact);
-      expect(redactedClone).to.deep.equal(new DataOperation({ 
-        accessToken: '<redacted>',
-        sources: [],
-        format: {},
-        subset: {},
-      }));
+      testLogger.info(objToLog);
+      testLogger.info('A message', { 'dataOperation': objToLog });
+      testLogger.info('A message', { 'k': 'v', ...objToLog });
+      testLogger.info('A message', objToLog);
+
+      expect(getTestLogs()).to.include('"accessToken":"<redacted>"');
+      expect(getTestLogs()).to.not.include('"accessToken":"tokenToRedact"');
+
       // check that the original object wasn't modified
-      expect(objToRedact).to.deep.equal(new DataOperation({ 
+      expect(objToLog).to.deep.equal(new DataOperation({
         accessToken: 'tokenToRedact',
         sources: [],
         format: {},
@@ -45,56 +43,57 @@ describe('util/log', function () {
       }));
     });
 
-    it('returns a cloned and redacted DataOperation when the DataOperation is a property of another object', function () {
-      const objToRedact = {
-        nested: new DataOperation({ 
-          accessToken: 'tokenToRedact',
-          sources: [],
-          format: {},
-          subset: {},
-        }),
-      };
-      const redacted = redact(objToRedact);
-      expect(redacted).to.deep.equal({
-        nested: new DataOperation({ 
-          accessToken: '<redacted>',
-          sources: [],
-          format: {},
-          subset: {},
-        }),
-      });
-      // check that the original object wasn't modified
-      expect(objToRedact).to.deep.equal({
-        nested: new DataOperation({ 
-          accessToken: 'tokenToRedact',
-          sources: [],
-          format: {},
-          subset: {},
-        }),
-      });
-    });
-
-    it('returns a cloned and redacted DataOperation.model when given a DataOperation.model', function () {
-      const objToRedact = new DataOperation({ 
+    it('logs a <redacted> token when given a DataOperation model', function () {
+      const objToLog = new DataOperation({
         accessToken: 'tokenToRedact',
         sources: [],
         format: {},
         subset: {},
       }).model;
-      const redactedClone = redact(objToRedact);
-      expect(redactedClone).to.deep.equal((new DataOperation({ 
-        accessToken: '<redacted>',
-        sources: [],
-        format: {},
-        subset: {},
-      })).model);
+      testLogger.info(objToLog);
+      testLogger.info('A message', { 'dataOperationModel': objToLog });
+      testLogger.info('A message', { 'k': 'v', ...objToLog });
+      testLogger.info('A message', objToLog);
+
+      expect(getTestLogs()).to.include('"accessToken":"<redacted>"');
+      expect(getTestLogs()).to.not.include('"accessToken":"tokenToRedact"');
+
       // check that the original object wasn't modified
-      expect(objToRedact).to.deep.equal((new DataOperation({ 
+      expect(objToLog).to.deep.equal(new DataOperation({
         accessToken: 'tokenToRedact',
         sources: [],
         format: {},
         subset: {},
-      })).model);
+      }).model);
+    });
+
+    it('logs a <redacted> token when given a HarmonyRequest-like object', function () {
+      const objToLog = {
+        operation: new DataOperation({
+          accessToken: 'tokenToRedact',
+          sources: [],
+          format: {},
+          subset: {},
+        }),
+      };
+
+      testLogger.info(objToLog);
+      testLogger.info('A message', { 'harmonyRequest': objToLog });
+      testLogger.info('A message', { 'k': 'v', ...objToLog });
+      testLogger.info('A message', objToLog);
+
+      expect(getTestLogs()).to.include('"accessToken":"<redacted>"');
+      expect(getTestLogs()).to.not.include('"accessToken":"tokenToRedact"');
+
+      // check that the original object wasn't modified
+      expect(objToLog).to.deep.equal({
+        operation: new DataOperation({
+          accessToken: 'tokenToRedact',
+          sources: [],
+          format: {},
+          subset: {},
+        }),
+      });
     });
   });
 });
