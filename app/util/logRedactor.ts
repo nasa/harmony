@@ -1,3 +1,8 @@
+import DataOperation from '../models/data-operation';
+import HarmonyRequest from '../models/harmony-request';
+import TurboService from '../models/services/turbo-service';
+import NoOpService from '../models/services/no-op-service';
+import HttpService from '../models/services/http-service';
 import * as _ from 'lodash';
 
 
@@ -11,11 +16,11 @@ function redactObject(obj, objPath, info, infoClone): object {
     infoClone = infoClone || _.cloneDeep(info);
     _.set(infoClone, [...objPath, 'accessToken'], '<redacted>');
   }
-  if (obj?.model?.accessToken) { // DataOperation
+  if ((obj as DataOperation)?.model?.accessToken) {
     infoClone = infoClone || _.cloneDeep(info);
     _.set(infoClone, [...objPath, 'model', 'accessToken'], '<redacted>');
   }
-  if (obj?.operation?.model?.accessToken) { // HarmonyRequest or BaseService
+  if ((obj as TurboService | NoOpService | HttpService | HarmonyRequest)?.operation?.model?.accessToken) {
     infoClone = infoClone || _.cloneDeep(info);
     _.set(infoClone, [...objPath, 'operation', 'model', 'accessToken'], '<redacted>');
   }
@@ -34,7 +39,9 @@ export default function redact( /* eslint-disable @typescript-eslint/no-explicit
 ): any {
   let infoClone = redactObject(info, [], info, null);
   Object.keys(info).forEach(function (key) {
-    infoClone = redactObject(info[key], [key], info, infoClone);
+    if (typeof info[key] === 'object') {
+      infoClone = redactObject(info[key], [key], info, infoClone);
+    }
   });
   if (infoClone) {
     return infoClone;
