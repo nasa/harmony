@@ -1,45 +1,10 @@
-import DataOperation from '../models/data-operation';
 import * as _ from 'lodash';
 import * as winston from 'winston';
 import env = require('./env');
+import redact from './logRedactor';
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
 
-
-
-/**
- * Redact sensitive key values from an object. The object passed
- * to the function will be modified in place.
- * 
- * @param info - the object to inspect 
- */
-export function redact( /* eslint-disable @typescript-eslint/no-explicit-any */
-  info: { [key: string | symbol]: any },
-): any {
-  if (info.accessToken) {
-    const infoClone = _.cloneDeep(info);
-    infoClone.accessToken = '<redacted>';
-    return infoClone;
-  } else if (info.model && info.model.accessToken) {
-    const infoClone = _.cloneDeep(info);
-    infoClone.model.accessToken = '<redacted>';
-    return infoClone;
-  }
-  let infoClone;
-  Object.keys(info).forEach(function (key) {
-    if (info[key] instanceof DataOperation) {
-      if (!infoClone) {
-        infoClone = _.cloneDeep(info);
-      }
-      infoClone[key].model.accessToken = '<redacted>';
-    }
-  });
-  if (infoClone) {
-    return infoClone;
-  } else {
-    return info;
-  }
-}
 
 /**
  * Formatter to help remove sensitive values from logs.
@@ -50,10 +15,11 @@ const redactor = winston.format((info) => {
 
 /**
  * Creates a logger that logs messages in JSON format.
- *
+ *@param transports - the transports to use
+ * 
  * @returns The JSON Winston logger
  */
-function createJsonLogger(): winston.Logger {
+export function createJsonLogger(transports: winston.transport[]): winston.Logger {
   const jsonLogger = winston.createLogger({
     format: winston.format.combine(
       winston.format.timestamp(),
@@ -61,9 +27,7 @@ function createJsonLogger(): winston.Logger {
       redactor(),
       winston.format.json(),
     ),
-    transports: [
-      new winston.transports.Console({ level: env.logLevel }),
-    ],
+    transports: transports,
   });
 
   return jsonLogger;
@@ -110,7 +74,9 @@ function createTextLogger(): winston.Logger {
   return textLogger;
 }
 
-const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger() : createJsonLogger();
+const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger() : createJsonLogger([
+  new winston.transports.Console({ level: env.logLevel }),
+]);
 
 /**
  * Configures logs so that they are written to the file with the given name, also suppressing
