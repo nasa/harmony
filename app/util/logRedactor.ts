@@ -9,20 +9,20 @@ import * as _ from 'lodash';
 /**
  * Redact sensitive values from an object if they exist.
  */
-function redactObject(obj, objPath, info, infoClone): object {
+function redactObject(obj, info, infoPath, infoClone): object {
   // obj may be an instance of a particular harmony class (e.g. DataOperation), or an
   // object that has similar data properties but is not a direct instantiation of that class
   if (obj?.accessToken) { // DataOperation model
     infoClone = infoClone || _.cloneDeep(info);
-    _.set(infoClone, [...objPath, 'accessToken'], '<redacted>');
+    _.set(infoClone, [...infoPath, 'accessToken'], '<redacted>');
   }
   if ((obj as DataOperation)?.model?.accessToken) {
     infoClone = infoClone || _.cloneDeep(info);
-    _.set(infoClone, [...objPath, 'model', 'accessToken'], '<redacted>');
+    _.set(infoClone, [...infoPath, 'model', 'accessToken'], '<redacted>');
   }
   if ((obj as TurboService | NoOpService | HttpService | HarmonyRequest)?.operation?.model?.accessToken) {
     infoClone = infoClone || _.cloneDeep(info);
-    _.set(infoClone, [...objPath, 'operation', 'model', 'accessToken'], '<redacted>');
+    _.set(infoClone, [...infoPath, 'operation', 'model', 'accessToken'], '<redacted>');
   }
   return infoClone;
 }
@@ -37,10 +37,10 @@ function redactObject(obj, objPath, info, infoClone): object {
 export default function redact( /* eslint-disable @typescript-eslint/no-explicit-any */
   info: object,
 ): any {
-  let infoClone = redactObject(info, [], info, null);
+  let infoClone = redactObject(info, info, [], null);
   Object.keys(info).forEach(function (key) {
     if (typeof info[key] === 'object') {
-      infoClone = redactObject(info[key], [key], info, infoClone);
+      infoClone = redactObject(info[key], info, [key], infoClone);
     }
   });
   if (infoClone) {
