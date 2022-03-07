@@ -135,7 +135,7 @@ describe('STAC - pagination', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
           code: 'harmony.RequestValidationError',
-          description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 10000.',
+          description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
         });
       });
     });
@@ -150,7 +150,7 @@ describe('STAC - pagination', function () {
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
           code: 'harmony.RequestValidationError',
-          description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 10000.',
+          description: 'Error: Parameter "limit" is invalid. Must be an integer greater than or equal to 0 and less than or equal to 2000.',
         });
       });
     });
