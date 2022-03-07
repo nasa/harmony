@@ -2,6 +2,7 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { createLoggerForTest } from '../helpers/log';
 import DataOperation from '../../app/models/data-operation';
+import HarmonyRequest from '../../app/models/harmony-request';
 
 describe('util/log', function () {
   describe('jsonLogger', function () {
@@ -12,7 +13,6 @@ describe('util/log', function () {
     });
 
     afterEach(function () {
-      console.log(`The test logger output string was:\n${getTestLogs()}`);
       for (const transport of testLogger.transports) {
         transport.close;
       }
@@ -56,7 +56,7 @@ describe('util/log', function () {
           format: {},
           subset: {},
         }),
-      };
+      } as HarmonyRequest;
       testLogger.info(harmonyRequest);
       testLogger.info('A message', { 'harmonyRequest': harmonyRequest });
       testLogger.info('A message', { 'k': 'v', ...harmonyRequest });
@@ -84,7 +84,7 @@ describe('util/log', function () {
           format: {},
           subset: {},
         }),
-      };
+      } as HarmonyRequest;
       const dataOperation = new DataOperation({
         accessToken: 'tokenToRedact',
         sources: [],
