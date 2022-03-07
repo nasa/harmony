@@ -192,8 +192,9 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/', landingPage);
   result.get('/versions', getVersions);
   result.use('/docs/api', swaggerUi.serve, swaggerUi.setup(yaml.load(ogcCoverageApi.openApiContent), { customJs: '/js/docs/analytics-tag.js' }));
-  result.get(collectionPrefix('(wms|eoss|ogc-api-coverages)'), service(serviceInvoker));
-  result.post(collectionPrefix('(ogc-api-coverages)'), service(serviceInvoker));
+  result.get(collectionPrefix('(wms|eoss)'), service(serviceInvoker));
+  result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, service(serviceInvoker));
+  result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, service(serviceInvoker));
   result.get('/jobs', getJobsListing);
   result.get('/jobs/:jobID', getJobStatus);
   result.post('/jobs/:jobID/cancel', cancelJob);
