@@ -4,7 +4,7 @@ from harmony.common import BaseHarmonyUser
 
 class HarmonyUatUser(BaseHarmonyUser):
 
-    def _harmony_service_example_bbox_variable_reformat(self):
+    def _harmony_service_example_bbox_variable_reformat_single(self):
         name = 'Harmony Service Example: Bbox, Variable, and reformat'
         collection = 'C1233800302-EEDTEST'
         variable = 'blue_var'
@@ -18,6 +18,20 @@ class HarmonyUatUser(BaseHarmonyUser):
             'format': 'image/png'
         }
         self._sync_request(name, collection, variable, params, 1)
+
+    def _harmony_service_example_bbox_variable_reformat_48_granules(self):
+        name = 'Harmony Service Example: Bbox, Variable, and reformat'
+        collection = 'C1233800302-EEDTEST'
+        variable = 'blue_var'
+        params = {
+            'subset': [
+                'lat(20:60)',
+                'lon(-140:-50)'
+            ],
+            'outputCrs': 'EPSG:4326',
+            'format': 'image/png'
+        }
+        self._async_request(name, collection, variable, params, 14)
 
     def _swot_repr_europe(self):
         name = 'SWOT Reprojection: Europe scale extent'
@@ -115,10 +129,11 @@ class HarmonyUatUser(BaseHarmonyUser):
 
     def _netcdf_to_zarr_single_granule(self):
         name='NetCDF to Zarr single granule'
-        collection = 'C1234082763-POCLOUD'
+        collection = 'C1234088182-EEDTEST'
         variable = 'all'
         params = {
-            'maxResults': 1
+            'maxResults': 1,
+            'format': 'application/x-zarr'
         }
         self._async_request(name, collection, variable, params, 10)
 
@@ -165,8 +180,13 @@ class HarmonyUatUser(BaseHarmonyUser):
     ############################################
     @tag('harmony-service-example', 'sync', 'variable', 'bbox', 'reproject', 'png')
     @task(2)
-    def harmony_service_example_bbox_variable_reformat(self):
-        self._harmony_service_example_bbox_variable_reformat()
+    def harmony_service_example_bbox_variable_reformat_single(self):
+        self._harmony_service_example_bbox_variable_reformat_single()
+
+    @tag('harmony-service-example', 'async', 'variable', 'bbox', 'reproject', 'png')
+    @task(2)
+    def harmony_service_example_bbox_variable_reformat_48_granules(self):
+        self._harmony_service_example_bbox_variable_reformat_48_granules()
 
     @tag('swot-repr', 'sync', 'reproject', 'netcdf4')
     @task(2)
