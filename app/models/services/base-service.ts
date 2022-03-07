@@ -312,10 +312,18 @@ export default abstract class BaseService<ServiceParamType> {
    */
   protected _createFirstStepWorkItems(workflowStep: WorkflowStep): WorkItem[] {
     const workItems = [];
-    for (const scrollID of this.operation.scrollIDs) {
+    if (this.operation.scrollIDs) {
+      for (const scrollID of this.operation.scrollIDs) {
+        workItems.push(new WorkItem({
+          jobID: this.operation.requestId,
+          scrollID,
+          serviceID: workflowStep.serviceID,
+          status: WorkItemStatus.READY,
+        }));
+      }
+    } else {
       workItems.push(new WorkItem({
         jobID: this.operation.requestId,
-        scrollID,
         serviceID: workflowStep.serviceID,
         status: WorkItemStatus.READY,
       }));
@@ -376,10 +384,11 @@ export default abstract class BaseService<ServiceParamType> {
 
   /**
    *  Check to see if the service is invoked in turbo mode
+   *  Default to true and the child class can over write it on demand
    * @returns true if the service is being invoked in turbo mode
    */
   protected isTurbo(): boolean {
-    return this.operation.scrollIDs.length > 0;
+    return true;
   }
 
   /**
