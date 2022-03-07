@@ -322,6 +322,7 @@ paths:
       # Parameters below this line are not part of the OGC specification
       - $ref: '#/components/parameters/concatenate'
       - $ref: '#/components/parameters/granuleId'
+      - $ref: '#/components/parameters/point'
       - $ref: '#/components/parameters/width'
       - $ref: '#/components/parameters/height'
       - $ref: '#/components/parameters/format'
@@ -355,6 +356,7 @@ paths:
       # Parameters below this line are not part of the OGC specification
       - $ref: '#/components/parameters/concatenate'
       - $ref: '#/components/parameters/granuleId'
+      - $ref: '#/components/parameters/point'
       - $ref: '#/components/parameters/width'
       - $ref: '#/components/parameters/height'
       - $ref: '#/components/parameters/format'
@@ -663,6 +665,22 @@ components:
       schema:
         maxItems: 6
         minItems: 4
+        type: array
+        items:
+          type: number
+    point:
+      name: point
+      in: query
+      description: |
+        Only collections that have a geometry that contains a spatial point are selected. The spatial point is provided as two numbers:
+        * Longitude, coordinate axis 1 * Latitude, coordinate axis 2
+        The coordinate reference system of the values is WGS84 longitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84).
+      required: false
+      style: form
+      explode: false
+      schema:
+        maxItems: 2
+        minItems: 2
         type: array
         items:
           type: number

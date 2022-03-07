@@ -7,7 +7,7 @@ import logger from '../util/log';
 import { CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 
-export const CURRENT_SCHEMA_VERSION = '0.13.0';
+export const CURRENT_SCHEMA_VERSION = '0.14.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -39,6 +39,18 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.14.0',
+      schema: readSchema('0.14.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        if ('point' in revertedModel.subset) {
+          delete revertedModel.subset.point; // eslint-disable-line no-param-reassign
+        }
+
+        return revertedModel;
+      },
+    },
     {
       version: '0.13.0',
       schema: readSchema('0.13.0'),
@@ -518,6 +530,26 @@ export default class DataOperation {
    */
   set interpolationMethod(interpolationMethod: string) {
     this.model.format.interpolation = interpolationMethod;
+  }
+
+  /**
+   * Sets the spatial point to be used for spatial subsetting, an array of 2 coordinates:
+   *   [ Longitude, Latitude ]
+   *
+   * @param point - The spatial point in form of [ Longitude, Latitude ]
+   */
+  set spatialPoint(point: Array<number>) {
+    this.model.subset.point = point;
+  }
+
+  /**
+   * Gets the spatial point to be used for spatial subsetting, an array of 2 coordinates:
+   *   [ Longitude, Latitude ]
+   *
+   * @returns The spatial point in form of [ Longitude, Latitude ]
+   */
+  get spatialPoint(): Array<number> {
+    return this.model.subset.point;
   }
 
   /**
