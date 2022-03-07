@@ -274,6 +274,7 @@ GIOVANNI_ADAPTER_REQUESTS_CPU=128m
 GIOVANNI_ADAPTER_REQUESTS_MEMORY=128Mi
 GIOVANNI_ADAPTER_LIMITS_CPU=128m
 GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
+GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
 
 # The services to deploy locally. A comma-separated list of services that the bin/deploy-services
 # script should attempt to deploy. By default only a couple of harmony example services are deployed.
@@ -284,7 +285,7 @@ GIOVANNI_ADAPTER_LIMITS_MEMORY=512Mi
 # so it will always be deployed, and does not need to be specified. Make sure if the image for the
 # service is not publicly available that you have built the docker image locally, otherwise the
 # service will fail to start.
-LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
+LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr,giovanni-adapter
 
 # page size to use with CMR calls
 CMR_MAX_PAGE_SIZE=2000
