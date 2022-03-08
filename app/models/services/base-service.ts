@@ -312,7 +312,7 @@ export default abstract class BaseService<ServiceParamType> {
    */
   protected _createFirstStepWorkItems(workflowStep: WorkflowStep): WorkItem[] {
     const workItems = [];
-    if (this.operation.scrollIDs) {
+    if ( this.operation.scrollIDs.length > 0 ) {
       for (const scrollID of this.operation.scrollIDs) {
         workItems.push(new WorkItem({
           jobID: this.operation.requestId,
