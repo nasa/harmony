@@ -55,9 +55,5 @@ export default function redact(
       infoClone = redactObject(info[key], info, [key], infoClone);
     }
   });
-  if (infoClone) {
-    return infoClone;
-  } else {
-    return info;
-  }
+  return infoClone || info;
 }
