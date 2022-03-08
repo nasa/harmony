@@ -131,6 +131,7 @@ export async function getNextWorkItem(
     // for postgres limitation (https://stackoverflow.com/questions/5272412/group-by-in-update-from-clause)
     await tx(Job.table)
       .forUpdate()
+      .skipLocked()
       .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
       .select(['username', 'serviceID', `${WorkItem.table}.serviceID`])
       .whereIn('username', subQuery);
@@ -145,6 +146,7 @@ export async function getNextWorkItem(
     if (userData?.username) {
       workItemData = await tx(`${WorkItem.table} as w`)
         .forUpdate()
+        .skipLocked()
         .join(`${Job.table} as j`, 'w.jobID', 'j.jobID')
         .join(`${WorkflowStep.table} as wf`, function () {
           this.on('w.jobID', '=', 'wf.jobID')
@@ -164,7 +166,7 @@ export async function getNextWorkItem(
         await tx(WorkItem.table)
           .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
           .where({ id: workItemData.id });
-        // need to update the job otherwise long running jobs won't count against 
+        // need to update the job otherwise long running jobs won't count against
         // the user's priority
         await tx(Job.table)
           .update({ updatedAt: new Date() })
