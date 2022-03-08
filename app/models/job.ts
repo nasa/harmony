@@ -7,7 +7,7 @@ import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
-import db, { Transaction } from '../util/db';
+import { Transaction } from '../util/db';
 import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 
 import env = require('../util/env');
