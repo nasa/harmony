@@ -200,6 +200,7 @@ export async function getLinksForJob(
       }
     })
     .forUpdate()
+    .skipLocked()
     .paginate({ currentPage, perPage, isLengthAware: true });
   const links = result.data.map((j) => new JobLink(j));
   return { data: links, pagination: result.pagination };
