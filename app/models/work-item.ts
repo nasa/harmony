@@ -129,12 +129,18 @@ export async function getNextWorkItem(
         .where({ 'w.status': 'ready', serviceID });
     // lock rows in the jobs table for users requesting this service - needed as a workaround
     // for postgres limitation (https://stackoverflow.com/questions/5272412/group-by-in-update-from-clause)
-    await tx(Job.table)
+    let jobQuery = tx(Job.table)
       .forUpdate()
-      .skipLocked()
       .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
       .select(['username', 'serviceID', `${WorkItem.table}.serviceID`])
       .whereIn('username', subQuery);
+
+    if (db.client.config.client === 'pg') {
+      jobQuery = jobQuery.skipLocked();
+    }
+
+    await jobQuery;
+
     const userData = await tx(Job.table)
       .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
       .select(['username'])
@@ -143,10 +149,10 @@ export async function getNextWorkItem(
       .groupBy('username')
       .orderBy('m', 'asc')
       .first();
+
     if (userData?.username) {
-      workItemData = await tx(`${WorkItem.table} as w`)
+      let workItemDataQuery = tx(`${WorkItem.table} as w`)
         .forUpdate()
-        .skipLocked()
         .join(`${Job.table} as j`, 'w.jobID', 'j.jobID')
         .join(`${WorkflowStep.table} as wf`, function () {
           this.on('w.jobID', '=', 'wf.jobID')
@@ -160,6 +166,12 @@ export async function getNextWorkItem(
         .orderBy('j.isAsync', 'asc')
         .orderBy('j.updatedAt', 'asc')
         .first();
+
+      if (db.client.config.client === 'pg') {
+        workItemDataQuery = workItemDataQuery.skipLocked();
+      }
+
+      workItemData = await workItemDataQuery;
 
       if (workItemData) {
         workItemData.operation = JSON.parse(workItemData.operation);
