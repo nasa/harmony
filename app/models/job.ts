@@ -7,7 +7,7 @@ import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
 import Record from './record';
-import { Transaction } from '../util/db';
+import db, { Transaction } from '../util/db';
 import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 
 import env = require('../util/env');
@@ -273,7 +273,7 @@ export class Job extends Record implements JobRecord {
     currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
-    const result = await transaction('jobs').select().where({ requestId }).forUpdate();
+    const result = await transaction('jobs').select().where({ requestId });
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
     if (job) {
