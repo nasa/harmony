@@ -2,6 +2,7 @@ import { initialize } from 'express-openapi';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Application, Response, Router } from 'express';
+import * as yaml from 'js-yaml';
 import { buildErrorResponse } from '../../util/errors';
 import getLandingPage from './get-landing-page';
 import getRequirementsClasses from './get-requirements-classes';
@@ -12,10 +13,32 @@ import postCoverageRangeset from './post-coverage-rangeset';
 import { describeCollection, describeCollections } from './describe-collections';
 import HarmonyRequest from '../../models/harmony-request';
 
+interface OgcHttpMethod {
+  parameters: {
+    $ref: string
+  }[]
+}
+
+interface OgcCoveragesApi {
+  paths : {
+    '/collections/{collectionId}/coverage/rangeset': {
+      get: OgcHttpMethod,
+      post: OgcHttpMethod
+    }
+  }
+}
+
 const version = '1.0.0';
 const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverages', version);
 const openApiPath = path.join(openApiRoot, `ogc-api-coverages-v${version}.yml`);
 export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
+const ogcCoveragesApi = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) as OgcCoveragesApi;
+export const coverageRangesetGetParams = ogcCoveragesApi
+  .paths['/collections/{collectionId}/coverage/rangeset'].get.parameters
+  .map(param => param.$ref.split('/').pop());
+export const coverageRangesetPostParams = ogcCoveragesApi
+  .paths['/collections/{collectionId}/coverage/rangeset'].post.parameters
+  .map(param => param.$ref.split('/').pop());
 
 /**
  * Express handler that returns a 501 error and "not yet implemented" message to the client
