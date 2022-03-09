@@ -3,6 +3,7 @@ import HarmonyRequest from '../models/harmony-request';
 import { RequestValidationError } from '../util/errors';
 import { Conjunction, listToText } from '../util/string';
 import { keysToLowerCase } from '../util/object';
+import { coverageRangesetGetParams, coverageRangesetPostParams } from '../frontends/ogc-coverages/index';
 
 /**
  * Middleware to execute various parameter validations
@@ -28,6 +29,22 @@ function validateLinkTypeParameter(req: HarmonyRequest): void {
 }
 
 /**
+ * Validate that the req query parameter names are correct according to Harmony implementation of OGC spec.
+ *
+ * @param req - The client request
+ */
+function validateParameterNames(req: HarmonyRequest): void {
+  const requestedParams = Object.keys(req.query);
+  const allowedParams = req.method == 'GET' ? coverageRangesetGetParams : coverageRangesetPostParams;
+  const incorrectParams = requestedParams.filter(param => !allowedParams.includes(param));
+  if (incorrectParams.length) {
+    const incorrectListString = listToText(incorrectParams, Conjunction.AND);
+    const allowedListString = listToText(allowedParams, Conjunction.AND);
+    throw new RequestValidationError(`Invalid query parameter(s) '${incorrectListString}'. Allowed parameters are ${allowedListString}`);
+  }
+}
+
+/**
  * Express.js middleware to validate parameters. This must be installed after the error handler
  * middleware.
  *
@@ -40,6 +57,7 @@ export default function parameterValidation(
 ): void {
   try {
     validateLinkTypeParameter(req);
+    validateParameterNames(req);
   } catch (e) {
     return next(e);
   }
