@@ -9,6 +9,8 @@ import { coverageRangesetGetParams, coverageRangesetPostParams } from '../fronte
  * Middleware to execute various parameter validations
  */
 
+const RANGESET_ROUTE_REGEX = /^\/(?!docs).*\/ogc-api-coverages\/.*\/collections\/.*\/coverage\/rangeset/;
+
 /**
  * The accepted values for the `linkType` parameter for job status requests
  */
@@ -33,7 +35,7 @@ function validateLinkTypeParameter(req: HarmonyRequest): void {
  *
  * @param req - The client request
  */
-function validateParameterNames(req: HarmonyRequest): void {
+function validateCoverageRangesetParameterNames(req: HarmonyRequest): void {
   const requestedParams = Object.keys(req.query);
   const allowedParams = req.method == 'GET' ? coverageRangesetGetParams : coverageRangesetPostParams;
   const incorrectParams = requestedParams.filter(param => !allowedParams.includes(param));
@@ -57,7 +59,9 @@ export default function parameterValidation(
 ): void {
   try {
     validateLinkTypeParameter(req);
-    validateParameterNames(req);
+    if (req.url.match(RANGESET_ROUTE_REGEX)) {
+      validateCoverageRangesetParameterNames(req);
+    }
   } catch (e) {
     return next(e);
   }
