@@ -8,10 +8,7 @@ import { objectStoreForProtocol } from './object-store';
 import logger from './log';
 
 import env = require('./env');
-import DataOperation from '../models/data-operation';
 import { getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
-import { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
-import { createEncrypter, createDecrypter } from './crypto';
 import { Transaction } from './db';
 
 export const QUERY_CMR_SERVICE_REGEX = /^harmonyservices\/query-cmr.*/;
