@@ -8,6 +8,13 @@ import { objectStoreForProtocol } from './object-store';
 import logger from './log';
 
 import env = require('./env');
+import DataOperation from '../models/data-operation';
+import { getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
+import { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
+import { createEncrypter, createDecrypter } from './crypto';
+import { Transaction } from './db';
+
+export const QUERY_CMR_SERVICE_REGEX = /^harmonyservices\/query-cmr.*/;
 
 const clientIdHeader = {
   'Client-id': `${env.harmonyClientId}`,
@@ -21,6 +28,10 @@ export const cmrApiConfig = {
 
 const acceptJsonHeader = {
   Accept: 'application/json',
+};
+
+const jsonContentTypeHeader = {
+  'Content-Type': 'application/json',
 };
 
 const cmrMaxPageSize = 2000;
@@ -343,6 +354,38 @@ async function _cmrPost(
 }
 
 /**
+ * POST data to the CMR using a body instead of a multipart form
+ * 
+ * @param path - The absolute path on the cmR API to the resource being queried
+ * @param body - Data to POST
+ * @param token - Access token for the user
+ * @param extraHeaders - Additional headers to pass with the request
+ * @returns The CMR result
+ */
+export async function cmrPostBody(
+  path: string,
+  body: object,
+  token: string,
+  extraHeaders = {},
+): Promise<CmrResponse> {
+  const headers = {
+    ...clientIdHeader,
+    ..._makeTokenHeader(token),
+    ...acceptJsonHeader,
+    ...jsonContentTypeHeader,
+    ...extraHeaders,
+  };
+  const response = await fetch(`${cmrApiConfig.baseURL}${path}`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers,
+  });
+  _handleCmrErrors(response);
+
+  return response;
+}
+
+/**
  * Performs a CMR variables.json search with the given query string
  *
  * @param query - The key/value pairs to search
@@ -519,6 +562,35 @@ export function initiateGranuleScroll(
     ...baseQuery,
     ...query,
   }, token);
+}
+
+/**
+ * Clear a CMR scroll session to allow the CMR to free associated resources
+ * 
+ * @param tx - the transaction to use for dB queries
+ * @param jobID - the job ID
+ */
+export async function clearScrollSession(tx: Transaction, jobID: string): Promise<void> {
+  const workflowStep = await getWorkflowStepByJobIdStepIndex(tx, jobID, 0);
+  if (workflowStep?.serviceID.match(QUERY_CMR_SERVICE_REGEX)) {
+    const workItems = await getWorkItemsByJobIdAndStepIndex(tx, jobID, 0);
+    if (workItems && workItems[0].serviceID.match(QUERY_CMR_SERVICE_REGEX)) {
+      const scrollId = workItems.workItems[0].scrollID;
+      const encrypter = createEncrypter(env.sharedSecretKey);
+      const decrypter = createDecrypter(env.sharedSecretKey);
+
+      const operation = new DataOperation(JSON.parse(workflowStep.operation), encrypter, decrypter);
+      const token = operation.unencryptedAccessToken;
+      try {
+        cmrPostBody('/search/clear-scroll', { scroll_id: scrollId }, token);
+      } catch {
+        // Do nothing - CMR will close the scroll session after ten minutes anyway. Also it's 
+        // possible (and acceptable) for Harmony to attempt to clear the scroll session more than
+        // once for failed/canceled jobs, which will result in errors from the CMR on subsequent
+        // requests. `cmrPostBody` will log the error in any case.
+      }
+    }
+  }
 }
 
 /**
