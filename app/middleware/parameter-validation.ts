@@ -9,7 +9,7 @@ import { coverageRangesetGetParams, coverageRangesetPostParams } from '../fronte
  * Middleware to execute various parameter validations
  */
 
-const RANGESET_ROUTE_REGEX = /^\/(?!docs).*\/ogc-api-coverages\/.*\/collections\/.*\/coverage\/rangeset/;
+const RANGESET_ROUTE_REGEX = /^\/.*\/ogc-api-coverages\/.*\/collections\/.*\/coverage\/rangeset/;
 
 /**
  * The accepted values for the `linkType` parameter for job status requests

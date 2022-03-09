@@ -36,9 +36,9 @@ const ogcCoveragesApi = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA 
 export const coverageRangesetGetParams = ogcCoveragesApi
   .paths['/collections/{collectionId}/coverage/rangeset'].get.parameters
   .map(param => param.$ref.split('/').pop());
-export const coverageRangesetPostParams = ogcCoveragesApi
+export const coverageRangesetPostParams = ['shapefile'].concat(ogcCoveragesApi
   .paths['/collections/{collectionId}/coverage/rangeset'].post.parameters
-  .map(param => param.$ref.split('/').pop());
+  .map(param => param.$ref.split('/').pop()));
 
 /**
  * Express handler that returns a 501 error and "not yet implemented" message to the client
