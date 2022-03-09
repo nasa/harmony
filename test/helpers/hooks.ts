@@ -1,5 +1,5 @@
 import { before, after } from 'mocha';
-import sinon from 'sinon';
+import { stub } from 'sinon';
 import request from 'supertest';
 import { auth } from './auth';
 import * as cmr from '../../app/util/cmr';
@@ -108,7 +108,7 @@ export function hookClearScrollSessionExpect(): void {
   let clearScrollSessionStub: sinon.SinonStub;
 
   before(async function () {
-    clearScrollSessionStub = sinon.stub(cmr, 'clearScrollSession');
+    clearScrollSessionStub = stub(cmr, 'clearScrollSession');
   });
 
   after(() => {

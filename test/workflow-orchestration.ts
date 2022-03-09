@@ -17,7 +17,6 @@ import { promises as fs } from 'fs';
 describe('When a workflow contains an aggregating step', async function () {
   const aggregateService = 'bar';
   hookServersStartStop();
-  hookClearScrollSessionExpect();
 
   beforeEach(async function () {
     const job = buildJob();
