@@ -89,7 +89,7 @@ export default async function cancelAndSaveJob(
     if (job) {
       if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
         // attempt to clear the CMR scroll session if this job had one
-        clearScrollSession(tx, job.jobID);
+        await clearScrollSession(tx, job.jobID);
 
         await completeJob(tx, job, JobStatus.CANCELED, logger, message);
       } else {

@@ -354,23 +354,20 @@ async function _cmrPost(
 }
 
 /**
- * POST data to the CMR using a body instead of a multipart form
+ * POST data to the CMR using data for the body instead of a multipart form
  * 
  * @param path - The absolute path on the cmR API to the resource being queried
  * @param body - Data to POST
- * @param token - Access token for the user
  * @param extraHeaders - Additional headers to pass with the request
  * @returns The CMR result
  */
-export async function cmrPostBody(
+async function _cmrPostBody(
   path: string,
   body: object,
-  token: string,
   extraHeaders = {},
 ): Promise<CmrResponse> {
   const headers = {
     ...clientIdHeader,
-    ..._makeTokenHeader(token),
     ...acceptJsonHeader,
     ...jsonContentTypeHeader,
     ...extraHeaders,
@@ -571,24 +568,17 @@ export function initiateGranuleScroll(
  * @param jobID - the job ID
  */
 export async function clearScrollSession(tx: Transaction, jobID: string): Promise<void> {
-  const workflowStep = await getWorkflowStepByJobIdStepIndex(tx, jobID, 0);
-  if (workflowStep?.serviceID.match(QUERY_CMR_SERVICE_REGEX)) {
-    const workItems = await getWorkItemsByJobIdAndStepIndex(tx, jobID, 0);
-    if (workItems && workItems[0].serviceID.match(QUERY_CMR_SERVICE_REGEX)) {
-      const scrollId = workItems.workItems[0].scrollID;
-      const encrypter = createEncrypter(env.sharedSecretKey);
-      const decrypter = createDecrypter(env.sharedSecretKey);
+  const workItems = await getWorkItemsByJobIdAndStepIndex(tx, jobID, 1);
+  if (workItems && workItems.workItems[0]?.serviceID.match(QUERY_CMR_SERVICE_REGEX)) {
+    const scrollId = workItems.workItems[0]?.scrollID;
 
-      const operation = new DataOperation(JSON.parse(workflowStep.operation), encrypter, decrypter);
-      const token = operation.unencryptedAccessToken;
-      try {
-        cmrPostBody('/search/clear-scroll', { scroll_id: scrollId }, token);
-      } catch {
-        // Do nothing - CMR will close the scroll session after ten minutes anyway. Also it's 
-        // possible (and acceptable) for Harmony to attempt to clear the scroll session more than
-        // once for failed/canceled jobs, which will result in errors from the CMR on subsequent
-        // requests. `cmrPostBody` will log the error in any case.
-      }
+    try {
+      _cmrPostBody('/search/clear-scroll', { scroll_id: scrollId });
+    } catch {
+      // Do nothing - CMR will close the scroll session after ten minutes anyway. Also it's
+      // possible (and acceptable) for Harmony to attempt to clear the scroll session more than
+      // once for failed/canceled jobs, which will result in errors from the CMR on subsequent
+      // requests. `cmrPostBody` will log the error in any case.
     }
   }
 }
