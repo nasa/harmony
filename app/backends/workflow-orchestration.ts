@@ -273,7 +273,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     if (status === WorkItemStatus.FAILED) {
       if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
         if (isQueryCmr) {
-          clearScrollSession(tx, job.jobID);
+          await clearScrollSession(tx, job.jobID);
         }
         let message = 'Unknown error';
         if (errorMessage) {
@@ -296,7 +296,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       );
 
       if (isQueryCmr && successWorkItemCount === thisStep.workItemCount) {
-        clearScrollSession(tx, job.jobID);
+        await clearScrollSession(tx, job.jobID);
       }
 
       if (nextStep) {
