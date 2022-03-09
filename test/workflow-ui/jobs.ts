@@ -132,8 +132,8 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
-    describe('who asks for more than env.defaultJobListPageSize jobs', function () {
-      hookWorkflowUIJobs({ username: 'woody', limit: env.defaultJobListPageSize + 999 });
+    describe('who asks for more than env.maxPageSize jobs', function () {
+      hookWorkflowUIJobs({ username: 'woody', limit: env.maxPageSize + 999 });
       it('returns all of the users jobs without error', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(3);
