@@ -1,6 +1,6 @@
 import { ILengthAwarePagination } from 'knex-paginate'; // For types only
 import _ from 'lodash';
-import { Transaction } from '../util/db';
+import db, { Transaction } from '../util/db';
 import { removeEmptyProperties } from '../util/object';
 import Record from './record';
 
@@ -184,7 +184,7 @@ export async function getLinksForJob(
   rel?: string,
   requireSpatioTemporal = false,
 ): Promise<{ data: JobLink[]; pagination: ILengthAwarePagination }> {
-  const result = await transaction('job_links').select()
+  let query = transaction('job_links').select()
     .where({ jobID })
     .orderBy(['id'])
     .modify((queryBuilder) => {
@@ -199,8 +199,14 @@ export async function getLinksForJob(
           .whereNotNull('temporalEnd');
       }
     })
-    .forUpdate()
-    .paginate({ currentPage, perPage, isLengthAware: true });
+    .forUpdate();
+
+  if (db.client.config.client === 'pg') {
+    query = query.skipLocked();
+  }
+
+  const result = await query.paginate({ currentPage, perPage, isLengthAware: true });
+
   const links = result.data.map((j) => new JobLink(j));
   return { data: links, pagination: result.pagination };
 }
