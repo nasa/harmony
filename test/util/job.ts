@@ -8,6 +8,7 @@ import { JobStatus } from '../../app/models/job';
 import { getWorkItemsByJobId, WorkItemStatus } from '../../app/models/work-item';
 import db from '../../app/util/db';
 import log from '../../app/util/log';
+import { hookClearScrollSessionExpect } from '../helpers/hooks';
 
 const aTurboJob = buildJob({ username: 'doe' });
 const firstTurboWorkItem = buildWorkItem({ jobID: aTurboJob.jobID });
@@ -61,18 +62,21 @@ describe('Canceling a job', async function () {
   });
 
   describe('when cancelation is requested for a turbo workflow', async function () {
-    it('is able to cancel the job in accepted state', async function () {
-      await cancelAndSaveJob(acceptedTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
-      const { workItems } = await getWorkItemsByJobId(db, readyTurboWorkItem.jobID);
-      expect(workItems[0].status).to.equal(WorkItemStatus.CANCELED);
-    });
+    hookClearScrollSessionExpect();
+    describe('And the workflow is in the accepted or running state', async function () {
+      it('is able to cancel the job in accepted state', async function () {
+        await cancelAndSaveJob(acceptedTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
+        const { workItems } = await getWorkItemsByJobId(db, readyTurboWorkItem.jobID);
+        expect(workItems[0].status).to.equal(WorkItemStatus.CANCELED);
+      });
 
-    it('is able to cancel the job in running state', async function () {
-      await cancelAndSaveJob(aTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
-      const { workItems } = await getWorkItemsByJobId(db, aTurboJob.jobID);
-      expect(workItems[0].status).to.equal(WorkItemStatus.CANCELED);
-      expect(workItems[1].status).to.equal(WorkItemStatus.SUCCESSFUL);
-      expect(workItems[2].status).to.equal(WorkItemStatus.FAILED);
+      it('is able to cancel the job in running state', async function () {
+        await cancelAndSaveJob(aTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
+        const { workItems } = await getWorkItemsByJobId(db, aTurboJob.jobID);
+        expect(workItems[0].status).to.equal(WorkItemStatus.CANCELED);
+        expect(workItems[1].status).to.equal(WorkItemStatus.SUCCESSFUL);
+        expect(workItems[2].status).to.equal(WorkItemStatus.FAILED);
+      });
     });
 
     it('fails to cancel an already-canceled workflow', async function () {
