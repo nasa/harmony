@@ -62,8 +62,8 @@ describe('Canceling a job', async function () {
   });
 
   describe('when cancelation is requested for a turbo workflow', async function () {
-    hookClearScrollSessionExpect();
     describe('And the workflow is in the accepted or running state', async function () {
+      hookClearScrollSessionExpect();
       it('is able to cancel the job in accepted state', async function () {
         await cancelAndSaveJob(acceptedTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
         const { workItems } = await getWorkItemsByJobId(db, readyTurboWorkItem.jobID);

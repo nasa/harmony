@@ -1,0 +1,25 @@
+POST /search/clear-scroll
+accept: application/json
+content-type: application/json
+accept-encoding: gzip,deflate
+body: {\"scroll_id\":null}
+
+HTTP/1.1 422 Unprocessable Entity
+content-type: application/json
+content-length: 42
+connection: close
+date: Thu, 10 Mar 2022 17:06:00 GMT
+access-control-allow-origin: *
+cmr-request-id: b88dcd73-c2d0-4518-8587-85c82c3745e1
+x-request-id: L7SE7Oh3GbLivvZxKAFo7moD8dm2PjYXtH0bQ9ik_jZ9SJEUXdQ2Hw==
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+server: ServerTokens ProductOnly
+x-cache: Error from cloudfront
+via: 1.1 8b91488fa62e73ed6328bc389e6d1cbe.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: L7SE7Oh3GbLivvZxKAFo7moD8dm2PjYXtH0bQ9ik_jZ9SJEUXdQ2Hw==
+
+{"errors":["scroll_id must be provided."]}

@@ -8,10 +8,6 @@ import { objectStoreForProtocol } from './object-store';
 import logger from './log';
 
 import env = require('./env');
-import { getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
-import { Transaction } from './db';
-
-export const QUERY_CMR_SERVICE_REGEX = /^harmonyservices\/query-cmr.*/;
 
 const clientIdHeader = {
   'Client-id': `${env.harmonyClientId}`,
@@ -566,18 +562,15 @@ export async function initiateGranuleScroll(
 /**
  * Clear a CMR scroll session to allow the CMR to free associated resources
  * 
- * @param tx - the transaction to use for dB queries
- * @param jobID - the job ID
+ * @param scrollID - the scroll-id of the scroll session
  */
-export async function clearScrollSession(tx: Transaction, jobID: string): Promise<void> {
-  const workItems = await getWorkItemsByJobIdAndStepIndex(tx, jobID, 1);
-  if (workItems && workItems.workItems[0]?.serviceID.match(QUERY_CMR_SERVICE_REGEX)) {
-    const scrollId = workItems.workItems[0]?.scrollID;
-    logger.debug(`Clearing scroll session for scroll-id: ${scrollId}`);
+export async function clearScrollSession(scrollId: string): Promise<void> {
+  logger.debug(`Clearing scroll session for scroll-id: ${scrollId}`);
+  if (scrollId) {
     try {
       await _cmrPostBody('/search/clear-scroll', { scroll_id: scrollId });
     } catch {
-      // Do nothing - CMR will close the scroll session after ten minutes anyway. `cmrPostBody` 
+      // Do nothing - CMR will close the scroll session after ten minutes anyway. `cmrPostBody`
       // will log the error in any case.
     }
   }
