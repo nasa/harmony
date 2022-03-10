@@ -37,7 +37,7 @@ function validateLinkTypeParameter(req: HarmonyRequest): void {
  */
 function validateCoverageRangesetParameterNames(req: HarmonyRequest): void {
   const requestedParams = Object.keys(req.query);
-  const allowedParams = req.method == 'GET' ? coverageRangesetGetParams : coverageRangesetPostParams;
+  const allowedParams = req.method.toLowerCase() == 'get' ? coverageRangesetGetParams : coverageRangesetPostParams;
   const incorrectParams = requestedParams.filter(param => !allowedParams.includes(param));
   if (incorrectParams.length) {
     const incorrectListString = listToText(incorrectParams, Conjunction.AND);
