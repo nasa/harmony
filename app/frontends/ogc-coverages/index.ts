@@ -13,17 +13,17 @@ import postCoverageRangeset from './post-coverage-rangeset';
 import { describeCollection, describeCollections } from './describe-collections';
 import HarmonyRequest from '../../models/harmony-request';
 
-interface OgcHttpMethod {
+interface OgcSchemaHttpMethod {
   parameters: {
     $ref: string
   }[]
 }
 
-interface OgcCoveragesApi {
+interface OgcSchemaCoverages {
   paths : {
     '/collections/{collectionId}/coverage/rangeset': {
-      get: OgcHttpMethod,
-      post: OgcHttpMethod
+      get: OgcSchemaHttpMethod,
+      post: OgcSchemaHttpMethod
     }
   }
 }
@@ -32,11 +32,11 @@ const version = '1.0.0';
 const openApiRoot = path.join(__dirname, '..', '..', 'schemas', 'ogc-api-coverages', version);
 const openApiPath = path.join(openApiRoot, `ogc-api-coverages-v${version}.yml`);
 export const openApiContent = fs.readFileSync(openApiPath, 'utf-8');
-const ogcCoveragesApi = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) as OgcCoveragesApi;
-export const coverageRangesetGetParams = ogcCoveragesApi
+const ogcSchemaCoverages = yaml.load(openApiContent, { schema: yaml.DEFAULT_SCHEMA }) as OgcSchemaCoverages;
+export const coverageRangesetGetParams = ogcSchemaCoverages
   .paths['/collections/{collectionId}/coverage/rangeset'].get.parameters
   .map(param => param.$ref.split('/').pop());
-export const coverageRangesetPostParams = ['shapefile'].concat(ogcCoveragesApi
+export const coverageRangesetPostParams = ['shapefile'].concat(ogcSchemaCoverages
   .paths['/collections/{collectionId}/coverage/rangeset'].post.parameters
   .map(param => param.$ref.split('/').pop()));
 
