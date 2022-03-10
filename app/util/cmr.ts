@@ -540,7 +540,7 @@ export function queryGranulesForCollection(
  * @param limit - The maximum number of granules to return
  * @returns The granules associated with the input collection
  */
-export function initiateGranuleScroll(
+export async function initiateGranuleScroll(
   collectionId: string,
   query: CmrQuery,
   token: string,
@@ -552,10 +552,15 @@ export function initiateGranuleScroll(
     scroll: 'defer',
   };
 
-  return queryGranuleUsingMultipartForm({
+  const resp = await queryGranuleUsingMultipartForm({
     ...baseQuery,
     ...query,
   }, token);
+
+  const { scrollID } = resp;
+  logger.debug(`Initiated scroll session with scroll-id: ${scrollID}`);
+
+  return resp;
 }
 
 /**
@@ -568,14 +573,12 @@ export async function clearScrollSession(tx: Transaction, jobID: string): Promis
   const workItems = await getWorkItemsByJobIdAndStepIndex(tx, jobID, 1);
   if (workItems && workItems.workItems[0]?.serviceID.match(QUERY_CMR_SERVICE_REGEX)) {
     const scrollId = workItems.workItems[0]?.scrollID;
-
+    logger.debug(`Clearing scroll session for scroll-id: ${scrollId}`);
     try {
-      _cmrPostBody('/search/clear-scroll', { scroll_id: scrollId });
+      await _cmrPostBody('/search/clear-scroll', { scroll_id: scrollId });
     } catch {
-      // Do nothing - CMR will close the scroll session after ten minutes anyway. Also it's
-      // possible (and acceptable) for Harmony to attempt to clear the scroll session more than
-      // once for failed/canceled jobs, which will result in errors from the CMR on subsequent
-      // requests. `cmrPostBody` will log the error in any case.
+      // Do nothing - CMR will close the scroll session after ten minutes anyway. `cmrPostBody` 
+      // will log the error in any case.
     }
   }
 }
