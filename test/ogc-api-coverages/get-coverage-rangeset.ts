@@ -232,9 +232,9 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, variableName, { query: { granuleId, outputCrz: '', maxResultz: 100 } });
     it('rejects the request with an informative error message', function () {
-      console.log(this.res.text);
       expect(this.res.status).to.equal(400);
       expect(this.res.text).to.include("Error: Invalid query parameter(s) 'outputCrz and maxResultz'");
+      expect(this.res.text).to.include('Allowed parameters are');
     });
   });
 
