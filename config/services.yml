@@ -82,6 +82,8 @@ https://cmr.earthdata.nasa.gov:
         - V2144677987-GES_DISC
         - V2144685939-GES_DISC
     capabilities:
+      concatenation: true
+      concatenate_by_default: true
       subsetting:
         bbox: true
         variable: true
@@ -90,6 +92,7 @@ https://cmr.earthdata.nasa.gov:
         - text/csv
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
+        operations: ['concatenate']
 
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.14.0'
@@ -477,6 +480,8 @@ https://cmr.uat.earthdata.nasa.gov:
         - V1242222234-GES_DISC
         - V1242222036-GES_DISC
     capabilities:
+      concatenation: true
+      concatenate_by_default: true
       subsetting:
         bbox: true
         variable: true
@@ -485,6 +490,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - text/csv
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
+        operations: ['concatenate']
 
   - name: harmony/service-example
     data_operation_version: '0.14.0'
