@@ -13,7 +13,7 @@ import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflo
 import path from 'path';
 import { promises as fs } from 'fs';
 import { ServiceError } from '../util/errors';
-import { clearScrollSession, QUERY_CMR_SERVICE_REGEX } from '../util/cmr';
+import { clearScrollSession } from '../util/cmr';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
@@ -260,7 +260,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     const workItem = await getWorkItemById(tx, parseInt(id, 10));
     const job: Job = await Job.byJobID(tx, workItem.jobID);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
-    const isQueryCmr = workItem.serviceID.match(QUERY_CMR_SERVICE_REGEX);
+    const isQueryCmr = workItem.serviceID.match(/query-cmr/);
 
     // If the job was already canceled or failed then send 400 response
     if ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
@@ -273,7 +273,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     if (status === WorkItemStatus.FAILED) {
       if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
         if (isQueryCmr) {
-          await clearScrollSession(tx, job.jobID);
+          await clearScrollSession(workItem.scrollID);
         }
         let message = 'Unknown error';
         if (errorMessage) {
@@ -296,7 +296,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       );
 
       if (isQueryCmr && successWorkItemCount === thisStep.workItemCount) {
-        await clearScrollSession(tx, job.jobID);
+        await clearScrollSession(workItem.scrollID);
       }
 
       if (nextStep) {

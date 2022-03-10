@@ -498,3 +498,21 @@ export async function workItemCountByServiceIDAndStatus(
   }
   return workItemCount;
 }
+
+/**
+ * Get the scroll-id for a job if it has one
+ * 
+ * @param tx - the transaction to use for querying
+ * @param jobID - the JobID
+ * @returns A promise containing a scroll-id or null if the job does not use query-cmr
+ */
+export async function getScrollIdForJob(
+  tx: Transaction,
+  jobID: string,
+): Promise<string> {
+  const workItems = await getWorkItemsByJobIdAndStepIndex(tx, jobID, 1);
+  if (workItems && workItems.workItems[0]?.serviceID.match(/query-cmr/)) {
+    return workItems.workItems[0]?.scrollID;
+  }
+  return null;
+}
