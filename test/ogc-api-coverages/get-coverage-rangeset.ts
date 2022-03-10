@@ -228,6 +228,16 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when provided an incorrectly named set of parameters', function () {
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookRangesetRequest(version, collection, variableName, { query: { granuleId, outputCrz: '', maxResultz: 100 } });
+    it('rejects the request with an informative error message', function () {
+      console.log(this.res.text);
+      expect(this.res.status).to.equal(400);
+      expect(this.res.text).to.include("Error: Invalid query parameter(s) 'outputCrz and maxResultz'");
+    });
+  });
+
   describe('when passed a blank outputCrs', function () {
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, variableName, { query: { granuleId, outputCrs: '' } });
