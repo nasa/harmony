@@ -77,6 +77,25 @@ const transport = new winston.transports.Console({ level: env.logLevel });
 const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger([transport]) : createJsonLogger([transport]);
 
 /**
+ * Check if log level is valid.
+ * @param level - the level to check
+ * @returns boolean
+ */
+function isValidLevel(level: string): boolean {
+  return Object.keys(winston.config.npm.levels).includes(level);
+}
+
+/**
+ * Change the log level on the logger transport.
+ * @param level - The new log level that'll be used.
+ */
+export function configureLogLevel(level: string): void {
+  if (isValidLevel(level)) {
+    transport.level = level;
+  }
+}
+
+/**
  * Configures logs so that they are written to the file with the given name, also suppressing
  * logging to stdout if the suppressStdOut option is set to true
  * @param filename - The name of the file to write logs to
