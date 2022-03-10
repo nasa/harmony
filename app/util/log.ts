@@ -92,6 +92,8 @@ function isValidLevel(level: string): boolean {
 export function configureLogLevel(level: string): void {
   if (isValidLevel(level)) {
     transport.level = level;
+  } else {
+    logger.error(`Ignoring request to configure log level with invalid level: ${level}.`);
   }
 }
 
