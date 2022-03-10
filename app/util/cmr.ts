@@ -23,6 +23,10 @@ const acceptJsonHeader = {
   Accept: 'application/json',
 };
 
+const jsonContentTypeHeader = {
+  'Content-Type': 'application/json',
+};
+
 const cmrMaxPageSize = 2000;
 
 export enum CmrPermission {
@@ -343,6 +347,35 @@ async function _cmrPost(
 }
 
 /**
+ * POST data to the CMR using data for the body instead of a multipart form
+ * 
+ * @param path - The absolute path on the cmR API to the resource being queried
+ * @param body - Data to POST
+ * @param extraHeaders - Additional headers to pass with the request
+ * @returns The CMR result
+ */
+async function _cmrPostBody(
+  path: string,
+  body: object,
+  extraHeaders = {},
+): Promise<CmrResponse> {
+  const headers = {
+    ...clientIdHeader,
+    ...acceptJsonHeader,
+    ...jsonContentTypeHeader,
+    ...extraHeaders,
+  };
+  const response = await fetch(`${cmrApiConfig.baseURL}${path}`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers,
+  });
+  _handleCmrErrors(response);
+
+  return response;
+}
+
+/**
  * Performs a CMR variables.json search with the given query string
  *
  * @param query - The key/value pairs to search
@@ -503,7 +536,7 @@ export function queryGranulesForCollection(
  * @param limit - The maximum number of granules to return
  * @returns The granules associated with the input collection
  */
-export function initiateGranuleScroll(
+export async function initiateGranuleScroll(
   collectionId: string,
   query: CmrQuery,
   token: string,
@@ -515,10 +548,32 @@ export function initiateGranuleScroll(
     scroll: 'defer',
   };
 
-  return queryGranuleUsingMultipartForm({
+  const resp = await queryGranuleUsingMultipartForm({
     ...baseQuery,
     ...query,
   }, token);
+
+  const { scrollID } = resp;
+  logger.debug(`Initiated scroll session with scroll-id: ${scrollID}`);
+
+  return resp;
+}
+
+/**
+ * Clear a CMR scroll session to allow the CMR to free associated resources
+ * 
+ * @param scrollID - the scroll-id of the scroll session
+ */
+export async function clearScrollSession(scrollId: string): Promise<void> {
+  logger.debug(`Clearing scroll session for scroll-id: ${scrollId}`);
+  if (scrollId) {
+    try {
+      await _cmrPostBody('/search/clear-scroll', { scroll_id: scrollId });
+    } catch {
+      // Do nothing - CMR will close the scroll session after ten minutes anyway.
+      logger.debug(`Failed to clear scroll session for scroll-id: ${scrollId}`);
+    }
+  }
 }
 
 /**

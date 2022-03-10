@@ -8,6 +8,10 @@ import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
 
+// The step index for the query-cmr task. Right now query-cmr only runs as the first step -
+// if this changes we will have to revisit this
+const QUERY_CMR_STEP_INDEX = 1;
+
 export enum WorkItemStatus {
   READY = 'ready',
   RUNNING = 'running',
@@ -497,4 +501,22 @@ export async function workItemCountByServiceIDAndStatus(
     workItemCount = Number(count[0]['count(`id`)']);
   }
   return workItemCount;
+}
+
+/**
+ * Get the scroll-id for a job if it has one
+ * 
+ * @param tx - the transaction to use for querying
+ * @param jobID - the JobID
+ * @returns A promise containing a scroll-id or null if the job does not use query-cmr
+ */
+export async function getScrollIdForJob(
+  tx: Transaction,
+  jobID: string,
+): Promise<string> {
+  const workItems = await getWorkItemsByJobIdAndStepIndex(tx, jobID, QUERY_CMR_STEP_INDEX);
+  if (workItems && workItems.workItems[0]?.serviceID.match(/query-cmr/)) {
+    return workItems.workItems[0]?.scrollID;
+  }
+  return null;
 }
