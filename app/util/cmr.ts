@@ -571,7 +571,8 @@ export async function clearScrollSession(scrollId: string): Promise<void> {
       await _cmrPostBody('/search/clear-scroll', { scroll_id: scrollId });
     } catch {
       // Do nothing - CMR will close the scroll session after ten minutes anyway.
-      logger.debug(`Failed to clear scroll session for scroll-id: ${scrollId}`)
+      logger.debug(`Failed to clear scroll session for scroll-id: ${scrollId}`);
+    }
   }
 }
 
