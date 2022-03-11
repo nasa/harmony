@@ -1,12 +1,14 @@
 import yargs from 'yargs';
 import { promises as fs } from 'fs';
 import path from 'path';
-import DataOperation from '../../../app/models/data-operation'; // confirm with Patrick see whether harmony being published to npm
+import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
 import logger from '../../../app/util/log';
 import Catalog from './stac/catalog';
 import StacItem from './stac/item';
 import { BoundingBox } from '../../../app/util/bounding-box';
+
+let giovanni_datafield_config = require('../config/giovanni-datafield.json');
 
 interface HarmonyArgv {
   harmonyMetadataDir?: string;
@@ -48,6 +50,7 @@ export default async function main(args: string[]): Promise<void> {
   const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
   console.log("ZHL got operation: ", operation);
+  console.log("config: ",giovanni_datafield_config);
   console.log("ZHL got operation model source: ", operation.model.sources);
   console.log("ZHL got operation model var source: ", operation.model.sources[0].variables);
   const timingLogger = appLogger.child({ requestId: operation.requestId }); // I can use my own logger but has to be consistent with the current format
@@ -58,7 +61,6 @@ export default async function main(args: string[]): Promise<void> {
   const result = new Catalog({ description: 'Giovanni adapter service' });
   // Get collection short name (make sure it's a conception id)
   // e.g. curl -Ln -bj “https://cmr.earthdata.nasa.gov/search/collections.json?concept_id=C1214614210-SCIOPS” | jq .
-  const collectionShortName = "collectoinname";
   /*
   result.links.push({
     rel: 'harmony_source',
