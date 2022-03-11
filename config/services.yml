@@ -92,7 +92,7 @@ https://cmr.earthdata.nasa.gov:
         - text/csv
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
-        operations: ['concatenate']
+        operations: ['concatenate', 'variableSubset']
 
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.14.0'
@@ -490,7 +490,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - text/csv
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
-        operations: ['concatenate']
+        operations: ['concatenate', 'variableSubset']
 
   - name: harmony/service-example
     data_operation_version: '0.14.0'
