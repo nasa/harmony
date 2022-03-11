@@ -747,6 +747,7 @@ https://cmr.uat.earthdata.nasa.gov:
           STAGING_PATH: public/sds/trajectory-subsetter
     umm_s:
       - S1242315633-EEDTEST
+      - S1243702422-ORNL_CLOUD
     collections: []
     capabilities:  # The Trajectory Subsetter also supports temporal subsetting
       subsetting:
