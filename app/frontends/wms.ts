@@ -11,6 +11,7 @@ import * as services from '../models/services';
 import { createDecrypter, createEncrypter } from '../util/crypto';
 import parseMultiValueParameter from '../util/parameter-parsing';
 import parseCRS from '../util/crs';
+import { validateParameterNames } from '../middleware/parameter-validation';
 
 import env from '../util/env';
 
@@ -192,6 +193,10 @@ function getMap(req, res, next: NextFunction): void {
     'height');
 
   validateParamIn(query, 'transparent', ['TRUE', 'FALSE']);
+
+  validateParameterNames(Object.keys(req.query), [
+    'service', 'request', 'version', 'layers', 'crs', 'bbox', 'format', 'styles', 
+    'width', 'height', 'transparent', 'dpi', 'map_resolution', 'layers', 'granuleid']);
 
   const dpi = query.dpi || query.map_resolution;
 
