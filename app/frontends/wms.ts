@@ -11,10 +11,15 @@ import * as services from '../models/services';
 import { createDecrypter, createEncrypter } from '../util/crypto';
 import parseMultiValueParameter from '../util/parameter-parsing';
 import parseCRS from '../util/crs';
+import { validateParameterNames } from '../middleware/parameter-validation';
 
 import env from '../util/env';
 
 const readFile = promisify(fs.readFile);
+
+const wmsGetMapParams = [
+  'SERVICE', 'REQUEST', 'VERSION', 'LAYERS', 'CRS', 'BBOX', 'FORMAT', 'STYLES', 
+  'WIDTH', 'HEIGHT', 'TRANSPARENT', 'DPI', 'MAP_RESOLUTION', 'LAYERS', 'GRANULEID'];
 
 /**
  * Validates that the given parameters are present in the map, throwing
@@ -192,6 +197,8 @@ function getMap(req, res, next: NextFunction): void {
     'height');
 
   validateParamIn(query, 'transparent', ['TRUE', 'FALSE']);
+
+  validateParameterNames(Object.keys(req.query), wmsGetMapParams);
 
   const dpi = query.dpi || query.map_resolution;
 
