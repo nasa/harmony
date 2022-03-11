@@ -31,19 +31,40 @@ function validateLinkTypeParameter(req: HarmonyRequest): void {
 }
 
 /**
+ * Validate that the parameter names are correct.
+ *  (Performs case insensitive comparison.)
+ * 
+ * @param requestedParams - names of the parameters provided by the user
+ * @param allowedParams - names of the allowed parameters
+ * @throws RequestValidationError - if disallowed parameters are detected
+ */
+export function validateParameterNames(requestedParams: string[], allowedParams: string[]): void {
+  const requestedParamsLower = requestedParams.map(param => param.toLowerCase());
+  const allowedParamsLower = allowedParams.map(param => param.toLowerCase());
+  const invalidParams = [];
+  requestedParamsLower.forEach((param, index) => {
+    const isNotAllowed = !allowedParamsLower.includes(param);
+    if (isNotAllowed) {
+      invalidParams.push(requestedParams[index]);
+    }
+  });
+  if (invalidParams.length) {
+    const incorrectListString = listToText(invalidParams, Conjunction.AND);
+    const allowedListString = listToText(allowedParams, Conjunction.AND);
+    throw new RequestValidationError(`Invalid parameter(s): ${incorrectListString}. Allowed parameters are: ${allowedListString}.`);
+  }
+}
+
+/**
  * Validate that the req query parameter names are correct according to Harmony implementation of OGC spec.
- *
+ * 
  * @param req - The client request
+ * @throws RequestValidationError - if disallowed parameters are detected
  */
 function validateCoverageRangesetParameterNames(req: HarmonyRequest): void {
   const requestedParams = Object.keys(req.query);
   const allowedParams = req.method.toLowerCase() == 'get' ? coverageRangesetGetParams : coverageRangesetPostParams;
-  const incorrectParams = requestedParams.filter(param => !allowedParams.includes(param));
-  if (incorrectParams.length) {
-    const incorrectListString = listToText(incorrectParams, Conjunction.AND);
-    const allowedListString = listToText(allowedParams, Conjunction.AND);
-    throw new RequestValidationError(`Invalid query parameter(s) '${incorrectListString}'. Allowed parameters are ${allowedListString}`);
-  }
+  validateParameterNames(requestedParams, allowedParams);
 }
 
 /**
