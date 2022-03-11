@@ -17,6 +17,10 @@ import env from '../util/env';
 
 const readFile = promisify(fs.readFile);
 
+const wmsGetMapParams = [
+  'SERVICE', 'REQUEST', 'VERSION', 'LAYERS', 'CRS', 'BBOX', 'FORMAT', 'STYLES', 
+  'WIDTH', 'HEIGHT', 'TRANSPARENT', 'DPI', 'MAP_RESOLUTION', 'LAYERS', 'GRANULEID'];
+
 /**
  * Validates that the given parameters are present in the map, throwing
  * a RequestValidationError if any are missing
@@ -194,9 +198,7 @@ function getMap(req, res, next: NextFunction): void {
 
   validateParamIn(query, 'transparent', ['TRUE', 'FALSE']);
 
-  validateParameterNames(Object.keys(req.query), [
-    'SERVICE', 'REQUEST', 'VERSION', 'LAYERS', 'CRS', 'BBOX', 'FORMAT', 'STYLES', 
-    'WIDTH', 'HEIGHT', 'TRANSPARENT', 'DPI', 'MAP_RESOLUTION', 'LAYERS', 'GRANULEID']);
+  validateParameterNames(Object.keys(req.query), wmsGetMapParams);
 
   const dpi = query.dpi || query.map_resolution;
 
