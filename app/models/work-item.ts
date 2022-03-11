@@ -4,7 +4,7 @@ import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
-import { Job, JobStatus } from './job';
+import { activeJobStatuses, Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
 
@@ -126,10 +126,11 @@ export async function getNextWorkItem(
 ): Promise<WorkItem> {
   let workItemData;
   try {
-    const subQuery =
+    const subQueryForUsersRequestingService =
       tx(Job.table)
         .select('username')
         .join(`${WorkItem.table} as w`, `${Job.table}.jobID`, 'w.jobID')
+        .whereIn(`${Job.table}.status`, activeJobStatuses)
         .where({ 'w.status': 'ready', serviceID });
     // lock rows in the jobs table for users requesting this service - needed as a workaround
     // for postgres limitation (https://stackoverflow.com/questions/5272412/group-by-in-update-from-clause)
@@ -137,7 +138,7 @@ export async function getNextWorkItem(
       .forUpdate()
       .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
       .select(['username', 'serviceID', `${WorkItem.table}.serviceID`])
-      .whereIn('username', subQuery);
+      .whereIn('username', subQueryForUsersRequestingService);
 
     if (db.client.config.client === 'pg') {
       jobQuery = jobQuery.skipLocked();
@@ -149,7 +150,7 @@ export async function getNextWorkItem(
       .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
       .select(['username'])
       .max(`${Job.table}.updatedAt`, { as: 'm' })
-      .whereIn('username', subQuery)
+      .whereIn('username', subQueryForUsersRequestingService)
       .groupBy('username')
       .orderBy('m', 'asc')
       .first();
@@ -163,7 +164,7 @@ export async function getNextWorkItem(
             .on('w.workflowStepIndex', '=', 'wf.stepIndex');
         })
         .select(...tableFields, 'wf.operation')
-        .whereIn('j.status', ['running', 'accepted'])
+        .whereIn('j.status', activeJobStatuses)
         .where('w.status', '=', 'ready')
         .where('w.serviceID', '=', serviceID)
         .where('j.username', '=', userData.username)
@@ -192,6 +193,7 @@ export async function getNextWorkItem(
     }
   } catch (e) {
     logger.error(`Error getting next work item for service [${serviceID}]`);
+    logger.error(e);
     throw e;
   }
 
@@ -505,7 +507,7 @@ export async function workItemCountByServiceIDAndStatus(
 
 /**
  * Get the scroll-id for a job if it has one
- * 
+ *
  * @param tx - the transaction to use for querying
  * @param jobID - the JobID
  * @returns A promise containing a scroll-id or null if the job does not use query-cmr
