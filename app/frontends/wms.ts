@@ -195,8 +195,8 @@ function getMap(req, res, next: NextFunction): void {
   validateParamIn(query, 'transparent', ['TRUE', 'FALSE']);
 
   validateParameterNames(Object.keys(req.query), [
-    'service', 'request', 'version', 'layers', 'crs', 'bbox', 'format', 'styles', 
-    'width', 'height', 'transparent', 'dpi', 'map_resolution', 'layers', 'granuleid']);
+    'SERVICE', 'REQUEST', 'VERSION', 'LAYERS', 'CRS', 'BBOX', 'FORMAT', 'STYLES', 
+    'WIDTH', 'HEIGHT', 'TRANSPARENT', 'DPI', 'MAP_RESOLUTION', 'LAYERS', 'GRANULEID']);
 
   const dpi = query.dpi || query.map_resolution;
 
