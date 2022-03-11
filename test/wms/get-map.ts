@@ -203,6 +203,30 @@ describe('WMS GetMap', function () {
     });
   });
 
+  describe('when provided an invalid set of parameters', function () {
+    const query = {
+      service: 'WMS',
+      request: 'GetMap',
+      layers: collection,
+      crs: 'EPSG:4326',
+      format: 'image/tiff',
+      styles: '',
+      width: 128,
+      height: 128,
+      version: '1.3.0',
+      bbox: '-180,-90,180,90',
+      transparent: 'TRUE',
+      invalidParam: 'yes',
+      anotherInvalidParam: 'ok',
+    };
+    it('returns an informative HTTP 400 "Bad Request" error', async function () {
+      const res = await wmsRequest(this.frontend, collection, query);
+      expect(res.status).to.equal(400);
+      expect(res.text).to.include('Invalid parameter(s): invalidParam and anotherInvalidParam');
+      expect(res.text).to.include('Allowed parameters are');
+    });
+  });
+
   const unsupportedCollection = 'C446474-ORNL_DAAC';
   describe('collection that does not have any supported services', function () {
     const query = {
