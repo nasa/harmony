@@ -3,9 +3,10 @@ import { promises as fs } from 'fs';
 import db, { Transaction } from './db';
 import { Job, JobStatus, terminalStates } from '../models/job';
 import env from './env';
-import { updateWorkItemStatusesByJobId, WorkItemStatus } from '../models/work-item';
+import { getScrollIdForJob, updateWorkItemStatusesByJobId, WorkItemStatus } from '../models/work-item';
 import { ConflictError, NotFoundError, RequestValidationError } from './errors';
 import isUUID from './uuid';
+import { clearScrollSession } from './cmr';
 
 /**
  * Cleans up the temporary work items for the provided jobID
@@ -87,6 +88,10 @@ export default async function cancelAndSaveJob(
 
     if (job) {
       if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
+        // attempt to clear the CMR scroll session if this job had one
+        const scrollId = await getScrollIdForJob(tx, job.jobID);
+        await clearScrollSession(scrollId);
+
         await completeJob(tx, job, JobStatus.CANCELED, logger, message);
       } else {
         logger.warn(`Ignoring repeated cancel request for job ${jobID}`);
