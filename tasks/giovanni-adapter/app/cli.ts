@@ -62,7 +62,9 @@ export default async function main(args: string[]): Promise<void> {
   const collectionId = operation.model.sources[0].collection;
   const variableId = operation.model.sources[0].variables[0].id;
   const giovanni_datafield = giovanni_datafield_config[collectionId][variableId];
-  const giovanni_url_path = encodeURIComponent(`${giovanni_service_name}?data=${giovanni_datafield}&location=[${lat},${lon}]&time=${time_start}/${time_end}`);
+  const giovanni_location_param = encodeURIComponent(`[${lat},${lon}]`);
+  const giovanni_time_param = encodeURIComponent(`${time_start}/${time_end}`);
+  const giovanni_url_path = `${giovanni_service_name}?data=${giovanni_datafield}&location=${giovanni_location_param}&time=${giovanni_time_param}`;
   const giovanni_url = `${giovanni_base_url}${giovanni_url_path}`;
   const assets = {
     'Giovanni URL': {
