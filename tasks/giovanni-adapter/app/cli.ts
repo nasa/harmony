@@ -8,7 +8,7 @@ import Catalog from './stac/catalog';
 import StacItem from './stac/item';
 import { BoundingBox } from '../../../app/util/bounding-box';
 
-const giovanni_datafield_config = require('../config/giovanni-datafield.json');
+import giovanni_datafield_config from '../config/giovanni-datafield.json';
 const giovanni_base_url = 'https://api.giovanni.earthdata.nasa.gov/';
 
 interface HarmonyArgv {
@@ -22,7 +22,7 @@ interface HarmonyArgv {
  */
 export function parser(): yargs.Argv<unknown> {
   return yargs
-    .usage('Usage: --output-dir <dir> --harmony-input <message> [--query <query1> <query2>]')
+    .usage('Usage: --harmony-metadata-dir <dir> --harmony-input <message>')
     .option('harmony-metadata-dir', {
       alias: 'o',
       describe: 'the directory where output files should be placed',
