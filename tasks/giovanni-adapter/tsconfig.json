@@ -11,7 +11,8 @@
       "allowJs": true,
       "noImplicitAny": false,
       "sourceMap": true,
-      "outDir": "built"
+      "outDir": "built",
+      "resolveJsonModule": true
   },
   "typeRoots": [ "./node_modules/@types", "./app/stac" ],
   "include": [ "./app/**/*", "./test/**/*" ]
