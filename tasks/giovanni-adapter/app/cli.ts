@@ -8,7 +8,8 @@ import Catalog from './stac/catalog';
 import StacItem from './stac/item';
 import { BoundingBox } from '../../../app/util/bounding-box';
 
-let giovanni_datafield_config = require('../config/giovanni-datafield.json');
+const giovanni_datafield_config = require('../config/giovanni-datafield.json');
+const giovanni_base_url = "https://api.giovanni.earthdata.nasa.gov/";
 
 interface HarmonyArgv {
   harmonyMetadataDir?: string;
@@ -61,6 +62,7 @@ export default async function main(args: string[]): Promise<void> {
   const result = new Catalog({ description: 'Giovanni adapter service' });
   // Get collection short name (make sure it's a conception id)
   // e.g. curl -Ln -bj “https://cmr.earthdata.nasa.gov/search/collections.json?concept_id=C1214614210-SCIOPS” | jq .
+  https://api.giovanni.earthdata.nasa.gov/timeseries?data=GPM_3IMERGHH_06_precipitationCal&location=%5B4.75%2C0.55%5D&time=2000-06-01T00:00:00%2F2000-06-01T07:30:00"
   /*
   result.links.push({
     rel: 'harmony_source',
@@ -75,17 +77,10 @@ export default async function main(args: string[]): Promise<void> {
       "title": "001_00_7f00ff_global"
   });
   console.log("ZHL result: ",result);
-  
-  const assets = {
-    "Giovanni URL": {
-      href: "https://www.google.com", //GIOVANNI_URL",
-      title: "Giovanni",
-      description: "Giovanni link",
-      type: "data",
-      roles: ['data']
-    }
-  };
 
+  const giovanni_service_name = 'proxy-timeseries';
+  const time_start = operation.temporal.start;
+  const time_end = operation.temporal.end;
   const [lon, lat] = operation.spatialPoint;
   const bbox: BoundingBox = [
       lon,
@@ -93,6 +88,22 @@ export default async function main(args: string[]): Promise<void> {
       lon,
       lat
   ];
+  const collectionId = operation.model.sources[0].collection;
+  const variableId = operation.model.sources[0].variables[0].id;
+  const giovanni_datafield = giovanni_datafield_config[collectionId][variableId];
+  const giovanni_url_path = encodeURIComponent(`${giovanni_service_name}?data=${giovanni_datafield}&location=[${lat},${lon}]&time=${time_start}/${time_end}`);
+  const giovanni_url = `${giovanni_base_url}${giovanni_url_path}`;
+  const assets = {
+    "Giovanni URL": {
+      href: giovanni_url,
+      title: "Giovanni",
+      description: "Giovanni link",
+      type: "data",
+      roles: ['data']
+    }
+  };
+
+
 
   const stacItemFilename = path.join(options.harmonyMetadataDir, 'item.json');
   const item = new StacItem({
