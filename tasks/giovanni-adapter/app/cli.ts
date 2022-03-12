@@ -58,7 +58,6 @@ export default async function main(args: string[]): Promise<void> {
   const time_start = operation.temporal.start;
   const time_end = operation.temporal.end;
   const [lon, lat] = operation.spatialPoint;
-  const bbox: BoundingBox = [lon, lat, lon, lat];
   const collectionId = operation.model.sources[0].collection;
   const variableId = operation.model.sources[0].variables[0].id;
   const giovanni_datafield = giovanni_datafield_config[collectionId][variableId];
@@ -66,6 +65,27 @@ export default async function main(args: string[]): Promise<void> {
   const giovanni_time_param = encodeURIComponent(`${time_start}/${time_end}`);
   const giovanni_url_path = `${giovanni_service_name}?data=${giovanni_datafield}&location=${giovanni_location_param}&time=${giovanni_time_param}`;
   const giovanni_url = `${giovanni_base_url}${giovanni_url_path}`;
+
+  // set up stac catalog
+  await fs.mkdir(options.harmonyMetadataDir, { recursive: true });
+  const result = new Catalog({ description: 'Giovanni adapter service' });
+  /*
+  result.links.push({
+    rel: 'harmony_source',
+    href: `${process.env.CMR_ENDPOINT}/search/concepts/${source.collection}`,
+  });
+  */
+
+  // generate stac item
+  const stacItemRelativeFilename = 'item.json';
+  result.links.push({
+    'rel': 'item',
+    'href': stacItemRelativeFilename,
+    'type': 'application/json',
+    'title': 'giovanni stac item',
+  });
+  const stacItemFilename = path.join(options.harmonyMetadataDir, stacItemRelativeFilename);
+  const bbox: BoundingBox = [lon, lat, lon, lat];
   const assets = {
     'Giovanni URL': {
       href: giovanni_url,
@@ -75,30 +95,13 @@ export default async function main(args: string[]): Promise<void> {
       roles: ['data'],
     },
   };
-
-
-  await fs.mkdir(options.harmonyMetadataDir, { recursive: true });
-  const result = new Catalog({ description: 'Giovanni adapter service' });
-  /*
-  result.links.push({
-    rel: 'harmony_source',
-    href: `${process.env.CMR_ENDPOINT}/search/concepts/${source.collection}`,
-  });
-  */
-  result.links.push({
-    'rel': 'item',
-    //"href": "<uuid>/<same uuid>.json", //<uuid>/<same uuid>.json saves the stac item which will have giovanni url under assets (which is the only thing that is required)
-    'href': 'item.json',
-    'type': 'application/json',
-    'title': '001_00_7f00ff_global',
-  });
-  const stacItemFilename = path.join(options.harmonyMetadataDir, 'item.json');
   const item = new StacItem({
     bbox,
     assets,
   });
   item.write(stacItemFilename, true);
 
+  // save stac catalog
   const relativeFilename = 'catalog.json';
   const catalogFilenames = [];
   const filename = path.join(options.harmonyMetadataDir, relativeFilename);
