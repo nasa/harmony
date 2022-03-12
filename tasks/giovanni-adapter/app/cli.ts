@@ -35,7 +35,6 @@ export function parser(): yargs.Argv<unknown> {
       type: 'string',
       coerce: JSON.parse,
       demandOption: true,
-
     });
 }
 
@@ -52,24 +51,8 @@ export default async function main(args: string[]): Promise<void> {
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing..start');
-  await fs.mkdir(options.harmonyMetadataDir, { recursive: true });
 
-  const result = new Catalog({ description: 'Giovanni adapter service' });
-  /*
-  result.links.push({
-    rel: 'harmony_source',
-    href: `${process.env.CMR_ENDPOINT}/search/concepts/${source.collection}`,
-  });
-  */
-  result.links.push({
-      "rel": "item",
-      //"href": "<uuid>/<same uuid>.json", //<uuid>/<same uuid>.json saves the stac item which will have giovanni url under assets (which is the only thing that is required)
-      "href": "item.json",
-      "type": "application/json",
-      "title": "001_00_7f00ff_global"
-  });
-  console.log("ZHL result: ",result);
-
+  // generate Giovanni URL
   const giovanni_service_name = 'proxy-timeseries';
   const time_start = operation.temporal.start;
   const time_end = operation.temporal.end;
@@ -96,7 +79,21 @@ export default async function main(args: string[]): Promise<void> {
   };
 
 
-
+  await fs.mkdir(options.harmonyMetadataDir, { recursive: true });
+  const result = new Catalog({ description: 'Giovanni adapter service' });
+  /*
+  result.links.push({
+    rel: 'harmony_source',
+    href: `${process.env.CMR_ENDPOINT}/search/concepts/${source.collection}`,
+  });
+  */
+  result.links.push({
+      "rel": "item",
+      //"href": "<uuid>/<same uuid>.json", //<uuid>/<same uuid>.json saves the stac item which will have giovanni url under assets (which is the only thing that is required)
+      "href": "item.json",
+      "type": "application/json",
+      "title": "001_00_7f00ff_global"
+  });
   const stacItemFilename = path.join(options.harmonyMetadataDir, 'item.json');
   const item = new StacItem({
     bbox,
