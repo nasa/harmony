@@ -8,6 +8,7 @@ import Catalog from './stac/catalog';
 import StacItem from './stac/item';
 import { BoundingBox } from '../../../app/util/bounding-box';
 
+// giovanni globals
 import giovanni_datafield_config from '../config/giovanni-datafield.json';
 const giovanni_base_url = 'https://api.giovanni.earthdata.nasa.gov/';
 
@@ -69,8 +70,8 @@ export default async function main(args: string[]): Promise<void> {
       title: 'Giovanni',
       description: 'Giovanni link',
       type: 'data',
-      roles: ['data']
-    }
+      roles: ['data'],
+    },
   };
 
 
@@ -83,11 +84,11 @@ export default async function main(args: string[]): Promise<void> {
   });
   */
   result.links.push({
-      "rel": "item",
-      //"href": "<uuid>/<same uuid>.json", //<uuid>/<same uuid>.json saves the stac item which will have giovanni url under assets (which is the only thing that is required)
-      "href": "item.json",
-      "type": "application/json",
-      "title": "001_00_7f00ff_global"
+    'rel': 'item',
+    //"href": "<uuid>/<same uuid>.json", //<uuid>/<same uuid>.json saves the stac item which will have giovanni url under assets (which is the only thing that is required)
+    'href': 'item.json',
+    'type': 'application/json',
+    'title': '001_00_7f00ff_global',
   });
   const stacItemFilename = path.join(options.harmonyMetadataDir, 'item.json');
   const item = new StacItem({
@@ -96,7 +97,7 @@ export default async function main(args: string[]): Promise<void> {
   });
   item.write(stacItemFilename, true);
 
-  const relativeFilename = `catalog.json`;
+  const relativeFilename = 'catalog.json';
   const catalogFilenames = [];
   const filename = path.join(options.harmonyMetadataDir, relativeFilename);
   catalogFilenames.push(relativeFilename);
