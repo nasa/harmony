@@ -50,19 +50,11 @@ export default async function main(args: string[]): Promise<void> {
   const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
   const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
   const operation = new DataOperation(options.harmonyInput, encrypter, decrypter);
-  console.log("ZHL got operation: ", operation);
-  console.log("config: ",giovanni_datafield_config);
-  console.log("ZHL got operation model source: ", operation.model.sources);
-  console.log("ZHL got operation model var source: ", operation.model.sources[0].variables);
-  const timingLogger = appLogger.child({ requestId: operation.requestId }); // I can use my own logger but has to be consistent with the current format
+  const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing..start');
   await fs.mkdir(options.harmonyMetadataDir, { recursive: true });
-  //await new Promise(r => setTimeout(r, 2000000));
 
   const result = new Catalog({ description: 'Giovanni adapter service' });
-  // Get collection short name (make sure it's a conception id)
-  // e.g. curl -Ln -bj “https://cmr.earthdata.nasa.gov/search/collections.json?concept_id=C1214614210-SCIOPS” | jq .
-  https://api.giovanni.earthdata.nasa.gov/timeseries?data=GPM_3IMERGHH_06_precipitationCal&location=%5B4.75%2C0.55%5D&time=2000-06-01T00:00:00%2F2000-06-01T07:30:00"
   /*
   result.links.push({
     rel: 'harmony_source',
