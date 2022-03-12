@@ -9,7 +9,7 @@ import StacItem from './stac/item';
 import { BoundingBox } from '../../../app/util/bounding-box';
 
 const giovanni_datafield_config = require('../config/giovanni-datafield.json');
-const giovanni_base_url = "https://api.giovanni.earthdata.nasa.gov/";
+const giovanni_base_url = 'https://api.giovanni.earthdata.nasa.gov/';
 
 interface HarmonyArgv {
   harmonyMetadataDir?: string;
@@ -57,23 +57,18 @@ export default async function main(args: string[]): Promise<void> {
   const time_start = operation.temporal.start;
   const time_end = operation.temporal.end;
   const [lon, lat] = operation.spatialPoint;
-  const bbox: BoundingBox = [
-      lon,
-      lat,
-      lon,
-      lat
-  ];
+  const bbox: BoundingBox = [lon, lat, lon, lat];
   const collectionId = operation.model.sources[0].collection;
   const variableId = operation.model.sources[0].variables[0].id;
   const giovanni_datafield = giovanni_datafield_config[collectionId][variableId];
   const giovanni_url_path = encodeURIComponent(`${giovanni_service_name}?data=${giovanni_datafield}&location=[${lat},${lon}]&time=${time_start}/${time_end}`);
   const giovanni_url = `${giovanni_base_url}${giovanni_url_path}`;
   const assets = {
-    "Giovanni URL": {
+    'Giovanni URL': {
       href: giovanni_url,
-      title: "Giovanni",
-      description: "Giovanni link",
-      type: "data",
+      title: 'Giovanni',
+      description: 'Giovanni link',
+      type: 'data',
       roles: ['data']
     }
   };
