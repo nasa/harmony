@@ -390,7 +390,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           name: 'turbo',
         },
         steps: [{
-          image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
+          image: 'harmonyservices/query-cmr:fake-test',
         }],
         capabilities: {
           subsetting: {
