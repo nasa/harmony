@@ -285,7 +285,7 @@ GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
 # so it will always be deployed, and does not need to be specified. Make sure if the image for the
 # service is not publicly available that you have built the docker image locally, otherwise the
 # service will fail to start.
-LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr,giovanni-adapter
+LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
 
 # page size to use with CMR calls
 CMR_MAX_PAGE_SIZE=2000
