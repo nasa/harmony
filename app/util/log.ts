@@ -3,6 +3,7 @@ import * as winston from 'winston';
 import env = require('./env');
 import { RequestValidationError } from './errors';
 import redact from './logRedactor';
+import { Conjunction, listToText } from './string';
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
 
@@ -83,8 +84,10 @@ const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger([transport]
  * @throws RequestValidationError - if the log level is not one of winston.config.npm.levels
  */
 function validateLogLevel(level: string): void {
-  if (!Object.keys(winston.config.npm.levels).includes(level)) {
-    throw new RequestValidationError(`Requested to configure log level with invalid level: ${level}.`);
+  const validLevels = Object.keys(winston.config.npm.levels);
+  if (!validLevels.includes(level)) {
+    throw new RequestValidationError(
+      `Requested to configure log level with invalid level: ${level}. Valid levels are: ${listToText(validLevels, Conjunction.AND)}`);
   }
 }
 
