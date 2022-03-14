@@ -80,7 +80,6 @@ const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger([transport]
 /**
  * Check if log level is valid.
  * @param level - the level to check
- * @returns boolean
  * @throws RequestValidationError - if the log level is not one of winston.config.npm.levels
  */
 function validateLogLevel(level: string): void {

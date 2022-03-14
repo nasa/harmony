@@ -20,7 +20,7 @@ export async function setLogLevel(
 ): Promise<void> {
   const query = keysToLowerCase(req.query);
   try {
-    const result = configureLogLevel(query.logLevel);
+    const result = configureLogLevel(query.level);
     res.json({ result });
   } catch (e) {
     req.context.logger.error(e);
