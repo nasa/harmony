@@ -477,6 +477,103 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when the first step is giovanni-adapter instead of query-cmr', function () {
+    const serviceConfigs: ServiceConfig<unknown>[] = [
+      {
+        name: 'giovanni-adapter-service',
+        collections: [
+          {
+            id: collection,
+          },
+        ],
+        type: {
+          name: 'turbo',
+        },
+        steps: [{
+          image: 'harmonyservices/giovanni-adapter:fake-test',
+        }],
+        default_sync: true,
+        has_granule_limit: false,
+      }];
+    hookServices(serviceConfigs);
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+
+    describe('and maxResults is not set for the query', function () {
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the job is being processed', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('The job is being processed');
+        });
+
+        it('returns the number of granules for the collection', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(177);
+        });
+      });
+    });
+
+    describe('and maxResults from the a query is set to a value greater than the granule limit for the collection', function () {
+      const maxResults = 200;
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the job is being processed', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('The job is being processed');
+        });
+
+        it('returns the number of granules for the collection', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(177);
+        });
+      });
+    });
+
+    describe('and maxResults from the a query is set to a value less than the granule limit for the collection', function () {
+      const maxResults = 2;
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\.$/);
+        });
+
+        it('returns up to maxGraunules', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(2);
+        });
+      });
+    });
+
+    describe('when the collection granule limit is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
+      before(function () {
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 3);
+      });
+      after(function () {
+        this.glStub.restore();
+      });
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      hookRedirect('jdoe1');
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
+      });
+
+      it('limits the input granules to the system limit', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.numInputGranules).to.equal(3);
+      });
+    });
+  });
+
   describe('when requesting output formats', function () {
     const tiff = 'image/tiff';
     const png = 'image/png';
