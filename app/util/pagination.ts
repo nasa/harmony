@@ -11,6 +11,22 @@ export interface PagingParams {
 }
 
 /**
+ * Build the RequestValidationError with a custom message that specifies what the validation constraints are.
+ * @param min - min constraint for the parameter
+ * @param max - max constraint for the parameter
+ * @param paramName - name of the parameter being validated
+ * @returns RequestValidationError
+ */
+function buildIntegerParseError(min: number, max: number, paramName: string): RequestValidationError {
+  const constraints = [];
+  if (min !== null)
+    constraints.push(` greater than or equal to ${min}`);
+  if (max !== null)
+    constraints.push(` less than or equal to ${max}`);
+  return new RequestValidationError(`Parameter "${paramName}" is invalid. Must be an integer${constraints.join(' and')}.`);
+}
+
+/**
  * Validates that the given string parameter is a positive integer, returning the
  * corresponding number if it is or throwing a validation error if it isn't
  * @param req - The Express request possibly containing paging params
@@ -18,6 +34,7 @@ export interface PagingParams {
  * @param defaultValue - the default to return if the parameter is not set
  * @param min - The minimum acceptable value the number
  * @param max - The maximum acceptable value the number
+ * @param useMaxWhenExceeded - If true, return 'max' (rather than an error) when the integer provided exceeds 'max'
  * @returns The numeric value of the parameter
  * @throws {@link RequestValidationError} If the passed value is not a positive integer
  */
@@ -27,6 +44,7 @@ function parseIntegerParam(
   defaultValue: number,
   min: number = null,
   max: number = null,
+  useMaxWhenExceeded = false,
 ): number {
   const strValue = req.query[paramName];
   if (!strValue) {
@@ -35,12 +53,15 @@ function parseIntegerParam(
   const value = +strValue;
   if (Number.isNaN(value)
     || !Number.isSafeInteger(value)
-    || (min !== null && value < min)
-    || (max !== null && value > max)) {
-    const constraints = [];
-    if (min !== null) constraints.push(` greater than or equal to ${min}`);
-    if (max !== null) constraints.push(` less than or equal to ${max}`);
-    throw new RequestValidationError(`Parameter "${paramName}" is invalid. Must be an integer${constraints.join(' and')}.`);
+    || (min !== null && value < min)) {
+    throw buildIntegerParseError(min, max, paramName);
+  }
+  if ((max !== null && value > max)) {
+    if (!useMaxWhenExceeded) {
+      throw buildIntegerParseError(min, max, paramName);
+    } else {
+      return max;
+    }
   }
   return value;
 }
@@ -49,13 +70,14 @@ function parseIntegerParam(
  * Gets the paging parameters from the given request
  * @param req - The Express request possibly containing paging params
  * @param defaultPageSize - The page size to use if no `limit` parameter is in the query
+ * @param useMaxWhenExceeded - If true, return 'max' (rather than an error) when the integer provided exceeds 'max'
  * @returns The paging parameters
  * @throws {@link RequestValidationError} If invalid paging parameters are provided
  */
-export function getPagingParams(req: Request, defaultPageSize: number): PagingParams {
+export function getPagingParams(req: Request, defaultPageSize: number, useMaxWhenExceeded = false): PagingParams {
   return {
     page: parseIntegerParam(req, 'page', 1, 1),
-    limit: parseIntegerParam(req, 'limit', defaultPageSize, 0, env.maxPageSize),
+    limit: parseIntegerParam(req, 'limit', defaultPageSize, 0, env.maxPageSize, useMaxWhenExceeded),
   };
 }
 

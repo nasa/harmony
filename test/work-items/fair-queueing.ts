@@ -30,6 +30,8 @@ const jobData = [
   ['job8', 'Bill', 'successful', true, 12355],
   // this job is not for the 'foo' service so it should not have its work items returned
   ['job9', 'John', 'accepted', true, 12340],
+  // this job has been canceled so even a work item with a ready status should be ignored
+  ['job10', 'Jane', 'canceled', true, 12200],
 ];
 
 const workflowStepData = [
@@ -43,6 +45,7 @@ const workflowStepData = [
   ['job7', 'foo', '[]'],
   ['job8', 'foo', '[]'],
   ['job9', 'bar', '[]'],
+  ['job10', 'foo', '[]'],
 ];
 
 const workItemData = [
@@ -56,6 +59,7 @@ const workItemData = [
   ['job7', 'foo', 'ready', 12349],
   ['job8', 'foo', 'successful', 12355],
   ['job9', 'bar', 'ready', 12340],
+  ['job10', 'foo', 'ready', 12200],
 ];
 
 describe('Fair Queueing', function () {

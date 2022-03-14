@@ -13,6 +13,7 @@ import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflo
 import path from 'path';
 import { promises as fs } from 'fs';
 import { ServiceError } from '../util/errors';
+import { clearScrollSession } from '../util/cmr';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
@@ -258,15 +259,22 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   await db.transaction(async (tx) => {
     const workItem = await getWorkItemById(tx, parseInt(id, 10));
     const job: Job = await Job.byJobID(tx, workItem.jobID);
+    const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
+    const isQueryCmr = workItem.serviceID.match(/query-cmr/);
+
     // If the job was already canceled or failed then send 400 response
     if ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
       res.status(409).send(`Job was already ${job.status}.`);
       return;
     }
+
     await updateWorkItemStatus(tx, id, status as WorkItemStatus);
     // If the response is an error then set the job status to 'failed'
     if (status === WorkItemStatus.FAILED) {
       if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
+        if (isQueryCmr) {
+          await clearScrollSession(workItem.scrollID);
+        }
         let message = 'Unknown error';
         if (errorMessage) {
           message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
@@ -286,11 +294,10 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         workItem.workflowStepIndex,
         SUCCESSFUL_WORK_ITEM_STATUSES,
       );
-      const thisStep = await getWorkflowStepByJobIdStepIndex(
-        tx,
-        workItem.jobID,
-        workItem.workflowStepIndex,
-      );
+
+      if (isQueryCmr && successWorkItemCount === thisStep.workItemCount) {
+        await clearScrollSession(workItem.scrollID);
+      }
 
       if (nextStep) {
         // if we have completed all the work items for this step or if the next step does not

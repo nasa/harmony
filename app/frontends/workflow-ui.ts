@@ -29,7 +29,7 @@ export async function getJobs(
   badgeClasses[JobStatus.SUCCESSFUL] = 'success';
   badgeClasses[JobStatus.RUNNING] = 'info';
   try {
-    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
     const query: JobQuery = {};
     if (!req.context.isAdminAccess) {
       query.username = req.user;
