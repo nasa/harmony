@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import * as winston from 'winston';
 import env = require('./env');
+import { RequestValidationError } from './errors';
 import redact from './logRedactor';
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
@@ -80,21 +81,25 @@ const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger([transport]
  * Check if log level is valid.
  * @param level - the level to check
  * @returns boolean
+ * @throws RequestValidationError - if the log level is not one of winston.config.npm.levels
  */
-function isValidLevel(level: string): boolean {
-  return Object.keys(winston.config.npm.levels).includes(level);
+function validateLogLevel(level: string): void {
+  if (!Object.keys(winston.config.npm.levels).includes(level)) {
+    throw new RequestValidationError(`Requested to configure log level with invalid level: ${level}.`);
+  }
 }
 
 /**
  * Change the log level on the logger transport.
  * @param level - The new log level that'll be used.
+ * @returns a string indicating the action performed
+ * @throws RequestValidationError - if the log level is not one of winston.config.npm.levels
  */
-export function configureLogLevel(level: string): void {
-  if (isValidLevel(level)) {
-    transport.level = level;
-  } else {
-    logger.error(`Ignoring request to configure log level with invalid level: ${level}.`);
-  }
+export function configureLogLevel(level: string): string {
+  validateLogLevel(level);
+  const currentLevel = transport.level;
+  transport.level = level;
+  return `Log level was changed from ${currentLevel} to ${level}`;
 }
 
 /**
