@@ -40,6 +40,24 @@ export function parser(): yargs.Argv<unknown> {
 }
 
 /**
+ * Generate Giovanni URL.
+ * @param args - The command line arguments to parse, absent any program name
+ */
+async function _generateGiovanniURL(operation: DataOperation): Promise<string> {
+  const giovanni_service_name = 'proxy-timeseries';
+  const time_start = operation.temporal.start;
+  const time_end = operation.temporal.end;
+  const [lon, lat] = operation.spatialPoint;
+  const collectionId = operation.model.sources[0].collection;
+  const variableId = operation.model.sources[0].variables[0].id;
+  const giovanni_datafield = giovanni_datafield_config[collectionId][variableId];
+  const giovanni_location_param = encodeURIComponent(`[${lat},${lon}]`);
+  const giovanni_time_param = encodeURIComponent(`${time_start}/${time_end}`);
+  const giovanni_url_path = `${giovanni_service_name}?data=${giovanni_datafield}&location=${giovanni_location_param}&time=${giovanni_time_param}`;
+  return `${giovanni_base_url}${giovanni_url_path}`;
+}
+
+/**
  * Entrypoint which does environment and CLI parsing.  Run `ts-node .` for usage.
  * @param args - The command line arguments to parse, absent any program name
  */
@@ -54,27 +72,11 @@ export default async function main(args: string[]): Promise<void> {
   timingLogger.info('timing..start');
 
   // generate Giovanni URL
-  const giovanni_service_name = 'proxy-timeseries';
-  const time_start = operation.temporal.start;
-  const time_end = operation.temporal.end;
-  const [lon, lat] = operation.spatialPoint;
-  const collectionId = operation.model.sources[0].collection;
-  const variableId = operation.model.sources[0].variables[0].id;
-  const giovanni_datafield = giovanni_datafield_config[collectionId][variableId];
-  const giovanni_location_param = encodeURIComponent(`[${lat},${lon}]`);
-  const giovanni_time_param = encodeURIComponent(`${time_start}/${time_end}`);
-  const giovanni_url_path = `${giovanni_service_name}?data=${giovanni_datafield}&location=${giovanni_location_param}&time=${giovanni_time_param}`;
-  const giovanni_url = `${giovanni_base_url}${giovanni_url_path}`;
+  const giovanni_url = await _generateGiovanniURL(operation);
 
   // set up stac catalog
   await fs.mkdir(options.harmonyMetadataDir, { recursive: true });
   const result = new Catalog({ description: 'Giovanni adapter service' });
-  /*
-  result.links.push({
-    rel: 'harmony_source',
-    href: `${process.env.CMR_ENDPOINT}/search/concepts/${source.collection}`,
-  });
-  */
 
   // generate stac item
   const stacItemRelativeFilename = 'item.json';
@@ -85,6 +87,7 @@ export default async function main(args: string[]): Promise<void> {
     'title': 'giovanni stac item',
   });
   const stacItemFilename = path.join(options.harmonyMetadataDir, stacItemRelativeFilename);
+  const [lon, lat] = operation.spatialPoint;
   const bbox: BoundingBox = [lon, lat, lon, lat];
   const assets = {
     'Giovanni URL': {
