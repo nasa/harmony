@@ -170,7 +170,7 @@ async function cmrGranuleLocatorTurbo(
       }
 
       // Only perform CMR granule query when needed by the first step
-      if ( req.context.serviceConfig.steps[0].image.match('^harmonyservices/query-cmr:.*') ) {
+      if ( req.context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*') ) {
         const { hits, scrollID } = await cmr.initiateGranuleScroll(
           source.collection,
           cmrQuery,
