@@ -4,11 +4,6 @@
 ## Description
 
 
-### Details
-* [ ] Includes dB schema changes
-* [ ] Includes user facing changes
-* [ ] Includes dependency changes
-
 ## Local Test Steps
 
 
