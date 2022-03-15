@@ -10,7 +10,6 @@ import { BoundingBox } from '../../../app/util/bounding-box';
 
 // giovanni globals
 import giovanni_datafield_config from '../config/giovanni-datafield.json';
-const giovanni_base_url = 'https://api.giovanni.earthdata.nasa.gov/';
 
 interface HarmonyArgv {
   harmonyMetadataDir?: string;
@@ -47,6 +46,15 @@ export function parser(): yargs.Argv<unknown> {
  *  https://cmr.uat.earthdata.nasa.gov
  */
 async function _generateGiovanniURL(operation: DataOperation, cmr_endpoint: string): Promise<string> {
+  let giovanni_base_url;
+  if ( cmr_endpoint === 'https://cmr.earthdata.nasa.gov' ) {
+    giovanni_base_url = 'https://api.giovanni.earthdata.nasa.gov/';
+  } else if ( cmr_endpoint === 'https://cmr.uat.earthdata.nasa.gov' ) {
+    giovanni_base_url = 'https://api.giovanni.earthdata.nasa.gov/';
+  } else {
+    throw new Error('CMR_ENDPOINT not set correctly.');
+  }
+
   const giovanni_service_name = 'proxy-timeseries';
   const time_start = operation.temporal.start;
   const time_end = operation.temporal.end;
