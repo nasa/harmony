@@ -1,5 +1,12 @@
 {
-   "C1225808238-GES_DISC":{
-      "V1242222340-GES_DISC":"GPM_3IMERGHH_06_precipitationCal"
+   "https://cmr.earthdata.nasa.gov": {
+      "C1598621093-GES_DISC":{
+         "V2144690146-GES_DISC":"GPM_3IMERGHH_06_precipitationCal"
+      }
+   },
+   "https://cmr.uat.earthdata.nasa.gov": {
+      "C1225808238-GES_DISC":{
+         "V1242222340-GES_DISC":"GPM_3IMERGHH_06_precipitationCal"
+      }
    }
 }
