@@ -477,10 +477,10 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
-  describe('when the first step is giovanni-adapter instead of query-cmr', function () {
+  describe('when the first step is not query-cmr', function () {
     const serviceConfigs: ServiceConfig<unknown>[] = [
       {
-        name: 'giovanni-adapter-service',
+        name: 'non-query-cmr-service',
         collections: [
           {
             id: collection,
@@ -490,7 +490,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           name: 'turbo',
         },
         steps: [{
-          image: 'harmonyservices/giovanni-adapter:fake-test',
+          image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
         }],
         default_sync: true,
         has_granule_limit: false,
