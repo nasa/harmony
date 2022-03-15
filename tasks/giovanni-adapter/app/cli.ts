@@ -41,16 +41,19 @@ export function parser(): yargs.Argv<unknown> {
 
 /**
  * Generate Giovanni URL.
- * @param args - The command line arguments to parse, absent any program name
+ * @param operation - The operation
+ * @param cmr_endpoint - CMR endpoint; needs to be one of the following from environments:
+ *  https://cmr.earthdata.nasa.gov
+ *  https://cmr.uat.earthdata.nasa.gov
  */
-async function _generateGiovanniURL(operation: DataOperation): Promise<string> {
+async function _generateGiovanniURL(operation: DataOperation, cmr_endpoint: string): Promise<string> {
   const giovanni_service_name = 'proxy-timeseries';
   const time_start = operation.temporal.start;
   const time_end = operation.temporal.end;
   const [lon, lat] = operation.spatialPoint;
   const collectionId = operation.model.sources[0].collection;
   const variableId = operation.model.sources[0].variables[0].id;
-  const giovanni_datafield = giovanni_datafield_config[collectionId][variableId];
+  const giovanni_datafield = giovanni_datafield_config[cmr_endpoint][collectionId][variableId];
   const giovanni_location_param = encodeURIComponent(`[${lat},${lon}]`);
   const giovanni_time_param = encodeURIComponent(`${time_start}/${time_end}`);
   const giovanni_url_path = `${giovanni_service_name}?data=${giovanni_datafield}&location=${giovanni_location_param}&time=${giovanni_time_param}`;
@@ -72,7 +75,8 @@ export default async function main(args: string[]): Promise<void> {
   timingLogger.info('timing..start');
 
   // generate Giovanni URL
-  const giovanni_url = await _generateGiovanniURL(operation);
+  const cmr_endpoint = process.env.CMR_ENDPOINT;
+  const giovanni_url = await _generateGiovanniURL(operation, cmr_endpoint);
 
   // set up stac catalog
   await fs.mkdir(options.harmonyMetadataDir, { recursive: true });
