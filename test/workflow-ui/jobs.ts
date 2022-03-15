@@ -6,6 +6,7 @@ import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { workflowUIJobs, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../helpers/workflow-ui';
+import env from '../../app/util/env';
 
 // Example jobs to use in tests
 const woodyJob1 = buildJob({
@@ -128,6 +129,14 @@ describe('Workflow UI jobs route', function () {
       it('returns only one job', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who asks for more than env.maxPageSize jobs', function () {
+      hookWorkflowUIJobs({ username: 'woody', limit: env.maxPageSize + 999 });
+      it('returns all of the users jobs without error', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(3);
       });
     });
 

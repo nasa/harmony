@@ -11,6 +11,8 @@ describe('Routing', function () {
   const invalidCollection = 'C1234-MISSING';
   const invalidCollection2 = 'C4568-MISSING';
   const validCollection = 'C1233800302-EEDTEST';
+  const version = '1.0.0';
+  const variable = 'red_var';
 
   hookServersStartStop();
 
@@ -64,6 +66,26 @@ describe('Routing', function () {
     condition: 'accessing an invalid top-level route',
     path: '/invalid-route',
     message: 'The requested page was not found.',
+  });
+
+  describeErrorCondition({
+    condition: 'not including coverages/variables in the URL path',
+    path: `/${validCollection}/ogc-api-coverages/${version}/collections/coverage/rangeset`,
+    message: {
+      code: 'harmony.NotFoundError',
+      description: 'Error: The requested page was not found.',
+    },
+    html: false,
+  });
+
+  describeErrorCondition({
+    condition: 'not including `coverage` in the URL path',
+    path: `/${validCollection}/ogc-api-coverages/${version}/${variable}/rangeset`,
+    message: {
+      code: 'harmony.NotFoundError',
+      description: 'Error: The requested page was not found.',
+    },
+    html: false,
   });
 
   describe('/schemas', function () {

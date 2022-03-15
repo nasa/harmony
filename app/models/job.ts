@@ -43,6 +43,7 @@ export enum JobStatus {
   CANCELED = 'canceled',
 }
 
+export const activeJobStatuses = [JobStatus.ACCEPTED, JobStatus.RUNNING];
 export const terminalStates = [JobStatus.SUCCESSFUL, JobStatus.FAILED, JobStatus.CANCELED];
 
 export interface JobRecord {
@@ -273,7 +274,7 @@ export class Job extends Record implements JobRecord {
     currentPage = 0,
     perPage = env.defaultResultPageSize,
   ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
-    const result = await transaction('jobs').select().where({ requestId }).forUpdate();
+    const result = await transaction('jobs').select().where({ requestId });
     const job = result.length === 0 ? null : new Job(result[0]);
     let paginationInfo;
     if (job) {

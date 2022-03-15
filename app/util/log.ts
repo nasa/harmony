@@ -1,59 +1,25 @@
 import * as _ from 'lodash';
 import * as winston from 'winston';
 import env = require('./env');
+import redact from './logRedactor';
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
 
-/**
- * Redact sensitive key values from an object.
- * 
- * @param obj - the object to inspect
- * @param sensitiveKeys - keys for which values will be redacted
- * @param seenObjects - Map of objects which have already been visited
- */
-function _redact(obj: object, sensitiveKeys: RegExp[], seenObjects = new Map()): void {
-  Object.keys(obj).forEach(function (key) {
-    if (sensitiveKeys.some(regex => regex.test(key))) {
-      obj[key] = '<redacted>';
-    } else if (typeof obj[key] === 'object') {
-      if (seenObjects.has(obj[key])) return;
-      _redact(obj[key], sensitiveKeys, seenObjects);
-    } 
-  });
-}
-
-/**
- * Redact sensitive key values from an object. The object passed
- * to the function will be modified in place.
- * 
- * @param obj - the object to inspect
- * @param sensitiveKeys - keys for which values will be redacted
- */
-export function redact(obj: object, sensitiveKeys: RegExp[]): void {
-  const seenObjects = new Map();
-  seenObjects.set(obj, true);
-  _redact(obj, sensitiveKeys, seenObjects);
-}
 
 /**
  * Formatter to help remove sensitive values from logs.
- * The redactor will search all keys according 
- * to desired regexp patterns and replace their values with <redacted>.
  */
 const redactor = winston.format((info) => {
-  // clone the info so that we don't mess with the state of 
-  // any objects that we're using elsewhere
-  const redactedClone = _.cloneDeep(info);
-  redact(redactedClone, [/token/i]);
-  return redactedClone;
+  return redact(info);
 });
 
 /**
  * Creates a logger that logs messages in JSON format.
- *
+ *@param transports - the transports to write to
+ * 
  * @returns The JSON Winston logger
  */
-function createJsonLogger(): winston.Logger {
+export function createJsonLogger(transports: winston.transport[]): winston.Logger {
   const jsonLogger = winston.createLogger({
     format: winston.format.combine(
       winston.format.timestamp(),
@@ -61,9 +27,7 @@ function createJsonLogger(): winston.Logger {
       redactor(),
       winston.format.json(),
     ),
-    transports: [
-      new winston.transports.Console({ level: env.logLevel }),
-    ],
+    transports,
   });
 
   return jsonLogger;
@@ -90,10 +54,11 @@ const textformat = winston.format.printf(
 /**
  * Creates a logger that log messages as a text string. Useful when testing locally and viewing
  * logs via a terminal.
+ * @param transports - the transports to write to
  *
  * @returns The text string Winston logger
  */
-function createTextLogger(): winston.Logger {
+export function createTextLogger(transports: winston.transport[]): winston.Logger {
   const textLogger = winston.createLogger({
     defaultMeta: {},
     format: winston.format.combine(
@@ -102,15 +67,14 @@ function createTextLogger(): winston.Logger {
       winston.format.colorize({ colors: { error: 'red', info: 'blue' } }),
       textformat,
     ),
-    transports: [
-      new winston.transports.Console({ level: env.logLevel }),
-    ],
+    transports,
   });
 
   return textLogger;
 }
 
-const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger() : createJsonLogger();
+const transport = new winston.transports.Console({ level: env.logLevel });
+const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger([transport]) : createJsonLogger([transport]);
 
 /**
  * Configures logs so that they are written to the file with the given name, also suppressing
