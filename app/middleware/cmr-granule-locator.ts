@@ -169,20 +169,23 @@ async function cmrGranuleLocatorTurbo(
         cmrQuery.geojson = operation.geojson;
       }
 
-      const { hits, scrollID } = await cmr.initiateGranuleScroll(
-        source.collection,
-        cmrQuery,
-        req.accessToken,
-        maxGranules,
-      );
-      if (hits === 0) {
-        throw new RequestValidationError('No matching granules found.');
-      }
-      const msTaken = new Date().getTime() - startTime;
-      logger.info('timing.cmr-initiate-granule-scroll.end', { durationMs: msTaken, hits });
+      // Only perform CMR granule query when needed by the first step
+      if ( req.context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*') ) {
+        const { hits, scrollID } = await cmr.initiateGranuleScroll(
+          source.collection,
+          cmrQuery,
+          req.accessToken,
+          maxGranules,
+        );
+        if (hits === 0) {
+          throw new RequestValidationError('No matching granules found.');
+        }
+        const msTaken = new Date().getTime() - startTime;
+        logger.info('timing.cmr-initiate-granule-scroll.end', { durationMs: msTaken, hits });
 
-      operation.cmrHits += hits;
-      operation.scrollIDs.push(scrollID);
+        operation.cmrHits += hits;
+        operation.scrollIDs.push(scrollID);
+      }
 
       const limitedMessage = getResultsLimitedMessage(req, source.collection);
       if (limitedMessage) {

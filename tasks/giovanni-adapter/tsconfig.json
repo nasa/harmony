@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+      "module": "commonjs",
+      "baseUrl": ".",
+      "paths": {
+        "@harmony/*": ["../../app/*"]
+      },
+      "moduleResolution": "node",
+      "target": "ES2018",
+      "esModuleInterop": true,
+      "allowJs": true,
+      "noImplicitAny": false,
+      "sourceMap": true,
+      "outDir": "built",
+      "resolveJsonModule": true
+  },
+  "typeRoots": [ "./node_modules/@types", "./app/stac" ],
+  "include": [ "./app/**/*", "./test/**/*" ]
+}

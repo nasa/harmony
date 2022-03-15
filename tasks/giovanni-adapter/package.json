@@ -1,0 +1,71 @@
+{
+  "name": "@harmony/giovanni-adapter",
+  "version": "0.0.0",
+  "description": "Harmony task that queries the CMR for an incoming message and produces a sources file as output",
+  "main": "app/query-granules.ts",
+  "scripts": {
+    "test": "eslint --ext .ts . && nyc mocha && npm audit --audit-level=high --production",
+    "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
+    "lint": "eslint --ext .ts .",
+    "coverage": "nyc mocha",
+    "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp harmonyservices/giovanni-adapter:${VERSION:-latest}",
+    "build": "tsc && docker build --no-cache -t harmonyservices/giovanni-adapter:${VERSION:-latest} .",
+    "publish": "docker push harmonyservices/giovanni-adapter:${VERSION:-latest}"
+  },
+  "keywords": [
+    "NASA",
+    "EOSDIS",
+    "Harmony",
+    "Services",
+    "Cumulus"
+  ],
+  "author": "NASA EOSDIS",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "ajv": "^8.8.0",
+    "ajv-formats": "^2.1.1",
+    "aws-sdk": "^2.1029.0",
+    "dotenv": "^10.0.0",
+    "form-data": "^4.0.0",
+    "lodash": "^4.17.21",
+    "node-fetch": "^2.6.1",
+    "tmp": "^0.2.1",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
+    "uuid": "^8.3.2",
+    "winston": "^3.3.3",
+    "yargs": "^16.2.0"
+  },
+  "engines": {
+    "node": "^12.14.1",
+    "npm": ">=7"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.22",
+    "@types/chai-as-promised": "^7.1.3",
+    "@types/geojson": "^7946.0.8",
+    "@types/lodash": "^4.14.177",
+    "@types/mocha": "^9.0.0",
+    "@types/mock-aws-s3": "^2.6.2",
+    "@types/mustache": "^4.1.2",
+    "@types/node": "^16.11.7",
+    "@types/node-fetch": "^2.5.7",
+    "@types/shpjs": "^3.4.1",
+    "@types/sinon": "^10.0.6",
+    "@types/superagent": "^4.1.13",
+    "@types/supertest": "^2.0.10",
+    "@types/tmp": "^0.2.2",
+    "@types/uuid": "^8.3.1",
+    "@types/yargs": "^17.0.5",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.4.0",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "eslint": "^8.2.0",
+    "mocha": "^9.1.3",
+    "nyc": "^15.1.0",
+    "sinon": "^12.0.1",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  }
+}
