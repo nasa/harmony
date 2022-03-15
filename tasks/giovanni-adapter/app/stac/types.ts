@@ -4,7 +4,7 @@
  * https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#link-object
  */
 export interface StacLink {
-  rel: 'self' | 'root' | 'parent' | 'child' | 'item' | 'collection' | 'derived_from' | 'alternate' | string;
+  rel: string;
   href: string;
   type?: string;
   title?: string;
@@ -19,7 +19,7 @@ export interface StacAsset {
   title?: string;
   description?: string;
   type?: string;
-  roles?: ('thumbnail' | 'overview' | 'data' | 'metadata' | string)[];
+  roles?: string[];
 }
 
 /**
