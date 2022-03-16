@@ -104,6 +104,11 @@ describe('Pull Worker', async function () {
         const work = await _pullWork();
         expect(work.item).to.eql(workItem, 'Expected a work item');
       });
+
+      it('does not retry with exponential backoff', async function () {
+        await _pullWork();
+        expect(this.axiosMock.history.get.length).to.equal(1);
+      });
     });
     describe('when work is not available', async function () {
       hookGetWorkRequest({ status: 404 });
