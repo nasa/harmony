@@ -64,8 +64,8 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._async_request(name, collection, variable, params, 5)
 
-    def _asf_gdal(self):
-        name = 'ASF GDAL'
+    def _harmony_gdal_adapter(self) -> object:
+        name = 'HARMONY GDAL ADAPTER'
         collection = 'C1225776654-ASF'
         variable = urllib.parse.quote('science/grids/data/amplitude', safe='')
         params = {
@@ -186,8 +186,8 @@ class HarmonyUatUser(BaseHarmonyUser):
     # Unable to download from ASF site in sandbox and SIT now
     @tag('asf-gdal', 'sync', 'bbox', 'variable', 'temporal', 'hierarchical-variable', 'netcdf4', 'uat-only')
     @task(2)
-    def asf_gdal(self):
-        self._asf_gdal()
+    def harmony_gdal_adapter(self):
+        self._harmony_gdal_adapter()
 
     @tag('var-subsetter', 'sync', 'variable', 'hierarchical-variable', 'netcdf4')
     @task(2)

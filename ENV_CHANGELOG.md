@@ -1,3 +1,7 @@
+## 2022-03-07
+### Changed
+- ASF_GDAL_SUBSETTER_IMAGE to HARMONY_GDAL_ADAPTER_IMAGE
+
 # Environment variable changelog
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.

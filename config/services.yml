@@ -22,7 +22,7 @@ x-turbo-config: &default-turbo-config
       FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
 
 https://cmr.earthdata.nasa.gov:
-  - name: asfdataservices/gdal-subsetter
+  - name: nasa/harmony-gdal-adapter
     data_operation_version: '0.14.0'
     type:
       <<: *default-turbo-config
@@ -30,7 +30,7 @@ https://cmr.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/asfdataservices/gdal-subsetter
+          STAGING_PATH: public/nasa/harmony-gdal-adapter
     collections:
       - id: C1595422627-ASF
       - id: C1214354031-ASF
@@ -54,7 +54,7 @@ https://cmr.earthdata.nasa.gov:
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
+      - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
   - name: gesdisc/giovanni
     data_operation_version: '0.14.0'
@@ -383,7 +383,7 @@ https://cmr.earthdata.nasa.gov:
 
 https://cmr.uat.earthdata.nasa.gov:
 
-  - name: asfdataservices/gdal-subsetter
+  - name: nasa/harmony-gdal-adapter
     data_operation_version: '0.14.0'
     type:
       <<: *default-turbo-config
@@ -391,7 +391,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/asfdataservices/gdal-subsetter
+          STAGING_PATH: public/nasa/harmony-gdal-adapter
     collections:
       - id: C1225776654-ASF
       - id: C1207038647-ASF
@@ -450,7 +450,7 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: true
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${ASF_GDAL_SUBSETTER_IMAGE}
+      - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
   - name: gesdisc/giovanni
     data_operation_version: '0.14.0'
