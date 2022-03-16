@@ -4,24 +4,30 @@ import WorkItem from '../../../../app/models/work-item';
 
 /**
  * Hooks get work request
+ * @param timeout - whether to mock a timeout
  * @param status - the http status code to return
  * @param workItem - the work item to return
  */
 export function hookGetWorkRequest(
   response: { status: number; statusText?: string; workItem?: WorkItem },
+  timeout = false,
 ): void {
   let mock;
   beforeEach(function () {
     mock = new MockAdapter(axios);
-    if (response.workItem) {
-      mock.onGet().replyOnce(response.status, response.workItem);
+    if (timeout) {
+      mock.onGet().timeout();
+    } else if (response.workItem) {
+      mock.onGet().reply(response.status, response.workItem);
     } else {
-      mock.onGet().replyOnce(response.status, response.statusText);
+      mock.onGet().reply(response.status, response.statusText);
     }
+    this.axiosMock = mock;
   });
 
   afterEach(function () {
     mock.restore();
+    delete this.axiosMock;
   });
 }
 /**

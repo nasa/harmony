@@ -1,4 +1,5 @@
 import axios from 'axios';
+import axiosRetry, { exponentialDelay, isNetworkOrIdempotentRequestError } from 'axios-retry';
 import Agent from 'agentkeepalive';
 import { exit } from 'process';
 import { Worker } from '../../../../app/workers/worker';
@@ -11,11 +12,12 @@ import sleep from '../../../../app/util/sleep';
 import path from 'path';
 import { promises as fs } from 'fs';
 
-const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
+const timeout = 30_000; // Wait up to 30 seconds for the server to start sending
 const activeSocketKeepAlive = 6_000;
 const maxSockets = 1;
 const maxFreeSockets = 1;
-const maxRetries = 3;
+const maxItemUpdateRetries = 3;
+const maxBackoffRetries = process.env.NODE_ENV === 'test' ? 2 : 100;
 let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
@@ -24,6 +26,14 @@ const LOCKFILE_DIR = '/tmp';
 
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
+
+// Exponential back-off retry delay between requests
+axiosRetry(axios, { 
+  retryDelay: exponentialDelay,
+  retryCondition: (error) => isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED',
+  shouldResetTimeout: true,
+  retries: maxBackoffRetries, 
+});
 
 export const keepaliveAgent = new Agent({
   keepAlive: true,
@@ -130,7 +140,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
         logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
         let tries = 0;
         let complete = false;
-        while (tries < maxRetries && !complete) {
+        while (tries < maxItemUpdateRetries && !complete) {
           tries += 1;
           try {
             await axios.put(`${workUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
@@ -150,7 +160,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
             }
           }
           if (!complete) {
-            if (tries < maxRetries) {
+            if (tries < maxItemUpdateRetries) {
               logger.info(`Retrying failure to update work item with id ${workItem.id} for job id ${workItem.jobID}`);
               await sleep(1000);
             } else {
