@@ -3,7 +3,9 @@ import MockAdapter from 'axios-mock-adapter';
 import WorkItem from '../../../../app/models/work-item';
 
 /**
- * Hooks get work request
+ * Hooks get work request. The mock axios object will respond an unlimitted number of times
+ * with the desired response for the lifetime of the mock. The mock will also be added to
+ * 'this.axiosMock' before the test runs, and deleted after it runs.
  * @param timeout - whether to mock a timeout
  * @param status - the http status code to return
  * @param workItem - the work item to return
