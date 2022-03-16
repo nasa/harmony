@@ -33,7 +33,6 @@ axiosRetry(axios, {
   retryCondition: 
     (error) => {
       if (isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED') {
-        logger.error('axios retry condition met. Will retry with exponential backoff.');
         logger.error({ 'axios-retry': error?.config['axios-retry'], 'message': error.message, 'code': error.code });
         return true;
       }
