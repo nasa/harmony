@@ -31,9 +31,15 @@ const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 axiosRetry(axios, { 
   retryDelay: exponentialDelay,
   retryCondition: 
-    (error) => isNetworkOrIdempotentRequestError(error) || // default retryCondition
-      error.code === 'ECONNABORTED', // timeouts
-  shouldResetTimeout: true,
+    (error) => {
+      if (isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED') {
+        logger.error('axios retry condition met. Will retry with exponential backoff.');
+        logger.error({ 'axios-retry': error?.config['axios-retry'], 'message': error.message, 'code': error.code });
+        return true;
+      }
+      return false;
+    },
+  shouldResetTimeout: true, 
   retries: maxBackoffRetries, 
 });
 
