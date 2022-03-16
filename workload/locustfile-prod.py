@@ -49,7 +49,7 @@ class ProdHarmonyUser(BaseHarmonyUser):
 
     @tag('asf-gdal', 'sync', 'bbox', 'variable', 'hierarchical-variable', 'netcdf4')
     @task(2)
-    def asf_gdal(self):
+    def harmony_gdal_adapter(self):
         collection = 'C1595422627-ASF'
         variable = urllib.parse.quote('science/grids/data/amplitude', safe='')
         params = {
@@ -65,7 +65,7 @@ class ProdHarmonyUser(BaseHarmonyUser):
                 variable=variable
             ),
             params=params,
-            name='ASF GDAL'
+            name='HARMONY GDAL ADAPTER'
         )
 
     @tag('podaac-l2ss', 'bbox', 'async', 'netcdf4')
