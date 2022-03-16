@@ -30,7 +30,9 @@ const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 // Exponential back-off retry delay between requests
 axiosRetry(axios, { 
   retryDelay: exponentialDelay,
-  retryCondition: (error) => isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED',
+  retryCondition: 
+    (error) => isNetworkOrIdempotentRequestError(error) || // default retryCondition
+      error.code === 'ECONNABORTED', // timeouts
   shouldResetTimeout: true,
   retries: maxBackoffRetries, 
 });
