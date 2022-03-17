@@ -18,6 +18,7 @@ const maxSockets = 1;
 const maxFreeSockets = 1;
 const maxItemUpdateRetries = 3;
 const maxBackoffRetries = process.env.NODE_ENV === 'test' ? 2 : 100;
+const exponentialDelayOffest = process.env.NODE_ENV === 'test' ? 0 : 4;
 let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
@@ -30,7 +31,7 @@ const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 // Exponential back-off retry delay between failed requests
 axiosRetry(axios, { 
   // delay in milliseconds = (2^retryNumber) * 100
-  retryDelay: (retryNumber) => exponentialDelay(retryNumber + 4),
+  retryDelay: (retryNumber) => exponentialDelay(retryNumber + exponentialDelayOffest),
   retryCondition: 
     (error) => {
       if (isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED') {
