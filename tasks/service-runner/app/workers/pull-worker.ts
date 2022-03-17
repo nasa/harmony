@@ -17,6 +17,7 @@ const activeSocketKeepAlive = 6_000;
 const maxSockets = 1;
 const maxFreeSockets = 1;
 const maxItemUpdateRetries = 3;
+// axiosRetry config
 const maxBackoffRetries = process.env.NODE_ENV === 'test' ? 2 : 100;
 const exponentialDelayOffest = process.env.NODE_ENV === 'test' ? 0 : 4;
 let pullCounter = 0;
