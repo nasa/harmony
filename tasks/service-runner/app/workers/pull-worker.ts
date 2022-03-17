@@ -27,9 +27,10 @@ const LOCKFILE_DIR = '/tmp';
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
 
-// Exponential back-off retry delay between requests
+// Exponential back-off retry delay between failed requests
 axiosRetry(axios, { 
-  retryDelay: exponentialDelay,
+  // delay in milliseconds = (2^retryNumber) * 100
+  retryDelay: (retryNumber) => exponentialDelay(retryNumber + 4),
   retryCondition: 
     (error) => {
       if (isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED') {
