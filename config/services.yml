@@ -312,6 +312,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
+    umm_s:
+      - S2227193226-POCLOUD
     collections:
       - id: C1996881807-POCLOUD
       - id: C1996881636-POCLOUD
@@ -615,6 +617,8 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/podaac/l2-subsetter-concise
+    umm_s:
+      - S1243671015-POCLOUD
     collections:
       - id: C1234208436-POCLOUD
       - id: C1234208437-POCLOUD
