@@ -1,6 +1,3 @@
-import axios from 'axios';
-import axiosRetry, { exponentialDelay, isNetworkOrIdempotentRequestError } from 'axios-retry';
-import Agent from 'agentkeepalive';
 import { exit } from 'process';
 import { Worker } from '../../../../app/workers/worker';
 import { sanitizeImage } from '../../../../app/util/string';
@@ -9,17 +6,14 @@ import WorkItem, { WorkItemStatus, WorkItemRecord } from '../../../../app/models
 import logger from '../../../../app/util/log';
 import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
+import createAxiosClientWithRetry, { axiosTimeoutMs } from '../util/axios-clients';
 import path from 'path';
 import { promises as fs } from 'fs';
 
-const timeout = 30_000; // Wait up to 30 seconds for the server to start sending
-const activeSocketKeepAlive = 6_000;
-const maxSockets = 1;
-const maxFreeSockets = 1;
-const maxItemUpdateRetries = 3;
-// axiosRetry config
-const maxBackoffRetries = process.env.NODE_ENV === 'test' ? 2 : 100;
-const exponentialDelayOffest = process.env.NODE_ENV === 'test' ? 0 : 4;
+
+const axiosGetWork = createAxiosClientWithRetry(Infinity, 90_000, 4);
+const axiosUpdateWork = createAxiosClientWithRetry(4, Infinity, 4);
+
 let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
@@ -28,31 +22,6 @@ const LOCKFILE_DIR = '/tmp';
 
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
-
-// Exponential back-off retry delay between failed requests
-axiosRetry(axios, { 
-  // delay in milliseconds = (2^retryNumber) * 100
-  retryDelay: (retryNumber) => exponentialDelay(retryNumber + exponentialDelayOffest),
-  retryCondition: 
-    (error) => {
-      if (isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED') {
-        logger.error('Axios retry condition has been met.',
-          { 'axios-retry': error?.config['axios-retry'], 'message': error.message, 'code': error.code });
-        return true;
-      }
-      return false;
-    },
-  shouldResetTimeout: true, 
-  retries: maxBackoffRetries, 
-});
-
-export const keepaliveAgent = new Agent({
-  keepAlive: true,
-  maxSockets,
-  maxFreeSockets,
-  timeout: activeSocketKeepAlive, // active socket keepalive for 60 seconds
-  freeSocketTimeout: timeout, // free socket keepalive for 30 seconds
-});
 
 const workUrl = `http://${env.backendHost}:${env.backendPort}/service/work`;
 logger.debug(`WORK URL: ${workUrl}`);
@@ -64,12 +33,10 @@ logger.debug(`INVOCATION_ARGS: ${env.invocationArgs}`);
  */
 async function _pullWork(): Promise<{ item?: WorkItem; status?: number; error?: string }> {
   try {
-    const response = await axios
+    const response = await axiosGetWork
       .get(workUrl, {
         params: { serviceID: env.harmonyService },
-        timeout,
         responseType: 'json',
-        httpAgent: keepaliveAgent,
         validateStatus(status) {
           return status === 404 || (status >= 200 && status < 400);
         },
@@ -149,38 +116,23 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
         const workItem = await _doWork(work.item);
         // call back to Harmony to mark the work unit as complete or failed
         logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
-        let tries = 0;
-        let complete = false;
-        while (tries < maxItemUpdateRetries && !complete) {
-          tries += 1;
-          try {
-            await axios.put(`${workUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
-            complete = true;
-          } catch (e) {
-            const status = e.response?.status;
-            if (status) {
-              if (status === 409) {
-                logger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
-                complete = true;
-              } else if (status >= 400) {
-                logger.error(`Error: received status [${status}] with message [${e.response.data}] when updating WorkItem ${workItem.id}`);
-                logger.error(`Error: ${e.response.statusText}`);
-              }
-            } else {
-              logger.error(e);
+        try {
+          await axiosUpdateWork.put(`${workUrl}/${workItem.id}`, workItem);
+        } catch (e) {
+          const status = e.response?.status;
+          if (status) {
+            if (status === 409) {
+              logger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
+            } else if (status >= 400) {
+              logger.error(`Error: received status [${status}] with message [${e.response.data}] when updating WorkItem ${workItem.id}`);
+              logger.error(`Error: ${e.response.statusText}`);
             }
-          }
-          if (!complete) {
-            if (tries < maxItemUpdateRetries) {
-              logger.info(`Retrying failure to update work item with id ${workItem.id} for job id ${workItem.jobID}`);
-              await sleep(1000);
-            } else {
-              logger.error(`Failed to update work item with id ${workItem.id} for job id ${workItem.jobID}`);
-            }
+          } else {
+            logger.error(e);
           }
         }
       }
-    } else if (work.error === `timeout of ${timeout}ms exceeded`) {
+    } else if (work.error === `timeout of ${axiosTimeoutMs}ms exceeded`) {
       // timeouts are expected - just try again after a short delay
       logger.debug('Polling timeout - retrying');
     } else if (work.status !== 404) {
