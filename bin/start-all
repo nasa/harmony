@@ -5,5 +5,5 @@
 ./bin/start-postgres-localstack
 ./bin/start-harmony
 echo ''
-echo 'Run `bin/reload-service-configs` to restart harmony.'
+echo 'Run `bin/reload-services-config` to restart harmony.'
 echo 'Run `kubectl delete namespace harmony` to remove all local resources'
