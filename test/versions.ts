@@ -22,7 +22,7 @@ describe('Versions endpoint', function () {
       it('returns a listing of all of the turbo services from services.yml', function () {
         const services = JSON.parse(this.res.text);
         expect(services.map((s) => s.name)).to.eql([
-          'asfdataservices/gdal-subsetter',
+          'nasa/harmony-gdal-adapter',
           'gesdisc/giovanni',
           'harmony/service-example',
           'podaac/l2-subsetter',
