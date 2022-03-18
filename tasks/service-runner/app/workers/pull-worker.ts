@@ -152,7 +152,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
           if (!complete) {
             if (tries < maxRetries) {
               logger.info(`Retrying failure to update work item with id ${workItem.id} for job id ${workItem.jobID}`);
-              await sleep(1000);
+              await sleep(5000);
             } else {
               logger.error(`Failed to update work item with id ${workItem.id} for job id ${workItem.jobID}`);
             }
@@ -179,7 +179,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       logger.error('Failed to delete /tmp/WORKING');
     }
     if (repeat) {
-      setTimeout(_pullAndDoWork, 500);
+      setTimeout(_pullAndDoWork, 5000);
     }
   }
 }

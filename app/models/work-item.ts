@@ -146,6 +146,18 @@ export async function getNextWorkItem(
 
     await jobQuery;
 
+    // const uquery = tx(Job.table)
+    //   .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
+    //   .select(['username'])
+    //   .max(`${Job.table}.updatedAt`, { as: 'm' })
+    //   .whereIn('username', subQueryForUsersRequestingService)
+    //   .groupBy('username')
+    //   .orderBy('m', 'asc')
+    //   .first().toSQL();
+
+    // logger.info(uquery.sql);
+    // logger.info(uquery.bindings);
+
     const userData = await tx(Job.table)
       .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
       .select(['username'])

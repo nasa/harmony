@@ -50,21 +50,9 @@ for (const k of Object.keys(allEnv)) {
 }
 
 interface HarmonyEnv {
-  backendHost: string;
-  backendPort: number;
-  harmonyClientId: string;
-  harmonyService: string;
-  invocationArgs: string;
   logLevel: string;
-  myPodName: string;
   port: number;
-  workerPort: number;
-  workerTimeout: number;
   workingDir: string;
 }
-
-// special cases
-
-envVars.harmonyClientId = process.env.CLIENT_ID || 'harmony-unknown';
 
 export = envVars;
