@@ -4,12 +4,12 @@ import axiosRetry, { exponentialDelay, isNetworkOrIdempotentRequestError } from 
 import Agent from 'agentkeepalive';
 
 /**
- * Axios client and agentkeepalive HTTP agent timeout.
+ * Default Axios client timeout (also used by keepAliveAgent).
  */
 export const axiosTimeoutMs = 30_000;
 
 /**
- * The agentkeepalive HTTP agent used for each Axios instance.
+ * The default HTTP agent used by createAxiosClientWithRetry.
  */
 export const keepAliveAgent = new Agent({
   keepAlive: true,
