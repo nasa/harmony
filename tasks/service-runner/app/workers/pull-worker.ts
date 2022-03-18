@@ -111,25 +111,23 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     }
 
     const work = await _pullWork();
-    if (!work.error) {
-      if (work.item) {
-        const workItem = await _doWork(work.item);
-        // call back to Harmony to mark the work unit as complete or failed
-        logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
-        try {
-          await axiosUpdateWork.put(`${workUrl}/${workItem.id}`, workItem);
-        } catch (e) {
-          const status = e.response?.status;
-          if (status) {
-            if (status === 409) {
-              logger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
-            } else if (status >= 400) {
-              logger.error(`Error: received status [${status}] with message [${e.response.data}] when updating WorkItem ${workItem.id}`);
-              logger.error(`Error: ${e.response.statusText}`);
-            }
-          } else {
-            logger.error(e);
+    if (!work.error && work.item) {
+      const workItem = await _doWork(work.item);
+      // call back to Harmony to mark the work unit as complete or failed
+      logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
+      try {
+        await axiosUpdateWork.put(`${workUrl}/${workItem.id}`, workItem);
+      } catch (e) {
+        const status = e.response?.status;
+        if (status) {
+          if (status === 409) {
+            logger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
+          } else if (status >= 400) {
+            logger.error(`Error: received status [${status}] with message [${e.response.data}] when updating WorkItem ${workItem.id}`);
+            logger.error(`Error: ${e.response.statusText}`);
           }
+        } else {
+          logger.error(e);
         }
       }
     } else if (work.status !== 404) {
