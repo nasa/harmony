@@ -66,8 +66,9 @@ export default function createAxiosClientWithRetry(
   retries = Infinity,
   maxDelayMs = Infinity,
   retryOffset = 0,
+  timeout = axiosTimeoutMs,
 ): AxiosInstance {
-  const axiosClient = axios.create({ httpAgent: keepAliveAgent, timeout: axiosTimeoutMs });
+  const axiosClient = axios.create({ httpAgent: keepAliveAgent, timeout });
   axiosRetry(axiosClient, {
     retryDelay: (retryNumber) => 
       calculateExponentialDelay(retryNumber, retryOffset, maxDelayMs),
