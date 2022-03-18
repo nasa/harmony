@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { exportedForTesting } from '../../app/workers/pull-worker';
 import MockAdapter from 'axios-mock-adapter';
 import WorkItem from '../../../../app/models/work-item';
 
@@ -16,7 +16,7 @@ export function hookGetWorkRequest(
 ): void {
   let mock;
   beforeEach(function () {
-    mock = new MockAdapter(axios);
+    mock = new MockAdapter(exportedForTesting.axiosGetWork);
     if (timeout) {
       mock.onGet().timeout();
     } else if (response.workItem) {
@@ -38,7 +38,7 @@ export function hookGetWorkRequest(
  * @param message - the message to return
  */
 export function hookWorkItemUpdate(status: number, message?: string): MockAdapter {
-  const mock = new MockAdapter(axios);
+  const mock = new MockAdapter(exportedForTesting.axiosUpdateWork);
   beforeEach(function () {
     mock.onPut().reply(status, message);
   });

@@ -201,6 +201,8 @@ export const exportedForTesting = {
   _pullAndDoWork,
   _primeCmrService,
   _primeService,
+  axiosGetWork,
+  axiosUpdateWork,
 };
 
 export default class PullWorker implements Worker {

@@ -1,4 +1,3 @@
-import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
@@ -17,7 +16,8 @@ const {
   _doWork,
   _pullAndDoWork,
   _primeCmrService,
-  _primeService } = pullWorker.exportedForTesting;
+  _primeService,
+  axiosUpdateWork } = pullWorker.exportedForTesting;
 
 describe('Pull Worker', async function () {
   describe('on start', async function () {
@@ -214,7 +214,7 @@ describe('Pull Worker', async function () {
     describe('when _pullWork throws an exception', async function () {
       let pullStub: SinonStub;
       let doWorkStub: SinonStub;
-      const mock = new MockAdapter(axios);
+      const mock = new MockAdapter(axiosUpdateWork);
       beforeEach(function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () {
           throw new Error('something bad happened');
@@ -244,7 +244,7 @@ describe('Pull Worker', async function () {
     describe('when _doWork throws an exception', async function () {
       let pullStub: SinonStub;
       let doWorkStub: SinonStub;
-      const mock = new MockAdapter(axios);
+      const mock = new MockAdapter(axiosUpdateWork);
       beforeEach(function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function (): Promise<{ item?: WorkItem; status?: number; error?: string }> {
           return {};
