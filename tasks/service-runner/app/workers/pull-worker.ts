@@ -6,7 +6,7 @@ import WorkItem, { WorkItemStatus, WorkItemRecord } from '../../../../app/models
 import logger from '../../../../app/util/log';
 import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
-import createAxiosClientWithRetry, { axiosTimeoutMs } from '../util/axios-clients';
+import createAxiosClientWithRetry from '../util/axios-clients';
 import path from 'path';
 import { promises as fs } from 'fs';
 
@@ -132,9 +132,6 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
           }
         }
       }
-    } else if (work.error === `timeout of ${axiosTimeoutMs}ms exceeded`) {
-      // timeouts are expected - just try again after a short delay
-      logger.debug('Polling timeout - retrying');
     } else if (work.status !== 404) {
       // something bad happened
       logger.error(`Full details: ${JSON.stringify(work)}`);

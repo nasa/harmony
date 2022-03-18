@@ -6,7 +6,7 @@ import Agent from 'agentkeepalive';
 /**
  * Default Axios client timeout (also used by keepAliveAgent).
  */
-export const axiosTimeoutMs = 30_000;
+const axiosTimeoutMs = 30_000;
 
 /**
  * The default HTTP agent used by createAxiosClientWithRetry.
