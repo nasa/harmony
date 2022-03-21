@@ -26,8 +26,10 @@ enum AxiosErrorCode {
 }
 
 /**
- * Calculate the delay before issuing the next request.
- * @param retryNumber - number of retriex thus far
+ * Calculate the exponential backoff delay (in milliseconds) before issuing the next request.
+ * @param retryNumber - number that indicates the nth retry
+ * @param exponentialOffset - used to offset the backoff exponent so that initial retries aren't issued too quickly
+ * @param maxDelayMs - sets an upper limit on the calculated delay
  * @returns - delay in ms
  */
 function calculateExponentialDelay(
@@ -67,19 +69,26 @@ function isRetryable(error: AxiosError): boolean {
 
 /**
  * Create an Axios instance with exponential backoff retry and agentkeepalive HTTP agent.
+ * @param retries - how many times to retry a request
+ * @param maxDelayMs - max delay between retried requests
+ * @param exponentialOffset - offsets the exponent in calculateExponentialDelay
+ * @param timeoutMs - requests time out after this many milliseconds
+ * @param httpAgent - the http agent used by the axios instance
+ * @param retryCondition - a function that specifies when to retry a request
+ * @returns AxiosInstance
  */
 export default function createAxiosClientWithRetry(
   retries = Infinity,
   maxDelayMs = Infinity,
   exponentialOffset = 0,
-  timeout = axiosTimeoutMs,
+  timeoutMs = axiosTimeoutMs,
   httpAgent = keepAliveAgent,
   retryCondition = isRetryable,
 ): AxiosInstance {
   if (process.env.NODE_ENV === 'test') {
     retries = 2;
   }
-  const axiosClient = axios.create({ httpAgent, timeout });
+  const axiosClient = axios.create({ httpAgent, timeout: timeoutMs });
   axiosRetry(axiosClient, {
     retryDelay: (retryNumber) => 
       calculateExponentialDelay(retryNumber, exponentialOffset, maxDelayMs),
