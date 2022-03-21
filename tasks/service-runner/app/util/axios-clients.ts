@@ -32,15 +32,15 @@ enum AxiosErrorCode {
  */
 function calculateExponentialDelay(
   retryNumber: number,
-  retryOffset = 0,
+  exponentialOffset = 0,
   maxDelayMs = Infinity,
 ): number {
   if (process.env.NODE_ENV === 'test') {
-    retryOffset = 0;
+    exponentialOffset = 0;
   }
-  // calculatedDelayMs ~= (2^(retryNumber + retryOffset)) * 100
-  const calculatedDelayMs = exponentialDelay(retryNumber + retryOffset);
-  logger.debug(`Calculating poll delay: calculatedDelayMs=${calculatedDelayMs} (retryNumber=${retryNumber}, retryOffset=${retryOffset})`);
+  // calculatedDelayMs ~= (2^(retryNumber + exponentialOffset)) * 100
+  const calculatedDelayMs = exponentialDelay(retryNumber + exponentialOffset);
+  logger.debug(`Calculating backoff delay: calculatedDelayMs=${calculatedDelayMs} (retryNumber=${retryNumber}, exponentialOffset=${exponentialOffset})`);
   if (calculatedDelayMs > maxDelayMs) {
     logger.debug(`calculatedDelayMs exceeds maxDelayMs. Returning maxDelayMs (${maxDelayMs})`);
     return maxDelayMs;
@@ -60,6 +60,8 @@ function isRetryable(error: AxiosError): boolean {
       { 'axios-retry': error?.config['axios-retry'], 'message': error.message, 'code': error.code });
     return true;
   }
+  logger.warn('Axios error is not retriable.',
+    { 'axios-retry': error?.config['axios-retry'], 'message': error.message, 'code': error.code });
   return false;
 }
 
@@ -69,7 +71,7 @@ function isRetryable(error: AxiosError): boolean {
 export default function createAxiosClientWithRetry(
   retries = Infinity,
   maxDelayMs = Infinity,
-  retryOffset = 0,
+  exponentialOffset = 0,
   timeout = axiosTimeoutMs,
   httpAgent = keepAliveAgent,
   retryCondition = isRetryable,
@@ -80,7 +82,7 @@ export default function createAxiosClientWithRetry(
   const axiosClient = axios.create({ httpAgent, timeout });
   axiosRetry(axiosClient, {
     retryDelay: (retryNumber) => 
-      calculateExponentialDelay(retryNumber, retryOffset, maxDelayMs),
+      calculateExponentialDelay(retryNumber, exponentialOffset, maxDelayMs),
     retryCondition,
     shouldResetTimeout: true,
     retries });
