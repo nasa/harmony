@@ -40,7 +40,7 @@ export default class Item implements StacItem {
     this.links = [];
     this.properties = {};
     Object.assign(this, properties);
-    assert(!!this.bbox || !!this.geometry, 'Item point, bbox or geometry is required');
+    assert(!!this.bbox || !!this.geometry, 'Item bbox or geometry is required');
   }
 
   /**
