@@ -11,8 +11,8 @@ import path from 'path';
 import { promises as fs } from 'fs';
 
 
-const axiosGetWork = createAxiosClientWithRetry(Infinity, 90_000, 4);
-const axiosUpdateWork = createAxiosClientWithRetry(4, Infinity, 4);
+const axiosGetWork = createAxiosClientWithRetry(Infinity, 90_000, 3);
+const axiosUpdateWork = createAxiosClientWithRetry(6, Infinity, 3);
 
 let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable

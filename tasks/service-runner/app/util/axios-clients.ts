@@ -40,7 +40,11 @@ function calculateExponentialDelay(
   }
   // calculatedDelayMs ~= (2^(retryNumber + retryOffset)) * 100
   const calculatedDelayMs = exponentialDelay(retryNumber + retryOffset);
-  if (calculatedDelayMs > maxDelayMs) return maxDelayMs;
+  logger.debug(`Calculating poll delay: calculatedDelayMs=${calculatedDelayMs} (retryNumber=${retryNumber}, retryOffset=${retryOffset})`);
+  if (calculatedDelayMs > maxDelayMs) {
+    logger.debug(`calculatedDelayMs exceeds maxDelayMs. Returning maxDelayMs (${maxDelayMs})`);
+    return maxDelayMs;
+  }
   return calculatedDelayMs;
 }
 
@@ -52,7 +56,7 @@ function calculateExponentialDelay(
 function isRetryable(error: AxiosError): boolean {
   if (isNetworkOrIdempotentRequestError(error) || 
     [AxiosErrorCode.ECONNABORTED.valueOf(), AxiosErrorCode.ECONNRESET.valueOf()].includes(error.code) ) {
-    logger.error('Axios retry condition has been met.',
+    logger.warn('Axios retry condition has been met.',
       { 'axios-retry': error?.config['axios-retry'], 'message': error.message, 'code': error.code });
     return true;
   }
