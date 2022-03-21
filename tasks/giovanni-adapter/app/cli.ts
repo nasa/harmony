@@ -101,7 +101,7 @@ export default async function main(args: string[]): Promise<void> {
   const stacItemFilename = path.join(options.harmonyMetadataDir, stacItemRelativeFilename);
   const time_start = operation.temporal.start;
   const time_end = operation.temporal.end;
-  const properties = { start_datetime: time_start, end_datetime: time_end, datetime: null };
+  const properties = { start_datetime: time_start, end_datetime: time_end };
   const [lon, lat] = operation.spatialPoint;
   const bbox: BoundingBox = [lon, lat, lon, lat];
   const assets = {
