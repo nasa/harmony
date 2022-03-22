@@ -54,7 +54,7 @@ describe('WMS GetCapabilities', function () {
     });
   });
 
-  const unsupportedCollection = 'C446474-ORNL_DAAC';
+  const unsupportedCollection = 'C1243745256-EEDTEST';
   describeErrorCondition({
     condition: 'collection that does not have any supported services',
     path: `/${unsupportedCollection}/wms?service=WMS&request=GetCapabilities`,
