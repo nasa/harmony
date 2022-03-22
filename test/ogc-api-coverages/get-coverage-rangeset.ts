@@ -969,7 +969,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
   });
 
   describe('when only one granule is identified', function () {
-    const collectionWithSingleGranule = 'C1000000099-ORNL_DAAC';
+    const collectionWithSingleGranule = 'C1243747466-EEDTEST';
     hookRangesetRequest(version, collectionWithSingleGranule, 'all', {});
 
     it('returns a 200 successful response', function () {
@@ -981,7 +981,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message indicating no transformations were performed', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1000000099-ORNL_DAAC.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1243747466-EEDTEST.');
     });
   });
 
