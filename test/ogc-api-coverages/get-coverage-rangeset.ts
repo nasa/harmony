@@ -858,7 +858,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 });
 
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
-  const collection = 'C446474-ORNL_DAAC';
+  const collection = 'C1243745256-EEDTEST';
   const version = '1.0.0';
 
   hookServersStartStop();
@@ -883,19 +883,19 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns the number of CMR hits as the number of input granules', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.numInputGranules).to.eql(39);
+      expect(job.numInputGranules).to.eql(6);
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446474-ORNL_DAAC.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1243745256-EEDTEST.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(39);
+      expect(job.links.length).to.equal(6);
     });
     it('granule links include a title of the granuleId', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links[0].title).to.equal('G1239610894-ORNL_DAAC');
+      expect(job.links[0].title).to.equal('G1243746331-EEDTEST');
     });
     it('granule links include a download link', function () {
       const job = JSON.parse(this.res.text);
@@ -923,26 +923,26 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns the number of CMR hits as the number of input granules', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.numInputGranules).to.eql(39);
+      expect(job.numInputGranules).to.eql(6);
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446474-ORNL_DAAC.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1243745256-EEDTEST.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(39);
+      expect(job.links.length).to.equal(6);
     });
     it('granule links include a title of the granuleId', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links[0].title).to.equal('G1239610894-ORNL_DAAC');
+      expect(job.links[0].title).to.equal('G1243746331-EEDTEST');
     });
     it('granule links include a download link', function () {
       const job = JSON.parse(this.res.text);
       expect(job.links[0].href).to.not.equal(undefined);
     });
 
-    itIncludesRequestUrl('/C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
+    itIncludesRequestUrl('/C1243745256-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
   });
 
   describe('when using accept headers', function () {
@@ -1003,7 +1003,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       expect(job.links.length).to.equal(1);
     });
 
-    itIncludesRequestUrl('C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
+    itIncludesRequestUrl('C1243745256-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
   });
 
   describe('when performing point-based query', function () {
@@ -1021,10 +1021,10 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('limits results to only those that match the point-based query', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(39);
+      expect(job.links.length).to.equal(6);
     });
 
-    itIncludesRequestUrl('C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?point=-96.595&point=39.1019');
+    itIncludesRequestUrl('C1243745256-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?point=-96.595&point=39.1019');
   });
 
   describe('when specifying an invalid variable', function () {
