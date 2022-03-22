@@ -8,7 +8,7 @@ import StubService from './helpers/stub-service';
 
 describe('testing concatenation', function () {
   describe('for a CONCISE workflow', function () {
-    const collection = 'C1234208438-POCLOUD';
+    const collection = 'C1243729749-EEDTEST';
     const serviceTag = 'ghcr.io/podaac/concise:sit';
 
     describe('When passing the concatenate parameter', function () {
@@ -134,7 +134,7 @@ describe('testing concatenation', function () {
   });
 
   describe('for an L2 subsetter to CONCISE workflow', function () {
-    const collection = 'C1234208438-POCLOUD';
+    const collection = 'C1243729749-EEDTEST';
     const l2SubsetterImage = 'ghcr.io/podaac/l2ss-py:sit';
     const conciseImage = 'ghcr.io/podaac/concise:sit';
 
