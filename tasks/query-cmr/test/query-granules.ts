@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable  node/no-unpublished-require */
 import fs from 'fs';
 import path from 'path';
 import chai, { expect } from 'chai';
@@ -14,7 +16,7 @@ import { S3ObjectStore } from '../../../app/util/object-store';
 import buildStacSchemaValidator from './helpers/stac';
 import { CmrError } from '../../../app/util/errors';
 
-chai.use(require('chai-as-promised'))
+chai.use(require('chai-as-promised'));
 
 const geojson = '../../test/resources/complex_multipoly.geojson';
 
@@ -103,9 +105,9 @@ function hookQueryGranulesScrollingWithError(): void {
       status: 404,
       data: {
         errors: [
-          "Scroll session [1234] does not exist",
+          'Scroll session [1234] does not exist',
         ],
-      }
+      },
     },
   };
 
