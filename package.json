@@ -107,7 +107,7 @@
     "swagger-ui-express": "^4.1.4",
     "tmp": "^0.2.1",
     "tmp-promise": "^3.0.3",
-    "ts-node": "^10.4.0",
+    "ts-node": "^10.7.0",
     "tsconfig-paths": "^3.9.0",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
