@@ -1,8 +1,34 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import { Server } from 'http';
 import env from './util/env';
+import { buildErrorResponse, HttpError } from '../../../app/util/errors';
 import log from '../../../app/util/log';
 import router from './routers/router';
-import { Server } from 'http';
+
+/**
+ * Express.js middleware catching errors that escape service protocol handling and sending them
+ * to users
+ *
+ * @param err - The error that occurred
+ * @param req - The client request
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
+ */
+function errorHandler(
+  err: HttpError, req: Request, res: Response, next: NextFunction,
+): void {
+  if (res.headersSent) {
+    // If the server has started writing the response, delegate to the
+    // default error handler, which closes the connection and fails the
+    // request
+    next(err);
+    return;
+  }
+  const statusCode = err.code || 500;
+  const resp = buildErrorResponse(err);
+
+  res.status(statusCode).json(resp);
+}
 
 /**
  *
@@ -20,6 +46,7 @@ export default function start(_config: Record<string, string>): Server {
 
   app.use(express.json());
   app.use('/', router());
+  app.use(errorHandler);
 
   return app.listen(env.port, '0.0.0.0', () => {
     log.info(`Application listening on port ${env.port}`);

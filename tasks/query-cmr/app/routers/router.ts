@@ -23,49 +23,54 @@ export interface QueryCmrRequest {
  * Handler for work requests
  * @param req - The request sent by the client
  * @param res - The response to send to the client
- * @param _next - The next function in the call chain
+ * @param next - The next function in the call chain
  * @returns Resolves when the request is complete
  */
-async function doWork(req: Request, res: Response, _next: NextFunction): Promise<void> {
-  const startTime = new Date().getTime();
-  const appLogger = logger.child({ application: 'query-cmr' });
-  const workReq: QueryCmrRequest = req.body;
-  const operation = new DataOperation(workReq.harmonyInput, encrypter, decrypter);
-  const timingLogger = appLogger.child({ requestId: operation.requestId });
-  timingLogger.info('timing.query-cmr.start');
-  await fs.mkdir(workReq.outputDir, { recursive: true });
+async function doWork(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const startTime = new Date().getTime();
+    const appLogger = logger.child({ application: 'query-cmr' });
+    const workReq: QueryCmrRequest = req.body;
+    const operation = new DataOperation(workReq.harmonyInput, encrypter, decrypter);
+    const timingLogger = appLogger.child({ requestId: operation.requestId });
+    timingLogger.info('timing.query-cmr.start');
+    await fs.mkdir(workReq.outputDir, { recursive: true });
 
-  const catalogs = workReq.scrollId
-    ? await queryGranulesScrolling(operation, workReq.scrollId)
-    : await queryGranules(
-      operation,
-      workReq.query as string[],
-      workReq.pageSize,
-      workReq.maxPages,
-      workReq.batchSize,
-    );
+    const catalogs = workReq.scrollId
+      ? await queryGranulesScrolling(operation, workReq.scrollId)
+      : await queryGranules(
+        operation,
+        workReq.query as string[],
+        workReq.pageSize,
+        workReq.maxPages,
+        workReq.batchSize,
+      );
 
-  const catalogFilenames = [];
-  const promises = catalogs.map(async (catalog, i) => {
-    const relativeFilename = `catalog${i}.json`;
-    const filename = path.join(workReq.outputDir, relativeFilename);
-    catalogFilenames.push(relativeFilename);
-    await catalog.write(filename, true);
-  });
+    const catalogFilenames = [];
+    const promises = catalogs.map(async (catalog, i) => {
+      const relativeFilename = `catalog${i}.json`;
+      const filename = path.join(workReq.outputDir, relativeFilename);
+      catalogFilenames.push(relativeFilename);
+      await catalog.write(filename, true);
+    });
 
-  const catalogListFilename = path.join(workReq.outputDir, 'batch-catalogs.json');
-  const catalogCountFilename = path.join(workReq.outputDir, 'batch-count.txt');
+    const catalogListFilename = path.join(workReq.outputDir, 'batch-catalogs.json');
+    const catalogCountFilename = path.join(workReq.outputDir, 'batch-count.txt');
 
-  await Promise.all(promises);
+    await Promise.all(promises);
 
-  await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
-  await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
+    await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
+    await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
 
-  res.status(200);
-  res.send('OK');
+    res.status(200);
+    res.send('OK');
 
-  const durationMs = new Date().getTime() - startTime;
-  timingLogger.info('timing.query-cmr.end', { durationMs });
+    const durationMs = new Date().getTime() - startTime;
+    timingLogger.info('timing.query-cmr.end', { durationMs });
+  } catch (e) {
+    res.status(500);
+    next(e);
+  }
 }
 
 /**

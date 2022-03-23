@@ -90,40 +90,38 @@ function _getErrorMessage(logStr: string, catalogDir: string): string {
   * @param callback - Function to call with result
   */
 export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse> {
-  try {
-    const { operation, scrollID } = workItem;
-    const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
 
-    return await new Promise<ServiceResponse>(async (resolve) => {
-      logger.debug('CALLING WORKER');
-      // timeout if things take too long
-      const timeout = setTimeout(() => {
-        resolve({ error: `query-cmr service timed out after ${workerTimeout / 1000.0} seconds` });
-      }, workerTimeout);
+  const { operation, scrollID } = workItem;
+  const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
 
-      try {
-        const resp = await axios.post(`http://localhost:${env.workerPort}/work`, {
+  return new Promise<ServiceResponse>(async (resolve) => {
+    logger.debug('CALLING WORKER');
+
+    try {
+      const resp = await axios.post(`http://localhost:${env.workerPort}/work`,
+        {
           outputDir: catalogDir,
           harmonyInput: `${JSON.stringify(operation)}`,
           scrollId: scrollID,
-        });
+        },
+        {
+          timeout: workerTimeout,
+        },
+      );
 
-        clearTimeout(timeout);
+      if (resp.status < 300) {
+        const catalogs = _getStacCatalogs(`${catalogDir}`);
 
-        if (resp.status < 300) {
-          const catalogs = _getStacCatalogs(`${catalogDir}`);
-
-          resolve({ batchCatalogs: catalogs });
-        } else {
-          resolve({ error: resp.statusText });
-        }
-      } catch (e) {
-        resolve({ error: e.message });
+        resolve({ batchCatalogs: catalogs });
+      } else {
+        resolve({ error: resp.statusText });
       }
-    });
-  } catch (e) {
-    return { error: e.message };
-  }
+    } catch (e) {
+      const message = e.response?.data ? e.response.data.description : e.message;
+      resolve({ error: message });
+    }
+  });
+
 }
 
 /**

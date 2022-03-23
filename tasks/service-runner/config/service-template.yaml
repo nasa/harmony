@@ -73,6 +73,8 @@ spec:
             value: $BACKEND_HOST
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
+          - name: WORKER_PORT
+            value: "$WORKER_PORT"
           - name: HARMONY_SERVICE
             value: $SERVICE_IMAGE
           - name: WORKING_DIR
