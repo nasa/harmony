@@ -21,3 +21,9 @@ To test:
 ```
 npm run test
 ```
+
+To push to ECR:
+
+```
+bin/push-image <tag>
+```
