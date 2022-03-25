@@ -88,7 +88,7 @@ async function _handleWorkItemResults(
 }
 
 /**
- * Read a STAC catalog and return the item links. This does not handle sub-catalogs. This function 
+ * Read a STAC catalog and return the item links. This does not handle sub-catalogs. This function
  * makes assumptions based on the Harmony STAC directory layout for services inputs/outputs and
  * is only intended to be used when aggregating service outputs into a single catalog.
  * @param catalogPath - the path to the catalog
@@ -118,7 +118,7 @@ async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLin
  *                       OR
  * `/tmp/<JOB_ID>/<WORK_ITEM_ID>/outputs/catalogN.json` (when a step can generate multiple outputs)
  * where N is from 0 to the number of results - 1.
- * 
+ *
  * @param tx - The database transaction
  * @param currentWorkItem - The current work item
  * @param nextStep - the next step in the workflow
@@ -146,7 +146,7 @@ async function createAggregatingWorkItem(
         const newLinks = await getItemLinksFromCatalog(singleCatalogPath);
         itemLinks.push(...newLinks);
       } catch {
-        // couldn't read the single catalog so read the JSON file that lists all the result 
+        // couldn't read the single catalog so read the JSON file that lists all the result
         // catalogs for this work item
         const jsonPath = path.join(directory, 'batch-catalogs.json');
         const json = (await fs.readFile(jsonPath)).toString();
@@ -281,7 +281,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         }
         await completeJob(tx, job, JobStatus.FAILED, logger, message);
       }
-    } else if (results && results.length > 0) {
+    } else {
       const nextStep = await getWorkflowStepByJobIdStepIndex(
         tx,
         workItem.jobID,
@@ -300,10 +300,18 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       }
 
       if (nextStep) {
-        // if we have completed all the work items for this step or if the next step does not
-        // aggregate then create a work item for the next step
-        if (successWorkItemCount === thisStep.workItemCount || !nextStep.hasAggregatedOutput) {
-          await createNextWorkItems(tx, workItem, nextStep, results);
+        if (results && results.length > 0) {
+          // if we have completed all the work items for this step or if the next step does not
+          // aggregate then create a work item for the next step
+          if (successWorkItemCount === thisStep.workItemCount || !nextStep.hasAggregatedOutput) {
+            await createNextWorkItems(tx, workItem, nextStep, results);
+          }
+        } else {
+          // Failed to create the next work items - fail the job rather than leaving it orphaned
+          // in the running state
+          logger.error('The work item update should have contained results to queue a next work item, but it did not.');
+          const message = 'Harmony internal failure: could not create the next work items for the request.';
+          await completeJob(tx, job, JobStatus.FAILED, logger, message);
         }
       } else {
         // 1. add job links for the results
