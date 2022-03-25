@@ -147,7 +147,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       logger.error('Failed to delete /tmp/WORKING');
     }
     if (repeat) {
-      setTimeout(_pullAndDoWork, 500);
+      setTimeout(_pullAndDoWork, 5000);
     }
   }
 }

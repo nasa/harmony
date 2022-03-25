@@ -5,6 +5,7 @@ import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import logger from '../../../../app/util/log';
 import WorkItem from '../../../../app/models/work-item';
+import axios from 'axios';
 
 // Must match where harmony expects artifacts in workflow-orchestration.ts
 const ARTIFACT_DIRECTORY = '/tmp/metadata';
@@ -89,70 +90,38 @@ function _getErrorMessage(logStr: string, catalogDir: string): string {
   * @param callback - Function to call with result
   */
 export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse> {
-  try {
-    const { operation, scrollID } = workItem;
-    const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
-    const args = [
-      'tasks/query-cmr/app/cli',
-      '--harmony-input',
-      `${JSON.stringify(operation)}`,
-      '--scroll-id',
-      scrollID,
-      '--output-dir',
-      catalogDir,
-    ];
 
-    return await new Promise<ServiceResponse>((resolve) => {
-      logger.debug('CALLING WORKER');
-      // create a writable stream to capture stdout from the exec call
-      // using stdout instead of stderr because the service library seems to log ERROR to stdout
-      const stdOut = new LogStream();
+  const { operation, scrollID } = workItem;
+  const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
 
-      // timeout if things take too long
-      const timeout = setTimeout(() => {
-        resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
-      }, workerTimeout);
+  return new Promise<ServiceResponse>(async (resolve) => {
+    logger.debug('CALLING WORKER');
 
-      exec.exec(
-        'harmony',
-        env.myPodName,
-        'worker',
-        [
-          'node',
-          ...args,
-        ],
-        stdOut,
-        process.stderr as stream.Writable,
-        process.stdin as stream.Readable,
-        true,
-        (status: k8s.V1Status) => {
-          logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
-          try {
-            if (status.status === 'Success') {
-              clearTimeout(timeout);
-              logger.debug('Getting STAC catalogs');
-              const catalogs = _getStacCatalogs(`${catalogDir}`);
-              resolve({ batchCatalogs: catalogs });
-            } else {
-              clearTimeout(timeout);
-              const logErr = _getErrorMessage(stdOut.logStr, catalogDir);
-              const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
-              stdOut.destroy();
-              resolve({ error: errMsg });
-            }
-          } catch (e) {
-            resolve({ error: e.message });
-          }
+    try {
+      const resp = await axios.post(`http://localhost:${env.workerPort}/work`,
+        {
+          outputDir: catalogDir,
+          harmonyInput: `${JSON.stringify(operation)}`,
+          scrollId: scrollID,
         },
-      ).catch((e) => {
-        clearTimeout(timeout);
-        logger.error(e.message);
-        resolve({ error: e.message });
-      });
-    });
-  } catch (e) {
-    return { error: e.message };
-  }
+        {
+          timeout: workerTimeout,
+        },
+      );
+
+      if (resp.status < 300) {
+        const catalogs = _getStacCatalogs(`${catalogDir}`);
+
+        resolve({ batchCatalogs: catalogs });
+      } else {
+        resolve({ error: resp.statusText });
+      }
+    } catch (e) {
+      const message = e.response?.data ? e.response.data.description : e.message;
+      resolve({ error: message });
+    }
+  });
+
 }
 
 /**

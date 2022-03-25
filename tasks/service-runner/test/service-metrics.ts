@@ -1,9 +1,13 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable  node/no-unpublished-require */
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
 import { describe, it } from 'mocha';
 import env from '../app/util/env';
 import { exportedForTesting } from '../app/service/service-metrics';
+
+chai.use(require('chai-as-promised'));
 
 describe('Service Metrics', async function () {
 
@@ -33,9 +37,7 @@ num_ready_work_items{service_id="${serviceID}"} 0`;
     describe('and harmony returns an error', async function () {
       it('throws an error', async function () {
         mock.onGet().reply(500);
-        expect(function (){
-          _getHarmonyMetric(serviceID);
-        }).to.throw;
+        await expect(_getHarmonyMetric(serviceID)).to.be.rejectedWith(Error, 'Request failed with status code 500');
       });
     });
   });

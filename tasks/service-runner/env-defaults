@@ -1,5 +1,6 @@
 // port on which the express server listens
 PORT=5000
+WORKER_PORT=5001
 HARMONY_SERVICE="harmonyservices/query-cmr:latest"
 SERVICE_RUNNER_IMAGE="harmonyservices/service-runner:latest"
 BACKEND_HOST=harmony
