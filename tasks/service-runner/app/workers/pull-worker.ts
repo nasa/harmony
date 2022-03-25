@@ -1,5 +1,3 @@
-import axios from 'axios';
-import Agent from 'agentkeepalive';
 import { exit } from 'process';
 import { Worker } from '../../../../app/workers/worker';
 import { sanitizeImage } from '../../../../app/util/string';
@@ -8,14 +6,14 @@ import WorkItem, { WorkItemStatus, WorkItemRecord } from '../../../../app/models
 import logger from '../../../../app/util/log';
 import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
+import createAxiosClientWithRetry from '../util/axios-clients';
 import path from 'path';
 import { promises as fs } from 'fs';
 
-const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
-const activeSocketKeepAlive = 6_000;
-const maxSockets = 1;
-const maxFreeSockets = 1;
-const maxRetries = 3;
+
+const axiosGetWork = createAxiosClientWithRetry(Infinity, 90_000, 3);
+const axiosUpdateWork = createAxiosClientWithRetry(6, Infinity, 3);
+
 let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
@@ -24,14 +22,6 @@ const LOCKFILE_DIR = '/tmp';
 
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
-
-export const keepaliveAgent = new Agent({
-  keepAlive: true,
-  maxSockets,
-  maxFreeSockets,
-  timeout: activeSocketKeepAlive, // active socket keepalive for 60 seconds
-  freeSocketTimeout: timeout, // free socket keepalive for 30 seconds
-});
 
 const workUrl = `http://${env.backendHost}:${env.backendPort}/service/work`;
 logger.debug(`WORK URL: ${workUrl}`);
@@ -43,12 +33,10 @@ logger.debug(`INVOCATION_ARGS: ${env.invocationArgs}`);
  */
 async function _pullWork(): Promise<{ item?: WorkItem; status?: number; error?: string }> {
   try {
-    const response = await axios
+    const response = await axiosGetWork
       .get(workUrl, {
         params: { serviceID: env.harmonyService },
-        timeout,
         responseType: 'json',
-        httpAgent: keepaliveAgent,
         validateStatus(status) {
           return status === 404 || (status >= 200 && status < 400);
         },
@@ -123,45 +111,25 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     }
 
     const work = await _pullWork();
-    if (!work.error) {
-      if (work.item) {
-        const workItem = await _doWork(work.item);
-        // call back to Harmony to mark the work unit as complete or failed
-        logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
-        let tries = 0;
-        let complete = false;
-        while (tries < maxRetries && !complete) {
-          tries += 1;
-          try {
-            await axios.put(`${workUrl}/${workItem.id}`, workItem, { httpAgent: keepaliveAgent });
-            complete = true;
-          } catch (e) {
-            const status = e.response?.status;
-            if (status) {
-              if (status === 409) {
-                logger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
-                complete = true;
-              } else if (status >= 400) {
-                logger.error(`Error: received status [${status}] with message [${e.response.data}] when updating WorkItem ${workItem.id}`);
-                logger.error(`Error: ${e.response.statusText}`);
-              }
-            } else {
-              logger.error(e);
-            }
+    if (!work.error && work.item) {
+      const workItem = await _doWork(work.item);
+      // call back to Harmony to mark the work unit as complete or failed
+      logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
+      try {
+        await axiosUpdateWork.put(`${workUrl}/${workItem.id}`, workItem);
+      } catch (e) {
+        const status = e.response?.status;
+        if (status) {
+          if (status === 409) {
+            logger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
+          } else if (status >= 400) {
+            logger.error(`Error: received status [${status}] with message [${e.response.data}] when updating WorkItem ${workItem.id}`);
+            logger.error(`Error: ${e.response.statusText}`);
           }
-          if (!complete) {
-            if (tries < maxRetries) {
-              logger.info(`Retrying failure to update work item with id ${workItem.id} for job id ${workItem.jobID}`);
-              await sleep(1000);
-            } else {
-              logger.error(`Failed to update work item with id ${workItem.id} for job id ${workItem.jobID}`);
-            }
-          }
+        } else {
+          logger.error(e);
         }
       }
-    } else if (work.error === `timeout of ${timeout}ms exceeded`) {
-      // timeouts are expected - just try again after a short delay
-      logger.debug('Polling timeout - retrying');
     } else if (work.status !== 404) {
       // something bad happened
       logger.error(`Full details: ${JSON.stringify(work)}`);
@@ -228,6 +196,8 @@ export const exportedForTesting = {
   _pullAndDoWork,
   _primeCmrService,
   _primeService,
+  axiosGetWork,
+  axiosUpdateWork,
 };
 
 export default class PullWorker implements Worker {

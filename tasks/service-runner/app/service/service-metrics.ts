@@ -1,7 +1,7 @@
 import { Response, Request, NextFunction } from 'express';
 import axios from 'axios';
 import env from '../util/env';
-import { keepaliveAgent } from '../workers/pull-worker';
+import { keepAliveAgent } from '../util/axios-clients';
 
 /**
  * Get prometheus-compatible metric message from harmony backend
@@ -18,7 +18,7 @@ async function _getHarmonyMetric(serviceID: string): Promise<string> {
       params: { serviceID },
       timeout,
       responseType: 'json',
-      httpAgent: keepaliveAgent,
+      httpAgent: keepAliveAgent,
       validateStatus(status) {
         return status === 200;
       },
