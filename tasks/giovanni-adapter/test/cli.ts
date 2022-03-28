@@ -99,6 +99,16 @@ describe('cli', function () {
         expect(fs.existsSync(index)).to.be.true;
         expect(JSON.parse(fs.readFileSync(index, 'utf-8')).description).to.equal('Giovanni adapter service');
       });
+
+      it('outputs the result data to item.json in the directory', function () {
+        const item = path.join(tmpDir, 'item.json');
+        expect(fs.existsSync(item)).to.be.true;
+        const itemContext = JSON.parse(fs.readFileSync(item, 'utf-8'));
+        expect(itemContext.bbox).to.eql([ 0.76, -3.8, 0.76, -3.8 ]);
+        expect(itemContext.properties.start_datetime).to.equal('2020-01-01T00:00:00.000Z');
+        expect(itemContext.properties.end_datetime).to.equal('2020-01-01T03:00:00.000Z');
+        expect(itemContext.assets['Giovanni URL'].href).to.equal('https://api.giovanni.earthdata.nasa.gov/proxy-timeseries?data=GPM_3IMERGHH_06_precipitationCal&location=%5B-3.8%2C0.76%5D&time=2020-01-01T00%3A00%3A00.000Z%2F2020-01-01T03%3A00%3A00.000Z');
+      });
     });
 
     describe('when the output directory does not exist', function () {

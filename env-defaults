@@ -39,6 +39,9 @@ PORT=3000
 # callbacks
 BACKEND_PORT=3001
 
+# The port on which a worker container listens for work from the manager container
+WORKER_PORT=5001
+
 # The base URL for the service callbacks. This needs to be accessible from
 # wherever the service is run. The Harmony CI/CD scripts sets this to the
 # backend load balancer when running on AWS. The default is set for
@@ -188,12 +191,12 @@ SERVICE_RUNNER_LIMITS_MEMORY=512Mi
 SERVICE_RUNNER_IMAGE=harmonyservices/service-runner:latest
 
 # backend services
-ASF_GDAL_SUBSETTER_IMAGE=asfdataservices/gdal-subsetter:latest
-ASF_GDAL_SUBSETTER_REQUESTS_CPU=128m
-ASF_GDAL_SUBSETTER_REQUESTS_MEMORY=128Mi
-ASF_GDAL_SUBSETTER_LIMITS_CPU=128m
-ASF_GDAL_SUBSETTER_LIMITS_MEMORY=8Gi
-ASF_GDAL_SUBSETTER_INVOCATION_ARGS='python -m gdal_subsetter'
+HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/nasa/harmony-gdal-adapter:latest
+HARMONY_GDAL_ADAPTER_REQUESTS_CPU=128m
+HARMONY_GDAL_ADAPTER_REQUESTS_MEMORY=128Mi
+HARMONY_GDAL_ADAPTER_LIMITS_CPU=128m
+HARMONY_GDAL_ADAPTER_LIMITS_MEMORY=8Gi
+HARMONY_GDAL_ADAPTER_INVOCATION_ARGS='python -m gdal_subsetter'
 
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
 HARMONY_SERVICE_EXAMPLE_REQUESTS_CPU=128m

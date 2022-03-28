@@ -194,7 +194,7 @@ export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForSer
 
 /**
  * Create fake output STAC catalogs/items to mock the execution of a service
- * 
+ *
  * @param jobID - the job ID to which the STAC items belong
  * @param workItemID - the ID of the work item that generated the STAC items
  */
@@ -209,7 +209,7 @@ export async function fakeServiceStacOutput(jobID: string, workItemID: number, g
     links: [
       {
         rel: 'harmony_source',
-        href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1234208438-POCLOUD',
+        href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1243729749-EEDTEST',
       },
       {
         rel: 'item',

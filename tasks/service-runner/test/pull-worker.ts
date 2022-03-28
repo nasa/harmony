@@ -1,4 +1,3 @@
-import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
@@ -17,7 +16,8 @@ const {
   _doWork,
   _pullAndDoWork,
   _primeCmrService,
-  _primeService } = pullWorker.exportedForTesting;
+  _primeService,
+  axiosUpdateWork } = pullWorker.exportedForTesting;
 
 describe('Pull Worker', async function () {
   describe('on start', async function () {
@@ -104,21 +104,38 @@ describe('Pull Worker', async function () {
         const work = await _pullWork();
         expect(work.item).to.eql(workItem, 'Expected a work item');
       });
+
+      it('does not retry with exponential backoff', async function () {
+        await _pullWork();
+        expect(this.axiosMock.history.get.length).to.equal(1);
+      });
     });
     describe('when work is not available', async function () {
       hookGetWorkRequest({ status: 404 });
 
-      it('returns a 404 status', async function () {
+      it('returns a 404 status (with no exponential backoff)', async function () {
         const work = await _pullWork();
         expect(work.status).to.equal(404, 'Expected a 404 status when work is not available');
+        expect(this.axiosMock.history.get.length).to.equal(1);
       });
     });
     describe('when there was an error getting work', async function () {
       hookGetWorkRequest({ status: 503, statusText: 'something bad happened' });
-      it('returns an error message', async function () {
+      it('returns an error message (after retrying with exponential backoff)', async function () {
         const work = await _pullWork();
         expect(work.status).to.be.greaterThanOrEqual(400, 'Expected an error status');
         expect(work.error).to.eql('something bad happened');
+        expect(this.axiosMock.history.get.length).to.equal(3);
+      });
+    });
+
+    describe('when there was a timeout while getting work', async function () {
+      hookGetWorkRequest(null, true);
+      it('returns a timeout message (after retrying with exponential backoff)', async function () {
+        const work = await _pullWork();
+        expect(work.status).to.be.greaterThanOrEqual(400, 'Expected an error status');
+        expect(work.error).to.eql('timeout of 30000ms exceeded');
+        expect(this.axiosMock.history.get.length).to.equal(3);
       });
     });
   });
@@ -197,7 +214,7 @@ describe('Pull Worker', async function () {
     describe('when _pullWork throws an exception', async function () {
       let pullStub: SinonStub;
       let doWorkStub: SinonStub;
-      const mock = new MockAdapter(axios);
+      const mock = new MockAdapter(axiosUpdateWork);
       beforeEach(function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () {
           throw new Error('something bad happened');
@@ -227,7 +244,7 @@ describe('Pull Worker', async function () {
     describe('when _doWork throws an exception', async function () {
       let pullStub: SinonStub;
       let doWorkStub: SinonStub;
-      const mock = new MockAdapter(axios);
+      const mock = new MockAdapter(axiosUpdateWork);
       beforeEach(function () {
         pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function (): Promise<{ item?: WorkItem; status?: number; error?: string }> {
           return {};

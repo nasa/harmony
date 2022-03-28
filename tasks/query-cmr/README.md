@@ -1,6 +1,6 @@
 # Query CMR Task
 
-Queries the CMR using a Harmony message and queries provided on the command line, producing output files for
+Queries the CMR using a Harmony message and queries (or a CMR scroll-id) provided on the command line (or via an HTTP), producing output files for
 each page of each query.  See the CLI usage message for documentation on options.
 
 To run:
@@ -20,4 +20,10 @@ To test:
 
 ```
 npm run test
+```
+
+To push to ECR:
+
+```
+bin/push-image <tag>
 ```

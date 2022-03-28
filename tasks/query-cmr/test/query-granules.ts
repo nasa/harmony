@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable  node/no-unpublished-require */
 import fs from 'fs';
 import path from 'path';
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
 import { describe, it, xit } from 'mocha';
 import * as sinon from 'sinon';
 import tmp from 'tmp';
@@ -12,6 +14,9 @@ import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
 import { S3ObjectStore } from '../../../app/util/object-store';
 import buildStacSchemaValidator from './helpers/stac';
+import { CmrError } from '../../../app/util/errors';
+
+chai.use(require('chai-as-promised'));
 
 const geojson = '../../test/resources/complex_multipoly.geojson';
 
@@ -82,6 +87,35 @@ function hookQueryGranulesScrolling(): void {
     // Map the call arguments into something we can actually assert against
     this.queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
     this.queryFields = this.queryFields.sort((a, b) => a._index - b._index);
+  });
+  after(function () {
+    fetchPost.restore();
+    delete this.result;
+    delete this.queryFields;
+  });
+}
+
+/**
+ * Sets up before and after hooks to run queryGranulesScrolling with an error response from the CMR
+ */
+function hookQueryGranulesScrollingWithError(): void {
+  const output = {
+    headers: new fetch.Headers({}),
+    ...{
+      status: 404,
+      data: {
+        errors: [
+          'Scroll session [1234] does not exist',
+        ],
+      },
+    },
+  };
+
+  let fetchPost: sinon.SinonStub;
+  before(async function () {
+    // Stub cmr fetchPost to return the contents of queries
+    fetchPost = sinon.stub(cmr, 'fetchPost');
+    fetchPost.returns(Promise.resolve(output));
   });
   after(function () {
     fetchPost.restore();
@@ -398,5 +432,14 @@ describe('query#queryGranulesScrolling', function () {
     it('limits the page size to 2000', function () {
       expect(this.queryFields[0].page_size).to.equal('2000');
     });
+  });
+
+  describe('when the CMR returns an error', async function () {
+    hookQueryGranulesScrollingWithError();
+
+    it('throws an error containing the CMR error message', async function () {
+      await expect(queryGranulesScrolling(operation, 'scrollId')).to.be.rejectedWith(CmrError, 'Scroll session [1234] does not exist');
+    });
+
   });
 });
