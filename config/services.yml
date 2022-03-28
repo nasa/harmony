@@ -570,6 +570,7 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         bbox: true
         variable: true
+        shape: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
