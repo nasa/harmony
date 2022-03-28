@@ -400,7 +400,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           name: 'turbo',
         },
         steps: [{
-          image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
+          image: 'harmonyservices/query-cmr:fake-test',
         }],
         capabilities: {
           subsetting: {
@@ -442,6 +442,103 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         it('returns up to the granule limit configured for the collection', function () {
           const job = JSON.parse(this.res.text);
           expect(job.numInputGranules).to.equal(5);
+        });
+      });
+    });
+
+    describe('and maxResults from the a query is set to a value less than the granule limit for the collection', function () {
+      const maxResults = 2;
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\.$/);
+        });
+
+        it('returns up to maxGraunules', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(2);
+        });
+      });
+    });
+
+    describe('when the collection granule limit is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
+      before(function () {
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 3);
+      });
+      after(function () {
+        this.glStub.restore();
+      });
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      hookRedirect('jdoe1');
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
+      });
+
+      it('limits the input granules to the system limit', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.numInputGranules).to.equal(3);
+      });
+    });
+  });
+
+  describe('when the first step is not query-cmr', function () {
+    const serviceConfigs: ServiceConfig<unknown>[] = [
+      {
+        name: 'non-query-cmr-service',
+        collections: [
+          {
+            id: collection,
+          },
+        ],
+        type: {
+          name: 'turbo',
+        },
+        steps: [{
+          image: 'fake-internal.earthdata.nasa.gov/nexus-service/foo:uat',
+        }],
+        default_sync: true,
+        has_granule_limit: false,
+      }];
+    hookServices(serviceConfigs);
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+
+    describe('and maxResults is not set for the query', function () {
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the job is being processed', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('The job is being processed');
+        });
+
+        it('returns the number of granules for the collection', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(177);
+        });
+      });
+    });
+
+    describe('and maxResults from the a query is set to a value greater than the granule limit for the collection', function () {
+      const maxResults = 200;
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the job is being processed', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.equal('The job is being processed');
+        });
+
+        it('returns the number of granules for the collection', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(177);
         });
       });
     });
@@ -761,7 +858,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 });
 
 describe('OGC API Coverages - getCoverageRangeset with a collection not configured for services', function () {
-  const collection = 'C446474-ORNL_DAAC';
+  const collection = 'C1243745256-EEDTEST';
   const version = '1.0.0';
 
   hookServersStartStop();
@@ -786,19 +883,19 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns the number of CMR hits as the number of input granules', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.numInputGranules).to.eql(39);
+      expect(job.numInputGranules).to.eql(6);
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446474-ORNL_DAAC.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1243745256-EEDTEST.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(39);
+      expect(job.links.length).to.equal(6);
     });
     it('granule links include a title of the granuleId', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links[0].title).to.equal('G1239610894-ORNL_DAAC');
+      expect(job.links[0].title).to.equal('G1243746331-EEDTEST');
     });
     it('granule links include a download link', function () {
       const job = JSON.parse(this.res.text);
@@ -826,26 +923,26 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns the number of CMR hits as the number of input granules', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.numInputGranules).to.eql(39);
+      expect(job.numInputGranules).to.eql(6);
     });
     it('returns a message when results are truncated', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C446474-ORNL_DAAC.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1243745256-EEDTEST.');
     });
     it('returns granule links', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(39);
+      expect(job.links.length).to.equal(6);
     });
     it('granule links include a title of the granuleId', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links[0].title).to.equal('G1239610894-ORNL_DAAC');
+      expect(job.links[0].title).to.equal('G1243746331-EEDTEST');
     });
     it('granule links include a download link', function () {
       const job = JSON.parse(this.res.text);
       expect(job.links[0].href).to.not.equal(undefined);
     });
 
-    itIncludesRequestUrl('/C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
+    itIncludesRequestUrl('/C1243745256-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset');
   });
 
   describe('when using accept headers', function () {
@@ -872,7 +969,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
   });
 
   describe('when only one granule is identified', function () {
-    const collectionWithSingleGranule = 'C1000000099-ORNL_DAAC';
+    const collectionWithSingleGranule = 'C1243747466-EEDTEST';
     hookRangesetRequest(version, collectionWithSingleGranule, 'all', {});
 
     it('returns a 200 successful response', function () {
@@ -884,7 +981,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('returns a message indicating no transformations were performed', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1000000099-ORNL_DAAC.');
+      expect(job.message).to.eql('Returning direct download links because no operations can be performed on C1243747466-EEDTEST.');
     });
   });
 
@@ -906,7 +1003,7 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
       expect(job.links.length).to.equal(1);
     });
 
-    itIncludesRequestUrl('C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
+    itIncludesRequestUrl('C1243745256-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(30%3A40)&subset=lon(-100%3A0)&subset=time(%221987-05-29T00%3A00Z%22%3A%221987-05-30T00%3A00Z%22)');
   });
 
   describe('when performing point-based query', function () {
@@ -924,10 +1021,10 @@ describe('OGC API Coverages - getCoverageRangeset with a collection not configur
     });
     it('limits results to only those that match the point-based query', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.links.length).to.equal(39);
+      expect(job.links.length).to.equal(6);
     });
 
-    itIncludesRequestUrl('C446474-ORNL_DAAC/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?point=-96.595&point=39.1019');
+    itIncludesRequestUrl('C1243745256-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?point=-96.595&point=39.1019');
   });
 
   describe('when specifying an invalid variable', function () {

@@ -58,6 +58,7 @@ interface HarmonyEnv {
   logLevel: string;
   myPodName: string;
   port: number;
+  workerPort: number;
   workerTimeout: number;
   workingDir: string;
 }

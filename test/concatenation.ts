@@ -8,7 +8,7 @@ import StubService from './helpers/stub-service';
 
 describe('testing concatenation', function () {
   describe('for a CONCISE workflow', function () {
-    const collection = 'C1234208438-POCLOUD';
+    const collection = 'C1243729749-EEDTEST';
     const serviceTag = 'ghcr.io/podaac/concise:sit';
 
     describe('When passing the concatenate parameter', function () {
@@ -129,6 +129,56 @@ describe('testing concatenation', function () {
             description: 'Error: no matching service',
           });
         });
+      });
+    });
+  });
+
+  describe('for an L2 subsetter to CONCISE workflow', function () {
+    const collection = 'C1243729749-EEDTEST';
+    const l2SubsetterImage = 'ghcr.io/podaac/l2ss-py:sit';
+    const conciseImage = 'ghcr.io/podaac/concise:sit';
+
+    describe('When passing the concatenate parameter and spatial subsetting', function () {
+      hookServersStartStop( { skipEarthdataLogin: false });
+      const query = {
+        concatenate: true,
+        subset: 'lat(0:90)',
+        maxResults: 3,
+      };
+
+      describe('priming the test so it works... this is meaningless, but workflow steps are not created by later tests without it', function () {
+        StubService.hook({ params: { redirect: 'http://example.com' } });
+        hookRangesetRequest('1.0.0', collection, 'all', { query, username: 'joe' });
+      });
+
+      hookRangesetRequest('1.0.0', collection, 'all', { query, username: 'joe' });
+      hookRedirect('joe');
+
+      it('includes a workflow step to invoke the l2-subsetter service first', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+        expect(workflowSteps[1].serviceID).to.eql(l2SubsetterImage);
+      });
+
+      it('does not set the `hasAggregatedOutput` flag on the l2-subsetter workflow step', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+        expect(workflowSteps[1].hasAggregatedOutput).to.equal(0);
+      });
+
+      it('includes a workflow step to invoke the concise service', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+        expect(workflowSteps[2].serviceID).to.eql(conciseImage);
+      });
+
+      it('has the `hasAggregatedOutput` flag set to true on the concise workflow step', async function () {
+        const job = JSON.parse(this.res.text);
+        const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+        expect(workflowSteps[2].hasAggregatedOutput).to.equal(1);
       });
     });
   });

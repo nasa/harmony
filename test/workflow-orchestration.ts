@@ -14,6 +14,51 @@ import { PATH_TO_CONTAINER_ARTIFACTS } from '../app/backends/workflow-orchestrat
 import path from 'path';
 import { promises as fs } from 'fs';
 
+describe('when a work item callback request does not return the results to construct the next work item(s)', function () {
+  const collection = 'C1233800302-EEDTEST';
+  hookServersStartStop();
+  const reprojectAndZarrQuery = {
+    maxResults: 2,
+    outputCrs: 'EPSG:4326',
+    interpolation: 'near',
+    scaleExtent: '0,2500000.3,1500000,3300000',
+    scaleSize: '1.1,2',
+    format: 'application/x-zarr',
+    concatenate: false, // Aggregated workflows are tested above
+  };
+
+  hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
+  hookRedirect('joe');
+
+  it('generates a workflow with 3 steps', async function () {
+    const job = JSON.parse(this.res.text);
+    const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
+
+    expect(workflowSteps.length).to.equal(3);
+  });
+
+  describe('when executing a query-cmr work item and no catalog is returned', function () {
+    it('finds the queued work item, but query-cmr fails to return a catalog for the next work items', async function () {
+      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+      expect(res.status).to.equal(200);
+      const workItem = JSON.parse(res.text);
+      expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
+      workItem.status = WorkItemStatus.SUCCESSFUL;
+      workItem.results = [];
+      await updateWorkItem(this.backend, workItem);
+    });
+
+    describe('when checking the jobs listing', function () {
+      it('shows the job as failed with an internal harmony error', async function () {
+        const jobs = await Job.forUser(db, 'anonymous');
+        const job = jobs.data[0];
+        expect(job.status).to.equal('failed');
+        expect(job.message).to.equal('Harmony internal failure: could not create the next work items for the request.');
+      });
+    });
+  });
+});
+
 describe('When a workflow contains an aggregating step', async function () {
   const aggregateService = 'bar';
   hookServersStartStop();
@@ -292,8 +337,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         firstSwotItem.results = [];
         await updateWorkItem(this.backend, firstSwotItem);
       });
-
-
 
       it('fails the job, and all further work items are canceled', async function () {
         // work item failure should trigger job failure

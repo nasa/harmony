@@ -37,20 +37,13 @@ spec:
           - secretRef:
               name: harmony-secrets
           env:
-            - name: TEXT_LOGGER
-              value: "false"
+            - name: "PORT"
+              value: "$WORKER_PORT"
           volumeMounts:
             - mountPath: /tmp/metadata
               name: test-volume
             - mountPath: /tmp
               name: ephemeral-volume
-          command: ["/bin/sh", "-c"]
-          args:
-            - trap "exit 0" TERM;
-              while true; do
-                date;
-                sleep 10;
-              done
         - name: manager
           imagePullPolicy: IfNotPresent
           image: $SERVICE_RUNNER_IMAGE
@@ -73,6 +66,8 @@ spec:
             value: $BACKEND_HOST
           - name: BACKEND_PORT
             value: "$BACKEND_PORT"
+          - name: WORKER_PORT
+            value: "$WORKER_PORT"
           - name: HARMONY_SERVICE
             value: "$QUERY_CMR_IMAGE"
           - name: MY_POD_NAME

@@ -670,8 +670,7 @@ describe('Individual job status route', function () {
 
         it('includes all of the granules', function () {
           const job = JSON.parse(this.res.text);
-          // TODO Change this back to 176 when done testing HARMONY-795 in UAT
-          expect(job.numInputGranules).to.equal(100);
+          expect(job.numInputGranules).to.equal(176);
         });
       });
 
