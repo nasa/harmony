@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { configureLogLevel } from '../util/log';
 import HarmonyRequest from '../models/harmony-request';
 import { keysToLowerCase } from '../util/object';
+import { RequestValidationError } from 'app/util/errors';
 
 /**
  * Admin interface for configuring Harmony.
@@ -20,7 +21,11 @@ export async function setLogLevel(
 ): Promise<void> {
   const query = keysToLowerCase(req.query);
   try {
-    const result = configureLogLevel(query.level);
+    const queryKeys = Object.keys(query);
+    if (!(queryKeys.length === 1) || queryKeys[0] != 'level') {
+      throw new RequestValidationError('Must set log level using a single query parameter: level');
+    }
+    const result = configureLogLevel(query.level.toLowerCase());
     res.json({ result });
   } catch (e) {
     req.context.logger.error(e);
