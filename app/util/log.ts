@@ -1,7 +1,9 @@
 import * as _ from 'lodash';
 import * as winston from 'winston';
 import env = require('./env');
+import { RequestValidationError } from './errors';
 import redact from './logRedactor';
+import { Conjunction, listToText } from './string';
 
 const envNameFormat = winston.format((info) => ({ ...info, env_name: env.harmonyClientId }));
 
@@ -75,6 +77,32 @@ export function createTextLogger(transports: winston.transport[]): winston.Logge
 
 const transport = new winston.transports.Console({ level: env.logLevel });
 const logger = process.env.TEXT_LOGGER === 'true' ? createTextLogger([transport]) : createJsonLogger([transport]);
+
+/**
+ * Check if log level is valid.
+ * @param level - the level to check
+ * @throws RequestValidationError - if the log level is not one of winston.config.npm.levels
+ */
+function validateLogLevel(level: string): void {
+  const validLevels = Object.keys(winston.config.npm.levels);
+  if (!validLevels.includes(level)) {
+    throw new RequestValidationError(
+      `Requested to configure log level with invalid level (${level}). Valid levels are: ${listToText(validLevels, Conjunction.AND)}.`);
+  }
+}
+
+/**
+ * Change the log level on the logger transport.
+ * @param level - The new log level that'll be used.
+ * @returns a string indicating the action performed
+ * @throws RequestValidationError - if the log level is not one of winston.config.npm.levels
+ */
+export function configureLogLevel(level: string): string {
+  validateLogLevel(level);
+  const currentLevel = transport.level;
+  transport.level = level;
+  return `Log level was changed from ${currentLevel} to ${level}`;
+}
 
 /**
  * Configures logs so that they are written to the file with the given name, also suppressing
