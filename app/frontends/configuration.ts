@@ -23,7 +23,7 @@ export async function setLogLevel(
   try {
     const queryKeys = Object.keys(query);
     if (!(queryKeys.length === 1) || queryKeys[0] != 'level') {
-      throw new RequestValidationError('Must set log level using a single query parameter: level');
+      throw new RequestValidationError('Must set log level using a single query parameter (level).');
     }
     const result = configureLogLevel(query.level.toLowerCase());
     res.json({ result });

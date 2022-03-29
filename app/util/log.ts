@@ -87,7 +87,7 @@ function validateLogLevel(level: string): void {
   const validLevels = Object.keys(winston.config.npm.levels);
   if (!validLevels.includes(level)) {
     throw new RequestValidationError(
-      `Requested to configure log level with invalid level: ${level}. Valid levels are: ${listToText(validLevels, Conjunction.AND)}`);
+      `Requested to configure log level with invalid level (${level}). Valid levels are: ${listToText(validLevels, Conjunction.AND)}.`);
   }
 }
 
