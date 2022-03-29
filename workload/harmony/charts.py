@@ -35,7 +35,7 @@ def remove_job_status_rows(df):
     Returns:
         {pandas.DataFrame} -- The original dataframe with all job status rows removed.
     """
-    job_status_regex = re.compile(r'\/jobs.*')
+    job_status_regex = re.compile(r'job status')
     jobs_rows_filter = df['Name'].str.contains(job_status_regex)
     return df[~jobs_rows_filter]
 
