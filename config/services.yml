@@ -398,6 +398,9 @@ https://cmr.uat.earthdata.nasa.gov:
           <<: *default-turbo-env
           STAGING_PATH: public/nasa/harmony-gdal-adapter
     collections:
+      - id: C1244141281-EEDTEST # ALOS AVNIR OBS ORI test collection
+      - id: C1244141250-EEDTEST # Sentinel 1 Interferogram test collection
+      - id: C1244141264-EEDTEST # UAVSAR POLSAR Pauli test collection
       - id: C1225776654-ASF
       - id: C1207038647-ASF
       - id: C1233629671-ASF
