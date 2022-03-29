@@ -19,17 +19,18 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._sync_request(name, collection, variable, params, 1)
 
-    def _harmony_service_example_bbox_variable_reformat_48_granules(self):
-        name = 'Harmony Service Example: Bbox, Variable, and reformat'
+    def _harmony_service_example_bbox_variable_reformat_50_granules(self):
+        name = '50 granules Harmony Service Example: Bbox, Variable, and reformat'
         collection = 'C1233800302-EEDTEST'
         variable = 'blue_var'
         params = {
             'subset': [
-                'lat(20:60)',
-                'lon(-140:-50)'
+                'lat(20:80)',
+                'lon(-140:0)'
             ],
             'outputCrs': 'EPSG:4326',
-            'format': 'image/png'
+            'format': 'image/png',
+            'maxResults': 50
         }
         self._async_request(name, collection, variable, params, 14)
 
@@ -45,13 +46,13 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._sync_request(name, collection, variable, params, 2)
 
-    def _netcdf_to_zarr_10_granules(self):
-        name = 'NetCDF-to-Zarr: 10 granules'
+    def _netcdf_to_zarr_48_granules(self):
+        name = '48 granules NetCDF-to-Zarr'
         collection = 'harmony_example_l2'
         variable = 'all'
         params = {
             'format': 'application/x-zarr',
-            'maxResults': '10'
+            'maxResults': '48'
         }
         self._async_request(name, collection, variable, params, 3)
 
@@ -114,16 +115,17 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._sync_request(name, collection, variable, params, 8)
 
-    def _podaac_l2ss_async_spatial_temporal(self):
-        name = 'PODAAC L2SS Async Spatial and Temporal'
+    def _podaac_l2ss_async_spatial_temporal_50_granules(self):
+        name = '50 granules PODAAC L2SS Async Spatial and Temporal'
         collection = 'C1234724471-POCLOUD'
         variable = 'all'
         params = {
             'subset': [
-                'lat(81.7:83)',
-                'lon(-62.8:-56.4)',
+                'lat(5.7:83)',
+                'lon(-62.8:36.4)',
                 'time("2019-06-22T00:00:00Z":"2019-06-22T23:59:59Z")'
-            ]
+            ],
+            'maxResults': 50
         }
         self._async_request(name, collection, variable, params, 9)
 
@@ -137,15 +139,25 @@ class HarmonyUatUser(BaseHarmonyUser):
         }
         self._async_request(name, collection, variable, params, 10)
 
-    def _concise_three_granules(self):
-        name='PODAAC Concise three granules'
+    def _concise_two_granules(self):
+        name='Two PODAAC Concise granules'
         collection = 'C1234208438-POCLOUD'
         variable = 'all'
         params = {
-            'maxResults': 3,
+            'maxResults': 2,
             'concatenate': 'true'
         }
         self._async_request(name, collection, variable, params, 11)
+
+    def _concise_50_granules(self):
+        name='50 granules PODAAC Concise'
+        collection = 'C1234208438-POCLOUD'
+        variable = 'all'
+        params = {
+            'maxResults': 50,
+            'concatenate': 'true'
+        }
+        self._async_request(name, collection, variable, params, 15)
 
 
     def _hoss_spatial_and_variable_subset(self):
@@ -178,69 +190,75 @@ class HarmonyUatUser(BaseHarmonyUser):
     ############################################
     # Locust tasks
     ############################################
-    @tag('harmony-service-example', 'sync', 'variable', 'bbox', 'reproject', 'png')
-    @task(2)
+    @tag('harmony-service-example', 'sync', 'variable', 'bbox', 'reproject', 'png', 'demo')
+    @task(50)
     def harmony_service_example_bbox_variable_reformat_single(self):
         self._harmony_service_example_bbox_variable_reformat_single()
 
-    @tag('harmony-service-example', 'async', 'variable', 'bbox', 'reproject', 'png')
+    @tag('harmony-service-example', 'async', 'variable', 'bbox', 'reproject', 'png', 'demo')
     @task(2)
-    def harmony_service_example_bbox_variable_reformat_48_granules(self):
-        self._harmony_service_example_bbox_variable_reformat_48_granules()
+    def harmony_service_example_bbox_variable_reformat_50_granules(self):
+        self._harmony_service_example_bbox_variable_reformat_50_granules()
 
-    @tag('swot-repr', 'sync', 'reproject', 'netcdf4')
-    @task(2)
+    @tag('swot-repr', 'sync', 'reproject', 'netcdf4', 'demo')
+    @task(50)
     def swot_repr_europe(self):
         self._swot_repr_europe()
 
-    @tag('netcdf-to-zarr', 'async', 'zarr')
+    @tag('netcdf-to-zarr', 'async', 'zarr', 'demo')
     @task(2)
-    def netcdf_to_zarr_10_granules(self):
-        self._netcdf_to_zarr_10_granules()
+    def netcdf_to_zarr_48_granules(self):
+        self._netcdf_to_zarr_48_granules()
 
+    # Broken with current netcdf-to-zarr
     @tag('chain', 'async', 'zarr', 'reproject', 'chain')
-    @task(2)
+    @task(50)
     def chain_swot_repr_europe_to_zarr(self):
         self._chain_swot_repr_europe_to_zarr()
 
     # Unable to download from ASF site in sandbox and SIT now
-    @tag('asf-gdal', 'sync', 'bbox', 'variable', 'temporal', 'hierarchical-variable', 'netcdf4', 'uat-only')
+    @tag('harmony-gdal', 'sync', 'bbox', 'variable', 'temporal', 'hierarchical-variable', 'netcdf4', 'uat-only')
     @task(2)
     def harmony_gdal_adapter(self):
         self._harmony_gdal_adapter()
 
-    @tag('var-subsetter', 'sync', 'variable', 'hierarchical-variable', 'netcdf4')
-    @task(2)
+    @tag('var-subsetter', 'sync', 'variable', 'hierarchical-variable', 'netcdf4', 'demo')
+    @task(50)
     def var_subsetter(self):
         self._var_subsetter()
 
-    @tag('podaac-l2ss', 'bbox', 'sync', 'netcdf4', 'agu', 'variable')
-    @task(2)
+    @tag('podaac-l2ss', 'bbox', 'sync', 'netcdf4', 'agu', 'variable', 'demo')
+    @task(50)
     def podaac_l2ss_sync_variable(self):
         self._podaac_l2ss_sync_variable()
 
-    @tag('podaac-l2ss', 'bbox', 'async', 'netcdf4', 'temporal', 'agu')
+    @tag('podaac-l2ss', 'bbox', 'async', 'netcdf4', 'temporal', 'agu', 'demo')
     @task(2)
-    def podaac_l2ss_async_spatial_temporal(self):
-        self._podaac_l2ss_async_spatial_temporal()
+    def podaac_l2ss_async_spatial_temporal_50_granules(self):
+        self._podaac_l2ss_async_spatial_temporal_50_granules()
 
-    @tag('netcdf-to-zarr', 'async', 'zarr', 'agu')
-    @task(2)
+    @tag('netcdf-to-zarr', 'async', 'zarr', 'agu', 'demo')
+    @task(50)
     def netcdf_to_zarr_single_granule(self):
         self._netcdf_to_zarr_single_granule()
 
-    @tag('new', 'async', 'concise')
-    @task(2)
-    def concise_three_granules(self):
-        self._concise_three_granules()
+    @tag('async', 'concise', 'demo')
+    @task(25)
+    def concise_two_granules(self):
+        self._concise_two_granules()
 
-    @tag('new', 'async', 'hoss')
+    @tag('async', 'concise', 'demo')
     @task(2)
+    def concise_50_granules(self):
+        self._concise_50_granules()
+
+    @tag('async', 'hoss', 'demo')
+    @task(50)
     def hoss_spatial_and_variable_subset(self):
         self._hoss_spatial_and_variable_subset()
 
-    @tag('new', 'async', 'chain', 'zarr', 'l2ss')
-    @task(2)
+    @tag('async', 'chain', 'zarr', 'l2ss', 'demo')
+    @task(50)
     def chain_l2ss_to_zarr(self):
         self._chain_l2ss_to_zarr()
 
