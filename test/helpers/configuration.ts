@@ -15,7 +15,7 @@ export function configureLogLevel(
   options: { username?: string; query?: object },
 ): Test {
   const { query } = options;
-  return request(app).get('/admin/configuration/log-level').query(query || {});
+  return request(app).get('/admin/configuration/log-level').query(query);
 }
 
 export const hookConfigureLogLevel = hookRequest.bind(this, configureLogLevel);

@@ -26,6 +26,7 @@ export async function setLogLevel(
       throw new RequestValidationError('Must set log level using a single query parameter (level).');
     }
     const result = configureLogLevel(query.level.toLowerCase());
+    req.context.logger.info(result);
     res.json({ result });
   } catch (e) {
     req.context.logger.error(e);

@@ -216,12 +216,12 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/jobs/:jobID/cancel', cancelJob);
   result.get('/admin/jobs/:jobID/cancel', cancelJob);
 
+  result.get('/admin/configuration/log-level', setLogLevel);
+
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
   result.get('/stac/:jobId', getStacCatalog);
   result.get('/stac/:jobId/:itemIndex', getStacItem);
-
-  result.get('/admin/configuration/log-level', setLogLevel);
 
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
