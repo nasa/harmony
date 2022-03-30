@@ -38,6 +38,7 @@ export async function getJobs(
     const pageLinks = getPagingLinks(req, pagination);
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
+    const currentPage = pageLinks.find((l) => l.rel === 'self');
     setPagingHeaders(res, pagination);
     res.render('workflow-ui/jobs/index', {
       jobs,
@@ -60,6 +61,9 @@ export async function getJobs(
         { ...previousPage, linkTitle: 'previous' },
         { ...nextPage, linkTitle: 'next' },
       ],
+      currentPage: currentPage.href,
+      page,
+      limit,
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() { return (this.href || ''); },
       isAdminRoute: req.context.isAdminAccess,

@@ -1,18 +1,22 @@
 <table class="table table-sm">
     <thead>
         <tr>
-            <th scope="col">jobID</th>
-            {{#isAdminRoute}}
-            <th scope="col">username</th>
-            {{/isAdminRoute}}
-            <th scope="col">request</th>
-            <th scope="col">
-            {{> workflow-ui/jobs/status-dropdown}}    
-            </th>
-            <th scope="col">message</th>
-            <th scope="col">numInputGranules</th>
-            <th scope="col">progress</th>
-            <th scope="col">createdAt</th>
+            <form action="{{currentPage}}" method="get">
+                <input type="hidden" name="page" value="{{page}}" /> 
+                <input type="hidden" name="limit" value="{{limit}}" /> 
+                <th scope="col">jobID</th>
+                {{#isAdminRoute}}
+                <th scope="col">username</th>
+                {{/isAdminRoute}}
+                <th scope="col">request</th>
+                <th scope="col">
+                {{> workflow-ui/jobs/status-dropdown}}    
+                </th>
+                <th scope="col">message</th>
+                <th scope="col">numInputGranules</th>
+                <th scope="col">progress</th>
+                <th scope="col">createdAt</th>
+            </form>
         </tr>
     </thead>
     <tbody>

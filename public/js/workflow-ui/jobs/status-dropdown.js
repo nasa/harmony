@@ -5,13 +5,6 @@ function addDropdownClickListener() {
   }, false);
 }
 
-function addApplyClickListener() {
-  const applyJobStatus = document.getElementById('apply-job-status');
-  applyJobStatus.addEventListener('click', function() { 
-    console.log('hi');
-  }, false);
-}
-
 export default {
 
   /**
@@ -19,6 +12,5 @@ export default {
    */
   async init() {
     addDropdownClickListener();
-    addApplyClickListener();
   }
 }
