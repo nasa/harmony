@@ -6,7 +6,9 @@
             <th scope="col">username</th>
             {{/isAdminRoute}}
             <th scope="col">request</th>
-            <th scope="col">status</th>
+            <th scope="col">
+            {{> workflow-ui/jobs/status-dropdown}}    
+            </th>
             <th scope="col">message</th>
             <th scope="col">numInputGranules</th>
             <th scope="col">progress</th>
@@ -22,7 +24,7 @@
             {{/isAdminRoute}}
             <td class="mw-40ch">
                 <small><code class="text-truncate d-block" title="{{request}}" data-bs-toggle="tooltip"
-                    data-bs-placement="right">{{jobUrl}}</code></small>
+                        data-bs-placement="right">{{jobUrl}}</code></small>
             </td>
             <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
             <td class="mw-40ch"><small><code class="text-truncate d-block" title="{{message}}" data-bs-toggle="tooltip"

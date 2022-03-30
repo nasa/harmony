@@ -41,6 +41,7 @@ export async function getJobs(
     setPagingHeaders(res, pagination);
     res.render('workflow-ui/jobs/index', {
       jobs,
+      jobStatuses: Object.values(JobStatus),
       version,
       jobBadge() { return badgeClasses[this.status]; },
       jobUrl() {
