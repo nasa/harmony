@@ -95,7 +95,7 @@ export default async function main(args: string[]): Promise<void> {
   result.links.push({
     'rel': 'item',
     'href': stacItemRelativeFilename,
-    'type': 'text/csv',
+    'type': 'application/json',
     'title': 'giovanni stac item',
   });
   const stacItemFilename = path.join(options.harmonyMetadataDir, stacItemRelativeFilename);
@@ -109,7 +109,7 @@ export default async function main(args: string[]): Promise<void> {
       href: giovanni_url,
       title: 'Giovanni',
       description: 'Giovanni link',
-      type: 'data',
+      type: 'text/csv',
       roles: ['data'],
     },
   };
