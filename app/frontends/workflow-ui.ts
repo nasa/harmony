@@ -32,9 +32,17 @@ export async function getJobs(
   badgeClasses[JobStatus.RUNNING] = 'info';
   try {
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
-    const query: JobQuery = {};
+    const query: JobQuery = { where: {}, whereIn: {} };
     if (!req.context.isAdminAccess) {
-      query.username = req.user;
+      query.where.username = req.user;
+    }
+    const disallowStatus = requestQuery['disallow-status'] === 'on';
+    if (requestQuery.status) {
+      query.whereIn.status = {
+        values: typeof requestQuery.status === 'string' ? 
+          [requestQuery.status] : requestQuery.status,
+        in: !disallowStatus,
+      };
     }
     const { data: jobs, pagination } = await Job.queryAll(db, query, false, page, limit);
     const pageLinks = getPagingLinks(req, pagination);
@@ -49,7 +57,7 @@ export async function getJobs(
       currentPage: currentPage.href,
       page,
       limit,
-      disallowStatusChecked: requestQuery['disallow-status'] === 'on' ? 'checked' : '',
+      disallowStatusChecked: disallowStatus ? 'checked' : '',
       statusSelected: function () {
         return function (status, render): string {
           if (requestQuery.status && requestQuery.status.includes(render(status))) {
@@ -99,9 +107,9 @@ export async function getJob(
   try {
     validateJobId(jobID);
     const { page, limit } = getPagingParams(req, 1000);
-    const query: JobQuery = { requestId: jobID };
+    const query: JobQuery = { where: { requestId: jobID } };
     if (!req.context.isAdminAccess) {
-      query.username = req.user;
+      query.where.username = req.user;
     }
     const { job } = await Job.byRequestId(db, jobID, 0, 0);
     if (job) {
@@ -145,9 +153,9 @@ export async function getWorkItemsTable(
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
   try {
     validateJobId(jobID);
-    const query: JobQuery = { requestId: jobID };
+    const query: JobQuery = { where: { requestId: jobID } };
     if (!req.context.isAdminAccess) {
-      query.username = req.user;
+      query.where.username = req.user;
     }
     const { job } = await Job.byRequestId(db, jobID, 0, 0);
     if (job) {
