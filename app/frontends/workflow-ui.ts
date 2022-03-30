@@ -49,7 +49,7 @@ export async function getJobs(
       currentPage: currentPage.href,
       page,
       limit,
-      allowStatusChecked: requestQuery['allow-status'] === 'on' ? 'checked' : '',
+      disallowStatusChecked: requestQuery['disallow-status'] === 'on' ? 'checked' : '',
       statusSelected: function () {
         return function (status, render): string {
           if (requestQuery.status && requestQuery.status.includes(render(status))) {
