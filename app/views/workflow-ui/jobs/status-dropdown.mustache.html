@@ -7,13 +7,13 @@
             <div class="form-row mb-2">
                 <select multiple id="job-status" class="form-control" name="status">
                     {{#jobStatuses}}
-                    <option value="{{.}}">
+                    <option value="{{.}}" {{#statusSelected}}{{.}}{{/statusSelected}}>
                         {{.}}
                     </option>
                     {{/jobStatuses}}
                 </select>
                 <div class="form-check">
-                    <input type="checkbox" class="form-check-input" name="allow-status">
+                    <input type="checkbox" class="form-check-input" name="allow-status" {{allowStatusChecked}}>
                     <label class="form-check-label" for="allow-job-status">
                         allow
                     </label>

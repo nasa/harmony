@@ -9,6 +9,7 @@ import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 import version from '../util/version';
 import env = require('../util/env');
+import { keysToLowerCase } from '../util/object';
 
 /**
  * Display jobs along with their status in the workflow UI.
@@ -22,6 +23,7 @@ import env = require('../util/env');
 export async function getJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
+  const requestQuery = keysToLowerCase(req.query);
   const badgeClasses = {};
   badgeClasses[JobStatus.ACCEPTED] = 'primary';
   badgeClasses[JobStatus.CANCELED] = 'secondary';
@@ -44,6 +46,17 @@ export async function getJobs(
       jobs,
       jobStatuses: Object.values(JobStatus),
       version,
+      currentPage: currentPage.href,
+      page,
+      limit,
+      allowStatusChecked: requestQuery['allow-status'] === 'on' ? 'checked' : '',
+      statusSelected: function () {
+        return function (status, render): string {
+          if (requestQuery.status && requestQuery.status.includes(render(status))) {
+            return render('selected');
+          }
+        };
+      },
       jobBadge() { return badgeClasses[this.status]; },
       jobUrl() {
         try {
@@ -61,9 +74,6 @@ export async function getJobs(
         { ...previousPage, linkTitle: 'previous' },
         { ...nextPage, linkTitle: 'next' },
       ],
-      currentPage: currentPage.href,
-      page,
-      limit,
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() { return (this.href || ''); },
       isAdminRoute: req.context.isAdminAccess,
