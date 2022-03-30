@@ -24,6 +24,7 @@ import * as eoss from '../frontends/eoss';
 import * as ogcCoverageApi from '../frontends/ogc-coverages/index';
 import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import landingPage from '../frontends/landing-page';
+import { setLogLevel } from '../frontends/configuration';
 import getVersions from '../frontends/versions';
 import serviceInvoker from '../backends/service-invoker';
 import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-request';
@@ -125,6 +126,7 @@ const authorizedRoutes = [
   '/cloud-access*',
   '/stac*',
   '/workflow-ui*',
+  '/configuration*',
 ];
 
 /**
@@ -214,10 +216,13 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/jobs/:jobID/cancel', cancelJob);
   result.get('/admin/jobs/:jobID/cancel', cancelJob);
 
+  result.get('/admin/configuration/log-level', setLogLevel);
+
   result.get('/cloud-access', cloudAccessJson);
   result.get('/cloud-access.sh', cloudAccessSh);
   result.get('/stac/:jobId', getStacCatalog);
   result.get('/stac/:jobId/:itemIndex', getStacItem);
+
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });
   return result;
