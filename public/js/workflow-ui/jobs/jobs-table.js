@@ -1,4 +1,5 @@
 import { formatDates, initTooltips } from "../table.js";
+import statusDropdown from "./status-dropdown.js";
 
 export default {
 
@@ -8,5 +9,6 @@ export default {
   async init() {
     formatDates();
     initTooltips('[data-bs-toggle="tooltip"]');
+    statusDropdown.init();
   }
 }

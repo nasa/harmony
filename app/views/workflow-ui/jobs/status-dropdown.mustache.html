@@ -1,11 +1,11 @@
-<div class="dropdown show">
+<div class="dropdown show" id="job-status-dropdown">
     status
     <a href="#" role="button" data-toggle="dropdown"> ∇
     </a>
     <div class="dropdown-menu">
-        <form class="px-4 py-3">
+        <div class="px-4 py-3">
             <div class="form-row mb-2">
-                <select multiple id="job-status" class="form-control-lg">
+                <select multiple id="job-status" class="form-control">
                     {{#jobStatuses}}
                     <option value="{{.}}">
                         {{.}}
@@ -13,7 +13,7 @@
                     {{/jobStatuses}}
                 </select>
                 <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="allow-job-status>
+                    <input type="checkbox" class="form-check-input" id="allow-job-status">
                     <label class="form-check-label" for="allow-job-status">
                         allow
                     </label>
@@ -22,6 +22,6 @@
             <div class="form-row">
                 <button type="button" id="apply-job-status" class="btn btn-primary btn-sm">apply</button>
             </div>
-        </form>
+        </div>
     </div>
 </div>
