@@ -95,7 +95,7 @@ export default async function main(args: string[]): Promise<void> {
   result.links.push({
     'rel': 'item',
     'href': stacItemRelativeFilename,
-    'type': 'application/json',
+    'type': 'text/csv',
     'title': 'giovanni stac item',
   });
   const stacItemFilename = path.join(options.harmonyMetadataDir, stacItemRelativeFilename);
