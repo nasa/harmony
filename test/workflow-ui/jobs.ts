@@ -33,8 +33,8 @@ const woodyJob2 = buildJob({
 
 const woodySyncJob = buildJob({
   username: 'woody',
-  status: JobStatus.RUNNING,
-  message: 'In progress',
+  status: JobStatus.FAILED,
+  message: 'The job failed :(',
   progress: 0,
   links: [],
   request: 'http://example.com/harmony?request=woody2',
@@ -107,7 +107,7 @@ describe('Workflow UI jobs route', function () {
         expect(this.res.statusCode).to.equal(200);
       });
 
-      it('returns an HTML table of info regarding the user’s jobs', function () {
+      it('returns an HTML table of info regarding the user\'s jobs', function () {
         const listing = this.res.text;
         [woodyJob1.request, woodyJob2.request, woodySyncJob.request]
           .forEach((req) => expect(listing).to.contain(mustache.render('{{req}}', { req })));
@@ -150,6 +150,39 @@ describe('Workflow UI jobs route', function () {
       it('returns only one job', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who filters by status IN [failed]', function () {
+      hookWorkflowUIJobs({ username: 'woody', status: JobStatus.FAILED.valueOf() });
+      it('returns only failed jobs', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+        expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+      });
+    });
+
+    describe('who filters by status IN [failed, successful]', function () {
+      hookWorkflowUIJobs({ username: 'woody', disallowStatus: '', status: [JobStatus.FAILED.valueOf(), JobStatus.SUCCESSFUL.valueOf()] });
+      it('returns failed and successful jobs', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(2);
+        expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+      });
+    });
+
+    describe('who filters by status NOT IN [failed, successful]', function () {
+      hookWorkflowUIJobs({ username: 'woody', disallowStatus: 'on', status: [JobStatus.FAILED.valueOf(), JobStatus.SUCCESSFUL.valueOf()] });
+      it('returns all jobs that are not failed or successful', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+        expect(listing).to.not.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
       });
     });
 

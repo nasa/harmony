@@ -36,7 +36,7 @@ export async function getJobs(
     if (!req.context.isAdminAccess) {
       query.where.username = req.user;
     }
-    const disallowStatus = requestQuery['disallow-status'] === 'on';
+    const disallowStatus = requestQuery.disallowstatus === 'on';
     if (requestQuery.status) {
       query.whereIn.status = {
         values: typeof requestQuery.status === 'string' ? 
