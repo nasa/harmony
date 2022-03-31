@@ -162,10 +162,15 @@ describe('Workflow UI jobs route', function () {
         expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
         expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
       });
-
       it('does not have disallowStatus HTML checked', function () {
         const listing = this.res.text;
         expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+      });
+      it('has the appropriate status options selected', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<option (?=.*value="failed")(?=.*selected).*>/g) || []).length).to.equal(1);
+        expect((listing.match(/<option (?=.*value="successful")(?!.*selected).*>/g) || []).length).to.equal(1);
+        expect((listing.match(/<option (?=.*value="running")(?!.*selected).*>/g) || []).length).to.equal(1);
       });
     });
 
@@ -178,10 +183,15 @@ describe('Workflow UI jobs route', function () {
         expect(listing).to.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
         expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
       });
-
       it('does not have disallowStatus HTML checked', function () {
         const listing = this.res.text;
         expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+      });
+      it('has the appropriate status options selected', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<option (?=.*value="failed")(?=.*selected).*>/g) || []).length).to.equal(1);
+        expect((listing.match(/<option (?=.*value="successful")(?=.*selected).*>/g) || []).length).to.equal(1);
+        expect((listing.match(/<option (?=.*value="running")(?!.*selected).*>/g) || []).length).to.equal(1);
       });
     });
 
@@ -194,10 +204,15 @@ describe('Workflow UI jobs route', function () {
         expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
         expect(listing).to.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
       });
-
       it('does have disallowStatus HTML checked', function () {
         const listing = this.res.text;
         expect((listing.match(/<input (?=.*name="disallowStatus")(?=.*checked).*>/g) || []).length).to.equal(1);
+      });
+      it('has the appropriate status options selected', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<option (?=.*value="failed")(?=.*selected).*>/g) || []).length).to.equal(1);
+        expect((listing.match(/<option (?=.*value="successful")(?=.*selected).*>/g) || []).length).to.equal(1);
+        expect((listing.match(/<option (?=.*value="running")(?!.*selected).*>/g) || []).length).to.equal(1);
       });
     });
 
