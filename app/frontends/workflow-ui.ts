@@ -24,14 +24,7 @@ export async function getJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const requestQuery = keysToLowerCase(req.query);
-  const badgeClasses = {};
-  badgeClasses[JobStatus.ACCEPTED] = 'primary';
-  badgeClasses[JobStatus.CANCELED] = 'secondary';
-  badgeClasses[JobStatus.FAILED] = 'danger';
-  badgeClasses[JobStatus.SUCCESSFUL] = 'success';
-  badgeClasses[JobStatus.RUNNING] = 'info';
   try {
-    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
     const query: JobQuery = { where: {}, whereIn: {} };
     if (!req.context.isAdminAccess) {
       query.where.username = req.user;
@@ -44,28 +37,31 @@ export async function getJobs(
         in: !disallowStatus,
       };
     }
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
     const { data: jobs, pagination } = await Job.queryAll(db, query, false, page, limit);
+    setPagingHeaders(res, pagination);
     const pageLinks = getPagingLinks(req, pagination);
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     const currentPage = pageLinks.find((l) => l.rel === 'self');
-    setPagingHeaders(res, pagination);
     res.render('workflow-ui/jobs/index', {
-      jobs,
-      jobStatuses: Object.values(JobStatus),
       version,
-      currentPage: currentPage.href,
       page,
       limit,
-      disallowStatusChecked: disallowStatus ? 'checked' : '',
-      statusSelected: function () {
-        return function (status, render): string {
-          if (requestQuery.status && requestQuery.status.includes(render(status))) {
-            return render('selected');
-          }
-        };
+      currentPage: currentPage.href,
+      isAdminRoute: req.context.isAdminAccess,
+      // job table row HTML
+      jobs,
+      jobBadge() { 
+        return {
+          [JobStatus.ACCEPTED]: 'primary',
+          [JobStatus.CANCELED]: 'secondary',
+          [JobStatus.FAILED]: 'danger',
+          [JobStatus.SUCCESSFUL]: 'success',
+          [JobStatus.RUNNING]: 'info',
+        }[this.status]; 
       },
-      jobBadge() { return badgeClasses[this.status]; },
+      jobCreatedAt() { return this.createdAt.getTime(); },
       jobUrl() {
         try {
           const url = new URL(this.request);
@@ -77,14 +73,23 @@ export async function getJobs(
           return this.request;
         }
       },
-      jobCreatedAt() { return this.createdAt.getTime(); },
+      // job table status dropdown HTML
+      jobStatuses: Object.values(JobStatus),
+      disallowStatusChecked: disallowStatus ? 'checked' : '',
+      statusSelected: function () {
+        return function (status, render): string {
+          if (requestQuery.status && requestQuery.status.includes(render(status))) {
+            return render('selected');
+          }
+        };
+      },
+      // job table paging buttons HTML
       links: [
         { ...previousPage, linkTitle: 'previous' },
         { ...nextPage, linkTitle: 'next' },
       ],
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() { return (this.href || ''); },
-      isAdminRoute: req.context.isAdminAccess,
     });
   } catch (e) {
     req.context.logger.error(e);
