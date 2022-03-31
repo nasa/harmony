@@ -162,6 +162,11 @@ describe('Workflow UI jobs route', function () {
         expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
         expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
       });
+
+      it('does not have disallowStatus HTML checked', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+      });
     });
 
     describe('who filters by status IN [failed, successful]', function () {
@@ -173,6 +178,11 @@ describe('Workflow UI jobs route', function () {
         expect(listing).to.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
         expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
       });
+
+      it('does not have disallowStatus HTML checked', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+      });
     });
 
     describe('who filters by status NOT IN [failed, successful]', function () {
@@ -183,6 +193,11 @@ describe('Workflow UI jobs route', function () {
         expect(listing).to.not.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
         expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
         expect(listing).to.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+      });
+
+      it('does have disallowStatus HTML checked', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowStatus")(?=.*checked).*>/g) || []).length).to.equal(1);
       });
     });
 
