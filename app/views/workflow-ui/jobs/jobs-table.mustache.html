@@ -1,22 +1,16 @@
 <table class="table table-sm">
     <thead>
         <tr>
-            <form action="{{currentPage}}" method="get">
-                <input type="hidden" name="page" value="{{page}}" /> 
-                <input type="hidden" name="limit" value="{{limit}}" /> 
-                <th scope="col">jobID</th>
-                {{#isAdminRoute}}
-                <th scope="col">username</th>
-                {{/isAdminRoute}}
-                <th scope="col">request</th>
-                <th scope="col">
-                {{> workflow-ui/jobs/status-dropdown}}    
-                </th>
-                <th scope="col">message</th>
-                <th scope="col">numInputGranules</th>
-                <th scope="col">progress</th>
-                <th scope="col">createdAt</th>
-            </form>
+            <th scope="col">jobID</th>
+            {{#isAdminRoute}}
+            <th scope="col">username</th>
+            {{/isAdminRoute}}
+            <th scope="col">request</th>
+            <th scope="col">status</th>
+            <th scope="col">message</th>
+            <th scope="col">numInputGranules</th>
+            <th scope="col">progress</th>
+            <th scope="col">createdAt</th>
         </tr>
     </thead>
     <tbody>
@@ -27,13 +21,13 @@
             <td>{{username}}</td>
             {{/isAdminRoute}}
             <td class="mw-40ch">
-                <small><code class="text-truncate d-block" title="{{request}}" data-bs-toggle="tooltip"
-                        data-bs-placement="right">{{jobUrl}}</code></small>
+                <span class="text-truncate d-block" title="{{request}}" data-bs-toggle="tooltip"
+                    data-bs-placement="right">{{jobUrl}}</span>
             </td>
             <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
-            <td class="mw-40ch"><small><code class="text-truncate d-block" title="{{message}}" data-bs-toggle="tooltip"
-                        data-bs-placement="right">{{message}}</code></small></td>
-            <td><span class="badge rounded-pill bg-warning text-dark">{{numInputGranules}}</span></td>
+            <td class="mw-40ch"><span class="text-truncate d-block" title="{{message}}" data-bs-toggle="tooltip"
+                    data-bs-placement="right">{{message}}</span></td>
+            <td>{{numInputGranules}}</td>
             <td>{{progress}}%</td>
             <td class="date-td" data-time="{{jobCreatedAt}}"></td>
         </tr>
