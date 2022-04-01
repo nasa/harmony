@@ -154,7 +154,7 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by status IN [failed]', function () {
-      hookWorkflowUIJobs({ username: 'woody', status: JobStatus.FAILED.valueOf() });
+      hookWorkflowUIJobs({ username: 'woody', jobsFilter: '[{"value":"status: failed","dbValue":"failed","field":"status"}]' });
       it('returns only failed jobs', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
@@ -168,14 +168,15 @@ describe('Workflow UI jobs route', function () {
       });
       it('has the appropriate status options selected', function () {
         const listing = this.res.text;
-        expect((listing.match(/<option (?=.*value="failed")(?=.*selected).*>/g) || []).length).to.equal(1);
-        expect((listing.match(/<option (?=.*value="successful")(?!.*selected).*>/g) || []).length).to.equal(1);
-        expect((listing.match(/<option (?=.*value="running")(?!.*selected).*>/g) || []).length).to.equal(1);
+        expect(listing).to.contain('status: failed');
+        expect(listing).to.not.contain('status: successful');
+        expect(listing).to.not.contain('status: running');
       });
     });
 
     describe('who filters by status IN [failed, successful]', function () {
-      hookWorkflowUIJobs({ username: 'woody', disallowStatus: '', status: [JobStatus.FAILED.valueOf(), JobStatus.SUCCESSFUL.valueOf()] });
+      const jobsFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowStatus: '', jobsFilter });
       it('returns failed and successful jobs', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(2);
@@ -189,14 +190,15 @@ describe('Workflow UI jobs route', function () {
       });
       it('has the appropriate status options selected', function () {
         const listing = this.res.text;
-        expect((listing.match(/<option (?=.*value="failed")(?=.*selected).*>/g) || []).length).to.equal(1);
-        expect((listing.match(/<option (?=.*value="successful")(?=.*selected).*>/g) || []).length).to.equal(1);
-        expect((listing.match(/<option (?=.*value="running")(?!.*selected).*>/g) || []).length).to.equal(1);
+        expect(listing).to.contain('status: failed');
+        expect(listing).to.contain('status: successful');
+        expect(listing).to.not.contain('status: running');
       });
     });
 
     describe('who filters by status NOT IN [failed, successful]', function () {
-      hookWorkflowUIJobs({ username: 'woody', disallowStatus: 'on', status: [JobStatus.FAILED.valueOf(), JobStatus.SUCCESSFUL.valueOf()] });
+      const jobsFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowStatus: 'on', jobsFilter });
       it('returns all jobs that are not failed or successful', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
@@ -210,9 +212,9 @@ describe('Workflow UI jobs route', function () {
       });
       it('has the appropriate status options selected', function () {
         const listing = this.res.text;
-        expect((listing.match(/<option (?=.*value="failed")(?=.*selected).*>/g) || []).length).to.equal(1);
-        expect((listing.match(/<option (?=.*value="successful")(?=.*selected).*>/g) || []).length).to.equal(1);
-        expect((listing.match(/<option (?=.*value="running")(?!.*selected).*>/g) || []).length).to.equal(1);
+        expect(listing).to.contain('status: failed');
+        expect(listing).to.contain('status: successful');
+        expect(listing).to.not.contain('status: running');
       });
     });
 

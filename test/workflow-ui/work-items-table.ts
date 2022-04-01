@@ -140,11 +140,11 @@ describe('Workflow UI work items table route', function () {
         const listing = this.res.text;
         [step1.serviceID, step2.serviceID]
           .forEach((workflowItemStep) => expect(listing).to.not.contain(
-            mustache.render('<td><small><code>{{workflowItemStep}}</code></small></td>', { workflowItemStep }),
+            mustache.render('<td>{{workflowItemStep}}</td>', { workflowItemStep }),
           ));
         [step1ServiceIdScrubbed, step2ServiceIdScrubbed]
           .forEach((workflowItemStep) => expect(listing).to.contain(
-            mustache.render('<td><small><code>{{workflowItemStep}}</code></small></td>', { workflowItemStep }),
+            mustache.render('<td>{{workflowItemStep}}</td>', { workflowItemStep }),
           ));
       });
     });
@@ -185,7 +185,7 @@ describe('Workflow UI work items table route', function () {
             .forEach((stepIndex) => expect(listing).to.contain(mustache.render('<th scope="row">{{stepIndex}}</th>', { stepIndex })));
           [step1ServiceIdScrubbed, step2ServiceIdScrubbed]
             .forEach((workflowItemStep) => expect(listing).to.contain(
-              mustache.render('<td><small><code>{{workflowItemStep}}</code></small></td>', { workflowItemStep }),
+              mustache.render('<td>{{workflowItemStep}}</td>', { workflowItemStep }),
             ));
           [1, 2, 3]
             .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));

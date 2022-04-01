@@ -4,7 +4,7 @@ function initFilter() {
   var filterInput = document.querySelector('input[name="jobsFilter"]');
   new Tagify(filterInput, {
     whitelist: [
-      { value: 'status: successful', dbValue: 'succesful', field: 'status'},
+      { value: 'status: successful', dbValue: 'successful', field: 'status'},
       { value: 'status: canceled', dbValue: "canceled", field: 'status'},
       { value: 'status: running', dbValue: "running", field: 'status'},
       { value: 'status: failed', dbValue: "failed", field: 'status'},
