@@ -11,6 +11,7 @@ function initFilter() {
       { value: 'status: accepted', dbValue: "accepted", field: 'status'},
     ],
     enforceWhitelist: true,
+    editTags: false,
     maxTags: 20,
     dropdown: {
       maxItems: 20,
