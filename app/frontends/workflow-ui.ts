@@ -101,7 +101,7 @@ export async function getJobs(
           return this.request;
         }
       },
-      // job table status dropdown HTML
+      // job table filters HTML
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       selectedFilters: jobFilters.originalValues,
       // job table paging buttons HTML
