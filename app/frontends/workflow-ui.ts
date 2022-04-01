@@ -12,6 +12,34 @@ import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
 
 /**
+ * Return an object that contains key value entries for jobs table filters.
+ * @param requestQuery - the Record given by keysToLowerCase
+ * @returns 
+ */
+function parseJobFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
+  requestQuery: Record<string, any>,
+): { 
+    statusValues: string[], // need for querying db
+    originalValues: string[] // needed for populating filter input
+  } {
+  if (!requestQuery.jobsfilter) {
+    return { 
+      statusValues: [], 
+      originalValues: [], 
+    };
+  }
+  const filters: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.jobsfilter);
+  const statusFilters = filters
+    .filter(filt => filt.field === 'status')
+    .map(filt => filt.dbValue);
+  const originalValues = filters.map(filt => filt.value);
+  return {
+    statusValues: statusFilters,
+    originalValues,
+  };
+}
+
+/**
  * Display jobs along with their status in the workflow UI.
  *
  * @param req - The request sent by the client
@@ -24,16 +52,18 @@ export async function getJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const requestQuery = keysToLowerCase(req.query);
+  console.log(requestQuery);
   try {
     const query: JobQuery = { where: {}, whereIn: {} };
     if (!req.context.isAdminAccess) {
       query.where.username = req.user;
     }
     const disallowStatus = requestQuery.disallowstatus === 'on';
-    if (requestQuery.status) {
+    const jobFilters = parseJobFilters(requestQuery);
+    console.log(jobFilters);
+    if (jobFilters.statusValues.length) {
       query.whereIn.status = {
-        values: typeof requestQuery.status === 'string' ? 
-          [requestQuery.status] : requestQuery.status,
+        values: jobFilters.statusValues,
         in: !disallowStatus,
       };
     }
@@ -74,15 +104,8 @@ export async function getJobs(
         }
       },
       // job table status dropdown HTML
-      jobStatuses: Object.values(JobStatus),
       disallowStatusChecked: disallowStatus ? 'checked' : '',
-      statusSelected: function () {
-        return function (status, render): string {
-          if (requestQuery.status && requestQuery.status.includes(render(status))) {
-            return render('selected');
-          }
-        };
-      },
+      selectedFilters: jobFilters.originalValues,
       // job table paging buttons HTML
       links: [
         { ...previousPage, linkTitle: 'previous' },

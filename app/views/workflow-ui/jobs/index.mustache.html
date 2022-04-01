@@ -49,14 +49,14 @@
                 <form action="{{currentPage}}" method="get">
                     <input type="hidden" name="page" value="{{page}}" />
                     <input type="hidden" name="limit" value="{{limit}}" />
-                    <input name="jobs-filter" class="jobs-filter" placeholder="add a filter" value="">
+                    <input name="jobsFilter" class="jobs-filter mb-2" placeholder="add a filter" value="{{selectedFilters}}">
                     <div class="form-check mb-3">
                         <input type="checkbox" class="form-check-input" name="disallowStatus" {{disallowStatusChecked}}>
                         <label class="form-check-label" for="disallowStatus">
                             negate statuses
                         </label>
                     </div>
-                    <button type="submit" id="apply-job-status" class="btn btn-primary btn-sm">∇ apply</button>
+                    <button type="submit" class="btn btn-primary btn-sm">∇ apply</button>
                 </form>
             </div>
             <div class="col-10">

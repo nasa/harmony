@@ -1,14 +1,14 @@
 import { formatDates, initTooltips } from "../table.js";
 
-function initFilters() {
-  var filterInput = document.querySelector('input[class="jobs-filter"]');
+function initFilter() {
+  var filterInput = document.querySelector('input[name="jobsFilter"]');
   new Tagify(filterInput, {
     whitelist: [
-      "status: successful",
-      "status: canceled",
-      "status: running",
-      "status: failed",
-      "status: accepted"
+      { value: 'status: successful', dbValue: 'succesful', field: 'status'},
+      { value: 'status: canceled', dbValue: "canceled", field: 'status'},
+      { value: 'status: running', dbValue: "running", field: 'status'},
+      { value: 'status: failed', dbValue: "failed", field: 'status'},
+      { value: 'status: accepted', dbValue: "accepted", field: 'status'},
     ],
     maxTags: 20,
     dropdown: {
@@ -27,6 +27,6 @@ export default {
   async init() {
     formatDates();
     initTooltips('[data-bs-toggle="tooltip"]');
-    initFilters();
+    initFilter();
   }
 }
