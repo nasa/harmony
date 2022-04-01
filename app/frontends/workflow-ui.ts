@@ -14,7 +14,7 @@ import { keysToLowerCase } from '../util/object';
 /**
  * Return an object that contains key value entries for jobs table filters.
  * @param requestQuery - the Record given by keysToLowerCase
- * @returns 
+ * @returns object containing filter values
  */
 function parseJobFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
   requestQuery: Record<string, any>,
@@ -52,7 +52,6 @@ export async function getJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const requestQuery = keysToLowerCase(req.query);
-  console.log(requestQuery);
   try {
     const query: JobQuery = { where: {}, whereIn: {} };
     if (!req.context.isAdminAccess) {
@@ -60,7 +59,6 @@ export async function getJobs(
     }
     const disallowStatus = requestQuery.disallowstatus === 'on';
     const jobFilters = parseJobFilters(requestQuery);
-    console.log(jobFilters);
     if (jobFilters.statusValues.length) {
       query.whereIn.status = {
         values: jobFilters.statusValues,
