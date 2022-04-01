@@ -10,6 +10,7 @@ function initFilter() {
       { value: 'status: failed', dbValue: "failed", field: 'status'},
       { value: 'status: accepted', dbValue: "accepted", field: 'status'},
     ],
+    enforceWhitelist: true,
     maxTags: 20,
     dropdown: {
       maxItems: 20,
