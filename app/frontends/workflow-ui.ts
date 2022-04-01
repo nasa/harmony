@@ -3,7 +3,7 @@ import { sanitizeImage } from '../util/string';
 import { validateJobId } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { getWorkItemsByJobId, WorkItemStatus } from '../models/work-item';
-import { NotFoundError } from '../util/errors';
+import { NotFoundError, RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
@@ -32,6 +32,14 @@ function parseJobFilters( /* eslint-disable @typescript-eslint/no-explicit-any *
   const statusFilters = filters
     .filter(filt => filt.field === 'status')
     .map(filt => filt.dbValue);
+  if (statusFilters.length > Object.keys(JobStatus).length) {
+    throw new RequestValidationError('Maximum amount of status filters was exceeded.');
+  }
+  for (const status of statusFilters) {
+    if (!Object.values<string>(JobStatus).includes(status)) {
+      throw new RequestValidationError(`Invalid status filter ${status} was requested.`);
+    }
+  }
   const originalValues = filters.map(filt => filt.value);
   return {
     statusValues: statusFilters,
