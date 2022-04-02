@@ -74,7 +74,7 @@ async function _handleWorkItemResults(
           href,
           type,
           title,
-          rel: asset.rel || 'data',
+          rel: 'data',
           temporal: {
             start: new Date(item.properties.start_datetime),
             end: new Date(item.properties.end_datetime),
