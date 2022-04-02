@@ -107,7 +107,7 @@ describe('cli', function () {
         expect(itemContext.bbox).to.eql([ 0.76, -3.8, 0.76, -3.8 ]);
         expect(itemContext.properties.start_datetime).to.equal('2020-01-01T00:00:00.000Z');
         expect(itemContext.properties.end_datetime).to.equal('2020-01-01T03:00:00.000Z');
-        expect(itemContext.assets['Giovanni URL'].href).to.equal('https://api.giovanni.earthdata.nasa.gov/proxy-timeseries?data=GPM_3IMERGHH_06_precipitationCal&location=%5B-3.8%2C0.76%5D&time=2020-01-01T00%3A00%3A00.000Z%2F2020-01-01T03%3A00%3A00.000Z');
+        expect(itemContext.assets['Giovanni URL'].href).to.equal('https://api.giovanni.uat.earthdata.nasa.gov/proxy-timeseries?data=GPM_3IMERGHH_06_precipitationCal&location=%5B-3.8%2C0.76%5D&time=2020-01-01T00%3A00%3A00.000Z%2F2020-01-01T03%3A00%3A00.000Z');
       });
     });
 
