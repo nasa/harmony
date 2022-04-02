@@ -69,7 +69,8 @@ async function _generateGiovanniURL(
   const giovanni_url_path = `${giovanni_service_name}?data=${giovanni_datafield}&location=${giovanni_location_param}&time=${giovanni_time_param}`;
   return {
     giovanni_url: `${giovanni_base_url}${giovanni_url_path}`,
-    giovanni_url_title: `Giovanni URL for time series of variable ${giovanni_datafield}`,
+    giovanni_url_title: `Giovanni URL for time series of variable ${giovanni_datafield} \
+(latitude = ${lat}, longitude = ${lon}, time range = [${time_start}, ${time_end}])`,
   };
 }
 
