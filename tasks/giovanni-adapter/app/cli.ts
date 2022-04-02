@@ -52,7 +52,7 @@ async function _generateGiovanniURL(
   if ( cmr_endpoint === 'https://cmr.earthdata.nasa.gov' ) {
     giovanni_base_url = 'https://api.giovanni.earthdata.nasa.gov/';
   } else if ( cmr_endpoint === 'https://cmr.uat.earthdata.nasa.gov' ) {
-    giovanni_base_url = 'https://api.giovanni.earthdata.nasa.gov/';
+    giovanni_base_url = 'https://api.giovanni.uat.earthdata.nasa.gov/';
   } else {
     throw new Error('CMR_ENDPOINT not set correctly.');
   }
