@@ -84,6 +84,7 @@ export async function getJobs(
       version,
       page,
       limit,
+      currentUser: req.user,
       currentPage: currentPage.href,
       isAdminRoute: req.context.isAdminAccess,
       // job table row HTML
