@@ -35,8 +35,8 @@ function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any *
     .filter(option => option.field === 'status')
     .map(option => option.dbValue);
   const userValues = selectedOptions
-    .filter(option => option.field === 'user')
-    .map(option => option.dbValue);
+    .filter(option => /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value))
+    .map(option => option.value.split('user: ')[1]);
   if (statusValues.length > Object.keys(JobStatus).length) {
     throw new RequestValidationError('Maximum amount of status filters was exceeded.');
   }
