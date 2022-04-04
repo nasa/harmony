@@ -28,21 +28,21 @@ function parseJobFilters( /* eslint-disable @typescript-eslint/no-explicit-any *
       originalValues: [], 
     };
   }
-  const filters: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.jobsfilter);
-  const statusFilters = filters
-    .filter(filt => filt.field === 'status')
-    .map(filt => filt.dbValue);
-  if (statusFilters.length > Object.keys(JobStatus).length) {
+  const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.jobsfilter);
+  const statusValues = selectedOptions
+    .filter(option => option.field === 'status')
+    .map(option => option.dbValue);
+  if (statusValues.length > Object.keys(JobStatus).length) {
     throw new RequestValidationError('Maximum amount of status filters was exceeded.');
   }
-  for (const status of statusFilters) {
+  for (const status of statusValues) {
     if (!Object.values<string>(JobStatus).includes(status)) {
       throw new RequestValidationError(`Invalid status filter ${status} was requested.`);
     }
   }
-  const originalValues = filters.map(filt => filt.value);
+  const originalValues = selectedOptions.map(option => option.value);
   return {
-    statusValues: statusFilters,
+    statusValues: statusValues,
     originalValues,
   };
 }
