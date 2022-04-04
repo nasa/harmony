@@ -26,7 +26,7 @@ export const SUCCESSFUL_WORK_ITEM_STATUSES = [WorkItemStatus.SUCCESSFUL];
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
-  'stacCatalogLocation', 'workflowStepIndex',
+  'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex',
 ];
 
 export interface WorkItemRecord {
@@ -56,6 +56,9 @@ export interface WorkItemRecord {
 
   // The location of the resulting STAC catalog(s) (not serialized)
   results?: string[];
+
+  // The sum of the sizes of the granules associated with this work item
+  totalGranulesSize?: number;
 
   // The last time the record was updated
   updatedAt: Date;
@@ -99,6 +102,9 @@ export default class WorkItem extends Record implements WorkItemRecord {
   // The location of the resulting STAC catalog(s) (not serialized)
   results?: string[];
 
+  // The sum of the sizes of the granules associated with this work item
+  totalGranulesSize?: number;
+
   /**
    * Saves the work item to the database using the given transaction.
    *
@@ -106,7 +112,9 @@ export default class WorkItem extends Record implements WorkItemRecord {
    */
   async save(transaction: Transaction): Promise<void> {
     const record = _.pick(this, serializedFields);
+    // record.totalGranulesSize = 0;
     await super.save(transaction, record);
+    logger.info('OK');
   }
 }
 
@@ -205,11 +213,13 @@ export async function getNextWorkItem(
  * @param tx - the transaction to use for querying
  * @param id - the id of the WorkItem
  * @param status - the status to set for the WorkItem
+ * @param totalGranulesSize - the combined sizes of all the input granules for this work item
  */
 export async function updateWorkItemStatus(
   tx: Transaction,
   id: string,
   status: WorkItemStatus,
+  totalGranulesSize: number,
 ): Promise<void> {
   const workItem = await tx(WorkItem.table)
     .forUpdate()
@@ -219,7 +229,7 @@ export async function updateWorkItemStatus(
 
   if (workItem) {
     await tx(WorkItem.table)
-      .update({ status, updatedAt: new Date() })
+      .update({ status, totalGranulesSize, updatedAt: new Date() })
       .where({ id: workItem.id });
   } else {
     throw new Error(`id [${id}] does not exist in table ${WorkItem.table}`);

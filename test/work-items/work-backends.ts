@@ -80,7 +80,7 @@ describe('Work Backends', function () {
       it('returns the correct fields for a work item', function () {
         expect(Object.keys(this.res.body)).to.eql([
           'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
-          'stacCatalogLocation', 'workflowStepIndex', 'operation',
+          'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'operation',
         ]);
       });
 
