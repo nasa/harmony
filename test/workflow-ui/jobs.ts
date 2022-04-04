@@ -248,8 +248,26 @@ describe('Workflow UI jobs route', function () {
 
         it('shows the users that submitted those jobs', async function () {
           const listing = this.res.text;
-          expect(listing).to.contain('woody');
-          expect(listing).to.contain('buzz');
+          expect(listing).to.contain('<td>woody</td>');
+          expect(listing).to.contain('<td>buzz</td>');
+        });
+      });
+
+      describe('when the admin filters the jobs by user IN [woody]', function () {
+        hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: woody"}]' });
+        it('only contains jobs submitted by woody', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('<td>woody</td>');
+          expect(listing).to.not.contain('<td>buzz</td>');
+        });
+      });
+
+      describe('when the admin filters the jobs by user NOT IN [woody]', function () {
+        hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: woody"}]', disallowUser: 'on' });
+        it('does not contain jobs submitted by woody', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain('<td>woody</td>');
+          expect(listing).to.contain('<td>buzz</td>');
         });
       });
 
