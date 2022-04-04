@@ -81,6 +81,7 @@ export interface JobQuery {
   };
   whereIn?: {
     status?: { in: boolean, values: string[] };
+    username?: { in: boolean, values: string[] };
   }
 }
 

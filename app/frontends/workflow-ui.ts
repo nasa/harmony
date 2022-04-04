@@ -20,17 +20,22 @@ function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any *
   requestQuery: Record<string, any>,
 ): { 
     statusValues: string[], // need for querying db
+    userValues: string[], // need for querying db
     originalValues: string[] // needed for populating filter input
   } {
   if (!requestQuery.jobsfilter) {
     return { 
-      statusValues: [], 
+      statusValues: [],
+      userValues: [], 
       originalValues: [], 
     };
   }
   const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.jobsfilter);
   const statusValues = selectedOptions
     .filter(option => option.field === 'status')
+    .map(option => option.dbValue);
+  const userValues = selectedOptions
+    .filter(option => option.field === 'user')
     .map(option => option.dbValue);
   if (statusValues.length > Object.keys(JobStatus).length) {
     throw new RequestValidationError('Maximum amount of status filters was exceeded.');
@@ -42,7 +47,8 @@ function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any *
   }
   const originalValues = selectedOptions.map(option => option.value);
   return {
-    statusValues: statusValues,
+    statusValues,
+    userValues,
     originalValues,
   };
 }
@@ -66,10 +72,17 @@ export async function getJobs(
       query.where.username = req.user;
     }
     const disallowStatus = requestQuery.disallowstatus === 'on';
+    const disallowUser = requestQuery.disallowuser === 'on';
     const jobsFilter = parseJobsFilter(requestQuery);
     if (jobsFilter.statusValues.length) {
       query.whereIn.status = {
         values: jobsFilter.statusValues,
+        in: !disallowStatus,
+      };
+    }
+    if (jobsFilter.userValues.length) {
+      query.whereIn.username = {
+        values: jobsFilter.userValues,
         in: !disallowStatus,
       };
     }
@@ -112,6 +125,7 @@ export async function getJobs(
       },
       // job table filters HTML
       disallowStatusChecked: disallowStatus ? 'checked' : '',
+      disallowUserChecked: disallowUser ? 'checked' : '',
       selectedFilters: jobsFilter.originalValues,
       // job table paging buttons HTML
       links: [
