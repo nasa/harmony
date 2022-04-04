@@ -83,7 +83,7 @@ export async function getJobs(
     if (jobsFilter.userValues.length) {
       query.whereIn.username = {
         values: jobsFilter.userValues,
-        in: !disallowStatus,
+        in: !disallowUser,
       };
     }
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
