@@ -16,7 +16,7 @@ import { keysToLowerCase } from '../util/object';
  * @param requestQuery - the Record given by keysToLowerCase
  * @returns object containing filter values
  */
-function parseJobFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
+function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any */
   requestQuery: Record<string, any>,
 ): { 
     statusValues: string[], // need for querying db
@@ -66,7 +66,7 @@ export async function getJobs(
       query.where.username = req.user;
     }
     const disallowStatus = requestQuery.disallowstatus === 'on';
-    const jobFilters = parseJobFilters(requestQuery);
+    const jobFilters = parseJobsFilter(requestQuery);
     if (jobFilters.statusValues.length) {
       query.whereIn.status = {
         values: jobFilters.statusValues,
