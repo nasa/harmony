@@ -65,8 +65,8 @@ function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any *
 export async function getJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  const requestQuery = keysToLowerCase(req.query);
   try {
+    const requestQuery = keysToLowerCase(req.query);
     const query: JobQuery = { where: {}, whereIn: {} };
     if (!req.context.isAdminAccess) {
       query.where.username = req.user;
