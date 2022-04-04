@@ -30,9 +30,9 @@ function initFilter(currentUser, isAdminRoute) {
       return false;
     },
     editTags: false,
-    maxTags: 20,
+    maxTags: 30,
     dropdown: {
-      maxItems: 20,
+      maxItems: 15,
       enabled: 0,
       closeOnSelect: true
     }

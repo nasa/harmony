@@ -14,10 +14,12 @@ import { keysToLowerCase } from '../util/object';
 /**
  * Return an object that contains key value entries for jobs table filters.
  * @param requestQuery - the Record given by keysToLowerCase
+ * @param maxFilters - set a limit on the number of user requested filters
  * @returns object containing filter values
  */
 function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any */
   requestQuery: Record<string, any>,
+  maxFilters = 30,
 ): { 
     statusValues: string[], // need for querying db
     userValues: string[], // need for querying db
@@ -37,8 +39,8 @@ function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any *
   const userValues = selectedOptions
     .filter(option => /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value))
     .map(option => option.value.split('user: ')[1]);
-  if (statusValues.length > Object.keys(JobStatus).length) {
-    throw new RequestValidationError('Maximum amount of status filters was exceeded.');
+  if ((statusValues.length + userValues.length) > maxFilters) {
+    throw new RequestValidationError(`Maximum amount of filters ${maxFilters} was exceeded.`);
   }
   for (const status of statusValues) {
     if (!Object.values<string>(JobStatus).includes(status)) {
