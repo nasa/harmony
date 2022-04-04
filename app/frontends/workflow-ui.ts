@@ -33,21 +33,18 @@ function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any *
     };
   }
   const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.jobsfilter);
-  const statusValues = selectedOptions
-    .filter(option => option.field === 'status')
-    .map(option => option.dbValue);
-  const userValues = selectedOptions
-    .filter(option => /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value))
-    .map(option => option.value.split('user: ')[1]);
+  const validStatusSelections = selectedOptions
+    .filter(option => option.field === 'status' && Object.values<string>(JobStatus).includes(option.dbValue));
+  const statusValues = validStatusSelections.map(option => option.dbValue);
+  const validUserSelections = selectedOptions
+    .filter(option => /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
+  const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
   if ((statusValues.length + userValues.length) > maxFilters) {
-    throw new RequestValidationError(`Maximum amount of filters ${maxFilters} was exceeded.`);
+    throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
   }
-  for (const status of statusValues) {
-    if (!Object.values<string>(JobStatus).includes(status)) {
-      throw new RequestValidationError(`Invalid status filter ${status} was requested.`);
-    }
-  }
-  const originalValues = selectedOptions.map(option => option.value);
+  const originalValues = validStatusSelections
+    .concat(validUserSelections)
+    .map(option => option.value);
   return {
     statusValues,
     userValues,

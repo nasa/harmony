@@ -196,6 +196,24 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
+    describe('who filters by an invalid status (working)', function () {
+      hookWorkflowUIJobs({ username: 'woody', jobsFilter: '[{"value":"status: working","dbValue":"working","field":"status"}, {"value":"status: running","dbValue":"running","field":"status"}]' });
+      it('ignores the invalid status', function () {
+        const listing = this.res.text;
+        expect(listing).to.not.contain('status: working');
+        expect(listing).to.contain('status: running');
+      });
+    });
+
+    describe('who filters by an invalid username (w oody)', function () {
+      hookWorkflowUIJobs({ username: 'woody', jobsFilter: '[{"value":"user: w oody"}, {"value":"user: woody"}]' });
+      it('ignores the invalid username', function () {
+        const listing = this.res.text;
+        expect(listing).to.not.contain('user: w oody');
+        expect(listing).to.contain('user: woody');
+      });
+    });
+
     describe('who filters by status NOT IN [failed, successful]', function () {
       const jobsFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
       hookWorkflowUIJobs({ username: 'woody', disallowStatus: 'on', jobsFilter });
