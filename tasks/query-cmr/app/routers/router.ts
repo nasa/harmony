@@ -36,15 +36,21 @@ async function doWork(req: Request, res: Response, next: NextFunction): Promise<
     timingLogger.info('timing.query-cmr.start');
     await fs.mkdir(workReq.outputDir, { recursive: true });
 
-    const catalogs = workReq.scrollId
-      ? await queryGranulesScrolling(operation, workReq.scrollId)
-      : await queryGranules(
+    let catalogs;
+    let totalGranulesSize = 0;
+    if (workReq.scrollId) {
+      const results = await queryGranulesScrolling(operation, workReq.scrollId);
+      [totalGranulesSize, catalogs] = results;
+
+    } else {
+      catalogs = await queryGranules(
         operation,
         workReq.query as string[],
         workReq.pageSize,
         workReq.maxPages,
         workReq.batchSize,
       );
+    }
 
     const catalogFilenames = [];
     const promises = catalogs.map(async (catalog, i) => {
@@ -63,7 +69,7 @@ async function doWork(req: Request, res: Response, next: NextFunction): Promise<
     await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
 
     res.status(200);
-    res.send('OK');
+    res.send(JSON.stringify({ totalGranulesSize: totalGranulesSize }));
 
     const durationMs = new Date().getTime() - startTime;
     timingLogger.info('timing.query-cmr.end', { durationMs });

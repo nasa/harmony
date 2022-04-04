@@ -75,6 +75,7 @@ export interface CmrGranule {
   lines?: string[];
   polygons?: string[][];
   links?: CmrGranuleLink[];
+  granule_size?: string;
   title: string;
   time_start: string;
   time_end: string;

@@ -112,9 +112,7 @@ export default class WorkItem extends Record implements WorkItemRecord {
    */
   async save(transaction: Transaction): Promise<void> {
     const record = _.pick(this, serializedFields);
-    // record.totalGranulesSize = 0;
     await super.save(transaction, record);
-    logger.info('OK');
   }
 }
 
