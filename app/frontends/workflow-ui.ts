@@ -66,10 +66,10 @@ export async function getJobs(
       query.where.username = req.user;
     }
     const disallowStatus = requestQuery.disallowstatus === 'on';
-    const jobFilters = parseJobsFilter(requestQuery);
-    if (jobFilters.statusValues.length) {
+    const jobsFilter = parseJobsFilter(requestQuery);
+    if (jobsFilter.statusValues.length) {
       query.whereIn.status = {
-        values: jobFilters.statusValues,
+        values: jobsFilter.statusValues,
         in: !disallowStatus,
       };
     }
@@ -111,7 +111,7 @@ export async function getJobs(
       },
       // job table filters HTML
       disallowStatusChecked: disallowStatus ? 'checked' : '',
-      selectedFilters: jobFilters.originalValues,
+      selectedFilters: jobsFilter.originalValues,
       // job table paging buttons HTML
       links: [
         { ...previousPage, linkTitle: 'previous' },
