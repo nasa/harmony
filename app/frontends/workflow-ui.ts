@@ -67,27 +67,27 @@ export async function getJobs(
 ): Promise<void> {
   try {
     const requestQuery = keysToLowerCase(req.query);
-    const query: JobQuery = { where: {}, whereIn: {} };
+    const jobQuery: JobQuery = { where: {}, whereIn: {} };
     if (!req.context.isAdminAccess) {
-      query.where.username = req.user;
+      jobQuery.where.username = req.user;
     }
     const disallowStatus = requestQuery.disallowstatus === 'on';
     const disallowUser = requestQuery.disallowuser === 'on';
     const jobsFilter = parseJobsFilter(requestQuery);
     if (jobsFilter.statusValues.length) {
-      query.whereIn.status = {
+      jobQuery.whereIn.status = {
         values: jobsFilter.statusValues,
         in: !disallowStatus,
       };
     }
     if (jobsFilter.userValues.length) {
-      query.whereIn.username = {
+      jobQuery.whereIn.username = {
         values: jobsFilter.userValues,
         in: !disallowUser,
       };
     }
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
-    const { data: jobs, pagination } = await Job.queryAll(db, query, false, page, limit);
+    const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, false, page, limit);
     setPagingHeaders(res, pagination);
     const pageLinks = getPagingLinks(req, pagination);
     const nextPage = pageLinks.find((l) => l.rel === 'next');
