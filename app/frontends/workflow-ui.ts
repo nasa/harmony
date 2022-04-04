@@ -14,11 +14,13 @@ import { keysToLowerCase } from '../util/object';
 /**
  * Return an object that contains key value entries for jobs table filters.
  * @param requestQuery - the Record given by keysToLowerCase
+ * @param isAdminAccess - is the requesting user an admin
  * @param maxFilters - set a limit on the number of user requested filters
  * @returns object containing filter values
  */
 function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any */
   requestQuery: Record<string, any>,
+  isAdminAccess: boolean,
   maxFilters = 30,
 ): { 
     statusValues: string[], // need for querying db
@@ -37,7 +39,7 @@ function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any *
     .filter(option => option.field === 'status' && Object.values<string>(JobStatus).includes(option.dbValue));
   const statusValues = validStatusSelections.map(option => option.dbValue);
   const validUserSelections = selectedOptions
-    .filter(option => /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
+    .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
   const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
   if ((statusValues.length + userValues.length) > maxFilters) {
     throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
@@ -72,7 +74,7 @@ export async function getJobs(
     }
     const disallowStatus = requestQuery.disallowstatus === 'on';
     const disallowUser = requestQuery.disallowuser === 'on';
-    const jobsFilter = parseJobsFilter(requestQuery);
+    const jobsFilter = parseJobsFilter(requestQuery, req.context.isAdminAccess);
     if (jobsFilter.statusValues.length) {
       jobQuery.whereIn.status = {
         values: jobsFilter.statusValues,

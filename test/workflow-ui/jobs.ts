@@ -206,10 +206,10 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by an invalid username (w oody)', function () {
-      hookWorkflowUIJobs({ username: 'woody', jobsFilter: '[{"value":"user: w oody"}, {"value":"user: woody"}]' });
+      hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: w-oody"}, {"value":"user: woody"}]' });
       it('ignores the invalid username', function () {
         const listing = this.res.text;
-        expect(listing).to.not.contain('user: w oody');
+        expect(listing).to.not.contain('user: w-oody');
         expect(listing).to.contain('user: woody');
       });
     });
