@@ -133,7 +133,8 @@ export default async function getRequestMetrics(
       }
     });
 
-    const json2csv = new Parser({});
+    const fields = ['totalTime', 'numInputGranules', 'totalGranuleSize', 'harmonyGdalAdapter', 'harmonyServiceExample', 'harmonyNetcdfToZarr', 'swotReproject', 'varSubsetter', 'sdsMaskfill', 'trajectorySubsetter', 'podaacConcise', 'podaacL2Subsetter', 'giovanniAdapter'];
+    const json2csv = new Parser({ fields });
     const csv = json2csv.parse(rows);
     res.header('Content-Type', 'text/csv');
     res.send(csv);
