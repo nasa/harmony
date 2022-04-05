@@ -32,6 +32,7 @@ import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
 import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
+import getRequestMetrics from '../frontends/request-metrics';
 
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
@@ -204,6 +205,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/admin/jobs', getJobsListing);
   result.get('/admin/jobs/:jobID', getJobStatus);
   result.post('/admin/jobs/:jobID/cancel', cancelJob);
+  result.get('/admin/request-metrics', getRequestMetrics);
 
   result.get('/workflow-ui', getJobs);
   result.get('/workflow-ui/:jobID', getJob);

@@ -85,6 +85,7 @@
     "form-data": "^4.0.0",
     "gdal": "^0.10.1",
     "js-yaml": "^4.1.0",
+    "json2csv": "^5.0.7",
     "knex": "^0.95.14",
     "knex-paginate": "^2.3.0",
     "lodash": "^4.17.21",
