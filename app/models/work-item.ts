@@ -530,3 +530,27 @@ export async function getScrollIdForJob(
   }
   return null;
 }
+
+/**
+ * Returns the sum of the work item sizes for all work items for the provided jobID.
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the job
+ */
+export async function getTotalWorkItemSizeForJobID(
+  tx: Transaction,
+  jobID: string,
+): Promise<number> {
+  const results = await tx(WorkItem.table)
+    .select()
+    .sum('totalGranulesSize')
+    .where({ jobID });
+
+  let totalSize;
+  if (db.client.config.client === 'pg') {
+    totalSize = Number(results[0].sum);
+  } else {
+    totalSize = Number(results[0]['sum(`totalGranulesSize`)']);
+  }
+
+  return totalSize;
+}

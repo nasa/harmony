@@ -7,6 +7,7 @@ import db from '../util/db';
 import env = require('../util/env');
 import { getPagingParams } from '../util/pagination';
 import { Parser } from 'json2csv';
+import { getTotalWorkItemSizeForJobID } from '../models/work-item';
 
 
 interface RequestMetrics {
@@ -116,7 +117,6 @@ export default async function getRequestMetrics(
   req.context.logger.info(`Generating request metrics requested by user ${req.user}`);
   try {
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
-    req.context.logger.warn(`LIMIT IS ${limit}`);
     const rows = [];
     await db.transaction(async (tx) => {
       // Get all the jobs
@@ -128,7 +128,7 @@ export default async function getRequestMetrics(
         const row = getServiceMetricsFromSteps(steps, req.context.logger);
         row.numInputGranules = job.numInputGranules;
         row.totalTime = (job.updatedAt.getTime() - job.createdAt.getTime()) / 1000;
-        // row.totalGranuleSize = job.totalGranuleSize;
+        row.totalGranuleSize = await getTotalWorkItemSizeForJobID(tx, job.jobID);
         rows.push(row);
       }
     });
