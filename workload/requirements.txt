@@ -4,3 +4,7 @@ pandas ~= 1.1.4
 plotly-express ~= 0.4.1
 jupyter ~= 1.0.0
 pygments ~= 2.7.4
+xhtml2pdf ~= 0.2.6
+notebook ~= 6.4.3
+ipywidgets ~= 7.5
+mistune>=2.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
