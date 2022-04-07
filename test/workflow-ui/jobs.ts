@@ -33,8 +33,8 @@ const woodyJob2 = buildJob({
 
 const woodySyncJob = buildJob({
   username: 'woody',
-  status: JobStatus.RUNNING,
-  message: 'In progress',
+  status: JobStatus.FAILED,
+  message: 'The job failed :(',
   progress: 0,
   links: [],
   request: 'http://example.com/harmony?request=woody2',
@@ -107,7 +107,7 @@ describe('Workflow UI jobs route', function () {
         expect(this.res.statusCode).to.equal(200);
       });
 
-      it('returns an HTML table of info regarding the user’s jobs', function () {
+      it('returns an HTML table of info regarding the user\'s jobs', function () {
         const listing = this.res.text;
         [woodyJob1.request, woodyJob2.request, woodySyncJob.request]
           .forEach((req) => expect(listing).to.contain(mustache.render('{{req}}', { req })));
@@ -153,6 +153,89 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
+    describe('who filters by status IN [failed]', function () {
+      hookWorkflowUIJobs({ username: 'woody', jobsFilter: '[{"value":"status: failed","dbValue":"failed","field":"status"}]' });
+      it('returns only failed jobs', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+        expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+      });
+      it('does not have disallowStatus HTML checked', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+      });
+      it('has the appropriate status options selected', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain('status: failed');
+        expect(listing).to.not.contain('status: successful');
+        expect(listing).to.not.contain('status: running');
+      });
+    });
+
+    describe('who filters by status IN [failed, successful]', function () {
+      const jobsFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowStatus: '', jobsFilter });
+      it('returns failed and successful jobs', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(2);
+        expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+      });
+      it('does not have disallowStatus HTML checked', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+      });
+      it('has the appropriate status options selected', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain('status: failed');
+        expect(listing).to.contain('status: successful');
+        expect(listing).to.not.contain('status: running');
+      });
+    });
+
+    describe('who filters by an invalid status (working)', function () {
+      hookWorkflowUIJobs({ username: 'woody', jobsFilter: '[{"value":"status: working","dbValue":"working","field":"status"}, {"value":"status: running","dbValue":"running","field":"status"}]' });
+      it('ignores the invalid status', function () {
+        const listing = this.res.text;
+        expect(listing).to.not.contain('status: working');
+        expect(listing).to.contain('status: running');
+      });
+    });
+
+    describe('who filters by an invalid username (jo)', function () {
+      hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: jo"}, {"value":"user: woody"}]' });
+      it('ignores the invalid username', function () {
+        const listing = this.res.text;
+        expect(listing).to.not.contain('user: jo');
+        expect(listing).to.contain('user: woody');
+      });
+    });
+
+    describe('who filters by status NOT IN [failed, successful]', function () {
+      const jobsFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowStatus: 'on', jobsFilter });
+      it('returns all jobs that are not failed or successful', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+        expect(listing).to.not.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+      });
+      it('does have disallowStatus HTML checked', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowStatus")(?=.*checked).*>/g) || []).length).to.equal(1);
+      });
+      it('has the appropriate status options selected', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain('status: failed');
+        expect(listing).to.contain('status: successful');
+        expect(listing).to.not.contain('status: running');
+      });
+    });
+
     describe('when accessing the admin endpoint', function () {
       describe('when the user is part of the admin group', function () {
         hookAdminWorkflowUIJobs({ username: 'adam', limit: 100 });
@@ -165,8 +248,26 @@ describe('Workflow UI jobs route', function () {
 
         it('shows the users that submitted those jobs', async function () {
           const listing = this.res.text;
-          expect(listing).to.contain('woody');
-          expect(listing).to.contain('buzz');
+          expect(listing).to.contain('<td>woody</td>');
+          expect(listing).to.contain('<td>buzz</td>');
+        });
+      });
+
+      describe('when the admin filters the jobs by user IN [woody]', function () {
+        hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: woody"}]' });
+        it('only contains jobs submitted by woody', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('<td>woody</td>');
+          expect(listing).to.not.contain('<td>buzz</td>');
+        });
+      });
+
+      describe('when the admin filters the jobs by user NOT IN [woody]', function () {
+        hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: woody"}]', disallowUser: 'on' });
+        it('does not contain jobs submitted by woody', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain('<td>woody</td>');
+          expect(listing).to.contain('<td>buzz</td>');
         });
       });
 

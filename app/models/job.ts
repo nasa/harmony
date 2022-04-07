@@ -65,18 +65,24 @@ export interface JobRecord {
 }
 
 export interface JobQuery {
-  id?: number;
-  jobID?: string;
-  username?: string;
-  requestId?: string;
-  status?: JobStatus;
-  message?: string;
-  progress?: number;
-  batchesCompleted?: number;
-  request?: string;
-  isAsync?: boolean;
-  createdAt?: number;
-  updatedAt?: number;
+  where?: {
+    id?: number;
+    jobID?: string;
+    username?: string;
+    requestId?: string;
+    status?: string;
+    message?: string;
+    progress?: number;
+    batchesCompleted?: number;
+    request?: string;
+    isAsync?: boolean;
+    createdAt?: number;
+    updatedAt?: number;
+  };
+  whereIn?: {
+    status?: { in: boolean, values: string[] };
+    username?: { in: boolean, values: string[] };
+  }
 }
 
 /**
@@ -147,8 +153,20 @@ export class Job extends Record implements JobRecord {
   ): Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
     const items = await transaction('jobs')
       .select()
-      .where(constraints)
+      .where(constraints.where)
       .orderBy('createdAt', 'desc')
+      .modify((queryBuilder) => {
+        if (constraints.whereIn) {
+          for (const jobField in constraints.whereIn) {
+            const constraint = constraints.whereIn[jobField];
+            if (constraint.in) {
+              queryBuilder.whereIn(jobField, constraint.values);
+            } else {
+              queryBuilder.whereNotIn(jobField, constraint.values);
+            }
+          }
+        }
+      })
       .paginate({ currentPage, perPage, isLengthAware: true });
 
     const jobs = items.data.map((j) => new Job(j));
@@ -212,7 +230,7 @@ export class Job extends Record implements JobRecord {
    */
   static forUser(transaction: Transaction, username: string, currentPage = 0, perPage = 10):
   Promise<{ data: Job[]; pagination: ILengthAwarePagination }> {
-    return this.queryAll(transaction, { username }, true, currentPage, perPage);
+    return this.queryAll(transaction, { where: { username } }, true, currentPage, perPage);
   }
 
   /**
@@ -223,7 +241,7 @@ export class Job extends Record implements JobRecord {
   * @returns the Job with the given JobID or null if not found
   */
   static async byJobID(transaction: Transaction, jobID: string): Promise<Job | null> {
-    const jobList = await this.queryAll(transaction, { jobID }, true, 0, 1);
+    const jobList = await this.queryAll(transaction, { where: { jobID } }, true, 0, 1);
     return jobList.data.shift();
   }
 
