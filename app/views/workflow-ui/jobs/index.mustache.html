@@ -58,13 +58,15 @@
                             negate statuses
                         </label>
                     </div>
-                    <div class="form-check mb-3">
+                    {{#isAdminRoute}}
+                    <div class="form-check">
                         <input type="checkbox" class="form-check-input" name="disallowUser" {{disallowUserChecked}}>
                         <label class="form-check-label" for="disallowUser">
                             negate users
                         </label>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm">∇ apply</button>
+                    {{/isAdminRoute}}
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">∇ apply</button>
                 </form>
             </div>
             <div class="col-10">
