@@ -10,7 +10,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { exit } from 'process';
 
-
+const POLLING_DELAY = 500;
 const axiosGetWork = createAxiosClientWithRetry(Infinity, 90_000, 3);
 const axiosUpdateWork = createAxiosClientWithRetry(6, Infinity, 3);
 
@@ -106,8 +106,8 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     }
 
     pullCounter += 1;
+    logger.debug('Polling for work');
     if (pullCounter === pullLogPeriod) {
-      logger.debug('Polling for work');
       pullCounter = 0;
     }
 
@@ -148,7 +148,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       logger.error('Failed to delete /tmp/WORKING');
     }
     if (repeat) {
-      setTimeout(_pullAndDoWork, 5000);
+      setTimeout(_pullAndDoWork, POLLING_DELAY);
     }
   }
 }

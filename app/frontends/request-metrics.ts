@@ -8,7 +8,15 @@ import env = require('../util/env');
 import { getPagingParams } from '../util/pagination';
 import { Parser } from 'json2csv';
 import { getTotalWorkItemSizeForJobID } from '../models/work-item';
+import _ from 'lodash';
 
+const fields = [
+  'totalTime', 'numInputGranules', 'totalGranuleSize', 'numVariables', 'concatenate',
+  'reproject', 'synchronous', 'spatialSubset', 'shapefileSubset', 'chainLength',
+  'harmonyGdalAdapter', 'harmonyServiceExample', 'harmonyNetcdfToZarr', 'swotReproject',
+  'varSubsetter', 'sdsMaskfill', 'trajectorySubsetter', 'podaacConcise',
+  'podaacL2Subsetter', 'giovanniAdapter',
+];
 
 interface RequestMetrics {
   harmonyGdalAdapter: number;
@@ -24,6 +32,13 @@ interface RequestMetrics {
   numInputGranules: number;
   totalGranuleSize: number;
   totalTime: number;
+  numVariables: number;
+  concatenate: number;
+  reproject: number;
+  synchronous: number;
+  spatialSubset: number;
+  shapefileSubset: number;
+  chainLength: number;
 }
 
 /**
@@ -90,13 +105,43 @@ function getServiceMetricsFromSteps(steps: WorkflowStep[], logger: Logger): Part
     podaacConcise: 0,
     podaacL2Subsetter: 0,
     giovanniAdapter: 0,
+    numVariables: 0,
+    concatenate: 0,
+    reproject: 0,
+    spatialSubset: 0,
+    shapefileSubset: 0,
+    chainLength: 0,
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mergedOperation: any = {};
   for (const step of steps) {
     const serviceName = getServiceNameFromID(step.serviceID, logger);
     if (row.hasOwnProperty(serviceName)) {
       row[serviceName] = 1;
     }
+    mergedOperation = _.merge(mergedOperation, JSON.parse(step.operation));
+  }
+
+  row.chainLength = steps?.length || 0;
+  row.numVariables = mergedOperation.sources.reduce(
+    (total, s) => total + (s.variables?.length || 0),
+    0);
+
+  if (mergedOperation.concatenate) {
+    row.concatenate = 1;
+  }
+
+  if (mergedOperation.format?.crs) {
+    row.reproject = 1;
+  }
+
+  if (mergedOperation.subset?.bbox?.length > 0) {
+    row.spatialSubset = 1;
+  }
+
+  if (mergedOperation.subset?.shape) {
+    row.shapefileSubset = 1;
   }
 
   return row;
@@ -119,21 +164,23 @@ export default async function getRequestMetrics(
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const rows = [];
     await db.transaction(async (tx) => {
-      // Get all the jobs
+      // Get all the jobs - jobs by default are returned with most recent job first
       const jobs = await Job.queryAll(tx, { status: JobStatus.SUCCESSFUL }, false, page, limit);
 
-      // For each job get the workflow steps for that job
       for (const job of jobs.data) {
         const steps = await getWorkflowStepsByJobId(tx, job.jobID);
         const row = getServiceMetricsFromSteps(steps, req.context.logger);
         row.numInputGranules = job.numInputGranules;
         row.totalTime = (job.updatedAt.getTime() - job.createdAt.getTime()) / 1000;
         row.totalGranuleSize = await getTotalWorkItemSizeForJobID(tx, job.jobID);
+        row.synchronous = 1;
+        if (job.isAsync) {
+          row.synchronous = 0;
+        }
         rows.push(row);
       }
     });
 
-    const fields = ['totalTime', 'numInputGranules', 'totalGranuleSize', 'harmonyGdalAdapter', 'harmonyServiceExample', 'harmonyNetcdfToZarr', 'swotReproject', 'varSubsetter', 'sdsMaskfill', 'trajectorySubsetter', 'podaacConcise', 'podaacL2Subsetter', 'giovanniAdapter'];
     const json2csv = new Parser({ fields });
     const csv = json2csv.parse(rows);
     res.header('Content-Type', 'text/csv');
