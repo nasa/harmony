@@ -387,8 +387,12 @@ describe('query#queryGranulesScrolling', function () {
   describe('when called with valid input sources and queries', async function () {
     hookQueryGranulesScrolling();
 
+    it('returns the combined granules sizes', function () {
+      expect(this.result[0]).to.be.greaterThan(0);
+    });
+
     it('returns a STAC catalog for each granule, each with a single item link and STAC item', function () {
-      expect(this.result[0].links).to.eql([{
+      expect(this.result[1][0].links).to.eql([{
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
@@ -397,7 +401,7 @@ describe('query#queryGranulesScrolling', function () {
         title: '001_00_7f00ff_global',
         type: 'application/json',
       }]);
-      expect(this.result[1].links).to.eql([{
+      expect(this.result[1][1].links).to.eql([{
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
@@ -406,7 +410,7 @@ describe('query#queryGranulesScrolling', function () {
         title: '001_01_7f00ff_africa',
         type: 'application/json',
       }]);
-      expect(this.result[2].links).to.eql([{
+      expect(this.result[1][2].links).to.eql([{
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
@@ -415,13 +419,13 @@ describe('query#queryGranulesScrolling', function () {
         title: '001_01_7f00ff_africa_poly',
         type: 'application/json',
       }]);
-      expect(this.result.length).to.equal(3);
+      expect(this.result[1].length).to.equal(3);
 
-      for (const catalog of this.result) {
+      for (const catalog of this.result[1]) {
         expect(catalog.links.filter((l) => l.rel === 'item').length).to.equal(1);
       }
 
-      for (const catalog of this.result) {
+      for (const catalog of this.result[1]) {
         expect(catalog.children.length).to.equal(1);
       }
     });
