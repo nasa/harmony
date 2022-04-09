@@ -3,12 +3,56 @@ import { sanitizeImage } from '../util/string';
 import { validateJobId } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { getWorkItemsByJobId, WorkItemStatus } from '../models/work-item';
-import { NotFoundError } from '../util/errors';
+import { NotFoundError, RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 import version from '../util/version';
 import env = require('../util/env');
+import { keysToLowerCase } from '../util/object';
+
+/**
+ * Return an object that contains key value entries for jobs table filters.
+ * @param requestQuery - the Record given by keysToLowerCase
+ * @param isAdminAccess - is the requesting user an admin
+ * @param maxFilters - set a limit on the number of user requested filters
+ * @returns object containing filter values
+ */
+function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any */
+  requestQuery: Record<string, any>,
+  isAdminAccess: boolean,
+  maxFilters = 30,
+): { 
+    statusValues: string[], // need for querying db
+    userValues: string[], // need for querying db
+    originalValues: string[] // needed for populating filter input
+  } {
+  if (!requestQuery.jobsfilter) {
+    return { 
+      statusValues: [],
+      userValues: [], 
+      originalValues: [], 
+    };
+  }
+  const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.jobsfilter);
+  const validStatusSelections = selectedOptions
+    .filter(option => option.field === 'status' && Object.values<string>(JobStatus).includes(option.dbValue));
+  const statusValues = validStatusSelections.map(option => option.dbValue);
+  const validUserSelections = selectedOptions
+    .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
+  const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
+  if ((statusValues.length + userValues.length) > maxFilters) {
+    throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
+  }
+  const originalValues = validStatusSelections
+    .concat(validUserSelections)
+    .map(option => option.value);
+  return {
+    statusValues,
+    userValues,
+    originalValues,
+  };
+}
 
 /**
  * Display jobs along with their status in the workflow UI.
@@ -22,27 +66,53 @@ import env = require('../util/env');
 export async function getJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  const badgeClasses = {};
-  badgeClasses[JobStatus.ACCEPTED] = 'primary';
-  badgeClasses[JobStatus.CANCELED] = 'secondary';
-  badgeClasses[JobStatus.FAILED] = 'danger';
-  badgeClasses[JobStatus.SUCCESSFUL] = 'success';
-  badgeClasses[JobStatus.RUNNING] = 'info';
   try {
-    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
-    const query: JobQuery = {};
+    const requestQuery = keysToLowerCase(req.query);
+    const jobQuery: JobQuery = { where: {}, whereIn: {} };
     if (!req.context.isAdminAccess) {
-      query.username = req.user;
+      jobQuery.where.username = req.user;
     }
-    const { data: jobs, pagination } = await Job.queryAll(db, query, false, page, limit);
+    const disallowStatus = requestQuery.disallowstatus === 'on';
+    const disallowUser = requestQuery.disallowuser === 'on';
+    const jobsFilter = parseJobsFilter(requestQuery, req.context.isAdminAccess);
+    if (jobsFilter.statusValues.length) {
+      jobQuery.whereIn.status = {
+        values: jobsFilter.statusValues,
+        in: !disallowStatus,
+      };
+    }
+    if (jobsFilter.userValues.length) {
+      jobQuery.whereIn.username = {
+        values: jobsFilter.userValues,
+        in: !disallowUser,
+      };
+    }
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
+    const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, false, page, limit);
+    setPagingHeaders(res, pagination);
     const pageLinks = getPagingLinks(req, pagination);
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
-    setPagingHeaders(res, pagination);
+    const currentPage = pageLinks.find((l) => l.rel === 'self');
     res.render('workflow-ui/jobs/index', {
-      jobs,
       version,
-      jobBadge() { return badgeClasses[this.status]; },
+      page,
+      limit,
+      currentUser: req.user,
+      currentPage: currentPage.href,
+      isAdminRoute: req.context.isAdminAccess,
+      // job table row HTML
+      jobs,
+      jobBadge() { 
+        return {
+          [JobStatus.ACCEPTED]: 'primary',
+          [JobStatus.CANCELED]: 'secondary',
+          [JobStatus.FAILED]: 'danger',
+          [JobStatus.SUCCESSFUL]: 'success',
+          [JobStatus.RUNNING]: 'info',
+        }[this.status]; 
+      },
+      jobCreatedAt() { return this.createdAt.getTime(); },
       jobUrl() {
         try {
           const url = new URL(this.request);
@@ -54,14 +124,17 @@ export async function getJobs(
           return this.request;
         }
       },
-      jobCreatedAt() { return this.createdAt.getTime(); },
+      // job table filters HTML
+      disallowStatusChecked: disallowStatus ? 'checked' : '',
+      disallowUserChecked: disallowUser ? 'checked' : '',
+      selectedFilters: jobsFilter.originalValues,
+      // job table paging buttons HTML
       links: [
         { ...previousPage, linkTitle: 'previous' },
         { ...nextPage, linkTitle: 'next' },
       ],
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() { return (this.href || ''); },
-      isAdminRoute: req.context.isAdminAccess,
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -84,9 +157,9 @@ export async function getJob(
   try {
     validateJobId(jobID);
     const { page, limit } = getPagingParams(req, 1000);
-    const query: JobQuery = { requestId: jobID };
+    const query: JobQuery = { where: { requestId: jobID } };
     if (!req.context.isAdminAccess) {
-      query.username = req.user;
+      query.where.username = req.user;
     }
     const { job } = await Job.byRequestId(db, jobID, 0, 0);
     if (job) {
@@ -130,9 +203,9 @@ export async function getWorkItemsTable(
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
   try {
     validateJobId(jobID);
-    const query: JobQuery = { requestId: jobID };
+    const query: JobQuery = { where: { requestId: jobID } };
     if (!req.context.isAdminAccess) {
-      query.username = req.user;
+      query.where.username = req.user;
     }
     const { job } = await Job.byRequestId(db, jobID, 0, 0);
     if (job) {

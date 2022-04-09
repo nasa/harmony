@@ -6,14 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../../../css/eui.min.css">
     <link rel="stylesheet" href="../../../css/default.css">
+    <link href="https://unpkg.com/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="../../../css/workflow-ui/jobs/index.css">
+    <script src="https://unpkg.com/@yaireo/tagify"></script>
+    <script src="https://unpkg.com/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-        crossorigin="anonymous" defer></script>
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
+        defer></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"
-        integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/"
-        crossorigin="anonymous" defer></script>
+        integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/" crossorigin="anonymous"
+        defer></script>
     <script language="javascript" id="_fed_an_ua_tag"
-        src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true" defer></script>
+        src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
+        defer></script>
     <script language="javascript" type="module" src="../../../js/workflow-ui/jobs/index.js" defer></script>
     <title>Harmony</title>
 </head>
@@ -39,17 +44,43 @@
         </ol>
     </nav>
     <div class="container-fluid">
-        <div class="row pb-4 px-4">
-            {{> workflow-ui/jobs/jobs-table}}
-            <nav aria-label="Page navigation" class="d-flex flex-column align-items-center">
-                <ul class="pagination px-0 mx-auto">
-                    {{#links}}
-                    <li class="page-item {{linkDisabled}}">
-                        <a class="page-link" href="{{linkHref}}" title="{{linkTitle}}">{{linkTitle}}</a>
-                    </li>
-                    {{/links}}
-                </ul>
-            </nav>
+        <div class="row pb-4">
+            <div class="col-2">
+                <form action="{{currentPage}}" method="get">
+                    <input type="hidden" name="page" value="{{page}}" />
+                    <input type="hidden" name="limit" value="{{limit}}" />
+                    <input name="jobsFilter" class="jobs-filter mb-2" placeholder="add a filter"
+                        value="{{selectedFilters}}" data-current-user="{{currentUser}}"
+                        data-is-admin-route="{{isAdminRoute}}">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="disallowStatus" {{disallowStatusChecked}}>
+                        <label class="form-check-label" for="disallowStatus">
+                            negate statuses
+                        </label>
+                    </div>
+                    {{#isAdminRoute}}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="disallowUser" {{disallowUserChecked}}>
+                        <label class="form-check-label" for="disallowUser">
+                            negate users
+                        </label>
+                    </div>
+                    {{/isAdminRoute}}
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">∇ apply</button>
+                </form>
+            </div>
+            <div class="col-10">
+                {{> workflow-ui/jobs/jobs-table}}
+                <nav aria-label="Page navigation" class="d-flex flex-column align-items-center">
+                    <ul class="pagination px-0 mx-auto">
+                        {{#links}}
+                        <li class="page-item {{linkDisabled}}">
+                            <a class="page-link" href="{{linkHref}}" title="{{linkTitle}}">{{linkTitle}}</a>
+                        </li>
+                        {{/links}}
+                    </ul>
+                </nav>
+            </div>
         </div>
     </div>
     <footer class="mt-auto">

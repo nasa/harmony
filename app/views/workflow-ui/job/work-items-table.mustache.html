@@ -1,8 +1,8 @@
 <table class="table table-sm">
     <thead>
         <tr>
-            <th scope="col">workflowStepIndex</th>
-            <th scope="col">workflowStepName</th>
+            <th scope="col">stepIndex</th>
+            <th scope="col">stepName</th>
             <th scope="col">id</th>
             <th scope="col">status</th>
             <th scope="col">createdAt</th>
@@ -13,7 +13,7 @@
         {{#workItems}}
         <tr class="work-item-table-row">
             <th scope="row">{{workflowStepIndex}}</th>
-            <td><small><code>{{workflowItemStep}}</code></small></td>
+            <td>{{workflowItemStep}}</td>
             <td>{{id}}</td>
             <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
             <td class="date-td" data-time="{{workflowItemCreatedAt}}"></td>

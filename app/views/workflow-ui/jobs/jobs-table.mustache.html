@@ -3,12 +3,12 @@
         <tr>
             <th scope="col">jobID</th>
             {{#isAdminRoute}}
-            <th scope="col">username</th>
+            <th scope="col">user</th>
             {{/isAdminRoute}}
             <th scope="col">request</th>
             <th scope="col">status</th>
             <th scope="col">message</th>
-            <th scope="col">numInputGranules</th>
+            <th scope="col">granules</th>
             <th scope="col">progress</th>
             <th scope="col">createdAt</th>
         </tr>
@@ -21,13 +21,13 @@
             <td>{{username}}</td>
             {{/isAdminRoute}}
             <td class="mw-40ch">
-                <small><code class="text-truncate d-block" title="{{request}}" data-bs-toggle="tooltip"
-                    data-bs-placement="right">{{jobUrl}}</code></small>
+                <span class="text-truncate d-block" title="{{request}}" data-bs-toggle="tooltip"
+                    data-bs-placement="right">{{jobUrl}}</span>
             </td>
             <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
-            <td class="mw-40ch"><small><code class="text-truncate d-block" title="{{message}}" data-bs-toggle="tooltip"
-                        data-bs-placement="right">{{message}}</code></small></td>
-            <td><span class="badge rounded-pill bg-warning text-dark">{{numInputGranules}}</span></td>
+            <td class="mw-40ch"><span class="text-truncate d-block" title="{{message}}" data-bs-toggle="tooltip"
+                    data-bs-placement="right">{{message}}</span></td>
+            <td>{{numInputGranules}}</td>
             <td>{{progress}}%</td>
             <td class="date-td" data-time="{{jobCreatedAt}}"></td>
         </tr>

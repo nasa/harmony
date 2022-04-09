@@ -111,10 +111,10 @@ export async function getJobsListing(
     req.context.logger.info(`Get jobs listing for user ${req.user}`);
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
-    const query: JobQuery = {};
+    const query: JobQuery = { where: {} };
     if (!req.context.isAdminAccess) {
-      query.username = req.user;
-      query.isAsync = true;
+      query.where.username = req.user;
+      query.where.isAsync = true;
     }
     let listing;
     await db.transaction(async (tx) => {
@@ -153,9 +153,9 @@ export async function getJobStatus(
     validateJobId(jobID);
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
 
-    const query: JobQuery = { requestId: jobID };
+    const query: JobQuery = { where: { requestId: jobID } };
     if (!req.context.isAdminAccess) {
-      query.username = req.user;
+      query.where.username = req.user;
     }
     let job: Job;
     let pagination;
