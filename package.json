@@ -72,7 +72,6 @@
     "@types/xmldom": "^0.1.31",
     "ajv": "^8.8.0",
     "ajv-formats": "^2.1.1",
-    "ansi-regex": "^5.0.1",
     "aws-sdk": "^2.1028.0",
     "axios": "^0.24.0",
     "body-parser": "^1.19.0",
