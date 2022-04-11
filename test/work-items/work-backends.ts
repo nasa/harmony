@@ -1,13 +1,13 @@
+import { Job, JobRecord, JobStatus } from './../../app/models/job';
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { Job, JobRecord, JobStatus } from '../../app/models/job';
 import { WorkItemRecord, WorkItemStatus, getWorkItemById } from '../../app/models/work-item';
 import { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
 import { hookJobCreation } from '../helpers/jobs';
-import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation } from '../helpers/work-items';
+import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
 import { hookClearScrollSessionExpect } from '../helpers/hooks';
 
@@ -42,7 +42,20 @@ describe('Work Backends', function () {
       numInputGranules: 100,
       collectionIds: [],
     });
-    before(async () => { await runningJob.save(db); });
+
+    const pausedJob = new Job({
+      jobID: 'PAUSED',
+      requestId,
+      status: JobStatus.PAUSED,
+      username: 'anonymous',
+      request: 'http://example.com/harmony?foo=bar',
+      numInputGranules: 100,
+      collectionIds: [],
+    });
+    before(async () => {
+      await runningJob.save(db);
+      await pausedJob.save(db);
+    });
 
     const readyWorkItem = {
       serviceID: 'theReadyService',
@@ -59,8 +72,18 @@ describe('Work Backends', function () {
       jobID: 'RUN',
     };
 
+    const pausedJobWorkItem = {
+      serviceID: 'thePausedJobService',
+      status: WorkItemStatus.READY,
+      jobID: 'PAUSED',
+      scrollID: '-1234',
+      stacCatalogLocation: '/tmp/catalog.json',
+      stepIndex: 3,
+    };
+
     hookWorkflowStepAndItemCreation(readyWorkItem);
     hookWorkflowStepAndItemCreation(runningWorkItem);
+    hookWorkflowStepAndItemCreation(pausedJobWorkItem);
 
     describe('when no work item is available for the service', function () {
       hookGetWorkForService('noWorkService');
@@ -68,6 +91,24 @@ describe('Work Backends', function () {
       it('returns a 404', function () {
         expect(this.res.status).to.equal(404);
       });
+    });
+
+    describe('when work items are available, but their job is paused', function () {
+      hookGetWorkForService('thePausedJobService');
+
+      it('returns a 404', function () {
+        expect(this.res.status).to.equal(404);
+      });
+    });
+
+    describe('when work items are available for a paused job that is resumed', async function () {
+      it('returns a 200', async function () {
+        pausedJob.updateStatus(JobStatus.RUNNING);
+        await pausedJob.save(db);
+        const result = await getWorkForService(this.backend, 'thePausedJobService');
+        expect(result.status).to.equal(200);
+      });
+
     });
 
     describe('when a work item is in the ready state for the service', function () {

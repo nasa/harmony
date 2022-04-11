@@ -23,6 +23,35 @@ async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<
 }
 
 /**
+   * Set the state of a job to 'paused' unless already in a terminal state then save it.
+   * 
+   * @param tx - the transaction to perform the updates with
+   * @param job - the job to save and update
+   * @param logger - the logger to use for logging errors/info
+   * @param message - the job's paused message
+   * @throws {@link ConflictError} if the job is already in a terminal state.
+ */
+export async function pauseAndSaveJob(
+  tx: Transaction,
+  job: Job,
+  finalStatus: JobStatus,
+  logger: Logger,
+  message?,
+): Promise<void> {
+  try {
+    if (terminalStates.includes(job.status)) {
+      throw new ConflictError(`Cannot pause a job in the ${job.status} state.`);
+    }
+    job.pause(message);
+    await job.save(tx);
+  } catch (e) {
+    logger.error(`Error encountered for job ${job.jobID} while attempting to set final status`);
+    logger.error(e);
+    throw e;
+  }
+}
+
+/**
    * Set and save the final status of the turbo job
    * and in the case of job failure or cancellation, its work items.
    * (Also clean up temporary work items.)
