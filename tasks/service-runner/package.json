@@ -38,7 +38,7 @@
     "sqlite3": "^4.2.0",
     "superagent": "^6.1.0",
     "tmp": "^0.2.1",
-    "winston": "^3.3.3"
+    "winston": "^3.7.2"
   },
   "devDependencies": {
     "@types/axios-mock-adapter": "1.10.0",
