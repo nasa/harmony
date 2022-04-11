@@ -45,12 +45,14 @@ export function parser(): yargs.Argv<unknown> {
  *  https://cmr.earthdata.nasa.gov
  *  https://cmr.uat.earthdata.nasa.gov
  */
-async function _generateGiovanniURL(operation: DataOperation, cmr_endpoint: string): Promise<string> {
+async function _generateGiovanniURL(
+  operation: DataOperation, cmr_endpoint: string,
+): Promise<{ giovanni_url: string; giovanni_url_title: string }> {
   let giovanni_base_url;
   if ( cmr_endpoint === 'https://cmr.earthdata.nasa.gov' ) {
     giovanni_base_url = 'https://api.giovanni.earthdata.nasa.gov/';
   } else if ( cmr_endpoint === 'https://cmr.uat.earthdata.nasa.gov' ) {
-    giovanni_base_url = 'https://api.giovanni.earthdata.nasa.gov/';
+    giovanni_base_url = 'https://api.giovanni.uat.earthdata.nasa.gov/';
   } else {
     throw new Error('CMR_ENDPOINT not set correctly.');
   }
@@ -65,7 +67,11 @@ async function _generateGiovanniURL(operation: DataOperation, cmr_endpoint: stri
   const giovanni_location_param = encodeURIComponent(`[${lat},${lon}]`);
   const giovanni_time_param = encodeURIComponent(`${time_start}/${time_end}`);
   const giovanni_url_path = `${giovanni_service_name}?data=${giovanni_datafield}&location=${giovanni_location_param}&time=${giovanni_time_param}`;
-  return `${giovanni_base_url}${giovanni_url_path}`;
+  return {
+    giovanni_url: `${giovanni_base_url}${giovanni_url_path}`,
+    giovanni_url_title: `Giovanni URL for time series of variable ${giovanni_datafield} \
+(latitude = ${lat}, longitude = ${lon}, time range = [${time_start}, ${time_end}])`,
+  };
 }
 
 /**
@@ -84,7 +90,7 @@ export default async function main(args: string[]): Promise<void> {
 
   // generate Giovanni URL
   const cmr_endpoint = process.env.CMR_ENDPOINT;
-  const giovanni_url = await _generateGiovanniURL(operation, cmr_endpoint);
+  const { giovanni_url, giovanni_url_title } = await _generateGiovanniURL(operation, cmr_endpoint);
 
   // set up stac catalog
   await fs.mkdir(options.harmonyMetadataDir, { recursive: true });
@@ -107,9 +113,9 @@ export default async function main(args: string[]): Promise<void> {
   const assets = {
     'Giovanni URL': {
       href: giovanni_url,
-      title: 'Giovanni',
+      title: giovanni_url_title,
       description: 'Giovanni link',
-      type: 'data',
+      type: 'text/csv',
       roles: ['data'],
     },
   };
