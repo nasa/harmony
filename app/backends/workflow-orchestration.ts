@@ -21,6 +21,26 @@ const RETRY_DELAY = 1000;
 export const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
 
 /**
+ * Calculate the STAC item output limit for the current query-cmr work item.
+ * @param workItem - current query-cmr work item
+ * @param tx - database transaction to query with
+ */
+async function calculateQueryCmrLimit(
+  workItem: WorkItem, 
+  tx): Promise<number> {
+  if (workItem?.scrollID) { // is query-cmr step?
+    const queryCmrWorkItemCount = await workItemCountForStep(tx, workItem.jobID, workItem.workflowStepIndex);
+    if (queryCmrWorkItemCount > 1) { // implies CMR page number > 1
+      const job = await Job.byJobID(tx, workItem.jobID);
+      const excess = (queryCmrWorkItemCount * env.cmrMaxPageSize) - job.numInputGranules;
+      if (excess > 0) { // total STAC output would exceed job.numInputGranules
+        return env.cmrMaxPageSize - excess;
+      }
+    }
+  }
+}
+
+/**
  * Return a work item for the given service
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -31,20 +51,13 @@ export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
   const { serviceID } = req.query;
-  let workItem;
+  let workItem: WorkItem, cmrLimit: number;
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
-    if (workItem?.scrollID) { // check if we should limit the number of STAC items returned by this work item
-      const queryCmrWorkItemCount = await workItemCountForStep(tx, workItem.jobID, workItem.workflowStepIndex);
-      const job = await Job.byJobID(tx, workItem.jobID);
-      if (queryCmrWorkItemCount > 1 && 
-        ((queryCmrWorkItemCount * env.cmrMaxPageSize) > job.numInputGranules)) {
-
-      }
-    }
+    cmrLimit = await calculateQueryCmrLimit(workItem, tx);
   });
   if (workItem) {
-    res.send(workItem);
+    res.send({ workItem, cmrLimit });
   } else if (tryCount < MAX_TRY_COUNT) {
     setTimeout(async () => {
       await getWork(req, res, next, tryCount + 1);
