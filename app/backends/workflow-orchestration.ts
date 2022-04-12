@@ -34,6 +34,14 @@ export async function getWork(
   let workItem;
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
+    if (workItem?.scrollID) { // check if we should limit the number of STAC items returned by this work item
+      const queryCmrWorkItemCount = await workItemCountForStep(tx, workItem.jobID, workItem.workflowStepIndex);
+      const job = await Job.byJobID(tx, workItem.jobID);
+      if (queryCmrWorkItemCount > 1 && 
+        ((queryCmrWorkItemCount * env.cmrMaxPageSize) > job.numInputGranules)) {
+
+      }
+    }
   });
   if (workItem) {
     res.send(workItem);

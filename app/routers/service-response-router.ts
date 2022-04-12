@@ -14,6 +14,7 @@ export default function router(): Router {
   const result = Router();
   result.use(json({
     type: 'application/json',
+    limit: '500kb',
   }));
   result.post('/:requestId/response', responseHandler);
   result.get('/work', getWork);
