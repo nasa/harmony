@@ -81,9 +81,19 @@ describe('Work Backends', function () {
       stepIndex: 3,
     };
 
+    const pausedJobQueryCmrWorkItem = {
+      serviceID: 'query-cmr',
+      status: WorkItemStatus.READY,
+      jobID: 'PAUSED',
+      scrollID: '-1234',
+      stacCatalogLocation: '/tmp/catalog.json',
+      stepIndex: 1,
+    };
+
     hookWorkflowStepAndItemCreation(readyWorkItem);
     hookWorkflowStepAndItemCreation(runningWorkItem);
     hookWorkflowStepAndItemCreation(pausedJobWorkItem);
+    hookWorkflowStepAndItemCreation(pausedJobQueryCmrWorkItem);
 
     describe('when no work item is available for the service', function () {
       hookGetWorkForService('noWorkService');
@@ -98,6 +108,15 @@ describe('Work Backends', function () {
 
       it('returns a 404', function () {
         expect(this.res.status).to.equal(404);
+      });
+    });
+
+    // CMR work items are returned even when a job is paused to avoid a scroll session timeout
+    describe('when work items are available for query-cmr, but their job is paused', function () {
+      hookGetWorkForService('query-cmr');
+
+      it('returns a 200', function () {
+        expect(this.res.status).to.equal(200);
       });
     });
 
