@@ -38,14 +38,11 @@ export async function pauseAndSaveJob(
   logger: Logger,
   message?,
 ): Promise<void> {
+  job.pause(message);
   try {
-    if (job.status != JobStatus.RUNNING) {
-      throw new ConflictError(`Cannot pause a job in the ${job.status} state.`);
-    }
-    job.pause(message);
     await job.save(tx);
   } catch (e) {
-    logger.error(`Error encountered for job ${job.jobID} while attempting to pause`);
+    logger.error(`Error saving job ${job.jobID} while attempting to pause job`);
     logger.error(e);
     throw e;
   }

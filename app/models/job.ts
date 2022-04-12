@@ -417,7 +417,7 @@ export class Job extends Record implements JobRecord {
    */
   resume(): void {
     if (this.status != JobStatus.PAUSED) {
-      throw new ConflictError(`Job is status is ${this.status} - only paused jobs can be resumed.`);
+      throw new ConflictError(`Job status is ${this.status} - only paused jobs can be resumed.`);
     }
     this.updateStatus(JobStatus.RUNNING);
   }

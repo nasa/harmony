@@ -19,7 +19,7 @@ describe('Pausing jobs', function () {
 
     describe('and it is resumed before pausing', function () {
       it('throws an error', function () {
-        expect(runningJob.resume.bind(runningJob)).to.throw('Job is status is running - only paused jobs can be resumed.');
+        expect(runningJob.resume.bind(runningJob)).to.throw('Job status is running - only paused jobs can be resumed.');
       });
     });
 
