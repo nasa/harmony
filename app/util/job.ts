@@ -39,13 +39,13 @@ export async function pauseAndSaveJob(
   message?,
 ): Promise<void> {
   try {
-    if (terminalStates.includes(job.status)) {
+    if (job.status != JobStatus.RUNNING) {
       throw new ConflictError(`Cannot pause a job in the ${job.status} state.`);
     }
     job.pause(message);
     await job.save(tx);
   } catch (e) {
-    logger.error(`Error encountered for job ${job.jobID} while attempting to set final status`);
+    logger.error(`Error encountered for job ${job.jobID} while attempting to pause`);
     logger.error(e);
     throw e;
   }
