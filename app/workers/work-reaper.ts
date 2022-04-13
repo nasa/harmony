@@ -8,6 +8,12 @@ import { Worker } from './worker';
 import db from '../util/db';
 import sleep from '../util/sleep';
 
+/**
+ * Batch size to use for deletions. We batch the deletions
+ * to avoid making an overly large IN(...) statement.
+ */
+const batchSize = env.nodeEnv === 'development' ? 500 : 5_000;
+
 export interface WorkReaperConfig {
   logger: Logger;
 }
@@ -31,7 +37,7 @@ export default class WorkReaper implements Worker {
         db, notUpdatedForMinutes, jobStatus,
       );
       if (workItemIds.length) {
-        const chunkedWorkItemIds = _.chunk(workItemIds, 500);
+        const chunkedWorkItemIds = _.chunk(workItemIds, batchSize);
         for (const workItemIdsChunk of chunkedWorkItemIds) {
           const numItemsDeleted = await deleteWorkItemsById(db, workItemIdsChunk);
           this.logger.debug(`Work reaper removed ${numItemsDeleted} work items`);
@@ -43,7 +49,7 @@ export default class WorkReaper implements Worker {
         db, notUpdatedForMinutes, jobStatus,
       );
       if (workStepIds.length) {
-        const chunkedWorkStepIds = _.chunk(workStepIds, 500);
+        const chunkedWorkStepIds = _.chunk(workStepIds, batchSize);
         for (const workStepIdsChunk of chunkedWorkStepIds) {
           const numItemsDeleted = await deleteWorkflowStepsById(db, workStepIdsChunk);
           this.logger.debug(`Work reaper removed ${numItemsDeleted} workflow steps`);
