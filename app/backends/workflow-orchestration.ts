@@ -24,17 +24,22 @@ export const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
  * Calculate the STAC item output limit for the current query-cmr work item.
  * @param workItem - current query-cmr work item
  * @param tx - database transaction to query with
+ * @param logger - a Logger instance
+ * @returns a number used to limit the query-cmr task or undefined
  */
 async function calculateQueryCmrLimit(
   workItem: WorkItem, 
-  tx): Promise<number> {
-  if (workItem?.scrollID) { // is query-cmr step?
+  tx,
+  logger: Logger): Promise<number> {
+  if (workItem?.scrollID) { // only proceed if this is a query-cmr step
     const queryCmrWorkItemCount = await workItemCountForStep(tx, workItem.jobID, workItem.workflowStepIndex);
-    if (queryCmrWorkItemCount > 1) { // implies CMR page number > 1
+    if (queryCmrWorkItemCount > 1) { // implies CMR page number > 1 and page_size = cmrMaxPageSize
       const job = await Job.byJobID(tx, workItem.jobID);
       const excess = (queryCmrWorkItemCount * env.cmrMaxPageSize) - job.numInputGranules;
-      if (excess > 0) { // total STAC output would exceed job.numInputGranules
-        return env.cmrMaxPageSize - excess;
+      if (excess > 0) { // total STAC output count would exceed job.numInputGranules
+        const targetLimit = env.cmrMaxPageSize - excess;
+        logger.debug(`Limiting query-cmr task to ${targetLimit} STAC items`);
+        return targetLimit;
       }
     }
   }
@@ -50,11 +55,12 @@ async function calculateQueryCmrLimit(
 export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
+  const { logger } = req.context;
   const { serviceID } = req.query;
   let workItem: WorkItem, cmrLimit: number;
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
-    cmrLimit = await calculateQueryCmrLimit(workItem, tx);
+    cmrLimit = await calculateQueryCmrLimit(workItem, tx, logger);
   });
   if (workItem) {
     res.send({ workItem, cmrLimit });
