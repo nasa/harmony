@@ -21,7 +21,7 @@ const RETRY_DELAY = 1000;
 export const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
 
 /**
- * Calculate the STAC item output limit for the current query-cmr work item.
+ * Calculate the granule page limit for the current query-cmr work item.
  * @param workItem - current query-cmr work item
  * @param tx - database transaction to query with
  * @param logger - a Logger instance
@@ -57,13 +57,13 @@ export async function getWork(
 ): Promise<void> {
   const { logger } = req.context;
   const { serviceID } = req.query;
-  let workItem: WorkItem, cmrLimit: number;
+  let workItem: WorkItem, maxCmrGranules: number;
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
-    cmrLimit = await calculateQueryCmrLimit(workItem, tx, logger);
+    maxCmrGranules = await calculateQueryCmrLimit(workItem, tx, logger);
   });
   if (workItem) {
-    res.send({ workItem, cmrLimit });
+    res.send({ workItem, maxCmrGranules });
   } else if (tryCount < MAX_TRY_COUNT) {
     setTimeout(async () => {
       await getWork(req, res, next, tryCount + 1);

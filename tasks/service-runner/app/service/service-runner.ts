@@ -88,8 +88,9 @@ function _getErrorMessage(logStr: string, catalogDir: string): string {
  * Run the query cmr service for a work item pulled from Harmony
   * @param operation - The requested operation
   * @param callback - Function to call with result
+  * @param maxCmrGranules - Limits the page of granules in the query-cmr task
   */
-export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceResponse> {
+export async function runQueryCmrFromPull(workItem: WorkItem, maxCmrGranules?: number): Promise<ServiceResponse> {
 
   const { operation, scrollID } = workItem;
   const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
@@ -103,6 +104,7 @@ export async function runQueryCmrFromPull(workItem: WorkItem): Promise<ServiceRe
           outputDir: catalogDir,
           harmonyInput: `${JSON.stringify(operation)}`,
           scrollId: scrollID,
+          maxCmrGranules,
         },
         {
           timeout: workerTimeout,

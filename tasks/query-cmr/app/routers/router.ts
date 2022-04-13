@@ -17,6 +17,7 @@ export interface QueryCmrRequest {
   maxPages?: number;
   batchSize?: number;
   scrollId?: string;
+  maxCmrGranules?: number;
 }
 
 /**
@@ -37,7 +38,7 @@ async function doWork(req: Request, res: Response, next: NextFunction): Promise<
     await fs.mkdir(workReq.outputDir, { recursive: true });
 
     const catalogs = workReq.scrollId
-      ? await queryGranulesScrolling(operation, workReq.scrollId)
+      ? await queryGranulesScrolling(operation, workReq.scrollId, workReq.maxCmrGranules)
       : await queryGranules(
         operation,
         workReq.query as string[],

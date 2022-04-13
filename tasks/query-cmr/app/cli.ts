@@ -14,6 +14,7 @@ interface HarmonyArgv {
   maxPages?: number;
   batchSize?: number;
   scrollId?: string;
+  maxCmrGranules?: number;
 }
 
 /**
@@ -64,6 +65,11 @@ export function parser(): yargs.Argv<HarmonyArgv> {
       describe: 'scroll session id used in the CMR-Scroll-Id header to perform a granule search using scrolling',
       type: 'string',
     })
+    .option('max-cmr-granules', {
+      alias: 'g',
+      describe: 'The maximum size of the page to request from CMR',
+      type: 'number',
+    })
     .check((argv) => {
       const scrollId = argv['scroll-id'];
       const { query } = argv;
@@ -91,7 +97,7 @@ export default async function main(args: string[]): Promise<void> {
   await fs.mkdir(options.outputDir, { recursive: true });
 
   const catalogs = options.scrollId
-    ? await queryGranulesScrolling(operation, options.scrollId)
+    ? await queryGranulesScrolling(operation, options.scrollId, options.maxCmrGranules)
     : await queryGranules(
       operation,
       options.query as string[],
