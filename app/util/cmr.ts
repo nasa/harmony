@@ -581,22 +581,25 @@ export async function clearScrollSession(scrollId: string): Promise<void> {
  *
  * @param scrollId - Scroll session id used in the CMR-Scroll-Id header
  * @param token - Access token for user request
- * @param limit - The maximum number of granules to return
+ * @param limit - The maximum number of granules to return. This may result in
+ * truncation of the page of results that is returned.
  * @returns The granules associated with the input collection
  */
-export function queryGranulesForScrollId(
+export async function queryGranulesForScrollId(
   scrollId: string, token: string, limit = cmrMaxPageSize,
 ): Promise<CmrGranuleHits> {
   const cmrQuery = {
-    page_size: limit,
     scroll: 'true',
   };
 
-  return queryGranuleUsingMultipartForm(
+  const response = await queryGranuleUsingMultipartForm(
     cmrQuery,
     token,
     { 'CMR-scroll-id': scrollId },
   );
+  response.granules = response.granules.slice(0, limit);
+  response.hits = response.granules.length;
+  return response;
 }
 
 /**
