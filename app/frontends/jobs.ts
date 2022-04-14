@@ -180,7 +180,7 @@ export async function getJobStatus(
 }
 
 /**
- * Express.js handler that cancels a single job `(POST /jobs/{jobID})`. A user can cancel their own
+ * Express.js handler that cancels a single job `(POST /jobs/{jobID}/cancel)`. A user can cancel their own
  * request. An admin can cancel any user's request.
  *
  * @param req - The request sent by the client
@@ -223,7 +223,7 @@ export async function cancelJob(
 }
 
 /**
- * Express.js handler that resumes a single job `(POST /jobs/{jobID})`. A user can resume their own
+ * Express.js handler that resumes a single job `(POST /jobs/{jobID}/resume)`. A user can resume their own
  * request. An admin can resume any user's request.
  *
  * @param req - The request sent by the client
