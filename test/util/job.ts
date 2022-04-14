@@ -3,7 +3,7 @@ import _ from 'lodash';
 import { buildJob } from '../helpers/jobs';
 import { buildWorkItem } from '../helpers/work-items';
 import { hookTransaction } from '../helpers/db';
-import cancelAndSaveJob from '../../app/util/job';
+import { cancelAndSaveJob } from '../../app/util/job';
 import { JobStatus } from '../../app/models/job';
 import { getWorkItemsByJobId, WorkItemStatus } from '../../app/models/work-item';
 import db from '../../app/util/db';
