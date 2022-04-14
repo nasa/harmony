@@ -18,15 +18,17 @@ import {
 import { hookRedirect } from '../helpers/hooks';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
 
+const normalUsername = 'joe';
+
 // unit tests for pausing/resuming jobs
 
 describe('Pausing jobs', function () {
   describe('When a job is running', function () {
-    const requestid = uuid();
+    const requestId = uuid();
     const runningJob = new Job({
-      jobID: requestid,
+      jobID: requestId,
       username: 'anonymouse',
-      requestId: requestid,
+      requestId,
       status: JobStatus.RUNNING,
       request: 'foo',
       numInputGranules: 10,
@@ -76,6 +78,142 @@ describe('Pausing jobs', function () {
 
 // integration tests for resuming jobs
 
+/**
+ * 
+ * Define common tests to be run for resuming jobs to allow use with admin/normal endpoints
+ * 
+ * @param resumeEndpointHook - Hook function to be used to resume job.
+ */
+function resumeJobCommonTests(resumeEndpointHook: Function, username: string): void {
+  describe('when the job does not exist', function () {
+    const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
+    resumeEndpointHook({ jobID: idDoesNotExist, username });
+    it('returns a 404 HTTP Not found response', function () {
+      expect(this.res.statusCode).to.equal(404);
+    });
+
+    it('returns a JSON error response', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.NotFoundError',
+        description: `Error: Unable to find job ${idDoesNotExist}`,
+      });
+    });
+  });
+
+  describe('when the jobID is in an invalid format', function () {
+    const invalidJobID = 'foo';
+    resumeEndpointHook({ jobID: invalidJobID, username });
+    it('returns a 400 HTTP bad request', function () {
+      expect(this.res.statusCode).to.equal(400);
+    });
+
+    it('returns a JSON error response', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.RequestValidationError',
+        description: `Error: Invalid format for Job ID '${invalidJobID}'. Job ID must be a UUID.`,
+      });
+    });
+  });
+
+  describe('when resuming a running job', function () {
+    const successfulJob = buildJob({ username: normalUsername });
+    successfulJob.status = JobStatus.RUNNING;
+    hookTransaction();
+    before(async function () {
+      await new Job(successfulJob).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+
+    resumeEndpointHook({ jobID: successfulJob.requestId, username });
+    it('returns a 409 HTTP conflict', function () {
+      expect(this.res.statusCode).to.equal(409);
+    });
+
+    it('returns a JSON error response indicating the job cannot be resumed', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.ConflictError',
+        description: 'Error: Job status is running - only paused jobs can be resumed.',
+      });
+    });
+  });
+
+  describe('when resuming a successful job', function () {
+    const successfulJob = buildJob({ username: normalUsername });
+    successfulJob.status = JobStatus.SUCCESSFUL;
+    hookTransaction();
+    before(async function () {
+      await new Job(successfulJob).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+
+    resumeEndpointHook({ jobID: successfulJob.requestId, username });
+    it('returns a 409 HTTP conflict', function () {
+      expect(this.res.statusCode).to.equal(409);
+    });
+
+    it('returns a JSON error response indicating the job cannot be resumed', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.ConflictError',
+        description: 'Error: Job status is successful - only paused jobs can be resumed.',
+      });
+    });
+  });
+
+  describe('when resuming a failed job', function () {
+    const failedJob = buildJob({ username: normalUsername });
+    failedJob.status = JobStatus.FAILED;
+    hookTransaction();
+    before(async function () {
+      await new Job(failedJob).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+    resumeEndpointHook({ jobID: failedJob.requestId, username });
+    it('returns a 409 HTTP conflict', function () {
+      expect(this.res.statusCode).to.equal(409);
+    });
+
+    it('returns a JSON error response indicating the job cannot be resumed', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.ConflictError',
+        description: 'Error: Job status is failed - only paused jobs can be resumed.',
+      });
+    });
+  });
+
+  describe('when resuming a canceled job', function () {
+    const canceledJob = buildJob({ username: normalUsername });
+    canceledJob.status = JobStatus.CANCELED;
+    hookTransaction();
+    before(async function () {
+      await new Job(canceledJob).save(this.trx);
+      this.trx.commit();
+      this.trx = null;
+    });
+
+    resumeEndpointHook({ jobID: canceledJob.requestId, username });
+    it('returns a 409 HTTP conflict', function () {
+      expect(this.res.statusCode).to.equal(409);
+    });
+
+    it('returns a JSON error response indicating the job cannot be resumed', function () {
+      const response = JSON.parse(this.res.text);
+      expect(response).to.eql({
+        code: 'harmony.ConflictError',
+        description: 'Error: Job status is canceled - only paused jobs can be resumed.',
+      });
+    });
+  });
+}
+
+
 describe('Resuming a job - user endpoint', function () {
   const resumeEndpointHooks = {
     POST: hookResumeJob,
@@ -85,7 +223,7 @@ describe('Resuming a job - user endpoint', function () {
     describe(`Resuming using ${httpMethod}`, function () {
       hookServersStartStop({ skipEarthdataLogin: false });
       hookTransaction();
-      const joeJob1 = buildJob({ username: 'joe' });
+      const joeJob1 = buildJob({ username: normalUsername });
       before(async function () {
         joeJob1.pause();
         await joeJob1.save(this.trx);
@@ -108,7 +246,7 @@ describe('Resuming a job - user endpoint', function () {
       });
 
       describe('For a logged-in user who owns the job', function () {
-        resumeEndpointHook({ jobID, username: 'joe' });
+        resumeEndpointHook({ jobID, username: normalUsername });
 
         it('returns a redirect to the running job', function () {
           expect(this.res.statusCode).to.equal(302);
@@ -116,7 +254,7 @@ describe('Resuming a job - user endpoint', function () {
         });
 
         describe('When following the redirect to the resumed job', function () {
-          hookRedirect('joe');
+          hookRedirect(normalUsername);
           it('returns an HTTP success response', function () {
             expect(this.res.statusCode).to.equal(200);
           });
@@ -142,7 +280,7 @@ describe('Resuming a job - user endpoint', function () {
       });
 
       describe('For a logged-in admin who does not own the job', function () {
-        const joeJob2 = buildJob({ username: 'joe' });
+        const joeJob2 = buildJob({ username: normalUsername });
         hookTransaction();
         before(async function () {
           await new Job(joeJob2).save(this.trx);
@@ -163,132 +301,7 @@ describe('Resuming a job - user endpoint', function () {
         });
       });
 
-      describe('when the job does not exist', function () {
-        const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
-        resumeEndpointHook({ jobID: idDoesNotExist, username: 'joe' });
-        it('returns a 404 HTTP Not found response', function () {
-          expect(this.res.statusCode).to.equal(404);
-        });
-
-        it('returns a JSON error response', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.NotFoundError',
-            description: `Error: Unable to find job ${idDoesNotExist}`,
-          });
-        });
-      });
-
-      describe('when the jobID is in an invalid format', function () {
-        const invalidJobID = 'foo';
-        resumeEndpointHook({ jobID: invalidJobID, username: 'joe' });
-        it('returns a 400 HTTP bad request', function () {
-          expect(this.res.statusCode).to.equal(400);
-        });
-
-        it('returns a JSON error response', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.RequestValidationError',
-            description: `Error: Invalid format for Job ID '${invalidJobID}'. Job ID must be a UUID.`,
-          });
-        });
-      });
-
-      describe('when resuming a running job', function () {
-        const successfulJob = buildJob({ username: 'joe' });
-        successfulJob.status = JobStatus.RUNNING;
-        hookTransaction();
-        before(async function () {
-          await new Job(successfulJob).save(this.trx);
-          this.trx.commit();
-          this.trx = null;
-        });
-
-        resumeEndpointHook({ jobID: successfulJob.requestId, username: 'joe' });
-        it('returns a 409 HTTP conflict', function () {
-          expect(this.res.statusCode).to.equal(409);
-        });
-
-        it('returns a JSON error response indicating the job cannot be resumed', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.ConflictError',
-            description: 'Error: Job status is running - only paused jobs can be resumed.',
-          });
-        });
-      });
-
-      describe('when resuming a successful job', function () {
-        const successfulJob = buildJob({ username: 'joe' });
-        successfulJob.status = JobStatus.SUCCESSFUL;
-        hookTransaction();
-        before(async function () {
-          await new Job(successfulJob).save(this.trx);
-          this.trx.commit();
-          this.trx = null;
-        });
-
-        resumeEndpointHook({ jobID: successfulJob.requestId, username: 'joe' });
-        it('returns a 409 HTTP conflict', function () {
-          expect(this.res.statusCode).to.equal(409);
-        });
-
-        it('returns a JSON error response indicating the job cannot be resumed', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.ConflictError',
-            description: 'Error: Job status is successful - only paused jobs can be resumed.',
-          });
-        });
-      });
-
-      describe('when resuming a failed job', function () {
-        const failedJob = buildJob({ username: 'joe' });
-        failedJob.status = JobStatus.FAILED;
-        hookTransaction();
-        before(async function () {
-          await new Job(failedJob).save(this.trx);
-          this.trx.commit();
-          this.trx = null;
-        });
-        resumeEndpointHook({ jobID: failedJob.requestId, username: 'joe' });
-        it('returns a 409 HTTP conflict', function () {
-          expect(this.res.statusCode).to.equal(409);
-        });
-
-        it('returns a JSON error response indicating the job cannot be resumed', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.ConflictError',
-            description: 'Error: Job status is failed - only paused jobs can be resumed.',
-          });
-        });
-      });
-
-      describe('when resuming a canceled job', function () {
-        const canceledJob = buildJob({ username: 'joe' });
-        canceledJob.status = JobStatus.CANCELED;
-        hookTransaction();
-        before(async function () {
-          await new Job(canceledJob).save(this.trx);
-          this.trx.commit();
-          this.trx = null;
-        });
-
-        resumeEndpointHook({ jobID: canceledJob.requestId, username: 'joe' });
-        it('returns a 409 HTTP conflict', function () {
-          expect(this.res.statusCode).to.equal(409);
-        });
-
-        it('returns a JSON error response indicating the job cannot be resumed', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.ConflictError',
-            description: 'Error: Job status is canceled - only paused jobs can be resumed.',
-          });
-        });
-      });
+      resumeJobCommonTests(resumeEndpointHook, normalUsername);
     });
   }
 });
@@ -302,7 +315,7 @@ describe('Resuming a job - admin endpoint', function () {
     describe(`Resuming using ${httpMethod}`, function () {
       hookServersStartStop({ skipEarthdataLogin: false });
       hookTransaction();
-      const joeJob1 = buildJob({ username: 'joe' });
+      const joeJob1 = buildJob({ username: normalUsername });
       before(async function () {
         joeJob1.pause();
         await joeJob1.save(this.trx);
@@ -325,7 +338,7 @@ describe('Resuming a job - admin endpoint', function () {
       });
 
       describe('For a logged-in user (but not admin) who owns the job', function () {
-        resumeEndpointHook({ jobID, username: 'joe' });
+        resumeEndpointHook({ jobID, username: normalUsername });
         it('returns a 403 forbidden because they are not an admin', function () {
           expect(this.res.statusCode).to.equal(403);
         });
@@ -370,132 +383,7 @@ describe('Resuming a job - admin endpoint', function () {
         });
       });
 
-      describe('when the job does not exist', function () {
-        const idDoesNotExist = 'aaaaaaaa-1111-bbbb-2222-cccccccccccc';
-        resumeEndpointHook({ jobID: idDoesNotExist, username: adminUsername });
-        it('returns a 404 HTTP Not found response', function () {
-          expect(this.res.statusCode).to.equal(404);
-        });
-
-        it('returns a JSON error response', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.NotFoundError',
-            description: `Error: Unable to find job ${idDoesNotExist}`,
-          });
-        });
-      });
-
-      describe('when the jobID is in an invalid format', function () {
-        const notjoeJob1ID = 'foo';
-        resumeEndpointHook({ jobID: notjoeJob1ID, username: adminUsername });
-        it('returns a 409 HTTP conflict', function () {
-          expect(this.res.statusCode).to.equal(400);
-        });
-
-        it('returns a JSON error response', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.RequestValidationError',
-            description: `Error: Invalid format for Job ID '${notjoeJob1ID}'. Job ID must be a UUID.`,
-          });
-        });
-      });
-
-      describe('when resuming a running job', function () {
-        const successfulJob = buildJob({ username: 'joe' });
-        successfulJob.status = JobStatus.RUNNING;
-        hookTransaction();
-        before(async function () {
-          await new Job(successfulJob).save(this.trx);
-          this.trx.commit();
-          this.trx = null;
-        });
-
-        resumeEndpointHook({ jobID: successfulJob.requestId, username: adminUsername });
-        it('returns a 409 HTTP conflict', function () {
-          expect(this.res.statusCode).to.equal(409);
-        });
-
-        it('returns a JSON error response indicating the job cannot be resumed', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.ConflictError',
-            description: 'Error: Job status is running - only paused jobs can be resumed.',
-          });
-        });
-      });
-
-      describe('when resuming a successful job', function () {
-        const successfulJob = buildJob({ username: 'joe' });
-        successfulJob.status = JobStatus.SUCCESSFUL;
-        hookTransaction();
-        before(async function () {
-          await new Job(successfulJob).save(this.trx);
-          this.trx.commit();
-          this.trx = null;
-        });
-        resumeEndpointHook({ jobID: successfulJob.requestId, username: adminUsername });
-        it('returns a 409 HTTP conflict', function () {
-          expect(this.res.statusCode).to.equal(409);
-        });
-
-        it('returns a JSON error response indicating the job cannot be resumed', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.ConflictError',
-            description: 'Error: Job status is successful - only paused jobs can be resumed.',
-          });
-        });
-      });
-
-      describe('when resuming a failed job', function () {
-        const failedJob = buildJob({ username: 'joe' });
-        failedJob.status = JobStatus.FAILED;
-        hookTransaction();
-        before(async function () {
-          await new Job(failedJob).save(this.trx);
-          this.trx.commit();
-          this.trx = null;
-        });
-
-        resumeEndpointHook({ jobID: failedJob.requestId, username: adminUsername });
-        it('returns a 409 HTTP conflict', function () {
-          expect(this.res.statusCode).to.equal(409);
-        });
-
-        it('returns a JSON error response indicating the job cannot be resumed', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.ConflictError',
-            description: 'Error: Job status is failed - only paused jobs can be resumed.',
-          });
-        });
-      });
-
-      describe('when resuming a canceled job', function () {
-        const canceledJob = buildJob({ username: 'joe' });
-        canceledJob.status = JobStatus.CANCELED;
-        hookTransaction();
-        before(async function () {
-          await new Job(canceledJob).save(this.trx);
-          this.trx.commit();
-          this.trx = null;
-        });
-
-        resumeEndpointHook({ jobID: canceledJob.requestId, username: adminUsername });
-        it('returns a 409 HTTP conflict', function () {
-          expect(this.res.statusCode).to.equal(409);
-        });
-
-        it('returns a JSON error response indicating the job cannot be resumed', function () {
-          const response = JSON.parse(this.res.text);
-          expect(response).to.eql({
-            code: 'harmony.ConflictError',
-            description: 'Error: Job status is canceled - only paused jobs can be resumed.',
-          });
-        });
-      });
+      resumeJobCommonTests(resumeEndpointHook, adminUsername);
     });
   }
 });
