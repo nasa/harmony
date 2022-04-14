@@ -210,17 +210,17 @@ $ git clone https://github.com/nasa/harmony.git
 
 Ensure envsubst is installed on system.
 
-Ensure node is available and is the correct version, 16.x.y.
+Ensure node is available and is the correct version, 16.13.y.
 
 ```
 $ node --version
-v16.14.2
+v16.13.1
 ```
 
 Ensure npm is available and is version 8 or later.
 ```
 $ npm --version
-8.5.0
+8.1.2
 ```
 
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
@@ -231,7 +231,7 @@ $ nvm install && nvm use
 
 The output should include node 16 and npm 8.
 ```
-Now using node v16.14.2 (npm v8.5.0)
+Now using node v16.13.1 (npm v8.1.2)
 ```
 
 Be sure to **verify the version on the final line** to make sure the NVM binary appears first in your `PATH`.
