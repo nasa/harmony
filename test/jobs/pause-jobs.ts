@@ -82,7 +82,8 @@ describe('Pausing jobs', function () {
  * 
  * Define common tests to be run for resuming jobs to allow use with admin/normal endpoints
  * 
- * @param resumeEndpointHook - Hook function to be used to resume job.
+ * @param resumeEndpointHook - hook function to be used to resume job.
+ * @param username - user to use when calling Harmony
  */
 function resumeJobCommonTests(resumeEndpointHook: Function, username: string): void {
   describe('when the job does not exist', function () {
