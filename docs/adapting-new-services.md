@@ -103,7 +103,6 @@ The structure of an entry in the [services.yml](../config/services.yml) file is 
         - v2
   batch_size: 1                   # The number of granules in each batch operation (defaults to 0 which means unlimited)
   maximum_sync_granules: 1        # Optional limit for the maximum number of granules for a request to be handled synchronously. Defaults to 1. Set to 0 to only allow async requests.
-  maximum_async_granules: 500     # Optional limit for the maximum number of granules allowed for a single async request. Harmony has a MAX_GRANULE_LIMIT enforced for all services.
   capabilities:                   # Service capabilities
     subsetting:
       bbox: true                  # Can subset by spatial bounding box
