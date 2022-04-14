@@ -25,8 +25,8 @@
     "Cumulus"
   ],
   "engines": {
-    "node": "^12.14.1",
-    "npm": ">=7"
+    "node": "^16.13.1",
+    "npm": ">=8"
   },
   "nyc": {
     "all": true,
@@ -83,7 +83,7 @@
     "express-validator": "^6.13.0",
     "express-winston": "^4.1.0",
     "form-data": "^4.0.0",
-    "gdal": "^0.10.1",
+    "gdal": "^0.11.1",
     "js-yaml": "^4.1.0",
     "knex": "^0.95.14",
     "knex-paginate": "^2.3.0",
