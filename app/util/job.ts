@@ -49,6 +49,35 @@ export async function pauseAndSaveJob(
 }
 
 /**
+   * Resume a paused job then save it.
+   * 
+   * @param jobID - the id of job (requestId in the db)
+   * @param logger - the logger to use for logging errors/info
+   * @param username - the name of the user requesting the cancel - null if the admin
+   * @throws {@link ConflictError} if the job is already in a terminal state.
+ */
+export async function resumeAndSaveJob(
+  jobID: string,
+  logger: Logger,
+  username: string,
+): Promise<void> {
+  let job;
+  await db.transaction(async (tx) => {
+    if (username) {
+      ({ job } = await Job.byUsernameAndRequestId(tx, username, jobID));
+    } else {
+      ({ job } = await Job.byRequestId(tx, jobID));
+    }
+
+    if (!job) {
+      throw new NotFoundError(`Unable to find job ${jobID}`);
+    }
+    job.resume();
+    await job.save(tx);
+  });
+}
+
+/**
    * Set and save the final status of the turbo job
    * and in the case of job failure or cancellation, its work items.
    * (Also clean up temporary work items.)
@@ -96,7 +125,7 @@ export async function completeJob(
  * @param shouldIgnoreRepeats - flag to indicate that we should ignore repeat calls to cancel the
  * same job - needed for the workflow termination listener (default false)
  */
-export default async function cancelAndSaveJob(
+export async function cancelAndSaveJob(
   jobID: string,
   message: string,
   logger: Logger,
