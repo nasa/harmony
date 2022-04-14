@@ -27,7 +27,7 @@ const jsonContentTypeHeader = {
   'Content-Type': 'application/json',
 };
 
-const cmrMaxPageSize = 2000;
+const { cmrMaxPageSize } = env;
 
 export enum CmrPermission {
   Read = 'read',
@@ -547,7 +547,7 @@ export async function initiateGranuleScroll(
     page_size: Math.min(limit, cmrMaxPageSize),
     scroll: 'defer',
   };
-
+  logger.debug(`Scroll session will be initiated with page size of ${baseQuery.page_size} (min of ${[limit, cmrMaxPageSize]}).`);
   const resp = await queryGranuleUsingMultipartForm({
     ...baseQuery,
     ...query,

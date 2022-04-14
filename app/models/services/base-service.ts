@@ -63,7 +63,7 @@ export interface ServiceConfig<ServiceParamType> {
  */
 export function getMaxSynchronousGranules(config: ServiceConfig<unknown>): number {
   const serviceLimit = _.get(config, 'maximum_sync_granules', env.maxSynchronousGranules);
-  return Math.min(env.maxGranuleLimit, serviceLimit);
+  return serviceLimit;
 }
 
 /**
@@ -479,8 +479,7 @@ export default abstract class BaseService<ServiceParamType> {
    */
   get numInputGranules(): number {
     return Math.min(this.operation.cmrHits,
-      this.operation.maxResults || Number.MAX_SAFE_INTEGER,
-      env.maxGranuleLimit);
+      this.operation.maxResults || Number.MAX_SAFE_INTEGER);
   }
 
   /**

@@ -32,16 +32,15 @@ async function calculateQueryCmrLimit(
   tx,
   logger: Logger): Promise<number> {
   if (workItem?.scrollID) { // only proceed if this is a query-cmr step
-    const queryCmrWorkItemCount = await workItemCountForStep(tx, workItem.jobID, workItem.workflowStepIndex);
-    if (queryCmrWorkItemCount > 1) { // implies CMR page number > 1 and page_size = cmrMaxPageSize
-      const job = await Job.byJobID(tx, workItem.jobID);
-      const excess = (queryCmrWorkItemCount * env.cmrMaxPageSize) - job.numInputGranules;
-      if (excess > 0) { // total STAC output count would exceed job.numInputGranules
-        const targetLimit = env.cmrMaxPageSize - excess;
-        logger.debug(`Limiting query-cmr task to ${targetLimit} STAC items`);
-        return targetLimit;
-      }
-    }
+    const nextStep = await getWorkflowStepByJobIdStepIndex(
+      tx,
+      workItem.jobID,
+      workItem.workflowStepIndex + 1,
+    );
+    const numItemsGenerated = await workItemCountForStep(tx, workItem.jobID, nextStep.stepIndex);
+    const queryCmrLimit = nextStep.workItemCount - numItemsGenerated;
+    logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
+    return queryCmrLimit;
   }
 }
 

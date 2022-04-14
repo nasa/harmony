@@ -83,7 +83,6 @@ interface HarmonyEnv {
   jobReaperPeriodSec: number;
   localstackHost: string;
   logLevel: string;
-  maxGranuleLimit: number;
   maxPageSize: number;
   maxPostFields: number;
   maxPostFileParts: number;

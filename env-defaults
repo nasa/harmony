@@ -99,11 +99,6 @@ MAX_PAGE_SIZE=2000
 # value in services.yml for maximum_sync_granules it will override this value.
 MAX_SYNCHRONOUS_GRANULES=1
 
-# The maximum allowed granules in any request synchronous or asynchronous. If a service
-# attempts to configure a value greater than this limit for either maximum_async_granules
-# or maximum_async_granules we will override the configuration to limit to this value.
-MAX_GRANULE_LIMIT=350
-
 # String to identify the type of environment.  Options:
 #  - "development" for local development.
 #  - "production" for deployments with a separate postgres server (SIT, UAT, Production).
