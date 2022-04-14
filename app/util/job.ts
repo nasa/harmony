@@ -53,7 +53,7 @@ export async function pauseAndSaveJob(
    * 
    * @param jobID - the id of job (requestId in the db)
    * @param logger - the logger to use for logging errors/info
-   * @param username - the name of the user requesting the cancel - null if the admin
+   * @param username - the name of the user requesting the resume - null if the admin
    * @throws {@link ConflictError} if the job is already in a terminal state.
  */
 export async function resumeAndSaveJob(

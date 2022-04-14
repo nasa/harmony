@@ -259,7 +259,7 @@ export function resumeJob(app: Express.Application, { jobID }: Job): Test {
 }
 
 /**
- * Submits a resume job request as the given user
+ * Submits a resume job request as the given user on the admin endpoint
  *
  * @param app - The express application (typically this.frontend)
  * @param job - The job
@@ -279,7 +279,7 @@ export function resumeJobWithGET(app: Express.Application, { jobID }: Job): Test
 }
 
 /**
- * Submits a resume job request as the given user using a GET instead of POST
+ * Submits a resume job request as the given user on the admin endpoint using a GET instead of POST
  *
  * @param app - The express application (typically this.frontend)
  * @param job - The job
