@@ -247,7 +247,7 @@ async function createNextWorkItems(
         workflowStepIndex: nextStep.stepIndex,
       }),
     );
-    await WorkItem.saveBatchInsert(tx, newItems);
+    await WorkItem.insertBatch(tx, newItems);
   }
 
   // If the current step is the query-cmr service and the number of work items for the next
