@@ -1,9 +1,30 @@
 /* eslint-disable no-param-reassign */
+import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 
 export interface RecordConstructor extends Function {
   table: string;
+}
+
+/**
+ * Before saving a record, set the appropriate date fields.
+ * This will mutate the Record and the Partial<Record>.
+ * @param fields - the fields to update
+ * @param record - the record to update
+ * @returns boolean indicating whether this is a new record
+ */
+function setDateFields(record: Record, fields: Partial<Record>): boolean {
+  const updatedAt = new Date();
+  record.updatedAt = updatedAt;
+  fields.updatedAt = updatedAt;
+
+  const newRecord = !record.createdAt;
+  if (newRecord) {
+    record.createdAt = record.updatedAt;
+    fields.createdAt = record.createdAt;
+  }
+  return newRecord;
 }
 
 /**
@@ -66,13 +87,8 @@ export default abstract class Record {
     if (errors) {
       throw new TypeError(`${this.constructor.name} is invalid: ${JSON.stringify(errors)}`);
     }
-    const updatedAt = new Date();
-    this.updatedAt = updatedAt;
-    fields.updatedAt = updatedAt;
-    const newRecord = !this.createdAt;
+    const newRecord = setDateFields(this, fields);
     if (newRecord) {
-      this.createdAt = this.updatedAt;
-      fields.createdAt = this.createdAt;
       let stmt = transaction((this.constructor as RecordConstructor).table)
         .insert(fields);
       if (db.client.config.client === 'pg') {
@@ -87,6 +103,43 @@ export default abstract class Record {
       await transaction((this.constructor as RecordConstructor).table)
         .where({ id: this.id })
         .update(fields);
+    }
+  }
+
+  /**
+   * Validates and saves each record (using a single statement).  Throws an error if any
+   * record is not valid.  Records will be inserted and have their id, createdAt, and
+   * updatedAt fields set. If running SQLite, the id field will not be set as it only returns
+   * the last id.
+   *
+   * @param transaction - The transaction to use for saving the records
+   * @param records - The records to save
+   * @param fieldsList - The fields to save to the database
+   * @throws Error - if the record is invalid
+   */
+  static async insertBatch(transaction: Transaction, records: Record[], fieldsList: Partial<Record>[] = records): Promise<void> {
+    const recordConstructor = records[0]?.constructor;
+    const { table } = recordConstructor as RecordConstructor;
+    for (const i of _.range(records.length)) {
+      const record = records[i];
+      const fields = fieldsList[i];
+      const errors = record.validate();
+      if (errors) {
+        throw new TypeError(`${recordConstructor.name} is invalid: ${JSON.stringify(errors)}`);
+      }
+      setDateFields(record, fields);
+    }
+    let stmt = transaction(table).insert(fieldsList);
+    if (db.client.config.client === 'pg') {
+      stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
+    }
+    try {
+      const recordIds = await stmt;
+      for (const i of _.range(records.length)) {
+        records[i].id = recordIds[i];
+      }
+    } catch (e) {
+      logger.error(e);
     }
   }
 }

@@ -238,18 +238,16 @@ async function createNextWorkItems(
     await createAggregatingWorkItem(tx, currentWorkItem, nextStep);
   } else {
     // Create a new work item for each result using the next step
-    // FIXME Do this as a bulk insertion when working NO GRANULES LIMIT TICKET (HARMONY-276)
-    for await (const result of results) {
-      const newWorkItem = new WorkItem({
+    const newItems = results.map(result =>
+      new WorkItem({
         jobID: currentWorkItem.jobID,
         serviceID: nextStep.serviceID,
         status: WorkItemStatus.READY,
         stacCatalogLocation: result,
         workflowStepIndex: nextStep.stepIndex,
-      });
-
-      await newWorkItem.save(tx);
-    }
+      }),
+    );
+    await WorkItem.saveBatchInsert(tx, newItems);
   }
 
   // If the current step is the query-cmr service and the number of work items for the next
