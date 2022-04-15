@@ -1,50 +1,19 @@
 import aws from 'aws-sdk';
-import os from 'os';
-import path from 'path';
-import { promises as fs, createWriteStream } from 'fs';
+import * as fs from 'fs';
 import * as querystring from 'querystring';
-import { promises as stream, PassThrough } from 'stream';
-// import tmp from 'tmp';
+import * as stream from 'stream';
+import tmp from 'tmp';
 import { URL } from 'url';
-// import * as util from 'util';
+import * as util from 'util';
 import { PromiseResult } from 'aws-sdk/lib/request';
 
 import env = require('./env');
 
 const { awsDefaultRegion } = env;
 
-// const pipeline = util.promisify(stream.pipeline);
-// const createTmpFileName = util.promisify(tmp.tmpName);
-// const readFile = util.promisify(fs.readFile);
-
-
-/**
- * Helper function to create a temporary directory and return the file path
- * @returns the temporary filename
- */
-async function createTmpDir(): Promise<string> {
-  let tmpDir;
-  const prefix = 'objectStore';
-  try {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
-    // logger.warn(`created temp directory ${tmpDir}`);
-    return tmpDir + '/';
-  } catch (e) {
-    // logger.error(`An error has occurred while trying to create ${tmpDir}.`);
-    // logger.error(e);
-    if (tmpDir) {
-      await fs.rm(tmpDir, { recursive: true });
-    }
-  }
-}
-
-// /**
-//  * Helper function to clean up a temporary directory
-//  * @param tmpDir - The directory to remove including all files
-//  */
-// async function cleanupTmpDir(tmpDir: string): Promise<void> {
-//   await fs.rm(tmpDir, { recursive: true });
-// }
+const pipeline = util.promisify(stream.pipeline);
+const createTmpFileName = util.promisify(tmp.tmpName);
+const readFile = util.promisify(fs.readFile);
 
 interface BucketParams {
   Bucket: string;
@@ -189,10 +158,9 @@ export class S3ObjectStore {
    * @throws TypeError - if an invalid URL is supplied
    */
   async downloadFile(paramsOrUrl: string | BucketParams): Promise<string> {
-    const tempDir = await createTmpDir();
-    const tempFile = tempDir + 'download';
-    const getObjectResponse = await this.getObject(paramsOrUrl);
-    await stream.pipeline(getObjectResponse.createReadStream(), await createWriteStream(tempFile));
+    const tempFile = await createTmpFileName();
+    const getObjectResponse = this.getObject(paramsOrUrl);
+    await pipeline(getObjectResponse.createReadStream(), fs.createWriteStream(tempFile));
     return tempFile;
   }
 
@@ -206,7 +174,7 @@ export class S3ObjectStore {
    * @throws TypeError - if an invalid URL is supplied
    */
   async uploadFile(fileName: string, paramsOrUrl: string | BucketParams): Promise<string> {
-    const fileContent = await fs.readFile(fileName);
+    const fileContent = await readFile(fileName);
     const params = this._paramsOrUrlToParams(paramsOrUrl) as aws.S3.PutObjectRequest;
     params.Body = fileContent;
     await this.s3.upload(params).promise();
@@ -243,9 +211,9 @@ export class S3ObjectStore {
       params.ContentLength = contentLength;
       // Getting non-zero-byte files streaming a req to S3 is wonky
       // https://stackoverflow.com/a/54153557
-      srcStream = new PassThrough();
+      srcStream = new stream.PassThrough();
       (body as NodeJS.ReadableStream).pipe(srcStream);
-      params.Body = new PassThrough();
+      params.Body = new stream.PassThrough();
     } else {
       params.Body = body;
     }
@@ -257,7 +225,7 @@ export class S3ObjectStore {
     }
     const upload = this.s3.upload(params);
     if (isStream) {
-      const passthrough = params.Body as PassThrough;
+      const passthrough = params.Body as stream.PassThrough;
       srcStream.on('data', (chunk) => { passthrough.write(chunk); });
       srcStream.on('end', () => { passthrough.end(); });
     }
