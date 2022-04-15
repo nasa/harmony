@@ -7,62 +7,17 @@ import DataOperation from './data-operation';
 import { activeJobStatuses, Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
+import { WorkItemRecord, WorkItemStatus } from './work-item-interface';
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
 // if this changes we will have to revisit this
 const QUERY_CMR_STEP_INDEX = 1;
-
-export enum WorkItemStatus {
-  READY = 'ready',
-  RUNNING = 'running',
-  SUCCESSFUL = 'successful',
-  FAILED = 'failed',
-  CANCELED = 'canceled',
-}
-
-// Future-proofing for when we have other success statuses like 'SUCCESSFUL_WITH_WARNINGS'
-export const SUCCESSFUL_WORK_ITEM_STATUSES = [WorkItemStatus.SUCCESSFUL];
 
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'workflowStepIndex',
 ];
-
-export interface WorkItemRecord {
-  // The ID of the job that created this work item
-  jobID: string;
-
-  // The ID of the scroll session (only used for the query cmr service)
-  scrollID?: string;
-
-  // unique identifier for the service - this should be the docker image tag (with version)
-  serviceID: string;
-
-  // The status of the operation - see WorkItemStatus
-  status?: WorkItemStatus;
-
-  // error message if status === FAILED
-  errorMessage?: string;
-
-  // The location of the STAC catalog for the item(s) to process
-  stacCatalogLocation?: string;
-
-  // The corresponding workflow step ID for the work item - used to look up the operation
-  workflowStepIndex: number;
-
-  // The operation to be performed by the service (not serialized)
-  operation?: DataOperation;
-
-  // The location of the resulting STAC catalog(s) (not serialized)
-  results?: string[];
-
-  // The last time the record was updated
-  updatedAt: Date;
-
-  // When the item was created
-  createdAt: Date;
-}
 
 /**
  *

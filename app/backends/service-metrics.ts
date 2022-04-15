@@ -1,5 +1,6 @@
 import { Response, Request, NextFunction } from 'express';
-import { workItemCountByServiceIDAndStatus, WorkItemStatus } from '../models/work-item';
+import { workItemCountByServiceIDAndStatus } from '../models/work-item';
+import { WorkItemStatus } from '../models/work-item-interface';
 import db from '../util/db';
 import { RequestValidationError } from '../util/errors';
 
@@ -14,7 +15,7 @@ import { RequestValidationError } from '../util/errors';
 export async function getReadyWorkItemCountForServiceID(
   req: Request, res: Response, next: NextFunction,
 ): Promise<void> {
- 
+
   const serviceID = req.query.serviceID as string;
 
   // Return 400 if serviceID not provided in query
