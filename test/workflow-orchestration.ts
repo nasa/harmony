@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getWorkItemsByJobId, WorkItemRecord, WorkItemStatus } from '../app/models/work-item';
+import { getWorkItemsByJobId } from '../app/models/work-item';
 import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
 import env from '../app/util/env';
@@ -13,6 +13,7 @@ import { buildJob } from './helpers/jobs';
 import { PATH_TO_CONTAINER_ARTIFACTS } from '../app/backends/workflow-orchestration';
 import path from 'path';
 import { promises as fs } from 'fs';
+import { WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
 
 describe('when a work item callback request does not return the results to construct the next work item(s)', function () {
   const collection = 'C1233800302-EEDTEST';

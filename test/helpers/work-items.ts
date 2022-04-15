@@ -4,13 +4,14 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import request, { Test } from 'supertest';
 import _ from 'lodash';
-import WorkItem, { WorkItemRecord, WorkItemStatus } from '../../app/models/work-item';
+import WorkItem from '../../app/models/work-item';
 import db, { Transaction } from '../../app/util/db';
 import env from '../../app/util/env';
 import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';
 import { buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach } from './workflow-steps';
 import { RecordConstructor } from '../../app/models/record';
+import { WorkItemStatus, WorkItemRecord } from '../../app/models/work-item-interface';
 
 export const exampleWorkItemProps = {
   jobID: '1',
