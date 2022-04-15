@@ -4,7 +4,8 @@ import * as togeojson from '@tmcw/togeojson';
 
 import { DOMParser } from 'xmldom';
 import * as shpjs from 'shpjs';
-import * as tmp from 'tmp-promise';
+import os from 'os';
+import path from 'path';
 
 import { Logger } from 'winston';
 import { NextFunction } from 'express';
@@ -15,27 +16,63 @@ import { listToText } from '../util/string';
 import { cookieOptions } from '../util/cookies';
 
 /**
+ * Helper function to create a temporary directory and return the file path
+ * @param logger - The logger associated with this request
+ * @returns the temporary filename
+ */
+async function createTmpDir(logger: Logger): Promise<string> {
+  let tmpDir;
+  const prefix = 'shapefile';
+  try {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
+    logger.warn(`created temp directory ${tmpDir}`);
+    return tmpDir + '/';
+  } catch (e) {
+    logger.error(`An error has occurred while trying to create ${tmpDir}.`);
+    logger.error(e);
+    if (tmpDir) {
+      await fs.rm(tmpDir, { recursive: true });
+    }
+  }
+}
+
+/**
+ * Helper function to clean up a temporary directory
+ * @param tmpDir - The directory to remove including all files
+ * @param logger - The logger associated with this request
+ */
+async function cleanupTmpDir(tmpDir: string, logger: Logger): Promise<void> {
+  try {
+    await fs.rm(tmpDir, { recursive: true });
+  } catch (e) {
+    logger.error(`An error has occurred while trying to remove ${tmpDir}.`);
+    logger.error(e);
+  }
+}
+
+/**
  * Converts the given ESRI Shapefile to GeoJSON and returns the resulting file.   Note,
  * the caller MUST unlink the result to delete it
  *
  * @param filename - the path to the ESRI shapefile to convert (must be a .zip file)
+ * @param logger - The logger associated with this request
  * @returns path to a temporary file containing the GeoJSON
  * @throws RequestValidationError - if something goes wrong
  */
-async function _esriToGeoJson(filename: string): Promise<string> {
-  let geoJsonFile;
-
+async function _esriToGeoJson(filename: string, logger: Logger): Promise<string> {
+  let tmpDir;
   try {
-    geoJsonFile = await tmp.file();
+    tmpDir = await createTmpDir(logger);
+    const geoJsonFile = tmpDir + 'shapefile';
     const buffer = await fs.readFile(filename);
     const geojson = rewind(await shpjs.parseZip(buffer));
-    await fs.writeFile(geoJsonFile.path, JSON.stringify(geojson), 'utf8');
+    await fs.writeFile(geoJsonFile, JSON.stringify(geojson), 'utf8');
+    return geoJsonFile;
   } catch (e) {
-    if (geoJsonFile) geoJsonFile.cleanup();
+    if (tmpDir) await cleanupTmpDir(tmpDir, logger);
     if (e instanceof RequestValidationError) throw e;
     throw new RequestValidationError('The provided ESRI Shapefile file could not be parsed. Please check its validity before retrying.');
   }
-  return geoJsonFile.path;
 }
 
 /**
@@ -47,9 +84,10 @@ async function _esriToGeoJson(filename: string): Promise<string> {
  * @returns path to a temporary file containing the GeoJSON
  */
 async function _kmlToGeoJson(filename: string, logger: Logger): Promise<string> {
-  let geoJsonFile;
+  let tmpDir;
   try {
-    geoJsonFile = await tmp.file();
+    tmpDir = await createTmpDir(logger);
+    const geoJsonFile = tmpDir + 'shapefile';
     // TODO: would be better if we could find a way to avoid holding both kml and geojson in memory
     const parserOpts = {
       /**
@@ -63,16 +101,15 @@ async function _kmlToGeoJson(filename: string, logger: Logger): Promise<string> 
     };
     const file = await fs.readFile(filename, 'utf8');
     const kml = new DOMParser(parserOpts).parseFromString(file);
-    const converted = togeojson.kml(kml);
-    await fs.writeFile(geoJsonFile.path, JSON.stringify(converted), 'utf8');
+    const converted = await togeojson.kml(kml);
+    await fs.writeFile(geoJsonFile, JSON.stringify(converted), 'utf8');
+    return geoJsonFile;
   } catch (e) {
-    if (geoJsonFile) geoJsonFile.cleanup();
+    if (tmpDir) await cleanupTmpDir(tmpDir, logger);
     if (e instanceof RequestValidationError) throw e;
     logger.error(e);
     throw new RequestValidationError('The provided KML file could not be parsed. Please check its validity before retrying.');
   }
-
-  return geoJsonFile.path;
 }
 
 const contentTypesToConverters = {
@@ -118,9 +155,11 @@ export default async function shapefileConverter(req, res, next: NextFunction): 
         convertedFile = await converter.geoJsonConverter(originalFile, req.context.logger);
         operation.geojson = await store.uploadFile(convertedFile, `${url}.geojson`);
       } finally {
-        await fs.unlink(originalFile);
+        await cleanupTmpDir(path.dirname(originalFile), req.context.logger);
+        // await fs.unlink(originalFile);
         if (convertedFile) {
-          await fs.unlink(convertedFile);
+          await cleanupTmpDir(path.dirname(convertedFile), req.context.logger);
+          // await fs.unlink(convertedFile);
         }
       }
     } else {
