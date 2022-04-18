@@ -106,7 +106,7 @@ describe('When a workflow contains an aggregating step', async function () {
 
   this.afterEach(async function () {
     await db.table('work_items').del();
-    await fs.rmdir(path.join(env.hostVolumePath, this.jobID), { recursive: true });
+    await fs.rm(path.join(env.hostVolumePath, this.jobID), { recursive: true });
   });
 
   describe('and a work item for the first step is completed', async function () {
