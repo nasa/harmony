@@ -20,7 +20,7 @@ export function hookGetWorkRequest(
     if (timeout) {
       mock.onGet().timeout();
     } else if (response.workItem) {
-      mock.onGet().reply(response.status, response.workItem);
+      mock.onGet().reply(response.status, { workItem: response.workItem });
     } else {
       mock.onGet().reply(response.status, response.statusText);
     }
