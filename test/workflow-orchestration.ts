@@ -41,7 +41,7 @@ describe('when a work item callback request does not return the results to const
     it('finds the queued work item, but query-cmr fails to return a catalog for the next work items', async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
       expect(res.status).to.equal(200);
-      const workItem = JSON.parse(res.text);
+      const { workItem } = JSON.parse(res.text);
       expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [];
@@ -94,7 +94,7 @@ describe('When a workflow contains an aggregating step', async function () {
       workflowStepIndex: 1,
     }).save(db);
     const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
-    const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+    const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
     savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
     savedWorkItem.results = [
       'test/resources/worker-response-sample/catalog0.json',
@@ -120,7 +120,7 @@ describe('When a workflow contains an aggregating step', async function () {
     describe('and it is the last work item for the step', async function () {
       it('supplies exactly one work item for the next step', async function () {
         const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
-        const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+        const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
         savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
         savedWorkItem.results = [
           'test/resources/worker-response-sample/catalog0.json',
@@ -138,7 +138,7 @@ describe('When a workflow contains an aggregating step', async function () {
 
       it('provides all the outputs of the preceding step to the aggregating step', async function () {
         const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
-        const savedWorkItem = JSON.parse(savedWorkItemResp.text);
+        const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
         savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
         savedWorkItem.results = [
           'test/resources/worker-response-sample/catalog0.json',
@@ -146,7 +146,7 @@ describe('When a workflow contains an aggregating step', async function () {
         await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
         await updateWorkItem(this.backend, savedWorkItem);
         const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-        const workItem = JSON.parse(nextStepWorkResponse.text) as WorkItemRecord;
+        const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
         const filePath = workItem.stacCatalogLocation.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
         const catalog = JSON.parse((await fs.readFile(filePath)).toString());
         const items = catalog.links.filter(link => link.rel === 'item');
@@ -228,7 +228,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       it('finds the item and can complete it', async function () {
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
         expect(res.status).to.equal(200);
-        const workItem = JSON.parse(res.text);
+        const { workItem } = JSON.parse(res.text);
         expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = ['test/resources/worker-response-sample/catalog0.json'];
@@ -239,7 +239,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         it('finds a swot-reprojection service work item and can complete it', async function () {
           const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
           expect(res.status).to.equal(200);
-          const workItem = JSON.parse(res.text);
+          const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = ['test/resources/worker-response-sample/catalog0.json'];
           await updateWorkItem(this.backend, workItem);
@@ -250,7 +250,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
           it('finds a netcdf-to-zarr service work item and can complete it', async function () {
             const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
             expect(res.status).to.equal(200);
-            const workItem = JSON.parse(res.text);
+            const { workItem } = JSON.parse(res.text);
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.results = ['test/resources/worker-response-sample/catalog0.json'];
             await updateWorkItem(this.backend, workItem);
@@ -270,7 +270,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
             it('wish I could do this in the describe', async function () {
               for await (const service of ['harmonyservices/query-cmr:latest', 'sds/swot-reproject:latest', 'harmonyservices/netcdf-to-zarr:latest']) {
                 const res = await getWorkForService(this.backend, service);
-                const workItem = JSON.parse(res.text);
+                const { workItem } = JSON.parse(res.text);
                 workItem.status = WorkItemStatus.SUCCESSFUL;
                 workItem.results = ['test/resources/worker-response-sample/catalog0.json'];
                 await updateWorkItem(this.backend, workItem);
@@ -312,7 +312,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
-      const workItem = JSON.parse(res.text);
+      const { workItem } = JSON.parse(res.text);
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
         'test/resources/worker-response-sample/catalog0.json',
@@ -332,7 +332,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
       before(async function () {
         const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-        firstSwotItem = JSON.parse(res.text);
+        firstSwotItem = JSON.parse(res.text).workItem;
         firstSwotItem.status = WorkItemStatus.FAILED;
         firstSwotItem.results = [];
         await updateWorkItem(this.backend, firstSwotItem);

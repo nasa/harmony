@@ -38,6 +38,10 @@ async function calculateQueryCmrLimit(
       workItem.jobID,
       workItem.workflowStepIndex + 1,
     );
+    if (!nextStep) {
+      logger.warn('Could not find next step for query CMR work item');
+      return;
+    }
     const numItemsGenerated = await workItemCountForStep(tx, workItem.jobID, nextStep.stepIndex);
     const queryCmrLimit = nextStep.workItemCount - numItemsGenerated;
     logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);

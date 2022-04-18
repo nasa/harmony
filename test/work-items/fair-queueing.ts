@@ -94,17 +94,17 @@ describe('Fair Queueing', function () {
 
     describe('and one user has waited longer than other users to have work done', async function () {
       it('returns the work item for the oldest worked job for that user', async function () {
-        expect(results[0].body.jobID).to.equal('job4');
+        expect(results[0].body.workItem.jobID).to.equal('job4');
       });
       it('updates the updatedAt field on the job', async function () {
         const job4 = await Job.byJobID(db, 'job4');
         expect(job4.updatedAt).to.be.greaterThan(new Date(jobData[3][4] as number));
       });
       it('returns work items for synchronous jobs ahead of older asynchronous jobs', async function () {
-        expect(results[1].body.jobID).to.equal('job3');
+        expect(results[1].body.workItem.jobID).to.equal('job3');
       });
       it('returns the rest of the work items in fair queueing order', function () {
-        const jobIds = results.slice(2, 5).map((result) => result.body.jobID);
+        const jobIds = results.slice(2, 5).map((result) => result.body.workItem.jobID);
         expect(jobIds).to.eql(['job6', 'job1', 'job7']);
       });
       it('returns a 404 status when no work is available', function () {
