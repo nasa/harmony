@@ -320,7 +320,12 @@ export async function cmrPostBase(
     return response;
   } finally {
     if (shapefile) {
-      // await fs.promises.unlink(shapefile);
+      try {
+        await fs.promises.unlink(shapefile);
+      } catch (e) {
+        logger.error(`Failed to delete file ${shapefile}`);
+        logger.error(e);
+      }
     }
   }
 }
