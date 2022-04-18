@@ -151,7 +151,8 @@ function hookQueryGranules(batchSize: number): void {
     downloadFile = sinon.stub(S3ObjectStore.prototype, 'downloadFile');
     const shapefile = tmp.tmpNameSync();
     fs.copyFileSync(geojson, shapefile);
-    downloadFile.returns(shapefile);
+
+    downloadFile.resolves(shapefile);
 
     // Create an output dir
     outputDir = tmp.dirSync({ unsafeCleanup: true }).name;
@@ -161,7 +162,7 @@ function hookQueryGranules(batchSize: number): void {
     queryFilenames = queries.map((q, i) => {
       const filename = tmp.tmpNameSync();
       fs.writeFileSync(filename, JSON.stringify(q));
-      fetchPost.onCall(i).returns(Promise.resolve(output));
+      fetchPost.onCall(i).resolves(Promise.resolve(output));
       return filename;
     });
     fetchPost.onCall(queries.length + 1).throws();
@@ -178,7 +179,7 @@ function hookQueryGranules(batchSize: number): void {
     queryFilenames.forEach(fs.unlinkSync);
     fetchPost.restore();
     downloadFile.restore();
-    fs.rmdirSync(outputDir, { recursive: true });
+    fs.rmSync(outputDir, { recursive: true });
     delete this.result;
     delete this.queryFields;
   });

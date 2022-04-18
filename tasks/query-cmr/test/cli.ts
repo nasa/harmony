@@ -177,7 +177,7 @@ describe('cli', function () {
         ['--output-dir', tmpDir, '--harmony-input', '{}', '--query', 'file.json'],
         [new CmrStacCatalog({ description: 'first' }), new CmrStacCatalog({ description: 'second' })],
       );
-      after(() => fs.rmdirSync(tmpDir, { recursive: true }));
+      after(() => fs.rmSync(tmpDir, { recursive: true }));
 
       it('creates the directory and one catalog file for each returned catalog', function () {
         const firstCatalog = path.join(tmpDir, 'catalog0.json');
