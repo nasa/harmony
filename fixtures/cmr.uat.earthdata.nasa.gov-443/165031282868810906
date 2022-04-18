@@ -1,0 +1,27 @@
+GET /search/collections.json?short_name=bogus-not-a-cmr-id&page_size=2000&sort_key=-revisionDate
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 228
+connection: close
+date: Mon, 18 Apr 2022 20:13:48 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: d894fd9b-9396-4e6a-8964-42aab50ecab2
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 8
+x-request-id: 2Rp0zRhBRFlD1v0sQJcVUXnvSKK9FUazhrVNjLgweyaAR9y7jDlrlA==
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 b1cccfee199a18a4097165436eb291a8.cloudfront.net (CloudFront)
+x-amz-cf-pop: EWR53-C2
+x-amz-cf-id: 2Rp0zRhBRFlD1v0sQJcVUXnvSKK9FUazhrVNjLgweyaAR9y7jDlrlA==
+
+{"feed":{"updated":"2022-04-18T20:13:48.735Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?short_name=bogus-not-a-cmr-id&page_size=2000&sort_key=-revisionDate","title":"ECHO dataset metadata","entry":[]}}
