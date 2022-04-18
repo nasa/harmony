@@ -20,6 +20,7 @@ const statesToDefaultMessages = {
   successful: 'The job has completed successfully',
   failed: 'The job failed with an unknown error',
   canceled: 'The job was canceled',
+  paused: 'The job is paused',
 };
 
 const defaultMessages = Object.values(statesToDefaultMessages);
@@ -41,6 +42,7 @@ export enum JobStatus {
   SUCCESSFUL = 'successful',
   FAILED = 'failed',
   CANCELED = 'canceled',
+  PAUSED = 'paused',
 }
 
 export const activeJobStatuses = [JobStatus.ACCEPTED, JobStatus.RUNNING];
@@ -384,6 +386,43 @@ export class Job extends Record implements JobRecord {
   }
 
   /**
+   *  Checks the status of the job to see if the job is paused.
+   * 
+   * @returns true if the `Job` is paused
+   */
+  isPaused(): boolean {
+    return this.status === JobStatus.PAUSED;
+  }
+
+  /**
+   * Updates the status to paused providing the optional message or the default
+   * if none is provided.  You should generally provide a message if possible.
+   * Only jobs in the RUNNING state may be paused.
+   * You must call `#save` to persist the change.
+   *
+   * @param message - a human-readable message to indicate the state of the job
+   * @throws An error if the job is not currently in the RUNNING state
+   */
+  pause(message = statesToDefaultMessages.paused): void {
+    if (this.status != JobStatus.RUNNING) {
+      throw new ConflictError(`Job status cannot be updated from ${this.status} to paused.`);
+    }
+    this.updateStatus(JobStatus.PAUSED, message);
+  }
+
+  /**
+   * Updates the status of a paused job to running.
+   *
+   * @throws An error if the job is not currently in the PAUSED state
+   */
+  resume(): void {
+    if (this.status != JobStatus.PAUSED) {
+      throw new ConflictError(`Job status is ${this.status} - only paused jobs can be resumed.`);
+    }
+    this.updateStatus(JobStatus.RUNNING);
+  }
+
+  /**
    * Updates the status to failed and message to the supplied error message or the default
    * if none is provided.  You should generally provide an error message if possible, as the
    * default indicates an unknown error.
@@ -508,7 +547,7 @@ export class Job extends Record implements JobRecord {
    * @param requestingUserName - the person we're checking permissions for
    * @param isAdminAccess - whether the requesting user has admin access
    * @param accessToken - the token to make permission check requests with
-   * @returns ture or false
+   * @returns true or false
    */
   async canShareResultsWith(
     requestingUserName: string,

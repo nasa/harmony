@@ -12,15 +12,20 @@ import { hookRedirect, hookUrl } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 
 const aJob = buildJob({ username: 'joe' });
+const pausedJob = buildJob({ username: 'joe' });
+pausedJob.pause();
 
 describe('Individual job status route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
   hookTransaction();
   before(async function () {
     await aJob.save(this.trx);
+    await pausedJob.save(this.trx);
     this.trx.commit();
   });
   const jobID = aJob.requestId;
+  const pausedjobID = pausedJob.requestId;
+
   describe('For a user who is not logged in', function () {
     before(async function () {
       this.res = await jobStatus(this.frontend, { jobID }).redirects(0);
@@ -51,6 +56,20 @@ describe('Individual job status route', function () {
       const selves = job.getRelatedLinks('self');
       expect(selves.length).to.equal(1);
       expect(selves[0].href).to.match(new RegExp(`.*?${this.res.req.path}\\?page=1&limit=2000$`));
+    });
+  });
+
+  describe('when the job is paused', function () {
+    hookJobStatus({ jobID: pausedjobID, username: 'joe' });
+
+    it('returns a status field of "paused"', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.status).to.eql('paused');
+    });
+
+    it('returns a human-readable message field corresponding to its state', function () {
+      const job = JSON.parse(this.res.text);
+      expect(job.message).to.include('The job is paused');
     });
   });
 

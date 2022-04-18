@@ -23,6 +23,61 @@ async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<
 }
 
 /**
+   * Set the state of a job to 'paused' unless already in a terminal state then save it.
+   * 
+   * @param tx - the transaction to perform the updates with
+   * @param job - the job to save and update
+   * @param logger - the logger to use for logging errors/info
+   * @param message - the job's paused message
+   * @throws {@link ConflictError} if the job is already in a terminal state.
+ */
+export async function pauseAndSaveJob(
+  tx: Transaction,
+  job: Job,
+  finalStatus: JobStatus,
+  logger: Logger,
+  message?,
+): Promise<void> {
+  job.pause(message);
+  try {
+    await job.save(tx);
+  } catch (e) {
+    logger.error(`Error saving job ${job.jobID} while attempting to pause job`);
+    logger.error(e);
+    throw e;
+  }
+}
+
+/**
+   * Resume a paused job then save it.
+   * 
+   * @param jobID - the id of job (requestId in the db)
+   * @param logger - the logger to use for logging errors/info
+   * @param username - the name of the user requesting the resume - null if the admin
+   * @throws {@link ConflictError} if the job is already in a terminal state.
+ */
+export async function resumeAndSaveJob(
+  jobID: string,
+  logger: Logger,
+  username: string,
+): Promise<void> {
+  let job;
+  await db.transaction(async (tx) => {
+    if (username) {
+      ({ job } = await Job.byUsernameAndRequestId(tx, username, jobID));
+    } else {
+      ({ job } = await Job.byRequestId(tx, jobID));
+    }
+
+    if (!job) {
+      throw new NotFoundError(`Unable to find job ${jobID}`);
+    }
+    job.resume();
+    await job.save(tx);
+  });
+}
+
+/**
    * Set and save the final status of the turbo job
    * and in the case of job failure or cancellation, its work items.
    * (Also clean up temporary work items.)
@@ -70,7 +125,7 @@ export async function completeJob(
  * @param shouldIgnoreRepeats - flag to indicate that we should ignore repeat calls to cancel the
  * same job - needed for the workflow termination listener (default false)
  */
-export default async function cancelAndSaveJob(
+export async function cancelAndSaveJob(
   jobID: string,
   message: string,
   logger: Logger,

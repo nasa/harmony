@@ -11,7 +11,7 @@ import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-a
 import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
 import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
-import { getJobsListing, getJobStatus, cancelJob } from '../frontends/jobs';
+import { getJobsListing, getJobStatus, cancelJob, resumeJob } from '../frontends/jobs';
 import { getJobs, getJob, getWorkItemsTable } from '../frontends/workflow-ui';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
@@ -200,10 +200,12 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/jobs', getJobsListing);
   result.get('/jobs/:jobID', getJobStatus);
   result.post('/jobs/:jobID/cancel', cancelJob);
+  result.post('/jobs/:jobID/resume', resumeJob);
 
   result.get('/admin/jobs', getJobsListing);
   result.get('/admin/jobs/:jobID', getJobStatus);
   result.post('/admin/jobs/:jobID/cancel', cancelJob);
+  result.post('/admin/jobs/:jobID/resume', resumeJob);
 
   result.get('/workflow-ui', getJobs);
   result.get('/workflow-ui/:jobID', getJob);
@@ -212,9 +214,11 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/admin/workflow-ui/:jobID', getJob);
   result.get('/admin/workflow-ui/:jobID/work-items', getWorkItemsTable);
 
-  // Allow canceling with a GET in addition to POST to workaround issues with redirects using EDL
+  // Allow canceling/resuming with a GET in addition to POST to workaround issues with redirects using EDL
   result.get('/jobs/:jobID/cancel', cancelJob);
   result.get('/admin/jobs/:jobID/cancel', cancelJob);
+  result.get('/jobs/:jobID/resume', resumeJob);
+  result.get('/admin/jobs/:jobID/resume', resumeJob);
 
   result.get('/admin/configuration/log-level', setLogLevel);
 

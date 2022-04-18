@@ -248,6 +248,46 @@ export function adminCancelJobWithGET(app: Express.Application, { jobID }: Job):
   return request(app).get(`/admin/jobs/${jobID}/cancel`);
 }
 
+/**
+ * Submits a resume job request as the given user
+ * 
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function resumeJob(app: Express.Application, { jobID }: Job): Test {
+  return request(app).post(`/jobs/${jobID}/resume`);
+}
+
+/**
+ * Submits a resume job request as the given user on the admin endpoint
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function adminResumeJob(app: Express.Application, { jobID }: Job): Test {
+  return request(app).post(`/admin/jobs/${jobID}/resume`);
+}
+
+/**
+ * Submits a resume job request as the given user using a GET instead of POST
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function resumeJobWithGET(app: Express.Application, { jobID }: Job): Test {
+  return request(app).get(`/jobs/${jobID}/resume`);
+}
+
+/**
+ * Submits a resume job request as the given user on the admin endpoint using a GET instead of POST
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function adminResumeJobWithGET(app: Express.Application, { jobID }: Job): Test {
+  return request(app).get(`/admin/jobs/${jobID}/resume`);
+}
+
 export const hookJobListing = hookRequest.bind(this, jobListing);
 export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);
 export const hookJobStatus = hookRequest.bind(this, jobStatus);
@@ -256,6 +296,10 @@ export const hookCancelJob = hookRequest.bind(this, cancelJob);
 export const hookAdminCancelJob = hookRequest.bind(this, adminCancelJob);
 export const hookCancelJobWithGET = hookRequest.bind(this, cancelJobWithGET);
 export const hookAdminCancelJobWithGET = hookRequest.bind(this, adminCancelJobWithGET);
+export const hookResumeJob = hookRequest.bind(this, resumeJob);
+export const hookAdminResumeJob = hookRequest.bind(this, adminResumeJob);
+export const hookResumeJobWithGET = hookRequest.bind(this, resumeJobWithGET);
+export const hookAdminResumeJobWithGET = hookRequest.bind(this, adminResumeJobWithGET);
 
 /**
  * Given a string returns a new string with all characters escaped such that the string

@@ -5,7 +5,7 @@ CREATE TABLE `jobs` (
   `jobID` char(36) not null,
   `requestId` char(36) not null,
   `username` varchar(255) not null,
-  `status` text check (`status` in ('accepted', 'running', 'successful', 'failed', 'canceled')) not null,
+  `status` text check (`status` in ('accepted', 'running', 'successful', 'failed', 'canceled', 'paused')) not null,
   `message` varchar(4096) not null,
   `progress` integer not null,
   `batchesCompleted` integer not null,

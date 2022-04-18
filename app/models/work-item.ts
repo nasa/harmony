@@ -136,12 +136,19 @@ export async function getNextWorkItem(
   serviceID: string,
 ): Promise<WorkItem> {
   let workItemData;
+  const acceptableJobStatuses = _.cloneDeep(activeJobStatuses);
+  // The query-cmr service should keep going for paused jobs to avoid the ten minute CMR
+  // scroll session timeout
+  if (serviceID.includes('query-cmr')) {
+    acceptableJobStatuses.push(JobStatus.PAUSED);
+  }
+
   try {
     const subQueryForUsersRequestingService =
       tx(Job.table)
         .select('username')
         .join(`${WorkItem.table} as w`, `${Job.table}.jobID`, 'w.jobID')
-        .whereIn(`${Job.table}.status`, activeJobStatuses)
+        .whereIn(`${Job.table}.status`, acceptableJobStatuses)
         .where({ 'w.status': 'ready', serviceID });
     // lock rows in the jobs table for users requesting this service - needed as a workaround
     // for postgres limitation (https://stackoverflow.com/questions/5272412/group-by-in-update-from-clause)
@@ -175,7 +182,7 @@ export async function getNextWorkItem(
             .on('w.workflowStepIndex', '=', 'wf.stepIndex');
         })
         .select(...tableFields, 'wf.operation')
-        .whereIn('j.status', activeJobStatuses)
+        .whereIn('j.status', acceptableJobStatuses)
         .where('w.status', '=', 'ready')
         .where('w.serviceID', '=', serviceID)
         .where('j.username', '=', userData.username)
