@@ -16,7 +16,7 @@ import { WorkItemStatus } from '../models/work-item-interface';
  */
 async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<void> {
   try {
-    await fs.rmdir(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
+    await fs.rm(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
   } catch (e) {
     logger.warn(`Unable to clean up temporary files for ${jobID}`);
     logger.warn(e);
