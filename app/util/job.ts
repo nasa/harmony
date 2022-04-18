@@ -3,10 +3,11 @@ import { promises as fs } from 'fs';
 import db, { Transaction } from './db';
 import { Job, JobStatus, terminalStates } from '../models/job';
 import env from './env';
-import { getScrollIdForJob, updateWorkItemStatusesByJobId, WorkItemStatus } from '../models/work-item';
+import { getScrollIdForJob, updateWorkItemStatusesByJobId } from '../models/work-item';
 import { ConflictError, NotFoundError, RequestValidationError } from './errors';
 import isUUID from './uuid';
 import { clearScrollSession } from './cmr';
+import { WorkItemStatus } from '../models/work-item-interface';
 
 /**
  * Cleans up the temporary work items for the provided jobID
@@ -15,7 +16,7 @@ import { clearScrollSession } from './cmr';
  */
 async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<void> {
   try {
-    await fs.rmdir(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
+    await fs.rm(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
   } catch (e) {
     logger.warn(`Unable to clean up temporary files for ${jobID}`);
     logger.warn(e);
@@ -24,7 +25,7 @@ async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<
 
 /**
    * Set the state of a job to 'paused' unless already in a terminal state then save it.
-   * 
+   *
    * @param tx - the transaction to perform the updates with
    * @param job - the job to save and update
    * @param logger - the logger to use for logging errors/info
@@ -50,7 +51,7 @@ export async function pauseAndSaveJob(
 
 /**
    * Resume a paused job then save it.
-   * 
+   *
    * @param jobID - the id of job (requestId in the db)
    * @param logger - the logger to use for logging errors/info
    * @param username - the name of the user requesting the resume - null if the admin

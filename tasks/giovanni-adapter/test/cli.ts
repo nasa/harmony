@@ -117,7 +117,7 @@ describe('cli', function () {
       hookCliMain(
         ['--harmony-metadata-dir', tmpDir, '--harmony-input', input],
       );
-      after(() => fs.rmdirSync(tmpDir, { recursive: true }));
+      after(() => fs.rmSync(tmpDir, { recursive: true }));
 
       it('creates the directory and one catalog file for each returned catalog', function () {
         const catalog = path.join(tmpDir, 'catalog.json');

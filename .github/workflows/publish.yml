@@ -5,7 +5,7 @@ on:
     branches:
       - main
   release:
-    types: 
+    types:
        - published
 
 env:
@@ -21,12 +21,11 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 16.x
       - name: Log into registry
         run: echo "${{ secrets.DOCKERHUB }}" | docker login -u "${DOCKER_USER}" --password-stdin
       - name: Setup Node
         run: |
-          npm install -g npm@7
           npm install
       - name: Build and publish images
         run: |
@@ -44,4 +43,4 @@ jobs:
           # build and publish images for all tasks
           VERSION="${VERSION}" lerna run build
           VERSION="${VERSION}" lerna run publish
-          
+

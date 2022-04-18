@@ -4,7 +4,7 @@ import stream from 'stream';
 import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import logger from '../../../../app/util/log';
-import WorkItem from '../../../../app/models/work-item';
+import { WorkItemRecord } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 
 // Must match where harmony expects artifacts in workflow-orchestration.ts
@@ -90,7 +90,7 @@ function _getErrorMessage(logStr: string, catalogDir: string): string {
   * @param callback - Function to call with result
   * @param maxCmrGranules - Limits the page of granules in the query-cmr task
   */
-export async function runQueryCmrFromPull(workItem: WorkItem, maxCmrGranules?: number): Promise<ServiceResponse> {
+export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranules?: number): Promise<ServiceResponse> {
 
   const { operation, scrollID } = workItem;
   const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
@@ -131,7 +131,7 @@ export async function runQueryCmrFromPull(workItem: WorkItem, maxCmrGranules?: n
  * @param operation - The requested operation
  * @param callback - Function to call with result
  */
-export async function runServiceFromPull(workItem: WorkItem): Promise<ServiceResponse> {
+export async function runServiceFromPull(workItem: WorkItemRecord): Promise<ServiceResponse> {
   try {
     const { operation, stacCatalogLocation } = workItem;
     // support invocation args specified with newline separator or space separator
