@@ -320,7 +320,7 @@ export async function cmrPostBase(
     return response;
   } finally {
     if (shapefile) {
-      await fs.promises.unlink(shapefile);
+      // await fs.promises.unlink(shapefile);
     }
   }
 }
