@@ -429,8 +429,8 @@ describe('query#queryGranulesScrolling', function () {
     it('uses a scrolling CMR search', function () {
       expect(this.queryFields[0].scroll).to.equal('true');
     });
-    it('limits the page size to 2000', function () {
-      expect(this.queryFields[0].page_size).to.equal('2000');
+    it('does not use the page_size parameter', function () {
+      expect(this.queryFields[0].page_size).to.equal(undefined);
     });
   });
 
