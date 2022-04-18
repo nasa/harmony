@@ -1,7 +1,8 @@
+import _ from 'lodash';
 import { NextFunction, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
-import db, { Transaction } from '../util/db';
+import db, { batchSize, Transaction } from '../util/db';
 import { completeJob } from '../util/job';
 import env from '../util/env';
 import { readCatalogItems, StacItemLink } from '../util/stac';
@@ -93,7 +94,8 @@ async function _handleWorkItemResults(
     const items = readCatalogItems(localLocation);
 
     for await (const item of items) {
-      for (const [_, asset] of Object.entries(item.assets)) {
+      for (const keyValue of Object.entries(item.assets)) {
+        const asset = keyValue[1];
         const { href, type, title } = asset;
         const link = new JobLink({
           jobID: job.jobID,
@@ -247,7 +249,9 @@ async function createNextWorkItems(
         workflowStepIndex: nextStep.stepIndex,
       }),
     );
-    await WorkItem.insertBatch(tx, newItems);
+    for (const batch of _.chunk(newItems, batchSize)) {
+      await WorkItem.insertBatch(tx, batch);
+    }
   }
 
   // If the current step is the query-cmr service and the number of work items for the next

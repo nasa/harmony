@@ -6,6 +6,11 @@ import { attachPaginate } from 'knex-paginate';
 import env from './env';
 import logger from './log';
 
+/**
+ * Batch size -- to avoid overly large SQL statements.
+ */
+export const batchSize = env.nodeEnv === 'development' ? 500 : 5000;
+
 export type Transaction = Knex.Transaction | Knex;
 
 const environment = env.nodeEnv;

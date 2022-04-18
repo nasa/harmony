@@ -5,14 +5,8 @@ import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from '../m
 import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from '../models/workflow-steps';
 import env from '../util/env';
 import { Worker } from './worker';
-import db from '../util/db';
+import db, { batchSize } from '../util/db';
 import sleep from '../util/sleep';
-
-/**
- * Batch size to use for deletions. We batch the deletions
- * to avoid making an overly large IN(...) statement.
- */
-const batchSize = env.nodeEnv === 'development' ? 500 : 5_000;
 
 export interface WorkReaperConfig {
   logger: Logger;
