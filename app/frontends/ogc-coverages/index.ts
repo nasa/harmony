@@ -21,7 +21,6 @@ interface OgcSchemaHttpMethod {
 
 interface OgcSchemaCoverages {
   paths : {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     '/collections/{collectionId}/coverage/rangeset': {
       get: OgcSchemaHttpMethod,
       post: OgcSchemaHttpMethod

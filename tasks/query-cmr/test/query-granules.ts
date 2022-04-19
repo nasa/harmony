@@ -142,24 +142,26 @@ function hookQueryGranules(batchSize: number): void {
 
   let fetchPost: sinon.SinonStub;
   let downloadFile: sinon.SinonStub;
-  let unlinkStub: sinon.SinonStub;
+  let outputDir: string;
   let queryFilenames: string[];
   const pageSize = 5;
   const maxPages = 1;
   before(async function () {
     // Stub access to S3 geojson file
     downloadFile = sinon.stub(S3ObjectStore.prototype, 'downloadFile');
-    downloadFile.resolves(geojson);
+    const shapefile = tmp.tmpNameSync();
+    fs.copyFileSync(geojson, shapefile);
+    downloadFile.returns(shapefile);
 
-    // Do not delete the shapefile that gets returned by downloadFile
-    unlinkStub = sinon.stub(fs.promises, 'unlink');
+    // Create an output dir
+    outputDir = tmp.dirSync({ unsafeCleanup: true }).name;
 
     // Stub cmr fetch post to return the contents of queries
     fetchPost = sinon.stub(cmr, 'fetchPost');
     queryFilenames = queries.map((q, i) => {
       const filename = tmp.tmpNameSync();
       fs.writeFileSync(filename, JSON.stringify(q));
-      fetchPost.onCall(i).resolves(Promise.resolve(output));
+      fetchPost.onCall(i).returns(Promise.resolve(output));
       return filename;
     });
     fetchPost.onCall(queries.length + 1).throws();
@@ -173,10 +175,10 @@ function hookQueryGranules(batchSize: number): void {
     this.queryFields = this.queryFields.sort((a, b) => a._index - b._index);
   });
   after(function () {
-    unlinkStub.restore();
     queryFilenames.forEach(fs.unlinkSync);
     fetchPost.restore();
     downloadFile.restore();
+    fs.rmdirSync(outputDir, { recursive: true });
     delete this.result;
     delete this.queryFields;
   });

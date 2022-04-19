@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Logger } from 'winston';
 import { v4 as uuid } from 'uuid';
-import WorkItem from '../work-item';
+import WorkItem, { WorkItemStatus } from '../work-item';
 import WorkflowStep from '../workflow-steps';
 import InvocationResult from './invocation-result';
 import { Job, JobStatus } from '../job';
@@ -10,7 +10,6 @@ import { defaultObjectStore } from '../../util/object-store';
 import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
-import { WorkItemStatus } from '../work-item-interface';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;

@@ -2,7 +2,7 @@ import { Job, JobRecord, JobStatus } from './../../app/models/job';
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { getWorkItemById } from '../../app/models/work-item';
+import { WorkItemRecord, WorkItemStatus, getWorkItemById } from '../../app/models/work-item';
 import { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
@@ -10,7 +10,6 @@ import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
 import { hookClearScrollSessionExpect } from '../helpers/hooks';
-import { WorkItemRecord, WorkItemStatus } from '../../app/models/work-item-interface';
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();

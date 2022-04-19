@@ -178,7 +178,7 @@ You must select "401" as the application type for Harmony to work correctly with
 
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
-* Node.js version 16.  We strongly recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions.
+* Node.js version 12.  We strongly recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions.
 * Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14 and Amazon Linux 2.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
 * [git](https://git-scm.com) - Used to clone this repository
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
@@ -210,28 +210,28 @@ $ git clone https://github.com/nasa/harmony.git
 
 Ensure envsubst is installed on system.
 
-Ensure node is available and is the correct version, 16.x.y.
+Ensure node is available and is the correct version, 12.x.y, where "x" >= 14.
 
 ```
 $ node --version
-v16.14.2
+v12.22.1
 ```
 
-Ensure npm is available and is version 8 or later.
+Ensure npm is available and is version 7 or later.
 ```
 $ npm --version
-8.5.0
+7.11.2
 ```
 
 If either are not the correct versions and you are using NVM, install them and ensure your `PATH` is up-to-date by running:
 
 ```
-$ nvm install && nvm use
+$ nvm install && nvm use && npm install -g npm@7
 ```
 
-The output should include node 16 and npm 8.
+The output should include node 12 and npm 7.
 ```
-Now using node v16.14.2 (npm v8.5.0)
+Now using node v12.22.1 (npm v7.11.2)
 ```
 
 Be sure to **verify the version on the final line** to make sure the NVM binary appears first in your `PATH`.

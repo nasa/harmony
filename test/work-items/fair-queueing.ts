@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { Job, JobRecord } from '../../app/models/job';
-import { WorkItemRecord } from '../../app/models/work-item-interface';
+import { WorkItemRecord } from '../../app/models/work-item';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
 import { getWorkForService, makePartialWorkItemRecord, rawSaveWorkItem } from '../helpers/work-items';

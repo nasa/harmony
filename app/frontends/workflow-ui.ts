@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { sanitizeImage } from '../util/string';
 import { validateJobId } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
-import { getWorkItemsByJobId } from '../models/work-item';
+import { getWorkItemsByJobId, WorkItemStatus } from '../models/work-item';
 import { NotFoundError, RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
@@ -10,7 +10,6 @@ import db from '../util/db';
 import version from '../util/version';
 import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
-import { WorkItemStatus } from '../models/work-item-interface';
 
 /**
  * Return an object that contains key value entries for jobs table filters.
@@ -23,16 +22,16 @@ function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any *
   requestQuery: Record<string, any>,
   isAdminAccess: boolean,
   maxFilters = 30,
-): {
+): { 
     statusValues: string[], // need for querying db
     userValues: string[], // need for querying db
     originalValues: string[] // needed for populating filter input
   } {
   if (!requestQuery.jobsfilter) {
-    return {
+    return { 
       statusValues: [],
-      userValues: [],
-      originalValues: [],
+      userValues: [], 
+      originalValues: [], 
     };
   }
   const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.jobsfilter);
@@ -104,14 +103,14 @@ export async function getJobs(
       isAdminRoute: req.context.isAdminAccess,
       // job table row HTML
       jobs,
-      jobBadge() {
+      jobBadge() { 
         return {
           [JobStatus.ACCEPTED]: 'primary',
           [JobStatus.CANCELED]: 'secondary',
           [JobStatus.FAILED]: 'danger',
           [JobStatus.SUCCESSFUL]: 'success',
           [JobStatus.RUNNING]: 'info',
-        }[this.status];
+        }[this.status]; 
       },
       jobCreatedAt() { return this.createdAt.getTime(); },
       jobUrl() {

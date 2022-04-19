@@ -2,13 +2,12 @@ import { describe } from 'mocha';
 import MockDate from 'mockdate';
 import { buildJob } from '../helpers/jobs';
 import { Job, JobStatus } from '../../app/models/job';
-import { getWorkItemsByJobId } from '../../app/models/work-item';
+import { WorkItemStatus, getWorkItemsByJobId } from '../../app/models/work-item';
 import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildWorkItem } from '../helpers/work-items';
 import logger from '../../app/util/log';
 import { expect } from 'chai';
 import WorkFailer, { WorkFailerConfig } from '../../app/workers/work-failer';
-import { WorkItemStatus } from '../../app/models/work-item-interface';
 
 describe('WorkFailer', function () {
   // used to mock work items (create date), for items that have not been running for long

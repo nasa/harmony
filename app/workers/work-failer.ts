@@ -1,12 +1,11 @@
 import { Logger } from 'winston';
-import { getWorkItemsByAgeAndStatus, updateWorkItemStatuses } from '../models/work-item';
+import { WorkItemStatus, getWorkItemsByAgeAndStatus, updateWorkItemStatuses } from '../models/work-item';
 import env from '../util/env';
 import { Worker } from './worker';
 import db, { Transaction } from '../util/db';
 import sleep from '../util/sleep';
 import { Job, JobStatus } from '../models/job';
 import { completeJob } from '../util/job';
-import { WorkItemStatus } from '../models/work-item-interface';
 
 export interface WorkFailerConfig {
   logger: Logger;
