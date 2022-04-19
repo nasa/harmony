@@ -439,3 +439,51 @@ describe('Workflow chaining for a collection configured for swot reprojection an
     });
   });
 });
+
+describe('Request that spans multiple CMR pages', function () {
+  const collection = 'C1233800302-EEDTEST';
+  hookServersStartStop();
+  describe('when requesting five granules', function () {
+    hookClearScrollSessionExpect();
+    const multiPageQuery = {
+      maxResults: 5,
+      outputCrs: 'EPSG:4326',
+      interpolation: 'near',
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+      format: 'application/x-zarr',
+      concatenate: false,
+    };
+
+    hookRangesetRequest('1.0.0', collection, 'all', { query: multiPageQuery });
+    hookRedirect('joe');
+
+    describe('when checking for a query-cmr work item', function () {
+      it('finds a query-cmr item along with a maxCmrGranules limit', async function () {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const { workItem, maxCmrGranules } = JSON.parse(res.text);
+        expect(maxCmrGranules).to.equal(5);
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = [
+          'test/resources/worker-response-sample/catalog0.json', 
+          'test/resources/worker-response-sample/catalog0.json', 
+          'test/resources/worker-response-sample/catalog0.json'];
+        await updateWorkItem(this.backend, workItem);
+      });
+
+      it('limits the next query-cmr task based on how many items have been generated for the next step', async function () {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const { workItem, maxCmrGranules } = JSON.parse(res.text);
+        expect(maxCmrGranules).to.equal(2);
+        expect(workItem).to.not.equal(undefined);
+      });
+
+      it('does not limit non-query-cmr items', async function () {
+        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        const { workItem, maxCmrGranules } = JSON.parse(res.text);
+        expect(maxCmrGranules).to.equal(undefined);
+        expect(workItem).to.not.equal(undefined);
+      });
+    });
+  });
+});
