@@ -42,7 +42,8 @@ describe('when a work item callback request does not return the results to const
     it('finds the queued work item, but query-cmr fails to return a catalog for the next work items', async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
       expect(res.status).to.equal(200);
-      const { workItem } = JSON.parse(res.text);
+      const { workItem, maxCmrGranules } = JSON.parse(res.text);
+      expect(maxCmrGranules).to.equal(2);
       expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [];
@@ -229,7 +230,8 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       it('finds the item and can complete it', async function () {
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
         expect(res.status).to.equal(200);
-        const { workItem } = JSON.parse(res.text);
+        const { workItem, maxCmrGranules } = JSON.parse(res.text);
+        expect(maxCmrGranules).to.equal(2);
         expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = ['test/resources/worker-response-sample/catalog0.json'];
@@ -313,7 +315,8 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
-      const { workItem } = JSON.parse(res.text);
+      const { workItem, maxCmrGranules } = JSON.parse(res.text);
+      expect(maxCmrGranules).to.equal(3);
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
         'test/resources/worker-response-sample/catalog0.json',
