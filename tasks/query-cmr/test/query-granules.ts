@@ -68,8 +68,9 @@ async function fetchPostArgsToFields(
 /**
  * Sets up before and after hooks to run queryGranulesScrolling with three granules as
  * the response to queryGranulesForScrollId
+ * @param maxCmrGranules - limit the number of granules returned in the CMR page
  */
-function hookQueryGranulesScrolling(): void {
+function hookQueryGranulesScrolling(maxCmrGranules?: number): void {
   const output = {
     headers: new fetch.Headers({}),
     ...JSON.parse(fs.readFileSync(path.resolve(__dirname, 'resources/atom-granules.json'), 'utf8')),
@@ -82,7 +83,7 @@ function hookQueryGranulesScrolling(): void {
     fetchPost.returns(Promise.resolve(output));
 
     // Actually call it
-    this.result = await queryGranulesScrolling(operation, 'scrollId');
+    this.result = await queryGranulesScrolling(operation, 'scrollId', maxCmrGranules);
 
     // Map the call arguments into something we can actually assert against
     this.queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
@@ -429,6 +430,22 @@ describe('query#queryGranulesScrolling', function () {
     });
     it('does not use the page_size parameter', function () {
       expect(this.queryFields[0].page_size).to.equal(undefined);
+    });
+  });
+
+  describe('when called with a max CMR granules limit', async function () {
+    hookQueryGranulesScrolling(1);
+
+    it('limits the STAC output', function () {
+      expect(this.result.length).to.equal(1);
+    });
+  });
+
+  describe('when called with a max CMR granules limit that exceeds the number of CMR granules', async function () {
+    hookQueryGranulesScrolling(3000);
+
+    it('the STAC output is not limitted', function () {
+      expect(this.result.length).to.equal(3);
     });
   });
 
