@@ -14,6 +14,7 @@ import { PATH_TO_CONTAINER_ARTIFACTS } from '../app/backends/workflow-orchestrat
 import path from 'path';
 import { promises as fs } from 'fs';
 import { WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
+import { truncateAll } from './helpers/db';
 
 describe('when a work item callback request does not return the results to construct the next work item(s)', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -443,6 +444,16 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 describe('Request that spans multiple CMR pages', function () {
   const collection = 'C1233800302-EEDTEST';
   hookServersStartStop();
+  
+  before(async function () {
+    // ensure that we're getting only the items 
+    // we created  for this test when invoking getWorkForService
+    await truncateAll();
+  });
+  after(async function () {
+    await truncateAll();
+  });
+
   describe('when requesting five granules', function () {
     hookClearScrollSessionExpect();
     const multiPageQuery = {
