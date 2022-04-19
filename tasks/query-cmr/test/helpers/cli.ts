@@ -26,6 +26,9 @@ export interface ParseResult {
     query: string[];
     pageSize: number;
     maxPages: number;
+    batchSize: number;
+    scrollId: string;
+    maxCmrGranules: number;
   };
   output: string;
 }
