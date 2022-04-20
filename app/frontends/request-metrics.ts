@@ -9,9 +9,10 @@ import { getPagingParams } from '../util/pagination';
 import { Parser } from 'json2csv';
 import { getTotalWorkItemSizeForJobID } from '../models/work-item';
 import _ from 'lodash';
+import { validateParameterNames } from '../middleware/parameter-validation';
 
-const fields = [
-  'totalTime', 'numInputGranules', 'totalGranuleSize', 'numVariables', 'concatenate',
+export const metricsFields = [
+  'timeTakenSeconds', 'numInputGranules', 'totalGranuleSizeMb', 'numVariables', 'concatenate',
   'reproject', 'synchronous', 'spatialSubset', 'shapefileSubset', 'chainLength',
   'harmonyGdalAdapter', 'harmonyServiceExample', 'harmonyNetcdfToZarr', 'swotReproject',
   'varSubsetter', 'sdsMaskfill', 'trajectorySubsetter', 'podaacConcise',
@@ -30,8 +31,8 @@ interface RequestMetrics {
   podaacL2Subsetter: number;
   giovanniAdapter: number;
   numInputGranules: number;
-  totalGranuleSize: number;
-  totalTime: number;
+  totalGranuleSizeMb: number;
+  timeTakenSeconds: number;
   numVariables: number;
   concatenate: number;
   reproject: number;
@@ -147,6 +148,8 @@ function getServiceMetricsFromSteps(steps: WorkflowStep[], logger: Logger): Part
   return row;
 }
 
+const allowedParams = ['limit', 'page'];
+
 /**
  * Express.js handler that returns request metrics to be used for cost
  * estimation for a request
@@ -161,6 +164,7 @@ export default async function getRequestMetrics(
 ): Promise<void> {
   req.context.logger.info(`Generating request metrics requested by user ${req.user}`);
   try {
+    validateParameterNames(Object.keys(req.query), allowedParams);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const rows = [];
     await db.transaction(async (tx) => {
@@ -171,8 +175,8 @@ export default async function getRequestMetrics(
         const steps = await getWorkflowStepsByJobId(tx, job.jobID);
         const row = getServiceMetricsFromSteps(steps, req.context.logger);
         row.numInputGranules = job.numInputGranules;
-        row.totalTime = (job.updatedAt.getTime() - job.createdAt.getTime()) / 1000;
-        row.totalGranuleSize = await getTotalWorkItemSizeForJobID(tx, job.jobID);
+        row.timeTakenSeconds = (job.updatedAt.getTime() - job.createdAt.getTime()) / 1000;
+        row.totalGranuleSizeMb = await getTotalWorkItemSizeForJobID(tx, job.jobID);
         row.synchronous = 1;
         if (job.isAsync) {
           row.synchronous = 0;
@@ -181,7 +185,7 @@ export default async function getRequestMetrics(
       }
     });
 
-    const json2csv = new Parser({ fields });
+    const json2csv = new Parser({ fields: metricsFields });
     const csv = json2csv.parse(rows);
     res.header('Content-Type', 'text/csv');
     res.send(csv);
