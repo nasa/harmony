@@ -122,6 +122,7 @@ function collectionPrefix(path: string): RegExp {
 
 const authorizedRoutes = [
   cmrCollectionReader.collectionRegex,
+  '/admin*',
   '/jobs*',
   '/service-results/*',
   '/cloud-access*',
