@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { sum } from 'lodash';
 import { NextFunction, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
@@ -34,17 +34,23 @@ async function calculateQueryCmrLimit(
   tx,
   logger: Logger): Promise<number> {
   if (workItem?.scrollID) { // only proceed if this is a query-cmr step
-    const nextStep = await getWorkflowStepByJobIdStepIndex(
-      tx,
-      workItem.jobID,
-      workItem.workflowStepIndex + 1,
-    );
-    if (!nextStep) {
-      logger.warn('Could not find next step for query CMR work item');
-      return;
-    }
-    const numItemsGenerated = await workItemCountForStep(tx, workItem.jobID, nextStep.stepIndex);
-    const queryCmrLimit = nextStep.workItemCount - numItemsGenerated;
+    const { numInputGranules } = await Job.byJobID(tx, workItem.jobID);
+    let queryCmrItems = (await getWorkItemsByJobIdAndStepIndex(
+      tx, workItem.jobID, workItem.workflowStepIndex, 1, Number.MAX_SAFE_INTEGER))
+      .workItems;
+    queryCmrItems = queryCmrItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL);
+    const stacCatalogLengths = await Promise.all(queryCmrItems.map(async ({ id, jobID }) => {
+      try {
+        const directory = path.join(env.hostVolumePath, jobID, `${id}`, 'outputs');
+        const jsonPath = path.join(directory, 'batch-catalogs.json');
+        const json = (await fs.readFile(jsonPath)).toString();
+        return JSON.parse(json).length;
+      } catch (e) {
+        logger.error(e);
+        return 0;
+      }
+    }));
+    const queryCmrLimit = numInputGranules - sum(stacCatalogLengths);
     logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
     return queryCmrLimit;
   }

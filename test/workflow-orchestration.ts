@@ -444,6 +444,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 describe('Request that spans multiple CMR pages', function () {
   const collection = 'C1233800302-EEDTEST';
   hookServersStartStop();
+  let workItemJobID;
   
   before(async function () {
     // ensure that we're getting only the items 
@@ -452,6 +453,7 @@ describe('Request that spans multiple CMR pages', function () {
   });
   after(async function () {
     await truncateAll();
+    await fs.rm(path.join(env.hostVolumePath, workItemJobID), { recursive: true });
   });
 
   describe('when requesting five granules', function () {
@@ -473,12 +475,14 @@ describe('Request that spans multiple CMR pages', function () {
       it('finds a query-cmr item along with a maxCmrGranules limit', async function () {
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
+        workItemJobID = workItem.jobID; // capture this so we can cleanup files afterward
         expect(maxCmrGranules).equals(5);
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = [
           'test/resources/worker-response-sample/catalog0.json', 
           'test/resources/worker-response-sample/catalog0.json', 
           'test/resources/worker-response-sample/catalog0.json'];
+        await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
         await updateWorkItem(this.backend, workItem);
       });
 
