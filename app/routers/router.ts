@@ -1,5 +1,6 @@
 import process from 'process';
 import express, { RequestHandler } from 'express';
+import asyncHandler from 'express-async-handler';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import * as yaml from 'js-yaml';
@@ -156,7 +157,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   // Handle multipart/form-data (used for shapefiles). Files will be uploaded to
   // a bucket.
-  result.post(collectionPrefix('(ogc-api-coverages)'), shapefileUpload());
+  result.post(collectionPrefix('(ogc-api-coverages)'), asyncHandler(shapefileUpload()));
 
   result.use(logged(earthdataLoginTokenAuthorizer(authorizedRoutes)));
 
@@ -173,7 +174,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   }
 
   // Routes and middleware not dealing with service requests
-  result.get('/service-results/:bucket/:key(*)', getServiceResult);
+  result.get('/service-results/:bucket/:key(*)', asyncHandler(getServiceResult));
 
   // Routes and middleware for handling service requests
   result.use(logged(cmrCollectionReader));
@@ -193,42 +194,42 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.use(logged(cmrGranuleLocator));
   result.use(logged(addRequestContextToOperation));
 
-  result.get('/', landingPage);
-  result.get('/versions', getVersions);
+  result.get('/', asyncHandler(landingPage));
+  result.get('/versions', asyncHandler(getVersions));
   result.use('/docs/api', swaggerUi.serve, swaggerUi.setup(yaml.load(ogcCoverageApi.openApiContent), { customJs: '/js/docs/analytics-tag.js' }));
-  result.get(collectionPrefix('(wms|eoss)'), service(serviceInvoker));
-  result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, service(serviceInvoker));
-  result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, service(serviceInvoker));
-  result.get('/jobs', getJobsListing);
-  result.get('/jobs/:jobID', getJobStatus);
-  result.post('/jobs/:jobID/cancel', cancelJob);
-  result.post('/jobs/:jobID/resume', resumeJob);
+  result.get(collectionPrefix('(wms|eoss)'), asyncHandler(service(serviceInvoker)));
+  result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, asyncHandler(service(serviceInvoker)));
+  result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, asyncHandler(service(serviceInvoker)));
+  result.get('/jobs', asyncHandler(getJobsListing));
+  result.get('/jobs/:jobID', asyncHandler(getJobStatus));
+  result.post('/jobs/:jobID/cancel', asyncHandler(cancelJob));
+  result.post('/jobs/:jobID/resume', asyncHandler(resumeJob));
 
-  result.get('/admin/jobs', getJobsListing);
-  result.get('/admin/jobs/:jobID', getJobStatus);
-  result.post('/admin/jobs/:jobID/cancel', cancelJob);
-  result.post('/admin/jobs/:jobID/resume', resumeJob);
-  result.get('/admin/request-metrics', getRequestMetrics);
+  result.get('/admin/jobs', asyncHandler(getJobsListing));
+  result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
+  result.post('/admin/jobs/:jobID/cancel', asyncHandler(cancelJob));
+  result.post('/admin/jobs/:jobID/resume', asyncHandler(resumeJob));
+  result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
 
-  result.get('/workflow-ui', getJobs);
-  result.get('/workflow-ui/:jobID', getJob);
-  result.get('/workflow-ui/:jobID/work-items', getWorkItemsTable);
-  result.get('/admin/workflow-ui', getJobs);
-  result.get('/admin/workflow-ui/:jobID', getJob);
-  result.get('/admin/workflow-ui/:jobID/work-items', getWorkItemsTable);
+  result.get('/workflow-ui', asyncHandler(getJobs));
+  result.get('/workflow-ui/:jobID', asyncHandler(getJob));
+  result.get('/workflow-ui/:jobID/work-items', asyncHandler(getWorkItemsTable));
+  result.get('/admin/workflow-ui', asyncHandler(getJobs));
+  result.get('/admin/workflow-ui/:jobID', asyncHandler(getJob));
+  result.get('/admin/workflow-ui/:jobID/work-items', asyncHandler(getWorkItemsTable));
 
   // Allow canceling/resuming with a GET in addition to POST to workaround issues with redirects using EDL
-  result.get('/jobs/:jobID/cancel', cancelJob);
-  result.get('/admin/jobs/:jobID/cancel', cancelJob);
-  result.get('/jobs/:jobID/resume', resumeJob);
-  result.get('/admin/jobs/:jobID/resume', resumeJob);
+  result.get('/jobs/:jobID/cancel', asyncHandler(cancelJob));
+  result.get('/admin/jobs/:jobID/cancel', asyncHandler(cancelJob));
+  result.get('/jobs/:jobID/resume', asyncHandler(resumeJob));
+  result.get('/admin/jobs/:jobID/resume', asyncHandler(resumeJob));
 
-  result.get('/admin/configuration/log-level', setLogLevel);
+  result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
 
-  result.get('/cloud-access', cloudAccessJson);
-  result.get('/cloud-access.sh', cloudAccessSh);
-  result.get('/stac/:jobId', getStacCatalog);
-  result.get('/stac/:jobId/:itemIndex', getStacItem);
+  result.get('/cloud-access', asyncHandler(cloudAccessJson));
+  result.get('/cloud-access.sh', asyncHandler(cloudAccessSh));
+  result.get('/stac/:jobId', asyncHandler(getStacCatalog));
+  result.get('/stac/:jobId/:itemIndex', asyncHandler(getStacItem));
 
   result.get('/*', () => { throw new NotFoundError('The requested page was not found.'); });
   result.post('/*', () => { throw new NotFoundError('The requested POST page was not found.'); });

@@ -78,6 +78,7 @@
     "date-fns": "^2.21.3",
     "dotenv": "^10.0.0",
     "express": "^4.17.3",
+    "express-async-handler": "^1.2.0",
     "express-openapi": "^4.6.5",
     "express-validator": "^6.13.0",
     "express-winston": "^4.1.0",

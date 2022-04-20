@@ -1,4 +1,5 @@
 import { Router, json } from 'express';
+import asyncHandler from 'express-async-handler';
 import { getWork, updateWorkItem } from '../backends/workflow-orchestration';
 import { responseHandler } from '../backends/service-response';
 import { getReadyWorkItemCountForServiceID } from '../backends/service-metrics';
@@ -15,11 +16,11 @@ export default function router(): Router {
   result.use(json({
     type: 'application/json',
   }));
-  result.post('/:requestId/response', responseHandler);
-  result.get('/work', getWork);
-  result.put('/work/:id', updateWorkItem);
+  result.post('/:requestId/response', asyncHandler(responseHandler));
+  result.get('/work', asyncHandler(getWork));
+  result.put('/work/:id', asyncHandler(updateWorkItem));
 
-  result.get('/metrics', getReadyWorkItemCountForServiceID);
+  result.get('/metrics', asyncHandler(getReadyWorkItemCountForServiceID));
 
   result.use((err, _req, _res, _next) => {
     if (err) {
