@@ -124,7 +124,7 @@ function getServiceMetricsFromSteps(steps: WorkflowStep[], logger: Logger): Part
   }
 
   row.chainLength = steps?.length || 0;
-  row.numVariables = mergedOperation.sources.reduce(
+  row.numVariables = mergedOperation.sources?.reduce(
     (total, s) => total + (s.variables?.length || 0),
     0);
 
