@@ -165,7 +165,7 @@ export default async function getRequestMetrics(
     const rows = [];
     await db.transaction(async (tx) => {
       // Get all the jobs - jobs by default are returned with most recent job first
-      const jobs = await Job.queryAll(tx, { status: JobStatus.SUCCESSFUL }, false, page, limit);
+      const jobs = await Job.queryAll(tx, { where: { status: JobStatus.SUCCESSFUL } }, false, page, limit);
 
       for (const job of jobs.data) {
         const steps = await getWorkflowStepsByJobId(tx, job.jobID);
