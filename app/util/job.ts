@@ -3,10 +3,11 @@ import { promises as fs } from 'fs';
 import db, { Transaction } from './db';
 import { Job, JobStatus, terminalStates } from '../models/job';
 import env from './env';
-import { getScrollIdForJob, updateWorkItemStatusesByJobId, WorkItemStatus } from '../models/work-item';
+import { getScrollIdForJob, updateWorkItemStatusesByJobId } from '../models/work-item';
 import { ConflictError, NotFoundError, RequestValidationError } from './errors';
 import isUUID from './uuid';
 import { clearScrollSession } from './cmr';
+import { WorkItemStatus } from '../models/work-item-interface';
 
 /**
  * Cleans up the temporary work items for the provided jobID
@@ -15,11 +16,66 @@ import { clearScrollSession } from './cmr';
  */
 async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<void> {
   try {
-    await fs.rmdir(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
+    await fs.rm(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
   } catch (e) {
     logger.warn(`Unable to clean up temporary files for ${jobID}`);
     logger.warn(e);
   }
+}
+
+/**
+   * Set the state of a job to 'paused' unless already in a terminal state then save it.
+   *
+   * @param tx - the transaction to perform the updates with
+   * @param job - the job to save and update
+   * @param logger - the logger to use for logging errors/info
+   * @param message - the job's paused message
+   * @throws {@link ConflictError} if the job is already in a terminal state.
+ */
+export async function pauseAndSaveJob(
+  tx: Transaction,
+  job: Job,
+  finalStatus: JobStatus,
+  logger: Logger,
+  message?,
+): Promise<void> {
+  job.pause(message);
+  try {
+    await job.save(tx);
+  } catch (e) {
+    logger.error(`Error saving job ${job.jobID} while attempting to pause job`);
+    logger.error(e);
+    throw e;
+  }
+}
+
+/**
+   * Resume a paused job then save it.
+   *
+   * @param jobID - the id of job (requestId in the db)
+   * @param logger - the logger to use for logging errors/info
+   * @param username - the name of the user requesting the resume - null if the admin
+   * @throws {@link ConflictError} if the job is already in a terminal state.
+ */
+export async function resumeAndSaveJob(
+  jobID: string,
+  logger: Logger,
+  username: string,
+): Promise<void> {
+  let job;
+  await db.transaction(async (tx) => {
+    if (username) {
+      ({ job } = await Job.byUsernameAndRequestId(tx, username, jobID));
+    } else {
+      ({ job } = await Job.byRequestId(tx, jobID));
+    }
+
+    if (!job) {
+      throw new NotFoundError(`Unable to find job ${jobID}`);
+    }
+    job.resume();
+    await job.save(tx);
+  });
 }
 
 /**
@@ -70,7 +126,7 @@ export async function completeJob(
  * @param shouldIgnoreRepeats - flag to indicate that we should ignore repeat calls to cancel the
  * same job - needed for the workflow termination listener (default false)
  */
-export default async function cancelAndSaveJob(
+export async function cancelAndSaveJob(
   jobID: string,
   message: string,
   logger: Logger,

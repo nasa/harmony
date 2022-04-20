@@ -99,6 +99,7 @@ export interface CmrGranuleHits {
 
 export interface CmrUmmVariable {
   meta: {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     'concept-id': string;
   };
   umm: {
@@ -316,10 +317,16 @@ export async function cmrPostBase(
   };
 
   try {
-    return module.exports.fetchPost(path, formData, headers);
+    const response = await module.exports.fetchPost(path, formData, headers);
+    return response;
   } finally {
     if (shapefile) {
-      await fs.promises.unlink(shapefile);
+      try {
+        await fs.promises.unlink(shapefile);
+      } catch (e) {
+        logger.error(`Failed to delete file ${shapefile}`);
+        logger.error(e);
+      }
     }
   }
 }
@@ -349,7 +356,7 @@ async function _cmrPost(
 
 /**
  * POST data to the CMR using data for the body instead of a multipart form
- * 
+ *
  * @param path - The absolute path on the cmR API to the resource being queried
  * @param body - Data to POST
  * @param extraHeaders - Additional headers to pass with the request
@@ -562,7 +569,7 @@ export async function initiateGranuleScroll(
 
 /**
  * Clear a CMR scroll session to allow the CMR to free associated resources
- * 
+ *
  * @param scrollID - the scroll-id of the scroll session
  */
 export async function clearScrollSession(scrollId: string): Promise<void> {

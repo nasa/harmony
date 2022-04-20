@@ -8,12 +8,13 @@ import { readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
-import WorkItem, { getNextWorkItem, WorkItemStatus, updateWorkItemStatus, getWorkItemById, workItemCountForStep, SUCCESSFUL_WORK_ITEM_STATUSES, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
+import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
 import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { ServiceError } from '../util/errors';
 import { clearScrollSession } from '../util/cmr';
+import { SUCCESSFUL_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;

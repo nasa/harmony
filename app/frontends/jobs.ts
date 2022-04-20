@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { keysToLowerCase } from '../util/object';
-import cancelAndSaveJob, { validateJobId } from '../util/job';
+import { cancelAndSaveJob, resumeAndSaveJob, validateJobId } from '../util/job';
 import JobLink from '../models/job-link';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
@@ -111,10 +111,10 @@ export async function getJobsListing(
     req.context.logger.info(`Get jobs listing for user ${req.user}`);
     const root = getRequestRoot(req);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
-    const query: JobQuery = {};
+    const query: JobQuery = { where: {} };
     if (!req.context.isAdminAccess) {
-      query.username = req.user;
-      query.isAsync = true;
+      query.where.username = req.user;
+      query.where.isAsync = true;
     }
     let listing;
     await db.transaction(async (tx) => {
@@ -153,9 +153,9 @@ export async function getJobStatus(
     validateJobId(jobID);
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
 
-    const query: JobQuery = { requestId: jobID };
+    const query: JobQuery = { where: { requestId: jobID } };
     if (!req.context.isAdminAccess) {
-      query.username = req.user;
+      query.where.username = req.user;
     }
     let job: Job;
     let pagination;
@@ -180,7 +180,7 @@ export async function getJobStatus(
 }
 
 /**
- * Express.js handler that cancels a single job `(POST /jobs/{jobID})`. A user can cancel their own
+ * Express.js handler that cancels a single job `(POST /jobs/{jobID}/cancel)`. A user can cancel their own
  * request. An admin can cancel any user's request.
  *
  * @param req - The request sent by the client
@@ -206,6 +206,45 @@ export async function cancelJob(
     }
 
     await cancelAndSaveJob(jobID, message, req.context.logger, true, username);
+
+    if (req.context.isAdminAccess) {
+      res.redirect(`/admin/jobs/${jobID}`);
+    } else {
+      res.redirect(`/jobs/${jobID}`);
+    }
+  } catch (e) {
+    req.context.logger.error(e);
+    if (e instanceof TypeError) {
+      next(new RequestValidationError(e.message));
+    } else {
+      next(e);
+    }
+  }
+}
+
+/**
+ * Express.js handler that resumes a single job `(POST /jobs/{jobID}/resume)`. A user can resume their own
+ * request. An admin can resume any user's request.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function resumeJob(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobID } = req.params;
+  req.context.logger.info(`Resume requested for job ${jobID} by user ${req.user}`);
+  try {
+    validateJobId(jobID);
+    let username: string;
+
+    if (!req.context.isAdminAccess) {
+      username = req.user;
+    }
+
+    await resumeAndSaveJob(jobID, req.context.logger, username);
 
     if (req.context.isAdminAccess) {
       res.redirect(`/admin/jobs/${jobID}`);

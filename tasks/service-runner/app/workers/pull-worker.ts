@@ -1,7 +1,7 @@
 import { Worker } from '../../../../app/workers/worker';
 import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
-import WorkItem, { WorkItemStatus, WorkItemRecord } from '../../../../app/models/work-item';
+import { WorkItemRecord, WorkItemStatus } from '../../../../app/models/work-item-interface';
 import logger from '../../../../app/util/log';
 import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runner';
 import sleep from '../../../../app/util/sleep';
@@ -10,7 +10,9 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { exit } from 'process';
 
-const POLLING_DELAY = 500;
+// Poll every 500 ms for now. Potentially make this a configuration item.
+const pollingInterval = 500;
+
 const axiosGetWork = createAxiosClientWithRetry(Infinity, 90_000, 3);
 const axiosUpdateWork = createAxiosClientWithRetry(6, Infinity, 3);
 
@@ -31,7 +33,7 @@ logger.debug(`INVOCATION_ARGS: ${env.invocationArgs}`);
 /**
  * Requests work items from Harmony
  */
-async function _pullWork(): Promise<{ item?: WorkItem; status?: number; error?: string }> {
+async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; error?: string }> {
   try {
     const response = await axiosGetWork
       .get(workUrl, {
@@ -62,8 +64,8 @@ async function _pullWork(): Promise<{ item?: WorkItem; status?: number; error?: 
  * @param workItem - the work to be done
  */
 async function _doWork(
-  workItem: WorkItem,
-): Promise<WorkItem> {
+  workItem: WorkItemRecord,
+): Promise<WorkItemRecord> {
   const newWorkItem = workItem;
   // work items with a scrollID are only for the query-cmr service
   const workFunc = newWorkItem.scrollID ? runQueryCmrFromPull : runServiceFromPull;
@@ -148,7 +150,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       logger.error('Failed to delete /tmp/WORKING');
     }
     if (repeat) {
-      setTimeout(_pullAndDoWork, POLLING_DELAY);
+      setTimeout(_pullAndDoWork, pollingInterval);
     }
   }
 }
@@ -167,7 +169,7 @@ async function _primeCmrService(): Promise<void> {
     scrollID: '1234',
   } as WorkItemRecord;
 
-  runQueryCmrFromPull(new WorkItem(exampleWorkItemProps)).catch((e) => {
+  runQueryCmrFromPull(exampleWorkItemProps).catch((e) => {
     logger.error('Failed to prime service');
     throw e;
   });
@@ -185,7 +187,7 @@ async function _primeService(): Promise<void> {
     operation: { requestId: 'abc' },
   } as WorkItemRecord;
 
-  runServiceFromPull(new WorkItem(exampleWorkItemProps)).catch((e) => {
+  runServiceFromPull(exampleWorkItemProps).catch((e) => {
     logger.error('Failed to prime service');
     throw e;
   });
