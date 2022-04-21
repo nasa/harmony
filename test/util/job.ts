@@ -66,13 +66,13 @@ describe('Canceling a job', async function () {
     describe('And the workflow is in the accepted or running state', async function () {
       hookClearScrollSessionExpect();
       it('is able to cancel the job in accepted state', async function () {
-        await cancelAndSaveJob(acceptedTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
+        await cancelAndSaveJob(acceptedTurboJob.requestId, 'Canceled by admin', log, 'doe');
         const { workItems } = await getWorkItemsByJobId(db, readyTurboWorkItem.jobID);
         expect(workItems[0].status).to.equal(WorkItemStatus.CANCELED);
       });
 
       it('is able to cancel the job in running state', async function () {
-        await cancelAndSaveJob(aTurboJob.requestId, 'Canceled by admin', log, true, 'doe');
+        await cancelAndSaveJob(aTurboJob.requestId, 'Canceled by admin', log, 'doe');
         const { workItems } = await getWorkItemsByJobId(db, aTurboJob.jobID);
         expect(workItems[0].status).to.equal(WorkItemStatus.CANCELED);
         expect(workItems[1].status).to.equal(WorkItemStatus.SUCCESSFUL);
@@ -81,15 +81,15 @@ describe('Canceling a job', async function () {
     });
 
     it('fails to cancel an already-canceled workflow', async function () {
-      await cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by user', log, true, 'doe');
+      await cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by user', log, 'doe');
       await expect(
-        cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by admin', log, true, 'doe'),
+        cancelAndSaveJob(anotherTurboJob.requestId, 'Canceled by admin', log, 'doe'),
       ).to.be.rejectedWith('Job status cannot be updated from canceled to canceled.');
     });
 
     it('fails to cancel an already-finished workflow', async function () {
       await expect(
-        cancelAndSaveJob(finishedTurboJob.requestId, 'Canceled by admin', log, true, 'doe'),
+        cancelAndSaveJob(finishedTurboJob.requestId, 'Canceled by admin', log, 'doe'),
       ).to.be.rejectedWith('Job status cannot be updated from successful to canceled.');
       const { workItems } = await getWorkItemsByJobId(db, finishedTurboWorkItem.jobID);
       expect(workItems[0].status).to.equal(WorkItemStatus.SUCCESSFUL);
@@ -97,7 +97,7 @@ describe('Canceling a job', async function () {
 
     it('fails to cancel a failed workflow', async function () {
       await expect(
-        cancelAndSaveJob(failedTurboJob.requestId, 'Canceled by admin', log, true, 'doe'),
+        cancelAndSaveJob(failedTurboJob.requestId, 'Canceled by admin', log, 'doe'),
       ).to.be.rejectedWith('Job status cannot be updated from failed to canceled.');
       const { workItems } = await getWorkItemsByJobId(db, failedTurboWorkItem.jobID);
       expect(workItems[0].status).to.equal(WorkItemStatus.FAILED);
