@@ -3,22 +3,17 @@
 import fs from 'fs';
 import path from 'path';
 import chai, { expect } from 'chai';
-import { describe, it, xit } from 'mocha';
+import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
-import tmp from 'tmp';
 import * as fetch from 'node-fetch';
 import { Stream } from 'form-data';
 import { queryGranulesScrolling } from '../app/query';
 
 import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
-import { S3ObjectStore } from '../../../app/util/object-store';
-import buildStacSchemaValidator from './helpers/stac';
 import { CmrError } from '../../../app/util/errors';
 
 chai.use(require('chai-as-promised'));
-
-const geojson = '../../test/resources/complex_multipoly.geojson';
 
 const operation = new DataOperation({
   unencryptedAccessToken: 'shhhhh!',

@@ -19,7 +19,7 @@ export function hookDoWork(workReq: QueryCmrRequest, output): void {
       return Promise.resolve(output);
     });
     spy(promises, 'mkdir');
-
+    // eslint-disable-next-line prefer-destructuring
     outputDir = workReq.outputDir;
     await doWork(workReq);
   });
