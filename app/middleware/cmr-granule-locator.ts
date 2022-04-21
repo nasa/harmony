@@ -17,6 +17,7 @@ import { defaultObjectStore } from '../util/object-store';
 enum GranuleLimitReason {
   Collection, // limited by the collection configuration
   MaxResults, // limited by the maxResults query parameter
+  System,     // limited by the system environment
   None,       // not limited
 }
 
@@ -60,6 +61,8 @@ function getMaxGranules(req: HarmonyRequest, collection: string): { maxGranules:
   if (req.context.serviceConfig.has_granule_limit !== false) {
     const query = keysToLowerCase(req.query);
     const { context } = req;
+    maxResults = env.maxGranuleLimit;
+    reason = GranuleLimitReason.System;
 
     if ('maxresults' in query && query.maxresults < maxResults) {
       maxResults = query.maxresults;
@@ -158,10 +161,8 @@ async function cmrGranuleLocatorTurbo(
     const queries = sources.map(async (source) => {
       logger.info(`Querying granules for ${source.collection}`, { cmrQuery, collection: source.collection });
       const startTime = new Date().getTime();
-      const { maxGranules, reason } = getMaxGranules(req, source.collection);
-      
+      const { maxGranules } = getMaxGranules(req, source.collection);
       operation.maxResults = maxGranules;
-      logger.debug(`Max results for operation is ${maxGranules}, with reason ${reason}.`);
 
       if (operation.geojson) {
         cmrQuery.geojson = operation.geojson;
@@ -175,7 +176,6 @@ async function cmrGranuleLocatorTurbo(
           req.accessToken,
           maxGranules,
         );
-        logger.debug(`Scroll session initiation call found ${hits} hits.`);
         if (hits === 0) {
           throw new RequestValidationError('No matching granules found.');
         }

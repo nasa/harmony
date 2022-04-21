@@ -72,6 +72,10 @@ function validateServiceConfig(config: ServiceConfig<unknown>): void {
     if (batchSize <= 0) {
       throw new TypeError(`Invalid batch_size ${batchSize}. Batch size must be greater than or equal to 1.`);
     }
+    if (batchSize > env.maxGranuleLimit) {
+      logger.warn(`Service ${config.name} attempting to allow more than the max allowed granules in a batch. `
+        + `Configured to use ${batchSize}, but will be limited to ${env.maxGranuleLimit}`);
+    }
   }
 }
 
