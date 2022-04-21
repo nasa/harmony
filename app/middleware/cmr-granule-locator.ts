@@ -162,6 +162,7 @@ async function cmrGranuleLocatorTurbo(
       logger.info(`Querying granules for ${source.collection}`, { cmrQuery, collection: source.collection });
       const startTime = new Date().getTime();
       const { maxGranules } = getMaxGranules(req, source.collection);
+
       operation.maxResults = maxGranules;
 
       if (operation.geojson) {
