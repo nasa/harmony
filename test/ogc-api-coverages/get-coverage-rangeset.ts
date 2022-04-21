@@ -715,17 +715,21 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   /*
   FIXME: HARMONY-293 - Commenting out now because this is a low priority edge case holding up high
   priority work
+
   describe('when the database catches fire during an asynchronous request', function () {
     before(function () {
       const testdb = path.resolve(__dirname, '../../db/test.sqlite3');
       fs.unlinkSync(testdb);
     });
+
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, variableName, {});
+
     after(async function () {
       // Get a new connection
       await knex(db.client.config).migrate.latest();
     });
+    
     it('returns an HTTP 500 error with the JSON error format', function () {
       expect(this.res.status).to.eql(500);
       const body = JSON.parse(this.res.text);
