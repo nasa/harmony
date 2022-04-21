@@ -34,10 +34,10 @@ export default class WorkReaper implements Worker {
         const chunkedWorkItemIds = _.chunk(workItemIds, batchSize);
         for (const workItemIdsChunk of chunkedWorkItemIds) {
           const numItemsDeleted = await deleteWorkItemsById(db, workItemIdsChunk);
-          this.logger.debug(`Work reaper removed ${numItemsDeleted} work items`);
+          this.logger.info(`Work reaper removed ${numItemsDeleted} work items`);
         }
       } else {
-        this.logger.debug('Work reaper did not find any work items to delete');
+        this.logger.info('Work reaper did not find any work items to delete');
       }
       const workStepIds = await getWorkflowStepIdsByJobUpdateAgeAndStatus(
         db, notUpdatedForMinutes, jobStatus,
@@ -46,10 +46,10 @@ export default class WorkReaper implements Worker {
         const chunkedWorkStepIds = _.chunk(workStepIds, batchSize);
         for (const workStepIdsChunk of chunkedWorkStepIds) {
           const numItemsDeleted = await deleteWorkflowStepsById(db, workStepIdsChunk);
-          this.logger.debug(`Work reaper removed ${numItemsDeleted} workflow steps`);
+          this.logger.info(`Work reaper removed ${numItemsDeleted} workflow steps`);
         }
       } else {
-        this.logger.debug('Work reaper did not find any workflow steps to delete');
+        this.logger.info('Work reaper did not find any workflow steps to delete');
       }
     } catch (e) {
       this.logger.error('Error attempting to delete terminal work items');

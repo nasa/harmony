@@ -117,7 +117,11 @@ export default abstract class Record {
    * @param fieldsList - The fields to save to the database
    * @throws Error - if the record is invalid
    */
-  static async insertBatch(transaction: Transaction, records: Record[], fieldsList: Partial<Record>[] = records): Promise<void> {
+  static async insertBatch(
+    transaction: Transaction, 
+    records: Record[], 
+    fieldsList: Partial<Record>[] = records,
+  ): Promise<void> {
     const recordConstructor = records[0]?.constructor;
     const { table } = recordConstructor as RecordConstructor;
     for (const i of _.range(records.length)) {
@@ -130,13 +134,16 @@ export default abstract class Record {
       setDateFields(record, fields);
     }
     let stmt = transaction(table).insert(fieldsList);
-    if (db.client.config.client === 'pg') {
+    const isPostgres = db.client.config.client === 'pg';
+    if (isPostgres) {
       stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
     }
     try {
       const recordIds = await stmt;
-      for (const i of _.range(records.length)) {
-        records[i].id = recordIds[i];
+      if (isPostgres) {
+        for (const i of _.range(records.length)) {
+          records[i].id = recordIds[i];
+        }
       }
     } catch (e) {
       logger.error(e);
