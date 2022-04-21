@@ -264,11 +264,21 @@ async function createNextWorkItems(
       await WorkItem.insertBatch(tx, batch);
     }
   }
+}
 
-  // If the current step is the query-cmr service and the number of work items for the next
-  // step is less than 'workItemCount' for the next step then create a new work item for
-  // the current step
+/**
+ * Creates another next query-cmr work item if needed
+ * @param tx - The database transaction
+ * @param currentWorkItem - The current work item
+ * @param nextStep - the next step in the workflow
+ */
+async function handleQueryCmrWork(
+  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
+): Promise<void> {
   if (currentWorkItem.scrollID) {
+    // If the current step is the query-cmr service and the number of work items for the next
+    // step is less than 'workItemCount' for the next step then create a new work item for
+    // the current step
     const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex);
     if (workItemCount < nextStep.workItemCount) {
       const nextQueryCmrItem = new WorkItem({
@@ -284,6 +294,7 @@ async function createNextWorkItems(
     }
   }
 }
+
 /**
  * Update a work item from a service response
  * @param req - The request sent by the client
@@ -344,7 +355,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
           // aggregate then create a work item for the next step
           if (successWorkItemCount === thisStep.workItemCount || !nextStep.hasAggregatedOutput) {
             await createNextWorkItems(tx, workItem, nextStep, results);
-          }
+          }  
+          await handleQueryCmrWork(tx, workItem, nextStep);
         } else {
           // Failed to create the next work items - fail the job rather than leaving it orphaned
           // in the running state
