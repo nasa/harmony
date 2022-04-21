@@ -24,29 +24,32 @@ async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<
 }
 
 /**
-   * Set the state of a job to 'paused' unless already in a terminal state then save it.
+   * Pause a job and then save it.
    *
-   * @param tx - the transaction to perform the updates with
-   * @param job - the job to save and update
+   * @param jobID - the id of job (requestId in the db)
    * @param logger - the logger to use for logging errors/info
-   * @param message - the job's paused message
+   * @param username - the name of the user requesting the pause - null if the admin
    * @throws {@link ConflictError} if the job is already in a terminal state.
  */
 export async function pauseAndSaveJob(
-  tx: Transaction,
-  job: Job,
-  finalStatus: JobStatus,
+  jobID: string,
   logger: Logger,
-  message?,
+  username: string,
 ): Promise<void> {
-  job.pause(message);
-  try {
+  let job;
+  await db.transaction(async (tx) => {
+    if (username) {
+      ({ job } = await Job.byUsernameAndRequestId(tx, username, jobID));
+    } else {
+      ({ job } = await Job.byRequestId(tx, jobID));
+    }
+
+    if (!job) {
+      throw new NotFoundError(`Unable to find job ${jobID}`);
+    }
+    job.pause();
     await job.save(tx);
-  } catch (e) {
-    logger.error(`Error saving job ${job.jobID} while attempting to pause job`);
-    logger.error(e);
-    throw e;
-  }
+  });
 }
 
 /**
@@ -59,7 +62,7 @@ export async function pauseAndSaveJob(
  */
 export async function resumeAndSaveJob(
   jobID: string,
-  logger: Logger,
+  _logger: Logger,
   username: string,
 ): Promise<void> {
   let job;
@@ -121,7 +124,6 @@ export async function completeJob(
  * @param jobID - the id of job (requestId in the db)
  * @param message - the message to use for the canceled job
  * @param logger - the logger to use for logging errors/info
- * @param shouldTerminateWorkflows - true if the workflow(s) for the job should be terminated
  * @param username - the name of the user requesting the cancel - null if the admin
  * @param shouldIgnoreRepeats - flag to indicate that we should ignore repeat calls to cancel the
  * same job - needed for the workflow termination listener (default false)
@@ -130,7 +132,6 @@ export async function cancelAndSaveJob(
   jobID: string,
   message: string,
   logger: Logger,
-  shouldTerminateWorkflows: boolean,
   username: string,
   shouldIgnoreRepeats = false,
 ): Promise<void> {

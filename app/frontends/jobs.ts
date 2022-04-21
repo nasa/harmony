@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { keysToLowerCase } from '../util/object';
-import { cancelAndSaveJob, resumeAndSaveJob, validateJobId } from '../util/job';
+import { cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, validateJobId } from '../util/job';
 import JobLink from '../models/job-link';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
@@ -205,7 +205,7 @@ export async function cancelJob(
       username = req.user;
     }
 
-    await cancelAndSaveJob(jobID, message, req.context.logger, true, username);
+    await cancelAndSaveJob(jobID, message, req.context.logger, username);
 
     if (req.context.isAdminAccess) {
       res.redirect(`/admin/jobs/${jobID}`);
@@ -223,8 +223,8 @@ export async function cancelJob(
 }
 
 /**
- * Express.js handler that resumes a single job `(POST /jobs/{jobID}/resume)`. A user can resume their own
- * request. An admin can resume any user's request.
+ * Express.js handler that resumes a single job `(POST /jobs/{jobID}/resume)`.
+ * A user can resume their own request. An admin can resume any user's request.
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -245,6 +245,45 @@ export async function resumeJob(
     }
 
     await resumeAndSaveJob(jobID, req.context.logger, username);
+
+    if (req.context.isAdminAccess) {
+      res.redirect(`/admin/jobs/${jobID}`);
+    } else {
+      res.redirect(`/jobs/${jobID}`);
+    }
+  } catch (e) {
+    req.context.logger.error(e);
+    if (e instanceof TypeError) {
+      next(new RequestValidationError(e.message));
+    } else {
+      next(e);
+    }
+  }
+}
+
+/**
+ * Express.js handler that pauses a single job `(POST /jobs/{jobID}/pause)`.
+ * A user can pause their own request. An admin can pause any user's request.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function pauseJob(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobID } = req.params;
+  req.context.logger.info(`Pause requested for job ${jobID} by user ${req.user}`);
+  try {
+    validateJobId(jobID);
+    let username: string;
+
+    if (!req.context.isAdminAccess) {
+      username = req.user;
+    }
+
+    await pauseAndSaveJob(jobID, req.context.logger, username);
 
     if (req.context.isAdminAccess) {
       res.redirect(`/admin/jobs/${jobID}`);
