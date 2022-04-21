@@ -615,10 +615,29 @@ describe('granule limits', function () {
   beforeEach(() => {
     stubs = [
       stub(env, 'maxSynchronousGranules').get(() => 2),
+      stub(env, 'maxGranuleLimit').get(() => 30),
     ];
   });
   afterEach(() => {
     stubs.map((s) => s.restore());
+  });
+
+  describe('when the service allows more than the granule limit for sync requests', function () {
+    it('returns the system granule limit', function () {
+      expect(getMaxSynchronousGranules({ maximum_sync_granules: 50 })).to.equal(30);
+    });
+  });
+
+  describe('when the service allows less than the granule limit for sync requests', function () {
+    it('returns the service specific sync granules limit', function () {
+      expect(getMaxSynchronousGranules({ maximum_sync_granules: 25 })).to.equal(25);
+    });
+  });
+
+  describe('when the service allows exactly the granule limit for sync requests', function () {
+    it('returns the correct limit', function () {
+      expect(getMaxSynchronousGranules({ maximum_sync_granules: 30 })).to.equal(30);
+    });
   });
 
   describe('when the service does not configure a granule limit for sync requests', function () {

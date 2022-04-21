@@ -9,6 +9,8 @@ import hookServersStartStop from '../helpers/servers';
 import StubService, { hookServices } from '../helpers/stub-service';
 import { ServiceConfig } from '../../app/models/services/base-service';
 import { hookRedirect } from '../helpers/hooks';
+import { stub } from 'sinon';
+import env from '../../app/util/env';
 
 describe('OGC API Coverages - getCoverageRangeset', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -461,6 +463,28 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         });
       });
     });
+
+    describe('when the collection granule limit is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
+      before(function () {
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 3);
+      });
+      after(function () {
+        this.glStub.restore();
+      });
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      hookRedirect('jdoe1');
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
+      });
+
+      it('limits the input granules to the system limit', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.numInputGranules).to.equal(3);
+      });
+    });
   });
 
   describe('when the first step is not query-cmr', function () {
@@ -534,6 +558,28 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
           const job = JSON.parse(this.res.text);
           expect(job.numInputGranules).to.equal(2);
         });
+      });
+    });
+
+    describe('when the collection granule limit is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
+      before(function () {
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 3);
+      });
+      after(function () {
+        this.glStub.restore();
+      });
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      hookRedirect('jdoe1');
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
+      });
+
+      it('limits the input granules to the system limit', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.numInputGranules).to.equal(3);
       });
     });
   });
@@ -669,21 +715,17 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
   /*
   FIXME: HARMONY-293 - Commenting out now because this is a low priority edge case holding up high
   priority work
-
   describe('when the database catches fire during an asynchronous request', function () {
     before(function () {
       const testdb = path.resolve(__dirname, '../../db/test.sqlite3');
       fs.unlinkSync(testdb);
     });
-
     StubService.hook({ params: { redirect: 'http://example.com' } });
     hookRangesetRequest(version, collection, variableName, {});
-
     after(async function () {
       // Get a new connection
       await knex(db.client.config).migrate.latest();
     });
-
     it('returns an HTTP 500 error with the JSON error format', function () {
       expect(this.res.status).to.eql(500);
       const body = JSON.parse(this.res.text);
