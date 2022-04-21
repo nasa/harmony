@@ -4,7 +4,7 @@ import path from 'path';
 import logger from '../../../../app/util/log';
 import DataOperation from '../../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../../app/util/crypto';
-import { queryGranules, queryGranulesScrolling } from '../query';
+import { queryGranulesScrolling } from '../query';
 
 const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
 const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
@@ -12,11 +12,45 @@ const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
 export interface QueryCmrRequest {
   outputDir?: string;
   harmonyInput?: object;
-  query?: (string | number)[];
-  pageSize?: number;
-  maxPages?: number;
-  batchSize?: number;
   scrollId?: string;
+  maxCmrGranules?: number;
+}
+
+/**
+ * Query the CMR as requested and create one or more STAC catalogs for the granule(s)
+ * 
+ * @param workReq - The request to be made to the CMR
+ * @returns an empty promise
+ */
+export async function doWork(workReq: QueryCmrRequest): Promise<void> {
+  const startTime = new Date().getTime();
+  const operation = new DataOperation(workReq.harmonyInput, encrypter, decrypter);
+  const { outputDir, scrollId } = workReq;
+  const appLogger = logger.child({ application: 'query-cmr' });
+  const timingLogger = appLogger.child({ requestId: operation.requestId });
+  timingLogger.info('timing.query-cmr.start');
+  await fs.mkdir(outputDir, { recursive: true });
+
+  const catalogs = await queryGranulesScrolling(operation, scrollId);
+
+  const catalogFilenames = [];
+  const promises = catalogs.map(async (catalog, i) => {
+    const relativeFilename = `catalog${i}.json`;
+    const filename = path.join(outputDir, relativeFilename);
+    catalogFilenames.push(relativeFilename);
+    await catalog.write(filename, true);
+  });
+
+  const catalogListFilename = path.join(outputDir, 'batch-catalogs.json');
+  const catalogCountFilename = path.join(outputDir, 'batch-count.txt');
+
+  await Promise.all(promises);
+
+  await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
+  await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
+
+  const durationMs = new Date().getTime() - startTime;
+  timingLogger.info('timing.query-cmr.end', { durationMs });
 }
 
 /**
@@ -26,47 +60,15 @@ export interface QueryCmrRequest {
  * @param next - The next function in the call chain
  * @returns Resolves when the request is complete
  */
-async function doWork(req: Request, res: Response, next: NextFunction): Promise<void> {
+async function doWorkHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const startTime = new Date().getTime();
-    const appLogger = logger.child({ application: 'query-cmr' });
     const workReq: QueryCmrRequest = req.body;
-    const operation = new DataOperation(workReq.harmonyInput, encrypter, decrypter);
-    const timingLogger = appLogger.child({ requestId: operation.requestId });
-    timingLogger.info('timing.query-cmr.start');
-    await fs.mkdir(workReq.outputDir, { recursive: true });
 
-    const catalogs = workReq.scrollId
-      ? await queryGranulesScrolling(operation, workReq.scrollId)
-      : await queryGranules(
-        operation,
-        workReq.query as string[],
-        workReq.pageSize,
-        workReq.maxPages,
-        workReq.batchSize,
-      );
-
-    const catalogFilenames = [];
-    const promises = catalogs.map(async (catalog, i) => {
-      const relativeFilename = `catalog${i}.json`;
-      const filename = path.join(workReq.outputDir, relativeFilename);
-      catalogFilenames.push(relativeFilename);
-      await catalog.write(filename, true);
-    });
-
-    const catalogListFilename = path.join(workReq.outputDir, 'batch-catalogs.json');
-    const catalogCountFilename = path.join(workReq.outputDir, 'batch-count.txt');
-
-    await Promise.all(promises);
-
-    await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
-    await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
+    await doWork(workReq);
 
     res.status(200);
     res.send('OK');
 
-    const durationMs = new Date().getTime() - startTime;
-    timingLogger.info('timing.query-cmr.end', { durationMs });
   } catch (e) {
     res.status(500);
     next(e);
@@ -88,7 +90,7 @@ export default function router(): Router {
     res.send('OK');
   });
 
-  result.post('/work', doWork);
+  result.post('/work', doWorkHandler);
 
   return result;
 }
