@@ -729,7 +729,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       // Get a new connection
       await knex(db.client.config).migrate.latest();
     });
-    
+
     it('returns an HTTP 500 error with the JSON error format', function () {
       expect(this.res.status).to.eql(500);
       const body = JSON.parse(this.res.text);
