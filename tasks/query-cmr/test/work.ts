@@ -36,7 +36,7 @@ describe('doWork', function () {
       };
       hookDoWork(
         workRequest,
-        [new CmrStacCatalog({ description: 'done' })],
+        [new CmrStacCatalog({ description: 'first' }), new CmrStacCatalog({ description: 'second' })],
       );
       after(() => fs.rmSync(tmpDir, { recursive: true }));
 
