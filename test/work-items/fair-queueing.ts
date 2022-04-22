@@ -63,12 +63,14 @@ const workItemData = [
 ];
 
 describe('Fair Queueing', function () {
-
   const jobRecords = jobData.map(makePartialJobRecord);
   const workflowStepRecords = workflowStepData.map(makePartialWorkflowStepRecord);
   const workItemRecords = workItemData.map(makePartialWorkItemRecord);
 
   hookServersStartStop({ skipEarthdataLogin: true });
+
+  before(truncateAll);
+  after(truncateAll);
 
   describe('When work is requested for a service', function () {
     const results = [];
@@ -89,8 +91,6 @@ describe('Fair Queueing', function () {
         results.push(result);
       }
     });
-
-    after(truncateAll);
 
     describe('and one user has waited longer than other users to have work done', async function () {
       it('returns the work item for the oldest worked job for that user', async function () {

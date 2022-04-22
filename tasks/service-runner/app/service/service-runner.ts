@@ -16,6 +16,7 @@ const exec = new k8s.Exec(kc);
 
 export interface ServiceResponse {
   batchCatalogs?: string[];
+  totalGranulesSize?: number;
   error?: string;
 }
 
@@ -111,8 +112,9 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord): Promise<Ser
 
       if (resp.status < 300) {
         const catalogs = _getStacCatalogs(`${catalogDir}`);
+        const { totalGranulesSize } = resp.data;
 
-        resolve({ batchCatalogs: catalogs });
+        resolve({ batchCatalogs: catalogs, totalGranulesSize });
       } else {
         resolve({ error: resp.statusText });
       }

@@ -42,6 +42,9 @@ export interface WorkItemRecord {
   // The location of the resulting STAC catalog(s) (not serialized)
   results?: string[];
 
+  // The sum of the sizes of the granules associated with this work item
+  totalGranulesSize?: number;
+
   // The last time the record was updated
   updatedAt: Date;
 

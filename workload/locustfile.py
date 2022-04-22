@@ -1,5 +1,6 @@
 from locust import task, tag
 import urllib.parse
+import random
 from harmony.common import BaseHarmonyUser
 
 class HarmonyUatUser(BaseHarmonyUser):
@@ -18,6 +19,24 @@ class HarmonyUatUser(BaseHarmonyUser):
             'format': 'image/png'
         }
         self._sync_request(name, collection, variable, params, 1)
+
+
+    def _random_num_granules_service_example(self):
+        name = 'Harmony Service Example: Bbox, Variable, and reformat'
+        collection = 'C1233800302-EEDTEST'
+        variable = 'blue_var'
+        numResults = random.randint(1, 100)
+        params = {
+            'subset': [
+                'lat(20:85)',
+                'lon(-140:40)'
+            ],
+            'maxResults': numResults,
+            'outputCrs': 'EPSG:4326',
+            'format': 'image/png',
+            'forceAsync': 'true'
+        }
+        self._async_request(name, collection, variable, params, 0)
 
     def _harmony_service_example_bbox_variable_reformat_50_granules(self):
         name = '50 granules Harmony Service Example: Bbox, Variable, and reformat'
@@ -261,6 +280,11 @@ class HarmonyUatUser(BaseHarmonyUser):
     @task(50)
     def chain_l2ss_to_zarr(self):
         self._chain_l2ss_to_zarr()
+
+    @tag('ml', 'random')
+    @task(50)
+    def random_num_granules_service_example(self):
+        self._random_num_granules_service_example()
 
     ## Something broken with this granule
     # @task(1)

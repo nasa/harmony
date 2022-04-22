@@ -20,9 +20,9 @@ export interface QueryCmrRequest {
  * Query the CMR as requested and create one or more STAC catalogs for the granule(s)
  * 
  * @param workReq - The request to be made to the CMR
- * @returns an empty promise
+ * @returns a promise containing the combined sizes of all the granules included in the catalogs
  */
-export async function doWork(workReq: QueryCmrRequest): Promise<void> {
+export async function doWork(workReq: QueryCmrRequest): Promise<number> {
   const startTime = new Date().getTime();
   const operation = new DataOperation(workReq.harmonyInput, encrypter, decrypter);
   const { outputDir, scrollId } = workReq;
@@ -31,7 +31,7 @@ export async function doWork(workReq: QueryCmrRequest): Promise<void> {
   timingLogger.info('timing.query-cmr.start');
   await fs.mkdir(outputDir, { recursive: true });
 
-  const catalogs = await queryGranulesScrolling(operation, scrollId);
+  const [totalGranulesSize, catalogs] = await queryGranulesScrolling(operation, scrollId);
 
   const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {
@@ -51,6 +51,8 @@ export async function doWork(workReq: QueryCmrRequest): Promise<void> {
 
   const durationMs = new Date().getTime() - startTime;
   timingLogger.info('timing.query-cmr.end', { durationMs });
+
+  return totalGranulesSize;
 }
 
 /**
@@ -64,10 +66,10 @@ async function doWorkHandler(req: Request, res: Response, next: NextFunction): P
   try {
     const workReq: QueryCmrRequest = req.body;
 
-    await doWork(workReq);
+    const totalGranulesSize = await doWork(workReq);
 
     res.status(200);
-    res.send('OK');
+    res.send(JSON.stringify({ totalGranulesSize: totalGranulesSize }));
 
   } catch (e) {
     res.status(500);
