@@ -179,7 +179,7 @@ describe('query#queryGranulesScrolling', function () {
     hookQueryGranulesScrolling(1);
 
     it('limits the STAC output', function () {
-      expect(this.result.length).to.equal(1);
+      expect(this.result[1].length).to.equal(1);
     });
   });
 
@@ -187,7 +187,7 @@ describe('query#queryGranulesScrolling', function () {
     hookQueryGranulesScrolling(3000);
 
     it('the STAC output is not limitted', function () {
-      expect(this.result.length).to.equal(3);
+      expect(this.result[1].length).to.equal(3);
     });
   });
 
