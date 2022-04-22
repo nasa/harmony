@@ -66,6 +66,17 @@ export default class WorkItem extends Record implements WorkItemRecord {
     const record = _.pick(this, serializedFields);
     await super.save(transaction, record);
   }
+
+  /**
+   * Saves the work items to the database using a single SQL statement.
+   *
+   * @param transaction - The transaction to use for saving the job link
+   * @param workItems - The work items to save
+   */
+  static async insertBatch(transaction: Transaction, workItems: WorkItem[]): Promise<void> {
+    const fieldsList = workItems.map(item => _.pick(item, serializedFields));
+    await super.insertBatch(transaction, workItems, fieldsList);
+  }
 }
 
 // 'w' here is the alias for the 'work_items' table

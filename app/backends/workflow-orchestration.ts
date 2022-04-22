@@ -1,7 +1,8 @@
+import _, { sum } from 'lodash';
 import { NextFunction, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
-import db, { Transaction } from '../util/db';
+import db, { batchSize, Transaction } from '../util/db';
 import { completeJob } from '../util/job';
 import env from '../util/env';
 import { readCatalogItems, StacItemLink } from '../util/stac';
@@ -22,6 +23,40 @@ const RETRY_DELAY = 1000;
 export const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
 
 /**
+ * Calculate the granule page limit for the current query-cmr work item.
+ * @param workItem - current query-cmr work item
+ * @param tx - database transaction to query with
+ * @param logger - a Logger instance
+ * @returns a number used to limit the query-cmr task or undefined
+ */
+async function calculateQueryCmrLimit(
+  workItem: WorkItem, 
+  tx,
+  logger: Logger): Promise<number> {
+  if (workItem?.scrollID) { // only proceed if this is a query-cmr step
+    const { numInputGranules } = await Job.byJobID(tx, workItem.jobID);
+    let queryCmrItems = (await getWorkItemsByJobIdAndStepIndex(
+      tx, workItem.jobID, workItem.workflowStepIndex, 1, Number.MAX_SAFE_INTEGER))
+      .workItems;
+    queryCmrItems = queryCmrItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL);
+    const stacCatalogLengths = await Promise.all(queryCmrItems.map(async ({ id, jobID }) => {
+      try {
+        const directory = path.join(env.hostVolumePath, jobID, `${id}`, 'outputs');
+        const jsonPath = path.join(directory, 'batch-catalogs.json');
+        const json = (await fs.readFile(jsonPath)).toString();
+        return JSON.parse(json).length;
+      } catch (e) {
+        logger.error(e);
+        return 0;
+      }
+    }));
+    const queryCmrLimit = numInputGranules - sum(stacCatalogLengths);
+    logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
+    return queryCmrLimit;
+  }
+}
+
+/**
  * Return a work item for the given service
  * @param req - The request sent by the client
  * @param res - The response to send to the client
@@ -31,13 +66,15 @@ export const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
 export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
+  const { logger } = req.context;
   const { serviceID } = req.query;
-  let workItem;
+  let workItem: WorkItem, maxCmrGranules: number;
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
+    maxCmrGranules = await calculateQueryCmrLimit(workItem, tx, logger);
   });
   if (workItem) {
-    res.send(workItem);
+    res.send({ workItem, maxCmrGranules });
   } else if (tryCount < MAX_TRY_COUNT) {
     setTimeout(async () => {
       await getWork(req, res, next, tryCount + 1);
@@ -68,7 +105,8 @@ async function _handleWorkItemResults(
     const items = readCatalogItems(localLocation);
 
     for await (const item of items) {
-      for (const [_, asset] of Object.entries(item.assets)) {
+      for (const keyValue of Object.entries(item.assets)) {
+        const asset = keyValue[1];
         const { href, type, title } = asset;
         const link = new JobLink({
           jobID: job.jobID,
@@ -213,24 +251,34 @@ async function createNextWorkItems(
     await createAggregatingWorkItem(tx, currentWorkItem, nextStep);
   } else {
     // Create a new work item for each result using the next step
-    // FIXME Do this as a bulk insertion when working NO GRANULES LIMIT TICKET (HARMONY-276)
-    for await (const result of results) {
-      const newWorkItem = new WorkItem({
+    const newItems = results.map(result =>
+      new WorkItem({
         jobID: currentWorkItem.jobID,
         serviceID: nextStep.serviceID,
         status: WorkItemStatus.READY,
         stacCatalogLocation: result,
         workflowStepIndex: nextStep.stepIndex,
-      });
-
-      await newWorkItem.save(tx);
+      }),
+    );
+    for (const batch of _.chunk(newItems, batchSize)) {
+      await WorkItem.insertBatch(tx, batch);
     }
   }
+}
 
-  // If the current step is the query-cmr service and the number of work items for the next
-  // step is less than 'workItemCount' for the next step then create a new work item for
-  // the current step
+/**
+ * Creates another next query-cmr work item if needed
+ * @param tx - The database transaction
+ * @param currentWorkItem - The current work item
+ * @param nextStep - the next step in the workflow
+ */
+async function handleQueryCmrWork(
+  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
+): Promise<void> {
   if (currentWorkItem.scrollID) {
+    // If the current step is the query-cmr service and the number of work items for the next
+    // step is less than 'workItemCount' for the next step then create a new work item for
+    // the current step
     const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex);
     if (workItemCount < nextStep.workItemCount) {
       const nextQueryCmrItem = new WorkItem({
@@ -246,6 +294,7 @@ async function createNextWorkItems(
     }
   }
 }
+
 /**
  * Update a work item from a service response
  * @param req - The request sent by the client
@@ -308,7 +357,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
           // aggregate then create a work item for the next step
           if (successWorkItemCount === thisStep.workItemCount || !nextStep.hasAggregatedOutput) {
             await createNextWorkItems(tx, workItem, nextStep, results);
-          }
+          }  
+          await handleQueryCmrWork(tx, workItem, nextStep);
         } else {
           // Failed to create the next work items - fail the job rather than leaving it orphaned
           // in the running state

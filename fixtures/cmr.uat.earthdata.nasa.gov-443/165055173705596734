@@ -1,0 +1,29 @@
+POST /search/variables.umm_json_v1_8
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801695-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2000\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.8; charset=utf-8
+content-length: 1248
+connection: close
+date: Thu, 21 Apr 2022 14:35:37 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 5e702541-be8e-4453-a62b-1d83721c897f
+strict-transport-security: max-age=31536000
+cmr-search-after: ["red_var","EEDTEST","red_var","EEDTEST"]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 17
+x-request-id: fQG384mB5PWAAQ24psmrULU9b__tc3FkoPn5Ah_7x2nxZ_3MMWwTow==
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 478e42d78af3de35728ba409bf63e348.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P2
+x-amz-cf-id: fQG384mB5PWAAQ24psmrULU9b__tc3FkoPn5Ah_7x2nxZ_3MMWwTow==
+
+{"hits":1,"took":17,"items":[{"meta":{"revision-id":4,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"vinverso","native-id":"mmt_variable_3969","concept-id":"V1233801695-EEDTEST","revision-date":"2021-11-22T16:52:38.675Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","RelatedURLs":[{"Description":"This is a sample way of designating a colormap for a specific variable record.","URLContentType":"VisualizationURL","Type":"Color Map","Subtype":"Harmony GDAL","URL":"https://colormap_server.earthdata.nasa.gov/sea_surface_temperature/green-based","Format":"XML","MimeType":"application/XML"}],"Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":1.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Red channel value","Name":"red_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8","Name":"UMM-Var","Version":"1.8"},"LongName":"Red Channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}}]}

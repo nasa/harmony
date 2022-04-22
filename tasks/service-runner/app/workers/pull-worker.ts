@@ -33,7 +33,7 @@ logger.debug(`INVOCATION_ARGS: ${env.invocationArgs}`);
 /**
  * Requests work items from Harmony
  */
-async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; error?: string }> {
+async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; error?: string, maxCmrGranules?: number }> {
   try {
     const response = await axiosGetWork
       .get(workUrl, {
@@ -49,7 +49,7 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
       return { status: response.status };
     }
 
-    return { item: response.data, status: response.status };
+    return { item: response.data.workItem, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
   } catch (err) {
     if (err.response) {
       return { status: err.response.status, error: err.response.data };
@@ -62,15 +62,17 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
  * Call a service to perform some work
  *
  * @param workItem - the work to be done
+ * @param maxCmrGranules - limits the page of granules in the query-cmr task
  */
 async function _doWork(
   workItem: WorkItemRecord,
+  maxCmrGranules?: number,
 ): Promise<WorkItemRecord> {
   const newWorkItem = workItem;
   // work items with a scrollID are only for the query-cmr service
   const workFunc = newWorkItem.scrollID ? runQueryCmrFromPull : runServiceFromPull;
   logger.debug('Calling work function');
-  const serviceResponse = await workFunc(newWorkItem);
+  const serviceResponse = await workFunc(newWorkItem, maxCmrGranules);
   logger.debug('Finished work');
   if (serviceResponse.batchCatalogs) {
     newWorkItem.status = WorkItemStatus.SUCCESSFUL;
@@ -115,7 +117,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
 
     const work = await _pullWork();
     if (!work.error && work.item) {
-      const workItem = await _doWork(work.item);
+      const workItem = await _doWork(work.item, work.maxCmrGranules);
       // call back to Harmony to mark the work unit as complete or failed
       logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
       try {

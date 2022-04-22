@@ -99,16 +99,10 @@ MAX_PAGE_SIZE=2000
 # value in services.yml for maximum_sync_granules it will override this value.
 MAX_SYNCHRONOUS_GRANULES=1
 
-# Number of granules submitted to a backend service within a single request. If a request
-# contains more granules, the request will result in multiple calls to the backend service
-# with DEFAULT_BATCH_SIZE granules sent in each call. If a service provides a value
-# in services.yml for maximum_async_granules it will override this value.
-DEFAULT_BATCH_SIZE=2000
-
 # The maximum allowed granules in any request synchronous or asynchronous. If a service
 # attempts to configure a value greater than this limit for either maximum_async_granules
 # or maximum_async_granules we will override the configuration to limit to this value.
-MAX_GRANULE_LIMIT=350
+MAX_GRANULE_LIMIT=2100
 
 # String to identify the type of environment.  Options:
 #  - "development" for local development.

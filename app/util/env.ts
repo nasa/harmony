@@ -74,7 +74,6 @@ interface HarmonyEnv {
   cmrEndpoint: string;
   cmrMaxPageSize: number;
   defaultPodGracePeriodSecs: number;
-  defaultBatchSize: number;
   defaultJobListPageSize: number;
   defaultParallelism: number;
   defaultResultPageSize: number;

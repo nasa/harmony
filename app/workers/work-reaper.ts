@@ -1,10 +1,11 @@
 import { Logger } from 'winston';
+import _ from 'lodash';
 import { JobStatus, terminalStates } from '../models/job';
 import { getWorkItemIdsByJobUpdateAgeAndStatus, deleteWorkItemsById } from '../models/work-item';
 import { deleteWorkflowStepsById, getWorkflowStepIdsByJobUpdateAgeAndStatus } from '../models/workflow-steps';
 import env from '../util/env';
 import { Worker } from './worker';
-import db from '../util/db';
+import db, { batchSize } from '../util/db';
 import sleep from '../util/sleep';
 
 export interface WorkReaperConfig {
@@ -30,8 +31,11 @@ export default class WorkReaper implements Worker {
         db, notUpdatedForMinutes, jobStatus,
       );
       if (workItemIds.length) {
-        const numItemsDeleted = await deleteWorkItemsById(db, workItemIds);
-        this.logger.info(`Work reaper removed ${numItemsDeleted} work items`);
+        const chunkedWorkItemIds = _.chunk(workItemIds, batchSize);
+        for (const workItemIdsChunk of chunkedWorkItemIds) {
+          const numItemsDeleted = await deleteWorkItemsById(db, workItemIdsChunk);
+          this.logger.info(`Work reaper removed ${numItemsDeleted} work items`);
+        }
       } else {
         this.logger.info('Work reaper did not find any work items to delete');
       }
@@ -39,8 +43,11 @@ export default class WorkReaper implements Worker {
         db, notUpdatedForMinutes, jobStatus,
       );
       if (workStepIds.length) {
-        const numStepsDeleted = await deleteWorkflowStepsById(db, workStepIds);
-        this.logger.info(`Work reaper removed ${numStepsDeleted} workflow steps`);
+        const chunkedWorkStepIds = _.chunk(workStepIds, batchSize);
+        for (const workStepIdsChunk of chunkedWorkStepIds) {
+          const numItemsDeleted = await deleteWorkflowStepsById(db, workStepIdsChunk);
+          this.logger.info(`Work reaper removed ${numItemsDeleted} workflow steps`);
+        }
       } else {
         this.logger.info('Work reaper did not find any workflow steps to delete');
       }

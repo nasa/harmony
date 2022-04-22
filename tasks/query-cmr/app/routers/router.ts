@@ -31,7 +31,7 @@ export async function doWork(workReq: QueryCmrRequest): Promise<number> {
   timingLogger.info('timing.query-cmr.start');
   await fs.mkdir(outputDir, { recursive: true });
 
-  const [totalGranulesSize, catalogs] = await queryGranulesScrolling(operation, scrollId);
+  const [totalGranulesSize, catalogs] = await queryGranulesScrolling(operation, scrollId, workReq.maxCmrGranules);
 
   const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {

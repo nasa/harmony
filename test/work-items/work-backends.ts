@@ -139,42 +139,42 @@ describe('Work Backends', function () {
       });
 
       it('returns the correct fields for a work item', function () {
-        expect(Object.keys(this.res.body)).to.eql([
+        expect(Object.keys(this.res.body.workItem)).to.eql([
           'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
           'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'operation',
         ]);
       });
 
       it('returns the expected service ID', function () {
-        expect(this.res.body.serviceID).to.equal('theReadyService');
+        expect(this.res.body.workItem.serviceID).to.equal('theReadyService');
       });
 
       it('returns the expected operation', function () {
-        expect(this.res.body.operation).to.eql(JSON.parse(validOperation));
+        expect(this.res.body.workItem.operation).to.eql(JSON.parse(validOperation));
       });
 
       it('returns the expected jobID', function () {
-        expect(this.res.body.jobID).to.equal('ABCD');
+        expect(this.res.body.workItem.jobID).to.equal('ABCD');
       });
 
       it('returns a datetime string for createdAt', function () {
-        expect(this.res.body.createdAt).to.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/);
+        expect(this.res.body.workItem.createdAt).to.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/);
       });
 
       it('returns a datetime string for updatedAt', function () {
-        expect(this.res.body.updatedAt).to.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/);
+        expect(this.res.body.workItem.updatedAt).to.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/);
       });
 
       it('returns the expected scrollID', function () {
-        expect(this.res.body.scrollID).to.equal('-1234');
+        expect(this.res.body.workItem.scrollID).to.equal('-1234');
       });
 
       it('returns the expected stac catalog location', function () {
-        expect(this.res.body.stacCatalogLocation).to.equal('/tmp/catalog.json');
+        expect(this.res.body.workItem.stacCatalogLocation).to.equal('/tmp/catalog.json');
       });
 
       it('returns the expected workflow step index', function () {
-        expect(this.res.body.workflowStepIndex).to.equal(3);
+        expect(this.res.body.workItem.workflowStepIndex).to.equal(3);
       });
     });
 

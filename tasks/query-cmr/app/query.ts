@@ -15,20 +15,20 @@ export interface DataSource {
  * each granule in the page.
  * @param token - The token to use for the query
  * @param scrollId - Scroll session id used in the CMR-Scroll-Id header for granule search
- * @param pageSize - The size of the page to request from CMR
+ * @param maxCmrGranules - The maximum size of the page to request from CMR
  * @param filePrefix - The prefix to give each file placed in the directory
  * @returns A tuple with the combined granules sizes and an array of a single STAC catalog for each granule (each with a single STAC item)
  */
 export async function queryScrollId(
   token: string,
   scrollId: string,
-  pageSize: number,
   filePrefix: string,
+  maxCmrGranules?: number,
 ): Promise<[number, StacCatalog[]]> {
   const cmrResponse = await queryGranulesForScrollId(
     scrollId,
     token,
-    pageSize,
+    maxCmrGranules,
   );
   const { hits } = cmrResponse;
   logger.info(`CMR Hits: ${hits}, Number of granules returned in this page: ${cmrResponse.granules.length}`);
@@ -56,14 +56,16 @@ export async function queryScrollId(
  *
  * @param operation - The harmony data operation which contains the access token
  * @param scrollId - Scroll session id used in the CMR-Scroll-Id header for granule search
+ * @param maxCmrGranules - The maximum size of the page to request from CMR
  * @returns A STAC catalog for each granule in a single page of results
  */
 export async function queryGranulesScrolling(
   operation: DataOperation,
   scrollId: string,
+  maxCmrGranules?: number,
 ): Promise<[number, StacCatalog[]]> {
   const { unencryptedAccessToken } = operation;
-  const [totalGranulesSize, catalogs] = await queryScrollId(unencryptedAccessToken, scrollId, 2000, `./granule_${scrollId}`);
+  const [totalGranulesSize, catalogs] = await queryScrollId(unencryptedAccessToken, scrollId, `./granule_${scrollId}`, maxCmrGranules);
 
   return [totalGranulesSize, catalogs];
 }
