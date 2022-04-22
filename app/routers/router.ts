@@ -12,7 +12,7 @@ import earthdataLoginTokenAuthorizer from '../middleware/earthdata-login-token-a
 import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-authorizer';
 import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
-import { getJobsListing, getJobStatus, cancelJob, resumeJob } from '../frontends/jobs';
+import { getJobsListing, getJobStatus, cancelJob, resumeJob, pauseJob } from '../frontends/jobs';
 import { getJobs, getJob, getWorkItemsTable } from '../frontends/workflow-ui';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
@@ -202,13 +202,27 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, asyncHandler(service(serviceInvoker)));
   result.get('/jobs', asyncHandler(getJobsListing));
   result.get('/jobs/:jobID', asyncHandler(getJobStatus));
+
   result.post('/jobs/:jobID/cancel', asyncHandler(cancelJob));
+  result.post('/admin/jobs/:jobID/cancel', asyncHandler(cancelJob));
+  // Allow canceling/resuming/pausing with a GET in addition to POST to workaround issues
+  // with redirects using EDL
+  result.get('/jobs/:jobID/cancel', asyncHandler(cancelJob));
+  result.get('/admin/jobs/:jobID/cancel', asyncHandler(cancelJob));
+
   result.post('/jobs/:jobID/resume', asyncHandler(resumeJob));
+  result.post('/admin/jobs/:jobID/resume', asyncHandler(resumeJob));
+  result.get('/jobs/:jobID/resume', asyncHandler(resumeJob));
+  result.get('/admin/jobs/:jobID/resume', asyncHandler(resumeJob));
+
+  result.post('/jobs/:jobID/pause', asyncHandler(pauseJob));
+  result.post('/admin/jobs/:jobID/pause', asyncHandler(pauseJob));
+  result.get('/jobs/:jobID/pause', asyncHandler(pauseJob));
+  result.get('/admin/jobs/:jobID/pause', asyncHandler(pauseJob));
 
   result.get('/admin/jobs', asyncHandler(getJobsListing));
   result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
-  result.post('/admin/jobs/:jobID/cancel', asyncHandler(cancelJob));
-  result.post('/admin/jobs/:jobID/resume', asyncHandler(resumeJob));
+  
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
 
   result.get('/workflow-ui', asyncHandler(getJobs));
@@ -217,12 +231,6 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/admin/workflow-ui', asyncHandler(getJobs));
   result.get('/admin/workflow-ui/:jobID', asyncHandler(getJob));
   result.get('/admin/workflow-ui/:jobID/work-items', asyncHandler(getWorkItemsTable));
-
-  // Allow canceling/resuming with a GET in addition to POST to workaround issues with redirects using EDL
-  result.get('/jobs/:jobID/cancel', asyncHandler(cancelJob));
-  result.get('/admin/jobs/:jobID/cancel', asyncHandler(cancelJob));
-  result.get('/jobs/:jobID/resume', asyncHandler(resumeJob));
-  result.get('/admin/jobs/:jobID/resume', asyncHandler(resumeJob));
 
   result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
 

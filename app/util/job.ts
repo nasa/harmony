@@ -24,71 +24,83 @@ async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<
 }
 
 /**
-   * Set the state of a job to 'paused' unless already in a terminal state then save it.
-   *
-   * @param tx - the transaction to perform the updates with
-   * @param job - the job to save and update
-   * @param logger - the logger to use for logging errors/info
-   * @param message - the job's paused message
-   * @throws {@link ConflictError} if the job is already in a terminal state.
+ * Helper function to pull back the provided job ID (optionally by username).
+ *
+ * @param tx - the transaction use to perform the queries
+ * @param jobID - the id of job (requestId in the db)
+ * @param username - the name of the user requesting the pause - null if the admin
+ * @throws {@link NotFoundError} if the job does not exist or the job does not
+ * belong to the user.
  */
-export async function pauseAndSaveJob(
-  tx: Transaction,
-  job: Job,
-  finalStatus: JobStatus,
-  logger: Logger,
-  message?,
-): Promise<void> {
-  job.pause(message);
-  try {
-    await job.save(tx);
-  } catch (e) {
-    logger.error(`Error saving job ${job.jobID} while attempting to pause job`);
-    logger.error(e);
-    throw e;
+async function lookupJob(tx: Transaction, jobID: string, username: string): Promise<Job>  {
+  let job;
+  if (username) {
+    ({ job } = await Job.byUsernameAndRequestId(tx, username, jobID));
+  } else {
+    ({ job } = await Job.byRequestId(tx, jobID));
   }
+
+  if (!job) {
+    throw new NotFoundError(`Unable to find job ${jobID}`);
+  }
+  return job;
 }
 
 /**
-   * Resume a paused job then save it.
-   *
-   * @param jobID - the id of job (requestId in the db)
-   * @param logger - the logger to use for logging errors/info
-   * @param username - the name of the user requesting the resume - null if the admin
-   * @throws {@link ConflictError} if the job is already in a terminal state.
+ * Pause a job and then save it.
+ *
+ * @param jobID - the id of job (requestId in the db)
+ * @param logger - the logger to use for logging errors/info
+ * @param username - the name of the user requesting the pause - null if the admin
+ * @throws {@link ConflictError} if the job is already in a terminal state.
+ * @throws {@link NotFoundError} if the job does not exist or the job does not
+ * belong to the user.
  */
-export async function resumeAndSaveJob(
+export async function pauseAndSaveJob(
   jobID: string,
   logger: Logger,
   username: string,
 ): Promise<void> {
-  let job;
   await db.transaction(async (tx) => {
-    if (username) {
-      ({ job } = await Job.byUsernameAndRequestId(tx, username, jobID));
-    } else {
-      ({ job } = await Job.byRequestId(tx, jobID));
-    }
+    const job = await lookupJob(tx, jobID, username);
+    job.pause();
+    await job.save(tx);
+  });
+}
 
-    if (!job) {
-      throw new NotFoundError(`Unable to find job ${jobID}`);
-    }
+/**
+ * Resume a paused job then save it.
+ *
+ * @param jobID - the id of job (requestId in the db)
+ * @param logger - the logger to use for logging errors/info
+ * @param username - the name of the user requesting the resume - null if the admin
+ * @throws {@link ConflictError} if the job is already in a terminal state.
+ * @throws {@link NotFoundError} if the job does not exist or the job does not
+ * belong to the user.
+ */
+export async function resumeAndSaveJob(
+  jobID: string,
+  _logger: Logger,
+  username: string,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const job = await lookupJob(tx, jobID, username);
     job.resume();
     await job.save(tx);
   });
 }
 
 /**
-   * Set and save the final status of the turbo job
-   * and in the case of job failure or cancellation, its work items.
-   * (Also clean up temporary work items.)
-   * @param tx - the transaction to perform the updates with
-   * @param job - the job to save and update
-   * @param finalStatus - the job's final status
-   * @param logger - the logger to use for logging errors/info
-   * @param message - the job's final message
-   * @throws {@link ConflictError} if the finalStatus is not within terminalStates
-   */
+ * Set and save the final status of the turbo job
+ * and in the case of job failure or cancellation, its work items.
+ * (Also clean up temporary work items.)
+ * @param tx - the transaction to perform the updates with
+ * @param job - the job to save and update
+ * @param finalStatus - the job's final status
+ * @param logger - the logger to use for logging errors/info
+ * @param message - the job's final message
+ * @throws {@link ConflictError} if the finalStatus is not within terminalStates
+ */
 export async function completeJob(
   tx: Transaction,
   job: Job,
@@ -121,39 +133,29 @@ export async function completeJob(
  * @param jobID - the id of job (requestId in the db)
  * @param message - the message to use for the canceled job
  * @param logger - the logger to use for logging errors/info
- * @param shouldTerminateWorkflows - true if the workflow(s) for the job should be terminated
  * @param username - the name of the user requesting the cancel - null if the admin
  * @param shouldIgnoreRepeats - flag to indicate that we should ignore repeat calls to cancel the
  * same job - needed for the workflow termination listener (default false)
+ * @throws {@link NotFoundError} if the job does not exist or the job does not
+ * belong to the user.
  */
 export async function cancelAndSaveJob(
   jobID: string,
   message: string,
   logger: Logger,
-  shouldTerminateWorkflows: boolean,
   username: string,
   shouldIgnoreRepeats = false,
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    let job;
-    if (username) {
-      ({ job } = await Job.byUsernameAndRequestId(tx, username, jobID));
-    } else {
-      ({ job } = await Job.byRequestId(tx, jobID));
-    }
+    const job = await lookupJob(tx, jobID, username);
+    if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
+      // attempt to clear the CMR scroll session if this job had one
+      const scrollId = await getScrollIdForJob(tx, job.jobID);
+      await clearScrollSession(scrollId);
 
-    if (job) {
-      if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
-        // attempt to clear the CMR scroll session if this job had one
-        const scrollId = await getScrollIdForJob(tx, job.jobID);
-        await clearScrollSession(scrollId);
-
-        await completeJob(tx, job, JobStatus.CANCELED, logger, message);
-      } else {
-        logger.warn(`Ignoring repeated cancel request for job ${jobID}`);
-      }
+      await completeJob(tx, job, JobStatus.CANCELED, logger, message);
     } else {
-      throw new NotFoundError(`Unable to find job ${jobID}`);
+      logger.warn(`Ignoring repeated cancel request for job ${jobID}`);
     }
   });
 }

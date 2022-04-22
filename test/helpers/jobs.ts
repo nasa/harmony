@@ -250,7 +250,7 @@ export function adminCancelJobWithGET(app: Express.Application, { jobID }: Job):
 
 /**
  * Submits a resume job request as the given user
- * 
+ *
  * @param app - The express application (typically this.frontend)
  * @param job - The job
  */
@@ -288,6 +288,47 @@ export function adminResumeJobWithGET(app: Express.Application, { jobID }: Job):
   return request(app).get(`/admin/jobs/${jobID}/resume`);
 }
 
+/**
+ * Submits a pause job request as the given user
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function pauseJob(app: Express.Application, { jobID }: Job): Test {
+  return request(app).post(`/jobs/${jobID}/pause`);
+}
+
+/**
+ * Submits a pause job request as the given user on the admin endpoint
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function adminPauseJob(app: Express.Application, { jobID }: Job): Test {
+  return request(app).post(`/admin/jobs/${jobID}/pause`);
+}
+
+/**
+ * Submits a pause job request as the given user using a GET instead of POST
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function pauseJobWithGET(app: Express.Application, { jobID }: Job): Test {
+  return request(app).get(`/jobs/${jobID}/pause`);
+}
+
+/**
+ * Submits a pause job request as the given user on the admin endpoint using a GET instead of POST
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function adminPauseJobWithGET(app: Express.Application, { jobID }: Job): Test {
+  return request(app).get(`/admin/jobs/${jobID}/pause`);
+}
+
+
 export const hookJobListing = hookRequest.bind(this, jobListing);
 export const hookAdminJobListing = hookRequest.bind(this, adminJobListing);
 export const hookJobStatus = hookRequest.bind(this, jobStatus);
@@ -300,6 +341,10 @@ export const hookResumeJob = hookRequest.bind(this, resumeJob);
 export const hookAdminResumeJob = hookRequest.bind(this, adminResumeJob);
 export const hookResumeJobWithGET = hookRequest.bind(this, resumeJobWithGET);
 export const hookAdminResumeJobWithGET = hookRequest.bind(this, adminResumeJobWithGET);
+export const hookPauseJob = hookRequest.bind(this, pauseJob);
+export const hookAdminPauseJob = hookRequest.bind(this, adminPauseJob);
+export const hookPauseJobWithGET = hookRequest.bind(this, pauseJobWithGET);
+export const hookAdminPauseJobWithGET = hookRequest.bind(this, adminPauseJobWithGET);
 
 /**
  * Given a string returns a new string with all characters escaped such that the string

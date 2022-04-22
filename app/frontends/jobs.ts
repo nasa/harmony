@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { keysToLowerCase } from '../util/object';
-import { cancelAndSaveJob, resumeAndSaveJob, validateJobId } from '../util/job';
+import { Logger } from 'winston';
+import { cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, validateJobId } from '../util/job';
 import JobLink from '../models/job-link';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
@@ -205,7 +206,7 @@ export async function cancelJob(
       username = req.user;
     }
 
-    await cancelAndSaveJob(jobID, message, req.context.logger, true, username);
+    await cancelAndSaveJob(jobID, message, req.context.logger, username);
 
     if (req.context.isAdminAccess) {
       res.redirect(`/admin/jobs/${jobID}`);
@@ -223,20 +224,21 @@ export async function cancelJob(
 }
 
 /**
- * Express.js handler that resumes a single job `(POST /jobs/{jobID}/resume)`. A user can resume their own
- * request. An admin can resume any user's request.
+ * Helper function for pausing and resuming jobs
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
- * @returns Resolves when the request is complete
+ * @param jobFn - The function to call to either resume or pause the job
  */
-export async function resumeJob(
-  req: HarmonyRequest, res: Response, next: NextFunction,
+export async function pauseOrResumeJob(
+  req: HarmonyRequest,
+  res: Response,
+  next: NextFunction,
+  jobFn: (jobID: string, logger: Logger, username: string) => Promise<void>,
 ): Promise<void> {
-  const { jobID } = req.params;
-  req.context.logger.info(`Resume requested for job ${jobID} by user ${req.user}`);
   try {
+    const { jobID } = req.params;
     validateJobId(jobID);
     let username: string;
 
@@ -244,7 +246,7 @@ export async function resumeJob(
       username = req.user;
     }
 
-    await resumeAndSaveJob(jobID, req.context.logger, username);
+    await jobFn(jobID, req.context.logger, username);
 
     if (req.context.isAdminAccess) {
       res.redirect(`/admin/jobs/${jobID}`);
@@ -259,4 +261,36 @@ export async function resumeJob(
       next(e);
     }
   }
+}
+
+/**
+ * Express.js handler that resumes a single job `(POST /jobs/{jobID}/resume)`.
+ * A user can resume their own request. An admin can resume any user's request.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function resumeJob(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  req.context.logger.info(`Resume requested for job ${req.params.jobID} by user ${req.user}`);
+  await pauseOrResumeJob(req, res, next, resumeAndSaveJob);
+}
+
+/**
+ * Express.js handler that pauses a single job `(POST /jobs/{jobID}/pause)`.
+ * A user can pause their own request. An admin can pause any user's request.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function pauseJob(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  req.context.logger.info(`Pause requested for job ${req.params.jobID} by user ${req.user}`);
+  await pauseOrResumeJob(req, res, next, pauseAndSaveJob);
 }
