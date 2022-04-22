@@ -304,6 +304,7 @@ async function handleQueryCmrWork(
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
   const { status, results, errorMessage } = req.body;
+  const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
   const { logger } = req.context;
   logger.info(`Updating work item for ${id} to ${status}`);
   await db.transaction(async (tx) => {
@@ -315,10 +316,11 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     // If the job was already canceled or failed then send 400 response
     if ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
       res.status(409).send(`Job was already ${job.status}.`);
+      // TODO investigate whether or not returning here could lead to work items staying in the 'running' state
       return;
     }
 
-    await updateWorkItemStatus(tx, id, status as WorkItemStatus);
+    await updateWorkItemStatus(tx, id, status as WorkItemStatus, totalGranulesSize);
     // If the response is an error then set the job status to 'failed'
     if (status === WorkItemStatus.FAILED) {
       if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {

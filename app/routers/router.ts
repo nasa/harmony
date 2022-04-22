@@ -33,6 +33,7 @@ import HarmonyRequest, { addRequestContextToOperation } from '../models/harmony-
 import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
 import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
+import getRequestMetrics from '../frontends/request-metrics';
 
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
@@ -122,6 +123,7 @@ function collectionPrefix(path: string): RegExp {
 
 const authorizedRoutes = [
   cmrCollectionReader.collectionRegex,
+  '/admin*',
   '/jobs*',
   '/service-results/*',
   '/cloud-access*',
@@ -220,6 +222,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.get('/admin/jobs', asyncHandler(getJobsListing));
   result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
+  
+  result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
 
   result.get('/workflow-ui', asyncHandler(getJobs));
   result.get('/workflow-ui/:jobID', asyncHandler(getJob));

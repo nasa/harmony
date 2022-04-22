@@ -17,14 +17,14 @@ export interface DataSource {
  * @param scrollId - Scroll session id used in the CMR-Scroll-Id header for granule search
  * @param maxCmrGranules - The maximum size of the page to request from CMR
  * @param filePrefix - The prefix to give each file placed in the directory
- * @returns A single STAC catalog for each granule (each with a single STAC item)
+ * @returns A tuple with the combined granules sizes and an array of a single STAC catalog for each granule (each with a single STAC item)
  */
 export async function queryScrollId(
   token: string,
   scrollId: string,
   filePrefix: string,
   maxCmrGranules?: number,
-): Promise<StacCatalog[]> {
+): Promise<[number, StacCatalog[]]> {
   const cmrResponse = await queryGranulesForScrollId(
     scrollId,
     token,
@@ -32,7 +32,10 @@ export async function queryScrollId(
   );
   const { hits } = cmrResponse;
   logger.info(`CMR Hits: ${hits}, Number of granules returned in this page: ${cmrResponse.granules.length}`);
+  let totalGranulesSize = 0;
   const catalogs = cmrResponse.granules.map((granule) => {
+    const granuleSize = granule.granule_size ? parseFloat(granule.granule_size) : 0;
+    totalGranulesSize += granuleSize;
     const result = new CmrStacCatalog({ description: `CMR collection ${granule.collection_concept_id}, granule ${granule.id}` });
     result.links.push({
       rel: 'harmony_source',
@@ -43,7 +46,7 @@ export async function queryScrollId(
     return result;
   });
 
-  return catalogs;
+  return [totalGranulesSize, catalogs];
 
 }
 
@@ -60,9 +63,9 @@ export async function queryGranulesScrolling(
   operation: DataOperation,
   scrollId: string,
   maxCmrGranules?: number,
-): Promise<StacCatalog[]> {
+): Promise<[number, StacCatalog[]]> {
   const { unencryptedAccessToken } = operation;
-  const catalogs = await queryScrollId(unencryptedAccessToken, scrollId, `./granule_${scrollId}`, maxCmrGranules);
+  const [totalGranulesSize, catalogs] = await queryScrollId(unencryptedAccessToken, scrollId, `./granule_${scrollId}`, maxCmrGranules);
 
-  return catalogs;
+  return [totalGranulesSize, catalogs];
 }

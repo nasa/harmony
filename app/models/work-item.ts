@@ -16,7 +16,7 @@ const QUERY_CMR_STEP_INDEX = 1;
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
-  'stacCatalogLocation', 'workflowStepIndex',
+  'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex',
 ];
 
 /**
@@ -53,6 +53,9 @@ export default class WorkItem extends Record implements WorkItemRecord {
 
   // The location of the resulting STAC catalog(s) (not serialized)
   results?: string[];
+
+  // The sum of the sizes of the granules associated with this work item
+  totalGranulesSize?: number;
 
   /**
    * Saves the work item to the database using the given transaction.
@@ -178,11 +181,13 @@ export async function getNextWorkItem(
  * @param tx - the transaction to use for querying
  * @param id - the id of the WorkItem
  * @param status - the status to set for the WorkItem
+ * @param totalGranulesSize - the combined sizes of all the input granules for this work item
  */
 export async function updateWorkItemStatus(
   tx: Transaction,
   id: string,
   status: WorkItemStatus,
+  totalGranulesSize: number,
 ): Promise<void> {
   const workItem = await tx(WorkItem.table)
     .forUpdate()
@@ -192,7 +197,7 @@ export async function updateWorkItemStatus(
 
   if (workItem) {
     await tx(WorkItem.table)
-      .update({ status, updatedAt: new Date() })
+      .update({ status, totalGranulesSize, updatedAt: new Date() })
       .where({ id: workItem.id });
   } else {
     throw new Error(`id [${id}] does not exist in table ${WorkItem.table}`);
@@ -494,4 +499,28 @@ export async function getScrollIdForJob(
     return workItems.workItems[0]?.scrollID;
   }
   return null;
+}
+
+/**
+ * Returns the sum of the work item sizes for all work items for the provided jobID.
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the job
+ */
+export async function getTotalWorkItemSizeForJobID(
+  tx: Transaction,
+  jobID: string,
+): Promise<number> {
+  const results = await tx(WorkItem.table)
+    .select()
+    .sum('totalGranulesSize')
+    .where({ jobID });
+
+  let totalSize;
+  if (db.client.config.client === 'pg') {
+    totalSize = Number(results[0].sum);
+  } else {
+    totalSize = Number(results[0]['sum(`totalGranulesSize`)']);
+  }
+
+  return totalSize;
 }

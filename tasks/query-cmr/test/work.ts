@@ -12,13 +12,14 @@ describe('doWork', function () {
 
     describe('when the output directory exists', function () {
       const tmpDir = tmp.dirSync({ unsafeCleanup: true }).name;
+      const totalGranulesSize = 1.0;
       const workRequest: QueryCmrRequest = {
         outputDir: tmpDir,
 
       };
       hookDoWork(
         workRequest,
-        [new CmrStacCatalog({ description: 'done' })],
+        [totalGranulesSize, [new CmrStacCatalog({ description: 'done' })]],
       );
 
       it('outputs the result data to catalog.json in the directory', function () {
@@ -30,13 +31,14 @@ describe('doWork', function () {
 
     describe('when the output directory does not exist', function () {
       const tmpDir = tmp.tmpNameSync();
+      const totalGranulesSize = 1.5;
       const workRequest: QueryCmrRequest = {
         outputDir: tmpDir,
 
       };
       hookDoWork(
         workRequest,
-        [new CmrStacCatalog({ description: 'first' }), new CmrStacCatalog({ description: 'second' })],
+        [totalGranulesSize, [new CmrStacCatalog({ description: 'first' }), new CmrStacCatalog({ description: 'second' })]],
       );
       after(() => fs.rmSync(tmpDir, { recursive: true }));
 

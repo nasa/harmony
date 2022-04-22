@@ -1,4 +1,3 @@
-import { exit } from 'process';
 import { Worker } from '../../../../app/workers/worker';
 import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
@@ -9,6 +8,7 @@ import sleep from '../../../../app/util/sleep';
 import createAxiosClientWithRetry from '../util/axios-clients';
 import path from 'path';
 import { promises as fs } from 'fs';
+import { exit } from 'process';
 
 // Poll every 500 ms for now. Potentially make this a configuration item.
 const pollingInterval = 500;
@@ -77,6 +77,7 @@ async function _doWork(
   if (serviceResponse.batchCatalogs) {
     newWorkItem.status = WorkItemStatus.SUCCESSFUL;
     newWorkItem.results = serviceResponse.batchCatalogs;
+    newWorkItem.totalGranulesSize = serviceResponse.totalGranulesSize;
   } else {
     logger.error(`Service failed with error: ${serviceResponse.error}`);
     newWorkItem.status = WorkItemStatus.FAILED;
@@ -109,8 +110,8 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     }
 
     pullCounter += 1;
+    logger.debug('Polling for work');
     if (pullCounter === pullLogPeriod) {
-      logger.debug('Polling for work');
       pullCounter = 0;
     }
 
@@ -231,7 +232,6 @@ export default class PullWorker implements Worker {
         }
       }
     }
-
     // poll the Harmony work endpoint
     _pullAndDoWork(repeat).catch((e) => {
       logger.error(e.message);
