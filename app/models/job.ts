@@ -241,6 +241,8 @@ export class Job extends Record implements JobRecord {
   *
   * @param transaction - the transaction to use for querying
   * @param jobID - the jobID for the job that should be retrieved
+  * @param getLinks - if true include the job links when returning the job
+  * @param lock - if true lock the row in the jobs table
   * @returns the Job with the given JobID or null if not found
   */
   static async byJobID(
