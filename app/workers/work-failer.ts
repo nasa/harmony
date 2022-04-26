@@ -44,7 +44,7 @@ export default class WorkFailer implements Worker {
         await updateWorkItemStatuses(tx, workItemIds, WorkItemStatus.FAILED);
         const jobIds = new Set(workItems.map((item) => item.jobID));
         for (const jobId of jobIds) {
-          const job = await Job.byJobID(tx, jobId);
+          const job = await Job.byJobID(tx, jobId, false, true);
           await completeJob(
             tx, job, JobStatus.FAILED, this.logger,
             `Job failed because one or more work items took too long (more than ${olderThanMinutes} minutes) to complete.`,
