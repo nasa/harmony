@@ -23,6 +23,12 @@ import {
 } from '../helpers/jobs';
 import { hookRedirect } from '../helpers/hooks';
 import { JobRecord, JobStatus, Job } from '../../app/models/job';
+import { getWorkflowStepsByJobId } from '../../app/models/workflow-steps';
+import db from '../../app/util/db';
+import { createDecrypter, createEncrypter } from '../../app/util/crypto';
+import env from '../../app/util/env';
+import DataOperation from '../../app/models/data-operation';
+import { buildWorkflowStep } from '../helpers/workflow-steps';
 
 const normalUsername = 'joe';
 
@@ -328,16 +334,26 @@ describe('Pausing and resuming a job - user endpoint', function () {
     GET: hookPauseJobWithGET,
   };
 
+  const encrypter = createEncrypter(env.sharedSecretKey);
+  const decrypter = createDecrypter(env.sharedSecretKey);
+
   for (const [httpMethod, resumeEndpointHook] of Object.entries(resumeEndpointHooks)) {
     const pauseEndpointHook = pauseEndpointHooks[httpMethod];
     describe(`Pausing and resuming using ${httpMethod}`, function () {
       hookServersStartStop({ skipEarthdataLogin: false });
       describe('Resuming a job', function () {
+        let token;
         hookTransaction();
         const joeJob1 = buildJob({ username: normalUsername });
         before(async function () {
           joeJob1.pause();
           await joeJob1.save(this.trx);
+          const workflowStep = buildWorkflowStep({ jobID: joeJob1.requestId });
+          await workflowStep.save(this.trx);
+          const workflowSteps = await getWorkflowStepsByJobId(this.trx, joeJob1.requestId);
+          const { operation } = workflowSteps[0];
+          const dataOperation = new DataOperation(JSON.parse(operation), encrypter, decrypter);
+          token = dataOperation.accessToken;
           this.trx.commit();
           this.trx = null;
         });
@@ -362,6 +378,16 @@ describe('Pausing and resuming a job - user endpoint', function () {
           it('returns a redirect to the running job', function () {
             expect(this.res.statusCode).to.equal(302);
             expect(this.res.headers.location).to.include(`/jobs/${jobID}`);
+          });
+
+          it('updates the access token for the workflow steps', async function () {
+            const workflowSteps = await getWorkflowStepsByJobId(db, jobID);
+            for (const workflowStep of workflowSteps) {
+              const { operation } = workflowStep;
+              const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
+              expect(op.accessToken).to.not.equal(token);
+              expect(op.accessToken).to.equal('fake_access');
+            }
           });
 
           describe('When following the redirect to the resumed job', function () {

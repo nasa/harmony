@@ -192,7 +192,7 @@ export async function changeJobState(
   req: HarmonyRequest,
   res: Response,
   next: NextFunction,
-  jobFn: (jobID: string, logger: Logger, username: string) => Promise<void>,
+  jobFn: (jobID: string, logger: Logger, username: string, token: string) => Promise<void>,
 ): Promise<void> {
   try {
     const { jobID } = req.params;
@@ -203,7 +203,7 @@ export async function changeJobState(
       username = req.user;
     }
 
-    await jobFn(jobID, req.context.logger, username);
+    await jobFn(jobID, req.context.logger, username, req.accessToken);
 
     if (req.context.isAdminAccess) {
       res.redirect(`/admin/jobs/${jobID}`);

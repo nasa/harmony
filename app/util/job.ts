@@ -8,6 +8,9 @@ import { ConflictError, NotFoundError, RequestValidationError } from './errors';
 import isUUID from './uuid';
 import { clearScrollSession } from './cmr';
 import { WorkItemStatus } from '../models/work-item-interface';
+import { getWorkflowStepsByJobId } from '../models/workflow-steps';
+import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
+import { createDecrypter, createEncrypter } from './crypto';
 
 /**
  * Cleans up the temporary work items for the provided jobID
@@ -44,50 +47,6 @@ async function lookupJob(tx: Transaction, jobID: string, username: string): Prom
     throw new NotFoundError(`Unable to find job ${jobID}`);
   }
   return job;
-}
-
-/**
- * Pause a job and then save it.
- *
- * @param jobID - the id of job (requestId in the db)
- * @param _logger - the logger to use for logging errors/info (unused, here to )
- * @param username - the name of the user requesting the pause - null if the admin
- * @throws {@link ConflictError} if the job is already in a terminal state.
- * @throws {@link NotFoundError} if the job does not exist or the job does not
- * belong to the user.
- */
-export async function pauseAndSaveJob(
-  jobID: string,
-  _logger: Logger,
-  username: string,
-): Promise<void> {
-  await db.transaction(async (tx) => {
-    const job = await lookupJob(tx, jobID, username);
-    job.pause();
-    await job.save(tx);
-  });
-}
-
-/**
- * Resume a paused job then save it.
- *
- * @param jobID - the id of job (requestId in the db)
- * @param _logger - the logger to use for logging errors/info
- * @param username - the name of the user requesting the resume - null if the admin
- * @throws {@link ConflictError} if the job is already in a terminal state.
- * @throws {@link NotFoundError} if the job does not exist or the job does not
- * belong to the user.
- */
-export async function resumeAndSaveJob(
-  jobID: string,
-  _logger: Logger,
-  username: string,
-): Promise<void> {
-  await db.transaction(async (tx) => {
-    const job = await lookupJob(tx, jobID, username);
-    job.resume();
-    await job.save(tx);
-  });
 }
 
 /**
@@ -133,13 +92,16 @@ export async function completeJob(
  * @param jobID - the id of job (requestId in the db)
  * @param logger - the logger to use for logging errors/info
  * @param username - the name of the user requesting the cancel - null if the admin
+ * @param _token - the access token for the user (not used)
+ * @throws {@link ConflictError} if the job is already in a terminal state.
  * @throws {@link NotFoundError} if the job does not exist or the job does not
  * belong to the user.
  */
 export async function cancelAndSaveJob(
   jobID: string,
   logger: Logger,
-  username: string,
+  username?: string,
+  _token?: string,
 ): Promise<void> {
   await db.transaction(async (tx) => {
     const job = await lookupJob(tx, jobID, username);
@@ -160,3 +122,67 @@ export function validateJobId(jobID: string): void {
     throw new RequestValidationError(`Invalid format for Job ID '${jobID}'. Job ID must be a UUID.`);
   }
 }
+
+/**
+ * Pause a job and then save it.
+ *
+ * @param jobID - the id of job (requestId in the db)
+ * @param _logger - the logger to use for logging errors/info (unused, here to )
+ * @param username - the name of the user requesting the pause - null if the admin
+ * @param _token - the access token for the user (not used)
+ * @throws {@link ConflictError} if the job is already in a terminal state.
+ * @throws {@link NotFoundError} if the job does not exist or the job does not
+ * belong to the user.
+ */
+export async function pauseAndSaveJob(
+  jobID: string,
+  _logger: Logger,
+  username?: string,
+  _token?: string,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const job = await lookupJob(tx, jobID, username);
+    job.pause();
+    await job.save(tx);
+  });
+}
+
+/**
+ * Resume a paused job then save it.
+ *
+ * @param jobID - the id of job (requestId in the db)
+ * @param _logger - the logger to use for logging errors/info
+ * @param username - the name of the user requesting the resume - null if the admin
+ * @param token - the access token for the user
+ * @throws {@link ConflictError} if the job is already in a terminal state.
+ * @throws {@link NotFoundError} if the job does not exist or the job does not
+ * belong to the user.
+ */
+export async function resumeAndSaveJob(
+  jobID: string,
+  _logger: Logger,
+  username?: string,
+  token?: string,
+
+): Promise<void> {
+  const encrypter = createEncrypter(env.sharedSecretKey);
+  const decrypter = createDecrypter(env.sharedSecretKey);
+  await db.transaction(async (tx) => {
+    const job = await lookupJob(tx, jobID, username);
+    if (username && token) {
+      // update access token
+      const workflowSteps = await getWorkflowStepsByJobId(tx, jobID);
+      for (const workflowStep of workflowSteps) {
+        const { operation } = workflowStep;
+        const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
+        op.model.accessToken = token;
+        const serialOp = op.serialize(CURRENT_SCHEMA_VERSION);
+        workflowStep.operation = serialOp;
+        workflowStep.save(tx);
+      }
+    }
+    job.resume();
+    await job.save(tx);
+  });
+}
+
