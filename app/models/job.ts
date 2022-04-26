@@ -237,14 +237,27 @@ export class Job extends Record implements JobRecord {
 
   /**
   * Returns a Job with the given jobID using the given transaction
+  * Optionally locks the row.
   *
   * @param transaction - the transaction to use for querying
   * @param jobID - the jobID for the job that should be retrieved
   * @returns the Job with the given JobID or null if not found
   */
-  static async byJobID(transaction: Transaction, jobID: string): Promise<Job | null> {
-    const jobList = await this.queryAll(transaction, { where: { jobID } }, true, 0, 1);
-    return jobList.data.shift();
+  static async byJobID(
+    transaction: Transaction, jobID: string, getLinks = true, lock = false,
+  ): Promise<Job | null> {
+
+    let query = transaction('jobs').select().where({ jobID });
+    if (lock) {
+      query = query.forUpdate();
+    }
+
+    const result = await query;
+    const job = new Job(result[0]);
+    if (getLinks) {
+      job.links = (await getLinksForJob(transaction, job.jobID)).data;
+    }
+    return job;
   }
 
   /**
@@ -387,7 +400,7 @@ export class Job extends Record implements JobRecord {
 
   /**
    *  Checks the status of the job to see if the job is paused.
-   * 
+   *
    * @returns true if the `Job` is paused
    */
   isPaused(): boolean {

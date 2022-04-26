@@ -30,11 +30,11 @@ export const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
  * @returns a number used to limit the query-cmr task or undefined
  */
 async function calculateQueryCmrLimit(
-  workItem: WorkItem, 
+  workItem: WorkItem,
   tx,
   logger: Logger): Promise<number> {
   if (workItem?.scrollID) { // only proceed if this is a query-cmr step
-    const { numInputGranules } = await Job.byJobID(tx, workItem.jobID);
+    const { numInputGranules } = await Job.byJobID(tx, workItem.jobID, false, false);
     let queryCmrItems = (await getWorkItemsByJobIdAndStepIndex(
       tx, workItem.jobID, workItem.workflowStepIndex, 1, Number.MAX_SAFE_INTEGER))
       .workItems;
@@ -309,7 +309,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   logger.info(`Updating work item for ${id} to ${status}`);
   await db.transaction(async (tx) => {
     const workItem = await getWorkItemById(tx, parseInt(id, 10));
-    const job: Job = await Job.byJobID(tx, workItem.jobID);
+    const job: Job = await Job.byJobID(tx, workItem.jobID, false, true);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
     const isQueryCmr = workItem.serviceID.match(/query-cmr/);
 
@@ -357,7 +357,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
           // aggregate then create a work item for the next step
           if (successWorkItemCount === thisStep.workItemCount || !nextStep.hasAggregatedOutput) {
             await createNextWorkItems(tx, workItem, nextStep, results);
-          }  
+          }
           await handleQueryCmrWork(tx, workItem, nextStep);
         } else {
           // Failed to create the next work items - fail the job rather than leaving it orphaned
