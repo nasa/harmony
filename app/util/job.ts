@@ -50,7 +50,7 @@ async function lookupJob(tx: Transaction, jobID: string, username: string): Prom
  * Pause a job and then save it.
  *
  * @param jobID - the id of job (requestId in the db)
- * @param logger - the logger to use for logging errors/info
+ * @param _logger - the logger to use for logging errors/info (unused, here to )
  * @param username - the name of the user requesting the pause - null if the admin
  * @throws {@link ConflictError} if the job is already in a terminal state.
  * @throws {@link NotFoundError} if the job does not exist or the job does not
@@ -58,7 +58,7 @@ async function lookupJob(tx: Transaction, jobID: string, username: string): Prom
  */
 export async function pauseAndSaveJob(
   jobID: string,
-  logger: Logger,
+  _logger: Logger,
   username: string,
 ): Promise<void> {
   await db.transaction(async (tx) => {
@@ -72,7 +72,7 @@ export async function pauseAndSaveJob(
  * Resume a paused job then save it.
  *
  * @param jobID - the id of job (requestId in the db)
- * @param logger - the logger to use for logging errors/info
+ * @param _logger - the logger to use for logging errors/info
  * @param username - the name of the user requesting the resume - null if the admin
  * @throws {@link ConflictError} if the job is already in a terminal state.
  * @throws {@link NotFoundError} if the job does not exist or the job does not
@@ -131,32 +131,23 @@ export async function completeJob(
 /**
  * Cancel the job and save it to the database
  * @param jobID - the id of job (requestId in the db)
- * @param message - the message to use for the canceled job
  * @param logger - the logger to use for logging errors/info
  * @param username - the name of the user requesting the cancel - null if the admin
- * @param shouldIgnoreRepeats - flag to indicate that we should ignore repeat calls to cancel the
- * same job - needed for the workflow termination listener (default false)
  * @throws {@link NotFoundError} if the job does not exist or the job does not
  * belong to the user.
  */
 export async function cancelAndSaveJob(
   jobID: string,
-  message: string,
   logger: Logger,
   username: string,
-  shouldIgnoreRepeats = false,
 ): Promise<void> {
   await db.transaction(async (tx) => {
     const job = await lookupJob(tx, jobID, username);
-    if (job.status !== JobStatus.CANCELED || !shouldIgnoreRepeats) {
-      // attempt to clear the CMR scroll session if this job had one
-      const scrollId = await getScrollIdForJob(tx, job.jobID);
-      await clearScrollSession(scrollId);
-
-      await completeJob(tx, job, JobStatus.CANCELED, logger, message);
-    } else {
-      logger.warn(`Ignoring repeated cancel request for job ${jobID}`);
-    }
+    // attempt to clear the CMR scroll session if this job had one
+    const scrollId = await getScrollIdForJob(tx, job.jobID);
+    await clearScrollSession(scrollId);
+    const message = username ? 'Canceled by user.' : 'Canceled by admin.';
+    await completeJob(tx, job, JobStatus.CANCELED, logger, message);
   });
 }
 
