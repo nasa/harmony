@@ -216,6 +216,7 @@ describe('WMS GetMap', function () {
       version: '1.3.0',
       bbox: '-180,-90,180,90',
       transparent: 'TRUE',
+      skipPreview: 'true',
       invalidParam: 'yes',
       anotherInvalidParam: 'ok',
     };
