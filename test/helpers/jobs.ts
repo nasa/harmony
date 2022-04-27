@@ -149,7 +149,7 @@ export function jobsEqual(
 
   return (jobRecord.requestId === serializedJob.jobID
     && jobRecord.username === serializedJob.username
-    && ((jobRecord.message === serializedJob.message) || skipMessage)
+    && (skipMessage || (jobRecord.message === serializedJob.message))
     && jobRecord.progress === serializedJob.progress
     && jobRecord.status === serializedJob.status
     && jobRecord.request === serializedJob.request
