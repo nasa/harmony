@@ -456,17 +456,16 @@ describe('Pausing and resuming a job - user endpoint', function () {
               expect(actualJob.status).to.eql('paused');
             });
 
-            it('sets the message to the job is paused', function () {
+            it('sets the appropriate message', function () {
               const actualJob = JSON.parse(this.res.text);
-              expect(actualJob.message).to.eql('The job is paused');
+              expect(actualJob.message).to.eql('The job is paused. The job may be resumed using the provided link.');
             });
 
             it('does not modify any of the other job fields', function () {
               const actualJob = new Job(JSON.parse(this.res.text));
               const expectedJob: JobRecord = _.cloneDeep(joeJob1);
-              expectedJob.message = 'The job is paused';
               expectedJob.status = JobStatus.PAUSED;
-              expect(jobsEqual(expectedJob, actualJob)).to.be.true;
+              expect(jobsEqual(expectedJob, actualJob, false, true)).to.be.true;
             });
           });
         });
@@ -640,16 +639,15 @@ describe('Pausing and resuming a job - admin endpoint', function () {
               const actualJob = JSON.parse(this.res.text);
               expect(actualJob.status).to.eql('paused');
             });
-            it('sets the message to the job is paused', function () {
+            it('sets the appropriate message', function () {
               const actualJob = JSON.parse(this.res.text);
-              expect(actualJob.message).to.eql('The job is paused');
+              expect(actualJob.message).to.eql('The job is paused. The job may be resumed using the provided link.');
             });
             it('does not modify any of the other job fields', function () {
               const actualJob = new Job(JSON.parse(this.res.text));
               const expectedJob: JobRecord = _.cloneDeep(joeJob1);
-              expectedJob.message = 'The job is paused';
               expectedJob.status = JobStatus.PAUSED;
-              expect(jobsEqual(expectedJob, actualJob)).to.be.true;
+              expect(jobsEqual(expectedJob, actualJob, false, true)).to.be.true;
             });
           });
         });
