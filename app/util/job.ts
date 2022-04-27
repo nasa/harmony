@@ -175,7 +175,7 @@ export async function resumeAndSaveJob(
       for (const workflowStep of workflowSteps) {
         const { operation } = workflowStep;
         const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
-        op.model.accessToken = token;
+        op.accessToken = token;
         const serialOp = op.serialize(CURRENT_SCHEMA_VERSION);
         workflowStep.operation = serialOp;
         workflowStep.save(tx);

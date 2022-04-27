@@ -386,7 +386,6 @@ describe('Pausing and resuming a job - user endpoint', function () {
               const { operation } = workflowStep;
               const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
               expect(op.accessToken).to.not.equal(token);
-              expect(op.accessToken).to.equal('fake_access');
             }
           });
 
