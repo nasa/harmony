@@ -386,6 +386,29 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${VAR_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset']
 
+  - name: sds/trajectory-subsetter
+    data_operation_version: '0.14.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/trajectory-subsetter
+    umm_s:
+      - S2232210365-ORNL_CLOUD
+    collections: []
+    capabilities:  # The Trajectory Subsetter also supports temporal subsetting
+      subsetting:
+        bbox: true
+        shape: true
+        variable: true
+      output_formats:
+        - application/x-hdf
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
+        operations: ['variableSubset', 'spatialSubset']
 
 https://cmr.uat.earthdata.nasa.gov:
 
