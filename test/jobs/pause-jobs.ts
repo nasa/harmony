@@ -461,6 +461,11 @@ describe('Pausing and resuming a job - user endpoint', function () {
               expect(actualJob.message).to.eql('The job is paused. The job may be resumed using the provided link.');
             });
 
+            it('provides a link for resuming the job', function () {
+              const actualJob = JSON.parse(this.res.text);
+              expect(actualJob.links.some((link) => link.href.includes('/resume')));
+            });
+
             it('does not modify any of the other job fields', function () {
               const actualJob = new Job(JSON.parse(this.res.text));
               const expectedJob: JobRecord = _.cloneDeep(joeJob1);
@@ -642,6 +647,10 @@ describe('Pausing and resuming a job - admin endpoint', function () {
             it('sets the appropriate message', function () {
               const actualJob = JSON.parse(this.res.text);
               expect(actualJob.message).to.eql('The job is paused. The job may be resumed using the provided link.');
+            });
+            it('provides a link for resuming the job', function () {
+              const actualJob = JSON.parse(this.res.text);
+              expect(actualJob.links.some((link) => link.href.includes('/resume')));
             });
             it('does not modify any of the other job fields', function () {
               const actualJob = new Job(JSON.parse(this.res.text));
