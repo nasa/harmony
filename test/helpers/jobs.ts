@@ -136,16 +136,21 @@ export function areStacJobLinksEqual(jobLinks: JobLink[], stacLinks: JobLink[]):
  * @param jobRecord - a job record
  * @param serializedJob - a job record serialized
  * @param skipLinks - if true links are not used in the comparison
+ * @param skipMessage - if true message is not used in the comparison
  * @returns true if the jobs are the same
  */
-export function jobsEqual(jobRecord: JobRecord, serializedJob: Job, skipLinks = false): boolean {
+export function jobsEqual(
+  jobRecord: JobRecord, 
+  serializedJob: Job, 
+  skipLinks = false,
+  skipMessage = false): boolean {
   const recordLinks = new Job(jobRecord).getRelatedLinks('data');
   const serializedLinks = serializedJob.getRelatedLinks('data');
 
   return (jobRecord.requestId === serializedJob.jobID
     && jobRecord.username === serializedJob.username
-    && jobRecord.message && serializedJob.message
-    && jobRecord.progress && serializedJob.progress
+    && (skipMessage || (jobRecord.message === serializedJob.message))
+    && jobRecord.progress === serializedJob.progress
     && jobRecord.status === serializedJob.status
     && jobRecord.request === serializedJob.request
     && (skipLinks || areJobLinksEqual(recordLinks, serializedLinks)));

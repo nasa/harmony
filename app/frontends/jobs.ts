@@ -47,6 +47,14 @@ function getLinksForDisplay(job: Job, urlRoot: string, statusLinkRel: string): J
   if (job.status === JobStatus.SUCCESSFUL && needsStacLink(dataLinks)) {
     links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
   }
+  if (job.status === JobStatus.PAUSED) {
+    links.unshift(new JobLink({
+      title: 'Resumes the job.',
+      href: `${urlRoot}/jobs/${job.jobID}/resume`,
+      type: 'application/json',
+      rel: 'resumer',
+    }));
+  }
   // add a 'self' or 'item' link if it does not already exist
   // 'item' is for use in jobs listings, 'self' for job status
   if (links.filter((link) => link.rel === 'self').length === 0) {
@@ -70,6 +78,9 @@ function getMessageForDisplay(job: Job, urlRoot: string): string {
     }
     message += ' Contains results in AWS S3. Access from AWS '
       + `${env.awsDefaultRegion} with keys from ${urlRoot}/cloud-access.sh`;
+  }
+  if (job.status === JobStatus.PAUSED) {
+    message += '. The job may be resumed using the provided link.';
   }
   return message;
 }
