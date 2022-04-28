@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
+import { Logger } from 'winston';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { keysToLowerCase } from '../util/object';
-import { Logger } from 'winston';
 import { cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, validateJobId } from '../util/job';
 import JobLink from '../models/job-link';
 import { needsStacLink } from '../util/stac';
@@ -192,32 +192,29 @@ export async function getJobStatus(
 }
 
 /**
- * Express.js handler that cancels a single job `(POST /jobs/{jobID}/cancel)`. A user can cancel their own
- * request. An admin can cancel any user's request.
+ * Helper function for canceling, pausing, or resuming jobs
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
- * @returns Resolves when the request is complete
+ * @param jobFn - The function to call to change the job state
  */
-export async function cancelJob(
-  req: HarmonyRequest, res: Response, next: NextFunction,
+export async function changeJobState(
+  req: HarmonyRequest,
+  res: Response,
+  next: NextFunction,
+  jobFn: (jobID: string, logger: Logger, username: string, token: string) => Promise<void>,
 ): Promise<void> {
-  const { jobID } = req.params;
-  req.context.logger.info(`Cancel requested for job ${jobID} by user ${req.user}`);
   try {
+    const { jobID } = req.params;
     validateJobId(jobID);
-    let message: string;
     let username: string;
-    const isAdmin = req.context.isAdminAccess;
-    if (isAdmin) {
-      message = 'Canceled by admin.';
-    } else {
-      message = 'Canceled by user.';
+
+    if (!req.context.isAdminAccess) {
       username = req.user;
     }
 
-    await cancelAndSaveJob(jobID, message, req.context.logger, username);
+    await jobFn(jobID, req.context.logger, username, req.accessToken);
 
     if (req.context.isAdminAccess) {
       res.redirect(`/admin/jobs/${jobID}`);
@@ -235,43 +232,20 @@ export async function cancelJob(
 }
 
 /**
- * Helper function for pausing and resuming jobs
+ * Express.js handler that cancels a single job `(POST /jobs/{jobID}/cancel)`. A user can cancel their own
+ * request. An admin can cancel any user's request.
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
- * @param jobFn - The function to call to either resume or pause the job
+ * @returns Resolves when the request is complete
  */
-export async function pauseOrResumeJob(
-  req: HarmonyRequest,
-  res: Response,
-  next: NextFunction,
-  jobFn: (jobID: string, logger: Logger, username: string) => Promise<void>,
+export async function cancelJob(
+  req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  try {
-    const { jobID } = req.params;
-    validateJobId(jobID);
-    let username: string;
-
-    if (!req.context.isAdminAccess) {
-      username = req.user;
-    }
-
-    await jobFn(jobID, req.context.logger, username);
-
-    if (req.context.isAdminAccess) {
-      res.redirect(`/admin/jobs/${jobID}`);
-    } else {
-      res.redirect(`/jobs/${jobID}`);
-    }
-  } catch (e) {
-    req.context.logger.error(e);
-    if (e instanceof TypeError) {
-      next(new RequestValidationError(e.message));
-    } else {
-      next(e);
-    }
-  }
+  const { jobID } = req.params;
+  req.context.logger.info(`Cancel requested for job ${jobID} by user ${req.user}`);
+  await changeJobState(req, res, next, cancelAndSaveJob);
 }
 
 /**
@@ -287,7 +261,7 @@ export async function resumeJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   req.context.logger.info(`Resume requested for job ${req.params.jobID} by user ${req.user}`);
-  await pauseOrResumeJob(req, res, next, resumeAndSaveJob);
+  await changeJobState(req, res, next, resumeAndSaveJob);
 }
 
 /**
@@ -303,5 +277,5 @@ export async function pauseJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   req.context.logger.info(`Pause requested for job ${req.params.jobID} by user ${req.user}`);
-  await pauseOrResumeJob(req, res, next, pauseAndSaveJob);
+  await changeJobState(req, res, next, pauseAndSaveJob);
 }

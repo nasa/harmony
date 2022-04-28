@@ -208,6 +208,7 @@ export default abstract class BaseService<ServiceParamType> {
   ): Promise<InvocationResult> {
     this.logger = logger;
     logger.info('Invoking service for operation', { operation: this.operation });
+    // TODO handle the skipPreview parameter here when implementing HARMONY-1129
     const job = this._createJob(requestUrl);
     await this._createAndSaveWorkflow(job);
 

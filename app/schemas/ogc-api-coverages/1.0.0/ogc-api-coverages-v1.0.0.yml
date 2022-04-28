@@ -328,6 +328,7 @@ paths:
       - $ref: '#/components/parameters/format'
       - $ref: '#/components/parameters/forceAsync'
       - $ref: '#/components/parameters/maxResults'
+      - $ref: '#/components/parameters/skipPreview'
       responses:
         "200":
           description: A coverage's range set.
@@ -362,6 +363,7 @@ paths:
       - $ref: '#/components/parameters/format'
       - $ref: '#/components/parameters/forceAsync'
       - $ref: '#/components/parameters/maxResults'
+      - $ref: '#/components/parameters/skipPreview'
       requestBody:
         content:
           multipart/form-data:
@@ -879,3 +881,10 @@ components:
       required: false
       schema:
         type: string
+    skipPreview:
+      name: skipPreview
+      in: query
+      description: if "true", override the default API behavior and never auto-pause jobs
+      required: false
+      schema:
+        type: boolean
