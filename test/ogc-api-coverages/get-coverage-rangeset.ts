@@ -34,6 +34,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       height: 500,
       width: 1000,
       format: 'image/png',
+      skipPreview: 'true',
     };
 
     describe('calling the backend service', function () {
