@@ -52,6 +52,7 @@ function getLinksForDisplay(job: Job, urlRoot: string, statusLinkRel: string): J
       title: 'Resumes the job.',
       href: `${urlRoot}/jobs/${job.jobID}/resume`,
       type: 'application/json',
+      rel: 'resumer',
     }));
   }
   // add a 'self' or 'item' link if it does not already exist
