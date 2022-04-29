@@ -152,6 +152,12 @@ export function start(config: Record<string, string>): {
   workReaper: WorkReaper;
   workFailer: WorkFailer;
 } {
+
+  // Log unhandled promise rejections and do not crash the node process
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+
   const appPort = +config.PORT;
   const backendPort = +config.BACKEND_PORT;
 
