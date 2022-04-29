@@ -1,6 +1,7 @@
 import { pick } from 'lodash';
 import { ILengthAwarePagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
+import { createMachine } from 'xstate';
 import { CmrPermission, CmrPermissionsMap, getCollectionsByIds, getPermissions, CmrTagKeys } from '../util/cmr';
 import { removeEmptyProperties } from '../util/object';
 import { ConflictError } from '../util/errors';
@@ -13,17 +14,6 @@ import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 import env = require('../util/env');
 
 const { awsDefaultRegion } = env;
-
-const statesToDefaultMessages = {
-  accepted: 'The job has been accepted and is waiting to be processed',
-  running: 'The job is being processed',
-  successful: 'The job has completed successfully',
-  failed: 'The job failed with an unknown error',
-  canceled: 'The job was canceled',
-  paused: 'The job is paused',
-};
-
-const defaultMessages = Object.values(statesToDefaultMessages);
 
 const serializedJobFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID',
@@ -43,11 +33,20 @@ export enum JobStatus {
   FAILED = 'failed',
   CANCELED = 'canceled',
   PAUSED = 'paused',
+  PREVIEWING = 'previewing',
 }
 
-export const activeJobStatuses = [JobStatus.ACCEPTED, JobStatus.RUNNING];
-export const terminalStates = [JobStatus.SUCCESSFUL, JobStatus.FAILED, JobStatus.CANCELED];
-
+enum JobEvent {
+  CANCEL = 'CANCEL',
+  COMPLETE = 'COMPLETE',
+  FAIL = 'FAIL',
+  NOOP = 'NOOP',
+  PAUSE = 'PAUSE',
+  FINISH_PREVIEW = 'FINISH_PREVIEW',
+  RESUME = 'RESUME',
+  START = 'START',
+  START_WITH_PREVIEW = 'START_WITH_PREVIEW',
+}
 export interface JobRecord {
   id?: number;
   jobID: string;
@@ -86,6 +85,106 @@ export interface JobQuery {
     username?: { in: boolean, values: string[] };
   }
 }
+
+// State machine definition for jobs. This is not used to maintain state, just to enforce
+// transition rules
+const stateMachine = createMachine(
+  {
+    id: 'job',
+    initial: 'accepted',
+    strict: true,
+    states: {
+      accepted: {
+        id: JobStatus.ACCEPTED,
+        meta: {
+          defaultMessage: 'The job has been accepted and is waiting to be processed',
+          active: true,
+        },
+        on: Object.fromEntries([
+          [JobEvent.START, { target: JobStatus.RUNNING }],
+          [JobEvent.START_WITH_PREVIEW, { target: JobStatus.PREVIEWING }],
+          [JobEvent.NOOP, { target: JobStatus.ACCEPTED }],
+        ]),
+      },
+      running: {
+        id: JobStatus.RUNNING,
+        meta: {
+          defaultMessage: 'The job is being processed',
+          active: true,
+        },
+        on: Object.fromEntries([
+          [JobEvent.COMPLETE, { target: JobStatus.SUCCESSFUL }],
+          [JobEvent.CANCEL, { target: JobStatus.CANCELED }],
+          [JobEvent.FAIL, { target: JobStatus.FAILED }],
+          [JobEvent.PAUSE, { target: JobStatus.PAUSED }],
+        ]),
+      },
+      successful: {
+        id: JobStatus.SUCCESSFUL,
+        meta: {
+          defaultMessage: 'The job has completed successfully',
+        },
+        type: 'final',
+      },
+      failed: {
+        id: JobStatus.FAILED,
+        meta: {
+          defaultMessage: 'The job failed with an unknown error',
+        },
+        type: 'final',
+        on: Object.fromEntries([
+          // allow retrigger of failure to simplify error handling
+          [JobEvent.FAIL, { target: JobStatus.FAILED }],
+        ]),
+      },
+      canceled: {
+        id: JobStatus.CANCELED,
+        meta: {
+          defaultMessage: 'The job was canceled',
+        },
+        type: 'final',
+      },
+      previewing: {
+        id: JobStatus.PREVIEWING,
+        meta: {
+          defaultMessage: 'The job is generating a preview before auto-pausing',
+          active: true,
+        },
+        on: Object.fromEntries([
+          [JobEvent.RESUME, { target: JobStatus.RUNNING }],
+          [JobEvent.CANCEL, { target: JobStatus.CANCELED }],
+          [JobEvent.FAIL, { target: JobStatus.FAILED }],
+          [JobEvent.FINISH_PREVIEW, { target: JobStatus.PAUSED }],
+        ]),
+      },
+      paused: {
+        id: JobStatus.PAUSED,
+        meta: {
+          defaultMessage: 'The job is paused',
+        },
+        on: Object.fromEntries([
+          [JobEvent.RESUME, { target: JobStatus.RUNNING }],
+          [JobEvent.CANCEL, { target: JobStatus.CANCELED }],
+          [JobEvent.FAIL, { target: JobStatus.FAILED }],
+        ]),
+      },
+    },
+  },
+);
+
+export const terminalStates = Object.keys(stateMachine.states).filter(key => stateMachine.states[key].type === 'final').map(k => stateMachine.states[k].id);
+
+export const activeJobStatuses = Object.keys(stateMachine.states).filter(key => stateMachine.states[key].meta.active).map(k => stateMachine.states[k].id);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const statesToDefaultMessages: any = Object.values(stateMachine.states).reduce(
+  (prev, state) => {
+    prev[state.id] = state.meta.defaultMessage;
+    return prev;
+  },
+  {});
+
+const defaultMessages = Object.values(statesToDefaultMessages);
 
 /**
  *
@@ -366,10 +465,15 @@ export class Job extends Record implements JobRecord {
    * terminal state.
    */
   validateStatus(): void {
-    if (terminalStates.includes(this.originalStatus)) {
+    const state = stateMachine.transition(this.originalStatus, { type: 'NOOP' });
+    if (state.done) {
       throw new ConflictError(`Job status cannot be updated from ${this.originalStatus} to ${this.status}.`);
     }
   }
+
+  // validateStatusChange(newState: JobStatus): void {
+  //   const state = stateMachine.transition(this.status, { type })
+  // }
 
   /**
    * Adds a link to the list of result links for the job.
@@ -403,10 +507,10 @@ export class Job extends Record implements JobRecord {
   /**
    *  Checks the status of the job to see if the job is paused.
    *
-   * @returns true if the `Job` is paused
+   * @returns true if the `Job` is paused or previewing
    */
   isPaused(): boolean {
-    return this.status === JobStatus.PAUSED;
+    return [JobStatus.PAUSED, JobStatus.PREVIEWING].includes(this.status);
   }
 
   /**
@@ -419,7 +523,8 @@ export class Job extends Record implements JobRecord {
    * @throws An error if the job is not currently in the RUNNING state
    */
   pause(message = statesToDefaultMessages.paused): void {
-    if (this.status != JobStatus.RUNNING) {
+    const state = stateMachine.transition(this.status, JobEvent.PAUSE);
+    if (!(state.changed && state.matches(JobStatus.PAUSED))) {
       throw new ConflictError(`Job status cannot be updated from ${this.status} to paused.`);
     }
     this.updateStatus(JobStatus.PAUSED, message);
@@ -431,7 +536,8 @@ export class Job extends Record implements JobRecord {
    * @throws An error if the job is not currently in the PAUSED state
    */
   resume(): void {
-    if (this.status != JobStatus.PAUSED) {
+    const state = stateMachine.transition(this.status, JobEvent.RESUME);
+    if (!(state.changed && state.matches(JobStatus.RUNNING))) {
       throw new ConflictError(`Job status is ${this.status} - only paused jobs can be resumed.`);
     }
     this.updateStatus(JobStatus.RUNNING);
@@ -446,6 +552,10 @@ export class Job extends Record implements JobRecord {
    * @param message - an error message
    */
   fail(message = statesToDefaultMessages.failed): void {
+    const state = stateMachine.transition(this.status, JobEvent.FAIL);
+    if (!state.matches(JobStatus.FAILED)) {
+      throw new ConflictError(`Job status cannot be updated from ${this.status} to failed.`);
+    }
     this.updateStatus(JobStatus.FAILED, message);
   }
 
@@ -456,6 +566,10 @@ export class Job extends Record implements JobRecord {
    * @param message - an error message
    */
   cancel(message = statesToDefaultMessages.canceled): void {
+    const state = stateMachine.transition(this.status, JobEvent.CANCEL);
+    if (!(state.changed && state.matches(JobStatus.CANCELED))) {
+      throw new ConflictError(`Job status cannot be updated from ${this.status} to canceled.`);
+    }
     this.updateStatus(JobStatus.CANCELED, message);
   }
 
@@ -468,6 +582,10 @@ export class Job extends Record implements JobRecord {
    * @param message - (optional) a human-readable success message.  See method description.
    */
   succeed(message?: string): void {
+    const state = stateMachine.transition(this.status, JobEvent.COMPLETE);
+    if (!(state.changed && state.matches(JobStatus.SUCCESSFUL))) {
+      throw new ConflictError(`Job status cannot be updated from ${this.status} to successful.`);
+    }
     this.updateStatus(JobStatus.SUCCESSFUL, message);
   }
 
@@ -520,7 +638,8 @@ export class Job extends Record implements JobRecord {
    * @returns true if the job is complete
    */
   isComplete(): boolean {
-    return terminalStates.includes(this.status);
+    const state = stateMachine.transition(this.status, 'NOOP');
+    return state.done;
   }
 
   /**

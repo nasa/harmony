@@ -11,6 +11,7 @@ import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
 import { WorkItemStatus } from '../work-item-interface';
+import e from 'tasks/service-runner/node_modules/@types/express';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -290,12 +291,15 @@ export default abstract class BaseService<ServiceParamType> {
   protected _createJob(
     requestUrl: string,
   ): Job {
+    const urlParams = new URLSearchParams(requestUrl);
+    const skipPreviewStr = urlParams.get('skipPreview');
+    const skipPreview = (this.numInputGranules < env.previewThreshold) || (skipPreviewStr && skipPreviewStr.toLowerCase() === 'true');
     const { requestId, user } = this.operation;
     const job = new Job({
       username: user,
       requestId,
       jobID: requestId,
-      status: JobStatus.RUNNING,
+      status: skipPreview ? JobStatus.RUNNING : JobStatus.PREVIEWING,
       request: requestUrl,
       isAsync: !this.isSynchronous,
       numInputGranules: this.numInputGranules,
@@ -308,7 +312,7 @@ export default abstract class BaseService<ServiceParamType> {
 
   /**
    * Creates a new work item object which will kick off the first task for this request
-   * @param stepId - The
+   * @param stepId - The id of the step to create the work item for
    * @returns The created WorkItem for the query CMR job
    * @throws ServerError - if the work item cannot be created
    */

@@ -93,6 +93,7 @@ interface HarmonyEnv {
   oauthHost: string;
   oauthUid: string;
   objectStoreType: string;
+  previewThreshold: number;
   reapableJobAgeMinutes: number;
   reapableWorkAgeMinutes: number;
   sameRegionAccessRole: string;

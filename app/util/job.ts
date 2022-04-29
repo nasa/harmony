@@ -50,7 +50,7 @@ async function lookupJob(tx: Transaction, jobID: string, username: string): Prom
 }
 
 /**
- * Set and save the final status of the turbo job
+ * Set and save the final status of the job
  * and in the case of job failure or cancellation, its work items.
  * (Also clean up temporary work items.)
  * @param tx - the transaction to perform the updates with
@@ -58,7 +58,7 @@ async function lookupJob(tx: Transaction, jobID: string, username: string): Prom
  * @param finalStatus - the job's final status
  * @param logger - the logger to use for logging errors/info
  * @param message - the job's final message
- * @throws {@link ConflictError} if the finalStatus is not within terminalStates
+ * @throws {@link ConflictError} if the finalStatus is not a terminal state
  */
 export async function completeJob(
   tx: Transaction,
