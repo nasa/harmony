@@ -38,7 +38,7 @@ export interface ParseResult {
 export async function parse(...args): Promise<ParseResult> {
   return new Promise((resolve) => {
     const argString = argsToString(...args);
-    parser().exitProcess(false).parse(argString, (error, argv, output) => {
+    void parser().exitProcess(false).parse(argString, (error, argv, output) => {
       resolve({ error, argv, output });
     });
   });

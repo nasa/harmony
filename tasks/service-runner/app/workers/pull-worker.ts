@@ -228,7 +228,7 @@ export default class PullWorker implements Worker {
           exit(1);
         } else {
           // wait 100 ms before trying again
-          sleep(100);
+          await sleep(100);
         }
       }
     }

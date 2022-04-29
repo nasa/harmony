@@ -124,14 +124,14 @@ export default async function main(args: string[]): Promise<void> {
     bbox,
     assets,
   });
-  item.write(stacItemFilename, true);
+  await item.write(stacItemFilename, true);
 
   // save stac catalog
   const relativeFilename = 'catalog.json';
   const catalogFilenames = [];
   const filename = path.join(options.harmonyMetadataDir, relativeFilename);
   catalogFilenames.push(relativeFilename);
-  result.write(filename, true);
+  await result.write(filename, true);
 
   const catalogListFilename = path.join(options.harmonyMetadataDir, 'batch-catalogs.json');
   const catalogCountFilename = path.join(options.harmonyMetadataDir, 'batch-count.txt');

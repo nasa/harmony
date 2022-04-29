@@ -162,9 +162,9 @@ export class Job extends Record implements JobRecord {
           for (const jobField in constraints.whereIn) {
             const constraint = constraints.whereIn[jobField];
             if (constraint.in) {
-              queryBuilder.whereIn(jobField, constraint.values);
+              void queryBuilder.whereIn(jobField, constraint.values);
             } else {
-              queryBuilder.whereNotIn(jobField, constraint.values);
+              void queryBuilder.whereNotIn(jobField, constraint.values);
             }
           }
         }

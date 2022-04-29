@@ -35,7 +35,7 @@ rules:
   no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]
   class-methods-use-this: "off"
   no-underscore-dangle: "off"
-  "@typescript-eslint/no-floating-promises": ["off"]
+  "@typescript-eslint/no-floating-promises": ["error"]
   require-jsdoc: ["warn"]
   tsdoc/syntax: ["error"]
   no-await-in-loop: ["off"]
