@@ -178,7 +178,7 @@ export async function resumeAndSaveJob(
         op.accessToken = token;
         const serialOp = op.serialize(CURRENT_SCHEMA_VERSION);
         workflowStep.operation = serialOp;
-        workflowStep.save(tx);
+        await workflowStep.save(tx);
       }
     }
     job.resume();

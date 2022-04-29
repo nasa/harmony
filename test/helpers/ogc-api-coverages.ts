@@ -86,15 +86,14 @@ export function rangesetRequest(
     cookies = null }: QueryOptions = {},
 ): Test {
   const encodedCoverageId = encodeURIComponent(coverageId);
-  const req = request(app)
+  let req = request(app)
     .get(`/${collection}/ogc-api-coverages/${version}/collections/${encodedCoverageId}/coverage/rangeset`)
     .query(query)
     .set(headers);
 
   if (cookies) {
-    req.set('Cookie', [cookies as unknown as string]);
+    req = req.set('Cookie', [cookies as unknown as string]);
   }
-
   return req;
 }
 
@@ -112,17 +111,17 @@ export function rangesetRequest(
  */
 export function postRangesetRequest(
   app: Express.Application, version: string, collection: string, coverageId: string, form: object, queryString = '',
-): request.Test {
+): Test {
   let urlPathAndParam = `/${collection}/ogc-api-coverages/${version}/collections/${coverageId}/coverage/rangeset`;
   if (queryString) urlPathAndParam += `?${queryString}`;
-  const req = request(app)
+  let req = request(app)
     .post(urlPathAndParam);
 
   Object.keys(form).forEach((key) => {
     if (key === 'shapefile') {
-      req.attach(key, form[key].path, { contentType: form[key].mimetype });
+      req = req.attach(key, form[key].path, { contentType: form[key].mimetype });
     } else {
-      req.field(key, form[key]);
+      req = req.field(key, form[key]);
     }
   });
 

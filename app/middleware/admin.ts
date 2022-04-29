@@ -17,11 +17,15 @@ import env from '../util/env';
 export default async function admin(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
-  if (isAdmin) {
-    req.context.isAdminAccess = true;
-    next();
-  } else {
-    next(new ForbiddenError('You are not permitted to access this resource'));
+  try {
+    const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    if (isAdmin) {
+      req.context.isAdminAccess = true;
+      next();
+    } else {
+      next(new ForbiddenError('You are not permitted to access this resource'));
+    }
+  } catch (e) {
+    next(e);
   }
 }
