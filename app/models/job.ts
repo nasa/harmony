@@ -470,10 +470,6 @@ export class Job extends Record implements JobRecord {
     }
   }
 
-  // validateStatusChange(newState: JobStatus): void {
-  //   const state = stateMachine.transition(this.status, { type })
-  // }
-
   /**
    * Adds a link to the list of result links for the job.
    * You must call `#save` to persist the change

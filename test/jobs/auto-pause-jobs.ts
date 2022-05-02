@@ -2,7 +2,6 @@
 import { expect } from 'chai';
 import _ from 'lodash';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
-import db from '../../app/util/db';
 import env from '../../app/util/env';
 import { truncateAll } from '../helpers/db';
 import { hookRedirect } from '../helpers/hooks';
