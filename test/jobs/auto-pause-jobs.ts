@@ -45,8 +45,9 @@ function autoPauseCommonTests(username: string, status: string, message: string)
 /**
  * Define test that job status moves from 'previewing' to 'paused' when the first granule completes
  *
+ * @param username - user to use when calling Harmony
  */
-function previewingToPauseTest(): void {
+function previewingToPauseTest(username: string): void {
   describe('and a granule has completed processing', async function () {
     before(async function () {
       const resQueryCmr = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
@@ -69,10 +70,10 @@ function previewingToPauseTest(): void {
     });
 
     after(async function () {
-      await db('work_items').truncate();
+      await truncateAll();
     });
 
-    autoPauseCommonTests('jdoe1', 'paused', 'The job is paused');
+    autoPauseCommonTests(username, 'paused', 'The job is paused');
   });
 }
 
@@ -80,6 +81,7 @@ describe('Auto-pausing jobs', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
   before(async function () {
     env.previewThreshold = 3;
+    await truncateAll();
   });
   after(function () {
     env.previewThreshold = originalPreviewThreshold;
@@ -92,11 +94,12 @@ describe('Auto-pausing jobs', function () {
 
       describe('and skipPreview is not set', function () {
         describe('and maxResults is set', function () {
-          hookRangesetRequest(version, collection, variableName, { username: 'jdoe', query: { maxResults: env.previewThreshold + 1 } });
 
-          autoPauseCommonTests('jdoe', 'previewing', 'The job is generating a preview before auto-pausing');
+          hookRangesetRequest(version, collection, variableName, { username: 'jdoe', query: { maxResults: 4 } });
 
-          previewingToPauseTest();
+          autoPauseCommonTests('jdoe', 'previewing', 'The job is generating a preview before auto-pausing. CMR query identified 177 granules, but the request has been limited to process only the first 4 granules because you requested 4 maxResults.');
+
+          previewingToPauseTest('jdoe');
         });
 
 
@@ -105,7 +108,7 @@ describe('Auto-pausing jobs', function () {
 
           autoPauseCommonTests('jdoe', 'previewing', 'The job is generating a preview before auto-pausing');
 
-          previewingToPauseTest();
+          previewingToPauseTest('jdoe');
 
         });
       });
