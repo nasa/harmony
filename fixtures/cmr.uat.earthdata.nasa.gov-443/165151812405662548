@@ -1,0 +1,21 @@
+POST /search/clear-scroll
+accept: application/json
+content-type: application/json
+accept-encoding: gzip,deflate
+body: {\"scroll_id\":\"2075745330\"}
+
+HTTP/1.1 204 No Content
+connection: close
+date: Mon, 02 May 2022 19:02:04 GMT
+cmr-request-id: 828e430c-abbb-4887-af02-7b239e83873a
+x-request-id: zaHelaI3yqZV2CE1GcVLr6LTFK0D_cG7FCs66lThI1n0rm4bDAeAQg==
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 cfb94084ba0615910dd15548de7c4c5e.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-P2
+x-amz-cf-id: zaHelaI3yqZV2CE1GcVLr6LTFK0D_cG7FCs66lThI1n0rm4bDAeAQg==
+

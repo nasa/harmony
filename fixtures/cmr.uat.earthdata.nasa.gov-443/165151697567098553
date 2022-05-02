@@ -1,0 +1,25 @@
+POST /search/clear-scroll
+accept: application/json
+content-type: application/json
+accept-encoding: gzip,deflate
+body: {\"scroll_id\":\"-2099857992\"}
+
+HTTP/1.1 404 Not Found
+content-type: application/json
+content-length: 58
+connection: close
+date: Mon, 02 May 2022 18:42:55 GMT
+access-control-allow-origin: *
+cmr-request-id: 4de78157-e657-40a4-9221-7f5d6bd313fd
+x-request-id: MzwJY0M1qQRtMCceNw5tWjpbuYL2y6LBkP-VCx9rlrwgEIXzd5_9ew==
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+server: ServerTokens ProductOnly
+x-cache: Error from cloudfront
+via: 1.1 2cfc0bae5f623e4a6a6bc0939f1d71c8.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: MzwJY0M1qQRtMCceNw5tWjpbuYL2y6LBkP-VCx9rlrwgEIXzd5_9ew==
+
+{"errors":["Scroll session [-2099857992] does not exist"]}

@@ -136,10 +136,8 @@ export function hookWorkflowStepAndItemCreation(props: object = {}): void {
 /**
  * Sends a request to update to a work item
  *
- * @param fn - A function that takes a callback request and returns it augmented with any query
- *   params, post bodies, etc
- * @param finish - True if the hook should wait for the user request to finish
- * @param beforeFn - The mocha `before` function to use, i.e. `before` or `beforeEach`
+ * @param app - The express application (typically this.backend)
+ * @param workItem - the updated WorkItem
  */
 export function updateWorkItem(app: Application, workItem: WorkItem): Test {
   return request(app).put(`/service/work/${workItem.id}`).send(workItem);
