@@ -40,12 +40,30 @@ function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
     {
+      version: '0.15.0',
+      schema: readSchema('0.15.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        revertedModel.sources?.forEach((s) => {
+          if ('coordinateVariables' in s) {
+            delete s.coordinateVariables;
+          }
+          s.variables?.forEach((v) => {
+            delete v.type;
+            delete v.subtype;
+          });
+        });
+        return revertedModel;
+
+      },
+    },
+    {
       version: '0.14.0',
       schema: readSchema('0.14.0'),
       down: (model): unknown => {
         const revertedModel = _.cloneDeep(model);
         if ('point' in revertedModel.subset) {
-          delete revertedModel.subset.point; // eslint-disable-line no-param-reassign
+          delete revertedModel.subset.point;
         }
 
         return revertedModel;
@@ -57,7 +75,7 @@ function schemaVersions(): SchemaVersion[] {
       down: (model): unknown => {
         const revertedModel = _.cloneDeep(model);
         if ('concatenate' in revertedModel) {
-          delete revertedModel.concatenate; // eslint-disable-line no-param-reassign
+          delete revertedModel.concatenate;
         }
 
         return revertedModel;
@@ -71,7 +89,7 @@ function schemaVersions(): SchemaVersion[] {
         revertedModel.sources.forEach((s) => {
           if (s.variables) {
             s.variables.forEach((v) => {
-              delete v.relatedUrls; // eslint-disable-line no-param-reassign
+              delete v.relatedUrls;
             });
           }
         });
@@ -90,7 +108,7 @@ function schemaVersions(): SchemaVersion[] {
       down: (model): unknown => {
         const revertedModel = _.cloneDeep(model);
         if (_.has(revertedModel, 'format.srs')) {
-          delete revertedModel.format.srs; // eslint-disable-line no-param-reassign
+          delete revertedModel.format.srs;
         }
 
         return revertedModel;
@@ -102,7 +120,7 @@ function schemaVersions(): SchemaVersion[] {
       down: (model): unknown => {
         const revertedModel = _.cloneDeep(model);
         if ('accessToken' in revertedModel) {
-          delete revertedModel.accessToken; // eslint-disable-line no-param-reassign
+          delete revertedModel.accessToken;
         }
 
         return revertedModel;
@@ -116,7 +134,7 @@ function schemaVersions(): SchemaVersion[] {
         revertedModel.sources.forEach((s) => {
           if (s.variables) {
             s.variables.forEach((v) => {
-              delete v.fullPath; // eslint-disable-line no-param-reassign
+              delete v.fullPath;
             });
           }
         });
@@ -132,9 +150,7 @@ function schemaVersions(): SchemaVersion[] {
         // remove the `bbox` and `temporal` fields from all the granules in all the sources
         revertedModel.sources.forEach((s) => {
           s.granules.forEach((g) => {
-            // eslint-disable-next-line no-param-reassign
             delete g.bbox;
-            // eslint-disable-next-line no-param-reassign
             delete g.temporal;
           });
         });

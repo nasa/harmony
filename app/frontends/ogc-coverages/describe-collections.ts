@@ -4,7 +4,7 @@ import HarmonyRequest from '../../models/harmony-request';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { getSanitizedRequestUrl } from '../../util/url';
-import parseVariables, { fullPath } from './util/variable-parsing';
+import { parseVariables, fullPath } from '../../util/variables';
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
