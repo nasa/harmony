@@ -105,7 +105,9 @@ export interface CmrUmmVariable {
   umm: {
     Name: string;
     LongName?: string;
-    RelatedURLs?: CmrRelatedUrl[]
+    RelatedURLs?: CmrRelatedUrl[];
+    VariableType?: string;
+    VariableSubType?: string;
   };
 }
 

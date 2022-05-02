@@ -1,3 +1,9 @@
+## [0.15.0] - 2022-05-02
+### Added
+- sources.coordinateVariables - Array of coordinate variables for the given source collection
+- variable.type - The value of the UMM-Var VariableType field.
+- variable.subtype - The value of the UMM-Var VariableSubType field.
+
 ## [0.14.0] - 2022-02-19
 ### Added
 - DataOperation.subset.point - Spatial point provided by the CMR

@@ -14,11 +14,12 @@ import parseCRS from '../util/crs';
 import { validateParameterNames } from '../middleware/parameter-validation';
 
 import env from '../util/env';
+import { getVariablesForCollection } from '../util/variables';
 
 const readFile = promisify(fs.readFile);
 
 const wmsGetMapParams = [
-  'SERVICE', 'REQUEST', 'VERSION', 'LAYERS', 'CRS', 'BBOX', 'FORMAT', 'STYLES', 
+  'SERVICE', 'REQUEST', 'VERSION', 'LAYERS', 'CRS', 'BBOX', 'FORMAT', 'STYLES',
   'WIDTH', 'HEIGHT', 'TRANSPARENT', 'DPI', 'MAP_RESOLUTION', 'LAYERS', 'GRANULEID',
   'SKIPPREVIEW'];
 
@@ -207,27 +208,7 @@ function getMap(req, res, next: NextFunction): void {
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(null, encrypter, decrypter);
 
-  const variablesByCollection = {};
-  const collectionVariables = query.layers.split(',');
-  for (const collectionVariableStr of collectionVariables) {
-    const [collectionId, variableId] = collectionVariableStr.split('/');
-
-    const collection = req.collections.find((c) => c.id === collectionId);
-    if (!collection) {
-      throw new RequestValidationError(`Invalid layer: ${collectionVariableStr}`);
-    }
-
-    if (!variablesByCollection[collectionId]) {
-      variablesByCollection[collectionId] = [];
-    }
-    if (variableId) {
-      const variable = collection.variables.find((v) => v.meta['concept-id'] === variableId);
-      if (!variable) {
-        throw new RequestValidationError(`Invalid layer: ${collectionVariableStr}`);
-      }
-      variablesByCollection[collectionId].push(variable);
-    }
-  }
+  const variablesByCollection = getVariablesForCollection(query.layers, req.collections);
   for (const collectionId of Object.keys(variablesByCollection)) {
     operation.addSource(collectionId, variablesByCollection[collectionId]);
   }

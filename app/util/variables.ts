@@ -1,5 +1,5 @@
-import { CmrCollection, CmrUmmVariable } from '../../../util/cmr';
-import { RequestValidationError } from '../../../util/errors';
+import { CmrCollection, CmrUmmVariable } from './cmr';
+import { RequestValidationError } from './errors';
 
 interface VariableInfo {
   collectionId: string;
@@ -36,7 +36,7 @@ function doesPathMatch(v: CmrUmmVariable, p: string): boolean {
  * @throws RequestValidationError - if the requested OGC collection ID parameter is not valid
  * based on the variables in the collections
  */
-export default function parseVariables(
+export function parseVariables(
   eosdisCollections: CmrCollection[],
   collectionIdParam: string,
 ): VariableInfo[] {
@@ -77,4 +77,50 @@ export default function parseVariables(
     }
   }
   return variableInfo;
+}
+
+const coordinateType = 'COORDINATE';
+
+/**
+ * Returns the coordinate variables from a list of variables
+ * @param variables - An array of CMR UMM Variables
+ * @returns The subset of variables that are coordinate variables
+ */
+export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVariable[] {
+  return variables.filter((v) => v.umm.VariableType == coordinateType );
+}
+
+/**
+ * Helper to get the variables separately by collection.
+ *
+ * @param layers - The WMS layers provided with the request
+ * @param collections - An array of the CMR Collections
+ * @returns an object with the key being the collection and the value a list of
+ * variables for that collection
+ */
+export function getVariablesForCollection(
+  layers: string, collections: CmrCollection[],
+): Record<string, CmrUmmVariable[]> {
+  const variablesByCollection = {};
+  const collectionVariables = layers.split(',');
+  for (const collectionVariableStr of collectionVariables) {
+    const [collectionId, variableId] = collectionVariableStr.split('/');
+
+    const collection = collections.find((c) => c.id === collectionId);
+    if (!collection) {
+      throw new RequestValidationError(`Invalid layer: ${collectionVariableStr}`);
+    }
+
+    if (!variablesByCollection[collectionId]) {
+      variablesByCollection[collectionId] = [];
+    }
+    if (variableId) {
+      const variable = collection.variables.find((v) => v.meta['concept-id'] === variableId);
+      if (!variable) {
+        throw new RequestValidationError(`Invalid layer: ${collectionVariableStr}`);
+      }
+      variablesByCollection[collectionId].push(variable);
+    }
+  }
+  return variablesByCollection;
 }
