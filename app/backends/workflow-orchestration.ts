@@ -375,6 +375,9 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         if (successWorkItemCount === thisStep.workItemCount) {
           await completeJob(tx, job, JobStatus.SUCCESSFUL, logger);
         } else {
+          if (job.status === JobStatus.PREVIEWING) {
+            job.pause();
+          }
           await job.save(tx);
         }
       }

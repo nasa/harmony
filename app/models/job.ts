@@ -42,7 +42,6 @@ enum JobEvent {
   FAIL = 'FAIL',
   NOOP = 'NOOP',
   PAUSE = 'PAUSE',
-  FINISH_PREVIEW = 'FINISH_PREVIEW',
   RESUME = 'RESUME',
   START = 'START',
   START_WITH_PREVIEW = 'START_WITH_PREVIEW',
@@ -154,7 +153,7 @@ const stateMachine = createMachine(
           [JobEvent.RESUME, { target: JobStatus.RUNNING }],
           [JobEvent.CANCEL, { target: JobStatus.CANCELED }],
           [JobEvent.FAIL, { target: JobStatus.FAILED }],
-          [JobEvent.FINISH_PREVIEW, { target: JobStatus.PAUSED }],
+          [JobEvent.PAUSE, { target: JobStatus.PAUSED }],
         ]),
       },
       paused: {
@@ -177,7 +176,7 @@ export const terminalStates = Object.keys(stateMachine.states).filter(key => sta
 export const activeJobStatuses = Object.keys(stateMachine.states).filter(key => stateMachine.states[key].meta.active).map(k => stateMachine.states[k].id);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const statesToDefaultMessages: any = Object.values(stateMachine.states).reduce(
+export const statesToDefaultMessages: any = Object.values(stateMachine.states).reduce(
   (prev, state) => {
     prev[state.id] = state.meta.defaultMessage;
     return prev;

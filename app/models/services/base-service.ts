@@ -4,14 +4,13 @@ import { v4 as uuid } from 'uuid';
 import WorkItem from '../work-item';
 import WorkflowStep from '../workflow-steps';
 import InvocationResult from './invocation-result';
-import { Job, JobStatus } from '../job';
+import { Job, JobStatus, statesToDefaultMessages } from '../job';
 import DataOperation from '../data-operation';
 import { defaultObjectStore } from '../../util/object-store';
 import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
 import { WorkItemStatus } from '../work-item-interface';
-import e from 'tasks/service-runner/node_modules/@types/express';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -291,9 +290,10 @@ export default abstract class BaseService<ServiceParamType> {
   protected _createJob(
     requestUrl: string,
   ): Job {
-    const urlParams = new URLSearchParams(requestUrl);
-    const skipPreviewStr = urlParams.get('skipPreview');
+    const url = new URL(requestUrl);
+    const skipPreviewStr = url.searchParams.get('skipPreview');
     const skipPreview = (this.numInputGranules < env.previewThreshold) || (skipPreviewStr && skipPreviewStr.toLowerCase() === 'true');
+    const message = skipPreview ? this.operation.message : [statesToDefaultMessages[JobStatus.PREVIEWING], this.operation.message].join('. ');
     const { requestId, user } = this.operation;
     const job = new Job({
       username: user,
@@ -303,7 +303,7 @@ export default abstract class BaseService<ServiceParamType> {
       request: requestUrl,
       isAsync: !this.isSynchronous,
       numInputGranules: this.numInputGranules,
-      message: this.operation.message,
+      message: message,
       collectionIds: this.operation.collectionIds,
     });
     job.addStagingBucketLink(this.operation.stagingLocation);
