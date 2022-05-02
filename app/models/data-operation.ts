@@ -39,18 +39,6 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
-    // {
-    //   version: '0.15.0',
-    //   schema: readSchema('0.14.0'),
-    //   down: (model): unknown => {
-    //     const revertedModel = _.cloneDeep(model);
-    //     if ('skipPreview' in revertedModel) {
-    //       delete revertedModel.skipPreview; // eslint-disable-line no-param-reassign
-    //     }
-
-    //     return revertedModel;
-    //   },
-    // },
     {
       version: '0.14.0',
       schema: readSchema('0.14.0'),
