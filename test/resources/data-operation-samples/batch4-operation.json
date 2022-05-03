@@ -4,7 +4,16 @@
     "variables": [{
       "id": "V1233801717-EEDTEST",
       "name": "blue_var",
-      "fullPath": "blue_var"
+      "fullPath": "blue_var",
+      "type": "SCIENCE_VARIABLE",
+      "subtype": "OTHER"
+    }],
+    "coordinateVariables": [{
+      "fullPath": "lat",
+      "id": "V1233801718-EEDTEST",
+      "name": "lat",
+      "subtype": "LATITUDE",
+      "type": "COORDINATE"
     }],
     "granules": [{
         "id": "G1233800379-EEDTEST",

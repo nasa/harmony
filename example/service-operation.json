@@ -1,5 +1,5 @@
 {
-  "$schema": "../app/schemas/data-operation/0.14.0/data-operation-v0.14.0.json",
+  "$schema": "../app/schemas/data-operation/0.15.0/data-operation-v0.15.0.json",
   "version": "0.14.0",
   "callback": "http://localhost/some-path",
   "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
@@ -19,7 +19,16 @@
               "type" : "GET DATA" ,
               "url" : "http://example.com/file649.txt"
             }
-          ]
+          ],
+          "type": "SCIENCE_VARIABLE",
+          "subtype": "SCIENCE_ARRAY"
+        }],
+        "coordinateVariables": [{
+          "id": "V1233801718-EEDTEST",
+          "name": "lat",
+          "fullPath": "lat",
+          "type": "COORDINATE",
+          "subtype": "LATITUDE"
         }
       ],
       "granules": [
@@ -71,12 +80,12 @@
     "shape": {
       "href": "s3://example-bucket/some/path/resource.json",
       "type": "application/geo+json"
-    }
+    },
+    "point": [
+      -130,
+      45
+    ]
   },
-  "point": [
-    -130,
-    45
-  ],
   "isSynchronous": false,
   "requestId": "c045c793-19f1-43b5-9547-c87a5c7dfadb",
   "client": "harmony-sit",
