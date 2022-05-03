@@ -186,3 +186,40 @@ export async function resumeAndSaveJob(
   });
 }
 
+/**
+ * It takes a job ID, a logger, and optionally a username and access token, and then it updates the
+ * job's workflow steps to use the new access token, and then it resumes the job
+ * @param jobID - the job ID of the job you want to skip the preview for
+ * @param _logger - Logger - this is a logger object that you can use to log messages to the
+ * console.
+ * @param username - The username of the user who is running the job.
+ * @param token - The access token for the user.
+ */
+export async function skipPreviewAndSaveJob(
+  jobID: string,
+  _logger: Logger,
+  username?: string,
+  token?: string,
+
+): Promise<void> {
+  const encrypter = createEncrypter(env.sharedSecretKey);
+  const decrypter = createDecrypter(env.sharedSecretKey);
+  await db.transaction(async (tx) => {
+    const job = await lookupJob(tx, jobID, username);
+    if (username && token) {
+      // update access token
+      const workflowSteps = await getWorkflowStepsByJobId(tx, jobID);
+      for (const workflowStep of workflowSteps) {
+        const { operation } = workflowStep;
+        const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
+        op.accessToken = token;
+        const serialOp = op.serialize(CURRENT_SCHEMA_VERSION);
+        workflowStep.operation = serialOp;
+        await workflowStep.save(tx);
+      }
+    }
+    job.skipPreview();
+    await job.save(tx);
+  });
+}
+

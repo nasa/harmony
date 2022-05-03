@@ -42,8 +42,10 @@ enum JobEvent {
   FAIL = 'FAIL',
   PAUSE = 'PAUSE',
   RESUME = 'RESUME',
+  SKIP_PREVIEW = 'SKIP_PREVIEW',
   START = 'START',
   START_WITH_PREVIEW = 'START_WITH_PREVIEW',
+
 }
 export interface JobRecord {
   id?: number;
@@ -148,7 +150,7 @@ const stateMachine = createMachine(
           active: true,
         },
         on: Object.fromEntries([
-          [JobEvent.RESUME, { target: JobStatus.RUNNING }],
+          [JobEvent.SKIP_PREVIEW, { target: JobStatus.RUNNING }],
           [JobEvent.CANCEL, { target: JobStatus.CANCELED }],
           [JobEvent.FAIL, { target: JobStatus.FAILED }],
           [JobEvent.PAUSE, { target: JobStatus.PAUSED }],
@@ -630,8 +632,7 @@ export class Job extends Record implements JobRecord {
    * @returns true if the job is complete
    */
   isComplete(): boolean {
-    const state = stateMachine.transition(this.status, 'NOOP');
-    return state.done;
+    return terminalStates.includes(this.status);
   }
 
   /**
