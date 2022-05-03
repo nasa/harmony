@@ -8,7 +8,7 @@ import { CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 
-export const CURRENT_SCHEMA_VERSION = '0.14.0';
+export const CURRENT_SCHEMA_VERSION = '0.15.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -319,7 +319,7 @@ export default class DataOperation {
 
   /**
    * Returns the service data sources, a list of objects containing a collection ID with the
-   * variables and granules to operate on.
+   * variables, coordinate variables, and granules to operate on.
    *
    * @returns The service data sources
    */

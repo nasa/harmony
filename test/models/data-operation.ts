@@ -269,6 +269,8 @@ describe('DataOperation', () => {
         Name: 'the/nested/name',
         LongName: 'A long name',
         RelatedURLs: relatedUrls,
+        VariableType: 'SCIENCE_VARIABLE',
+        VariableSubType: 'SCIENCE_VECTOR',
       },
     }];
 
