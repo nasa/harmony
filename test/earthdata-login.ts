@@ -368,7 +368,7 @@ describe('Earthdata Login', function () {
 
     describe('When loading a documentation URL', function () {
       beforeEach(function () {
-        this.req = request(this.frontend).get('/docs/eoss');
+        this.req = request(this.frontend).get('/docs/api/');
       });
 
       describe('if the request does not provide a token', function () {

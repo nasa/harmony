@@ -6,6 +6,7 @@ import _ from 'lodash';
 import logger from '../util/log';
 import { CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
+import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 
 export const CURRENT_SCHEMA_VERSION = '0.14.0';
 
@@ -201,23 +202,6 @@ function validator(): Ajv {
   return _validator;
 }
 
-export interface HarmonyVariable {
-  id: string;
-  name: string;
-  fullPath: string;
-  relatedUrls?: HarmonyRelatedUrl[];
-}
-
-export interface HarmonyRelatedUrl {
-  url: string;
-  urlContentType: string;
-  type: string;
-  subtype?: string;
-  description?: string;
-  format?: string;
-  mimeType?: string;
-}
-
 export interface TemporalRange {
   start?: Date;
   end?: Date;
@@ -237,8 +221,9 @@ export interface HarmonyGranule {
 
 export interface DataSource {
   collection: string;
-  granules: HarmonyGranule[];
+  coordinateVariables: HarmonyVariable[];
   variables: HarmonyVariable[];
+  granules: HarmonyGranule[];
 }
 
 export interface SRS {
@@ -367,36 +352,17 @@ export default class DataOperation {
    *
    * @param collection - The CMR ID of the collection being operated on
    * @param vars - An array of objects containing variable id and name
-   * @param granules - An array of objects containing granule id, name, and url
+   * @param cmrCoordinateVariables - An array of CMR UMM variables that are
+   * coordinate variables.
    */
   addSource(
     collection: string,
-    vars?: CmrUmmVariable[],
-    granules?: HarmonyGranule[],
+    vars: CmrUmmVariable[] = undefined,
+    cmrCoordinateVariables: CmrUmmVariable[] = undefined,
   ): void {
-    const variables = vars ? vars.map(({ umm, meta }) => {
-      const schemaVar: HarmonyVariable = {
-        id: meta['concept-id'],
-        name: umm.Name,
-        fullPath: umm.Name,
-      };
-      if (umm.RelatedURLs) {
-        schemaVar.relatedUrls = umm.RelatedURLs
-          .map((relatedUrl) => {
-            return {
-              url: relatedUrl.URL,
-              urlContentType: relatedUrl.URLContentType,
-              type: relatedUrl.Type,
-              subtype: relatedUrl.Subtype,
-              description: relatedUrl.Description,
-              format: relatedUrl.Format,
-              mimeType:relatedUrl.MimeType,
-            };
-          });
-      }
-      return schemaVar;
-    }) : undefined;
-    this.model.sources.push({ collection, variables, granules });
+    const variables = vars?.map(cmrVarToHarmonyVar);
+    const coordinateVariables = cmrCoordinateVariables?.map(cmrVarToHarmonyVar);
+    this.model.sources.push({ collection, variables, coordinateVariables });
   }
 
   /**

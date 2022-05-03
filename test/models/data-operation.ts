@@ -236,12 +236,6 @@ describe('DataOperation', () => {
 
   describe('#addSource', () => {
     const collection = 'Foo';
-    const granules = [{
-      id: 'G123-BAR',
-      name: 'Gran',
-      url: 'https://example.com/foo',
-      temporal: {},
-    }];
     const relatedUrls = [
       {
         Description: 'This related URL points to a color map',
@@ -278,16 +272,32 @@ describe('DataOperation', () => {
       },
     }];
 
+    const coordinateVariables = [{
+      meta: { 'concept-id': 'V124-BAR' },
+      umm: {
+        Name: 'lat',
+        LongName: 'A long name for latitude',
+        VariableType: 'COORDINATE',
+        VariableSubType: 'LATITUDE',
+      },
+    }];
+
     describe('when adding a source', () => {
       const operation = new DataOperation();
-      operation.addSource(collection, variables, granules);
+      operation.addSource(collection, variables, coordinateVariables);
 
       it('sets the collection correctly', () => {
         expect(operation.model.sources[0].collection).to.equal('Foo');
       });
 
-      it('sets the granules correctly', () => {
-        expect(operation.model.sources[0].granules).to.equal(granules);
+      it('sets the coordinate variables correctly', () => {
+        expect(operation.model.sources[0].coordinateVariables).to.eql([{
+          id: 'V124-BAR',
+          name: 'lat',
+          fullPath: 'lat',
+          type: 'COORDINATE',
+          subtype: 'LATITUDE',
+        }]);
       });
 
       it('uses the variable concept ID as the id', () => {
