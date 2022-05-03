@@ -208,9 +208,9 @@ function getMap(req, res, next: NextFunction): void {
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(null, encrypter, decrypter);
 
-  const variablesByCollection = getVariablesForCollection(query.layers, req.collections);
-  for (const collectionId of Object.keys(variablesByCollection)) {
-    operation.addSource(collectionId, variablesByCollection[collectionId]);
+  const varInfos = getVariablesForCollection(query.layers, req.collections);
+  for (const varInfo of varInfos) {
+    operation.addSource(varInfo.collectionId, varInfo.variables, varInfo.coordinateVariables);
   }
 
   const [crs, srs] = parseCRS({ queryCRS_: query.crs, validate: false });

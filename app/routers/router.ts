@@ -21,7 +21,6 @@ import parameterValidation from '../middleware/parameter-validation';
 import chooseService from '../middleware/service-selection';
 import shapefileConverter from '../middleware/shapefile-converter';
 import { NotFoundError } from '../util/errors';
-import * as eoss from '../frontends/eoss';
 import * as ogcCoverageApi from '../frontends/ogc-coverages/index';
 import { cloudAccessJson, cloudAccessSh } from '../frontends/cloud-access';
 import landingPage from '../frontends/landing-page';
@@ -181,9 +180,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   ogcCoverageApi.addOpenApiRoutes(result);
   result.use(collectionPrefix('wms'), service(logged(wmsFrontend)));
-  eoss.addOpenApiRoutes(result);
 
-  result.use(/^\/(wms|eoss|ogc-api-coverages)/, (req, res, next) => {
+  result.use(/^\/(wms|ogc-api-coverages)/, (req, res, next) => {
     next(new NotFoundError('Services can only be invoked when a valid collection is supplied in the URL path before the service name.'));
   });
   result.use(logged(shapefileConverter));
@@ -197,7 +195,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/', asyncHandler(landingPage));
   result.get('/versions', asyncHandler(getVersions));
   result.use('/docs/api', swaggerUi.serve, swaggerUi.setup(yaml.load(ogcCoverageApi.openApiContent), { customJs: '/js/docs/analytics-tag.js' }));
-  result.get(collectionPrefix('(wms|eoss)'), asyncHandler(service(serviceInvoker)));
+  result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
   result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, asyncHandler(service(serviceInvoker)));
   result.post(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset/, asyncHandler(service(serviceInvoker)));
   result.get('/jobs', asyncHandler(getJobsListing));
@@ -227,7 +225,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.get('/admin/jobs', asyncHandler(getJobsListing));
   result.get('/admin/jobs/:jobID', asyncHandler(getJobStatus));
-  
+
   result.get('/admin/request-metrics', asyncHandler(getRequestMetrics));
 
   result.get('/workflow-ui', asyncHandler(getJobs));

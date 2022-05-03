@@ -2,7 +2,6 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import hookServersStartStop from './helpers/servers';
 import { validGetMapQuery, wmsRequest } from './helpers/wms';
-import { eossGetGranule } from './helpers/eoss';
 import { hookFunction } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookCmr from './helpers/stub-cmr';
@@ -82,13 +81,6 @@ describe('HTTP Backends', function () {
     describeHttpBackendBehavior(function (crs) {
       return wmsRequest(this.frontend, collection, { ...validGetMapQuery, crs, layers: collection })
         .ok(() => true); // Treat all responses as non-errors to allow checking status code
-    });
-  });
-
-  describe('when accessed via EOSS', function () {
-    describeHttpBackendBehavior(function (crs) {
-      return eossGetGranule(this.frontend, '0.1.0', collection, granule, { crs })
-        .ok(() => true);
     });
   });
 

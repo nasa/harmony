@@ -1,9 +1,63 @@
 import { CmrCollection, CmrUmmVariable } from './cmr';
 import { RequestValidationError } from './errors';
 
+export interface HarmonyVariable {
+  id: string;
+  name: string;
+  fullPath: string;
+  relatedUrls?: HarmonyRelatedUrl[];
+  type?: string;
+  subtype?: string;
+}
+
+export interface HarmonyRelatedUrl {
+  url: string;
+  urlContentType: string;
+  type: string;
+  subtype?: string;
+  description?: string;
+  format?: string;
+  mimeType?: string;
+}
+
 interface VariableInfo {
   collectionId: string;
   variables?: CmrUmmVariable[];
+  coordinateVariables?: CmrUmmVariable[];
+}
+
+/**
+ * Returns the harmony representation of a variable given a CMR UMM variable
+ *
+ * @param cmrVariable - The CMR UMM representation of a variable
+ * @returns the Harmony representation of a variable
+ */
+export function cmrVarToHarmonyVar(cmrVariable: CmrUmmVariable): HarmonyVariable {
+  const { umm, meta } = cmrVariable;
+  const harmonyVariable: HarmonyVariable = {
+    id: meta['concept-id'],
+    name: umm.Name,
+    fullPath: umm.Name,
+    type: umm.VariableType,
+    subtype: umm.VariableSubType,
+  };
+
+  if (umm.RelatedURLs) {
+    harmonyVariable.relatedUrls = umm.RelatedURLs
+      .map((relatedUrl) => {
+        return {
+          url: relatedUrl.URL,
+          urlContentType: relatedUrl.URLContentType,
+          type: relatedUrl.Type,
+          subtype: relatedUrl.Subtype,
+          description: relatedUrl.Description,
+          format: relatedUrl.Format,
+          mimeType:relatedUrl.MimeType,
+        };
+      });
+  }
+
+  return harmonyVariable;
 }
 
 /**
@@ -23,6 +77,17 @@ export function fullPath(v: CmrUmmVariable): string {
  */
 function doesPathMatch(v: CmrUmmVariable, p: string): boolean {
   return p === v.umm.Name;
+}
+
+const coordinateType = 'COORDINATE';
+
+/**
+ * Returns the coordinate variables from a list of variables
+ * @param variables - An array of CMR UMM Variables
+ * @returns The subset of variables that are coordinate variables
+ */
+export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVariable[] {
+  return variables.filter((v) => v.umm.VariableType == coordinateType );
 }
 
 /**
@@ -55,13 +120,15 @@ export function parseVariables(
       throw new RequestValidationError('"all" cannot be specified alongside other variables');
     }
     for (const collection of eosdisCollections) {
-      variableInfo.push({ collectionId: collection.id });
+      const coordinateVariables = getCoordinateVariables(collection.variables);
+      variableInfo.push({ collectionId: collection.id, coordinateVariables });
     }
   } else {
     // Figure out which variables belong to which collections and whether any are missing.
     // Note that a single variable name may appear in multiple collections
     let missingVariables = variableIds;
     for (const collection of eosdisCollections) {
+      const coordinateVariables = getCoordinateVariables(collection.variables);
       const variables = [];
       for (const variableId of variableIds) {
         const variable = collection.variables.find((v) => doesPathMatch(v, variableId));
@@ -70,24 +137,13 @@ export function parseVariables(
           variables.push(variable);
         }
       }
-      variableInfo.push({ collectionId: collection.id, variables });
+      variableInfo.push({ collectionId: collection.id, variables, coordinateVariables });
     }
     if (missingVariables.length > 0) {
       throw new RequestValidationError(`Coverages were not found for the provided CMR collection: ${missingVariables.join(', ')}`);
     }
   }
   return variableInfo;
-}
-
-const coordinateType = 'COORDINATE';
-
-/**
- * Returns the coordinate variables from a list of variables
- * @param variables - An array of CMR UMM Variables
- * @returns The subset of variables that are coordinate variables
- */
-export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVariable[] {
-  return variables.filter((v) => v.umm.VariableType == coordinateType );
 }
 
 /**
@@ -100,7 +156,7 @@ export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVaria
  */
 export function getVariablesForCollection(
   layers: string, collections: CmrCollection[],
-): Record<string, CmrUmmVariable[]> {
+): VariableInfo[] {
   const variablesByCollection = {};
   const collectionVariables = layers.split(',');
   for (const collectionVariableStr of collectionVariables) {
@@ -122,5 +178,12 @@ export function getVariablesForCollection(
       variablesByCollection[collectionId].push(variable);
     }
   }
-  return variablesByCollection;
+
+  const variableInfo = [];
+  for (const collection of collections) {
+    const coordinateVariables = getCoordinateVariables(collection.variables);
+    const variables = variablesByCollection[collection.id];
+    variableInfo.push({ collectionId: collection.id, variables, coordinateVariables });
+  }
+  return variableInfo;
 }
