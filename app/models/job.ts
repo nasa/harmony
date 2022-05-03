@@ -40,7 +40,6 @@ enum JobEvent {
   CANCEL = 'CANCEL',
   COMPLETE = 'COMPLETE',
   FAIL = 'FAIL',
-  NOOP = 'NOOP',
   PAUSE = 'PAUSE',
   RESUME = 'RESUME',
   START = 'START',
@@ -102,7 +101,6 @@ const stateMachine = createMachine(
         on: Object.fromEntries([
           [JobEvent.START, { target: JobStatus.RUNNING }],
           [JobEvent.START_WITH_PREVIEW, { target: JobStatus.PREVIEWING }],
-          [JobEvent.NOOP, { target: JobStatus.ACCEPTED }],
         ]),
       },
       running: {
@@ -464,8 +462,7 @@ export class Job extends Record implements JobRecord {
    * terminal state.
    */
   validateStatus(): void {
-    const state = stateMachine.transition(this.originalStatus, { type: 'NOOP' });
-    if (state.done) {
+    if (terminalStates.includes(this.originalStatus)) {
       throw new ConflictError(`Job status cannot be updated from ${this.originalStatus} to ${this.status}.`);
     }
   }
