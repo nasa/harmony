@@ -3,7 +3,7 @@
       "module": "commonjs",
       "baseUrl": ".",
       "moduleResolution": "node",
-      "target": "ES2018",
+      "target": "ES2019",
       "esModuleInterop": true,
       "allowJs": true,
       "noImplicitAny": false,
