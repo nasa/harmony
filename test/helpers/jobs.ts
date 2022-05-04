@@ -294,6 +294,46 @@ export function adminResumeJobWithGET(app: Express.Application, { jobID }: Job):
 }
 
 /**
+ * Submits a skip preview request as the given user
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function skipPreview(app: Express.Application, { jobID }: Job): Test {
+  return request(app).post(`/jobs/${jobID}/skip-preview`);
+}
+
+/**
+ * Submits a skip preview request as the given user on the admin endpoint
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function adminSkipPreview(app: Express.Application, { jobID }: Job): Test {
+  return request(app).post(`/admin/jobs/${jobID}/skip-preview`);
+}
+
+/**
+ * Submits a skip preview request as the given user using a GET instead of POST
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function skipPreviewWithGET(app: Express.Application, { jobID }: Job): Test {
+  return request(app).get(`/jobs/${jobID}/skip-preview`);
+}
+
+/**
+ * Submits a skip preview request as the given user on the admin endpoint using a GET instead of POST
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param job - The job
+ */
+export function adminSkipPreviewWithGET(app: Express.Application, { jobID }: Job): Test {
+  return request(app).get(`/admin/jobs/${jobID}/skip-preview`);
+}
+
+/**
  * Submits a pause job request as the given user
  *
  * @param app - The express application (typically this.frontend)
@@ -346,6 +386,10 @@ export const hookResumeJob = hookRequest.bind(this, resumeJob);
 export const hookAdminResumeJob = hookRequest.bind(this, adminResumeJob);
 export const hookResumeJobWithGET = hookRequest.bind(this, resumeJobWithGET);
 export const hookAdminResumeJobWithGET = hookRequest.bind(this, adminResumeJobWithGET);
+export const hookSkipPreview = hookRequest.bind(this, skipPreview);
+export const hookAdminSkipPreview = hookRequest.bind(this, adminSkipPreview);
+export const hookSkipPreviewWithGET = hookRequest.bind(this, skipPreviewWithGET);
+export const hookAdminSkipPreviewWithGET = hookRequest.bind(this, adminSkipPreviewWithGET);
 export const hookPauseJob = hookRequest.bind(this, pauseJob);
 export const hookAdminPauseJob = hookRequest.bind(this, adminPauseJob);
 export const hookPauseJobWithGET = hookRequest.bind(this, pauseJobWithGET);

@@ -42,6 +42,22 @@ function autoPauseCommonTests(username: string, status: string, message: string)
 }
 
 /**
+ * Define test that a link to skip the preview is supplied in the response
+ * @param {string} username - The username of the user who is running the job.
+ */
+function skipPreviewLinkTest(username: string) {
+  describe('retrieving its job status', function () {
+    hookRedirect(username);
+    it('supplies a link to skip the preview', function () {
+      const job = JSON.parse(this.res.text);
+      const link = job.links[0];
+      expect(link.title).to.eql('Skip preview and run the job.');
+      expect(link.rel).to.eql('preview-skipper');
+    });
+  });
+}
+
+/**
  * Define test that job status moves from 'previewing' to 'paused' when the first granule completes
  *
  * @param username - user to use when calling Harmony
@@ -85,7 +101,7 @@ describe('Auto-pausing jobs', function () {
   after(function () {
     env.previewThreshold = originalPreviewThreshold;
   });
-  describe('When a request a request is made', function () {
+  describe('When a request is made', function () {
     const collection = 'C1233800302-EEDTEST';
     const variableName = 'red_var';
     const version = '1.0.0';
@@ -98,6 +114,8 @@ describe('Auto-pausing jobs', function () {
 
           autoPauseCommonTests('jdoe', 'previewing', 'The job is generating a preview before auto-pausing. CMR query identified 177 granules, but the request has been limited to process only the first 4 granules because you requested 4 maxResults.');
 
+          skipPreviewLinkTest('jdoe');
+
           previewingToPauseTest('jdoe');
         });
 
@@ -106,6 +124,8 @@ describe('Auto-pausing jobs', function () {
           hookRangesetRequest(version, collection, variableName, { username: 'jdoe' });
 
           autoPauseCommonTests('jdoe', 'previewing', 'The job is generating a preview before auto-pausing');
+
+          skipPreviewLinkTest('jdoe');
 
           previewingToPauseTest('jdoe');
 
@@ -120,3 +140,4 @@ describe('Auto-pausing jobs', function () {
     });
   });
 });
+

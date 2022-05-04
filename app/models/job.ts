@@ -538,6 +538,19 @@ export class Job extends Record implements JobRecord {
   }
 
   /**
+   * Updates the status of a previewing job to running.
+   *
+   * @throws An error if the job is not currently in the PREVIEWING state
+   */
+  skipPreview(): void {
+    const state = stateMachine.transition(this.status, JobEvent.SKIP_PREVIEW);
+    if (!(state.changed && state.matches(JobStatus.RUNNING))) {
+      throw new ConflictError(`Job status is ${this.status} - only previewing jobs can skip preview.`);
+    }
+    this.updateStatus(JobStatus.RUNNING);
+  }
+
+  /**
    * Updates the status to failed and message to the supplied error message or the default
    * if none is provided.  You should generally provide an error message if possible, as the
    * default indicates an unknown error.
