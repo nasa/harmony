@@ -39,7 +39,7 @@ describe('Pausing jobs', function () {
     const requestId = uuid();
     const runningJob = new Job({
       jobID: requestId,
-      username: 'anonymouse',
+      username: 'anonymous',
       requestId,
       status: JobStatus.RUNNING,
       request: 'foo',
