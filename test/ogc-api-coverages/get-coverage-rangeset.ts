@@ -57,6 +57,11 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(source.variables[0].id).to.equal(variableId);
       });
 
+      it('has an empty set of coordinate variables for a collection with no coordinate variables', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.coordinateVariables).to.eql([]);
+      });
+
       it('passes the outputCrs parameter to the backend in Proj4 format', function () {
         expect(this.service.operation.crs).to.equal('+proj=longlat +datum=WGS84 +no_defs');
       });
@@ -853,6 +858,23 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       expect(res.body).to.eql({
         code: 'harmony.RequestValidationError',
         description: 'Error: "all" cannot be specified alongside other variables',
+      });
+    });
+  });
+
+  describe('when using a collection with coordinate variables', function () {
+    const collectionId = 'C1243747507-EEDTEST';
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+
+    hookRangesetRequest(version, collectionId, 'sea_surface_temperature', {});
+
+    it('includes coordinate variables', function () {
+      const source = this.service.operation.sources[0];
+      expect(source.coordinateVariables[0]).to.eql({
+        fullPath: 'chlorophyll_a',
+        id: 'V1244967897-EEDTEST',
+        name: 'chlorophyll_a',
+        type: 'COORDINATE',
       });
     });
   });
