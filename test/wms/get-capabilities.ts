@@ -31,7 +31,7 @@ describe('WMS GetCapabilities', function () {
   });
 
   describe('when called on a collection without variable metadata', function () {
-    const collection = 'C1243747507-EEDTEST';
+    const collection = 'C1244968414-EEDTEST';
     hookGetCapabilities(collection);
 
     it('completes successfully', function () {

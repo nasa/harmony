@@ -38,9 +38,15 @@ export function cmrVarToHarmonyVar(cmrVariable: CmrUmmVariable): HarmonyVariable
     id: meta['concept-id'],
     name: umm.Name,
     fullPath: umm.Name,
-    type: umm.VariableType,
-    subtype: umm.VariableSubType,
   };
+
+  if (umm.VariableType) {
+    harmonyVariable.type = umm.VariableType;
+  }
+
+  if (umm.VariableSubType) {
+    harmonyVariable.subtype =  umm.VariableSubType;
+  }
 
   if (umm.RelatedURLs) {
     harmonyVariable.relatedUrls = umm.RelatedURLs
