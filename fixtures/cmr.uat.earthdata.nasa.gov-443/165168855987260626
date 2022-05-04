@@ -1,0 +1,29 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1243747507-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n100\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"scroll\"\r\n\r\ndefer\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"bounding_box\"\r\n\r\n-180,-90,180,90\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 157
+connection: close
+date: Wed, 04 May 2022 18:22:39 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 95ba35ad-cb2f-4c88-9bf8-9c975e3def14
+strict-transport-security: max-age=31536000
+cmr-hits: 5
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 66
+x-request-id: eDxcjv8q1MKNDfFFlhipcYlL744CVHqd5Bq6T_DUBAL1MGDXEuU0Cw==
+cmr-scroll-id: 2091008455
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 72b77c557ac4c265c32d99bdef4e9d6a.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD79-C3
+x-amz-cf-id: eDxcjv8q1MKNDfFFlhipcYlL744CVHqd5Bq6T_DUBAL1MGDXEuU0Cw==
+
+{"feed":{"updated":"2022-05-04T18:22:39.880Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[]}}
