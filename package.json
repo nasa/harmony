@@ -117,7 +117,8 @@
     "uuid": "^8.3.2",
     "winston": "^3.7.2",
     "xmldom": "github:xmldom/xmldom#0.7.0",
-    "xregexp": "^5.0.2"
+    "xregexp": "^5.0.2",
+    "xstate": "^4.31.0"
   },
   "devDependencies": {
     "@mapbox/node-pre-gyp": "^1.0.9",

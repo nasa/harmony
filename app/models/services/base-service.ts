@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 import WorkItem from '../work-item';
 import WorkflowStep from '../workflow-steps';
 import InvocationResult from './invocation-result';
-import { Job, JobStatus } from '../job';
+import { Job, JobStatus, statesToDefaultMessages } from '../job';
 import DataOperation from '../data-operation';
 import { defaultObjectStore } from '../../util/object-store';
 import { RequestValidationError, ServerError } from '../../util/errors';
@@ -290,16 +290,26 @@ export default abstract class BaseService<ServiceParamType> {
   protected _createJob(
     requestUrl: string,
   ): Job {
+    const url = new URL(requestUrl);
+    const skipPreviewStr = url.searchParams.get('skipPreview');
+    const skipPreview =
+      (this.numInputGranules < env.previewThreshold) ||
+      (skipPreviewStr && skipPreviewStr.toLowerCase() === 'true');
+    const defaultMessage = statesToDefaultMessages[JobStatus.PREVIEWING];
+    const message = skipPreview ?
+      this.operation.message :
+      this.operation.message ? [defaultMessage, this.operation.message].join('. ') : defaultMessage;
+
     const { requestId, user } = this.operation;
     const job = new Job({
       username: user,
       requestId,
       jobID: requestId,
-      status: JobStatus.RUNNING,
+      status: skipPreview ? JobStatus.RUNNING : JobStatus.PREVIEWING,
       request: requestUrl,
       isAsync: !this.isSynchronous,
       numInputGranules: this.numInputGranules,
-      message: this.operation.message,
+      message: message,
       collectionIds: this.operation.collectionIds,
     });
     job.addStagingBucketLink(this.operation.stagingLocation);
@@ -308,7 +318,7 @@ export default abstract class BaseService<ServiceParamType> {
 
   /**
    * Creates a new work item object which will kick off the first task for this request
-   * @param stepId - The
+   * @param stepId - The id of the step to create the work item for
    * @returns The created WorkItem for the query CMR job
    * @throws ServerError - if the work item cannot be created
    */

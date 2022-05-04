@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { Logger } from 'winston';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { keysToLowerCase } from '../util/object';
-import { cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, validateJobId } from '../util/job';
+import { cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, skipPreviewAndSaveJob, validateJobId } from '../util/job';
 import JobLink from '../models/job-link';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
@@ -44,17 +44,35 @@ function getLinksForDisplay(job: Job, urlRoot: string, statusLinkRel: string): J
     // Remove the S3 bucket and prefix link
     links = links.filter((link) => link.rel !== 's3-access');
   }
-  if (job.status === JobStatus.SUCCESSFUL && needsStacLink(dataLinks)) {
-    links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
+  switch (job.status) {
+    case JobStatus.SUCCESSFUL:
+      if (needsStacLink(dataLinks)) {
+        links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
+      }
+      break;
+
+    case JobStatus.PAUSED:
+      links.unshift(new JobLink({
+        title: 'Resumes the job.',
+        href: `${urlRoot}/jobs/${job.jobID}/resume`,
+        type: 'application/json',
+        rel: 'resumer',
+      }));
+      break;
+
+    case JobStatus.PREVIEWING:
+      links.unshift(new JobLink({
+        title: 'Skip preview and run the job.',
+        href: `${urlRoot}/jobs/${job.jobID}/skip-preview`,
+        type: 'application/json',
+        rel: 'preview-skipper',
+      }));
+      break;
+
+    default:
+      break;
   }
-  if (job.status === JobStatus.PAUSED) {
-    links.unshift(new JobLink({
-      title: 'Resumes the job.',
-      href: `${urlRoot}/jobs/${job.jobID}/resume`,
-      type: 'application/json',
-      rel: 'resumer',
-    }));
-  }
+
   // add a 'self' or 'item' link if it does not already exist
   // 'item' is for use in jobs listings, 'self' for job status
   if (links.filter((link) => link.rel === 'self').length === 0) {
@@ -262,6 +280,23 @@ export async function resumeJob(
 ): Promise<void> {
   req.context.logger.info(`Resume requested for job ${req.params.jobID} by user ${req.user}`);
   await changeJobState(req, res, next, resumeAndSaveJob);
+}
+
+/**
+ * Express.js handler that skips the preview of a single job and goes straight to 'running'
+ *  `(POST /jobs/{jobID}/resume)`.
+ * A user can skip preview of their own request. An admin can skip preview any user's request.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns Resolves when the request is complete
+ */
+export async function skipJobPreview(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  req.context.logger.info(`Skip preview requested for job ${req.params.jobID} by user ${req.user}`);
+  await changeJobState(req, res, next, skipPreviewAndSaveJob);
 }
 
 /**
