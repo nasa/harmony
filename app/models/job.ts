@@ -171,9 +171,13 @@ const stateMachine = createMachine(
   },
 );
 
-export const terminalStates = Object.keys(stateMachine.states).filter(key => stateMachine.states[key].type === 'final').map(k => stateMachine.states[k].id) as JobStatus[];
+export const terminalStates = Object.keys(stateMachine.states)
+  .filter(key => stateMachine.states[key].type === 'final')
+  .map(k => stateMachine.states[k].id) as JobStatus[];
 
-export const activeJobStatuses = Object.keys(stateMachine.states).filter(key => stateMachine.states[key].meta.active).map(k => stateMachine.states[k].id);
+export const activeJobStatuses = Object.keys(stateMachine.states)
+  .filter(key => stateMachine.states[key].meta.active)
+  .map(k => stateMachine.states[k].id);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const statesToDefaultMessages: any = Object.values(stateMachine.states).reduce(
