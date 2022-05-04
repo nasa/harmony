@@ -162,6 +162,7 @@ const stateMachine = createMachine(
           defaultMessage: 'The job is paused',
         },
         on: Object.fromEntries([
+          [JobEvent.SKIP_PREVIEW, { target: JobStatus.RUNNING }],
           [JobEvent.RESUME, { target: JobStatus.RUNNING }],
           [JobEvent.CANCEL, { target: JobStatus.CANCELED }],
           [JobEvent.FAIL, { target: JobStatus.FAILED }],

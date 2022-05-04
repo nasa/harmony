@@ -217,7 +217,7 @@ describe('Skipping job preview', function () {
     for (const [httpMethod, skipPreviewEndpointHook] of Object.entries(skipPreviewEndpointHooks)) {
       describe(`Skipping preview using ${httpMethod}`, function () {
 
-        describe('Skipping preview', function () {
+        describe('When a job is previewing', function () {
           let token;
           hookTransaction();
           const message = 'The job is generating a preview before auto-pausing. CMR query identified 176 granules, but the request has been limited to process only the first 101 granules because you requested 101 maxResults.';
@@ -318,6 +318,105 @@ describe('Skipping job preview', function () {
           skipJobPreviewCommonTests(skipPreviewEndpointHook, normalUsername);
 
         });
+
+        describe('When a job is paused', function () {
+          let token;
+          hookTransaction();
+          const message = 'The job is paused';
+          const pausedJob = buildJob({ username: normalUsername, message });
+          pausedJob.status = JobStatus.PAUSED;
+          before(async function () {
+            await pausedJob.save(this.trx);
+            const workflowStep = buildWorkflowStep({ jobID: pausedJob.requestId });
+            await workflowStep.save(this.trx);
+            const workflowSteps = await getWorkflowStepsByJobId(this.trx, pausedJob.requestId);
+            const { operation } = workflowSteps[0];
+            const dataOperation = new DataOperation(JSON.parse(operation), encrypter, decrypter);
+            token = dataOperation.accessToken;
+            this.trx.commit();
+            this.trx = null;
+          });
+          const { jobID } = pausedJob;
+
+          describe('and the user tries to skip the preview', function () {
+            describe('For a user who is not logged in', function () {
+              skipPreviewEndpointHook({ jobID });
+              it('redirects to Earthdata Login', function () {
+                expect(this.res.statusCode).to.equal(303);
+                expect(this.res.headers.location).to.include(process.env.OAUTH_HOST);
+              });
+
+              it('sets the "redirect" cookie to the originally-requested resource', function () {
+                expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/jobs/${jobID}/skip-preview`));
+              });
+            });
+
+            describe('For a logged-in user who owns the job', async function () {
+              hookSkipPreview({ jobID, username: normalUsername });
+
+              it('returns a redirect to the running job', function () {
+                expect(this.res.statusCode).to.equal(302);
+                expect(this.res.headers.location).to.include(`/jobs/${jobID}`);
+              });
+
+              it('updates the access token for the workflow steps', async function () {
+                const workflowSteps = await getWorkflowStepsByJobId(db, jobID);
+                for (const workflowStep of workflowSteps) {
+                  const { operation } = workflowStep;
+                  const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
+                  expect(op.accessToken).to.not.equal(token);
+                }
+              });
+
+              describe('When following the redirect to the resumed job', function () {
+                hookRedirect(normalUsername);
+                it('returns an HTTP success response', function () {
+                  expect(this.res.statusCode).to.equal(200);
+                });
+
+                it('changes the status to running', function () {
+                  const actualJob = JSON.parse(this.res.text);
+                  expect(actualJob.status).to.eql('running');
+                });
+
+                it('sets the message to the "The job is being processed"', function () {
+                  const actualJob = JSON.parse(this.res.text);
+                  expect(actualJob.message).to.eql('The job is being processed');
+                });
+
+                it('does not modify any of the other job fields', function () {
+                  const actualJob = new Job(JSON.parse(this.res.text));
+                  const expectedJob: JobRecord = _.cloneDeep(pausedJob);
+                  expectedJob.message = 'The job is being processed';
+                  expectedJob.status = JobStatus.RUNNING;
+                  expect(jobsEqual(expectedJob, actualJob)).to.be.true;
+                });
+              });
+            });
+          });
+
+          describe('For a logged-in admin who does not own the job', function () {
+            const joeJob2 = buildJob({ username: normalUsername });
+            hookTransaction();
+            before(async function () {
+              await new Job(joeJob2).save(this.trx);
+              this.trx.commit();
+              this.trx = null;
+            });
+            skipPreviewEndpointHook({ jobID: joeJob2.requestId, username: adminUsername });
+            it('returns a 404 not found', function () {
+              expect(this.res.statusCode).to.equal(404);
+            });
+
+            it('returns a JSON error response', function () {
+              const response = JSON.parse(this.res.text);
+              expect(response).to.eql({
+                code: 'harmony.NotFoundError',
+                description: `Error: Unable to find job ${joeJob2.requestId}`,
+              });
+            });
+          });
+        });
       });
     }
   });
@@ -328,11 +427,10 @@ describe('Skipping job preview', function () {
       GET: hookAdminSkipPreviewWithGET,
     };
 
-
     for (const [httpMethod, skipPreviewEndpointHook] of Object.entries(skipPreviewEndpointHooks)) {
       describe(`Skipping preview using ${httpMethod}`, function () {
 
-        describe('Skipping preview', function () {
+        describe('When a job is previewing', function () {
           hookTransaction();
           const message = 'The job is generating a preview before auto-pausing';
           const previewingJob = buildJob({ username: normalUsername, message });
@@ -397,6 +495,82 @@ describe('Skipping job preview', function () {
               it('does not modify any of the other job fields', function () {
                 const actualJob = new Job(JSON.parse(this.res.text));
                 const expectedJob: JobRecord = _.cloneDeep(previewingJob);
+                expectedJob.message = 'The job is being processed';
+                expectedJob.status = JobStatus.RUNNING;
+                expect(jobsEqual(expectedJob, actualJob)).to.be.true;
+              });
+            });
+          });
+
+          skipJobPreviewCommonTests(skipPreviewEndpointHook, adminUsername);
+
+        });
+
+        describe('When a job is paused', function () {
+          hookTransaction();
+          const message = 'The job is generating a preview before auto-pausing';
+          const pausedJob = buildJob({ username: normalUsername, message });
+          pausedJob.status = JobStatus.PAUSED;
+          before(async function () {
+            await pausedJob.save(this.trx);
+            this.trx.commit();
+            this.trx = null;
+          });
+          const { jobID } = pausedJob;
+
+          describe('and the user tries to skip the preview', function () {
+            describe('For a user who is not logged in', function () {
+              skipPreviewEndpointHook({ jobID });
+              it('redirects to Earthdata Login', function () {
+                expect(this.res.statusCode).to.equal(303);
+                expect(this.res.headers.location).to.include(process.env.OAUTH_HOST);
+              });
+
+              it('sets the "redirect" cookie to the originally-requested resource', function () {
+                expect(this.res.headers['set-cookie'][0]).to.include(encodeURIComponent(`/jobs/${jobID}/skip-preview`));
+              });
+            });
+          });
+
+          describe('For a logged-in user (but not admin) who owns the job', function () {
+            skipPreviewEndpointHook({ jobID, username: normalUsername });
+            it('returns a 403 forbidden because they are not an admin', function () {
+              expect(this.res.statusCode).to.equal(403);
+            });
+
+            it('returns a JSON error response', function () {
+              const response = JSON.parse(this.res.text);
+              expect(response).to.eql({
+                code: 'harmony.ForbiddenError',
+                description: 'Error: You are not permitted to access this resource',
+              });
+            });
+          });
+
+          describe('For a logged-in admin', function () {
+            skipPreviewEndpointHook({ jobID, username: adminUsername });
+            it('returns a redirect to the running job', function () {
+              expect(this.res.statusCode).to.equal(302);
+              expect(this.res.headers.location).to.include(`/admin/jobs/${jobID}`);
+            });
+
+            describe('When following the redirect to the running job', function () {
+              hookRedirect(adminUsername);
+              it('returns an HTTP success response', function () {
+                expect(this.res.statusCode).to.equal(200);
+              });
+
+              it('changes the status to running', function () {
+                const actualJob = JSON.parse(this.res.text);
+                expect(actualJob.status).to.eql('running');
+              });
+              it('sets the message to "The job is being processed"', function () {
+                const actualJob = JSON.parse(this.res.text);
+                expect(actualJob.message).to.eql('The job is being processed');
+              });
+              it('does not modify any of the other job fields', function () {
+                const actualJob = new Job(JSON.parse(this.res.text));
+                const expectedJob: JobRecord = _.cloneDeep(pausedJob);
                 expectedJob.message = 'The job is being processed';
                 expectedJob.status = JobStatus.RUNNING;
                 expect(jobsEqual(expectedJob, actualJob)).to.be.true;
