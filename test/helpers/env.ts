@@ -15,6 +15,9 @@ process.env.SHARED_SECRET_KEY = 'foo';
 // needed for aggregation tests
 process.env.HOST_VOLUME_PATH = '/tmp';
 
+// needed to keep lots of tests from auto-pausing
+process.env.PREVIEW_THRESHOLD = '500';
+
 // eslint-disable-next-line import/first
 import env from '../../app/util/env'; // Must set required env before loading the env file
 

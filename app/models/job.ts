@@ -547,7 +547,10 @@ export class Job extends Record implements JobRecord {
     if (!(state.changed && state.matches(JobStatus.RUNNING))) {
       throw new ConflictError(`Job status is ${this.status} - only previewing jobs can skip preview.`);
     }
-    this.updateStatus(JobStatus.RUNNING);
+    const defaultMessage = statesToDefaultMessages[JobStatus.PREVIEWING];
+    let message = this.message.replace(defaultMessage, '').replace('. ', '').trim();
+    message ||= statesToDefaultMessages[JobStatus.RUNNING];
+    this.updateStatus(JobStatus.RUNNING, message);
   }
 
   /**

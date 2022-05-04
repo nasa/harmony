@@ -292,8 +292,14 @@ export default abstract class BaseService<ServiceParamType> {
   ): Job {
     const url = new URL(requestUrl);
     const skipPreviewStr = url.searchParams.get('skipPreview');
-    const skipPreview = (this.numInputGranules < env.previewThreshold) || (skipPreviewStr && skipPreviewStr.toLowerCase() === 'true');
-    const message = skipPreview ? this.operation.message : [statesToDefaultMessages[JobStatus.PREVIEWING], this.operation.message].join('. ');
+    const skipPreview =
+      (this.numInputGranules < env.previewThreshold) ||
+      (skipPreviewStr && skipPreviewStr.toLowerCase() === 'true');
+    const defaultMessage = statesToDefaultMessages[JobStatus.PREVIEWING];
+    const message = skipPreview ?
+      this.operation.message :
+      this.operation.message ? [defaultMessage, this.operation.message].join('. ') : defaultMessage;
+
     const { requestId, user } = this.operation;
     const job = new Job({
       username: user,
