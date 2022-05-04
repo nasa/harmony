@@ -870,6 +870,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
     it('includes coordinate variables', function () {
       const source = this.service.operation.sources[0];
+      expect(source.coordinateVariables.length).to.equal(8);
       expect(source.coordinateVariables[0]).to.eql({
         fullPath: 'chlorophyll_a',
         id: 'V1244967897-EEDTEST',

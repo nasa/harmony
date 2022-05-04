@@ -250,4 +250,35 @@ describe('WMS GetMap', function () {
       expect(res.text).to.include('There is no service configured to support transformations on the provided collection via WMS.');
     });
   });
+
+  const coordinateVariableCollection = 'C1243747507-EEDTEST';
+  describe('collection that does not have any supported services', function () {
+    const query = {
+      service: 'WMS',
+      request: 'GetMap',
+      layers: `${coordinateVariableCollection}`,
+      crs: 'EPSG:4326',
+      format: 'image/tiff',
+      styles: '',
+      width: 128,
+      height: 128,
+      version: '1.3.0',
+      bbox: '-180,-90,180,90',
+      transparent: 'TRUE',
+    };
+
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+    hookGetMap(coordinateVariableCollection, query);
+
+    it('includes coordinate variables', function () {
+      const source = this.service.operation.sources[0];
+      expect(source.coordinateVariables.length).to.equal(8);
+      expect(source.coordinateVariables[0]).to.eql({
+        fullPath: 'chlorophyll_a',
+        id: 'V1244967897-EEDTEST',
+        name: 'chlorophyll_a',
+        type: 'COORDINATE',
+      });
+    });
+  });
 });
