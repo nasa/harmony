@@ -598,6 +598,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1238658049-POCLOUD
       - id: C1238570311-POCLOUD
       - id: C1243729749-EEDTEST
+      - id: C1243747507-EEDTEST
     capabilities:
       subsetting:
         bbox: true
@@ -660,6 +661,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1234071416-POCLOUD
       - id: C1238658052-POCLOUD
       - id: C1243729749-EEDTEST
+      - id: C1243747507-EEDTEST
     capabilities:
       concatenation: true
       subsetting:
@@ -925,6 +927,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1234724471-POCLOUD
       - id: C1234071416-POCLOUD
       - id: C1243729749-EEDTEST
+      - id: C1243747507-EEDTEST
     capabilities:
       concatenation: true
       concatenate_by_default: true

@@ -395,7 +395,7 @@ async function _cmrPostBody(
 async function queryVariables(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVariable>> {
-  const variablesResponse = await _cmrPost('/search/variables.umm_json_v1_8', query, token) as CmrVariablesResponse;
+  const variablesResponse = await _cmrPost('/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
   return variablesResponse.data.items;
 }
 

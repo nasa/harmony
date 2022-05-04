@@ -87,7 +87,7 @@ const coordinateType = 'COORDINATE';
  * @returns The subset of variables that are coordinate variables
  */
 export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVariable[] {
-  return variables.filter((v) => v.umm.VariableType == coordinateType );
+  return variables.filter((v) => v.umm.VariableType === coordinateType );
 }
 
 /**
