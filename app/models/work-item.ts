@@ -234,14 +234,9 @@ export async function updateWorkItemStatusesByJobId(
   newStatus: WorkItemStatus,
 ): Promise<void> {
   const updatedAt = new Date();
-  return tx(WorkItem.table)
+  await tx(WorkItem.table)
     .where({ jobID })
-    .modify((queryBuilder) => {
-      if (oldStatuses.length) {
-        queryBuilder
-          .whereIn('status', oldStatuses);
-      }
-    })
+    .whereIn('status', oldStatuses)
     .update({ status: newStatus, updatedAt });
 }
 

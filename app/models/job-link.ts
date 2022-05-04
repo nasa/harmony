@@ -189,11 +189,10 @@ export async function getLinksForJob(
     .orderBy(['id'])
     .modify((queryBuilder) => {
       if (rel) {
-        queryBuilder
-          .where({ rel });
+        void queryBuilder.where({ rel });
       }
       if (requireSpatioTemporal) {
-        queryBuilder
+        void queryBuilder
           .whereNotNull('bbox')
           .whereNotNull('temporalStart')
           .whereNotNull('temporalEnd');
