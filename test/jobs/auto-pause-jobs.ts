@@ -43,9 +43,9 @@ function autoPauseCommonTests(username: string, status: string, message: string)
 
 /**
  * Define test that a link to skip the preview is supplied in the response
- * @param {string} username - The username of the user who is running the job.
+ * @param username - The username of the user who is running the job.
  */
-function skipPreviewLinkTest(username: string) {
+function skipPreviewLinkTest(username: string): void {
   describe('retrieving its job status', function () {
     hookRedirect(username);
     it('supplies a link to skip the preview', function () {
