@@ -112,6 +112,7 @@ export async function getJobs(
           [JobStatus.SUCCESSFUL]: 'success',
           [JobStatus.RUNNING]: 'info',
           [JobStatus.PAUSED]: 'warning',
+          [JobStatus.PREVIEWING]: 'info',
         }[this.status];
       },
       jobCreatedAt() { return this.createdAt.getTime(); },
