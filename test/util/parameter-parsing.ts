@@ -45,7 +45,6 @@ describe('util/parameter-parsing', function () {
 
     it('returns false for "FaLsE"', function () {
       expect(parseBoolean('FaLsE')).to.be.false;
-
     });
 
     it('returns true for "tRUe"', function () {
