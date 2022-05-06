@@ -1,7 +1,7 @@
 import { Logger } from 'winston';
 import { promises as fs } from 'fs';
 import db, { Transaction } from './db';
-import { Job, JobStatus, terminalStates } from '../models/job';
+import { Job, JobEvent, JobStatus, terminalStates, validateTransition } from '../models/job';
 import env from './env';
 import { getScrollIdForJob, updateWorkItemStatusesByJobId } from '../models/work-item';
 import { ConflictError, NotFoundError, RequestValidationError } from './errors';
@@ -223,3 +223,26 @@ export async function skipPreviewAndSaveJob(
   });
 }
 
+/**
+ * Return a set of JobEvents representing the actions that are currently available
+ * to a user with respect to the job in question.
+ * Note that this returns only actions that users can take (e.g. JobEvent.FAIL will not be returned).
+ * @param job - the job to return valid actions (JobEvents) for
+ * @returns a set of JobEvent
+ */
+export function getUserEventsForJob(job: Job): Set<JobEvent> {
+  const allActions: [JobEvent, JobStatus][] = [
+    [JobEvent.CANCEL, JobStatus.CANCELED],
+    [JobEvent.PAUSE, JobStatus.PAUSED], 
+    [JobEvent.RESUME, JobStatus.RUNNING], 
+    [JobEvent.SKIP_PREVIEW, JobStatus.RUNNING],
+  ];
+  const availableActions = new Set<JobEvent>();
+  for (const [event, newStatus] of allActions) {
+    try {
+      validateTransition(job.status, newStatus, event);
+      availableActions.add(event);
+    } catch {}
+  }
+  return availableActions;
+}

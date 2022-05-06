@@ -1,4 +1,7 @@
+import { Job, JobEvent } from '../models/job';
+import JobLink from '../models/job-link';
 import env = require('./env');
+import { getUserEventsForJob } from './job';
 
 const { awsDefaultRegion } = env;
 
@@ -70,4 +73,69 @@ export function getStatusLink(urlRoot: string, jobID: string, rel: string): Link
     rel,
     type: 'application/json',
   };
+}
+
+/**
+ * Given a job event, return the JobLink representing the corresponding event.
+ * @param event - the event being triggered by the JobLink
+ * @param jobID - the jobID that this link is for
+ * @param urlRoot - the root url to use in the link
+ * @param isAdmin - whether to include /admin in the link
+ * @returns - the job link for the job event
+ */
+function getLinkForJobEvent(
+  event: JobEvent, 
+  jobID: string, 
+  urlRoot: string, 
+  isAdmin = false,
+): JobLink {
+  const adminPath = isAdmin ? '/admin' : '';
+  switch (event) {
+    case JobEvent.RESUME:
+      return new JobLink({
+        title: 'Resumes the job.',
+        href: `${urlRoot + adminPath}/jobs/${jobID}/resume`,
+        type: 'application/json',
+        rel: 'resumer',
+      });
+    case JobEvent.SKIP_PREVIEW:
+      return new JobLink({
+        title: 'Skip preview and run the job.',
+        href: `${urlRoot + adminPath}/jobs/${jobID}/skip-preview`,
+        type: 'application/json',
+        rel: 'preview-skipper',
+      });
+    case JobEvent.CANCEL:
+      return new JobLink({
+        title: 'Cancel the job.',
+        href: `${urlRoot + adminPath}/jobs/${jobID}/cancel`,
+        type: 'application/json',
+        rel: 'canceler',
+      });
+    case JobEvent.PAUSE:
+      return new JobLink({
+        title: 'Pauses the job.',
+        href: `${urlRoot + adminPath}/jobs/${jobID}/pause`,
+        type: 'application/json',
+        rel: 'pauser',
+      });
+  }
+}
+
+/**
+ * Generate links that represent the actions that are available to a user with
+ * respect to job status state transitions.
+ * @param job - the job to generate links for
+ * @param urlRoot - the root url for the links being generated 
+ * @param isAdmin - boolean representing whether we are generating links for 
+ * an admin request
+ * @returns JobLink[]
+ */
+export function getEventLinksForJob(
+  job: Job,
+  urlRoot: string,
+  isAdmin = false,
+): JobLink[] {
+  const events = Array.from(getUserEventsForJob(job).values());
+  return events.map((event) => getLinkForJobEvent(event, job.jobID, urlRoot, isAdmin));
 }

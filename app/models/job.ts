@@ -36,7 +36,7 @@ export enum JobStatus {
   PREVIEWING = 'previewing',
 }
 
-enum JobEvent {
+export enum JobEvent {
   CANCEL = 'CANCEL',
   COMPLETE = 'COMPLETE',
   FAIL = 'FAIL',
@@ -189,6 +189,26 @@ export const statesToDefaultMessages: any = Object.values(stateMachine.states).r
   {});
 
 const defaultMessages = Object.values(statesToDefaultMessages);
+
+/**
+ * Validate that a desired transition (for job status) is acceptable according to the state machine.
+ * @param currentStatus - the current job status
+ * @param desiredStatus - the desired job status
+ * @param event - the event that would precipitate the transition
+ * @param errorMessage - the error message to throw if the transition is invalid
+ * @throws ConflictError if the transition is invalid
+ */
+export function validateTransition(
+  currentStatus: JobStatus,
+  desiredStatus: JobStatus, 
+  event: JobEvent,
+  errorMessage = `Job status cannot be updated from ${currentStatus} to ${desiredStatus}.`,
+): void {
+  const state = stateMachine.transition(currentStatus, event);
+  if (!(state.changed && state.matches(desiredStatus))) {
+    throw new ConflictError(errorMessage);
+  }
+}
 
 /**
  *
@@ -522,10 +542,7 @@ export class Job extends Record implements JobRecord {
    * @throws An error if the job is not currently in the RUNNING state
    */
   pause(message = statesToDefaultMessages.paused): void {
-    const state = stateMachine.transition(this.status, JobEvent.PAUSE);
-    if (!(state.changed && state.matches(JobStatus.PAUSED))) {
-      throw new ConflictError(`Job status cannot be updated from ${this.status} to paused.`);
-    }
+    validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
     this.updateStatus(JobStatus.PAUSED, message);
   }
 
@@ -535,10 +552,8 @@ export class Job extends Record implements JobRecord {
    * @throws An error if the job is not currently in the PAUSED state
    */
   resume(): void {
-    const state = stateMachine.transition(this.status, JobEvent.RESUME);
-    if (!(state.changed && state.matches(JobStatus.RUNNING))) {
-      throw new ConflictError(`Job status is ${this.status} - only paused jobs can be resumed.`);
-    }
+    validateTransition(this.status, JobStatus.RUNNING, JobEvent.RESUME,
+      `Job status is ${this.status} - only paused jobs can be resumed.`);
     this.updateStatus(JobStatus.RUNNING);
   }
 
@@ -548,10 +563,8 @@ export class Job extends Record implements JobRecord {
    * @throws An error if the job is not currently in the PREVIEWING state
    */
   skipPreview(): void {
-    const state = stateMachine.transition(this.status, JobEvent.SKIP_PREVIEW);
-    if (!(state.changed && state.matches(JobStatus.RUNNING))) {
-      throw new ConflictError(`Job status is ${this.status} - only previewing jobs can skip preview.`);
-    }
+    validateTransition(this.status, JobStatus.RUNNING, JobEvent.SKIP_PREVIEW,
+      `Job status is ${this.status} - only previewing jobs can skip preview.`);
     const defaultMessage = statesToDefaultMessages[JobStatus.PREVIEWING];
     let message = this.message.replace(defaultMessage, '').replace('. ', '').trim();
     message ||= statesToDefaultMessages[JobStatus.RUNNING];
@@ -567,10 +580,7 @@ export class Job extends Record implements JobRecord {
    * @param message - an error message
    */
   fail(message = statesToDefaultMessages.failed): void {
-    const state = stateMachine.transition(this.status, JobEvent.FAIL);
-    if (!state.matches(JobStatus.FAILED)) {
-      throw new ConflictError(`Job status cannot be updated from ${this.status} to failed.`);
-    }
+    validateTransition(this.status, JobStatus.FAILED, JobEvent.FAIL);
     this.updateStatus(JobStatus.FAILED, message);
   }
 
@@ -581,10 +591,7 @@ export class Job extends Record implements JobRecord {
    * @param message - an error message
    */
   cancel(message = statesToDefaultMessages.canceled): void {
-    const state = stateMachine.transition(this.status, JobEvent.CANCEL);
-    if (!(state.changed && state.matches(JobStatus.CANCELED))) {
-      throw new ConflictError(`Job status cannot be updated from ${this.status} to canceled.`);
-    }
+    validateTransition(this.status, JobStatus.CANCELED, JobEvent.CANCEL);
     this.updateStatus(JobStatus.CANCELED, message);
   }
 
@@ -597,10 +604,7 @@ export class Job extends Record implements JobRecord {
    * @param message - (optional) a human-readable success message.  See method description.
    */
   succeed(message?: string): void {
-    const state = stateMachine.transition(this.status, JobEvent.COMPLETE);
-    if (!(state.changed && state.matches(JobStatus.SUCCESSFUL))) {
-      throw new ConflictError(`Job status cannot be updated from ${this.status} to successful.`);
-    }
+    validateTransition(this.status, JobStatus.SUCCESSFUL, JobEvent.COMPLETE);
     this.updateStatus(JobStatus.SUCCESSFUL, message);
   }
 
