@@ -69,7 +69,7 @@ const dimensionConfig: DimensionConfig = {
 };
 
 const arbitraryDimensionConfig = {
-  lowToHigh: false,
+  lowToHigh: true,
   type: Number,
   regex: numberRangeRegex,
 };
