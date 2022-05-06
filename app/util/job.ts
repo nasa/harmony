@@ -230,7 +230,7 @@ export async function skipPreviewAndSaveJob(
  * @param job - the job to return valid actions (JobEvents) for
  * @returns a set of JobEvent
  */
-export function getUserEventsForJob(job: Job): Set<JobEvent> {
+export function getUserActionsForJob(job: Job): Set<JobEvent> {
   const allActions: [JobEvent, JobStatus][] = [
     [JobEvent.CANCEL, JobStatus.CANCELED],
     [JobEvent.PAUSE, JobStatus.PAUSED], 

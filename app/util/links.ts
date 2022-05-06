@@ -1,7 +1,7 @@
 import { Job, JobEvent } from '../models/job';
 import JobLink from '../models/job-link';
 import env = require('./env');
-import { getUserEventsForJob } from './job';
+import { getUserActionsForJob } from './job';
 
 const { awsDefaultRegion } = env;
 
@@ -131,11 +131,11 @@ function getLinkForJobEvent(
  * an admin request
  * @returns JobLink[]
  */
-export function getEventLinksForJob(
+export function getJobStatusTransitionLinks(
   job: Job,
   urlRoot: string,
   isAdmin = false,
 ): JobLink[] {
-  const events = Array.from(getUserEventsForJob(job).values());
+  const events = Array.from(getUserActionsForJob(job).values());
   return events.map((event) => getLinkForJobEvent(event, job.jobID, urlRoot, isAdmin));
 }
