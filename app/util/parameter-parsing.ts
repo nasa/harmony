@@ -19,7 +19,7 @@ export function parseBoolean(valueStr: string): boolean {
   if (!valueStr) return false;
   if (valueStr.toLowerCase() === 'true') return true;
   if (valueStr.toLowerCase() === 'false') return false;
-  throw new ParameterParseError('must be \'false\' or \'true\'');
+  throw new ParameterParseError(`'${valueStr}' must be \'false\' or \'true\'`);
 }
 
 /**
