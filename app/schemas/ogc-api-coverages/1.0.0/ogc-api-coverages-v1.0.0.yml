@@ -730,7 +730,10 @@ components:
       description: '
         get a subset of the coverage by slicing or trimming among one axis.  Harmony supports
         the axes "lat" and "lon" for spatial subsetting, and "time" for temporal, regardless of the names
-        of those axes in the data files.  Examples:
+        of those axes in the data files. Harmony also supports arbitrary dimension names for subsetting
+        on numeric ranges for that dimension.
+
+        Examples:
           - Subset to the lat/lon bounding box with southwest corner (-10, -10) and northeast corner (10, 10)
             subset=lat(-10:10)&subset=lon(-10:10)
           - Subset to all latitudes north of -10 degrees and all longitudes west of 10 degrees
@@ -739,6 +742,8 @@ components:
             subset=lat(-10:10)
           - Subset to the first month of 2020
             subset=time("2020-01-01T00:00:00Z":"2020-02-01T00:00:00Z")
+          - Subset on arbitrary dimension "vertical" with a value between 0 and 20
+            subset=vertical(0:20)
 
         For full syntax and examples, see
         https://github.com/opengeospatial/ogc_api_coverages/blob/master/standard/clause_9_subset.adoc'
