@@ -67,6 +67,12 @@ const dimensionConfig: DimensionConfig = {
   },
 };
 
+const arbitraryDimensionConfig = {
+  lowToHigh: false,
+  type: Number,
+  regex: numberRangeRegex,
+};
+
 /**
  * Tag class for denoting errors during parsing
  *
@@ -74,9 +80,9 @@ const dimensionConfig: DimensionConfig = {
 export class ParameterParseError extends Error {}
 
 /**
- * Helper function for parameters that parses and validates boolean values. A null value  
+ * Helper function for parameters that parses and validates boolean values. A null value
  * defaults to false.
- * 
+ *
  * @param valueStr - the unparsed boolean as it appears in the input
  * @returns the parsed result
  * @throws ParameterParserError - if there are errors while parsing
@@ -169,8 +175,7 @@ function _getDimensionName(value: string): string {
  *   see `dimensionConfig` (the default value) in this file.  Usually should not be specified,
  *   except for testing.
  * @returns An array with two elements corresponding to [longitude, latitude]
- * @throws ParameterParseError - if a subset parameter cannot be parsed, has unrecognized
- *   axis names, or is otherwise invalid
+ * @throws ParameterParseError - if a subset parameter cannot be parsed
  */
 export function parsePointParam(
   values: number[],
@@ -207,8 +212,7 @@ export function parsePointParam(
  *   see `dimensionInfo` (the default value) in this file.  Usually should not be specified,
  *   except for testing.
  * @returns An object mapping dimension names to objects with min and max ranges
- * @throws ParameterParseError - if a subset parameter cannot be parsed, has unrecognized
- *   axis names, or is otherwise invalid
+ * @throws ParameterParseError - if a subset parameter cannot be parsed
  */
 export function parseSubsetParams(
   values: string[],
@@ -217,10 +221,19 @@ export function parseSubsetParams(
   const result: DimensionRanges = {};
   for (const value of values) {
     const dimName = _getDimensionName(value);
-    const dim = dimConfig[dimName];
+    let dim = dimConfig[dimName];
+    const parsed: Range<unknown> = {};
+
     if (!dim) {
-      throw new ParameterParseError(`unrecognized subset dimension "${dimName}"`);
+      // Allow arbitrary dimensions with numeric ranges
+      dim = arbitraryDimensionConfig;
+      dim.name = dimName;
     }
+
+    if (result[dim.name]) {
+      throw new ParameterParseError(`subset dimension "${dim.name}" was specified multiple times`);
+    }
+
     const match = value.match(dim.regex);
     if (!match) {
       throw new ParameterParseError(`subset dimension "${dim.name}" could not be parsed`);
@@ -229,11 +242,8 @@ export function parseSubsetParams(
     const minStr = matches[2];
     // When just a single value is provided treat it as a range with the same min and max
     const maxStr = matches[3] || minStr;
-    const parsed: Range<unknown> = {};
 
-    if (result[dim.name]) {
-      throw new ParameterParseError(`subset dimension "${dim.name}" was specified multiple times`);
-    }
+
     switch (dim.type) {
       case Number:
         parsed.min = parseNumeric(dim, minStr, dim.min);

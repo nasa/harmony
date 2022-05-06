@@ -4,7 +4,7 @@ import { keysToLowerCase } from '../../util/object';
 import { RequestValidationError } from '../../util/errors';
 import wrap from '../../util/array';
 import { parseVariables } from '../../util/variables';
-import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/parameter-parsing';
+import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal, ParameterParseError } from './util/subset-parameter-parsing';
 import { parseAcceptHeader } from '../../util/content-negotiation';
 import parseMultiValueParameter from '../../util/parameter-parsing';
 import HarmonyRequest from '../../models/harmony-request';
