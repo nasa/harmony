@@ -225,7 +225,7 @@ export async function skipPreviewAndSaveJob(
 
 /**
  * Return a set of JobEvents representing the actions that are currently available
- * to a user with respect to the job in question.
+ * to a user for a particular job.
  * Note that this returns only actions that users can take (e.g. JobEvent.FAIL will not be returned).
  * @param job - the job to return valid actions (JobEvents) for
  * @returns a set of JobEvent
