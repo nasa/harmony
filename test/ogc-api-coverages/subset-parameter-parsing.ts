@@ -227,9 +227,21 @@ describe('OGC API Coverages - Utilities', function () {
           });
         });
 
+        describe('with same min and max integers', function () {
+          it('returns a parsed object', function () {
+            expect(parseSubsetParams(['delta(4:4)'])).to.eql({ delta: { min: 4, max: 4 } });
+          });
+        });
+
+        describe('with same min and max floats', function () {
+          it('returns a parsed object', function () {
+            expect(parseSubsetParams(['delta(4.0:4.00000)'])).to.eql({ delta: { min: 4.0, max: 4.00000 } });
+          });
+        });
+
         describe('with a min greater than max', function () {
-          it('allows it and returns a parsed object', function () {
-            expect(parseSubsetParams(['wrap(500:-100)'])).to.eql({ wrap: { min: 500, max: -100 } });
+          it('throws a parse error', function () {
+            expect(parseSubsetParamsFn(['wrap(500:-100)'])).to.throw(ParameterParseError, 'subset dimension "wrap" values must be ordered from low to high');
           });
         });
 
