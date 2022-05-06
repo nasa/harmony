@@ -66,6 +66,9 @@ export default function getCoverageRangeset(
   }
   try {
     const subset = parseSubsetParams(wrap(query.subset));
+    // Update in HARMONY-1120
+    operation.dimensionSubset = !Object.keys(subset).every((k) => ['time', 'lat', 'lon'].includes(k));
+
     const bbox = subsetParamsToBbox(subset);
     if (bbox) {
       operation.boundingRectangle = bbox;

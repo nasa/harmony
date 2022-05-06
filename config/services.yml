@@ -378,13 +378,14 @@ https://cmr.earthdata.nasa.gov:
       subsetting:
         bbox: true
         variable: true
+        dimension: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset']
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset']
 
   - name: sds/trajectory-subsetter
     data_operation_version: '0.15.0'
@@ -753,13 +754,14 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         bbox: true
         variable: true
+        dimension: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset']
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset']
 
   - name: sds/maskfill
     data_operation_version: '0.15.0'

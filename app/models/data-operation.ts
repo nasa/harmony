@@ -263,6 +263,9 @@ export default class DataOperation {
 
   requestStartTime: Date; // The time that the initial request to harmony was received
 
+  // Temporary - remove when implementing HARMONY-1120
+  dimensionSubset?: boolean;
+
   /**
    * Creates an instance of DataOperation.
    *
@@ -315,6 +318,16 @@ export default class DataOperation {
   get shouldVariableSubset(): boolean {
     const varSources = this.sources.filter((s) => s.variables && s.variables.length > 0);
     return varSources.length > 0;
+  }
+
+  /**
+   * Returns true if the operation is requesting dimension subsetting
+   *
+   * @returns true if the operation requests dimension subsetting
+   */
+  get shouldDimensionSubset(): boolean {
+    // Update this with HARMONY-1120 to check the operation field
+    return this.dimensionSubset;
   }
 
   /**
@@ -851,6 +864,9 @@ export default class DataOperation {
       }
       if (!fieldsToInclude.includes('shapefileSubset')) {
         delete toWrite.subset.shape;
+      }
+      if (!fieldsToInclude.includes('dimensionSubset')) {
+        delete toWrite.subset.dimensions;
       }
 
       if (Object.keys(toWrite.subset).length === 0) {
