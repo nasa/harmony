@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import parseMultiValueParameter from '../../app/util/parameter-parsing';
+import { parseMultiValueParameter } from '../../app/util/parameter-parsing';
 
 describe('util/parameter-parsing', function () {
   describe('#parseMultiValueParameter', function () {
