@@ -2,11 +2,32 @@ import { RequestValidationError } from './errors';
 import HarmonyRequest from '../models/harmony-request';
 
 /**
+ * Tag class for denoting errors during parsing
+ *
+ */
+export class ParameterParseError extends Error {}
+
+/**
+  * Helper function for parameters that parses and validates boolean values. A null value
+  * defaults to false.
+  *
+  * @param valueStr - the unparsed boolean as it appears in the input
+  * @returns the parsed result
+  * @throws ParameterParserError - if there are errors while parsing
+  */
+export function parseBoolean(valueStr: string): boolean {
+  if (!valueStr) return false;
+  if (valueStr.toLowerCase() === 'true') return true;
+  if (valueStr.toLowerCase() === 'false') return false;
+  throw new ParameterParseError('must be \'false\' or \'true\'');
+}
+
+/**
  * Returns the parameter as parsed as an array of comma-separated values if
  * it was a string, or just returns the array if it's already parsed
  * @param value - The parameter value to parse (either an array or a string)
  */
-export default function parseMultiValueParameter(value: string[] | string): string[] {
+export function parseMultiValueParameter(value: string[] | string): string[] {
   if (value instanceof Array) {
     return value;
   }

@@ -9,7 +9,7 @@ import { keysToLowerCase } from '../util/object';
 import { RequestValidationError, NotFoundError } from '../util/errors';
 import * as services from '../models/services';
 import { createDecrypter, createEncrypter } from '../util/crypto';
-import parseMultiValueParameter from '../util/parameter-parsing';
+import { parseMultiValueParameter } from '../util/parameter-parsing';
 import parseCRS from '../util/crs';
 import { validateParameterNames } from '../middleware/parameter-validation';
 

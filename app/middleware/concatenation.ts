@@ -1,5 +1,5 @@
 import { NextFunction, Response } from 'express';
-import { ParameterParseError, parseBoolean } from '../frontends/ogc-coverages/util/subset-parameter-parsing';
+import { ParameterParseError, parseBoolean } from '../util/parameter-parsing';
 import HarmonyRequest from '../models/harmony-request';
 import { RequestValidationError } from '../util/errors';
 import { keysToLowerCase } from '../util/object';
