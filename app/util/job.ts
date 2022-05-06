@@ -237,12 +237,12 @@ export function getUserEventsForJob(job: Job): Set<JobEvent> {
     [JobEvent.RESUME, JobStatus.RUNNING], 
     [JobEvent.SKIP_PREVIEW, JobStatus.RUNNING],
   ];
-  const availableActions = new Set<JobEvent>();
+  const validEvents = new Set<JobEvent>();
   for (const [event, newStatus] of allActions) {
     try {
       validateTransition(job.status, newStatus, event);
-      availableActions.add(event);
+      validEvents.add(event);
     } catch {}
   }
-  return availableActions;
+  return validEvents;
 }
