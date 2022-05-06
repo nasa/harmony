@@ -6,7 +6,7 @@ import {
   subsetParamsToBbox,
   subsetParamsToTemporal,
   ParameterParseError,
-} from '../../app/frontends/ogc-coverages/util/parameter-parsing';
+} from '../../app/frontends/ogc-coverages/util/subset-parameter-parsing';
 
 describe('OGC API Coverages - Utilities', function () {
   describe('parseSubsetParams', function () {
@@ -190,23 +190,96 @@ describe('OGC API Coverages - Utilities', function () {
       });
     });
 
-    describe('multiple subsets', function () {
-      it('returns a parsed object with "lat" and "lon" info when passed a valid ranges', function () {
-        expect(parseSubsetParams(['lon(-10:10.5)', 'lat(-20:20.5)', 'time("2001-05-01T12:35:00Z":"2002-07-01T13:18:55Z")'])).to.eql({
-          lon: { min: -10, max: 10.5 },
-          lat: { min: -20, max: 20.5 },
-          time: { min: new Date('2001-05-01T12:35:00Z'), max: new Date('2002-07-01T13:18:55Z') },
-        });
-      });
 
-      it('throws a parse error when passed duplicate ranges', function () {
-        expect(parseSubsetParamsFn(['lon(-10:10.5)', 'lon(-10.5:9)'])).to.throw(ParameterParseError, 'dimension "lon" was specified multiple times');
+    it('throws a parse error when passed duplicate ranges', function () {
+      expect(parseSubsetParamsFn(['lon(-10:10.5)', 'lon(-10.5:9)'])).to.throw(ParameterParseError, 'dimension "lon" was specified multiple times');
+    });
+
+    describe('arbitrary dimension subsets', function () {
+      describe('when passed an arbitrary dimension', function () {
+        describe('with integer min and max', function () {
+          it('returns a parsed object', function () {
+            expect(parseSubsetParams(['foo(-5:5000)'])).to.eql({ foo: { min: -5, max: 5000 } });
+          });
+        });
+
+        describe('with float min and max', function () {
+          it('returns a parsed object', function () {
+            expect(parseSubsetParams(['foo(-5.23:5000.0)'])).to.eql({ foo: { min: -5.23, max: 5000.0 } });
+          });
+        });
+
+        describe('with integer min and no max', function () {
+          it('returns a parsed object', function () {
+            expect(parseSubsetParams(['bar(-15:*)'])).to.eql({ bar: { min: -15, max: undefined } });
+          });
+        });
+
+        describe('with no min and integer max', function () {
+          it('returns a parsed object', function () {
+            expect(parseSubsetParams(['baz(*:22)'])).to.eql({ baz: { min: undefined, max: 22 } });
+          });
+        });
+
+        describe('with no min and no max', function () {
+          it('returns a parsed object', function () {
+            expect(parseSubsetParams(['charlie(*:*)'])).to.eql({ charlie: { min: undefined, max: undefined } });
+          });
+        });
+
+        describe('with a min greater than max', function () {
+          it('allows it and returns a parsed object', function () {
+            expect(parseSubsetParams(['wrap(500:-100)'])).to.eql({ wrap: { min: 500, max: -100 } });
+          });
+        });
+
+        describe('with a missing value for min', function () {
+          it('throws a parse error', function () {
+            expect(parseSubsetParamsFn(['foo(:25)'])).to.throw(ParameterParseError, 'subset dimension "foo" could not be parsed');
+          });
+        });
+
+        describe('with a missing value for max', function () {
+          it('throws a parse error', function () {
+            expect(parseSubsetParamsFn(['bar(250:)'])).to.throw(ParameterParseError, 'subset dimension "bar" could not be parsed');
+          });
+        });
+
+        describe('with a string value for min', function () {
+          it('throws a parse error', function () {
+            expect(parseSubsetParamsFn(['foo(abc:25)'])).to.throw(ParameterParseError, 'subset dimension "foo" has an invalid numeric value "abc"');
+          });
+        });
+
+        describe('with a string value for max', function () {
+          it('throws a parse error', function () {
+            expect(parseSubsetParamsFn(['bar(25:def)'])).to.throw(ParameterParseError, 'subset dimension "bar" has an invalid numeric value "def"');
+          });
+        });
+
+        describe('with a string value for min and max', function () {
+          it('throws a parse error', function () {
+            expect(parseSubsetParamsFn(['foo(no:good)'])).to.throw(ParameterParseError, 'subset dimension "foo" has an invalid numeric value "no"');
+          });
+        });
+
+        describe('with multiple dimensions with the same name', function () {
+          it('throws a parse error', function () {
+            expect(parseSubsetParamsFn(['foo(-10:10)', 'foo(100,350)'])).to.throw(ParameterParseError, 'subset dimension "foo" was specified multiple times');
+          });
+        });
       });
     });
 
-    describe('subsets of unrecognized dimensions', function () {
-      it('throws a parse error when provided an unrecognized dimension', function () {
-        expect(parseSubsetParamsFn(['long(-10:10.5)'])).to.throw(ParameterParseError, 'unrecognized subset dimension "long"');
+    describe('multiple subsets', function () {
+      it('returns a parsed object with "lat" and "lon" info when passed a valid ranges', function () {
+        expect(parseSubsetParams(['lon(-10:10.5)', 'lat(-20:20.5)', 'time("2001-05-01T12:35:00Z":"2002-07-01T13:18:55Z")', 'foo(-2.2:4)', 'bar(*:10)'])).to.eql({
+          lon: { min: -10, max: 10.5 },
+          lat: { min: -20, max: 20.5 },
+          time: { min: new Date('2001-05-01T12:35:00Z'), max: new Date('2002-07-01T13:18:55Z') },
+          foo: { min: -2.2, max: 4 },
+          bar: { min: undefined, max: 10 },
+        });
       });
     });
   });
