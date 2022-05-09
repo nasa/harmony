@@ -1,7 +1,7 @@
 import { Job, JobEvent } from '../models/job';
 import JobLink from '../models/job-link';
 import env = require('./env');
-import { getUserActionsForJob } from './job';
+import { getLinkRelevantJobEvents } from './job';
 
 const { awsDefaultRegion } = env;
 
@@ -124,18 +124,18 @@ function getLinkForJobEvent(
 
 /**
  * Generate links that represent the actions that are available to a user with
- * respect to job status state transitions.
+ * respect to job status state transitions (cancel, pause, etc.).
  * @param job - the job to generate links for
  * @param urlRoot - the root url for the links being generated 
  * @param isAdmin - boolean representing whether we are generating links for 
  * an admin request
  * @returns JobLink[]
  */
-export function getJobStatusTransitionLinks(
+export function getJobStateChangeLinks(
   job: Job,
   urlRoot: string,
   isAdmin = false,
 ): JobLink[] {
-  const events = Array.from(getUserActionsForJob(job).values());
+  const events = Array.from(getLinkRelevantJobEvents(job).values());
   return events.map((event) => getLinkForJobEvent(event, job.jobID, urlRoot, isAdmin));
 }

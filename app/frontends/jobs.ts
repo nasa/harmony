@@ -6,7 +6,7 @@ import { cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, skipPreviewAndSave
 import JobLink from '../models/job-link';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
-import { getCloudAccessJsonLink, getCloudAccessShLink, getJobStatusTransitionLinks, getStacCatalogLink, getStatusLink, Link } from '../util/links';
+import { getCloudAccessJsonLink, getCloudAccessShLink, getJobStateChangeLinks, getStacCatalogLink, getStatusLink, Link } from '../util/links';
 import { RequestValidationError, NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
@@ -48,7 +48,7 @@ function getLinksForDisplay(job: Job, urlRoot: string, statusLinkRel: string): J
     links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
   }
   // add cancel, pause, resume, etc. links if applicable
-  links.unshift(...getJobStatusTransitionLinks(job, urlRoot));
+  links.unshift(...getJobStateChangeLinks(job, urlRoot));
   // add a 'self' or 'item' link if it does not already exist
   // 'item' is for use in jobs listings, 'self' for job status
   if (links.filter((link) => link.rel === 'self').length === 0) {

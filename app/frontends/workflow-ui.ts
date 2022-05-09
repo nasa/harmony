@@ -11,6 +11,8 @@ import version from '../util/version';
 import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
 import { WorkItemStatus } from '../models/work-item-interface';
+import { getRequestRoot } from '../util/url';
+import { getJobStateChangeLinks } from '../util/links';
 
 /**
  * Return an object that contains key value entries for jobs table filters.
@@ -176,6 +178,41 @@ export async function getJob(
         version,
         isAdminRoute: req.context.isAdminAccess,
       });
+    } else {
+      throw new NotFoundError(`Unable to find job ${jobID}`);
+    }
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * Return job state change links so that the user can pause, resume, cancel, etc., a job.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The job links (pause, resume, etc.)
+ */
+export async function getJobLinks(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobID } = req.params;
+  try {
+    validateJobId(jobID);
+    const query: JobQuery = { where: { requestId: jobID } };
+    if (!req.context.isAdminAccess) {
+      query.where.username = req.user;
+    }
+    const { job } = await Job.byRequestId(db, jobID, 0, 0);
+    if (job) {
+      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+        throw new NotFoundError();
+      }
+      const urlRoot = getRequestRoot(req);
+      const links = getJobStateChangeLinks(job, urlRoot, req.context.isAdminAccess);
+      res.send(links);
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
