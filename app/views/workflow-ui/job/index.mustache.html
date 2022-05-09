@@ -7,13 +7,14 @@
     <link rel="stylesheet" href="../../../css/eui.min.css">
     <link rel="stylesheet" href="../../../css/default.css">
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-        crossorigin="anonymous" defer></script>
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
+        defer></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"
-        integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/"
-        crossorigin="anonymous" defer></script>
+        integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/" crossorigin="anonymous"
+        defer></script>
     <script language="javascript" id="_fed_an_ua_tag"
-        src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true" defer></script>
+        src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
+        defer></script>
     <script language="javascript" type="module" src="../../../js/workflow-ui/job/index.js" async></script>
     <title>Harmony</title>
 </head>
@@ -31,7 +32,7 @@
             </div>
         </div>
     </nav>
-    <nav class="ml-0 pl-0"
+    <nav class="ml-0 pl-0 d-flex flex-row justify-content-between"
         style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);"
         aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -43,10 +44,14 @@
             {{/isAdminRoute}}
             <li class="breadcrumb-item active" aria-current="page">{{job.jobID}}</li>
         </ol>
+        <div class="breadcrumb" id="links-container">
+            
+        </div>
     </nav>
     <div class="container-fluid">
         <div class="row pb-4 px-4">
-            <div class="col-12" id="workflow-items-table-container" data-page="{{page}}" data-limit={{limit}} data-job-id={{job.jobID}}>
+            <div class="col-12" id="workflow-items-table-container" data-page="{{page}}" data-limit={{limit}}
+                data-job-id={{job.jobID}}>
 
             </div>
         </div>

@@ -1,7 +1,10 @@
 import workItemsTable from "./work-items-table.js";
+import navLinks from "../navLinks.js";
 
-const page = document.getElementById('workflow-items-table-container').getAttribute('data-page');
-const limit = document.getElementById('workflow-items-table-container').getAttribute('data-limit');
-const jobId = document.getElementById('workflow-items-table-container').getAttribute('data-job-id');
+const workflowContainer = document.getElementById('workflow-items-table-container');
+const page = workflowContainer.getAttribute('data-page');
+const limit = workflowContainer.getAttribute('data-limit');
+const jobId = workflowContainer.getAttribute('data-job-id');
 
 workItemsTable.init(jobId, page, limit);
+navLinks.init("links-container", jobId);

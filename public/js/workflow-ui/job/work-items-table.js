@@ -2,7 +2,7 @@ import { formatDates } from "../table.js";
 
 /**
  * Query the Harmony backend for an up to date version of 
- * a single page of the work items table.
+ * a single HTML page of the work items table.
  * @param {string} jobId - id of the job that the work items are linked to
  * @param {number} page - page number for the work items
  * @param {number} limit - limit on the number of work items in a page
@@ -29,7 +29,6 @@ export default {
    * @param {string} jobId - id of the job that the work items are linked to
    * @param {number} page - page number for the work items
    * @param {number} limit - limit on the number of work items in a page
-   * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
    */
   async init(jobId, page, limit) {
     const fiveSeconds = 5 * 1000;
