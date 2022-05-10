@@ -215,6 +215,12 @@ export async function getJobLinks(
       if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
         throw new NotFoundError();
       }
+      if (!req.context.isAdminAccess && (job.username != req.user)) {
+        // if the job is shareable but this user (req.user) does not own the job,
+        // they shouldn't be able to change the job's state
+        res.send([]);
+        return;
+      }
       const urlRoot = getRequestRoot(req);
       const links = getAllStateChangeLinks(job, urlRoot, req.context.isAdminAccess);
       res.send(links);
