@@ -9,3 +9,9 @@ a .badge-dark {
 .mw-40ch {
     max-width: 40ch;
 }
+
+.toast-container {
+    top:0;
+    right: 0;
+    z-index: 999;
+}

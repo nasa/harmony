@@ -20,16 +20,14 @@
 </head>
 
 <body class="d-flex flex-column h-100">
-    <div id="earthdata-notification-banner"></div>
+    {{> workflow-ui/toasts}}
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-lg">
             <a class="navbar-brand nasa" href="/">Earthdata Harmony</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            </div>
+            </button> 
         </div>
     </nav>
     <nav class="ml-0 pl-0"
@@ -45,7 +43,7 @@
                 {{/isAdminRoute}}
                 <li class="breadcrumb-item active" aria-current="page">{{job.jobID}}</li>
             </ol>
-            <div class="" id="links-container">
+            <div id="links-container">
 
             </div>
         </div>
