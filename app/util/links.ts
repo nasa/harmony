@@ -139,3 +139,20 @@ export function getJobStateChangeLinks(
   const events = Array.from(getLinkRelevantJobEvents(job).values());
   return events.map((event) => getLinkForJobEvent(event, job.jobID, urlRoot, isAdmin));
 }
+
+/**
+ * Generate links that represent all of the actions that are available to a user with
+ * respect to job status state transitions (cancel, pause, etc.).
+ * @param urlRoot - the root url for the links being generated 
+ * @param isAdmin - boolean representing whether we are generating links for 
+ * an admin request
+ * @returns JobLink[]
+ */
+export function getAllStateChangeLinks(
+  job: Job,
+  urlRoot: string,
+  isAdmin = false,
+): JobLink[] {
+  const events = [JobEvent.CANCEL, JobEvent.PAUSE, JobEvent.RESUME, JobEvent.SKIP_PREVIEW];
+  return events.map((event) => getLinkForJobEvent(event, job.jobID, urlRoot, isAdmin));
+}

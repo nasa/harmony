@@ -12,7 +12,20 @@ import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
 import { WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
-import { getJobStateChangeLinks } from '../util/links';
+import { getAllStateChangeLinks } from '../util/links';
+
+/**
+ * Maps job status to display class.
+ */
+const statusClass = {
+  [JobStatus.ACCEPTED]: 'primary',
+  [JobStatus.CANCELED]: 'secondary',
+  [JobStatus.FAILED]: 'danger',
+  [JobStatus.SUCCESSFUL]: 'success',
+  [JobStatus.RUNNING]: 'info',
+  [JobStatus.PAUSED]: 'warning',
+  [JobStatus.PREVIEWING]: 'info',
+};
 
 /**
  * Return an object that contains key value entries for jobs table filters.
@@ -107,15 +120,7 @@ export async function getJobs(
       // job table row HTML
       jobs,
       jobBadge() {
-        return {
-          [JobStatus.ACCEPTED]: 'primary',
-          [JobStatus.CANCELED]: 'secondary',
-          [JobStatus.FAILED]: 'danger',
-          [JobStatus.SUCCESSFUL]: 'success',
-          [JobStatus.RUNNING]: 'info',
-          [JobStatus.PAUSED]: 'warning',
-          [JobStatus.PREVIEWING]: 'info',
-        }[this.status];
+        return statusClass[this.status];
       },
       jobCreatedAt() { return this.createdAt.getTime(); },
       jobUrl() {
@@ -177,6 +182,9 @@ export async function getJob(
         limit,
         version,
         isAdminRoute: req.context.isAdminAccess,
+        statusClass() {
+          return statusClass[job.status];
+        },
       });
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
@@ -211,7 +219,7 @@ export async function getJobLinks(
         throw new NotFoundError();
       }
       const urlRoot = getRequestRoot(req);
-      const links = getJobStateChangeLinks(job, urlRoot, req.context.isAdminAccess);
+      const links = getAllStateChangeLinks(job, urlRoot, req.context.isAdminAccess);
       res.send(links);
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
