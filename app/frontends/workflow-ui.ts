@@ -182,9 +182,6 @@ export async function getJob(
         limit,
         version,
         isAdminRoute: req.context.isAdminAccess,
-        statusClass() {
-          return statusClass[job.status];
-        },
       });
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
@@ -272,6 +269,8 @@ export async function getWorkItemsTable(
       const previousPage = pageLinks.find((l) => l.rel === 'prev');
       setPagingHeaders(res, pagination);
       res.render('workflow-ui/job/work-items-table', {
+        job,
+        statusClass: statusClass[job.status],
         workItems,
         workflowItemBadge() { return badgeClasses[this.status]; },
         workflowItemStep() { return sanitizeImage(this.serviceID); },

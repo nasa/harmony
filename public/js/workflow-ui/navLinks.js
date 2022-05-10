@@ -12,23 +12,32 @@ function buildLinksHtml(links) {
   `;
 }
 
-async function handleClick(event) {
+async function handleClick(event, toasts, workItemsTable) {
   event.preventDefault();
+  toasts.showUpper('Changing job state..');
   const link = event.target;
   const stateChangeUrl = link.getAttribute('href');
   const res = await fetch(stateChangeUrl);
   const data = await res.json();
   console.log(data);
   if (res.status === 200) {
-    
+    toasts.showUpper(`Success! The job is now ${data.status}`);
+    workItemsTable.refreshTable();
+  } else if (data.description) {
+    toasts.showUpper(data.description);
+  } else {
+    toasts.showUpper('The update failed.');
   }
 }
 
-function insertLinksHtml(links, linksContainerId) {
+function insertLinksHtml(links, linksContainerId, toasts, workItemsTable) {
   const html = buildLinksHtml(links);
   document.getElementById(linksContainerId).innerHTML = html;
   document.querySelectorAll('.state-change-link').forEach(function (link) {
-    link.addEventListener('click', handleClick);
+    link.toasts = toasts;
+    link.addEventListener('click', function (event) {
+      handleClick(event, toasts, workItemsTable);
+    }, false);
   });
 }
 
@@ -37,12 +46,12 @@ function insertLinksHtml(links, linksContainerId) {
  * @param
  * @returns
  */
-async function fetchAndInsertLinks(linksContainerId, jobId) {
+async function fetchAndInsertLinks(linksContainerId, jobId, toasts, workItemsTable) {
   const linksUrl = `./${jobId}/links`;
   const res = await fetch(linksUrl);
   if (res.status === 200) {
     const data = await res.json();
-    insertLinksHtml(data, linksContainerId);
+    insertLinksHtml(data, linksContainerId, toasts, workItemsTable);
   }
 }
 
@@ -52,7 +61,7 @@ export default {
    *
    * @param
    */
-  async init(linksContainerId, jobId) {
-    fetchAndInsertLinks(linksContainerId, jobId);
+  async init(linksContainerId, jobId, toasts, workItemsTable) {
+    fetchAndInsertLinks(linksContainerId, jobId, toasts, workItemsTable);
   }
 }

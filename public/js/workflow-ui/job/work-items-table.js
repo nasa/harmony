@@ -31,6 +31,7 @@ export default {
    * @param {number} limit - limit on the number of work items in a page
    */
   async init(jobId, page, limit) {
+    this.refreshTable = () => load(jobId, page, limit, false);
     const fiveSeconds = 5 * 1000;
     await load(jobId, page, limit, false);
     let jobIsRunning = true;
@@ -44,5 +45,5 @@ export default {
       async () => await load(jobId, page, limit, false), 
       fiveSeconds * 3,
     );
-  }
+  },
 }
