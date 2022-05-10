@@ -32,6 +32,9 @@ OAUTH_PASSWORD=
 # Settings to control how Harmony behaves                                 #
 ###########################################################################
 
+# The host network interface to bind against
+HOST_BINDING='127.0.0.1'
+
 # The port on which to run the Harmony frontend
 PORT=3000
 
