@@ -131,7 +131,7 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
   ogcCoveragesApi.handleOpenApiErrors(app);
   app.use(errorHandler);
 
-  return app.listen(port, '0.0.0.0', () => appLogger.info(`Application frontend listening on ${hostBinding} on port ${port}`));
+  return app.listen(port, hostBinding, () => appLogger.info(`Application frontend listening on ${hostBinding} on port ${port}`));
 }
 
 /**
