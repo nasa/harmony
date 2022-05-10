@@ -63,9 +63,10 @@ function addRequestId(appLogger: Logger): RequestHandler {
  * listening on the provided port.
  *
  * @param port - The port the server should listen on
+ * @param hostBinding - The host network interface to bind against
  * @returns The running express application
  */
-function buildBackendServer(port: number): Server {
+function buildBackendServer(port: number, hostBinding: string): Server {
   const appLogger = logger.child({ application: 'backend' });
   const setRequestId = (req: HarmonyRequest, res: Response, next: NextFunction): void => {
     const { requestId } = req.params;
@@ -93,7 +94,7 @@ function buildBackendServer(port: number): Server {
   app.get('/', ((req, res) => res.send('OK')));
   app.use(errorHandler);
 
-  return app.listen(port, '0.0.0.0', () => appLogger.info(`Application backend listening on port ${port}`));
+  return app.listen(port, hostBinding, () => appLogger.info(`Application backend listening on ${hostBinding} on port ${port}`));
 }
 
 /**
@@ -101,10 +102,11 @@ function buildBackendServer(port: number): Server {
  * listening on the provided port.
  *
  * @param port - The port the server should listen on
+ * @param hostBinding - The host network interface to bind against
  * @param config - Config that controls whether certain middleware will be used
  * @returns The running express application
  */
-function buildFrontendServer(port: number, config: RouterConfig): Server {
+function buildFrontendServer(port: number, hostBinding: string, config: RouterConfig): Server {
   const appLogger = logger.child({ application: 'frontend' });
   const app = express();
   app.use(addRequestId(appLogger));
@@ -129,7 +131,7 @@ function buildFrontendServer(port: number, config: RouterConfig): Server {
   ogcCoveragesApi.handleOpenApiErrors(app);
   app.use(errorHandler);
 
-  return app.listen(port, '0.0.0.0', () => appLogger.info(`Application frontend listening on port ${port}`));
+  return app.listen(port, '0.0.0.0', () => appLogger.info(`Application frontend listening on ${hostBinding} on port ${port}`));
 }
 
 /**
@@ -162,13 +164,13 @@ export function start(config: Record<string, string>): {
   const backendPort = +config.BACKEND_PORT;
 
   // Setup the frontend server to handle client requests
-  const frontend = buildFrontendServer(appPort, config);
+  const frontend = buildFrontendServer(appPort, config.HOST_BINDING, config);
 
   // Allow requests to take 20 minutes
   frontend.setTimeout(1200000);
 
   // Setup the backend server to accept callbacks from backend services
-  const backend = buildBackendServer(backendPort);
+  const backend = buildBackendServer(backendPort, config.HOST_BINDING);
 
   let workReaper;
   if (config.startWorkReaper !== 'false') {
