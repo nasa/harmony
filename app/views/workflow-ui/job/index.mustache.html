@@ -32,20 +32,22 @@
             </div>
         </div>
     </nav>
-    <nav class="ml-0 pl-0 d-flex flex-row justify-content-between"
+    <nav class="ml-0 pl-0"
         style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);"
         aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            {{#isAdminRoute}}
-            <li class="breadcrumb-item"><a href="/admin/workflow-ui">Jobs</a></li>
-            {{/isAdminRoute}}
-            {{^isAdminRoute}}
-            <li class="breadcrumb-item"><a href="/workflow-ui">Jobs</a></li>
-            {{/isAdminRoute}}
-            <li class="breadcrumb-item active" aria-current="page">{{job.jobID}}</li>
-        </ol>
-        <div class="breadcrumb" id="links-container">
-            
+        <div class="breadcrumb  d-flex flex-row justify-content-between">
+            <ol class="breadcrumb p-0 m-0">
+                {{#isAdminRoute}}
+                <li class="breadcrumb-item"><a href="/admin/workflow-ui">Jobs</a></li>
+                {{/isAdminRoute}}
+                {{^isAdminRoute}}
+                <li class="breadcrumb-item"><a href="/workflow-ui">Jobs</a></li>
+                {{/isAdminRoute}}
+                <li class="breadcrumb-item active" aria-current="page">{{job.jobID}}</li>
+            </ol>
+            <div class="" id="links-container">
+
+            </div>
         </div>
     </nav>
     <div class="container-fluid">
