@@ -22,6 +22,9 @@ function initTooltips(querySelector) {
   });
 }
 
+/**
+ * Utility for commonly used table logic.
+ */
 export {
   formatDates,
   initTooltips,

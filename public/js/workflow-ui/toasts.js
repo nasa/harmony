@@ -1,38 +1,56 @@
-let toastList;
+/**
+ * Holds the bootstrap toast object and the corresponding DOM element.
+ * There is a lower and upper toast (one is stacked above the other).
+ */
+const toastObj = {};
+
+/**
+ * Identifiers for the available toast elements.
+ */
+const upperToastId = 'upper-toast';
+const lowerToastId = 'lower-toast';
+
+// bootstrap toasts need to be initialized
 document.addEventListener("DOMContentLoaded",function(){
-  var toastElList = [].slice.call(document.querySelectorAll('.toast'))
-  toastList = toastElList.map(function (toastEl) {
-    return new bootstrap.Toast(toastEl, { delay: 5000 })
-  })
+  for (const toastId of [upperToastId, lowerToastId]) {
+    const toastEl = document.getElementById(toastId);
+    toastObj[toastId].el = toastEl;
+    toastObj[toastId].toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+  }
 });
 
 /**
- *
- * @param
+ * For the given toast, set its text.
+ * @param {string} toastId - the id of the toast
+ * @param {string} text - the text for the toast
  */
 function setToastText(toastId, text) {
-  const toastEl = document.getElementById(toastId);
-  const toastBodyEl = toastEl.querySelector('.toast-body');
+  const toastBodyEl = toastObj[toastId].el.querySelector('.toast-body');
   toastBodyEl.textContent = text;
 }
 
+/**
+ * A utility object for showing toasts.
+ * The corresponding toasts HTML partial must be included
+ * in order to use this functionality.
+ */
 export default {
 
   /**
-   *
-   * @param
+   * Set the text of the upper toast and show it.
+   * @param {string} text 
    */
   showUpper(text) {
-    setToastText('upper-toast', text);
-    toastList[0].show();
+    setToastText(upperToastId, text);
+    toastObj[upperToastId].toast.show();
   },
 
   /**
-   *
-   * @param
+   * Set the text of the lower toast and show it.
+   * @param {string} text 
    */
   showLower(text) {
-    setToastText('lower-toast', text);
-    toastList[1].show();
+    setToastText(lowerToastId, text);
+    toastObj[lowerToastId].toast.show();
   }
 }

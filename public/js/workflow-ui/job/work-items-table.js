@@ -22,6 +22,11 @@ async function load(jobId, page, limit, checkJobStatus) {
   }
 }
 
+/**
+ * Utility for initializing and refreshing the work items table.
+ * After calling init, work item information will be fetched periodically
+ * so that the user can see updates in near real time.
+ */
 export default {
 
   /**

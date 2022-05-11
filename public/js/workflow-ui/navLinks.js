@@ -73,6 +73,10 @@ async function fetchAndInsertLinks(linksContainerId, jobId) {
   }
 }
 
+/**
+ * Builds job state change navigation links and handles
+ * all relevant user interactions with those links.
+ */
 export default {
 
   /**

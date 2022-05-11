@@ -1,6 +1,5 @@
 import workItemsTable from "./work-items-table.js";
 import navLinks from "../navLinks.js";
-import toasts from "../toasts.js";
 
 const workflowContainer = document.getElementById('workflow-items-table-container');
 const page = workflowContainer.getAttribute('data-page');
