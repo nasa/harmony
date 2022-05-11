@@ -8,4 +8,4 @@ const limit = workflowContainer.getAttribute('data-limit');
 const jobId = workflowContainer.getAttribute('data-job-id');
 
 workItemsTable.init(jobId, page, limit);
-navLinks.init("links-container", jobId, toasts, workItemsTable);
+navLinks.init("links-container", jobId);
