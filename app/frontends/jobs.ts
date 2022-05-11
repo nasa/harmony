@@ -1,3 +1,4 @@
+import { serialize } from 'cookie';
 import { Response, NextFunction } from 'express';
 import { Logger } from 'winston';
 import { Job, JobStatus, JobQuery } from '../models/job';
@@ -199,7 +200,7 @@ export async function getJobStatus(
       const urlRoot = getRequestRoot(req);
       const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
       job.links = job.links.concat(pagingLinks);
-      res.send(getJobForDisplay(job, urlRoot, linkType));
+      res.send(JSON.parse(JSON.stringify(getJobForDisplay(job, urlRoot, linkType))));
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }

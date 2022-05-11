@@ -11,6 +11,8 @@ import Record from './record';
 import { Transaction } from '../util/db';
 import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 
+export const EXPIRATION_DAYS = 30;
+
 import env = require('../util/env');
 
 const { awsDefaultRegion } = env;
@@ -238,6 +240,8 @@ export class Job extends Record implements JobRecord {
   numInputGranules: number;
 
   collectionIds: string[];
+
+  dataExpiration?: Date;
 
   /**
    * Returns an array of all jobs that match the given constraints
@@ -790,6 +794,7 @@ export class Job extends Record implements JobRecord {
       }) as unknown as JobLink[];
     }
     const job = new Job(serializedJob as JobRecord); // We need to clean this up
+    job.dataExpiration = this.getDataExpiration();
     delete job.originalStatus;
     delete job.batchesCompleted;
     delete job.collectionIds;
@@ -806,4 +811,17 @@ export class Job extends Record implements JobRecord {
     const links = this.links.filter((link) => link.rel === rel);
     return links.map(removeEmptyProperties) as JobLink[];
   }
+
+  /**
+   *  Computes and returns the date the data produced by the job will expire based on `createdAt`
+   * 
+   * @returns the date the data produced by the job will expire
+   */
+  getDataExpiration(): Date {
+    const expiration = new Date(this.createdAt);
+    expiration.setUTCDate(expiration.getUTCDate() + EXPIRATION_DAYS);
+    return expiration;
+  }
+
+
 }
