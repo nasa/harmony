@@ -131,6 +131,7 @@ function getLinkForJobEvent(
  */
 export function getLinkRelevantJobEvents(job: Job): Set<JobEvent> {
   const allActions: [JobEvent, JobStatus][] = [
+    // [event, resultant status]
     [JobEvent.CANCEL, JobStatus.CANCELED],
     [JobEvent.PAUSE, JobStatus.PAUSED], 
     [JobEvent.RESUME, JobStatus.RUNNING], 
