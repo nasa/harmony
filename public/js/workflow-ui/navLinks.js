@@ -68,8 +68,10 @@ async function fetchAndInsertLinks(linksContainerId, jobId) {
   const linksUrl = `./${jobId}/links`;
   const res = await fetch(linksUrl);
   if (res.status === 200) {
-    const data = await res.json();
-    insertLinksHtml(data, linksContainerId);
+    const links = await res.json();
+    if (links.length) {
+      insertLinksHtml(links, linksContainerId);
+    }
   }
 }
 

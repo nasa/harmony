@@ -216,7 +216,7 @@ export async function getJobLinks(
         throw new NotFoundError();
       }
       if (!req.context.isAdminAccess && (job.username != req.user)) {
-        // if the job is shareable but this user (req.user) does not own the job,
+        // if the job is shareable but this non-admin user (req.user) does not own the job,
         // they shouldn't be able to change the job's state
         res.send([]);
         return;

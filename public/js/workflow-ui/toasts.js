@@ -14,8 +14,7 @@ const lowerToastId = 'lower-toast';
 document.addEventListener("DOMContentLoaded",function(){
   for (const toastId of [upperToastId, lowerToastId]) {
     const toastEl = document.getElementById(toastId);
-    toastObj[toastId].el = toastEl;
-    toastObj[toastId].toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+    toastObj[toastId] = new bootstrap.Toast(toastEl, { delay: 5000 });
   }
 });
 
@@ -25,7 +24,8 @@ document.addEventListener("DOMContentLoaded",function(){
  * @param {string} text - the text for the toast
  */
 function setToastText(toastId, text) {
-  const toastBodyEl = toastObj[toastId].el.querySelector('.toast-body');
+  const toastEl = document.getElementById(toastId);
+  const toastBodyEl = toastEl.querySelector('.toast-body');
   toastBodyEl.textContent = text;
 }
 
@@ -42,7 +42,7 @@ export default {
    */
   showUpper(text) {
     setToastText(upperToastId, text);
-    toastObj[upperToastId].toast.show();
+    toastObj[upperToastId].show();
   },
 
   /**
@@ -51,6 +51,6 @@ export default {
    */
   showLower(text) {
     setToastText(lowerToastId, text);
-    toastObj[lowerToastId].toast.show();
+    toastObj[lowerToastId].show();
   }
 }
