@@ -130,7 +130,7 @@ function getLinkForJobEvent(
  * @returns a set of JobEvent
  */
 export function getLinkRelevantJobEvents(job: Job): Set<JobEvent> {
-  const allActions: [JobEvent, JobStatus][] = [
+  const transitions: [JobEvent, JobStatus][] = [
     // [event, resultant status]
     [JobEvent.CANCEL, JobStatus.CANCELED],
     [JobEvent.PAUSE, JobStatus.PAUSED], 
@@ -138,12 +138,12 @@ export function getLinkRelevantJobEvents(job: Job): Set<JobEvent> {
   ];
   if (job.status === JobStatus.PREVIEWING) {
     // This may be a valid transition for other states, but we
-    // are only interested when the job is currently previewing.
+    // are only interested in it when the job is currently previewing.
     // e.g. skipping preview is valid for a paused job but doesn't make sense to a user
-    allActions.push([ JobEvent.SKIP_PREVIEW, JobStatus.RUNNING ]);
+    transitions.push([ JobEvent.SKIP_PREVIEW, JobStatus.RUNNING ]);
   }
   const validEvents = new Set<JobEvent>();
-  for (const [event, newStatus] of allActions) {
+  for (const [event, newStatus] of transitions) {
     try {
       validateTransition(job.status, newStatus, event);
       validEvents.add(event);
