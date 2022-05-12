@@ -199,7 +199,7 @@ export async function getJobStatus(
       const urlRoot = getRequestRoot(req);
       const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
       job.links = job.links.concat(pagingLinks);
-      res.send(JSON.parse(JSON.stringify(getJobForDisplay(job, urlRoot, linkType))));
+      res.send(getJobForDisplay(job, urlRoot, linkType));
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }

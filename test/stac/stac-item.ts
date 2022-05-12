@@ -233,6 +233,9 @@ describe('STAC item route', function () {
           title: `Harmony output #1 in job ${completedJob.requestId}`,
           description: 'Harmony out for http://example.com/harmony?job=completedJob',
           type: 'Feature',
+          stac_extensions: [
+            'https://stac-extensions.github.io/timestamps/v1.0.0/schema.json',
+          ],
           bbox: [-10, -10, 10, 10],
           geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
           // `links` added later

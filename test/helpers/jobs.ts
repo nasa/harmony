@@ -15,7 +15,7 @@ import { RecordConstructor } from '../../app/models/record';
 export const adminUsername = 'adam';
 
 export const expectedJobKeys = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID',
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID', 'dataExpiration',
 ];
 
 export const expectedNoOpJobKeys = expectedJobKeys.filter((k) => k !== 'jobID');
