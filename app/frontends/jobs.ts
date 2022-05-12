@@ -158,27 +158,21 @@ export async function getJobStatus(
   try {
     validateJobId(jobID);
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
-
-    const query: JobQuery = { where: { requestId: jobID } };
-    if (!req.context.isAdminAccess) {
-      query.where.username = req.user;
-    }
     let job: Job;
     let pagination;
     await db.transaction(async (tx) => {
       ({ job, pagination } = await Job.byRequestId(tx, jobID, page, limit));
     });
-    if (job) {
-      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
-        throw new NotFoundError();
-      }
-      const urlRoot = getRequestRoot(req);
-      const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
-      job.links = job.links.concat(pagingLinks);
-      res.send(getJobForDisplay(job, urlRoot, linkType));
-    } else {
+    if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
+    if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+      throw new NotFoundError();
+    }
+    const urlRoot = getRequestRoot(req);
+    const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
+    job.links = job.links.concat(pagingLinks);
+    res.send(getJobForDisplay(job, urlRoot, linkType));
   } catch (e) {
     req.context.logger.error(e);
     next(e);

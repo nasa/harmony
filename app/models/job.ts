@@ -378,11 +378,13 @@ export class Job extends Record implements JobRecord {
     }
 
     const result = await query;
-    const job = new Job(result[0]);
-    if (getLinks) {
-      job.links = (await getLinksForJob(transaction, job.jobID)).data;
+    if (result.length) {
+      const job = new Job(result[0]);
+      if (getLinks) {
+        job.links = (await getLinksForJob(transaction, job.jobID)).data;
+      }
+      return job;
     }
-    return job;
   }
 
   /**

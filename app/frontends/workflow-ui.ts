@@ -167,25 +167,20 @@ export async function getJob(
   try {
     validateJobId(jobID);
     const { page, limit } = getPagingParams(req, 1000);
-    const query: JobQuery = { where: { requestId: jobID } };
-    if (!req.context.isAdminAccess) {
-      query.where.username = req.user;
-    }
-    const { job } = await Job.byRequestId(db, jobID, 0, 0);
-    if (job) {
-      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
-        throw new NotFoundError();
-      }
-      res.render('workflow-ui/job/index', {
-        job,
-        page,
-        limit,
-        version,
-        isAdminRoute: req.context.isAdminAccess,
-      });
-    } else {
+    const job = await Job.byJobID(db, jobID, false);
+    if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
+    if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+      throw new NotFoundError();
+    }
+    res.render('workflow-ui/job/index', {
+      job,
+      page,
+      limit,
+      version,
+      isAdminRoute: req.context.isAdminAccess,
+    });
   } catch (e) {
     req.context.logger.error(e);
     next(e);
@@ -206,27 +201,22 @@ export async function getJobLinks(
   const { jobID } = req.params;
   try {
     validateJobId(jobID);
-    const query: JobQuery = { where: { requestId: jobID } };
-    if (!req.context.isAdminAccess) {
-      query.where.username = req.user;
-    }
-    const { job } = await Job.byRequestId(db, jobID, 0, 0);
-    if (job) {
-      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
-        throw new NotFoundError();
-      }
-      if (!req.context.isAdminAccess && (job.username != req.user)) {
-        // if the job is shareable but this non-admin user (req.user) does not own the job,
-        // they shouldn't be able to change the job's state
-        res.send([]);
-        return;
-      }
-      const urlRoot = getRequestRoot(req);
-      const links = getAllStateChangeLinks(job, urlRoot, req.context.isAdminAccess);
-      res.send(links);
-    } else {
+    const job = await Job.byJobID(db, jobID, false);
+    if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
+    if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+      throw new NotFoundError();
+    }
+    if (!req.context.isAdminAccess && (job.username != req.user)) {
+      // if the job is shareable but this non-admin user (req.user) does not own the job,
+      // they won't be able to change the job's state via the state change links
+      res.send([]);
+      return;
+    }
+    const urlRoot = getRequestRoot(req);
+    const links = getAllStateChangeLinks(job, urlRoot, req.context.isAdminAccess);
+    res.send(links);
   } catch (e) {
     req.context.logger.error(e);
     next(e);
