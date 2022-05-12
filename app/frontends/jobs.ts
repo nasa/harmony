@@ -1,4 +1,3 @@
-import { serialize } from 'cookie';
 import { Response, NextFunction } from 'express';
 import { Logger } from 'winston';
 import { Job, JobStatus, JobQuery } from '../models/job';
