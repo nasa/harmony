@@ -121,7 +121,9 @@ export async function getStacItem(req, res, next): Promise<void> {
       req,
       res,
       (job: Job) => stacItemCreate.apply(
-        null, [job.jobID, job.request, job.links[0], itemIndexInt, linkType, job.createdAt],
+        null,
+        [job.jobID, job.request, job.links[0], itemIndexInt,
+          linkType, job.createdAt, job.getDataExpiration()],
       ),
       pagingParams,
       linkType,

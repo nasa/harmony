@@ -160,17 +160,24 @@ describe('STAC item route', function () {
 
       describe('when the service supplies the necessary fields for the 0th item', async function () {
         const completedJobId = completedJob.requestId;
+        // completedJob.createdAt = new Date();
+
+
         const expectedItemWithoutAssetsOrLinks = {
           id: `${completedJob.requestId}_0`,
           stac_version: '0.9.0',
           title: `Harmony output #0 in job ${completedJob.requestId}`,
           description: 'Harmony out for http://example.com/harmony?job=completedJob',
           type: 'Feature',
+          stac_extensions: [
+            'https://stac-extensions.github.io/timestamps/v1.0.0/schema.json',
+          ],
+
           bbox: [-10, -10, 10, 10],
           geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
           // `links` added later
           properties: {
-            // `created` property added later,
+            // `created` and `expires` properties added later
             license: 'various',
             start_datetime: '2020-01-01T00:00:00.000Z',
             end_datetime: '2020-01-01T01:00:00.000Z',
@@ -230,7 +237,7 @@ describe('STAC item route', function () {
           geometry: { type: 'Polygon', coordinates: [[[-10, -10], [-10, 10], [10, 10], [10, -10], [-10, -10]]] },
           // `links` added later
           properties: {
-            // `created` property added later,
+            // `created` and `expires` properties added later
             license: 'various',
             start_datetime: '2021-01-01T00:00:00.000Z',
             end_datetime: '2021-01-01T01:00:00.000Z',
