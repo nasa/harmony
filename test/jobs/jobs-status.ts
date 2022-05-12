@@ -4,7 +4,7 @@ import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
 import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from '../helpers/job-status';
-import { Job } from '../../app/models/job';
+import { Job, JobStatus } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
 import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob } from '../helpers/jobs';
@@ -16,6 +16,7 @@ import env from '../../app/util/env';
 const aJob = buildJob({ username: 'joe' });
 const pausedJob = buildJob({ username: 'joe' });
 pausedJob.pause();
+const previewingJob = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
 
 describe('Individual job status route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -23,10 +24,12 @@ describe('Individual job status route', function () {
   before(async function () {
     await aJob.save(this.trx);
     await pausedJob.save(this.trx);
+    await previewingJob.save(this.trx);
     this.trx.commit();
   });
   const jobID = aJob.requestId;
   const pausedjobID = pausedJob.requestId;
+  const previewingJobID = previewingJob.requestId;
 
   describe('For a user who is not logged in', function () {
     before(async function () {
@@ -42,7 +45,7 @@ describe('Individual job status route', function () {
     });
   });
 
-  describe('For a logged-in user who owns the job', function () {
+  describe('For a logged-in user who owns the running job', function () {
     hookJobStatus({ jobID, username: 'joe' });
     it('returns an HTTP success response', function () {
       expect(this.res.statusCode).to.equal(200);
@@ -59,6 +62,42 @@ describe('Individual job status route', function () {
       expect(selves.length).to.equal(1);
       expect(selves[0].href).to.match(new RegExp(`.*?${this.res.req.path}\\?page=1&limit=2000$`));
     });
+
+    it('includes links for canceling and pausing the job', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const pauseLinks = job.getRelatedLinks('pauser');
+      expect(pauseLinks.length).to.equal(1);
+      const cancelLinks = job.getRelatedLinks('canceler');
+      expect(cancelLinks.length).to.equal(1);
+    });
+
+    it('does not include irrelevant state change links', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const resumeLinks = job.getRelatedLinks('resumer');
+      expect(resumeLinks.length).to.equal(0);
+      const previewSkipLinks = job.getRelatedLinks('preview-skipper');
+      expect(previewSkipLinks.length).to.equal(0);
+    });
+  });
+
+  describe('For a logged-in user who owns the previewing job', function () {
+    hookJobStatus({ jobID: previewingJobID, username: 'joe' });
+
+    it('includes a link for skipping the preview, pausing and canceling', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const pauseLinks = job.getRelatedLinks('pauser');
+      expect(pauseLinks.length).to.equal(1);
+      const previewSkipLinks = job.getRelatedLinks('preview-skipper');
+      expect(previewSkipLinks.length).to.equal(1);
+      const cancelLinks = job.getRelatedLinks('canceler');
+      expect(cancelLinks.length).to.equal(1);
+    });
+
+    it('does not include irrelevant state change links', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const resumeLinks = job.getRelatedLinks('resumer');
+      expect(resumeLinks.length).to.equal(0);
+    });
   });
 
   describe('when the job is paused', function () {
@@ -72,6 +111,22 @@ describe('Individual job status route', function () {
     it('returns a human-readable message field corresponding to its state', function () {
       const job = JSON.parse(this.res.text);
       expect(job.message).to.include('The job is paused');
+    });
+
+    it('includes links for canceling and resuming the job', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const resumeLinks = job.getRelatedLinks('resumer');
+      expect(resumeLinks.length).to.equal(1);
+      const cancelLinks = job.getRelatedLinks('canceler');
+      expect(cancelLinks.length).to.equal(1);
+    });
+
+    it('does not include irrelevant state change links', function () {
+      const job = new Job(JSON.parse(this.res.text));
+      const pauseLinks = job.getRelatedLinks('pauser');
+      expect(pauseLinks.length).to.equal(0);
+      const previewSkipLinks = job.getRelatedLinks('preview-skipper');
+      expect(previewSkipLinks.length).to.equal(0);
     });
   });
 

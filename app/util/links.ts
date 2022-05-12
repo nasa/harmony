@@ -1,7 +1,6 @@
-import { Job, JobEvent } from '../models/job';
+import { Job, JobEvent, JobStatus, validateTransition } from '../models/job';
 import JobLink from '../models/job-link';
 import env = require('./env');
-import { getLinkRelevantJobEvents } from './job';
 
 const { awsDefaultRegion } = env;
 
@@ -120,6 +119,36 @@ function getLinkForJobEvent(
         rel: 'pauser',
       });
   }
+}
+
+/**
+ * Return a set of JobEvents representing the actions that are currently available
+ * to a user for a particular job.
+ * Note that this only returns actions that users can precipitate via state change links
+ * (e.g. JobEvent.FAIL will not be returned).
+ * @param job - the job to return valid actions (JobEvents) for
+ * @returns a set of JobEvent
+ */
+export function getLinkRelevantJobEvents(job: Job): Set<JobEvent> {
+  const allActions: [JobEvent, JobStatus][] = [
+    [JobEvent.CANCEL, JobStatus.CANCELED],
+    [JobEvent.PAUSE, JobStatus.PAUSED], 
+    [JobEvent.RESUME, JobStatus.RUNNING], 
+  ];
+  if (job.status === JobStatus.PREVIEWING) {
+    // This may be a valid transition for other states, but we
+    // are only interested when the job is currently previewing.
+    // e.g. skipping preview is valid for a paused job but doesn't make sense to a user
+    allActions.push([ JobEvent.SKIP_PREVIEW, JobStatus.RUNNING ]);
+  }
+  const validEvents = new Set<JobEvent>();
+  for (const [event, newStatus] of allActions) {
+    try {
+      validateTransition(job.status, newStatus, event);
+      validEvents.add(event);
+    } catch {}
+  }
+  return validEvents;
 }
 
 /**

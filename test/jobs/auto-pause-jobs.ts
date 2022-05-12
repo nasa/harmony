@@ -50,7 +50,7 @@ function skipPreviewLinkTest(username: string): void {
     hookRedirect(username);
     it('supplies a link to skip the preview', function () {
       const job = JSON.parse(this.res.text);
-      const link = job.links[0];
+      const link = job.links.find((jobLink) => jobLink.rel === 'preview-skipper');
       expect(link.title).to.eql('Skip preview and run the job.');
       expect(link.rel).to.eql('preview-skipper');
     });
