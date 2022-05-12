@@ -160,8 +160,6 @@ describe('STAC item route', function () {
 
       describe('when the service supplies the necessary fields for the 0th item', async function () {
         const completedJobId = completedJob.requestId;
-        // completedJob.createdAt = new Date();
-
 
         const expectedItemWithoutAssetsOrLinks = {
           id: `${completedJob.requestId}_0`,
