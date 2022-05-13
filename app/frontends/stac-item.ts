@@ -12,6 +12,7 @@ export interface StacAsset {
   title?: string;
   description?: string;
   type?: string;
+  stac_extensions?: string[];
   roles?: ('thumbnail' | 'overview' | 'data' | 'metadata' | string)[];
 }
 
@@ -26,6 +27,8 @@ export class HarmonyItem {
 
   type: string;
 
+  stac_extensions: string[];
+
   bbox: number[];
 
   geometry: {
@@ -35,6 +38,7 @@ export class HarmonyItem {
   properties: {
     created?: string;
     datetime?: string;
+    expires?: string;
   };
 
   assets: Record<string, StacAsset>;
@@ -54,6 +58,9 @@ export class HarmonyItem {
     this.title = title;
     this.description = description;
     this.type = 'Feature';
+    this.stac_extensions = [
+      'https://stac-extensions.github.io/timestamps/v1.0.0/schema.json',
+    ];
     this.bbox = [];
     this.geometry = {};
     this.properties = {};
@@ -149,6 +156,17 @@ export class HarmonyItem {
   }
 
   /**
+   *  Adds expires property for a STAC item
+   * 
+   * @param expires - Data expiration
+   */
+  addExpires(expires?: Date): void {
+    if (expires) {
+      this.setProperty('expires', expires.toISOString());
+    }
+  }
+
+  /**
    * Sets a property for a STAC Item
    * @param name - Name of the property
    * @param value - Value of the property
@@ -209,7 +227,7 @@ export class HarmonyItem {
    * @returns - STAC item JSON
    */
   toJSON(): object {
-    const paths = ['id', 'stac_version', 'title', 'description', 'type', 'bbox', 'geometry', 'properties', 'assets', 'links'];
+    const paths = ['id', 'stac_version', 'title', 'description', 'type', 'stac_extensions', 'bbox', 'geometry', 'properties', 'assets', 'links'];
     return pick(this, paths);
   }
 }
@@ -229,6 +247,7 @@ export class HarmonyItem {
 export default function create(
   jobID: string, jobRequest: string, stacDataLink: JobLink,
   index: number, linkType?: string, createdAt?: Date,
+  expires?: Date,
 ): HarmonyItem {
   const title = `Harmony output #${index} in job ${jobID}`;
   const description = `Harmony out for ${jobRequest}`;
@@ -249,6 +268,7 @@ export default function create(
   } = stacDataLink;
   item.addSpatialExtent(bbox);
   item.addTemporalExtent(temporal.start, temporal.end);
+  item.addExpires(expires);
   item.addAsset(href, linkTitle, type);
   // Add linkType to links if defined and not null
   const selfUrl = linkType ? `./?linkType=${linkType}` : '.';

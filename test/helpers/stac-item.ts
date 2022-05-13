@@ -51,6 +51,7 @@ export default function itReturnsTheExpectedStacResponse(
       { href: parentUrl, rel: 'root', title: 'parent' },
     ];
     tmpExpectedItemWithoutAssets.properties.created = itemWithoutAssets.properties.created;
+    tmpExpectedItemWithoutAssets.properties.expires = itemWithoutAssets.properties.expires;
     expect(itemWithoutAssets).to.eql(tmpExpectedItemWithoutAssets);
 
     expectAssets(assets, linkType);
