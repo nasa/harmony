@@ -25,7 +25,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const query = {
       granuleId,
       outputCrs: 'EPSG:4326',
-      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")'],
+      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1,10)'],
       interpolation: 'near',
       // TODO: it might only make sense to include width and height with a scaleExtent
       // and scaleSize by itself
