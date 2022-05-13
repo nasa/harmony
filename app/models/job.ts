@@ -19,7 +19,7 @@ import env = require('../util/env');
 const { awsDefaultRegion } = env;
 
 const serializedJobFields = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'links', 'request', 'numInputGranules', 'jobID',
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'dataExpiration', 'links', 'request', 'numInputGranules', 'jobID',
 ];
 
 export const jobRecordFields = [
@@ -210,6 +210,7 @@ const defaultMessages = Object.values(statesToDefaultMessages);
  *   - request: (string) Original user request URL that created this job
  *   - createdAt: (Date) the date / time at which the job was created
  *   - updatedAt: (Date) the date / time at which the job was last updated
+ *   - dataExpiration: (Date) the date / time at which the generated data will be deleted
  */
 export class Job extends Record implements JobRecord {
   static table = 'jobs';
@@ -225,6 +226,8 @@ export class Job extends Record implements JobRecord {
   requestId: string;
 
   progress: number;
+
+  dataExpiration?: Date;
 
   batchesCompleted: number;
 
@@ -242,7 +245,6 @@ export class Job extends Record implements JobRecord {
 
   collectionIds: string[];
 
-  dataExpiration?: Date;
 
   /**
    * Returns an array of all jobs that match the given constraints
@@ -779,6 +781,7 @@ export class Job extends Record implements JobRecord {
    * @returns an object with the serialized job fields.
    */
   serialize(urlRoot?: string, linkType?: string): Job {
+    this.dataExpiration = this.getDataExpiration();
     const serializedJob = pick(this, serializedJobFields) as Job;
     serializedJob.updatedAt = new Date(serializedJob.updatedAt);
     serializedJob.createdAt = new Date(serializedJob.createdAt);
@@ -795,7 +798,6 @@ export class Job extends Record implements JobRecord {
       }) as unknown as JobLink[];
     }
     const job = new Job(serializedJob as JobRecord); // We need to clean this up
-    job.dataExpiration = this.getDataExpiration();
     delete job.originalStatus;
     delete job.batchesCompleted;
     delete job.collectionIds;
