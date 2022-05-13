@@ -12,7 +12,7 @@ import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
 import { WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
-import { getAllStateChangeLinks } from '../util/links';
+import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 
 /**
  * Maps job status to display class.
@@ -199,6 +199,7 @@ export async function getJobLinks(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { jobID } = req.params;
+  const { all } = req.query;
   try {
     validateJobId(jobID);
     const job = await Job.byJobID(db, jobID, false);
@@ -215,7 +216,9 @@ export async function getJobLinks(
       return;
     }
     const urlRoot = getRequestRoot(req);
-    const links = getAllStateChangeLinks(job, urlRoot, req.context.isAdminAccess);
+    const links = all === 'true' ?
+      getAllStateChangeLinks(job, urlRoot, req.context.isAdminAccess) :
+      getJobStateChangeLinks(job, urlRoot, req.context.isAdminAccess);
     res.send(links);
   } catch (e) {
     req.context.logger.error(e);

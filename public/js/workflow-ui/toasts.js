@@ -11,7 +11,7 @@ const upperToastId = 'upper-toast';
 const lowerToastId = 'lower-toast';
 
 // bootstrap toasts need to be initialized
-document.addEventListener("DOMContentLoaded",function(){
+window.addEventListener('load', () => {
   for (const toastId of [upperToastId, lowerToastId]) {
     const toastEl = document.getElementById(toastId);
     toastObj[toastId] = new bootstrap.Toast(toastEl, { delay: 5000 });
