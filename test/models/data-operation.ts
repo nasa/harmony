@@ -224,7 +224,9 @@ describe('DataOperation', () => {
       });
 
       describe('all fields requested', () => {
-        const serializedOperation = validOperation.serialize(CURRENT_SCHEMA_VERSION, ['spatialSubset', 'variableSubset', 'reformat', 'reproject', 'shapefileSubset']);
+        const serializedOperation = validOperation.serialize(
+          CURRENT_SCHEMA_VERSION, ['spatialSubset', 'variableSubset', 'reformat', 'reproject', 'shapefileSubset', 'dimensionSubset'],
+        );
 
         it('includes all of the fields for the operation', () => {
           expect(JSON.parse(serializedOperation)).to.eql(expectedOutput);

@@ -1,3 +1,7 @@
+## [0.16.0] - 2022-05-12
+### Added
+- subset.dimensions - An array containing the dimensions by which to subset. Each dimension contains a name and optionally a min and max value
+
 ## [0.15.0] - 2022-05-02
 ### Added
 - sources.coordinateVariables - Array of coordinate variables for the given source collection
