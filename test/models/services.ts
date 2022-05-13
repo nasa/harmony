@@ -153,7 +153,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('and the request needs dimension subsetting', function () {
       beforeEach(function () {
-        this.operation.dimensionSubset = true;
+        this.operation.dimensions = [{ name: 'XDim', min: 10, max: 150 }];
       });
 
       it('chooses the service that supports dimension subsetting', function () {

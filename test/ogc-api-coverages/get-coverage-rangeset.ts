@@ -25,7 +25,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     const query = {
       granuleId,
       outputCrs: 'EPSG:4326',
-      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1,10)'],
+      subset: ['lat(0:10)', 'lon(-20.1:20)', 'time("2020-01-02T00:00:00.000Z":"2020-01-02T01:00:00.000Z")', 'foo(1.1:10)'],
       interpolation: 'near',
       // TODO: it might only make sense to include width and height with a scaleExtent
       // and scaleSize by itself
@@ -84,6 +84,14 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('transforms subset lat and lon parameters into a backend bounding box subset request', function () {
         expect(this.service.operation.boundingRectangle).to.eql([-20.1, 0, 20, 10]);
+      });
+
+      it('passes the arbitrary dimensions to subset to the backend', function () {
+        expect(this.service.operation.dimensions).to.eql([{
+          name: 'foo',
+          min: 1.1,
+          max: 10,
+        }]);
       });
 
       it('passes the interpolation parameter to the backend', function () {
