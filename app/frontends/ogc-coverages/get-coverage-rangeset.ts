@@ -66,6 +66,17 @@ export default function getCoverageRangeset(
   }
   try {
     const subset = parseSubsetParams(wrap(query.subset));
+    operation.dimensions = [];
+    Object.entries(subset).forEach(([key, value]) => {
+      if (!['time', 'lat', 'lon'].includes(key)) {
+        operation.dimensions.push({
+          name: key,
+          min: value.min as number,
+          max: value.max as number,
+        });
+      }
+    });
+
     const bbox = subsetParamsToBbox(subset);
     if (bbox) {
       operation.boundingRectangle = bbox;

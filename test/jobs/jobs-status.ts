@@ -1,10 +1,10 @@
+import { EXPIRATION_DAYS, Job, JobStatus } from './../../app/models/job';
 import { expect } from 'chai';
 import { stub } from 'sinon';
 import { describe, it, before, after } from 'mocha';
 import { v4 as uuid } from 'uuid';
 import request from 'supertest';
 import { itReturnsUnchangedDataLinksForZarr, itProvidesAWorkingHttpUrl } from '../helpers/job-status';
-import { Job, JobStatus } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, hookTransactionFailure } from '../helpers/db';
 import { jobStatus, hookJobStatus, jobsEqual, itIncludesRequestUrl, buildJob } from '../helpers/jobs';
@@ -17,6 +17,22 @@ const aJob = buildJob({ username: 'joe' });
 const pausedJob = buildJob({ username: 'joe' });
 pausedJob.pause();
 const previewingJob = buildJob({ username: 'joe', status: JobStatus.PREVIEWING });
+
+const timeStampRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/;
+
+/**
+ * Defines test for presence of dataExpiration field
+ */
+function itIncludesADataExpirationField(): void {
+  it('provides the date when the data will expire', function () {
+    const job = JSON.parse(this.res.text);
+    expect(job.dataExpiration).to.match(timeStampRegex);
+    const expiration = new Date(job.dataExpiration);
+    const expectedExpiration = new Date(job.createdAt);
+    expectedExpiration.setUTCDate(expectedExpiration.getUTCDate() + EXPIRATION_DAYS);
+    expect(expiration).eql(expectedExpiration);
+  });
+}
 
 describe('Individual job status route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -78,6 +94,8 @@ describe('Individual job status route', function () {
       const previewSkipLinks = job.getRelatedLinks('preview-skipper');
       expect(previewSkipLinks.length).to.equal(0);
     });
+
+    itIncludesADataExpirationField();
   });
 
   describe('For a logged-in user who owns the previewing job', function () {
@@ -98,6 +116,8 @@ describe('Individual job status route', function () {
       const resumeLinks = job.getRelatedLinks('resumer');
       expect(resumeLinks.length).to.equal(0);
     });
+
+    itIncludesADataExpirationField();
   });
 
   describe('when the job is paused', function () {
@@ -128,6 +148,8 @@ describe('Individual job status route', function () {
       const previewSkipLinks = job.getRelatedLinks('preview-skipper');
       expect(previewSkipLinks.length).to.equal(0);
     });
+    
+    itIncludesADataExpirationField();
   });
 
   describe('For a non-existent job ID', function () {
@@ -203,6 +225,8 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.stac).to.be.undefined;
         });
+
+        itIncludesADataExpirationField();   
       });
     });
 
@@ -230,6 +254,8 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.stac).to.be.undefined;
         });
+
+        itIncludesADataExpirationField();
       });
     });
 
@@ -252,6 +278,8 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.include('The job has completed successfully');
         });
+
+        itIncludesADataExpirationField();
       });
     });
 
@@ -267,6 +295,8 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.message).to.equal('CMR query identified 177 granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults.');
         });
+
+        itIncludesADataExpirationField();
       });
     });
   });
@@ -296,6 +326,8 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.stac).to.be.undefined;
         });
+
+        itIncludesADataExpirationField();
       });
     });
 
@@ -324,6 +356,8 @@ describe('Individual job status route', function () {
           const job = JSON.parse(this.res.text);
           expect(job.stac).to.be.undefined;
         });
+
+        itIncludesADataExpirationField();
       });
     });
 
@@ -361,6 +395,8 @@ describe('Individual job status route', function () {
         const job = JSON.parse(this.res.text);
         expect(job.status).to.equal('running');
       });
+
+      itIncludesADataExpirationField();
     });
 
     describe('when an incomplete job has provided a percentage progress update', function () {
@@ -380,6 +416,8 @@ describe('Individual job status route', function () {
         const job = JSON.parse(this.res.text);
         expect(job.status).to.equal('running');
       });
+
+      itIncludesADataExpirationField();
     });
 
     describe('when an incomplete job provides an out-of-range percentage', function () {
@@ -583,6 +621,8 @@ describe('Individual job status route', function () {
         });
 
         itIncludesRequestUrl('/C1104-PVC_TS2/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?subset=lat(-80%3A80)&subset=lon(-100%3A100)');
+
+        itIncludesADataExpirationField();
       });
     });
 

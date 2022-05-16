@@ -132,7 +132,7 @@ function supportsConcatenation(configs: ServiceConfig<unknown>[]): ServiceConfig
 /**
  * Determines whether or not a given ServiceCollection supports a given DataSource, i.e.,
  * the Service Collection has a matching collection id and variables
- * 
+ *
  * @param source - The DataSource from an operation
  * @param servColl - The ServiceCollection defined in services.yml
  * @returns `true` if the collections are the same and if variables are not defined
@@ -311,6 +311,24 @@ function requiresShapefileSubsetting(operation: DataOperation): boolean {
  */
 function supportsShapefileSubsetting(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
   return configs.filter((config) => getIn(config, 'capabilities.subsetting.shape', false));
+}
+
+/**
+ * Returns true if the operation requires dimension subsetting
+ * @param operation - The operation to perform.
+ * @returns true if the provided operation requires dimension subsetting and false otherwise
+ */
+function requiresDimensionSubsetting(operation: DataOperation): boolean {
+  return operation.shouldDimensionSubset;
+}
+
+/**
+ * Returns any services that support dimension subsetting from the list of configs
+ * @param configs - The potential matching service configurations
+ * @returns Any configurations that support dimension subsetting
+ */
+function supportsDimensionSubsetting(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.subsetting.dimension', false));
 }
 
 const noOpService: ServiceConfig<void> = {
@@ -540,6 +558,35 @@ function filterShapefileSubsettingMatches(
 }
 
 /**
+ * Returns any services that support arbitrary dimension subsetting from the list of configs
+ * if the operation requires dimension subsetting.
+ * @param operation - The operation to perform.
+ * @param context - Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs - All service configurations that have matched up to this call
+ * @param requestedOperations - Operations that have been considered in filtering out services up to
+ *     this call
+ * @returns Any service configurations that support the requested output format
+ */
+function filterDimensionSubsettingMatches(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[],
+  requestedOperations: string[],
+): ServiceConfig<unknown>[] {
+  let services = configs;
+  if (requiresDimensionSubsetting(operation)) {
+    requestedOperations.push('dimension subsetting');
+    services = supportsDimensionSubsetting(configs);
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation(operation, requestedOperations);
+  }
+  return services;
+}
+
+/**
  * For certain UnsupportedOperation errors the root cause will be a combination of multiple
  * request parameters such as requesting variable subsetting and a specific output format.
  * This function will return a detailed message on what combination was unsupported.
@@ -580,6 +627,7 @@ const allFilterFns = [
   filterVariableSubsettingMatches,
   filterSpatialSubsettingMatches,
   filterShapefileSubsettingMatches,
+  filterDimensionSubsettingMatches,
   filterReprojectionMatches,
   // This filter must be last because it chooses a format based on the accepted MimeTypes and
   // the remaining services that could support the operation. If it ran earlier we could
@@ -595,6 +643,7 @@ const requiredFilterFns = [
   filterCollectionMatches,
   filterConcatenationMatches,
   filterVariableSubsettingMatches,
+  filterDimensionSubsettingMatches,
   filterReprojectionMatches,
   // See caveat above in allFilterFns about why this filter must be applied last
   filterOutputFormatMatches,

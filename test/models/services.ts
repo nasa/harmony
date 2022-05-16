@@ -11,7 +11,7 @@ import env from '../../app/util/env';
 import TurboService from '../../app/models/services/turbo-service';
 
 describe('services.chooseServiceConfig and services.buildService', function () {
-  describe("when the operation's collection is configured for two services", function () {
+  describe("when the operation's collection is configured for several services", function () {
     beforeEach(function () {
       const collectionId = 'C123-TEST';
       const operation = new DataOperation();
@@ -47,6 +47,16 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           capabilities: {
             output_formats: ['image/tiff', 'image/png'],
             reprojection: true,
+          },
+        },
+        {
+          name: 'fourth-service',
+          type: { name: 'turbo' },
+          collections: [{ id: collectionId }],
+          capabilities: {
+            subsetting: {
+              dimension: true,
+            },
           },
         },
       ];
@@ -138,6 +148,17 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       it('chooses the service that supports shapefile subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         expect(serviceConfig.name).to.equal('first-service');
+      });
+    });
+
+    describe('and the request needs dimension subsetting', function () {
+      beforeEach(function () {
+        this.operation.dimensions = [{ name: 'XDim', min: 10, max: 150 }];
+      });
+
+      it('chooses the service that supports dimension subsetting', function () {
+        const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
+        expect(serviceConfig.name).to.equal('fourth-service');
       });
     });
 
@@ -589,7 +610,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         expect(service.constructor.name).to.equal('TurboService');
       });
     });
-  
+
     describe('requesting service with two variable subsetting and only one matches', function () {
       const operation = new DataOperation();
       operation.addSource(collectionId, [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var-1' } },

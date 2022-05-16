@@ -23,7 +23,7 @@ x-turbo-config: &default-turbo-config
 
 https://cmr.earthdata.nasa.gov:
   - name: nasa/harmony-gdal-adapter
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -57,7 +57,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
   - name: gesdisc/giovanni
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     has_granule_limit: false
     default_sync: true
@@ -95,7 +95,7 @@ https://cmr.earthdata.nasa.gov:
         operations: ['concatenate', 'variableSubset']
 
   - name: harmony/netcdf-to-zarr
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     batch_size: 20
     type:
       <<: *default-turbo-config
@@ -211,7 +211,7 @@ https://cmr.earthdata.nasa.gov:
         operations: ['reformat', 'concatenate']
 
   - name: harmony/service-example
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -236,7 +236,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -280,7 +280,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
   - name: podaac/concise
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -305,7 +305,7 @@ https://cmr.earthdata.nasa.gov:
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -362,7 +362,7 @@ https://cmr.earthdata.nasa.gov:
 
   - name: sds/HOSS
     # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -378,16 +378,17 @@ https://cmr.earthdata.nasa.gov:
       subsetting:
         bbox: true
         variable: true
+        dimension: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset']
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset']
 
   - name: sds/trajectory-subsetter
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -413,7 +414,7 @@ https://cmr.earthdata.nasa.gov:
 https://cmr.uat.earthdata.nasa.gov:
 
   - name: nasa/harmony-gdal-adapter
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -485,7 +486,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
   - name: gesdisc/giovanni
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     has_granule_limit: false
     default_sync: true
@@ -523,7 +524,7 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate', 'variableSubset']
 
   - name: harmony/service-example
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     batch_size: 10
     type:
       <<: *default-turbo-config
@@ -553,7 +554,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -613,7 +614,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
   - name: podaac/concise
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -642,7 +643,7 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -683,7 +684,7 @@ https://cmr.uat.earthdata.nasa.gov:
           exists: ['concatenate']
 
   - name: sds/swot-reproject
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     batch_size: 1
     type:
       <<: *default-turbo-config
@@ -712,7 +713,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: sds/variable-subsetter
     # The Variable Subsetter provides _only_ variable subsetting
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -737,7 +738,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: sds/HOSS
     # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -753,16 +754,17 @@ https://cmr.uat.earthdata.nasa.gov:
       subsetting:
         bbox: true
         variable: true
+        dimension: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset']
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset']
 
   - name: sds/maskfill
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -781,7 +783,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${SDS_MASKFILL_IMAGE}
 
   - name: sds/trajectory-subsetter
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
@@ -809,7 +811,7 @@ https://cmr.uat.earthdata.nasa.gov:
   # the frontend callback server.
   # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
   - name: harmony/example
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     type:
       name: http
@@ -829,7 +831,7 @@ https://cmr.uat.earthdata.nasa.gov:
       reprojection: true
 
   - name: harmony/netcdf-to-zarr
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     batch_size: 20
     type:
       <<: *default-turbo-config
@@ -910,7 +912,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   # CHAINED SERVICES BELOW HERE
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     batch_size: 20
     type:
       <<: *default-turbo-config
@@ -949,7 +951,7 @@ https://cmr.uat.earthdata.nasa.gov:
           format: ['application/x-zarr']
 
   - name: harmony/swot-repr-netcdf-to-zarr
-    data_operation_version: '0.15.0'
+    data_operation_version: '0.16.0'
     type:
       <<: *default-turbo-config
       params:
