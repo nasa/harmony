@@ -194,7 +194,24 @@ export const statesToDefaultMessages: any = Object.values(stateMachine.states).r
 const defaultMessages = Object.values(statesToDefaultMessages);
 
 /**
- * Validate that a desired transition (for job status) is acceptable according to the state machine.
+ * Check if a desired transition (for job status) is acceptable according to the state machine.
+ * @param currentStatus - the current job status
+ * @param desiredStatus - the desired job status
+ * @param event - the event that would precipitate the transition
+ * @returns boolean true if the transition is valid
+ */
+export function canTransition(
+  currentStatus: JobStatus,
+  desiredStatus: JobStatus, 
+  event: JobEvent,
+): boolean {
+  const state = stateMachine.transition(currentStatus, event);
+  return state.changed && state.matches(desiredStatus);
+}
+
+/**
+ * Validate that a desired transition (for job status) is acceptable according to the state machine
+ * and throw an error if not acceptable.
  * @param currentStatus - the current job status
  * @param desiredStatus - the desired job status
  * @param event - the event that would precipitate the transition
@@ -207,8 +224,7 @@ export function validateTransition(
   event: JobEvent,
   errorMessage = `Job status cannot be updated from ${currentStatus} to ${desiredStatus}.`,
 ): void {
-  const state = stateMachine.transition(currentStatus, event);
-  if (!(state.changed && state.matches(desiredStatus))) {
+  if (!canTransition(currentStatus, desiredStatus, event)) {
     throw new ConflictError(errorMessage);
   }
 }

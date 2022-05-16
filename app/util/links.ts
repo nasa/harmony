@@ -1,4 +1,4 @@
-import { Job, JobEvent, JobStatus, validateTransition } from '../models/job';
+import { canTransition, Job, JobEvent, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
 import env = require('./env');
 
@@ -144,10 +144,9 @@ export function getLinkRelevantJobEvents(job: Job): Set<JobEvent> {
   }
   const validEvents = new Set<JobEvent>();
   for (const [event, newStatus] of transitions) {
-    try {
-      validateTransition(job.status, newStatus, event);
+    if (canTransition(job.status, newStatus, event)) {
       validEvents.add(event);
-    } catch {}
+    }
   }
   return validEvents;
 }
