@@ -50,7 +50,7 @@ describe('Workflow UI job links route', function () {
   describe('for the non-admin endpoint', function () {
     describe('when a non-admin user', function () {
       describe('requests links for their own job', function () {
-        hookWorkflowUILinks({ jobID: nonShareableJob.jobID, username: 'woody' });
+        hookWorkflowUILinks({ jobID: nonShareableJob.jobID, username: 'woody', query: { all: 'true' } });
         it('returns an HTTP success response', function () {
           expect(this.res.statusCode).to.equal(200);
         });
@@ -60,7 +60,7 @@ describe('Workflow UI job links route', function () {
         });
       });
       describe('requests links for a shareable job that they do not own', function () {
-        hookWorkflowUILinks({ jobID: shareableJob.jobID, username: 'woody' });
+        hookWorkflowUILinks({ jobID: shareableJob.jobID, username: 'woody', query: { all: 'true' } });
         it('returns an HTTP success response', function () {
           expect(this.res.statusCode).to.equal(200);
         });
@@ -71,7 +71,7 @@ describe('Workflow UI job links route', function () {
       });
       describe('requests links for a job that does not exist', function () {
         const unknownRequest = uuid();
-        hookWorkflowUILinks({ jobID: unknownRequest, username: 'woody' });
+        hookWorkflowUILinks({ jobID: unknownRequest, username: 'woody', query: { all: 'true' } });
         it('returns a 404 HTTP Not Found response', function () {
           expect(this.res.statusCode).to.equal(404);
           expect(this.res.text).to.include(`Unable to find job ${unknownRequest}`);
@@ -80,7 +80,7 @@ describe('Workflow UI job links route', function () {
     });
     describe('when an admin user', function () {
       describe('requests links for a non-shareable job they do not own', function () {
-        hookWorkflowUILinks({ jobID: nonShareableJob.jobID, username: 'adam' });
+        hookWorkflowUILinks({ jobID: nonShareableJob.jobID, username: 'adam', query: { all: 'true' } });
         it('returns a 404 HTTP Not Found response', function () {
           expect(this.res.statusCode).to.equal(404);
           expect(this.res.text).to.include('The requested resource could not be found');
@@ -91,7 +91,7 @@ describe('Workflow UI job links route', function () {
   describe('for the admin endpoint', function () {
     describe('when an admin user', function () {
       describe('requests links for a non-shareable job they do not own', function () {
-        hookAdminWorkflowUILinks({ jobID: nonShareableJob.jobID, username: 'adam' });
+        hookAdminWorkflowUILinks({ jobID: nonShareableJob.jobID, username: 'adam', query: { all: 'true' } });
         it('returns an HTTP success response', function () {
           expect(this.res.statusCode).to.equal(200);
         });
@@ -103,7 +103,7 @@ describe('Workflow UI job links route', function () {
     });
     describe('when a non-admin user', function () {
       describe('requests links for a job they do not own', function () {
-        hookAdminWorkflowUILinks({ jobID: nonShareableJob.jobID, username: 'eve' });
+        hookAdminWorkflowUILinks({ jobID: nonShareableJob.jobID, username: 'eve', query: { all: 'true' } });
         it('returns a 403 HTTP Forbidden response', function () {
           expect(this.res.statusCode).to.equal(403);
           expect(this.res.text).to.include('You are not permitted to access this resource');

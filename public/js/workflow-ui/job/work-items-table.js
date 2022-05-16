@@ -70,9 +70,7 @@ export default {
     // back off now since the work items are likely
     // close to being complete
     setInterval(
-      function () {
-        loadAndNotify(jobId, page, limit, false, broker);
-      },
+      () => loadAndNotify(jobId, page, limit, false, broker),
       fiveSeconds * 3,
     );
   },
