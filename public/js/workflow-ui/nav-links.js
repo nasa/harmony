@@ -27,7 +27,7 @@ function buildLinksHtml(links) {
  */
 async function handleClick(event, broker) {
   event.preventDefault();
-  toasts.showUpper('Changing job state..');
+  toasts.showUpper('Changing job state...');
   const link = event.target;
   const stateChangeUrl = link.getAttribute('href');
   const res = await fetch(stateChangeUrl);
