@@ -6,7 +6,7 @@ import { cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, skipPreviewAndSave
 import JobLink from '../models/job-link';
 import { needsStacLink } from '../util/stac';
 import { getRequestRoot } from '../util/url';
-import { getCloudAccessJsonLink, getCloudAccessShLink, getStacCatalogLink, getStatusLink, Link } from '../util/links';
+import { getCloudAccessJsonLink, getCloudAccessShLink, getJobStateChangeLinks, getStacCatalogLink, getStatusLink, Link } from '../util/links';
 import { RequestValidationError, NotFoundError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
@@ -44,35 +44,11 @@ function getLinksForDisplay(job: Job, urlRoot: string, statusLinkRel: string): J
     // Remove the S3 bucket and prefix link
     links = links.filter((link) => link.rel !== 's3-access');
   }
-  switch (job.status) {
-    case JobStatus.SUCCESSFUL:
-      if (needsStacLink(dataLinks)) {
-        links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
-      }
-      break;
-
-    case JobStatus.PAUSED:
-      links.unshift(new JobLink({
-        title: 'Resumes the job.',
-        href: `${urlRoot}/jobs/${job.jobID}/resume`,
-        type: 'application/json',
-        rel: 'resumer',
-      }));
-      break;
-
-    case JobStatus.PREVIEWING:
-      links.unshift(new JobLink({
-        title: 'Skip preview and run the job.',
-        href: `${urlRoot}/jobs/${job.jobID}/skip-preview`,
-        type: 'application/json',
-        rel: 'preview-skipper',
-      }));
-      break;
-
-    default:
-      break;
+  if (job.status === JobStatus.SUCCESSFUL && needsStacLink(dataLinks)) {
+    links.unshift(new JobLink(getStacCatalogLink(urlRoot, job.jobID)));
   }
-
+  // add cancel, pause, resume, etc. links if applicable
+  links.unshift(...getJobStateChangeLinks(job, urlRoot));
   // add a 'self' or 'item' link if it does not already exist
   // 'item' is for use in jobs listings, 'self' for job status
   if (links.filter((link) => link.rel === 'self').length === 0) {
@@ -182,27 +158,21 @@ export async function getJobStatus(
   try {
     validateJobId(jobID);
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
-
-    const query: JobQuery = { where: { requestId: jobID } };
-    if (!req.context.isAdminAccess) {
-      query.where.username = req.user;
-    }
     let job: Job;
     let pagination;
     await db.transaction(async (tx) => {
       ({ job, pagination } = await Job.byRequestId(tx, jobID, page, limit));
     });
-    if (job) {
-      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
-        throw new NotFoundError();
-      }
-      const urlRoot = getRequestRoot(req);
-      const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
-      job.links = job.links.concat(pagingLinks);
-      res.send(getJobForDisplay(job, urlRoot, linkType));
-    } else {
+    if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
+    if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+      throw new NotFoundError();
+    }
+    const urlRoot = getRequestRoot(req);
+    const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
+    job.links = job.links.concat(pagingLinks);
+    res.send(getJobForDisplay(job, urlRoot, linkType));
   } catch (e) {
     req.context.logger.error(e);
     next(e);
