@@ -173,6 +173,7 @@ export function getJobStateChangeLinks(
 /**
  * Generate links that represent all of the actions that are available to a user with
  * respect to job status state transitions (cancel, pause, etc.).
+ * @param job - the job to generate links for
  * @param urlRoot - the root url for the links being generated 
  * @param isAdmin - boolean representing whether we are generating links for 
  * an admin request
