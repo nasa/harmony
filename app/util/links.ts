@@ -99,14 +99,14 @@ function getLinkForJobEvent(
       });
     case JobEvent.SKIP_PREVIEW:
       return new JobLink({
-        title: 'Skip preview and run the job.',
+        title: 'Skips preview and runs the job.',
         href: `${urlRoot + adminPath}/jobs/${jobID}/skip-preview`,
         type: 'application/json',
         rel: 'preview-skipper',
       });
     case JobEvent.CANCEL:
       return new JobLink({
-        title: 'Cancel the job.',
+        title: 'Cancels the job.',
         href: `${urlRoot + adminPath}/jobs/${jobID}/cancel`,
         type: 'application/json',
         rel: 'canceler',

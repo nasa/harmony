@@ -1,5 +1,5 @@
 /**
- * Holds the bootstrap toast object and the corresponding DOM element.
+ * Holds the bootstrap toast objects.
  * There is a lower and upper toast (one is stacked above the other).
  */
 const toastObj = {};
