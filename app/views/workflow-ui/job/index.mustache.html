@@ -7,46 +7,51 @@
     <link rel="stylesheet" href="../../../css/eui.min.css">
     <link rel="stylesheet" href="../../../css/default.css">
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-        crossorigin="anonymous" defer></script>
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
+        defer></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.min.js"
-        integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/"
-        crossorigin="anonymous" defer></script>
+        integrity="sha384-oesi62hOLfzrys4LxRF63OJCXdXDipiYWBnvTl9Y9/TRlw5xlKIEHpNyvvDShgf/" crossorigin="anonymous"
+        defer></script>
     <script language="javascript" id="_fed_an_ua_tag"
-        src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true" defer></script>
+        src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
+        defer></script>
     <script language="javascript" type="module" src="../../../js/workflow-ui/job/index.js" async></script>
     <title>Harmony</title>
 </head>
 
 <body class="d-flex flex-column h-100">
-    <div id="earthdata-notification-banner"></div>
+    {{> workflow-ui/toasts}}
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-lg">
             <a class="navbar-brand nasa" href="/">Earthdata Harmony</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            </div>
+            </button> 
         </div>
     </nav>
     <nav class="ml-0 pl-0"
         style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);"
         aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            {{#isAdminRoute}}
-            <li class="breadcrumb-item"><a href="/admin/workflow-ui">Jobs</a></li>
-            {{/isAdminRoute}}
-            {{^isAdminRoute}}
-            <li class="breadcrumb-item"><a href="/workflow-ui">Jobs</a></li>
-            {{/isAdminRoute}}
-            <li class="breadcrumb-item active" aria-current="page">{{job.jobID}}</li>
-        </ol>
+        <div class="breadcrumb  d-flex flex-row justify-content-between">
+            <ol class="breadcrumb p-0 m-0">
+                {{#isAdminRoute}}
+                <li class="breadcrumb-item"><a href="/admin/workflow-ui">Jobs</a></li>
+                {{/isAdminRoute}}
+                {{^isAdminRoute}}
+                <li class="breadcrumb-item"><a href="/workflow-ui">Jobs</a></li>
+                {{/isAdminRoute}}
+                <li class="breadcrumb-item active" aria-current="page">{{job.jobID}}</li>
+            </ol>
+            <div id="links-container">
+                <!-- job state change links will go here -->
+            </div>
+        </div>
     </nav>
     <div class="container-fluid">
         <div class="row pb-4 px-4">
-            <div class="col-12" id="workflow-items-table-container" data-page="{{page}}" data-limit={{limit}} data-job-id={{job.jobID}}>
+            <div class="col-12" id="workflow-items-table-container" data-page="{{page}}" data-limit={{limit}}
+                data-job-id={{job.jobID}}>
 
             </div>
         </div>
@@ -71,8 +76,6 @@
             </div>
         </div>
     </footer>
-
-    <script type="text/javascript" src="https://status.earthdata.nasa.gov/assets/banner_widget.js"></script>
     <script type="text/javascript" src="https://fbm.earthdata.nasa.gov/for/Harmony/feedback.js"></script>
     <script type="text/javascript">feedback.init({ showIcon: false });</script>
 </body>

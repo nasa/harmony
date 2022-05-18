@@ -39,10 +39,13 @@ function initFilter(currentUser, isAdminRoute) {
   })
 }
 
+/**
+ * Handles jobs table logic (formatting, building filters, etc.).
+ */
 export default {
 
   /**
-   * Handles jobs table logic.
+   * Initialize the jobs table.
    * @param currentUser - the current Harmony user
    * @param isAdminRoute - whether the current page is /admin/...
    */

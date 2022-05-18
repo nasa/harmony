@@ -66,8 +66,16 @@ export default function getCoverageRangeset(
   }
   try {
     const subset = parseSubsetParams(wrap(query.subset));
-    // Update in HARMONY-1120
-    operation.dimensionSubset = !Object.keys(subset).every((k) => ['time', 'lat', 'lon'].includes(k));
+    operation.dimensions = [];
+    Object.entries(subset).forEach(([key, value]) => {
+      if (!['time', 'lat', 'lon'].includes(key)) {
+        operation.dimensions.push({
+          name: key,
+          min: value.min as number,
+          max: value.max as number,
+        });
+      }
+    });
 
     const bbox = subsetParamsToBbox(subset);
     if (bbox) {

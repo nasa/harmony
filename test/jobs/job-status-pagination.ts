@@ -199,9 +199,10 @@ describe('Individual job status route - pagination', function () {
       hookJobStatus({ jobID, username: 'joe', query: { limit: 100 } });
       it('includes only the relation to self, with no paging info', function () {
         const pageLinks = JSON.parse(this.res.text).links;
-        expect(pageLinks.length).to.equal(51);
-        expect(pageLinks[50].rel).to.equal('self');
-        expect(pageLinks[50].title).to.equal('The current page');
+        expect(pageLinks.length).to.equal(53);
+        expect(pageLinks[52].rel).to.equal('self');
+        expect(pageLinks[52].title).to.equal('The current page');
+        expect(pageLinks.find((link) => link.rel === 'prev' || link.rel === 'next')).to.be.undefined;
       });
     });
 
@@ -209,9 +210,10 @@ describe('Individual job status route - pagination', function () {
       hookJobStatus({ jobID, username: 'joe', query: { limit: 0 } });
       it('includes only the relation to self, with no paging info', function () {
         const pageLinks = JSON.parse(this.res.text).links;
-        expect(pageLinks.length).to.equal(1);
-        expect(pageLinks[0].rel).to.equal('self');
-        expect(pageLinks[0].title).to.equal('The current page');
+        expect(pageLinks.length).to.equal(3);
+        expect(pageLinks[2].rel).to.equal('self');
+        expect(pageLinks[2].title).to.equal('The current page');
+        expect(pageLinks.find((link) => link.rel === 'prev' || link.rel === 'next')).to.be.undefined;
       });
     });
   });

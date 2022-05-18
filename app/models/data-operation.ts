@@ -8,7 +8,7 @@ import { CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 
-export const CURRENT_SCHEMA_VERSION = '0.15.0';
+export const CURRENT_SCHEMA_VERSION = '0.16.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -41,6 +41,15 @@ function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
     {
+      version: '0.16.0',
+      schema: readSchema('0.16.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        delete revertedModel.subset.dimensions;
+        return revertedModel;
+      },
+    },
+    {
       version: '0.15.0',
       schema: readSchema('0.15.0'),
       down: (model): unknown => {
@@ -54,8 +63,8 @@ function schemaVersions(): SchemaVersion[] {
             delete v.subtype;
           });
         });
-        return revertedModel;
 
+        return revertedModel;
       },
     },
     {
@@ -232,6 +241,12 @@ export interface SRS {
   epsg?: string;
 }
 
+export interface Dimension {
+  name: string;
+  min?: number;
+  max?: number;
+}
+
 /**
  * Encapsulates an operation to be performed against a backend.  Currently the
  * class is largely getters and setters.  The eventual intent is to allow us
@@ -262,9 +277,6 @@ export default class DataOperation {
   message: string;
 
   requestStartTime: Date; // The time that the initial request to harmony was received
-
-  // Temporary - remove when implementing HARMONY-1120
-  dimensionSubset?: boolean;
 
   /**
    * Creates an instance of DataOperation.
@@ -326,8 +338,7 @@ export default class DataOperation {
    * @returns true if the operation requests dimension subsetting
    */
   get shouldDimensionSubset(): boolean {
-    // Update this with HARMONY-1120 to check the operation field
-    return this.dimensionSubset;
+    return this.dimensions?.length > 0;
   }
 
   /**
@@ -584,6 +595,25 @@ export default class DataOperation {
   get geojson(): string {
     return this.model.subset.shape && this.model.subset.shape.href;
   }
+
+  /**
+   * Gets the dimensions used for dimension subsetting
+   *
+   * @returns A URI to the geojson shape
+   */
+  get dimensions(): Dimension[] {
+    return this.model.subset.dimensions;
+  }
+
+  /**
+   * Sets dimensions used for dimension subsetting
+   *
+   * @param dimensions - The dimensions against which to subset
+   */
+  set dimensions(dimensions: Dimension[]) {
+    this.model.subset.dimensions = dimensions;
+  }
+
 
   /**
    * Returns the temporal range to be acted upon by services where each time
