@@ -95,6 +95,9 @@ DEFAULT_RESULT_PAGE_SIZE=2000
 # Default number of jobs listed in a page
 DEFAULT_JOB_LIST_PAGE_SIZE=10
 
+# TODO change this to a smaller number when aggregating services are updated to handle paged catalogs
+AGGREGATE_STAC_CATALOG_MAX_PAGE_SIZE=1000000
+
 # Maximum number of results in a page
 MAX_PAGE_SIZE=2000
 
