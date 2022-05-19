@@ -66,6 +66,7 @@ if (missingVars.length > 0) {
 
 interface HarmonyEnv {
   adminGroupId: string;
+  aggregateStacCatalogMaxPageSize: number;
   artifactBucket: string;
   awsDefaultRegion: string;
   builtInTaskPrefix: string;

@@ -15,6 +15,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
+import { stub } from 'sinon';
 
 describe('when a work item callback request does not return the results to construct the next work item(s)', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -26,7 +27,7 @@ describe('when a work item callback request does not return the results to const
     scaleExtent: '0,2500000.3,1500000,3300000',
     scaleSize: '1.1,2',
     format: 'application/x-zarr',
-    concatenate: false, // Aggregated workflows are tested above
+    concatenate: false, // Aggregated workflows are tested below
   };
 
   hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
@@ -63,6 +64,21 @@ describe('when a work item callback request does not return the results to const
 });
 
 describe('When a workflow contains an aggregating step', async function () {
+  /**
+   * Do some fake work and update the work item
+   * @param context - 'this' from test
+   */
+  async function doWorkAndUpdateStatus(context: Mocha.Context): Promise<void> {
+    const savedWorkItemResp = await getWorkForService(context.backend, 'foo');
+    const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
+    savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
+    savedWorkItem.results = [
+      'test/resources/worker-response-sample/catalog0.json',
+    ];
+    await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
+    await updateWorkItem(context.backend, savedWorkItem);
+  }
+
   const aggregateService = 'bar';
   hookServersStartStop();
 
@@ -111,49 +127,88 @@ describe('When a workflow contains an aggregating step', async function () {
     await fs.rm(path.join(env.hostVolumePath, this.jobID), { recursive: true });
   });
 
-  describe('and a work item for the first step is completed', async function () {
-    describe('and it is not the last work item for the step', async function () {
-      it('does not supply work for the next step', async function () {
+  describe('and it has fewer granules than the paging threshold', async function () {
 
-        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-        expect(nextStepWorkResponse.statusCode).to.equal(404);
+    describe('and a work item for the first step is completed', async function () {
+      describe('and it is not the last work item for the step', async function () {
+        it('does not supply work for the next step', async function () {
+
+          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          expect(nextStepWorkResponse.statusCode).to.equal(404);
+        });
+      });
+
+      describe('and it is the last work item for the step', async function () {
+
+        it('supplies exactly one work item for the next step', async function () {
+          await doWorkAndUpdateStatus(this);
+
+          // one work item available
+          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          expect(nextStepWorkResponse.statusCode).to.equal(200);
+
+          const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          expect(secondNextStepWorkResponse.statusCode).to.equal(404);
+
+
+        });
+
+        it('provides all the outputs of the preceding step to the aggregating step', async function () {
+          await doWorkAndUpdateStatus(this);
+          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
+          const filePath = workItem.stacCatalogLocation.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
+          const catalog = JSON.parse((await fs.readFile(filePath)).toString());
+          const items = catalog.links.filter(link => link.rel === 'item');
+          expect(items.length).to.equal(2);
+        });
+
+        it('does not add paging links to the catalog', async function () {
+          await doWorkAndUpdateStatus(this);
+
+          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
+          const filePath = workItem.stacCatalogLocation.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
+          const catalog = JSON.parse((await fs.readFile(filePath)).toString());
+          expect(catalog.links.filter(link => link.rel == 'prev').length).to.equal(0);
+          expect(catalog.links.filter(link => link.rel == 'next').length).to.equal(0);
+        });
       });
     });
+  });
 
-    describe('and it is the last work item for the step', async function () {
-      it('supplies exactly one work item for the next step', async function () {
-        const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
-        const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
-        savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
-        savedWorkItem.results = [
-          'test/resources/worker-response-sample/catalog0.json',
-        ];
-        await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
-        await updateWorkItem(this.backend, savedWorkItem);
+  describe('and it has more granules than the paging threshold', async function () {
+    let envStub;
 
-        // one work item available
-        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-        expect(nextStepWorkResponse.statusCode).to.equal(200);
+    before(function () {
+      envStub = stub(env, 'aggregateStacCatalogMaxPageSize').get(() => 1);
+    });
 
-        const secondNextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-        expect(secondNextStepWorkResponse.statusCode).to.equal(404);
-      });
+    after(function () {
+      envStub.restore();
+    });
 
-      it('provides all the outputs of the preceding step to the aggregating step', async function () {
-        const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
-        const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
-        savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
-        savedWorkItem.results = [
-          'test/resources/worker-response-sample/catalog0.json',
-        ];
-        await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
-        await updateWorkItem(this.backend, savedWorkItem);
-        const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
-        const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
-        const filePath = workItem.stacCatalogLocation.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
-        const catalog = JSON.parse((await fs.readFile(filePath)).toString());
-        const items = catalog.links.filter(link => link.rel === 'item');
-        expect(items.length).to.equal(2);
+    describe('and a work item for the first step is completed', async function () {
+
+      describe('and it is the last work item for the step', async function () {
+
+        it('adds paging links to the catalogs', async function () {
+          await doWorkAndUpdateStatus(this);
+
+          const nextStepWorkResponse = await getWorkForService(this.backend, aggregateService);
+          const workItem = JSON.parse(nextStepWorkResponse.text).workItem as WorkItemRecord;
+          const filePath = workItem.stacCatalogLocation.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
+          const catalog = JSON.parse((await fs.readFile(filePath)).toString());
+          // first catalog just has 'next' link
+          expect(catalog.links.filter(link => link.rel == 'prev').length).to.equal(0);
+          const nextLinks = catalog.links.filter(link => link.rel == 'next');
+          expect(nextLinks.length).to.equal(1);
+          // second catalog just has 'prev' link
+          const nextCatalogPath = nextLinks[0].href.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
+          const nextCatalog = JSON.parse((await fs.readFile(nextCatalogPath)).toString());
+          expect(nextCatalog.links.filter(link => link.rel == 'prev').length).to.equal(1);
+          expect(nextCatalog.links.filter(link => link.rel == 'next').length).to.equal(0);
+        });
       });
     });
   });
