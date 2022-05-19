@@ -1,4 +1,4 @@
-import _, { sum } from 'lodash';
+import _, { ceil, range, sum } from 'lodash';
 import { NextFunction, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
@@ -207,24 +207,64 @@ async function createAggregatingWorkItem(
     throw new ServiceError(500, `Failed to retrieve all work items for step ${nextStep.stepIndex - 1}`);
   }
 
-  // create a STAC catalog using `catalogLinks`
-  const catalog = {
-    stac_version: '1.0.0-beta.2',
-    stac_extensions: [],
-    id: uuid(),
-    description: 'Aggregation input catalogs',
-    links: itemLinks,
-  };
-
-  const catalogJson = JSON.stringify(catalog, null, 4);
-  // write the new catalog out to the file system
+  // create the directory to hold the catalog(s)
   const outputDir = path.join(env.hostVolumePath, nextStep.jobID, `aggregate-${currentWorkItem.id}`, 'outputs');
   await fs.mkdir(outputDir, { recursive: true });
-  const catalogPath = path.join(outputDir, 'catalog0.json');
-  await fs.writeFile(catalogPath, catalogJson);
 
+  // path to use in the catalogs when generating links (correct for worker container not Harmony)
   // we don't use fs.join here because the pods use linux paths
-  const podCatalogPath = `${PATH_TO_CONTAINER_ARTIFACTS}/${nextStep.jobID}/aggregate-${currentWorkItem.id}/outputs/catalog0.json`;
+  const containerOutputPath = `${PATH_TO_CONTAINER_ARTIFACTS}/${nextStep.jobID}/aggregate-${currentWorkItem.id}/outputs`;
+
+  const pageSize = env.aggregateStacCatalogMaxPageSize;
+  const catalogCount = ceil(itemLinks.length / env.aggregateStacCatalogMaxPageSize);
+  for (const index of range(0, catalogCount)) {
+    const start = index * pageSize;
+    const end = start + pageSize;
+    const links = itemLinks.slice(start, end);
+
+    // and prev/next links as needed
+    if (index > 0) {
+      const prevCatUrl = `${containerOutputPath}/catalog${index - 1}.json`;
+      const prevLink: StacItemLink = {
+        href: prevCatUrl,
+        rel: 'prev',
+        title: 'Previous page',
+        type: 'application/json',
+      };
+      links.push(prevLink);
+    }
+
+    if (index < catalogCount - 1) {
+      const nextCatUrl = `${containerOutputPath}/catalog${index + 1}.json`;
+      const nextLink: StacItemLink = {
+        href: nextCatUrl,
+        rel: 'next',
+        title: 'Next page',
+        type: 'application/json',
+      };
+      links.push(nextLink);
+    }
+
+    // create a STAC catalog with links
+    const catalog = {
+      stac_version: '1.0.0-beta.2',
+      stac_extensions: [],
+      id: uuid(),
+      description: 'Aggregation input catalogs',
+      links: links,
+    };
+
+    const catalogJson = JSON.stringify(catalog, null, 4);
+
+    // write the new catalog out to the file system
+    const catalogPath = path.join(outputDir, `catalog${index}.json`);
+    await fs.writeFile(catalogPath, catalogJson);
+  }
+
+  // catalog0 is the first catalog in the linked catalogs, so it is the catalog
+  // that aggregating services should read first
+  // we don't use fs.join here because the pods use linux paths
+  const podCatalogPath = `${containerOutputPath}/catalog0.json`;
 
   const newWorkItem = new WorkItem({
     jobID: currentWorkItem.jobID,
