@@ -261,6 +261,8 @@ async function createAggregatingWorkItem(
     await fs.writeFile(catalogPath, catalogJson);
   }
 
+  // catalog0 is the first catalog in the linked catalogs, so it is the catalog
+  // that aggregating services should read first
   // we don't use fs.join here because the pods use linux paths
   const podCatalogPath = `${containerOutputPath}/catalog0.json`;
 
