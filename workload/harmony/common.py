@@ -76,6 +76,7 @@ class BaseHarmonyUser(HttpUser):
 
     def _sync_request(self, name, collection, variable, params, test_number):
         full_name = f'{test_number:03}: {name}'
+        params['skipPreview'] = True
 
         self.client.get(
             self.coverages_root.format(
@@ -86,6 +87,7 @@ class BaseHarmonyUser(HttpUser):
 
     def _async_request(self, name, collection, variable, params, test_number):
         full_name = f'{test_number:03}: {name}'
+        params['skipPreview'] = True
 
         start_time = time()
         response = self.client.get(
