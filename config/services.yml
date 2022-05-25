@@ -701,9 +701,6 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: false
         variable: false
       output_formats:
-        - image/tiff
-        - image/png
-        - image/gif
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
       reprojection: true
@@ -972,9 +969,6 @@ https://cmr.uat.earthdata.nasa.gov:
         bbox: false
         variable: false
       output_formats:
-        - image/tiff
-        - image/png
-        - image/gif
         - application/netcdf # Incorrect mime-type, remove when no longer needed
         - application/x-netcdf4
         - application/x-zarr
