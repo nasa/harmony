@@ -410,7 +410,7 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset']
+        operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
 
 https://cmr.uat.earthdata.nasa.gov:
 
@@ -803,7 +803,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset']
+        operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
 
   # This is an example service and backend from example/http-backend.js mounted by
   # the frontend callback server.
@@ -984,3 +984,34 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['reformat', 'concatenate']
         conditional:
           format: ['application/x-zarr']
+
+  - name: sds/HOSS-maskfill
+    # Provides polygon spatial subsetting for collections hosted in OPeNDAP
+    # Also provides variable and temporal subsetting through HOSS.
+    data_operation_version: '0.16.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/HOSS
+    umm_s:
+      - S1245117629-EEDTEST
+    collections:
+      - id: C1222931739-GHRC_CLOUD
+    capabilities:
+      subsetting:
+        bbox: true
+        dimension: true
+        shape: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${VAR_SUBSETTER_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
+      - image: !Env ${SDS_MASKFILL_IMAGE}
+        operations: ['shapefileSubset', 'spatialSubset']

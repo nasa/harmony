@@ -36,6 +36,7 @@ describe('Versions endpoint', function () {
           'harmony/netcdf-to-zarr',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
           'harmony/swot-repr-netcdf-to-zarr',
+          'sds/HOSS-maskfill',
         ]);
       });
 
