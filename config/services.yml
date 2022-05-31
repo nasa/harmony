@@ -247,6 +247,7 @@ https://cmr.earthdata.nasa.gov:
     umm_s:
       - S1962070864-POCLOUD
       - S2214242245-GES_DISC
+      - S2279690167-LARC_ASDC
     collections:
       - id: C1940473819-POCLOUD
       - id: C1940475563-POCLOUD
