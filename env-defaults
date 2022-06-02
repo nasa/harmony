@@ -172,6 +172,19 @@ KUBE_CONTEXT=docker-desktop
 # default is 4 hours
 WORKER_TIMEOUT=14400000
 
+# Number of times to retry failed HTTP (408, 502, 503, 504) data download calls
+# via the http module of the service library.
+
+# backoff seconds = {backoff factor} * (2 ** ({retry number} - 1))
+# where {retry number} = 1, 2, 3, ..., total_retries
+
+# With a backoff_factor of 2 (the current default) and 10 retries,
+# the total sleep seconds between executions will be:
+# [0, 4, 8, 16, 32, 64, 120, 120, 120, 120] (~10 minutes)
+# 120 seconds is the maximum backoff and there is always 0 seconds before the
+# first retry regardless of the parameters.
+MAX_DOWNLOAD_RETRIES=10
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #

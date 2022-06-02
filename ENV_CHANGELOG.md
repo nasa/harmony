@@ -1,3 +1,7 @@
+## 2022-06-01
+### Added
+- MAX_DOWNLOAD_RETRIES - Number of times to retry failed HTTP (408, 502, 503, 504) data downloads in the the service library.
+
 ## 2022-03-07
 ### Changed
 - ASF_GDAL_SUBSETTER_IMAGE to HARMONY_GDAL_ADAPTER_IMAGE
