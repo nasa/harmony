@@ -19,7 +19,8 @@ const pollingInterval = 500;
 // e.g. with maxRetries = 10, exponentialOffset = 3, maxDelayMs = 60_000 the delays in ms are roughly:
 // [(2^(1+3))*100=1_600, (2^(2+3))*100=3_200, 6_400, 12_800, 25_600, 51_200, 60_000, 60_000, 60_000, 60_000]
 // (ms = milliseconds. Actual delay will differ by a small random amount of ms that gets added to each delay.)
-const { maxGetWorkRetries, maxPutWorkRetries } = env;
+const { maxPutWorkRetries } = env;
+const maxGetWorkRetries = Number.MAX_SAFE_INTEGER;
 const maxDelayMs = 60_000; // delay subsequent retries for up to 1 minute
 const exponentialOffset = 3; // offsets the exponent so that initial retries don't happen too soon
 const axiosGetWork = createAxiosClientWithRetry(maxGetWorkRetries, maxDelayMs, exponentialOffset);

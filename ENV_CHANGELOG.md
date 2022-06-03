@@ -4,7 +4,6 @@ order with the most recent changes first.
 
 ## 2022-06-03
 ### Added
-- MAX_GET_WORK_RETRIES - how many times a manager should retry a retryable GET /work request
 - MAX_PUT_WORK_RETRIES - how many times a manager should retry a retryable PUT /work request
 
 ## 2022-03-07
