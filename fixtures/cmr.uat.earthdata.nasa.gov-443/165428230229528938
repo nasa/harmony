@@ -1,0 +1,27 @@
+GET /search/collections.json?short_name=BOGUS-EEDTEST&page_size=100&sort_key=-revisionDate
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 222
+connection: close
+date: Fri, 03 Jun 2022 18:51:42 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 221d377e-ed4f-437c-b29e-5f2a5a4e635e
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 8
+x-request-id: G6zfEJ6Q7F4sD_jcEZa3_q6JcoKNeerC96g70w_D9tkv2Zh_1bxw2A==
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 6c2e384f59feb64a0c739aee7f890066.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD89-C2
+x-amz-cf-id: G6zfEJ6Q7F4sD_jcEZa3_q6JcoKNeerC96g70w_D9tkv2Zh_1bxw2A==
+
+{"feed":{"updated":"2022-06-03T18:51:42.368Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?short_name=BOGUS-EEDTEST&page_size=100&sort_key=-revisionDate","title":"ECHO dataset metadata","entry":[]}}
