@@ -85,9 +85,6 @@ export default function createAxiosClientWithRetry(
   httpAgent = keepAliveAgent,
   retryCondition = isRetryable,
 ): AxiosInstance {
-  if (process.env.NODE_ENV === 'test') {
-    retries = 2;
-  }
   const axiosClient = axios.create({ httpAgent, timeout: timeoutMs });
   axiosRetry(axiosClient, {
     retryDelay: (retryNumber) => 

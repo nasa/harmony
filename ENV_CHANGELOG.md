@@ -1,10 +1,15 @@
-## 2022-03-07
-### Changed
-- ASF_GDAL_SUBSETTER_IMAGE to HARMONY_GDAL_ADAPTER_IMAGE
-
 # Environment variable changelog
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
+
+## 2022-06-03
+### Added
+- MAX_GET_WORK_RETRIES - how many times a manager should retry a retryable GET /work request
+- MAX_PUT_WORK_RETRIES - how many times a manager should retry a retryable PUT /work request
+
+## 2022-03-07
+### Changed
+- ASF_GDAL_SUBSETTER_IMAGE to HARMONY_GDAL_ADAPTER_IMAGE
 
 ## 2020-12-02
 ### Added
