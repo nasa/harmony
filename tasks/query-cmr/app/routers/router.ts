@@ -18,7 +18,7 @@ export interface QueryCmrRequest {
 
 /**
  * Query the CMR as requested and create one or more STAC catalogs for the granule(s)
- * 
+ *
  * @param workReq - The request to be made to the CMR
  * @returns a promise containing the combined sizes of all the granules included in the catalogs
  */
@@ -30,8 +30,12 @@ export async function doWork(workReq: QueryCmrRequest): Promise<number> {
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing.query-cmr.start');
   await fs.mkdir(outputDir, { recursive: true });
+  const mkdirTime = new Date().getTime();
+  timingLogger.info('timing.query-cmr.mkdir', { durationMs: mkdirTime - startTime });
 
   const [totalGranulesSize, catalogs] = await queryGranulesScrolling(operation, scrollId, workReq.maxCmrGranules);
+  const granuleScrollingTime = new Date().getTime();
+  timingLogger.info('timing.query-cmr.query-granules-scrolling', { durationMs: granuleScrollingTime - mkdirTime });
 
   const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {
@@ -45,12 +49,15 @@ export async function doWork(workReq: QueryCmrRequest): Promise<number> {
   const catalogCountFilename = path.join(outputDir, 'batch-count.txt');
 
   await Promise.all(promises);
+  const catalogWriteTime = new Date().getTime();
+  timingLogger.info('timing.query-cmr.catalog-promises-write', { durationMs: catalogWriteTime - granuleScrollingTime });
 
   await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
   await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
 
-  const durationMs = new Date().getTime() - startTime;
-  timingLogger.info('timing.query-cmr.end', { durationMs });
+  const catalogSummaryTime = new Date().getTime();
+  timingLogger.info('timing.query-cmr.catalog-summary-write', { durationMs: catalogSummaryTime - catalogWriteTime });
+  timingLogger.info('timing.query-cmr.end', { durationMs: catalogSummaryTime - startTime });
 
   return totalGranulesSize;
 }

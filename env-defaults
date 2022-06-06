@@ -309,7 +309,7 @@ GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
 LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
 
 # page size to use with CMR calls
-CMR_MAX_PAGE_SIZE=2000
+CMR_MAX_PAGE_SIZE=100
 
 # Prefix before "harmonyservices/task-name" for built-in tasks like query-cmr, e.g. an ECR location
 # If not blank, it should end in a slash if there is a slash before "harmony"
