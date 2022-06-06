@@ -61,6 +61,7 @@ interface HarmonyEnv {
   workerPort: number;
   workerTimeout: number;
   workingDir: string;
+  maxPutWorkRetries: number;
 }
 
 // special cases

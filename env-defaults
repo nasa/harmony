@@ -340,6 +340,12 @@ MAX_POST_FILE_PARTS=100
 # containers for any services to read and save STAC catalogs.
 HOST_VOLUME_PATH=
 
+# If a retryable error is encountered while attempting to update a work item,
+# the HTTP client will retry a maximum of this many times.
+# MAX_PUT_WORK_RETRIES should be high enough to allow a work item update to succeed
+# even when a deployment is happening (~25 min max currently)
+MAX_PUT_WORK_RETRIES=30
+
 ###########################################################################
 #                             Prometheus Config                           #
 #                                                                         #
