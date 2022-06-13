@@ -4,20 +4,20 @@ import { ParameterParseError } from '../../../util/parameter-parsing';
 const rangeSeparator = ':';
 const unbounded = '*';
 // Regex to match lat(-10:10) or lon(*:20)
-const numberRangeRegex = new RegExp(`^(\\w+)\\((.+)${rangeSeparator}(.+)\\)$`);
+const numberRangeRegex = new RegExp(`^(.+)\\((.+)${rangeSeparator}(.+)\\)$`);
 
 // time("2001-05-01T12:35:00Z":"2002-07-01T13:18:55Z")
-const twoStringsRegex = new RegExp(`^(\\w+)\\("(.+)"${rangeSeparator}"(.+)"\\)$`);
+const twoStringsRegex = new RegExp(`^(.+)\\("(.+)"${rangeSeparator}"(.+)"\\)$`);
 // time(*:"2001-05-01T12:35:00Z")
-const unboundedMinStringRegex = new RegExp(`^(\\w+)\\((\\*)${rangeSeparator}"(.+)"\\)$`);
+const unboundedMinStringRegex = new RegExp(`^(.+)\\((\\*)${rangeSeparator}"(.+)"\\)$`);
 // time("2001-05-01T12:35:00Z":*)
-const unboundedMaxStringRegex = new RegExp(`^(\\w+)\\("(.+)"${rangeSeparator}(\\*)\\)$`);
+const unboundedMaxStringRegex = new RegExp(`^(.+)\\("(.+)"${rangeSeparator}(\\*)\\)$`);
 // time(*:*)
-const unboundedStringRegex = new RegExp(`^(\\w+)\\((\\*)${rangeSeparator}(\\*)\\)`);
+const unboundedStringRegex = new RegExp(`^(.+)\\((\\*)${rangeSeparator}(\\*)\\)`);
 // time(*)
-const singleUnboundedStringRegex = new RegExp('^(\\w+)\\((\\*)\\)$');
+const singleUnboundedStringRegex = new RegExp('^(.+)\\((\\*)\\)$');
 // time("2001-05-01T12:35:00Z")
-const singleStringRegex = new RegExp('^(\\w+)\\("(.+)"\\)$');
+const singleStringRegex = new RegExp('^(.+)\\("(.+)"\\)$');
 // Date ranges can have several different representations
 const dateTimeRegex = new RegExp(`${twoStringsRegex.source}|${unboundedMinStringRegex.source}|${unboundedMaxStringRegex.source}|${unboundedStringRegex.source}|${singleStringRegex.source}|${singleUnboundedStringRegex.source}`);
 
@@ -128,7 +128,7 @@ function parseDate(dim: Dimension, valueStr: string): Date {
   return value;
 }
 
-const dimensionNameRegex = /^(\w+)\(.+\)$/;
+const dimensionNameRegex = /^(.+)\(.+\)$/;
 
 /**
  * Returns the dimension name (e.g. time, lat, lon) from the value provided.
