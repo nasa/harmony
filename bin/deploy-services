@@ -21,7 +21,6 @@ if [ ! -f "$file" ]; then
   echo "query-cmr-sidecar.yml was not found."
   exit 1
 fi
-echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
 envsubst < $file | kubectl apply -f - -n harmony
 
 # create the other services
@@ -53,6 +52,5 @@ do
   varname=${var_prefix}_INVOCATION_ARGS
   export SERVICE_INVOCATION_ARGS=${!varname}
 
-  echo "Deploying $service using volume mount path $HOST_VOLUME_PATH"
   envsubst < $file | kubectl apply -f - -n harmony
 done

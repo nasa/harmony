@@ -7,8 +7,6 @@ import logger from '../../../../app/util/log';
 import { WorkItemRecord } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 
-// Must match where harmony expects artifacts in workflow-orchestration.ts
-const ARTIFACT_DIRECTORY = '/tmp/metadata';
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
@@ -94,7 +92,7 @@ function _getErrorMessage(logStr: string, catalogDir: string): string {
 export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranules?: number): Promise<ServiceResponse> {
 
   const { operation, scrollID } = workItem;
-  const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
+  const catalogDir = `${env.hostVolumePath}/${operation.requestId}/${workItem.id}/outputs`;
 
   return new Promise<ServiceResponse>(async (resolve) => {
     logger.debug('CALLING WORKER');
@@ -142,7 +140,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
       commandLine = env.invocationArgs.split(' ');
     }
 
-    const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
+    const catalogDir = `${env.hostVolumePath}/${operation.requestId}/${workItem.id}/outputs`;
 
     return await new Promise<ServiceResponse>((resolve) => {
       logger.debug(`CALLING WORKER for pod ${env.myPodName}`);

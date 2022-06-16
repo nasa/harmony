@@ -349,9 +349,9 @@ MAX_POST_FILE_SIZE=2000000000
 # Maximum number of multipart parts to accept when providing a shapefile
 MAX_POST_FILE_PARTS=100
 
-# The location on the file system to save the work items that will be mounted into the
-# containers for any services to read and save STAC catalogs.
-HOST_VOLUME_PATH=
+# The location in s3 where STAC catalogs are saved.
+# Both pods and Harmony backend will read/write at this location.
+HOST_VOLUME_PATH=s3://stac
 
 # If a retryable error is encountered while attempting to update a work item,
 # the HTTP client will retry a maximum of this many times.
