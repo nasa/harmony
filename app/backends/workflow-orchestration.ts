@@ -349,7 +349,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   logger.info(`Updating work item for ${id} to ${status}`);
   await db.transaction(async (tx) => {
     const workItem = await getWorkItemById(tx, parseInt(id, 10));
-    const job: Job = await Job.byJobID(tx, workItem.jobID, false, true);
+    const job: Job = await Job.byJobID(tx, workItem.jobID, false, false);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
     const isQueryCmr = workItem.serviceID.match(/query-cmr/);
 
