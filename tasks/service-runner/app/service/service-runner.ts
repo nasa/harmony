@@ -1,12 +1,13 @@
 import * as k8s from '@kubernetes/client-node';
-import { existsSync, readdirSync, readFileSync } from 'fs';
 import stream from 'stream';
 import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import logger from '../../../../app/util/log';
+import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 
+const s3 = objectStoreForProtocol('s3');
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
@@ -37,15 +38,13 @@ class LogStream extends stream.Writable {
 }
 
 /**
- * Get a list of STAC catalog in a directory
- * @param dir - the directory containing the catalogs
+ * Get a list of full s3 paths to each STAC catalog found in an S3 directory.
+ * @param dir - the s3 path, e.g. s3://stac/requestId/workItemId/outputs
  */
-function _getStacCatalogs(dir: string): string[] {
-  // readdirSync should be ok since a service only ever handles one WorkItem at a time and may
-  // actually be necessary to ensure read after write consistency on EFS
-  return readdirSync(dir)
-    .filter((fileName) => fileName.match(/catalog\d*.json/))
-    .map((fileName) => `${dir}/${fileName}`);
+async function _getStacCatalogs(dir: string): Promise<string[]> {
+  return (await s3.listObjectKeys(dir))
+    .filter((fileKey) => fileKey.match(/catalog\d*.json/))
+    .map((fileKey) => `${env.hostVolumePath}/${fileKey}`);
 }
 
 /**
@@ -59,12 +58,14 @@ function _getStacCatalogs(dir: string): string[] {
  * @param catalogDir - A string path for the outputs directory of the WorkItem.
  * @returns An error message parsed from the log
  */
-function _getErrorMessage(logStr: string, catalogDir: string): string {
+async function _getErrorMessage(logStr: string, catalogDir: string): Promise<string> {
   // expect JSON logs entries
   try {
     const errorFile = `${catalogDir}/error.json`;
-    if (existsSync(errorFile)) {
-      const logEntry = JSON.parse(readFileSync(errorFile).toString());
+    if (await s3.objectExists(errorFile)) {
+      const objResponse = await s3.getObject(errorFile).promise();
+      const errorFileString = objResponse.Body.toString('utf-8');
+      const logEntry = JSON.parse(errorFileString);
       return logEntry.error;
     }
 
@@ -111,7 +112,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
       );
 
       if (resp.status < 300) {
-        const catalogs = _getStacCatalogs(`${catalogDir}`);
+        const catalogs = await _getStacCatalogs(`${catalogDir}`);
         const { totalGranulesSize } = resp.data;
 
         resolve({ batchCatalogs: catalogs, totalGranulesSize });
@@ -119,6 +120,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
         resolve({ error: resp.statusText });
       }
     } catch (e) {
+      logger.error(e);
       const message = e.response?.data ? e.response.data.description : e.message;
       resolve({ error: message });
     }
@@ -171,13 +173,13 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
         process.stderr as stream.Writable,
         process.stdin as stream.Readable,
         true,
-        (status: k8s.V1Status) => {
+        async (status: k8s.V1Status) => {
           logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
           try {
             if (status.status === 'Success') {
               clearTimeout(timeout);
               logger.debug('Getting STAC catalogs');
-              const catalogs = _getStacCatalogs(`${catalogDir}`);
+              const catalogs = await _getStacCatalogs(`${catalogDir}`);
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);

@@ -1,13 +1,10 @@
-import aws from 'aws-sdk';
 import { Request, Response, NextFunction, Router } from 'express';
-import { promises as fs } from 'fs';
-import path from 'path';
 import logger from '../../../../app/util/log';
 import DataOperation from '../../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../../app/util/crypto';
 import { queryGranulesScrolling } from '../query';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
-import { ServerError } from '../../../app/util/errors';
+import { ServerError } from '../../../../app/util/errors';
 
 const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
 const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);

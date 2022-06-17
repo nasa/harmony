@@ -113,6 +113,37 @@ export class S3ObjectStore {
   }
 
   /**
+   * List all of the object keys for the given prefix.
+   * 
+   * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the objects to
+   *   be retrieved or the object URL
+   * @returns list of s3 objects
+   */
+  async listObjectKeys(paramsOrUrl: string | BucketParams): Promise<string[]>  {
+    let s3Objects = [];
+    let hasMoreObjects = true;
+    let continuationToken = null;
+    const requestParams = this._paramsOrUrlToParams(paramsOrUrl);
+    while (hasMoreObjects) {
+      const res = await this.s3
+        .listObjectsV2({
+          Bucket: requestParams.Bucket,
+          Prefix: requestParams.Key,
+          ContinuationToken: continuationToken || undefined,
+        })
+        .promise();
+      s3Objects = [...s3Objects, ...res.Contents.map(object => object.Key)];
+      if (!res.IsTruncated) {
+        hasMoreObjects = false;
+        continuationToken = null;
+      } else {
+        continuationToken = res.NextContinuationToken;
+      }
+    }
+    return s3Objects;
+  }
+
+  /**
    * Call HTTP HEAD on an object to get its headers without retrieving it (see AWS S3 SDK
    * `headObject`)
    *
@@ -125,6 +156,24 @@ export class S3ObjectStore {
     paramsOrUrl: string | BucketParams,
   ): Promise<PromiseResult<aws.S3.HeadObjectOutput, aws.AWSError>> {
     return this.s3.headObject(this._paramsOrUrlToParams(paramsOrUrl)).promise();
+  }
+
+  /**
+   * Check if the object exists.
+   * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the object to
+   *   be retrieved or the object URL
+   * @returns boolean
+   */
+  async objectExists(paramsOrUrl): Promise<boolean> {
+    try {
+      await this.s3.headObject(this._paramsOrUrlToParams(paramsOrUrl)).promise();
+      return true;
+    } catch (err) {
+      if (err.code === 'NotFound') {
+        return false;
+      }
+      throw err;
+    }
   }
 
   /**
