@@ -183,7 +183,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = _getErrorMessage(stdOut.logStr, catalogDir);
+              const logErr = await _getErrorMessage(stdOut.logStr, catalogDir);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }

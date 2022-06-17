@@ -169,7 +169,7 @@ export class S3ObjectStore {
       await this.s3.headObject(this._paramsOrUrlToParams(paramsOrUrl)).promise();
       return true;
     } catch (err) {
-      if (err.code === 'NotFound') {
+      if (err.statusCode === 404) {
         return false;
       }
       throw err;
