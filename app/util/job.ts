@@ -12,6 +12,7 @@ import { getWorkflowStepsByJobId } from '../models/workflow-steps';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
 import { createDecrypter, createEncrypter } from './crypto';
 
+// TODO - replace with expiration policy
 /**
  * Cleans up the temporary work items for the provided jobID
  * @param jobID - the jobID for which to remove temporary work items

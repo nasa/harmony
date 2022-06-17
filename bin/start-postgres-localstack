@@ -78,13 +78,17 @@ fi
 STAGING_BUCKET=${STAGING_BUCKET:-local-staging-bucket}
 ARTIFACT_BUCKET=${ARTIFACT_BUCKET:-local-artifact-bucket}
 UPLOAD_BUCKET=${UPLOAD_BUCKET:-local-upload-bucket}
-STAC_BUCKET_PATH=${HOST_VOLUME_PATH:-s3://local-stac-bucket}
+STAC_BUCKET=${HOST_VOLUME_PATH:-local-stac-bucket}
 
+# Creates buckets in localstack, and an acl allowing us to view STAC files.
+# e.g. http://localhost:4566/stac/39e08ca7-6088-4080-a55c-b2f7bc0f6bbd/34798/outputs/catalog0.json
 localstack_startup_script="
 awslocal s3 mb s3://${STAGING_BUCKET}
 awslocal s3 mb s3://${ARTIFACT_BUCKET}
 awslocal s3 mb s3://${UPLOAD_BUCKET}
-awslocal s3 mb ${STAC_BUCKET_PATH}"
+awslocal s3 mb s3://${STAC_BUCKET}
+awslocal s3api put-bucket-acl --bucket ${STAC_BUCKET} --acl public-read"
+
 
 # For some develpers using Linux, artifact repositories were not working correctly without
 # setting the default harmony account as a cluster admin

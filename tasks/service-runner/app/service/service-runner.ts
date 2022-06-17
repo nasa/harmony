@@ -44,7 +44,7 @@ class LogStream extends stream.Writable {
 async function _getStacCatalogs(dir: string): Promise<string[]> {
   return (await s3.listObjectKeys(dir))
     .filter((fileKey) => fileKey.match(/catalog\d*.json/))
-    .map((fileKey) => `${env.hostVolumePath}/${fileKey}`);
+    .map((fileKey) => `s3://${env.hostVolumePath}/${fileKey}`);
 }
 
 /**
@@ -93,7 +93,7 @@ async function _getErrorMessage(logStr: string, catalogDir: string): Promise<str
 export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranules?: number): Promise<ServiceResponse> {
 
   const { operation, scrollID } = workItem;
-  const catalogDir = `${env.hostVolumePath}/${operation.requestId}/${workItem.id}/outputs`;
+  const catalogDir = `s3://${env.hostVolumePath}/${operation.requestId}/${workItem.id}/outputs`;
 
   return new Promise<ServiceResponse>(async (resolve) => {
     logger.debug('CALLING WORKER');
@@ -142,7 +142,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
       commandLine = env.invocationArgs.split(' ');
     }
 
-    const catalogDir = `${env.hostVolumePath}/${operation.requestId}/${workItem.id}/outputs`;
+    const catalogDir = `s3://${env.hostVolumePath}/${operation.requestId}/${workItem.id}/outputs`;
 
     return await new Promise<ServiceResponse>((resolve) => {
       logger.debug(`CALLING WORKER for pod ${env.myPodName}`);
