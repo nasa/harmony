@@ -16,11 +16,11 @@ import { promises as fs } from 'fs';
 import { ServiceError } from '../util/errors';
 import { clearScrollSession } from '../util/cmr';
 import { SUCCESSFUL_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
+import { objectStoreForProtocol } from '../util/object-store';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
-// Must match where the service wrapper is mounting artifacts
-export const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
+const s3 = objectStoreForProtocol('s3');
 
 /**
  * Calculate the granule page limit for the current query-cmr work item.
@@ -39,13 +39,12 @@ async function calculateQueryCmrLimit(
       tx, workItem.jobID, workItem.workflowStepIndex, 1, Number.MAX_SAFE_INTEGER))
       .workItems;
     queryCmrItems = queryCmrItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL);
-    const stacCatalogLengths = await Promise.all(queryCmrItems.map(async ({ id, jobID }) => {
+    const stacCatalogLengths = await Promise.all(queryCmrItems.map(async (item) => {
+      const jsonPath = item.stacResultsLocation('batch-catalogs.json');
       try {
-        const directory = path.join(env.artifactBucket, jobID, `${id}`, 'outputs');
-        const jsonPath = path.join(directory, 'batch-catalogs.json');
-        const json = (await fs.readFile(jsonPath)).toString();
-        return JSON.parse(json).length;
+        return (await s3.getObjectJson(jsonPath)).length;
       } catch (e) {
+        logger.error(`Could not not calculate query cmr limit from ${jsonPath}`);
         logger.error(e);
         return 0;
       }
@@ -132,15 +131,14 @@ async function _handleWorkItemResults(
  * @param catalogPath - the path to the catalog
  */
 async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]> {
-  const baseDir = path.dirname(catalogPath).replace(env.artifactBucket, PATH_TO_CONTAINER_ARTIFACTS);
-  const text = (await fs.readFile(catalogPath)).toString();
-  const catalog = JSON.parse(text);
+  const baseDir = path.dirname(catalogPath);
+  const catalog = await s3.getObjectJson(catalogPath);
   const links: StacItemLink[] = [];
   for (const link of catalog.links) {
     if (link.rel === 'item') {
       // make relative path absolute
       const { href } = link;
-      link.href = `${baseDir}/${path.normalize(href)}`;
+      link.href = path.join(baseDir, href);
       links.push(link);
     }
   }
@@ -176,21 +174,18 @@ async function createAggregatingWorkItem(
     if (prevStepWorkItems.workItems.length < 1) break;
 
     for (const workItem of prevStepWorkItems.workItems) {
-      const { id, jobID } = workItem;
-      const directory = path.join(env.artifactBucket, jobID, `${id}`, 'outputs');
       try {
         // try to use the default catalog output for single granule work items
-        const singleCatalogPath = path.join(directory, 'catalog.json');
+        const singleCatalogPath = workItem.stacResultsLocation('catalog.json');
         const newLinks = await getItemLinksFromCatalog(singleCatalogPath);
         itemLinks.push(...newLinks);
       } catch {
         // couldn't read the single catalog so read the JSON file that lists all the result
         // catalogs for this work item
-        const jsonPath = path.join(directory, 'batch-catalogs.json');
-        const json = (await fs.readFile(jsonPath)).toString();
-        const catalog = JSON.parse(json);
+        const jsonPath = workItem.stacResultsLocation('batch-catalogs.json');
+        const catalog = await s3.getObjectJson(jsonPath);
         for (const filePath of catalog) {
-          const fullPath = path.join(directory, filePath);
+          const fullPath = workItem.stacResultsLocation(filePath);
           const newLinks = await getItemLinksFromCatalog(fullPath);
           itemLinks.push(...newLinks);
         }
@@ -206,14 +201,6 @@ async function createAggregatingWorkItem(
     throw new ServiceError(500, `Failed to retrieve all work items for step ${nextStep.stepIndex - 1}`);
   }
 
-  // create the directory to hold the catalog(s)
-  const outputDir = path.join(env.artifactBucket, nextStep.jobID, `aggregate-${currentWorkItem.id}`, 'outputs');
-  await fs.mkdir(outputDir, { recursive: true });
-
-  // path to use in the catalogs when generating links (correct for worker container not Harmony)
-  // we don't use fs.join here because the pods use linux paths
-  const containerOutputPath = `${PATH_TO_CONTAINER_ARTIFACTS}/${nextStep.jobID}/aggregate-${currentWorkItem.id}/outputs`;
-
   const pageSize = env.aggregateStacCatalogMaxPageSize;
   const catalogCount = ceil(itemLinks.length / env.aggregateStacCatalogMaxPageSize);
   for (const index of range(0, catalogCount)) {
@@ -223,7 +210,7 @@ async function createAggregatingWorkItem(
 
     // and prev/next links as needed
     if (index > 0) {
-      const prevCatUrl = `${containerOutputPath}/catalog${index - 1}.json`;
+      const prevCatUrl = currentWorkItem.stacResultsLocation(`catalog${index - 1}.json`, true);
       const prevLink: StacItemLink = {
         href: prevCatUrl,
         rel: 'prev',
@@ -234,7 +221,7 @@ async function createAggregatingWorkItem(
     }
 
     if (index < catalogCount - 1) {
-      const nextCatUrl = `${containerOutputPath}/catalog${index + 1}.json`;
+      const nextCatUrl = currentWorkItem.stacResultsLocation(`catalog${index + 1}.json`, true);
       const nextLink: StacItemLink = {
         href: nextCatUrl,
         rel: 'next',
@@ -255,15 +242,14 @@ async function createAggregatingWorkItem(
 
     const catalogJson = JSON.stringify(catalog, null, 4);
 
-    // write the new catalog out to the file system
-    const catalogPath = path.join(outputDir, `catalog${index}.json`);
-    await fs.writeFile(catalogPath, catalogJson);
+    // write the new catalog out to s3
+    const catalogPath = currentWorkItem.stacResultsLocation(`catalog${index}.json`, true);
+    await s3.upload(catalogJson, catalogPath, null, 'application/json');
   }
 
   // catalog0 is the first catalog in the linked catalogs, so it is the catalog
   // that aggregating services should read first
-  // we don't use fs.join here because the pods use linux paths
-  const podCatalogPath = `${containerOutputPath}/catalog0.json`;
+  const podCatalogPath = currentWorkItem.stacResultsLocation('catalog0.json', true);
 
   const newWorkItem = new WorkItem({
     jobID: currentWorkItem.jobID,

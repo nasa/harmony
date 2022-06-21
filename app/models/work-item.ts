@@ -8,6 +8,8 @@ import { activeJobStatuses, Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
 import { WorkItemRecord, WorkItemStatus } from './work-item-interface';
+import env from '../util/env';
+import path from 'path';
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
 // if this changes we will have to revisit this
@@ -18,6 +20,17 @@ const serializedFields = [
   'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex',
 ];
+
+/**
+ * 
+ * @param fileName 
+ * @param item 
+ * @returns 
+ */
+export function stacResultsLocation(item: WorkItemRecord, fileName = '', isAggregate = false): string {
+  const basePath = `s3://${env.artifactBucket}/${item.jobID}/${isAggregate ? 'aggregate-' : ''}${item.id}/outputs`;
+  return path.join(basePath, fileName);
+}
 
 /**
  *
@@ -76,6 +89,10 @@ export default class WorkItem extends Record implements WorkItemRecord {
   static async insertBatch(transaction: Transaction, workItems: WorkItem[]): Promise<void> {
     const fieldsList = workItems.map(item => _.pick(item, serializedFields));
     await super.insertBatch(transaction, workItems, fieldsList);
+  }
+
+  stacResultsLocation(fileName = '', isAggregate=false): string {
+    return stacResultsLocation(fileName, this, isAggregate);
   }
 }
 

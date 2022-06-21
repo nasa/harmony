@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import path from 'path';
 import JobLink from '../models/job-link';
 import { objectStoreForProtocol } from './object-store';
@@ -50,9 +49,7 @@ export function linksWithStacData(links: Array<JobLink>): Array<JobLink> {
  */
 export async function readCatalogItems(filename: string): Promise<StacItem[]> {
   const s3 = objectStoreForProtocol('s3');
-  const catalogResponse = await s3.getObject(filename).promise();
-  const catalogString = catalogResponse.Body.toString('utf-8');
-  const catalog = JSON.parse(catalogString);
+  const catalog = await s3.getObjectJson(filename);
   const dirname = path.dirname(filename);
   const childLinks = catalog.links
     .filter((l) => l.rel === 'item')
@@ -60,10 +57,8 @@ export async function readCatalogItems(filename: string): Promise<StacItem[]> {
 
   const items: StacItem[] = [];
   for (const link of childLinks) {
-    const location = `${dirname}${link.replace('./', '/')}`;
-    const itemResponse = await s3.getObject(location).promise();
-    const itemString = itemResponse.Body.toString('utf-8');
-    const item = JSON.parse(itemString) as StacItem;
+    const location = path.join(dirname, link); // link likely has relative path "./itemFile.json"
+    const item = await s3.getObjectJson(location) as StacItem;
     items.push(item);
   }
 

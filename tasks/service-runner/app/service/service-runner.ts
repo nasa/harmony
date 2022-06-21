@@ -5,6 +5,7 @@ import env from '../util/env';
 import logger from '../../../../app/util/log';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord } from '../../../../app/models/work-item-interface';
+import { stacResultsLocation } from '../../../../app/models/work-item';
 import axios from 'axios';
 
 const s3 = objectStoreForProtocol('s3');
@@ -63,9 +64,7 @@ async function _getErrorMessage(logStr: string, catalogDir: string): Promise<str
   try {
     const errorFile = `${catalogDir}/error.json`;
     if (await s3.objectExists(errorFile)) {
-      const objResponse = await s3.getObject(errorFile).promise();
-      const errorFileString = objResponse.Body.toString('utf-8');
-      const logEntry = JSON.parse(errorFileString);
+      const logEntry = await s3.getObjectJson(errorFile);
       return logEntry.error;
     }
 
@@ -93,7 +92,7 @@ async function _getErrorMessage(logStr: string, catalogDir: string): Promise<str
 export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranules?: number): Promise<ServiceResponse> {
 
   const { operation, scrollID } = workItem;
-  const catalogDir = `s3://${env.artifactBucket}/${operation.requestId}/${workItem.id}/outputs`;
+  const catalogDir = stacResultsLocation(workItem);
 
   return new Promise<ServiceResponse>(async (resolve) => {
     logger.debug('CALLING WORKER');
@@ -142,7 +141,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
       commandLine = env.invocationArgs.split(' ');
     }
 
-    const catalogDir = `s3://${env.artifactBucket}/${operation.requestId}/${workItem.id}/outputs`;
+    const catalogDir = stacResultsLocation(workItem);
 
     return await new Promise<ServiceResponse>((resolve) => {
       logger.debug(`CALLING WORKER for pod ${env.myPodName}`);

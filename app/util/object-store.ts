@@ -112,6 +112,15 @@ export class S3ObjectStore {
     return this.s3.getObject(this._paramsOrUrlToParams(paramsOrUrl), callback);
   }
 
+  async getObjectJson(
+    paramsOrUrl: string | BucketParams,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> {
+    const catalogResponse = await this.getObject(paramsOrUrl).promise();
+    const catalogString = catalogResponse.Body.toString('utf-8');
+    return JSON.parse(catalogString);
+  }
+
   /**
    * List all of the object keys for the given prefix.
    * 
