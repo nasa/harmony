@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import path from 'path';
 import JobLink from '../models/job-link';
+import { objectStoreForProtocol } from './object-store';
 
 export interface StacItemLink {
   href: string;
@@ -47,17 +48,22 @@ export function linksWithStacData(links: Array<JobLink>): Array<JobLink> {
  * Reads the content of the catalog and returns the catalog items
  * @param filename - the catalog filename
  */
-export function readCatalogItems(filename: string): StacItem[] {
+export async function readCatalogItems(filename: string): Promise<StacItem[]> {
+  const s3 = objectStoreForProtocol('s3');
+  const catalogResponse = await s3.getObject(filename).promise();
+  const catalogString = catalogResponse.Body.toString('utf-8');
+  const catalog = JSON.parse(catalogString);
   const dirname = path.dirname(filename);
-  const catalog = JSON.parse(fs.readFileSync(filename, 'utf-8'));
   const childLinks = catalog.links
     .filter((l) => l.rel === 'item')
     .map((l) => l.href);
 
   const items: StacItem[] = [];
   for (const link of childLinks) {
-    const location = `${dirname}/${link.replace('./', '/')}`;
-    const item = JSON.parse(fs.readFileSync(location, 'utf-8')) as unknown as StacItem;
+    const location = `${dirname}${link.replace('./', '/')}`;
+    const itemResponse = await s3.getObject(location).promise();
+    const itemString = itemResponse.Body.toString('utf-8');
+    const item = JSON.parse(itemString) as StacItem;
     items.push(item);
   }
 

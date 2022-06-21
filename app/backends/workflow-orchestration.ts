@@ -99,10 +99,9 @@ async function _handleWorkItemResults(
   logger: Logger,
 ): Promise<void> {
   for (const catalogLocation of results) {
-    const localLocation = catalogLocation.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
-    logger.debug(`Adding link for STAC catalog ${localLocation}`);
+    logger.debug(`Adding link for STAC catalog ${catalogLocation}`);
 
-    const items = readCatalogItems(localLocation);
+    const items = await readCatalogItems(catalogLocation);
 
     for await (const item of items) {
       for (const keyValue of Object.entries(item.assets)) {
