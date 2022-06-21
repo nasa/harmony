@@ -1,6 +1,7 @@
 import path from 'path';
 import JobLink from '../models/job-link';
 import { objectStoreForProtocol } from './object-store';
+import { resolve } from './url';
 
 export interface StacItemLink {
   href: string;
@@ -57,7 +58,7 @@ export async function readCatalogItems(filename: string): Promise<StacItem[]> {
 
   const items: StacItem[] = [];
   for (const link of childLinks) {
-    const location = path.join(dirname, link); // link likely has relative path "./itemFile.json"
+    const location = resolve(dirname, link); // link likely has relative path "./itemFile.json"
     const item = await s3.getObjectJson(location) as StacItem;
     items.push(item);
   }

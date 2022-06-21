@@ -3,13 +3,14 @@ import { ILengthAwarePagination } from 'knex-paginate';
 import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
+import env from '../util/env';
+import { resolve } from '../util/url';
 import DataOperation from './data-operation';
 import { activeJobStatuses, Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
 import { WorkItemRecord, WorkItemStatus } from './work-item-interface';
-import env from '../util/env';
-import path from 'path';
+
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
 // if this changes we will have to revisit this
@@ -29,7 +30,7 @@ const serializedFields = [
  */
 export function stacResultsLocation(item: WorkItemRecord, fileName = '', isAggregate = false): string {
   const basePath = `s3://${env.artifactBucket}/${item.jobID}/${isAggregate ? 'aggregate-' : ''}${item.id}/outputs`;
-  return path.join(basePath, fileName);
+  return resolve(basePath, fileName);
 }
 
 /**

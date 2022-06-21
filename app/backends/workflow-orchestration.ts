@@ -12,11 +12,11 @@ import JobLink from '../models/job-link';
 import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
 import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 import path from 'path';
-import { promises as fs } from 'fs';
 import { ServiceError } from '../util/errors';
 import { clearScrollSession } from '../util/cmr';
 import { SUCCESSFUL_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
 import { objectStoreForProtocol } from '../util/object-store';
+import { resolve } from '../util/url';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
@@ -138,7 +138,7 @@ async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLin
     if (link.rel === 'item') {
       // make relative path absolute
       const { href } = link;
-      link.href = path.join(baseDir, href);
+      link.href = resolve(baseDir, href);
       links.push(link);
     }
   }

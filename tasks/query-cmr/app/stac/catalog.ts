@@ -6,6 +6,7 @@ import _ from 'lodash';
 import StacItem from './item';
 import { StacCatalog, StacLink } from './types';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
+import { resolve } from '../../../../app/util/url';
 
 /**
  * Implementation of the StacCatalog type with constructor, write function, and ability
@@ -61,7 +62,7 @@ export default class Catalog implements StacCatalog {
     const dirname = path.dirname(filename);
     const childLinks = this.links.filter((l) => l.rel === 'child' || l.rel === 'item');
     const promises: Promise<void | aws.S3.ManagedUpload.SendData>[] = this.children.map(async (item, i) => {
-      const itemFilename = `${dirname}/${path.normalize(childLinks[i].href)}`;
+      const itemFilename = resolve(dirname, childLinks[i].href);
       return item.write(itemFilename, pretty);
     });
     const json = pretty ? JSON.stringify(this, null, 2) : JSON.stringify(this);
