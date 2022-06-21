@@ -327,7 +327,7 @@ OBJECT_STORE_TYPE=s3
 # Default: A bucket created for use in localstack
 STAGING_BUCKET=local-staging-bucket
 
-# The bucket where intermediate service artifacts will be staged
+# The bucket where intermediate service artifacts and STAC catalogs will be staged
 # Default: A bucket created for use in localstack
 ARTIFACT_BUCKET=local-artifact-bucket
 
@@ -348,10 +348,6 @@ MAX_POST_FILE_SIZE=2000000000
 
 # Maximum number of multipart parts to accept when providing a shapefile
 MAX_POST_FILE_PARTS=100
-
-# The bucket in s3 where STAC catalogs are saved.
-# Both pods and Harmony backend will read/write at this location.
-HOST_VOLUME_PATH=stac
 
 # If a retryable error is encountered while attempting to update a work item,
 # the HTTP client will retry a maximum of this many times.

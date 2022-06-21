@@ -41,7 +41,7 @@ async function calculateQueryCmrLimit(
     queryCmrItems = queryCmrItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL);
     const stacCatalogLengths = await Promise.all(queryCmrItems.map(async ({ id, jobID }) => {
       try {
-        const directory = path.join(env.hostVolumePath, jobID, `${id}`, 'outputs');
+        const directory = path.join(env.artifactBucket, jobID, `${id}`, 'outputs');
         const jsonPath = path.join(directory, 'batch-catalogs.json');
         const json = (await fs.readFile(jsonPath)).toString();
         return JSON.parse(json).length;
@@ -132,7 +132,7 @@ async function _handleWorkItemResults(
  * @param catalogPath - the path to the catalog
  */
 async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]> {
-  const baseDir = path.dirname(catalogPath).replace(env.hostVolumePath, PATH_TO_CONTAINER_ARTIFACTS);
+  const baseDir = path.dirname(catalogPath).replace(env.artifactBucket, PATH_TO_CONTAINER_ARTIFACTS);
   const text = (await fs.readFile(catalogPath)).toString();
   const catalog = JSON.parse(text);
   const links: StacItemLink[] = [];
@@ -177,7 +177,7 @@ async function createAggregatingWorkItem(
 
     for (const workItem of prevStepWorkItems.workItems) {
       const { id, jobID } = workItem;
-      const directory = path.join(env.hostVolumePath, jobID, `${id}`, 'outputs');
+      const directory = path.join(env.artifactBucket, jobID, `${id}`, 'outputs');
       try {
         // try to use the default catalog output for single granule work items
         const singleCatalogPath = path.join(directory, 'catalog.json');
@@ -207,7 +207,7 @@ async function createAggregatingWorkItem(
   }
 
   // create the directory to hold the catalog(s)
-  const outputDir = path.join(env.hostVolumePath, nextStep.jobID, `aggregate-${currentWorkItem.id}`, 'outputs');
+  const outputDir = path.join(env.artifactBucket, nextStep.jobID, `aggregate-${currentWorkItem.id}`, 'outputs');
   await fs.mkdir(outputDir, { recursive: true });
 
   // path to use in the catalogs when generating links (correct for worker container not Harmony)
