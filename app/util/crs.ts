@@ -1,4 +1,4 @@
-import { SpatialReference } from 'gdal';
+import { SpatialReference } from 'gdal-async';
 import { RequestValidationError } from './errors';
 import { SRS } from '../models/data-operation';
 
