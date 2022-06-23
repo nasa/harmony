@@ -51,14 +51,13 @@ export function linksWithStacData(links: Array<JobLink>): Array<JobLink> {
 export async function readCatalogItems(filename: string): Promise<StacItem[]> {
   const s3 = objectStoreForProtocol('s3');
   const catalog = await s3.getObjectJson(filename);
-  const dirname = path.dirname(filename);
   const childLinks = catalog.links
     .filter((l) => l.rel === 'item')
     .map((l) => l.href);
 
   const items: StacItem[] = [];
   for (const link of childLinks) {
-    const location = resolve(dirname, link); // link likely has relative path "./itemFile.json"
+    const location = resolve(filename, link); // link likely has relative path "./itemFile.json"
     const item = await s3.getObjectJson(location) as StacItem;
     items.push(item);
   }

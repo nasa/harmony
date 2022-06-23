@@ -4,8 +4,7 @@ import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import logger from '../../../../app/util/log';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
-import { WorkItemRecord } from '../../../../app/models/work-item-interface';
-import { stacResultsLocation } from '../../../../app/models/work-item';
+import { WorkItemRecord, getStacOutputsUrl } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 
 const s3 = objectStoreForProtocol('s3');
@@ -90,10 +89,10 @@ async function _getErrorMessage(logStr: string, catalogDir: string): Promise<str
   * @param maxCmrGranules - Limits the page of granules in the query-cmr task
   */
 export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranules?: number): Promise<ServiceResponse> {
-
+  console.log(workItem);
   const { operation, scrollID } = workItem;
-  const catalogDir = stacResultsLocation(workItem);
-
+  const catalogDir = getStacOutputsUrl(workItem);
+  console.log(catalogDir);
   return new Promise<ServiceResponse>(async (resolve) => {
     logger.debug('CALLING WORKER');
 
@@ -141,8 +140,9 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
       commandLine = env.invocationArgs.split(' ');
     }
 
-    const catalogDir = stacResultsLocation(workItem);
-
+    const catalogDir = getStacOutputsUrl(workItem);
+    console.log(workItem);
+    console.log(catalogDir, stacCatalogLocation);
     return await new Promise<ServiceResponse>((resolve) => {
       logger.debug(`CALLING WORKER for pod ${env.myPodName}`);
       // create a writable stream to capture stdout from the exec call

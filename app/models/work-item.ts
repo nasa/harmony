@@ -3,13 +3,11 @@ import { ILengthAwarePagination } from 'knex-paginate';
 import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
-import env from '../util/env';
-import { resolve } from '../util/url';
 import DataOperation from './data-operation';
 import { activeJobStatuses, Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
-import { WorkItemRecord, WorkItemStatus } from './work-item-interface';
+import { WorkItemRecord, WorkItemStatus, getStacOutputsUrl } from './work-item-interface';
 
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
@@ -21,17 +19,6 @@ const serializedFields = [
   'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex',
 ];
-
-/**
- * 
- * @param fileName 
- * @param item 
- * @returns 
- */
-export function stacResultsLocation(item: WorkItemRecord, fileName = '', isAggregate = false): string {
-  const basePath = `s3://${env.artifactBucket}/${item.jobID}/${isAggregate ? 'aggregate-' : ''}${item.id}/outputs`;
-  return resolve(basePath, fileName);
-}
 
 /**
  *
@@ -92,8 +79,8 @@ export default class WorkItem extends Record implements WorkItemRecord {
     await super.insertBatch(transaction, workItems, fieldsList);
   }
 
-  stacResultsLocation(fileName = '', isAggregate=false): string {
-    return stacResultsLocation(fileName, this, isAggregate);
+  getStacOutputsUrl(fileName = '', isAggregate = false): string {
+    return getStacOutputsUrl(this, fileName, isAggregate);
   }
 }
 

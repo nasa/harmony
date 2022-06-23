@@ -59,10 +59,9 @@ export default class Catalog implements StacCatalog {
    */
   async write(filename: string, pretty = false): Promise<void> {
     const s3 = objectStoreForProtocol('s3');
-    const dirname = path.dirname(filename);
     const childLinks = this.links.filter((l) => l.rel === 'child' || l.rel === 'item');
     const promises: Promise<void | aws.S3.ManagedUpload.SendData>[] = this.children.map(async (item, i) => {
-      const itemFilename = resolve(dirname, childLinks[i].href);
+      const itemFilename = resolve(filename, childLinks[i].href);
       return item.write(itemFilename, pretty);
     });
     const json = pretty ? JSON.stringify(this, null, 2) : JSON.stringify(this);

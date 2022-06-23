@@ -8,11 +8,6 @@ source ".env"
 set +a
 eval "$env_save"
 
-if [[ -z "${HOST_VOLUME_PATH}" ]]; then
-  echo "HOST_VOLUME_PATH must be set before running this script"
-  exit 1
-fi
-
 . ./bin/create-k8s-config-maps-and-secrets
 
 # create the query-cmr service

@@ -1,5 +1,4 @@
 import aws from 'aws-sdk';
-import { promises as fs } from 'fs';
 import { strict as assert } from 'assert';
 import { v4 as uuid } from 'uuid';
 import { StacLink, StacAsset, StacItem } from './types';

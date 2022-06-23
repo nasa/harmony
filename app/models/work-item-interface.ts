@@ -1,4 +1,6 @@
 import DataOperation from './data-operation';
+import { resolve } from '../util/url';
+import env from '../util/env';
 
 export enum WorkItemStatus {
   READY = 'ready',
@@ -50,4 +52,16 @@ export interface WorkItemRecord {
 
   // When the item was created
   createdAt: Date;
+}
+
+/**
+ * 
+ * @param fileName 
+ * @param item 
+ * @returns 
+ */
+export function getStacOutputsUrl(item: WorkItemRecord, fileName = '', isAggregate = false): string {
+  console.log(item, fileName, isAggregate);
+  const basePath = `s3://${env.artifactBucket}/${item.jobID}/${isAggregate ? 'aggregate-' : ''}${item.id}/outputs`;
+  return resolve(basePath, fileName);
 }
