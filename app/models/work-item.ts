@@ -79,8 +79,18 @@ export default class WorkItem extends Record implements WorkItemRecord {
     await super.insertBatch(transaction, workItems, fieldsList);
   }
 
-  getStacOutputsUrl(fileName = '', isAggregate = false): string {
-    return getStacOutputsUrl(this, fileName, isAggregate);
+  /**
+   * Get the s3 URL path to the STAC outputs directory for this work item.
+   * Optionally pass in a target URL in which case the URL returned will be the target URL
+   * resolved relative to the STAC outputs directory.
+   * e.g. s3://artifacts/abc/123/outputs/ with a targetUrl of ./catalog0.json or catalog0.json would resolve to
+   * s3://artifacts/abc/123/outputs/catalog0.json
+   * @param targetUrl - URL to resolve against the base outptuts directory 
+   * @param isAggregate - include the word aggregate in the URL
+   * @returns - the path to the STAC outputs directory (e.g. s3://artifacts/abc/123/outputs/) or the full path to the target URL
+   */
+  getStacOutputsUrl(targetUrl = '', isAggregate = false): string {
+    return getStacOutputsUrl(this, targetUrl, isAggregate);
   }
 }
 

@@ -55,13 +55,17 @@ export interface WorkItemRecord {
 }
 
 /**
- * 
- * @param fileName 
- * @param item 
- * @returns 
+ * Get the s3 URL path to the STAC outputs directory for a work item.
+ * Optionally pass in a target URL in which case the URL returned will be the target URL
+ * resolved relative to the STAC outputs directory.
+ * e.g. s3://artifacts/abc/123/outputs/ with a targetUrl of ./catalog0.json or catalog0.json would resolve to
+ * s3://artifacts/abc/123/outputs/catalog0.json
+ * @param targetUrl - URL to resolve against the base outptuts directory 
+ * @param item - the returned URL will provide the path to the outputs for this work item
+ * @param isAggregate - include the word aggregate in the URL
+ * @returns - the path to the STAC outputs directory (e.g. s3://artifacts/abc/123/outputs/) or the full path to the target URL
  */
-export function getStacOutputsUrl(item: WorkItemRecord, fileName = '', isAggregate = false): string {
-  console.log(item, fileName, isAggregate);
-  const basePath = `s3://${env.artifactBucket}/${item.jobID}/${isAggregate ? 'aggregate-' : ''}${item.id}/outputs`;
-  return resolve(basePath, fileName);
+export function getStacOutputsUrl(item: WorkItemRecord, targetUrl = '', isAggregate = false): string {
+  const baseUrl = `s3://${env.artifactBucket}/${item.jobID}/${isAggregate ? 'aggregate-' : ''}${item.id}/outputs/`;
+  return resolve(baseUrl, targetUrl);
 }

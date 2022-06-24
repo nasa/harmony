@@ -3,6 +3,7 @@ import stream from 'stream';
 import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import logger from '../../../../app/util/log';
+import { resolve as resolveUrl } from '../../../../app/util/url';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord, getStacOutputsUrl } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
@@ -39,7 +40,7 @@ class LogStream extends stream.Writable {
 
 /**
  * Get a list of full s3 paths to each STAC catalog found in an S3 directory.
- * @param dir - the s3 path, e.g. s3://stac/requestId/workItemId/outputs
+ * @param dir - the s3 path, e.g. s3://artifacts/requestId/workItemId/outputs/
  */
 async function _getStacCatalogs(dir: string): Promise<string[]> {
   return (await s3.listObjectKeys(dir))
@@ -55,13 +56,14 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
  * braces.
  *
  * @param logStr - A string that contains error logging
- * @param catalogDir - A string path for the outputs directory of the WorkItem.
+ * @param catalogDir - A string path for the outputs directory of the WorkItem 
+ * (e.g. s3://artifacts/requestId/workItemId/outputs/).
  * @returns An error message parsed from the log
  */
 async function _getErrorMessage(logStr: string, catalogDir: string): Promise<string> {
   // expect JSON logs entries
   try {
-    const errorFile = `${catalogDir}/error.json`;
+    const errorFile = resolveUrl(catalogDir, 'error.json');
     if (await s3.objectExists(errorFile)) {
       const logEntry = await s3.getObjectJson(errorFile);
       return logEntry.error;
@@ -89,10 +91,8 @@ async function _getErrorMessage(logStr: string, catalogDir: string): Promise<str
   * @param maxCmrGranules - Limits the page of granules in the query-cmr task
   */
 export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranules?: number): Promise<ServiceResponse> {
-  console.log(workItem);
   const { operation, scrollID } = workItem;
   const catalogDir = getStacOutputsUrl(workItem);
-  console.log(catalogDir);
   return new Promise<ServiceResponse>(async (resolve) => {
     logger.debug('CALLING WORKER');
 
@@ -141,8 +141,6 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
     }
 
     const catalogDir = getStacOutputsUrl(workItem);
-    console.log(workItem);
-    console.log(catalogDir, stacCatalogLocation);
     return await new Promise<ServiceResponse>((resolve) => {
       logger.debug(`CALLING WORKER for pod ${env.myPodName}`);
       // create a writable stream to capture stdout from the exec call

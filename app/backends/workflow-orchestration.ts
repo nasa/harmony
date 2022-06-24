@@ -11,7 +11,6 @@ import { Job, JobStatus } from '../models/job';
 import JobLink from '../models/job-link';
 import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
 import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
-import path from 'path';
 import { ServiceError } from '../util/errors';
 import { clearScrollSession } from '../util/cmr';
 import { SUCCESSFUL_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
@@ -73,7 +72,6 @@ export async function getWork(
     maxCmrGranules = await calculateQueryCmrLimit(workItem, tx, logger);
   });
   if (workItem) {
-    console.log(workItem);
     res.send({ workItem, maxCmrGranules });
   } else if (tryCount < MAX_TRY_COUNT) {
     setTimeout(async () => {
@@ -132,14 +130,13 @@ async function _handleWorkItemResults(
  * @param catalogPath - the path to the catalog
  */
 async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]> {
-  const baseDir = path.dirname(catalogPath);
   const catalog = await s3.getObjectJson(catalogPath);
   const links: StacItemLink[] = [];
   for (const link of catalog.links) {
     if (link.rel === 'item') {
       // make relative path absolute
       const { href } = link;
-      link.href = resolve(baseDir, href);
+      link.href = resolve(catalogPath, href);
       links.push(link);
     }
   }
@@ -185,8 +182,8 @@ async function createAggregatingWorkItem(
         // catalogs for this work item
         const jsonPath = workItem.getStacOutputsUrl('batch-catalogs.json');
         const catalog = await s3.getObjectJson(jsonPath);
-        for (const filePath of catalog) {
-          const fullPath = workItem.getStacOutputsUrl(filePath);
+        for (const fileName of catalog) {
+          const fullPath = workItem.getStacOutputsUrl(fileName);
           const newLinks = await getItemLinksFromCatalog(fullPath);
           itemLinks.push(...newLinks);
         }

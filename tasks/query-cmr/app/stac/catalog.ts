@@ -52,20 +52,20 @@ export default class Catalog implements StacCatalog {
   }
 
   /**
-   * Writes this catalog and all of its children, with child filenames determined
+   * Writes this catalog and all of its children, with child file paths determined
    * by their relative link paths
-   * @param filename - the filename to write this catalog to
+   * @param filePath - the full path to the file where this catalog should be written
    * @param pretty - if output JSON should be pretty-formatted
    */
-  async write(filename: string, pretty = false): Promise<void> {
+  async write(filePath: string, pretty = false): Promise<void> {
     const s3 = objectStoreForProtocol('s3');
     const childLinks = this.links.filter((l) => l.rel === 'child' || l.rel === 'item');
     const promises: Promise<void | aws.S3.ManagedUpload.SendData>[] = this.children.map(async (item, i) => {
-      const itemFilename = resolve(filename, childLinks[i].href);
+      const itemFilename = resolve(filePath, childLinks[i].href);
       return item.write(itemFilename, pretty);
     });
     const json = pretty ? JSON.stringify(this, null, 2) : JSON.stringify(this);
-    promises.push(s3.upload(json, filename, null, 'application/json'));
+    promises.push(s3.upload(json, filePath, null, 'application/json'));
     await Promise.all(promises);
   }
 }

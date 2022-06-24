@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import logger from '../../../../app/util/log';
+import { resolve } from '../../../../app/util/url';
 import DataOperation from '../../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../../app/util/crypto';
 import { queryGranulesScrolling } from '../query';
@@ -37,13 +38,13 @@ export async function doWork(workReq: QueryCmrRequest): Promise<number> {
   const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {
     const relativeFilename = `catalog${i}.json`;
-    const filename = `${outputDir}/${relativeFilename}`;
+    const filename = resolve(outputDir, relativeFilename);
     catalogFilenames.push(relativeFilename);
     await catalog.write(filename, true);
   });
 
-  const catalogListFilename = `${outputDir}/batch-catalogs.json`;
-  const catalogCountFilename = `${outputDir}/batch-count.txt`;
+  const catalogListFilename = resolve(outputDir, 'batch-catalogs.json');
+  const catalogCountFilename = resolve(outputDir, 'batch-count.txt');
 
   await Promise.all(promises);
   const catalogWriteTime = new Date().getTime();
