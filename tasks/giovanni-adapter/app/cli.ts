@@ -7,6 +7,8 @@ import logger from '../../../app/util/log';
 import Catalog from './stac/catalog';
 import StacItem from './stac/item';
 import { BoundingBox } from '../../../app/util/bounding-box';
+import { resolve } from '../../../app/util/url';
+import { objectStoreForProtocol } from '../../../app/util/object-store';
 
 // giovanni globals
 import giovanni_datafield_config from '../config/giovanni-datafield.json';
@@ -104,7 +106,7 @@ export default async function main(args: string[]): Promise<void> {
     'type': 'application/json',
     'title': 'giovanni stac item',
   });
-  const stacItemFilename = path.join(options.harmonyMetadataDir, stacItemRelativeFilename);
+  const stacItemFilename = resolve(options.harmonyMetadataDir, stacItemRelativeFilename);
   const time_start = operation.temporal.start;
   const time_end = operation.temporal.end;
   const properties = { start_datetime: time_start, end_datetime: time_end };
@@ -129,15 +131,16 @@ export default async function main(args: string[]): Promise<void> {
   // save stac catalog
   const relativeFilename = 'catalog.json';
   const catalogFilenames = [];
-  const filename = path.join(options.harmonyMetadataDir, relativeFilename);
+  const filename = resolve(options.harmonyMetadataDir, relativeFilename);
   catalogFilenames.push(relativeFilename);
   await result.write(filename, true);
 
-  const catalogListFilename = path.join(options.harmonyMetadataDir, 'batch-catalogs.json');
-  const catalogCountFilename = path.join(options.harmonyMetadataDir, 'batch-count.txt');
+  const catalogListFilename = resolve(options.harmonyMetadataDir, 'batch-catalogs.json');
+  const catalogCountFilename = resolve(options.harmonyMetadataDir, 'batch-count.txt');
 
-  await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
-  await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
+  const s3 = objectStoreForProtocol('s3');
+  await s3.upload(JSON.stringify(catalogFilenames), catalogListFilename, null, 'application/json');
+  await s3.upload(catalogFilenames.length.toString(), catalogCountFilename, null, 'text/plain');
 
   const durationMs = new Date().getTime() - startTime;
   timingLogger.info('timing.giovanni-adapter.end', { durationMs });

@@ -1,6 +1,5 @@
 import aws from 'aws-sdk';
 import { strict as assert } from 'assert';
-import path from 'path';
 import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
 import StacItem from './item';

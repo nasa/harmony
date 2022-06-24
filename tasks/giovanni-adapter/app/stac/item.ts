@@ -1,7 +1,8 @@
-import { promises as fs } from 'fs';
+import aws from 'aws-sdk';
 import { strict as assert } from 'assert';
 import { v4 as uuid } from 'uuid';
 import { StacLink, StacAsset, StacItem } from './types';
+import { objectStoreForProtocol } from '../../../../app/util/object-store';
 
 /**
  * Implementation of the StacCatalog type with constructor and write capabilities
@@ -45,11 +46,12 @@ export default class Item implements StacItem {
 
   /**
    * Writes this item as JSON to the given filename
-   * @param filename - the name of the file to write
+   * @param filePath - the full path to the file where this catalog should be written
    * @param pretty - whether to pretty-format the JSON
    */
-  async write(filename: string, pretty = false): Promise<void> {
+  async write(filePath: string, pretty = false): Promise<aws.S3.ManagedUpload.SendData> {
+    const s3 = objectStoreForProtocol('s3');
     const json = pretty ? JSON.stringify(this, null, 2) : JSON.stringify(this);
-    return fs.writeFile(filename, json);
+    return s3.upload(json, filePath, null, 'application/json');
   }
 }
