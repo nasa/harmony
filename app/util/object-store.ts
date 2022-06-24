@@ -112,6 +112,12 @@ export class S3ObjectStore {
     return this.s3.getObject(this._paramsOrUrlToParams(paramsOrUrl), callback);
   }
 
+  /**
+   * Get the JSON for the given file.
+   @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the objects to
+   *   be retrieved or the object URL
+   * @returns an object, parsed from JSON
+   */
   async getObjectJson(
     paramsOrUrl: string | BucketParams,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -173,7 +179,7 @@ export class S3ObjectStore {
    *   be retrieved or the object URL
    * @returns boolean
    */
-  async objectExists(paramsOrUrl): Promise<boolean> {
+  async objectExists(paramsOrUrl: string | BucketParams): Promise<boolean> {
     try {
       await this.s3.headObject(this._paramsOrUrlToParams(paramsOrUrl)).promise();
       return true;
