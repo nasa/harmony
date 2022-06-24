@@ -46,7 +46,7 @@ export default class Item implements StacItem {
 
   /**
    * Writes this item as JSON to the given filename
-   * @param filePath - the full path to the file where this catalog should be written
+   * @param filePath - the full path to the file where this item should be written
    * @param pretty - whether to pretty-format the JSON
    */
   async write(filePath: string, pretty = false): Promise<aws.S3.ManagedUpload.SendData> {
