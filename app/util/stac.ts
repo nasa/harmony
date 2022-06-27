@@ -1,4 +1,3 @@
-import path from 'path';
 import JobLink from '../models/job-link';
 import { objectStoreForProtocol } from './object-store';
 import { resolve } from './url';
