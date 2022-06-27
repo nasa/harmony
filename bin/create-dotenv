@@ -31,6 +31,8 @@ PROMPT_EDL
 		OAUTH_PASSWORD=$OAUTH_PASSWORD
 EOF
     
+    echo "\n# Env vars used for turbo mode" >> .env
+    
     # prompt for LOCALLY_DEPLOYED_SERVICES
     echo "Enter services to deploy (comma separated list):"
     read -p "Hit <Enter> to use the default services: " LOCALLY_DEPLOYED_SERVICES
