@@ -19,7 +19,6 @@ import { resolve } from '../util/url';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
-const s3 = objectStoreForProtocol('s3');
 
 /**
  * Calculate the granule page limit for the current query-cmr work item.
@@ -38,6 +37,7 @@ async function calculateQueryCmrLimit(
       tx, workItem.jobID, workItem.workflowStepIndex, 1, Number.MAX_SAFE_INTEGER))
       .workItems;
     queryCmrItems = queryCmrItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL);
+    const s3 = objectStoreForProtocol('s3');
     const stacCatalogLengths = await Promise.all(queryCmrItems.map(async (item) => {
       const jsonPath = item.getStacOutputsUrl('batch-catalogs.json');
       try {
@@ -130,6 +130,7 @@ async function _handleWorkItemResults(
  * @param catalogPath - the path to the catalog
  */
 async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLink[]> {
+  const s3 = objectStoreForProtocol('s3');
   const catalog = await s3.getObjectJson(catalogPath);
   const links: StacItemLink[] = [];
   for (const link of catalog.links) {
@@ -162,6 +163,7 @@ async function createAggregatingWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
 ): Promise<void> {
   const itemLinks: StacItemLink[] = [];
+  const s3 = objectStoreForProtocol('s3');
   // get all the previous results
   const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex - 1);
   let page = 1;

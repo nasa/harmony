@@ -7,10 +7,10 @@ import { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
 import { hookJobCreation } from '../helpers/jobs';
-import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService } from '../helpers/work-items';
+import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
 import { hookClearScrollSessionExpect } from '../helpers/hooks';
-import { WorkItemRecord, WorkItemStatus } from '../../app/models/work-item-interface';
+import { getStacOutputsUrl, WorkItemRecord, WorkItemStatus } from '../../app/models/work-item-interface';
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();
@@ -21,6 +21,7 @@ describe('Work Backends', function () {
   const workItemRecord = {
     jobID: jobRecord.jobID,
     serviceID: service,
+    id: 1,
   } as Partial<WorkItemRecord>;
 
   const workflowStepRecod = {
@@ -222,10 +223,12 @@ describe('Work Backends', function () {
         ...workItemRecord,
         ...{
           status: WorkItemStatus.SUCCESSFUL,
-          results: ['test/resources/worker-response-sample/catalog0.json'],
+          results: [getStacOutputsUrl({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
         },
       };
-
+      before(async () => {
+        await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
+      });
       hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
 
       it('sets the work item status to successful', async function () {

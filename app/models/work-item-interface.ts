@@ -65,7 +65,7 @@ export interface WorkItemRecord {
  * @param isAggregate - include the word aggregate in the URL
  * @returns - the path to the STAC outputs directory (e.g. s3://artifacts/abc/123/outputs/) or the full path to the target URL
  */
-export function getStacOutputsUrl(item: WorkItemRecord, targetUrl = '', isAggregate = false): string {
+export function getStacOutputsUrl(item: { id: number, jobID: string }, targetUrl = '', isAggregate = false): string {
   const baseUrl = `s3://${env.artifactBucket}/${item.jobID}/${isAggregate ? 'aggregate-' : ''}${item.id}/outputs/`;
   return resolve(baseUrl, targetUrl);
 }

@@ -12,9 +12,6 @@ process.env.OAUTH_UID = 'foo';
 process.env.OAUTH_PASSWORD = 'foo';
 process.env.SHARED_SECRET_KEY = 'foo';
 
-// needed for aggregation tests
-process.env.HOST_VOLUME_PATH = '/tmp';
-
 // needed to keep lots of tests from auto-pausing
 process.env.PREVIEW_THRESHOLD = '500';
 
