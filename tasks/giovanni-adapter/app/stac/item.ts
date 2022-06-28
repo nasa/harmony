@@ -45,7 +45,7 @@ export default class Item implements StacItem {
   }
 
   /**
-   * Writes this item as JSON to the given filename
+   * Writes this item as JSON to the given filePath
    * @param filePath - the full path to the file where this item should be written
    * @param pretty - whether to pretty-format the JSON
    */
