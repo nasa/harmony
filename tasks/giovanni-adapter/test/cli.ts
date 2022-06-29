@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { getObjectText } from '../../../test/helpers/object-store';
+import { resolve } from '../../../app/util/url';
 
 import { hookCliParser, hookCliMain } from './helpers/cli';
 
@@ -93,12 +94,12 @@ describe('cli', function () {
       );
 
       it('outputs the result data to catalog.json in the directory', async function () {
-        const catalog = await getObjectText(`${tmpDir}/catalog.json`);
+        const catalog = await getObjectText(resolve(tmpDir, 'catalog.json'));
         expect(JSON.parse(catalog).description).to.equal('Giovanni adapter service');
       });
 
       it('outputs the result data to item.json in the directory', async function () {
-        const itemContext = JSON.parse(await getObjectText(`${tmpDir}/item.json`));
+        const itemContext = JSON.parse(await getObjectText(resolve(tmpDir, 'item.json')));
         expect(itemContext.bbox).to.eql([ 0.76, -3.8, 0.76, -3.8 ]);
         expect(itemContext.properties.start_datetime).to.equal('2020-01-01T00:00:00.000Z');
         expect(itemContext.properties.end_datetime).to.equal('2020-01-01T03:00:00.000Z');
