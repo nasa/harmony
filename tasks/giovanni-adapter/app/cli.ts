@@ -1,6 +1,5 @@
 import yargs from 'yargs';
 import { promises as fs } from 'fs';
-import path from 'path';
 import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
 import logger from '../../../app/util/log';

@@ -2,7 +2,9 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import env from '../app/util/env';
 import WorkItem from '../../../app/models/work-item';
+import { objectStoreForProtocol } from '../../../app/util/object-store';
 import * as serviceRunner from '../app/service/service-runner';
+import { resolve } from '../../../app/util/url';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
@@ -44,38 +46,44 @@ const nonErrorLog = `
 }
 `;
 
-const workItemWithErrorJson = './test/fixtures/error-messages';
-const workItemWithoutErrorJson = './test/fixtures/empty-dir';
+const workItemWithErrorJson = 's3://stac/abc/123/outputs/';
+const workItemWithoutErrorJson = 's3://stac/abc/456/outputs/';
 const emptyLog = '';
 
 describe('Service Runner', function () {
   describe('_getErrorMessage()', function () {
-    describe('when there is an error.json file associated with the WorkItem', function () {
-      const errorMessage = _getErrorMessage(errorLog, workItemWithErrorJson);
-      it('returns the error message from error.json', function () {
+    before(async function () {
+      const s3 = objectStoreForProtocol('s3');
+      const errorJson = JSON.stringify({ 'error': 'Service error message', 'category': 'Service' });
+      const errorJsonUrl = resolve(workItemWithErrorJson, 'error.json');
+      await s3.upload(errorJson, errorJsonUrl, null, 'application/json');
+    });
+    describe('when there is an error.json file associated with the WorkItem', async function () {
+      const errorMessage = await _getErrorMessage(errorLog, workItemWithErrorJson);
+      it('returns the error message from error.json', async function () {
         expect(errorMessage).equal('Service error message');
       });
     });
-    describe('when the error log has ERROR level entries', function () {
-      const errorMessage = _getErrorMessage(errorLog, workItemWithoutErrorJson);
+    describe('when the error log has ERROR level entries', async function () {
+      const errorMessage = await _getErrorMessage(errorLog, workItemWithoutErrorJson);
       it('returns the first error log entry', function () {
         expect(errorMessage).equal('bad stuff');
       });
     });
-    describe('when the error log has no ERROR level entries', function () {
-      const errorMessage = _getErrorMessage(nonErrorLog, workItemWithoutErrorJson);
+    describe('when the error log has no ERROR level entries', async function () {
+      const errorMessage = await _getErrorMessage(nonErrorLog, workItemWithoutErrorJson);
       it('returns "unknown error"', function () {
         expect(errorMessage).equal('Unknown error');
       });
     });
-    describe('when the error log is empty', function () {
-      const errorMessage = _getErrorMessage(emptyLog, workItemWithoutErrorJson);
+    describe('when the error log is empty', async function () {
+      const errorMessage = await _getErrorMessage(emptyLog, workItemWithoutErrorJson);
       it('returns "unknown error"', function () {
         expect(errorMessage).equal('Unknown error');
       });
     });
-    describe('when the error log is null', function () {
-      const errorMessage = _getErrorMessage(null, workItemWithoutErrorJson);
+    describe('when the error log is null', async function () {
+      const errorMessage = await _getErrorMessage(null, workItemWithoutErrorJson);
       it('returns "unknown error"', function () {
         expect(errorMessage).equal('Unknown error');
       });
@@ -83,15 +91,23 @@ describe('Service Runner', function () {
   });
 
   describe('_getStacCatalogs', function () {
-    describe('when the directory has catalogs', function () {
-      const files = _getStacCatalogs('test/fixtures/stac-catalogs');
+    const nonEmptyCatalogUrl = 's3://stac-catalogs/some/';
+    const emptyCatalogUrl = 's3://stac-catalogs/empty/';
+    before(async function () {
+      const s3 = objectStoreForProtocol('s3');
+      const errorJson = JSON.stringify({});
+      const catalogUrl = resolve(nonEmptyCatalogUrl, 'catalog0.json');
+      await s3.upload(errorJson, catalogUrl, null, 'application/json');
+    });
+    describe('when the directory has catalogs', async function () {
+      const files = await _getStacCatalogs(nonEmptyCatalogUrl);
       it('returns the list of catalogs', function () {
-        expect(files).to.eql(['test/fixtures/stac-catalogs/catalog0.json']);
+        expect(files).to.eql([`${nonEmptyCatalogUrl}catalog0.json`]);
       });
     });
 
-    describe('when the directory has no catalogs', function () {
-      const files = _getStacCatalogs('test/fixtures/empty-dir');
+    describe('when the directory has no catalogs', async function () {
+      const files = await _getStacCatalogs(emptyCatalogUrl);
       it('returns any empty list', function () {
         expect(files).to.eql([]);
       });

@@ -1,4 +1,3 @@
-import { before, after } from 'mocha';
 import { stub, SinonStub } from 'sinon';
 import fs from 'fs';
 import mockAws, { S3 } from 'mock-aws-s3';

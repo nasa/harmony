@@ -1,8 +1,6 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import fs from 'fs';
-import tmp from 'tmp';
-import path from 'path';
+import { getObjectText } from '../../../test/helpers/object-store';
 
 import { hookCliParser, hookCliMain } from './helpers/cli';
 
@@ -89,40 +87,23 @@ describe('cli', function () {
       }
    }`;
     describe('when the output directory exists', function () {
-      const tmpDir = tmp.dirSync({ unsafeCleanup: true }).name;
+      const tmpDir = 's3://stac/abc/123/outputs/';
       hookCliMain(
         ['--harmony-metadata-dir', tmpDir, '--harmony-input', input],
       );
 
-      it('outputs the result data to catalog.json in the directory', function () {
-        const index = path.join(tmpDir, 'catalog.json');
-        expect(fs.existsSync(index)).to.be.true;
-        expect(JSON.parse(fs.readFileSync(index, 'utf-8')).description).to.equal('Giovanni adapter service');
+      it('outputs the result data to catalog.json in the directory', async function () {
+        const catalog = await getObjectText(`${tmpDir}/catalog.json`);
+        expect(JSON.parse(catalog).description).to.equal('Giovanni adapter service');
       });
 
-      it('outputs the result data to item.json in the directory', function () {
-        const item = path.join(tmpDir, 'item.json');
-        expect(fs.existsSync(item)).to.be.true;
-        const itemContext = JSON.parse(fs.readFileSync(item, 'utf-8'));
+      it('outputs the result data to item.json in the directory', async function () {
+        const itemContext = JSON.parse(await getObjectText(`${tmpDir}/item.json`));
         expect(itemContext.bbox).to.eql([ 0.76, -3.8, 0.76, -3.8 ]);
         expect(itemContext.properties.start_datetime).to.equal('2020-01-01T00:00:00.000Z');
         expect(itemContext.properties.end_datetime).to.equal('2020-01-01T03:00:00.000Z');
         expect(itemContext.assets['Giovanni URL'].href).to.equal('https://api.giovanni.uat.earthdata.nasa.gov/proxy-timeseries?data=GPM_3IMERGHH_06_precipitationCal&location=%5B-3.8%2C0.76%5D&time=2020-01-01T00%3A00%3A00.000Z%2F2020-01-01T03%3A00%3A00.000Z');
         expect(itemContext.assets['Giovanni URL'].title).to.equal('Giovanni URL for time series of variable GPM_3IMERGHH_06_precipitationCal (latitude = -3.8, longitude = 0.76, time range = [2020-01-01T00:00:00.000Z, 2020-01-01T03:00:00.000Z])');
-      });
-    });
-
-    describe('when the output directory does not exist', function () {
-      const tmpDir = tmp.tmpNameSync();
-      hookCliMain(
-        ['--harmony-metadata-dir', tmpDir, '--harmony-input', input],
-      );
-      after(() => fs.rmSync(tmpDir, { recursive: true }));
-
-      it('creates the directory and one catalog file for each returned catalog', function () {
-        const catalog = path.join(tmpDir, 'catalog.json');
-        expect(fs.existsSync(catalog)).to.be.true;
-        expect(JSON.parse(fs.readFileSync(catalog, 'utf-8')).description).to.equal('Giovanni adapter service');
       });
     });
   });
