@@ -105,7 +105,7 @@ export default async function main(args: string[]): Promise<void> {
     'type': 'application/json',
     'title': 'giovanni stac item',
   });
-  const stacItemFilename = resolve(options.harmonyMetadataDir, stacItemRelativeFilename);
+  const stacItemUrl = resolve(options.harmonyMetadataDir, stacItemRelativeFilename);
   const time_start = operation.temporal.start;
   const time_end = operation.temporal.end;
   const properties = { start_datetime: time_start, end_datetime: time_end };
@@ -125,7 +125,7 @@ export default async function main(args: string[]): Promise<void> {
     bbox,
     assets,
   });
-  await item.write(stacItemFilename, true);
+  await item.write(stacItemUrl, true);
 
   // save stac catalog
   const relativeFilename = 'catalog.json';
