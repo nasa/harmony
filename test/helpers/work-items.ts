@@ -8,7 +8,7 @@ import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';
 import { buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach } from './workflow-steps';
 import { RecordConstructor } from '../../app/models/record';
-import { WorkItemStatus, WorkItemRecord, getStacOutputsUrl } from '../../app/models/work-item-interface';
+import { WorkItemStatus, WorkItemRecord, getStacLocation } from '../../app/models/work-item-interface';
 import { objectStoreForProtocol } from '../../app/util/object-store';
 
 export const exampleWorkItemProps = {
@@ -257,26 +257,26 @@ export async function fakeServiceStacOutput(jobID: string, workItemID: number, g
 
       // create a fake STAC catalog
       exampleCatalog.links[1].href = `./granule${i}.json`;
-      const catalogUrl = getStacOutputsUrl(workItem, `catalog${i}.json`);
+      const catalogUrl = getStacLocation(workItem, `catalog${i}.json`);
       await s3.upload(JSON.stringify(exampleCatalog, null, 4), catalogUrl, null, 'application/json');
 
       // create a fake STAC item
-      const granuleUrl = getStacOutputsUrl(workItem, `granule${i}.json`);
+      const granuleUrl = getStacLocation(workItem, `granule${i}.json`);
       await s3.upload(JSON.stringify(exampleItem, null, 4), granuleUrl, null, 'application/json');
 
     }
 
     // create fake catalog of catalogs
-    const batchUrl = getStacOutputsUrl(workItem, 'batch-catalogs.json');
+    const batchUrl = getStacLocation(workItem, 'batch-catalogs.json');
     await s3.upload(JSON.stringify(catalogOfCatalogs, null, 4), batchUrl, null, 'application/json');
   } else {
     // just write out a catalog and item
 
     // create a fake STAC catalog
-    const catalogUrl = getStacOutputsUrl(workItem, 'catalog.json');
+    const catalogUrl = getStacLocation(workItem, 'catalog.json');
     await s3.upload(JSON.stringify(exampleCatalog, null, 4), catalogUrl, null, 'application/json');
     // create a fake STAC item
-    const granuleUrl = getStacOutputsUrl(workItem, 'granule.json');
+    const granuleUrl = getStacLocation(workItem, 'granule.json');
     await s3.upload(JSON.stringify(exampleItem, null, 4), granuleUrl, null, 'application/json');
 
   }

@@ -5,7 +5,7 @@ import env from '../util/env';
 import logger from '../../../../app/util/log';
 import { resolve as resolveUrl } from '../../../../app/util/url';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
-import { WorkItemRecord, getStacOutputsUrl } from '../../../../app/models/work-item-interface';
+import { WorkItemRecord, getStacLocation } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 
 const s3 = objectStoreForProtocol('s3');
@@ -92,7 +92,7 @@ async function _getErrorMessage(logStr: string, catalogDir: string): Promise<str
   */
 export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranules?: number): Promise<ServiceResponse> {
   const { operation, scrollID } = workItem;
-  const catalogDir = getStacOutputsUrl(workItem);
+  const catalogDir = getStacLocation(workItem);
   return new Promise<ServiceResponse>(async (resolve) => {
     logger.debug('CALLING WORKER');
 
@@ -140,7 +140,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
       commandLine = env.invocationArgs.split(' ');
     }
 
-    const catalogDir = getStacOutputsUrl(workItem);
+    const catalogDir = getStacLocation(workItem);
     return await new Promise<ServiceResponse>((resolve) => {
       logger.debug(`CALLING WORKER for pod ${env.myPodName}`);
       // create a writable stream to capture stdout from the exec call

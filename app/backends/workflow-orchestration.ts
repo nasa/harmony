@@ -39,7 +39,7 @@ async function calculateQueryCmrLimit(
     queryCmrItems = queryCmrItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL);
     const s3 = objectStoreForProtocol('s3');
     const stacCatalogLengths = await Promise.all(queryCmrItems.map(async (item) => {
-      const jsonPath = item.getStacOutputsUrl('batch-catalogs.json');
+      const jsonPath = item.getStacLocation('batch-catalogs.json');
       try {
         return (await s3.getObjectJson(jsonPath)).length;
       } catch (e) {
@@ -176,16 +176,16 @@ async function createAggregatingWorkItem(
     for (const workItem of prevStepWorkItems.workItems) {
       try {
         // try to use the default catalog output for single granule work items
-        const singleCatalogPath = workItem.getStacOutputsUrl('catalog.json');
+        const singleCatalogPath = workItem.getStacLocation('catalog.json');
         const newLinks = await getItemLinksFromCatalog(singleCatalogPath);
         itemLinks.push(...newLinks);
       } catch {
         // couldn't read the single catalog so read the JSON file that lists all the result
         // catalogs for this work item
-        const jsonPath = workItem.getStacOutputsUrl('batch-catalogs.json');
+        const jsonPath = workItem.getStacLocation('batch-catalogs.json');
         const catalog = await s3.getObjectJson(jsonPath);
         for (const fileName of catalog) {
-          const fullPath = workItem.getStacOutputsUrl(fileName);
+          const fullPath = workItem.getStacLocation(fileName);
           const newLinks = await getItemLinksFromCatalog(fullPath);
           itemLinks.push(...newLinks);
         }
@@ -210,7 +210,7 @@ async function createAggregatingWorkItem(
 
     // and prev/next links as needed
     if (index > 0) {
-      const prevCatUrl = currentWorkItem.getStacOutputsUrl(`catalog${index - 1}.json`, true);
+      const prevCatUrl = currentWorkItem.getStacLocation(`catalog${index - 1}.json`, true);
       const prevLink: StacItemLink = {
         href: prevCatUrl,
         rel: 'prev',
@@ -221,7 +221,7 @@ async function createAggregatingWorkItem(
     }
 
     if (index < catalogCount - 1) {
-      const nextCatUrl = currentWorkItem.getStacOutputsUrl(`catalog${index + 1}.json`, true);
+      const nextCatUrl = currentWorkItem.getStacLocation(`catalog${index + 1}.json`, true);
       const nextLink: StacItemLink = {
         href: nextCatUrl,
         rel: 'next',
@@ -243,13 +243,13 @@ async function createAggregatingWorkItem(
     const catalogJson = JSON.stringify(catalog, null, 4);
 
     // write the new catalog out to s3
-    const catalogPath = currentWorkItem.getStacOutputsUrl(`catalog${index}.json`, true);
+    const catalogPath = currentWorkItem.getStacLocation(`catalog${index}.json`, true);
     await s3.upload(catalogJson, catalogPath, null, 'application/json');
   }
 
   // catalog0 is the first catalog in the linked catalogs, so it is the catalog
   // that aggregating services should read first
-  const podCatalogPath = currentWorkItem.getStacOutputsUrl('catalog0.json', true);
+  const podCatalogPath = currentWorkItem.getStacLocation('catalog0.json', true);
 
   const newWorkItem = new WorkItem({
     jobID: currentWorkItem.jobID,

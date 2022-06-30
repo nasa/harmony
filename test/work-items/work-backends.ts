@@ -10,7 +10,7 @@ import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
 import { hookClearScrollSessionExpect } from '../helpers/hooks';
-import { getStacOutputsUrl, WorkItemRecord, WorkItemStatus } from '../../app/models/work-item-interface';
+import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../../app/models/work-item-interface';
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();
@@ -223,7 +223,7 @@ describe('Work Backends', function () {
         ...workItemRecord,
         ...{
           status: WorkItemStatus.SUCCESSFUL,
-          results: [getStacOutputsUrl({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+          results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
         },
       };
       before(async () => {
