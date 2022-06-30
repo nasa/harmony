@@ -4,7 +4,7 @@
   "description": "Harmony task that queries the CMR for an incoming message and produces a sources file as output",
   "main": "app/query-granules.ts",
   "scripts": {
-    "test": "eslint --ext .ts . && nyc mocha && npm audit --audit-level=high --production",
+    "test": "eslint --ext .ts . && nyc mocha && better-npm-audit audit",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha",
@@ -59,6 +59,7 @@
     "@types/yargs": "^17.0.5",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
+    "better-npm-audit": "^3.7.3",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "eslint": "^8.2.0",
