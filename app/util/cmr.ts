@@ -141,6 +141,7 @@ export interface CmrResponse extends Response {
 export interface CmrVariablesResponse extends CmrResponse {
   data: {
     items: CmrUmmVariable[];
+    hits: number;
   };
 }
 
@@ -386,17 +387,37 @@ async function _cmrPostBody(
 }
 
 /**
- * Performs a CMR variables.json search with the given query string
+ * Performs a CMR variables.json search with the given query string. If there are more
+ * than 2000 variables, page through the variable results until all are retrieved.
  *
  * @param query - The key/value pairs to search
  * @param token - Access token for user request
  * @returns The variable search results
  */
-async function queryVariables(
+async function getAllVariables(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVariable>> {
   const variablesResponse = await _cmrPost('/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
-  return variablesResponse.data.items;
+  const { hits } = variablesResponse.data;
+  let variables = variablesResponse.data.items;
+  let numVariablesRetrieved = variables.length;
+  let page_num = 1;
+
+  while (numVariablesRetrieved < hits) {
+    page_num += 1;
+    logger.debug(`Paging through variables = ${page_num}, numVariablesRetrieved = ${numVariablesRetrieved}, total hits ${hits}`);
+    query.page_num = page_num;
+    const response = await _cmrPost('/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
+    const pageOfVariables = response.data.items;
+    variables = variables.concat(pageOfVariables);
+    numVariablesRetrieved += pageOfVariables.length;
+    if (pageOfVariables.length == 0) {
+      logger.warn(`Expected ${hits} variables, but only retrieved ${numVariablesRetrieved} from CMR.`);
+      break;
+    }
+  }
+
+  return variables;
 }
 
 /**
@@ -478,6 +499,12 @@ export function getCollectionsByShortName(
   }, token);
 }
 
+// We have an environment variable called CMR_MAX_PAGE_SIZE which is used for how many items
+// to scroll through for each page of granule results. The value may not match the actual
+// CMR maximum page size which has been 2000 since inception. For pulling back variables we
+// want to get as many as we can per page for better performance, so we use the actual limit.
+const ACTUAL_CMR_MAX_PAGE_SIZE = 2000;
+
 /**
  * Queries and returns the CMR JSON variables corresponding to the given CMR Variable IDs
  *
@@ -489,9 +516,9 @@ export function getVariablesByIds(
   ids: Array<string>,
   token: string,
 ): Promise<Array<CmrUmmVariable>> {
-  return queryVariables({
+  return getAllVariables({
     concept_id: ids,
-    page_size: cmrMaxPageSize,
+    page_size: ACTUAL_CMR_MAX_PAGE_SIZE,
   }, token);
 }
 
