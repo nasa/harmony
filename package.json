@@ -4,7 +4,7 @@
   "description": "Data services frontend",
   "main": "index.js",
   "scripts": {
-    "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks . && nyc mocha && npm audit --audit-level=high --production && lerna run test",
+    "test": "strict-npm-engines && eslint --ext .ts --ignore-pattern tasks . && nyc mocha && better-npm-audit audit && lerna run test",
     "test-fast": "TS_NODE_TRANSPILE_ONLY=true mocha",
     "coverage": "nyc mocha",
     "start": "ts-node -r tsconfig-paths/register app/server.ts",
@@ -140,6 +140,7 @@
     "@typescript-eslint/parser": "^5.19.0",
     "aws-sdk-mock": "^5.1.0",
     "axios-mock-adapter": "^1.18.2",
+    "better-npm-audit": "^3.7.3",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "cookie": "^0.4.1",
