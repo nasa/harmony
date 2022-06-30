@@ -1,0 +1,16 @@
+{
+  "1075701": {
+    "active": true,
+    "notes": "Only affects a dev dependency nodemon"
+  },
+  "1080830": {
+    "active": true,
+    "notes": "No available fix. We should fix as soon as a fix becomes available.",
+    "expiry": "2022-07-14"
+  },
+  "1080829": {
+    "active": true,
+    "notes": "No available fix. We should fix as soon as a fix becomes available.",
+    "expiry": "2022-07-14"
+  }
+}
