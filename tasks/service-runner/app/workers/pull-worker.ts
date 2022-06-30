@@ -58,6 +58,7 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
     if (response.status === 404) {
       return { status: response.status };
     }
+
     return { item: response.data.workItem, maxCmrGranules: response.data.maxCmrGranules, status: response.status };
   } catch (err) {
     if (err.response) {

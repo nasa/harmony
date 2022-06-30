@@ -130,16 +130,16 @@ export default async function main(args: string[]): Promise<void> {
   // save stac catalog
   const relativeFilename = 'catalog.json';
   const catalogFilenames = [];
-  const filename = resolve(options.harmonyMetadataDir, relativeFilename);
+  const catalogUrl = resolve(options.harmonyMetadataDir, relativeFilename);
   catalogFilenames.push(relativeFilename);
-  await result.write(filename, true);
+  await result.write(catalogUrl, true);
 
-  const catalogListFilename = resolve(options.harmonyMetadataDir, 'batch-catalogs.json');
-  const catalogCountFilename = resolve(options.harmonyMetadataDir, 'batch-count.txt');
+  const catalogListUrl = resolve(options.harmonyMetadataDir, 'batch-catalogs.json');
+  const catalogCountUrl = resolve(options.harmonyMetadataDir, 'batch-count.txt');
 
   const s3 = objectStoreForProtocol('s3');
-  await s3.upload(JSON.stringify(catalogFilenames), catalogListFilename, null, 'application/json');
-  await s3.upload(catalogFilenames.length.toString(), catalogCountFilename, null, 'text/plain');
+  await s3.upload(JSON.stringify(catalogFilenames), catalogListUrl, null, 'application/json');
+  await s3.upload(catalogFilenames.length.toString(), catalogCountUrl, null, 'text/plain');
 
   const durationMs = new Date().getTime() - startTime;
   timingLogger.info('timing.giovanni-adapter.end', { durationMs });

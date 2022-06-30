@@ -113,7 +113,7 @@ export class S3ObjectStore {
   }
 
   /**
-   * Get the parsed JSON object for the given JSON file.
+   * Get the parsed JSON object for the JSON file at the given s3 location.
    @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the objects to
    *   be retrieved or the object URL
    * @returns an object, parsed from JSON

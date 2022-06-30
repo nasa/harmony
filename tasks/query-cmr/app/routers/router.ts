@@ -38,21 +38,21 @@ export async function doWork(workReq: QueryCmrRequest): Promise<number> {
   const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {
     const relativeFilename = `catalog${i}.json`;
-    const filename = resolve(outputDir, relativeFilename);
+    const catalogUrl = resolve(outputDir, relativeFilename);
     catalogFilenames.push(relativeFilename);
-    await catalog.write(filename, true);
+    await catalog.write(catalogUrl, true);
   });
 
-  const catalogListFilename = resolve(outputDir, 'batch-catalogs.json');
-  const catalogCountFilename = resolve(outputDir, 'batch-count.txt');
+  const catalogListUrl = resolve(outputDir, 'batch-catalogs.json');
+  const catalogCountUrl = resolve(outputDir, 'batch-count.txt');
 
   await Promise.all(promises);
   const catalogWriteTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.catalog-promises-write', { durationMs: catalogWriteTime - granuleScrollingTime });
 
   const s3 = objectStoreForProtocol('s3');
-  await s3.upload(JSON.stringify(catalogFilenames), catalogListFilename, null, 'application/json');
-  await s3.upload(catalogFilenames.length.toString(), catalogCountFilename, null, 'text/plain');
+  await s3.upload(JSON.stringify(catalogFilenames), catalogListUrl, null, 'application/json');
+  await s3.upload(catalogFilenames.length.toString(), catalogCountUrl, null, 'text/plain');
 
   const catalogSummaryTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.catalog-summary-write', { durationMs: catalogSummaryTime - catalogWriteTime });

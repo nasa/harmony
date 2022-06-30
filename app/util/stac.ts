@@ -45,19 +45,19 @@ export function linksWithStacData(links: Array<JobLink>): Array<JobLink> {
 
 /**
  * Reads the content of the catalog and returns the catalog items
- * @param filename - the catalog filename
+ * @param catalogUrl - the catalog s3 url
  */
-export async function readCatalogItems(filename: string): Promise<StacItem[]> {
+export async function readCatalogItems(catalogUrl: string): Promise<StacItem[]> {
   const s3 = objectStoreForProtocol('s3');
-  const catalog = await s3.getObjectJson(filename);
+  const catalog = await s3.getObjectJson(catalogUrl);
   const childLinks = catalog.links
     .filter((l) => l.rel === 'item')
     .map((l) => l.href);
 
   const items: StacItem[] = [];
   for (const link of childLinks) {
-    const location = resolve(filename, link); // link likely has relative path "./itemFile.json"
-    const item = await s3.getObjectJson(location) as StacItem;
+    const itemUrl = resolve(catalogUrl, link); // link has a relative path "./itemFile.json"
+    const item = await s3.getObjectJson(itemUrl) as StacItem;
     items.push(item);
   }
 

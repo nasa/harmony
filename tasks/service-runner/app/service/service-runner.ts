@@ -40,7 +40,7 @@ class LogStream extends stream.Writable {
 
 /**
  * Get a list of full s3 paths to each STAC catalog found in an S3 directory.
- * @param dir - the s3 path, e.g. s3://artifacts/requestId/workItemId/outputs/
+ * @param dir - the s3 directory url where the catalogs are located
  */
 async function _getStacCatalogs(dir: string): Promise<string[]> {
   return (await s3.listObjectKeys(dir))
@@ -110,7 +110,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
       );
 
       if (resp.status < 300) {
-        const catalogs = await _getStacCatalogs(`${catalogDir}`);
+        const catalogs = await _getStacCatalogs(catalogDir);
         const { totalGranulesSize } = resp.data;
 
         resolve({ batchCatalogs: catalogs, totalGranulesSize });
@@ -176,7 +176,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
             if (status.status === 'Success') {
               clearTimeout(timeout);
               logger.debug('Getting STAC catalogs');
-              const catalogs = await _getStacCatalogs(`${catalogDir}`);
+              const catalogs = await _getStacCatalogs(catalogDir);
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);

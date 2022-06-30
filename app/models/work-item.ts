@@ -9,7 +9,6 @@ import Record from './record';
 import WorkflowStep from './workflow-steps';
 import { WorkItemRecord, WorkItemStatus, getStacLocation } from './work-item-interface';
 
-
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
 // if this changes we will have to revisit this
 const QUERY_CMR_STEP_INDEX = 1;

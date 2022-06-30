@@ -184,8 +184,8 @@ async function createAggregatingWorkItem(
         // catalogs for this work item
         const jsonPath = workItem.getStacLocation('batch-catalogs.json');
         const catalog = await s3.getObjectJson(jsonPath);
-        for (const fileName of catalog) {
-          const fullPath = workItem.getStacLocation(fileName);
+        for (const filename of catalog) {
+          const fullPath = workItem.getStacLocation(filename);
           const newLinks = await getItemLinksFromCatalog(fullPath);
           itemLinks.push(...newLinks);
         }
