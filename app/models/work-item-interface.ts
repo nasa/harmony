@@ -60,8 +60,8 @@ export interface WorkItemRecord {
  * resolved relative to the STAC outputs directory.
  * e.g. s3://artifacts/abc/123/outputs/ with a targetUrl of ./catalog0.json or catalog0.json would resolve to
  * s3://artifacts/abc/123/outputs/catalog0.json
- * @param targetUrl - URL to resolve against the base outptuts directory 
  * @param item - the returned URL will provide the path to the outputs for this work item
+ * @param targetUrl - URL to resolve against the base outptuts directory 
  * @param isAggregate - include the word aggregate in the URL
  * @returns - the path to the STAC outputs directory (e.g. s3://artifacts/abc/123/outputs/) or the full path to the target URL
  */
