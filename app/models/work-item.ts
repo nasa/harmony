@@ -116,25 +116,13 @@ export async function getNextWorkItem(
   }
 
   try {
+    // query to get users that have active jobs that have available work items for the service
     const subQueryForUsersRequestingService =
       tx(Job.table)
         .select('username')
         .join(`${WorkItem.table} as w`, `${Job.table}.jobID`, 'w.jobID')
         .whereIn(`${Job.table}.status`, acceptableJobStatuses)
         .where({ 'w.status': 'ready', serviceID });
-    // lock rows in the jobs table for users requesting this service - needed as a workaround
-    // for postgres limitation (https://stackoverflow.com/questions/5272412/group-by-in-update-from-clause)
-    let jobQuery = tx(Job.table)
-      .forUpdate()
-      .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
-      .select(['username', 'serviceID', `${WorkItem.table}.serviceID`])
-      .whereIn('username', subQueryForUsersRequestingService);
-
-    if (db.client.config.client === 'pg') {
-      jobQuery = jobQuery.skipLocked();
-    }
-
-    await jobQuery;
 
     const userData = await tx(Job.table)
       .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
