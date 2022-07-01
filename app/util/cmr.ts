@@ -394,7 +394,7 @@ async function _cmrPostBody(
  * @param token - Access token for user request
  * @returns The variable search results
  */
-async function getAllVariables(
+export async function getAllVariables(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmVariable>> {
   const variablesResponse = await _cmrPost('/search/variables.umm_json_v1_8_1', query, token) as CmrVariablesResponse;
