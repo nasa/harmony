@@ -8,7 +8,6 @@ import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord, getStacLocation } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 
-const s3 = objectStoreForProtocol('s3');
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
@@ -43,6 +42,7 @@ class LogStream extends stream.Writable {
  * @param dir - the s3 directory url where the catalogs are located
  */
 async function _getStacCatalogs(dir: string): Promise<string[]> {
+  const s3 = objectStoreForProtocol('s3');
   return (await s3.listObjectKeys(dir))
     .filter((fileKey) => fileKey.match(/catalog\d*.json/))
     .map((fileKey) => `s3://${env.artifactBucket}/${fileKey}`);
@@ -63,6 +63,7 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
 async function _getErrorMessage(logStr: string, catalogDir: string): Promise<string> {
   // expect JSON logs entries
   try {
+    const s3 = objectStoreForProtocol('s3');
     const errorFile = resolveUrl(catalogDir, 'error.json');
     if (await s3.objectExists(errorFile)) {
       const logEntry = await s3.getObjectJson(errorFile);
