@@ -46,8 +46,8 @@ const nonErrorLog = `
 }
 `;
 
-const workItemWithErrorJson = 's3://stac/abc/123/outputs/';
-const workItemWithoutErrorJson = 's3://stac/abc/456/outputs/';
+const workItemWithErrorJson = 's3://stac-catalogs/abc/123/outputs/';
+const workItemWithoutErrorJson = 's3://stac-catalogs/abc/456/outputs/';
 const emptyLog = '';
 
 describe('Service Runner', function () {
@@ -59,32 +59,32 @@ describe('Service Runner', function () {
       await s3.upload(errorJson, errorJsonUrl, null, 'application/json');
     });
     describe('when there is an error.json file associated with the WorkItem', async function () {
-      const errorMessage = await _getErrorMessage(errorLog, workItemWithErrorJson);
       it('returns the error message from error.json', async function () {
+        const errorMessage = await _getErrorMessage(errorLog, workItemWithErrorJson);
         expect(errorMessage).equal('Service error message');
       });
     });
     describe('when the error log has ERROR level entries', async function () {
-      const errorMessage = await _getErrorMessage(errorLog, workItemWithoutErrorJson);
-      it('returns the first error log entry', function () {
+      it('returns the first error log entry', async function () {
+        const errorMessage = await _getErrorMessage(errorLog, workItemWithoutErrorJson);
         expect(errorMessage).equal('bad stuff');
       });
     });
     describe('when the error log has no ERROR level entries', async function () {
-      const errorMessage = await _getErrorMessage(nonErrorLog, workItemWithoutErrorJson);
-      it('returns "unknown error"', function () {
+      it('returns "unknown error"', async function () {
+        const errorMessage = await _getErrorMessage(nonErrorLog, workItemWithoutErrorJson);
         expect(errorMessage).equal('Unknown error');
       });
     });
     describe('when the error log is empty', async function () {
-      const errorMessage = await _getErrorMessage(emptyLog, workItemWithoutErrorJson);
-      it('returns "unknown error"', function () {
+      it('returns "unknown error"', async function () {
+        const errorMessage = await _getErrorMessage(emptyLog, workItemWithoutErrorJson);
         expect(errorMessage).equal('Unknown error');
       });
     });
     describe('when the error log is null', async function () {
-      const errorMessage = await _getErrorMessage(null, workItemWithoutErrorJson);
-      it('returns "unknown error"', function () {
+      it('returns "unknown error"', async function () {
+        const errorMessage = await _getErrorMessage(null, workItemWithoutErrorJson);
         expect(errorMessage).equal('Unknown error');
       });
     });
@@ -100,15 +100,15 @@ describe('Service Runner', function () {
       await s3.upload(errorJson, catalogUrl, null, 'application/json');
     });
     describe('when the directory has catalogs', async function () {
-      const files = await _getStacCatalogs(nonEmptyCatalogUrl);
-      it('returns the list of catalogs', function () {
-        expect(files).to.eql([`${nonEmptyCatalogUrl}catalog0.json`]);
+      it('returns the list of catalogs', async function () {
+        const files = await _getStacCatalogs(nonEmptyCatalogUrl);
+        expect(files).to.eql(['s3://stac-catalogs/some/catalog0.json']);
       });
     });
 
     describe('when the directory has no catalogs', async function () {
-      const files = await _getStacCatalogs(emptyCatalogUrl);
-      it('returns any empty list', function () {
+      it('returns any empty list', async function () {
+        const files = await _getStacCatalogs(emptyCatalogUrl);
         expect(files).to.eql([]);
       });
     });
