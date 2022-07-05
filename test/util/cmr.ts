@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { CmrRelatedUrl, CmrUmmVariable, getVariablesByIds } from '../../app/util/cmr';
+import { CmrRelatedUrl, CmrUmmVariable, getVariablesByIds, getAllVariables } from '../../app/util/cmr';
 
 describe('util/cmr', function () {
   describe('getVariablesByIds', function () {
@@ -26,4 +26,18 @@ describe('util/cmr', function () {
       expect(expectedRelatedUrls).to.deep.equal(redVariableRelatedUrls);
     });
   });
+
+  describe('getAllVariables', function () {
+    it('successfully retrieves all variables over multiple pages', async function () {
+      const variableIds = ['V1233801695-EEDTEST', 'V1233801696-EEDTEST', 'V1233801716-EEDTEST', 'V1233801717-EEDTEST'];
+      const query = {
+        concept_id: variableIds,
+        page_size: 1, // requires paging through 4 pages
+      };
+      const variables = await getAllVariables(query, '');
+      expect(variables.length).to.eql(4);
+    });
+  });
+
+
 });

@@ -11,7 +11,6 @@ import { getWorkflowStepsByJobId } from '../models/workflow-steps';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
 import { createDecrypter, createEncrypter } from './crypto';
 
-
 /**
  * Helper function to pull back the provided job ID (optionally by username).
  *

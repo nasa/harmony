@@ -1,0 +1,29 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1243729749-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n2\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"scroll\"\r\n\r\ndefer\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 157
+connection: close
+date: Thu, 30 Jun 2022 16:26:30 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 7e8b0f9c-cd88-46e2-a055-cc0ad7a6e483
+strict-transport-security: max-age=31536000
+cmr-hits: 5
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 35
+x-request-id: ojI5zsrbZuO_bKaeldFMXlOkawQXSrIkSMyoaz7pdKLRKF5XpsZ7zQ==
+cmr-scroll-id: 631695632
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 eaf34fdea6961e8abc71da907904f86e.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW53-C1
+x-amz-cf-id: ojI5zsrbZuO_bKaeldFMXlOkawQXSrIkSMyoaz7pdKLRKF5XpsZ7zQ==
+
+{"feed":{"updated":"2022-06-30T16:26:30.935Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[]}}
