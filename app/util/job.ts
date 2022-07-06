@@ -1,5 +1,4 @@
 import { Logger } from 'winston';
-import { promises as fs } from 'fs';
 import db, { Transaction } from './db';
 import { Job, JobStatus, terminalStates } from '../models/job';
 import env from './env';
@@ -11,20 +10,6 @@ import { WorkItemStatus } from '../models/work-item-interface';
 import { getWorkflowStepsByJobId } from '../models/workflow-steps';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
 import { createDecrypter, createEncrypter } from './crypto';
-
-/**
- * Cleans up the temporary work items for the provided jobID
- * @param jobID - the jobID for which to remove temporary work items
- * @param logger - the logger associated with the request
- */
-async function cleanupWorkItemsForJobID(jobID: string, logger: Logger): Promise<void> {
-  try {
-    await fs.rm(`${env.hostVolumePath}/${jobID}/`, { recursive: true });
-  } catch (e) {
-    logger.warn(`Unable to clean up temporary files for ${jobID}`);
-    logger.warn(e);
-  }
-}
 
 /**
  * Helper function to pull back the provided job ID (optionally by username).
@@ -82,8 +67,6 @@ export async function completeJob(
     logger.error(`Error encountered for job ${job.jobID} while attempting to set final status`);
     logger.error(e);
     throw e;
-  } finally {
-    await cleanupWorkItemsForJobID(job.jobID, logger);
   }
 }
 

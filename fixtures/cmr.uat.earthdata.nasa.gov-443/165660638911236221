@@ -1,0 +1,27 @@
+GET /search/collections.json?concept_id=C1243729749-EEDTEST&page_size=100
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+connection: close
+date: Thu, 30 Jun 2022 16:26:29 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 5a5b88d9-872c-4df0-9a7d-0dc6ae8556c7
+strict-transport-security: max-age=31536000
+cmr-search-after: ["jason-1 sgdr version e netcdf","EEDTEST","harmony-JASON-1_L2_OST_GPS_E","e",1243729749,21]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 26
+x-request-id: g9J3dBH-CWQAJR-me5MhbLL6VUYcFNXH6DoFMW4r8Y0mfykla8K7zA==
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 6c6707b9b2a2151353d87b53eeed3030.cloudfront.net (CloudFront)
+x-amz-cf-pop: DFW53-C1
+x-amz-cf-id: g9J3dBH-CWQAJR-me5MhbLL6VUYcFNXH6DoFMW4r8Y0mfykla8K7zA==
+
+{"feed":{"updated":"2022-06-30T16:26:29.182Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1243729749-EEDTEST&page_size=100","title":"ECHO dataset metadata","entry":[{"processing_level_id":"2","cloud_hosted":true,"boxes":["-66.15 -180 66.15 180"],"time_start":"2002-01-14T12:00:00.000Z","version_id":"E","updated":"2017-04-28T05:01:46.000Z","dataset_id":"Jason-1 SGDR version E NetCDF","has_spatial_subsetting":false,"has_transforms":false,"associations":{"variables":["V1243740799-EEDTEST","V1243740833-EEDTEST","V1243740831-EEDTEST","V1243740783-EEDTEST","V1243740821-EEDTEST","V1243740823-EEDTEST","V1243740785-EEDTEST","V1243740843-EEDTEST","V1243740837-EEDTEST","V1243740781-EEDTEST","V1243740797-EEDTEST","V1243740803-EEDTEST","V1243740787-EEDTEST","V1243740793-EEDTEST","V1243740791-EEDTEST","V1243740825-EEDTEST","V1243740801-EEDTEST","V1243740789-EEDTEST","V1243740811-EEDTEST","V1243740817-EEDTEST","V1243740813-EEDTEST","V1243740805-EEDTEST","V1243740807-EEDTEST","V1243740795-EEDTEST","V1243740809-EEDTEST","V1243740815-EEDTEST","V1243740829-EEDTEST","V1243740841-EEDTEST","V1243740845-EEDTEST","V1243740839-EEDTEST","V1243740827-EEDTEST","V1243740847-EEDTEST","V1243740819-EEDTEST","V1243740835-EEDTEST"]},"has_variables":true,"data_center":"EEDTEST","short_name":"harmony-JASON-1_L2_OST_GPS_E","organizations":["NASA/JPL/PODAAC","Jason-1"],"title":"Jason-1 SGDR version E NetCDF","coordinate_system":"CARTESIAN","summary":"The Sensory Geophysical Data Record (SGDR) files contain full accuracy altimeter data, with a high precision orbit (accuracy ~1.5 cm). The instruments on Jason-1 make direct observations of the following quantities: altimeter range, significant wave height, ocean radar backscatter cross-section (a measure of wind speed), ionospheric electron content (derived by a simple formula), tropospheric water content, mean sea surface, and position relative to the GPS satellite constellation. The SGDR contain all relevant corrections needed to calculate the sea surface height. It also contains the 20Hz waveforms that are required for retracking.  The SGDR is an expert level product, if you do not require the waveforms then the GDR/GPN or GPR will be more suited for your needs.","time_end":"2012-03-03T12:59:12.000Z","service_features":{"opendap":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false},"esi":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false},"harmony":{"has_formats":false,"has_variables":false,"has_transforms":false,"has_spatial_subsetting":false,"has_temporal_subsetting":false}},"orbit_parameters":{"swath_width":"0.0","period":"112.43","inclination_angle":"66.04","number_of_orbits":"1"},"id":"C1243729749-EEDTEST","has_formats":false,"original_format":"UMM_JSON","archive_center":"NASA/JPL/PODAAC","has_temporal_subsetting":false,"browse_flag":true,"platforms":["JASON-1"],"online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/browse#","hreflang":"en-US","href":"https://podaac.jpl.nasa.gov/Podaac/thumbnails/JASON-1_L2_OST_GPS_E.jpg"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://podaac-tools.jpl.nasa.gov/drive/files/allData/jason1/L2/docs/j1_maneuver.txt"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://podaac-tools.jpl.nasa.gov/drive/files/allData/jason1/L2/docs/j1_safehold.txt"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://podaac-tools.jpl.nasa.gov/drive/files/allData/jason1/L2/docs/j1_cyclelist.txt"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://podaac-tools.jpl.nasa.gov/drive/files/allData/jason1/L2/docs/Handbook_Jason-1_v5.1_April2016.pdf"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/documentation#","hreflang":"en-US","href":"https://podaac.jpl.nasa.gov/CitingPODAAC"},{"length":"0MB","rel":"http://esipfed.org/ns/fedsearch/1.1/data#","hreflang":"en-US","href":"https://cmr.earthdata.nasa.gov/virtual-directory/collections/C1940472420-POCLOUD"},{"length":"0MB","rel":"http://esipfed.org/ns/fedsearch/1.1/data#","hreflang":"en-US","href":"https://search.earthdata.nasa.gov/search/granules?p=C1940472420-POCLOUD"}]}]}}
