@@ -412,6 +412,36 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
 
+  - name: sds/HOSS-maskfill
+    # Provides polygon spatial subsetting for collections hosted in OPeNDAP
+    # Also provides variable and temporal subsetting through HOSS.
+    data_operation_version: '0.16.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/HOSS
+    umm_s:
+      - S2300730272-XYZ_PROV
+    collections: []
+    capabilities:
+      subsetting:
+        bbox: true
+        dimension: true
+        shape: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${VAR_SUBSETTER_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
+      - image: !Env ${SDS_MASKFILL_IMAGE}
+        operations: ['shapefileSubset', 'spatialSubset']
+
 https://cmr.uat.earthdata.nasa.gov:
 
   - name: nasa/harmony-gdal-adapter
