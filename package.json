@@ -157,7 +157,7 @@
     "fast-check": "^2.19.0",
     "get-pkg-repo": "^5.0.0",
     "javascript-typescript-langserver": "^2.11.3",
-    "lerna": "^4.0.0",
+    "lerna": "^5.1.8",
     "mocha": "^9.1.3",
     "mocha-junit-reporter": "^2.0.0",
     "mocha-multi": "^1.1.3",
