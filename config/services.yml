@@ -22,7 +22,7 @@ x-turbo-config: &default-turbo-config
       FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
 
 https://cmr.earthdata.nasa.gov:
-  
+
   - name: gesdisc/giovanni
     data_operation_version: '0.16.0'
     enabled: !Env ${EXAMPLE_SERVICES}
@@ -409,6 +409,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
 
+  # OPS GDAL
   - name: nasa/harmony-gdal-adapter
     data_operation_version: '0.16.0'
     type:
@@ -867,6 +868,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         operations: ['reformat', 'concatenate']
 
+  # UAT GDAL
   - name: nasa/harmony-gdal-adapter
     data_operation_version: '0.16.0'
     type:
