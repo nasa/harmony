@@ -184,13 +184,15 @@ async function createAggregatingWorkItem(
         // catalogs for this work item
         const jsonPath = workItem.getStacLocation('batch-catalogs.json');
         const catalog = await s3.getObjectJson(jsonPath);
-        for (const filename of catalog) {
+        const linksPromises: Promise<StacItemLink[]>[] = catalog.map((filename: string) => {
           const fullPath = workItem.getStacLocation(filename);
-          const newLinks = await getItemLinksFromCatalog(fullPath);
-          itemLinks.push(...newLinks);
+          return getItemLinksFromCatalog(fullPath);
+        });
+        const linksListList: StacItemLink[][] = await Promise.all(linksPromises);
+        for (const linksList of linksListList) {
+          itemLinks.push(...linksList);
         }
       }
-
       processedItemCount++;
     }
     page++;
