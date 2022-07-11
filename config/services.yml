@@ -22,39 +22,6 @@ x-turbo-config: &default-turbo-config
       FALLBACK_AUTHN_ENABLED: !Env ${FALLBACK_AUTHN_ENABLED}
 
 https://cmr.earthdata.nasa.gov:
-  - name: nasa/harmony-gdal-adapter
-    data_operation_version: '0.16.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/nasa/harmony-gdal-adapter
-    collections:
-      - id: C1595422627-ASF
-      - id: C1214354031-ASF
-      - id: C1808440897-ASF
-      - id: C2011599335-ASF
-      - id: C1239324659-POCUMULUS
-      - id: C1990404801-POCLOUD
-      - id: C1238618571-POCUMULUS
-      - id: C1996881146-POCLOUD
-    capabilities:
-      subsetting:
-        shape: true
-        bbox: true
-        variable: true
-        multiple_variable: true
-      output_formats:
-        - application/x-netcdf4
-        - image/tiff
-        - image/png
-        - image/gif
-      reprojection: true
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
   - name: gesdisc/giovanni
     data_operation_version: '0.16.0'
@@ -442,8 +409,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
 
-https://cmr.uat.earthdata.nasa.gov:
-
+  # OPS GDAL
   - name: nasa/harmony-gdal-adapter
     data_operation_version: '0.16.0'
     type:
@@ -453,52 +419,15 @@ https://cmr.uat.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/nasa/harmony-gdal-adapter
-    umm_s:
-      - S1245787332-EEDTEST
     collections:
-      - id: C1225776654-ASF
-      - id: C1207038647-ASF
-      - id: C1233629671-ASF
-      - id: C1207181535-ASF
-      - id: C1208013295-ASF
-      - id: C1239927797-ASF
-      - id: C1215664073-GES_DISC
-      - id: C1215664076-GES_DISC
-      - id: C1215802948-GES_DISC
-      - id: C1225808241-GES_DISC
-      - id: C1221131370-GES_DISC
-      - id: C1225808237-GES_DISC
-      - id: C1216382991-GES_DISC
-      - id: C1224264723-GES_DISC
-      - id: C1236380582-GES_DISC
-      - id: C1215726323-GES_DISC
-      - id: C1215802935-GES_DISC
-      - id: C1215802938-GES_DISC
-      - id: C1225808243-GES_DISC
-      - id: C1233603862-GES_DISC
-      - id: C1215802911-GES_DISC
-      - id: C1215802943-GES_DISC
-      - id: C1215802918-GES_DISC
-      - id: C1215720780-GES_DISC
-      - id: C1225808239-GES_DISC
-      - id: C1215802915-GES_DISC
-      - id: C1225808242-GES_DISC
-      - id: C1225808240-GES_DISC
-      - id: C1215802921-GES_DISC
-      - id: C1215802970-GES_DISC
-      - id: C1215802941-GES_DISC
-      - id: C1236380583-GES_DISC
-      - id: C1215802914-GES_DISC
-      - id: C1215802973-GES_DISC
-      - id: C1215802956-GES_DISC
-      - id: C1215802920-GES_DISC
-      - id: C1215139640-GES_DISC
-      - id: C1215802932-GES_DISC
-      - id: C1221312185-GES_DISC
+      - id: C1595422627-ASF
+      - id: C1214354031-ASF
+      - id: C1808440897-ASF
+      - id: C2011599335-ASF
       - id: C1239324659-POCUMULUS
-      - id: C1239379702-POCLOUD
+      - id: C1990404801-POCLOUD
       - id: C1238618571-POCUMULUS
-      - id: C1238621141-POCLOUD
+      - id: C1996881146-POCLOUD
     capabilities:
       subsetting:
         shape: true
@@ -514,6 +443,8 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
+
+https://cmr.uat.earthdata.nasa.gov:
 
   - name: gesdisc/giovanni
     data_operation_version: '0.16.0'
@@ -935,6 +866,78 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         operations: ['reformat', 'concatenate']
+
+  # UAT GDAL
+  - name: nasa/harmony-gdal-adapter
+    data_operation_version: '0.16.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/nasa/harmony-gdal-adapter
+    umm_s:
+      - S1245787332-EEDTEST
+    collections:
+      - id: C1225776654-ASF
+      - id: C1207038647-ASF
+      - id: C1233629671-ASF
+      - id: C1207181535-ASF
+      - id: C1208013295-ASF
+      - id: C1239927797-ASF
+      - id: C1215664073-GES_DISC
+      - id: C1215664076-GES_DISC
+      - id: C1215802948-GES_DISC
+      - id: C1225808241-GES_DISC
+      - id: C1221131370-GES_DISC
+      - id: C1225808237-GES_DISC
+      - id: C1216382991-GES_DISC
+      - id: C1224264723-GES_DISC
+      - id: C1236380582-GES_DISC
+      - id: C1215726323-GES_DISC
+      - id: C1215802935-GES_DISC
+      - id: C1215802938-GES_DISC
+      - id: C1225808243-GES_DISC
+      - id: C1233603862-GES_DISC
+      - id: C1215802911-GES_DISC
+      - id: C1215802943-GES_DISC
+      - id: C1215802918-GES_DISC
+      - id: C1215720780-GES_DISC
+      - id: C1225808239-GES_DISC
+      - id: C1215802915-GES_DISC
+      - id: C1225808242-GES_DISC
+      - id: C1225808240-GES_DISC
+      - id: C1215802921-GES_DISC
+      - id: C1215802970-GES_DISC
+      - id: C1215802941-GES_DISC
+      - id: C1236380583-GES_DISC
+      - id: C1215802914-GES_DISC
+      - id: C1215802973-GES_DISC
+      - id: C1215802956-GES_DISC
+      - id: C1215802920-GES_DISC
+      - id: C1215139640-GES_DISC
+      - id: C1215802932-GES_DISC
+      - id: C1221312185-GES_DISC
+      - id: C1239324659-POCUMULUS
+      - id: C1239379702-POCLOUD
+      - id: C1238618571-POCUMULUS
+      - id: C1238621141-POCLOUD
+    capabilities:
+      subsetting:
+        shape: true
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - application/x-netcdf4
+        - image/tiff
+        - image/png
+        - image/gif
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
   # CHAINED SERVICES BELOW HERE
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
