@@ -20,7 +20,7 @@ export interface ServiceCapabilities {
     variable?: boolean;
     multiple_variable?: true;
   };
-  output_formats?: [string];
+  output_formats?: string[];
   reprojection?: boolean;
 }
 

@@ -1,5 +1,6 @@
 import { CmrCollection, CmrUmmVariable } from './cmr';
 import { RequestValidationError } from './errors';
+import * as services from '../models/services/index';
 
 export interface HarmonyVariable {
   id: string;
@@ -97,6 +98,31 @@ export function getCoordinateVariables(variables: CmrUmmVariable[]): CmrUmmVaria
 }
 
 /**
+ * Get a list of variables that are defined in the service configs as being available for
+ * processing for the given collection. If the returned set is empty this means there are no
+ * limits set as to which variables a service will process.
+ * @param collection - the CMR collection 
+ * @returns A Set of variable IDs obtained from service configs
+ */
+export function getSupportedVariablesForCollection(
+  collection: CmrCollection,
+): Set<string> {
+  const variableIds = new Set<string>();
+  const configs = services.getServiceConfigs();
+  for (const serviceConfig of configs) {
+    const serviceCollection = serviceConfig.collections?.find(
+      (collectionConfig) => collectionConfig.id === collection.id,
+    );
+    if (serviceCollection?.variables) {
+      for (const variableId of serviceCollection?.variables) {
+        variableIds.add(variableId);
+      }
+    }
+  }
+  return variableIds;
+}
+
+/**
  * Given a list of EOSDIS collections and variables parsed from the CMR and an OGC
  * collectionId parameter return the full variables which match.
  *
@@ -132,21 +158,25 @@ export function parseVariables(
   } else {
     // Figure out which variables belong to which collections and whether any are missing.
     // Note that a single variable name may appear in multiple collections
-    let missingVariables = variableIds;
+    const missingVariables = new Set<string>(variableIds);
     for (const collection of eosdisCollections) {
+      // Get the list of variables configured in services.yml for this collection. If the 
+      // returned set is empty then we will ignore it, otherwise we will only add variables
+      // in that set
+      const serviceVariables = getSupportedVariablesForCollection(collection);
       const coordinateVariables = getCoordinateVariables(collection.variables);
       const variables = [];
       for (const variableId of variableIds) {
         const variable = collection.variables.find((v) => doesPathMatch(v, variableId));
-        if (variable) {
-          missingVariables = missingVariables.filter((v) => v !== variableId);
+        if (variable && (serviceVariables.has(variableId) || serviceVariables.size === 0)) {
+          missingVariables.delete(variableId);
           variables.push(variable);
         }
       }
       variableInfo.push({ collectionId: collection.id, variables, coordinateVariables });
     }
-    if (missingVariables.length > 0) {
-      throw new RequestValidationError(`Coverages were not found for the provided CMR collection: ${missingVariables.join(', ')}`);
+    if (missingVariables.size > 0) {
+      throw new RequestValidationError(`Coverages were not found for the provided CMR collection: ${Array.from(missingVariables).join(', ')}`);
     }
   }
   return variableInfo;
