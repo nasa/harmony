@@ -92,7 +92,7 @@ export async function getWork(
  * @param results  - an array of paths to STAC catalogs
  * @param logger - The logger for the request
  */
-async function _handleWorkItemResults(
+async function addJobLinksForFinishedWorkItem(
   tx: Transaction,
   job: Job,
   results: string[],
@@ -328,7 +328,7 @@ async function createNextWorkItems(
  * @param currentWorkItem - The current work item
  * @param nextStep - the next step in the workflow
  */
-async function handleQueryCmrWork(
+async function maybeQueueQueryCmrWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
 ): Promise<void> {
   if (currentWorkItem.scrollID) {
@@ -437,6 +437,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
   const { logger } = req.context;
   logger.info(`Updating work item for ${id} to ${status}`);
+  let responded = false;
   await db.transaction(async (tx) => {
     const workItem = await getWorkItemById(tx, parseInt(id, 10));
     const job = await Job.byJobID(tx, workItem.jobID, false, false);
@@ -446,6 +447,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     if ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
       res.status(409).send(`Job was already ${job.status}.`);
       // Note work item will stay in the running state, but the reaper will clean it up
+      responded = true;
       return;
     }
 
@@ -466,7 +468,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
 
       if (nextStep) {
         if (results && results.length > 0) {
-          await handleQueryCmrWork(tx, workItem, nextStep);
+          await maybeQueueQueryCmrWorkItem(tx, workItem, nextStep);
         } else {
           // Failed to create the next work items - fail the job rather than leaving it orphaned
           // in the running state
@@ -478,14 +480,14 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
           await completeJob(tx, job, JobStatus.FAILED, logger, message);
         }
       } else {
-        // 1. add job links for the results
-        await _handleWorkItemResults(tx, job, results, logger);
-        // 2. If the number of work items with status 'successful' equals 'workItemCount'
-        //    for the current step (which is the last) then set the job status to 'complete'.
+        // Completely finished with the chain for this granule
+        await addJobLinksForFinishedWorkItem(tx, job, results, logger);
+        // If all granules are finished mark the job as finished
         job.completeBatch(thisStep.workItemCount);
         if (allWorkItemsForStepComplete) {
           await completeJob(tx, job, JobStatus.SUCCESSFUL, logger);
         } else {
+          // Special case to pause the job as soon as any single granule completes when in the previewing state
           if (job.status === JobStatus.PREVIEWING) {
             job.pause();
           }
@@ -494,5 +496,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       }
     }
   });
-  res.status(204).send();
+  if (!responded) {
+    // If we haven't returned an error to the caller already return a success with no body
+    res.status(204).send();
+  }
 }
