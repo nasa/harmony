@@ -15,7 +15,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { ServiceError } from '../util/errors';
 import { clearScrollSession } from '../util/cmr';
-import { SUCCESSFUL_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
+import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
@@ -285,25 +285,41 @@ async function createAggregatingWorkItem(
  * @param results - an array of paths to STAC catalogs
  */
 async function createNextWorkItems(
-  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, results: string[],
-): Promise<void> {
-  if (nextStep.hasAggregatedOutput) {
-    await createAggregatingWorkItem(tx, currentWorkItem, nextStep);
-  } else {
-    // Create a new work item for each result using the next step
-    const newItems = results.map(result =>
-      new WorkItem({
-        jobID: currentWorkItem.jobID,
-        serviceID: nextStep.serviceID,
-        status: WorkItemStatus.READY,
-        stacCatalogLocation: result,
-        workflowStepIndex: nextStep.stepIndex,
-      }),
-    );
-    for (const batch of _.chunk(newItems, batchSize)) {
-      await WorkItem.insertBatch(tx, batch);
+  tx: Transaction, workItem: WorkItem, allWorkItemsForStepComplete: boolean, results: string[],
+): Promise<WorkflowStep> {
+  // TODO - We should not queue an item for the next step in a chain for this
+  // granule
+  const nextStep = await getWorkflowStepByJobIdStepIndex(
+    tx, workItem.jobID, workItem.workflowStepIndex + 1,
+  );
+
+  if (nextStep) {
+    if (results && results.length > 0) {
+      // if we have completed all the work items for this step or if the next step does not
+      // aggregate then create a work item for the next step
+      if (nextStep.hasAggregatedOutput) {
+        // TODO - is there anything we can do for aggregation steps?
+        if (allWorkItemsForStepComplete) {
+          await createAggregatingWorkItem(tx, workItem, nextStep);
+        }
+      } else {
+        // Create a new work item for each result using the next step
+        const newItems = results.map(result =>
+          new WorkItem({
+            jobID: workItem.jobID,
+            serviceID: nextStep.serviceID,
+            status: WorkItemStatus.READY,
+            stacCatalogLocation: result,
+            workflowStepIndex: nextStep.stepIndex,
+          }),
+        );
+        for (const batch of _.chunk(newItems, batchSize)) {
+          await WorkItem.insertBatch(tx, batch);
+        }
+      }
     }
   }
+  return nextStep;
 }
 
 /**
@@ -335,6 +351,80 @@ async function handleQueryCmrWork(
   }
 }
 
+// Update work item flow
+
+// Should we try to validate the status field?
+// Get all the database entries
+// Return 409 if job is in terminal state
+// Update the work item database entry
+// Check for and handle a failed status
+// If we should continue on figure out the next step to work on
+// If we just finished with the last query-cmr step clear the scrolling session
+// If there's another step for this work item create the next work items
+// * Creates another query-cmr work item if it's required TODO: Move this to the same if as the scrolling session check
+// Special case for if there's supposed to be a next step, but there are no catalogs to pass to it
+// If we're at the last step in the chain
+//  - create the links for the jobs
+//  - mark a batch as complete for the job? What is this?
+//  - check if the items completed matches the number of work items for this step
+//     - Mark the job as complete and successful and end
+//  - check if the job is previewing and pause if so
+//  - save the job (why are we only saving the )
+
+
+/**
+ *
+ * @param tx - The database transaction
+ * @param job - The job associated with the work item
+ * @param workItem - The work item that just finished
+ * @param status - The status sent with the work item update
+ * @param errorMessage - The error message associated with the work item update (if any)
+ * @param logger - The logger for the request
+ *
+ * @returns whether to continue processing work item updates or end
+ */
+async function handleFailedWorkItems(
+  tx, job, workItem, status, logger, errorMessage,
+): Promise<boolean> {
+  let continueProcessing = true;
+  // If the response is an error then set the job status to 'failed'
+  if (status === WorkItemStatus.FAILED) {
+    // TODO allow partial failures
+    continueProcessing = false;
+    if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
+      if (workItem.scrollID) {
+        // TODO should I fail a job if the query CMR task failed? I think I should
+        continueProcessing = false;
+      }
+      let message = `WorkItem [${workItem.id}] failed with and unknown error`;
+      if (errorMessage) {
+        message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
+      }
+      // TODO - do not fail the job if user requested to allow work item errors
+      await completeJob(tx, job, JobStatus.FAILED, logger, message);
+    }
+  }
+  return continueProcessing;
+}
+
+/**
+ * Clears the CMR scrolling session if the work item has a scroll ID and the work item
+ * failed or has scrolled through the expected number of items.
+ *
+ * @param workflowStep - The current workflow step
+ * @param status - The work item status
+ * @param scrollID - The scrollID for the work item (may be null)
+ */
+async function maybeClearScrollSession(
+  scrollID: string, allWorkItemsForStepComplete: boolean, status: WorkItemStatus,
+): Promise<void> {
+  if (scrollID) {
+    if (allWorkItemsForStepComplete || status === WorkItemStatus.FAILED) {
+      await clearScrollSession(scrollID);
+    }
+  }
+}
+
 /**
  * Update a work item from a service response
  * @param req - The request sent by the client
@@ -349,59 +439,40 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   logger.info(`Updating work item for ${id} to ${status}`);
   await db.transaction(async (tx) => {
     const workItem = await getWorkItemById(tx, parseInt(id, 10));
-    const job: Job = await Job.byJobID(tx, workItem.jobID, false, false);
+    const job = await Job.byJobID(tx, workItem.jobID, false, false);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
-    const isQueryCmr = workItem.serviceID.match(/query-cmr/);
 
-    // If the job was already canceled or failed then send 400 response
+    // If the job was already canceled or failed then send 409 response
     if ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
       res.status(409).send(`Job was already ${job.status}.`);
-      // TODO investigate whether or not returning here could lead to work items staying in the 'running' state
+      // Note work item will stay in the running state, but the reaper will clean it up
       return;
     }
 
     await updateWorkItemStatus(tx, id, status as WorkItemStatus, totalGranulesSize);
-    // If the response is an error then set the job status to 'failed'
-    if (status === WorkItemStatus.FAILED) {
-      if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
-        if (isQueryCmr) {
-          await clearScrollSession(workItem.scrollID);
-        }
-        let message = 'Unknown error';
-        if (errorMessage) {
-          message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
-        }
-        await completeJob(tx, job, JobStatus.FAILED, logger, message);
-      }
-    } else {
-      const nextStep = await getWorkflowStepByJobIdStepIndex(
-        tx,
-        workItem.jobID,
-        workItem.workflowStepIndex + 1,
-      );
+    const completedWorkItemCount = await workItemCountForStep(
+      tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
+    );
+    const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
-      const successWorkItemCount = await workItemCountForStep(
-        tx,
-        workItem.jobID,
-        workItem.workflowStepIndex,
-        SUCCESSFUL_WORK_ITEM_STATUSES,
-      );
+    await maybeClearScrollSession(workItem.scrollID, allWorkItemsForStepComplete, status);
+    const continueProcessing = await handleFailedWorkItems(tx, job, workItem, status, logger, errorMessage);
 
-      if (isQueryCmr && successWorkItemCount === thisStep.workItemCount) {
-        await clearScrollSession(workItem.scrollID);
-      }
+    if (continueProcessing) {
+      // createNextSteps
+      const nextStep = await createNextWorkItems(tx, workItem, allWorkItemsForStepComplete, results);
+      // TODO - We should not queue an item for the next step in a chain for this
+      // granule
 
       if (nextStep) {
         if (results && results.length > 0) {
-          // if we have completed all the work items for this step or if the next step does not
-          // aggregate then create a work item for the next step
-          if (successWorkItemCount === thisStep.workItemCount || !nextStep.hasAggregatedOutput) {
-            await createNextWorkItems(tx, workItem, nextStep, results);
-          }
           await handleQueryCmrWork(tx, workItem, nextStep);
         } else {
           // Failed to create the next work items - fail the job rather than leaving it orphaned
           // in the running state
+
+          // TODO mark as successful with errors - note we should just ignore this if there are more work items that
+          // have not finished for this job, but otherwise go ahead and mark this job as failed / successful with errors
           logger.error('The work item update should have contained results to queue a next work item, but it did not.');
           const message = 'Harmony internal failure: could not create the next work items for the request.';
           await completeJob(tx, job, JobStatus.FAILED, logger, message);
@@ -412,7 +483,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         // 2. If the number of work items with status 'successful' equals 'workItemCount'
         //    for the current step (which is the last) then set the job status to 'complete'.
         job.completeBatch(thisStep.workItemCount);
-        if (successWorkItemCount === thisStep.workItemCount) {
+        if (allWorkItemsForStepComplete) {
           await completeJob(tx, job, JobStatus.SUCCESSFUL, logger);
         } else {
           if (job.status === JobStatus.PREVIEWING) {
