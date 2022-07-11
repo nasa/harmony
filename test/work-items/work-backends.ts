@@ -198,7 +198,7 @@ describe('Work Backends', function () {
       hookClearScrollSessionExpect();
 
       const failedWorkItemRecord = {
-        ...workItemRecord, ...{ status: WorkItemStatus.FAILED },
+        ...workItemRecord, ...{ status: WorkItemStatus.FAILED, scrollID: '-1234' },
       };
 
       hookWorkItemCreation(failedWorkItemRecord);
@@ -222,6 +222,7 @@ describe('Work Backends', function () {
         ...workItemRecord,
         ...{
           status: WorkItemStatus.SUCCESSFUL,
+          scrollID: '-1234',
           results: ['test/resources/worker-response-sample/catalog0.json'],
         },
       };
