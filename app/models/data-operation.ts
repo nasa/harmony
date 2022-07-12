@@ -8,7 +8,7 @@ import { CmrUmmVariable } from '../util/cmr';
 import { Encrypter, Decrypter } from '../util/crypto';
 import { cmrVarToHarmonyVar, HarmonyVariable } from '../util/variables';
 
-export const CURRENT_SCHEMA_VERSION = '0.16.0';
+export const CURRENT_SCHEMA_VERSION = '0.17.0';
 
 /**
  * Synchronously reads and parses the JSON Schema at the given path
@@ -40,6 +40,19 @@ let _schemaVersions: SchemaVersion[];
 function schemaVersions(): SchemaVersion[] {
   if (_schemaVersions) return _schemaVersions;
   _schemaVersions = [
+    {
+      version: '0.17.0',
+      schema: readSchema('0.17.0'),
+      down: (model): unknown => {
+        const revertedModel = _.cloneDeep(model);
+        revertedModel.sources?.forEach((s) => {
+          delete s.versionId;
+          delete s.shortName;
+        });
+
+        return revertedModel;
+      },
+    },
     {
       version: '0.16.0',
       schema: readSchema('0.16.0'),
@@ -230,6 +243,8 @@ export interface HarmonyGranule {
 
 export interface DataSource {
   collection: string;
+  shortName: string;
+  versionId: string;
   coordinateVariables: HarmonyVariable[];
   variables: HarmonyVariable[];
   granules: HarmonyGranule[];
@@ -375,18 +390,22 @@ export default class DataOperation {
    * Adds a new service data source to the list of those to operate on
    *
    * @param collection - The CMR ID of the collection being operated on
+   * @param shortName - The CMR short name of the collection being operated on
+   * @param versionId - The CMR version ID of the collection being operated on
    * @param vars - An array of objects containing variable id and name
    * @param cmrCoordinateVariables - An array of CMR UMM variables that are
    * coordinate variables.
    */
   addSource(
     collection: string,
+    shortName: string,
+    versionId: string,
     vars: CmrUmmVariable[] = undefined,
     cmrCoordinateVariables: CmrUmmVariable[] = undefined,
   ): void {
     const variables = vars?.map(cmrVarToHarmonyVar);
     const coordinateVariables = cmrCoordinateVariables?.map(cmrVarToHarmonyVar);
-    this.model.sources.push({ collection, variables, coordinateVariables });
+    this.model.sources.push({ collection, shortName, versionId, variables, coordinateVariables });
   }
 
   /**

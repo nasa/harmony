@@ -210,7 +210,8 @@ function getMap(req, res, next: NextFunction): void {
 
   const varInfos = getVariablesForCollection(query.layers, req.collections);
   for (const varInfo of varInfos) {
-    operation.addSource(varInfo.collectionId, varInfo.variables, varInfo.coordinateVariables);
+    operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
+      varInfo.variables, varInfo.coordinateVariables);
   }
 
   const [crs, srs] = parseCRS({ queryCRS_: query.crs, validate: false });
