@@ -1,5 +1,4 @@
 import yargs from 'yargs';
-import { promises as fs } from 'fs';
 import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
 import logger from '../../../app/util/log';
@@ -94,7 +93,6 @@ export default async function main(args: string[]): Promise<void> {
   const { giovanni_url, giovanni_url_title } = await _generateGiovanniURL(operation, cmr_endpoint);
 
   // set up stac catalog
-  await fs.mkdir(options.harmonyMetadataDir, { recursive: true });
   const result = new Catalog({ description: 'Giovanni adapter service' });
 
   // generate stac item
