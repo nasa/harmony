@@ -239,6 +239,18 @@ describe('OGC API Coverages - Utilities', function () {
           });
         });
 
+        describe('with non-alphanumeric dimension', function () {
+          it('returns a parsed object', function () {
+            expect(parseSubsetParams(['/lev(0:1000)'])).to.eql({ '/lev': { min: 0, max: 1000.0 } });
+          });
+        });
+
+        describe('with spaces in the dimension', function () {
+          it('returns a parsed object', function () {
+            expect(parseSubsetParams(['my lev(0:1000)'])).to.eql({ 'my lev': { min: 0, max: 1000.0 } });
+          });
+        });
+
         describe('with a min greater than max', function () {
           it('throws a parse error', function () {
             expect(parseSubsetParamsFn(['wrap(500:-100)'])).to.throw(ParameterParseError, 'subset dimension "wrap" values must be ordered from low to high');

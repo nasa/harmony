@@ -18,7 +18,8 @@ describe('WorkFailer', function () {
 
   let shouldFailJob1: Job;
   let shouldFailJob2: Job;
-  let unproblematicJob: Job;
+  let unproblematicJob1: Job;
+  let unproblematicJob2: Job;
 
   hookTransaction();
 
@@ -45,11 +46,23 @@ describe('WorkFailer', function () {
     MockDate.reset();
 
     // this job has 0 long-running work items
-    unproblematicJob = buildJob({ status: JobStatus.RUNNING });
-    await unproblematicJob.save(this.trx);
+    unproblematicJob1 = buildJob({ status: JobStatus.RUNNING });
+    await unproblematicJob1.save(this.trx);
     MockDate.set(newDate); // make the below work item "new"
-    const unproblematicJobItem1 = buildWorkItem({ jobID: unproblematicJob.jobID, status: WorkItemStatus.RUNNING });
-    await unproblematicJobItem1.save(this.trx);
+    const unproblematicJob1Item1 = buildWorkItem({ jobID: unproblematicJob1.jobID, status: WorkItemStatus.RUNNING });
+    await unproblematicJob1Item1.save(this.trx);
+
+    // this job has an old work item in the ready state and a new one in the running state
+    unproblematicJob2 = buildJob({ status: JobStatus.RUNNING });
+    await unproblematicJob2.save(this.trx);
+    MockDate.set(newDate); // make the below work item "new"
+    const unproblematicJob2Item1 = buildWorkItem({ jobID: unproblematicJob2.jobID, status: WorkItemStatus.RUNNING });
+    await unproblematicJob2Item1.save(this.trx);
+
+    MockDate.set(oldDate);
+    const unproblematicJob2Item2 = buildWorkItem({ jobID: unproblematicJob2.jobID, status: WorkItemStatus.READY });
+    await unproblematicJob2Item2.save(this.trx);
+    MockDate.set(newDate);
 
     const config: WorkFailerConfig = { logger };
     const workFailer = new WorkFailer(config);
@@ -78,7 +91,7 @@ describe('WorkFailer', function () {
     });
 
     it('does not fail work items that have not taken too long', async function () {
-      const unproblematicJobItems = (await getWorkItemsByJobId(this.trx, unproblematicJob.jobID)).workItems;
+      const unproblematicJobItems = (await getWorkItemsByJobId(this.trx, unproblematicJob1.jobID)).workItems;
       expect(unproblematicJobItems.length).to.equal(1);
       expect(unproblematicJobItems.filter((item) => item.status === WorkItemStatus.RUNNING).length).to.equal(1);
     });
@@ -92,7 +105,12 @@ describe('WorkFailer', function () {
     });
 
     it('does not fail jobs associated with the work items that are not taking too long', async function () {
-      const runningJob = await Job.byJobID(this.trx, unproblematicJob.jobID);
+      const runningJob = await Job.byJobID(this.trx, unproblematicJob1.jobID);
+      expect(runningJob.status).to.equal(JobStatus.RUNNING);
+    });
+
+    it('does not fail jobs associated with the work items in a READY state for a long time', async function () {
+      const runningJob = await Job.byJobID(this.trx, unproblematicJob2.jobID);
       expect(runningJob.status).to.equal(JobStatus.RUNNING);
     });
   });

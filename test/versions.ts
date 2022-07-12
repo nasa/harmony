@@ -22,7 +22,6 @@ describe('Versions endpoint', function () {
       it('returns a listing of all of the turbo services from services.yml', function () {
         const services = JSON.parse(this.res.text);
         expect(services.map((s) => s.name)).to.eql([
-          'nasa/harmony-gdal-adapter',
           'gesdisc/giovanni',
           'harmony/service-example',
           'podaac/l2-subsetter',
@@ -34,6 +33,7 @@ describe('Versions endpoint', function () {
           'sds/maskfill',
           'sds/trajectory-subsetter',
           'harmony/netcdf-to-zarr',
+          'nasa/harmony-gdal-adapter',
           'harmony/podaac-l2-subsetter-netcdf-to-zarr',
           'harmony/swot-repr-netcdf-to-zarr',
           'sds/HOSS-maskfill',
