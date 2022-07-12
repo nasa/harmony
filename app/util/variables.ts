@@ -22,6 +22,8 @@ export interface HarmonyRelatedUrl {
 
 interface VariableInfo {
   collectionId: string;
+  shortName: string;
+  versionId: string;
   variables?: CmrUmmVariable[];
   coordinateVariables?: CmrUmmVariable[];
 }
@@ -192,7 +194,8 @@ export function getVariablesForCollection(
   for (const collection of collections) {
     const coordinateVariables = getCoordinateVariables(collection.variables);
     const variables = variablesByCollection[collection.id];
-    variableInfo.push({ collectionId: collection.id, variables, coordinateVariables });
+    variableInfo.push({ collectionId: collection.id, shortName: collection.short_name,
+      versionId: collection.version_id, variables, coordinateVariables });
   }
   return variableInfo;
 }

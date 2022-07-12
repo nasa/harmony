@@ -238,6 +238,8 @@ describe('DataOperation', () => {
 
   describe('#addSource', () => {
     const collection = 'Foo';
+    const shortName = 'harmony_example';
+    const versionId = '1';
     const relatedUrls = [
       {
         Description: 'This related URL points to a color map',
@@ -288,10 +290,18 @@ describe('DataOperation', () => {
 
     describe('when adding a source', () => {
       const operation = new DataOperation();
-      operation.addSource(collection, variables, coordinateVariables);
+      operation.addSource(collection, shortName, versionId, variables, coordinateVariables);
 
       it('sets the collection correctly', () => {
         expect(operation.model.sources[0].collection).to.equal('Foo');
+      });
+
+      it('sets the short name correctly', () => {
+        expect(operation.model.sources[0].shortName).to.equal('harmony_example');
+      });
+
+      it('sets the version id correctly', () => {
+        expect(operation.model.sources[0].versionId).to.equal('1');
       });
 
       it('sets the coordinate variables correctly', () => {
