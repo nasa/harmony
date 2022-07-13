@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.16.0.json",
+    "$id": "https://harmony.earthdata.nasa.gov/schemas/data-operation-v0.17.0.json",
     "$ref": "#/definitions/DataOperation",
     "definitions": {
       "DataOperation": {

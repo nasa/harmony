@@ -14,8 +14,10 @@ describe('services.chooseServiceConfig and services.buildService', function () {
   describe("when the operation's collection is configured for several services", function () {
     beforeEach(function () {
       const collectionId = 'C123-TEST';
+      const shortName = 'harmony_example';
+      const versionId = '1';
       const operation = new DataOperation();
-      operation.addSource(collectionId);
+      operation.addSource(collectionId, shortName, versionId);
       this.operation = operation;
       this.config = [
         {
@@ -229,8 +231,10 @@ describe('services.chooseServiceConfig and services.buildService', function () {
   describe("when the operation's collection has a single configured service", function () {
     beforeEach(function () {
       const collectionId = 'C123-TEST';
+      const shortName = 'harmony_example';
+      const versionId = '1';
       const operation = new DataOperation();
-      operation.addSource(collectionId);
+      operation.addSource(collectionId, shortName, versionId);
       this.operation = operation;
       this.config = [
         {
@@ -260,6 +264,8 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
   describe('when one out of two services support variable subsetting', function () {
     const collectionId = 'C123-TEST';
+    const shortName = 'harmony_example';
+    const versionId = '1';
     beforeEach(function () {
       this.config = [
         {
@@ -285,7 +291,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting variable subsetting with an output format available on the variable subsetter service', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
+      operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'image/tiff';
 
       it('returns the service configured for variable subsetting', function () {
@@ -302,7 +308,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting variable subsetting with an output format that is not supported by the variable subsetting service, but is supported by other services', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
+      operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'application/x-zarr';
 
       it('returns the no op service', function () {
@@ -324,7 +330,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting no variable subsetting and a format supported by the service that does not support variable subsetting', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId);
+      operation.addSource(collectionId, shortName, versionId);
       operation.outputFormat = 'application/x-zarr';
       it('returns the non-variable subsetter service that does support the format', function () {
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
@@ -334,7 +340,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting variable subsetting and a format not supported by any services', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
+      operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': 'V123-PROV1' }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'image/foo';
 
       it('returns the no op service', function () {
@@ -358,8 +364,10 @@ describe('services.chooseServiceConfig and services.buildService', function () {
   describe("when the operation's collection is not configured for services", function () {
     beforeEach(function () {
       const collectionId = 'C123-TEST';
+      const shortName = 'harmony_example';
+      const versionId = '1';
       const operation = new DataOperation();
-      operation.addSource(collectionId);
+      operation.addSource(collectionId, shortName, versionId);
       this.operation = operation;
       this.config = [
         {
@@ -391,8 +399,10 @@ describe('services.chooseServiceConfig and services.buildService', function () {
   describe('when no services can support spatial or shapefile subsetting for the collection', function () {
     beforeEach(function () {
       const collectionId = 'C123-TEST';
+      const shortName = 'harmony_example';
+      const versionId = '1';
       const operation = new DataOperation();
-      operation.addSource(collectionId);
+      operation.addSource(collectionId, shortName, versionId);
       this.operation = operation;
       this.config = [
         {
@@ -451,6 +461,8 @@ describe('services.chooseServiceConfig and services.buildService', function () {
   describe('when requesting variable-based service with one variable', function () {
     const collectionId = 'C123-TEST';
     const variableId = 'V123-TEST';
+    const shortName = 'harmony_example';
+    const versionId = '1';
     beforeEach(function () {
       this.config = [
         {
@@ -485,7 +497,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('sets to synchronous for the variable-based-service', function () {
         operation = new DataOperation();
-        operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
+        operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
         operation.outputFormat = 'text/csv';
         const service = new TurboService(this.config[0], operation);
         expect(service.isSynchronous).to.equal(true);
@@ -493,7 +505,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('sets to asynchronous for the variable-based-async-service', function () {
         operation = new DataOperation();
-        operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
+        operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
         operation.outputFormat = 'text/csv';
         const service = new TurboService(this.config[1], operation);
         expect(service.isSynchronous).to.equal(false);
@@ -501,7 +513,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('returns the service configured for variable-based service', function () {
         operation = new DataOperation();
-        operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
+        operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
         operation.outputFormat = 'text/csv';
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         expect(serviceConfig.name).to.equal('variable-based-service');
@@ -509,7 +521,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('uses the correct service class when building the service', function () {
         operation = new DataOperation();
-        operation.addSource(collectionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
+        operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': variableId }, umm: { Name: 'the-var' } }]);
         operation.outputFormat = 'text/csv';
         const serviceConfig = chooseServiceConfig(operation, {}, this.config);
         const service = buildService(serviceConfig, operation);
@@ -519,7 +531,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting service without variable subsetting', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId);
+      operation.addSource(collectionId, shortName, versionId);
       operation.outputFormat = 'text/csv';
 
       it('does not return the service configured for variable-based service', function () {
@@ -536,7 +548,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting service with no variable matches', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': 'wrong-variable-Id' }, umm: { Name: 'wrong-var' } }]);
+      operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': 'wrong-variable-Id' }, umm: { Name: 'wrong-var' } }]);
       operation.outputFormat = 'text/csv';
 
       it('does not return the service configured for variable-based service', function () {
@@ -557,6 +569,8 @@ describe('services.chooseServiceConfig and services.buildService', function () {
     const variableId1 = 'V123-TEST';
     const variableId2 = 'V456-TEST';
     const variableId3 = 'V789-TEST';
+    const shortName = 'harmony_example';
+    const versionId = '1';
     beforeEach(function () {
       this.config = [
         {
@@ -578,7 +592,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting service with one variable subsetting', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var' } }]);
+      operation.addSource(collectionId, shortName, versionId, [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var' } }]);
       operation.outputFormat = 'text/csv';
 
       it('returns the service configured for variable-based service', function () {
@@ -595,7 +609,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting service with two variable subsetting and both matches', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var-1' } },
+      operation.addSource(collectionId, shortName, versionId,  [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var-1' } },
         { meta: { 'concept-id': variableId2 }, umm: { Name: 'the-var-2' } }]);
       operation.outputFormat = 'text/csv';
 
@@ -613,7 +627,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
     describe('requesting service with two variable subsetting and only one matches', function () {
       const operation = new DataOperation();
-      operation.addSource(collectionId, [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var-1' } },
+      operation.addSource(collectionId, shortName, versionId,  [{ meta: { 'concept-id': variableId1 }, umm: { Name: 'the-var-1' } },
         { meta: { 'concept-id': variableId3 }, umm: { Name: 'the-var-3' } }]);
       operation.outputFormat = 'text/csv';
 
