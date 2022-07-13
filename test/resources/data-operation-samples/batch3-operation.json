@@ -1,6 +1,8 @@
 {
   "sources": [{
     "collection": "C1233800302-EEDTEST",
+    "shorName": "harmony_example",
+    "versionId": "1",
     "variables": [{
       "id": "V1233801716-EEDTEST",
       "name": "blue_var",
