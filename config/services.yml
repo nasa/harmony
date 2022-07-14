@@ -424,9 +424,7 @@ https://cmr.earthdata.nasa.gov:
       - id: C1214354031-ASF
       - id: C1808440897-ASF
       - id: C2011599335-ASF
-      - id: C1239324659-POCUMULUS
       - id: C1990404801-POCLOUD
-      - id: C1238618571-POCUMULUS
       - id: C1996881146-POCLOUD
     capabilities:
       subsetting:
@@ -816,7 +814,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1234724471-POCLOUD
       - id: C1239379704-POCLOUD
       - id: C1238621141-POCLOUD
-      - id: C1238618570-POCUMULUS
       - id: C1215664073-GES_DISC
       - id: C1215664076-GES_DISC
       - id: C1215802948-GES_DISC
@@ -920,9 +917,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1215139640-GES_DISC
       - id: C1215802932-GES_DISC
       - id: C1221312185-GES_DISC
-      - id: C1239324659-POCUMULUS
       - id: C1239379702-POCLOUD
-      - id: C1238618571-POCUMULUS
       - id: C1238621141-POCLOUD
     capabilities:
       subsetting:
