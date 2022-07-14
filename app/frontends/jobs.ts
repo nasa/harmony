@@ -92,8 +92,7 @@ function getJobForDisplay(job: Job, urlRoot: string, linkType?: string): Job {
   const statusLinkRel = linkType === 'none' ? 'item' : 'self';
   serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel);
   serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
-  delete serializedJob.isAsync;
-  delete serializedJob.batchesCompleted;
+
   return serializedJob;
 }
 

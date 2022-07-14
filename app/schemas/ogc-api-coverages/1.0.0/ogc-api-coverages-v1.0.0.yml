@@ -329,6 +329,7 @@ paths:
       - $ref: '#/components/parameters/forceAsync'
       - $ref: '#/components/parameters/maxResults'
       - $ref: '#/components/parameters/skipPreview'
+      - $ref: '#/components/parameters/ignoreErrors'
       responses:
         "200":
           description: A coverage's range set.
@@ -364,6 +365,7 @@ paths:
       - $ref: '#/components/parameters/forceAsync'
       - $ref: '#/components/parameters/maxResults'
       - $ref: '#/components/parameters/skipPreview'
+      - $ref: '#/components/parameters/ignoreErrors'
       requestBody:
         content:
           multipart/form-data:
@@ -890,6 +892,13 @@ components:
       name: skipPreview
       in: query
       description: if "true", override the default API behavior and never auto-pause jobs
+      required: false
+      schema:
+        type: boolean
+    ignoreErrors:
+      name: ignoreErrors
+      in: query
+      description: if "true", continue processing a request to completion even if some items fail
       required: false
       schema:
         type: boolean

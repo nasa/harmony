@@ -209,3 +209,27 @@ export async function getLinksForJob(
   const links = result.data.map((j) => new JobLink(j));
   return { data: links, pagination: result.pagination };
 }
+
+
+/**
+ * Returns the number of job links for the given job
+ * @param tx - the transaction to use for querying
+ * @param jobID - the UUID associated with the job
+ */
+export async function getJobLinkCount(
+  tx: Transaction,
+  jobID: string,
+): Promise<number> {
+  const count = await tx(JobLink.table)
+    .select()
+    .count('id')
+    .where({ jobID });
+
+  let jobLinkCount;
+  if (db.client.config.client === 'pg') {
+    jobLinkCount = Number(count[0].count);
+  } else {
+    jobLinkCount = Number(count[0]['count(`id`)']);
+  }
+  return jobLinkCount;
+}

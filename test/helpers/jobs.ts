@@ -15,7 +15,8 @@ import { RecordConstructor } from '../../app/models/record';
 export const adminUsername = 'adam';
 
 export const expectedJobKeys = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'dataExpiration', 'links', 'request', 'numInputGranules', 'jobID',
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'dataExpiration',
+  'links', 'request', 'numInputGranules', 'jobID',
 ];
 
 export const expectedNoOpJobKeys = expectedJobKeys.filter((k) => k !== 'jobID');
@@ -29,6 +30,7 @@ const exampleProps = {
   request: 'http://example.com/harmony?foo=bar',
   numInputGranules: 100,
   isAsync: true,
+  ignoreErrors: false,
 } as JobRecord;
 
 /**
@@ -140,8 +142,8 @@ export function areStacJobLinksEqual(jobLinks: JobLink[], stacLinks: JobLink[]):
  * @returns true if the jobs are the same
  */
 export function jobsEqual(
-  jobRecord: JobRecord, 
-  serializedJob: Job, 
+  jobRecord: JobRecord,
+  serializedJob: Job,
   skipLinks = false,
   skipMessage = false): boolean {
   const recordLinks = new Job(jobRecord).getRelatedLinks('data');

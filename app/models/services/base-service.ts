@@ -311,6 +311,7 @@ export default abstract class BaseService<ServiceParamType> {
       numInputGranules: this.numInputGranules,
       message: message,
       collectionIds: this.operation.collectionIds,
+      ignoreErrors: this.operation.ignoreErrors,
     });
     job.addStagingBucketLink(this.operation.stagingLocation);
     return job;

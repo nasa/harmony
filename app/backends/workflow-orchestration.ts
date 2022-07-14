@@ -8,7 +8,7 @@ import env from '../util/env';
 import { readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
-import JobLink from '../models/job-link';
+import JobLink, { getJobLinkCount } from '../models/job-link';
 import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
 import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 import path from 'path';
@@ -16,6 +16,7 @@ import { promises as fs } from 'fs';
 import { ServiceError } from '../util/errors';
 import { clearScrollSession } from '../util/cmr';
 import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
+import JobError, { getErrorCountForJob } from '../models/job-error';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
@@ -373,6 +374,42 @@ async function maybeQueueQueryCmrWorkItem(
 
 
 /**
+ * TODO implement
+ */
+async function addErrorsForWorkItem(tx, job, url, message): Promise<void> {
+  const error = new JobError({
+    jobID: job.jobID,
+    url,
+    message,
+  });
+  await error.save(tx);
+}
+
+/**
+ * TODO implement
+ */
+async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatus> {
+  let finalStatus = JobStatus.SUCCESSFUL;
+  if (await getErrorCountForJob(tx, job.jobID) > 0) {
+    if (await getJobLinkCount(tx, job.jobID) > 0) {
+      finalStatus = JobStatus.COMPLETE_WITH_ERRORS;
+    } else {
+      finalStatus = JobStatus.FAILED;
+    }
+  }
+  return finalStatus;
+}
+
+/**
+ *
+ * @param workItem - The work item
+ */
+function getWorkItemUrl(workItem): string {
+  const url = workItem.stacCatalogLocation;
+  return url;
+}
+
+/**
  *
  * @param tx - The database transaction
  * @param job - The job associated with the work item
@@ -389,19 +426,43 @@ async function handleFailedWorkItems(
   let continueProcessing = true;
   // If the response is an error then set the job status to 'failed'
   if (status === WorkItemStatus.FAILED) {
-    // TODO allow partial failures
-    continueProcessing = false;
+    continueProcessing = job.ignoreErrors;
     if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
+      let jobMessage;
       if (workItem.scrollID) {
-        // TODO should I fail a job if the query CMR task failed? I think I should
+        // Fail the request if query-cmr fails to populate granules
         continueProcessing = false;
+        jobMessage = `WorkItem [${workItem.id}] failed to query CMR for granule information`;
+        if (errorMessage) {
+          jobMessage = `${jobMessage} with error: ${errorMessage}`;
+        }
+      } else {
+        // TODO - figure out the URL (read the STAC catalog for the location?)
+        const url = getWorkItemUrl(workItem);
+
+        let message = `WorkItem [${workItem.id}] failed with an unknown error`;
+        if (errorMessage) {
+          message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
+        }
+        await addErrorsForWorkItem(tx, job, url, message);
       }
-      let message = `WorkItem [${workItem.id}] failed with and unknown error`;
-      if (errorMessage) {
-        message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
+
+      if (job.ignoreErrors && !jobMessage) {
+        const errorCount =  await getErrorCountForJob(tx, job.jobID);
+        if (errorCount + 1 > env.maxErrorsForJob) {
+          jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded`;
+          continueProcessing = false;
+        }
       }
-      // TODO - do not fail the job if user requested to allow work item errors
-      await completeJob(tx, job, JobStatus.FAILED, logger, message);
+
+      // let message = `WorkItem [${workItem.id}] failed with an unknown error`;
+      // if (errorMessage?.length > 0) {
+      //   message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
+      // }
+
+      if (!continueProcessing) {
+        await completeJob(tx, job, JobStatus.FAILED, logger, jobMessage);
+      }
     }
   }
   return continueProcessing;
@@ -461,10 +522,10 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     const continueProcessing = await handleFailedWorkItems(tx, job, workItem, status, logger, errorMessage);
 
     if (continueProcessing) {
-      // createNextSteps
-      const nextStep = await createNextWorkItems(tx, workItem, allWorkItemsForStepComplete, results);
-      // TODO - We should not queue an item for the next step in a chain for this
-      // granule
+      let nextStep = null;
+      if (status != WorkItemStatus.FAILED) {
+        nextStep = await createNextWorkItems(tx, workItem, allWorkItemsForStepComplete, results);
+      }
 
       if (nextStep) {
         if (results && results.length > 0) {
@@ -480,12 +541,18 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
           await completeJob(tx, job, JobStatus.FAILED, logger, message);
         }
       } else {
-        // Completely finished with the chain for this granule
-        await addJobLinksForFinishedWorkItem(tx, job, results, logger);
+        // Finished with the chain for this granule
+        if (status != WorkItemStatus.FAILED) {
+          await addJobLinksForFinishedWorkItem(tx, job, results, logger);
+        } else {
+          // TODO
+          await addErrorsForWorkItem(tx, job, results, logger);
+        }
         // If all granules are finished mark the job as finished
         job.completeBatch(thisStep.workItemCount);
         if (allWorkItemsForStepComplete) {
-          await completeJob(tx, job, JobStatus.SUCCESSFUL, logger);
+          const finalStatus = await getFinalStatusForJob(tx, job);
+          await completeJob(tx, job, finalStatus, logger);
         } else {
           // Special case to pause the job as soon as any single granule completes when in the previewing state
           if (job.status === JobStatus.PREVIEWING) {
