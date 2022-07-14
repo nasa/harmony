@@ -115,6 +115,9 @@ MAX_GRANULE_LIMIT=2100
 # The threshold of the number of granules in a request that will trigger auto-pausing with preview
 PREVIEW_THRESHOLD=100
 
+# The maximum number of errors to allow for a job before considering it failed
+MAX_ERRORS_FOR_JOB=2000
+
 # String to identify the type of environment.  Options:
 #  - "development" for local development.
 #  - "production" for deployments with a separate postgres server (SIT, UAT, Production).

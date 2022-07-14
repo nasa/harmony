@@ -454,8 +454,7 @@ export async function workItemCountByServiceIDAndStatus(
     .select()
     .count('id')
     .where({ serviceID })
-    .whereIn(`${WorkItem.table}.status`, statuses)
-    ;
+    .whereIn(`${WorkItem.table}.status`, statuses);
 
   let workItemCount;
   if (db.client.config.client === 'pg') {

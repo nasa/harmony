@@ -5,7 +5,7 @@ CREATE TABLE `jobs` (
   `jobID` char(36) not null,
   `requestId` char(36) not null,
   `username` varchar(255) not null,
-  `status` text check (`status` in ('accepted', 'running', 'successful', 'failed', 'canceled', 'paused', 'previewing')) not null,
+  `status` text check (`status` in ('accepted', 'running', 'successful', 'failed', 'canceled', 'paused', 'previewing', 'complete_with_errors')) not null,
   `message` varchar(4096) not null,
   `progress` integer not null,
   `batchesCompleted` integer not null,
@@ -14,7 +14,8 @@ CREATE TABLE `jobs` (
   `request` varchar(4096) not null default 'unknown',
   `isAsync` boolean,
   `numInputGranules` integer not null default 0,
-  `collectionIds` text not null
+  `collectionIds` text not null,
+  `ignoreErrors` boolean not null
 );
 
 CREATE TABLE `job_links` (
@@ -27,6 +28,16 @@ CREATE TABLE `job_links` (
   `temporalStart` datetime,
   `temporalEnd` datetime,
   `bbox` varchar(255),
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  FOREIGN KEY(jobID) REFERENCES jobs(jobID)
+);
+
+CREATE TABLE `job_errors` (
+  `id` integer not null primary key autoincrement,
+  `jobID` char(36) not null,
+  `url` varchar(4096) not null,
+  `message` varchar(4096) not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID)
@@ -65,6 +76,7 @@ CREATE INDEX jobs_jobID_idx ON jobs(jobID);
 CREATE INDEX jobs_updatedAt_id ON jobs(updatedAt);
 CREATE INDEX jobs_username_idx ON jobs(username);
 CREATE INDEX job_links_jobID_idx ON job_links(jobID);
+CREATE INDEX job_errors_jobID_idx ON job_errors(jobID);
 CREATE INDEX work_items_jobID_idx ON work_items(jobID);
 CREATE INDEX work_items_serviceID_idx ON work_items(serviceID);
 CREATE INDEX work_items_status_idx ON work_items(status);
