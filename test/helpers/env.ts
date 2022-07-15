@@ -25,6 +25,7 @@ process.env.CMR_MAX_PAGE_SIZE = '100';
 import env from '../../app/util/env'; // Must set required env before loading the env file
 
 env.nodeEnv = 'test';
+process.setMaxListeners(Infinity);
 
 use(chaiAsPromised);
 
