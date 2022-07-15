@@ -162,3 +162,19 @@ export async function deleteWorkflowStepsById(
 
   return numDeleted;
 }
+
+/**
+ * Decrements the number of expected work items for all future steps. Used when
+ * a work item fails.
+ *
+ * @param tx - the database transaction
+ * @param jobID - the job ID
+ * @param stepIndex - the current step index
+ */
+export async function decrementFutureWorkItemCount(tx: Transaction, jobID, stepIndex): Promise<void> {
+  await tx(WorkflowStep.table)
+    .where({ jobID })
+    .andWhere('stepIndex', '>', stepIndex)
+    .andWhere('hasAggregatedOutput', false)
+    .decrement('workItemCount');
+}
