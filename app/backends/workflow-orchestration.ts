@@ -405,7 +405,16 @@ async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatu
  * @param workItem - The work item
  */
 function getWorkItemUrl(workItem): string {
-  const url = workItem.stacCatalogLocation;
+  let url = 'unknown';
+  const localLocation = workItem.stacCatalogLocation?.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
+
+  if (localLocation) {
+    const items = readCatalogItems(localLocation);
+
+    // Only consider the first item in the list
+    url = items[0].assets.data.href;
+  }
+
   return url;
 }
 
