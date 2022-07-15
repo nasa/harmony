@@ -15,6 +15,7 @@ import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 export const EXPIRATION_DAYS = 30;
 
 import env = require('../util/env');
+import JobError from './job-error';
 
 const { awsDefaultRegion } = env;
 
@@ -63,6 +64,7 @@ export interface JobRecord {
   progress?: number;
   batchesCompleted?: number;
   links?: JobLinkOrRecord[];
+  errors?: JobError[];
   request: string;
   isAsync?: boolean;
   ignoreErrors?: boolean;
@@ -267,6 +269,8 @@ export class Job extends Record implements JobRecord {
   static statuses: JobStatus;
 
   links: JobLink[];
+
+  errors: JobError[];
 
   message: string;
 

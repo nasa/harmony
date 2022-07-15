@@ -66,7 +66,7 @@ export async function getErrorsForJob(
   tx: Transaction,
   jobID: string,
 ): Promise<JobError[]> {
-  const results = await tx(this.table).select()
+  const results = await tx(JobError.table).select()
     .where({ jobID })
     .orderBy(['id']);
 
