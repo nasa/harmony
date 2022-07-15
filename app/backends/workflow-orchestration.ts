@@ -450,7 +450,7 @@ async function handleFailedWorkItems(
 
       if (job.ignoreErrors && !jobMessage) {
         const errorCount =  await getErrorCountForJob(tx, job.jobID);
-        if (errorCount + 1 > env.maxErrorsForJob) {
+        if (errorCount > env.maxErrorsForJob) {
           jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded`;
           continueProcessing = false;
         }
