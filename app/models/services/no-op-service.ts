@@ -43,7 +43,7 @@ export default class NoOpService extends BaseService<void> {
    * @param requestUrl - The URL the end user invoked
    * @returns a promise with the Job status response
    */
-  async invoke(logger, harmonyRoot, requestUrl): Promise<InvocationResult> {
+  async invoke(_logger, harmonyRoot, requestUrl): Promise<InvocationResult> {
     const now = new Date();
     const granuleLists = this.operation.sources.map((source) => source.granules);
     const granules = granuleLists.reduce((acc, val) => acc.concat(val), []);

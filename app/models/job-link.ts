@@ -216,14 +216,15 @@ export async function getLinksForJob(
  * @param tx - the transaction to use for querying
  * @param jobID - the UUID associated with the job
  */
-export async function getJobLinkCount(
+export async function getJobDataLinkCount(
   tx: Transaction,
   jobID: string,
 ): Promise<number> {
   const count = await tx(JobLink.table)
     .select()
     .count('id')
-    .where({ jobID });
+    .where({ jobID })
+    .andWhere({ rel: 'data' });
 
   let jobLinkCount;
   if (db.client.config.client === 'pg') {

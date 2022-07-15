@@ -8,9 +8,9 @@ import env from '../util/env';
 import { readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
-import JobLink, { getJobLinkCount } from '../models/job-link';
+import JobLink, { getJobDataLinkCount } from '../models/job-link';
 import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
-import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
+import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { ServiceError } from '../util/errors';
@@ -391,7 +391,7 @@ async function addErrorsForWorkItem(tx, job, url, message): Promise<void> {
 async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatus> {
   let finalStatus = JobStatus.SUCCESSFUL;
   if (await getErrorCountForJob(tx, job.jobID) > 0) {
-    if (await getJobLinkCount(tx, job.jobID) > 0) {
+    if (await getJobDataLinkCount(tx, job.jobID) > 0) {
       finalStatus = JobStatus.COMPLETE_WITH_ERRORS;
     } else {
       finalStatus = JobStatus.FAILED;
@@ -414,6 +414,7 @@ function getWorkItemUrl(workItem): string {
  * @param tx - The database transaction
  * @param job - The job associated with the work item
  * @param workItem - The work item that just finished
+ * @param workflowStep - The current workflow step
  * @param status - The status sent with the work item update
  * @param errorMessage - The error message associated with the work item update (if any)
  * @param logger - The logger for the request
@@ -421,7 +422,7 @@ function getWorkItemUrl(workItem): string {
  * @returns whether to continue processing work item updates or end
  */
 async function handleFailedWorkItems(
-  tx, job, workItem, status, logger, errorMessage,
+  tx, job, workItem: WorkItem, workflowStep: WorkflowStep, status, logger, errorMessage,
 ): Promise<boolean> {
   let continueProcessing = true;
   // If the response is an error then set the job status to 'failed'
@@ -462,6 +463,9 @@ async function handleFailedWorkItems(
 
       if (!continueProcessing) {
         await completeJob(tx, job, JobStatus.FAILED, logger, jobMessage);
+      } else {
+        // Need to make sure we expect one fewer granule to complete
+        await decrementFutureWorkItemCount(tx, job.jobID, workflowStep.stepIndex);
       }
     }
   }
@@ -519,7 +523,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
     await maybeClearScrollSession(workItem.scrollID, allWorkItemsForStepComplete, status);
-    const continueProcessing = await handleFailedWorkItems(tx, job, workItem, status, logger, errorMessage);
+    const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
 
     if (continueProcessing) {
       let nextStep = null;
@@ -545,7 +549,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         if (status != WorkItemStatus.FAILED) {
           await addJobLinksForFinishedWorkItem(tx, job, results, logger);
         } else {
-          // TODO
           await addErrorsForWorkItem(tx, job, results, logger);
         }
         // If all granules are finished mark the job as finished
