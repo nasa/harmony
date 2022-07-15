@@ -38,16 +38,16 @@ https://cmr.earthdata.nasa.gov:
     collections:
       - id: C1598621093-GES_DISC
         variables:
-        - V2144690146-GES_DISC
-        - V2144682160-GES_DISC
-        - V2144444407-GES_DISC
-        - V2144674651-GES_DISC
-        - V2144680005-GES_DISC
-        - V2144683811-GES_DISC
-        - V2144672700-GES_DISC
-        - V2144443981-GES_DISC
-        - V2144677987-GES_DISC
-        - V2144685939-GES_DISC
+        - V2296949098-GES_DISC
+        - V2296949172-GES_DISC
+        - V2296949242-GES_DISC
+        - V2296949978-GES_DISC
+        - V2296949195-GES_DISC
+        - V2296949905-GES_DISC
+        - V2296949990-GES_DISC
+        - V2296949860-GES_DISC
+        - V2296949142-GES_DISC
+        - V2296949998-GES_DISC
     capabilities:
       concatenation: true
       concatenate_by_default: true
@@ -424,9 +424,7 @@ https://cmr.earthdata.nasa.gov:
       - id: C1214354031-ASF
       - id: C1808440897-ASF
       - id: C2011599335-ASF
-      - id: C1239324659-POCUMULUS
       - id: C1990404801-POCLOUD
-      - id: C1238618571-POCUMULUS
       - id: C1996881146-POCLOUD
     capabilities:
       subsetting:
@@ -460,16 +458,16 @@ https://cmr.uat.earthdata.nasa.gov:
     collections:
       - id: C1225808238-GES_DISC
         variables:
-        - V1240788781-GES_DISC
-        - V1242222137-GES_DISC
-        - V1240788730-GES_DISC
-        - V1242222299-GES_DISC
-        - V1242222009-GES_DISC
-        - V1242222265-GES_DISC
-        - V1242222196-GES_DISC
-        - V1242222340-GES_DISC
-        - V1242222234-GES_DISC
-        - V1242222036-GES_DISC
+        - V1245551685-GES_DISC
+        - V1245551715-GES_DISC
+        - V1245551687-GES_DISC
+        - V1245551691-GES_DISC
+        - V1245551713-GES_DISC
+        - V1245551711-GES_DISC
+        - V1245551709-GES_DISC
+        - V1245551689-GES_DISC
+        - V1245551693-GES_DISC
+        - V1245551717-GES_DISC
     capabilities:
       concatenation: true
       concatenate_by_default: true
@@ -815,7 +813,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1234724471-POCLOUD
       - id: C1239379704-POCLOUD
       - id: C1238621141-POCLOUD
-      - id: C1238618570-POCUMULUS
       - id: C1215664073-GES_DISC
       - id: C1215664076-GES_DISC
       - id: C1215802948-GES_DISC
@@ -919,9 +916,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1215139640-GES_DISC
       - id: C1215802932-GES_DISC
       - id: C1221312185-GES_DISC
-      - id: C1239324659-POCUMULUS
       - id: C1239379702-POCLOUD
-      - id: C1238618571-POCUMULUS
       - id: C1238621141-POCLOUD
     capabilities:
       subsetting:

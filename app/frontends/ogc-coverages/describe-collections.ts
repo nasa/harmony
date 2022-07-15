@@ -4,7 +4,7 @@ import HarmonyRequest from '../../models/harmony-request';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { getSanitizedRequestUrl } from '../../util/url';
-import { parseVariables, fullPath } from '../../util/variables';
+import { parseVariables, fullPath, getSupportedVariablesForCollection } from '../../util/variables';
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
@@ -101,14 +101,22 @@ export function describeCollections(req: HarmonyRequest, res: Response): void {
     };
     links.push(rootLink, selfLink);
     const extent = generateExtent(collection);
-    // Include a link to perform a request asking for all variables in the EOSDIS collection
-    const allVariables = { umm: { Name: 'all', LongName: 'All variables' }, meta: { 'concept-id': 'all' } };
-    ogcCollections.push(buildCollectionInfo(collection, allVariables, `${requestUrl}/all`, extent));
+    const supportedVariables = getSupportedVariablesForCollection(collection);
+    if (supportedVariables.size == 0) {
+      // Include a link to perform a request asking for all variables in the EOSDIS collection
+      // unless a service limits the variables
+      const allVariables = { umm: { Name: 'all', LongName: 'All variables' }, meta: { 'concept-id': 'all' } };
+      ogcCollections.push(buildCollectionInfo(collection, allVariables, `${requestUrl}/all`, extent));
+    }
     for (const variable of collection.variables) {
-      const collectionInfo = buildCollectionInfo(
-        collection, variable, `${requestUrl}/${encodeURIComponent(fullPath(variable))}`, extent,
-      );
-      ogcCollections.push(collectionInfo);
+      // if a service has limited the variables for the collection, only allow variables in that
+      // set 
+      if (supportedVariables.has(variable.meta['concept-id']) || supportedVariables.size === 0) {
+        const collectionInfo = buildCollectionInfo(
+          collection, variable, `${requestUrl}/${encodeURIComponent(fullPath(variable))}`, extent,
+        );
+        ogcCollections.push(collectionInfo);
+      }
     }
   }
   res.send({
