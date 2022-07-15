@@ -376,7 +376,7 @@ async function maybeQueueQueryCmrWorkItem(
 /**
  * TODO implement
  */
-async function addErrorsForWorkItem(tx, job, url, message): Promise<void> {
+async function addErrorForWorkItem(tx, job, url, message): Promise<void> {
   const error = new JobError({
     jobID: job.jobID,
     url,
@@ -445,7 +445,7 @@ async function handleFailedWorkItems(
         if (errorMessage) {
           message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
         }
-        await addErrorsForWorkItem(tx, job, url, message);
+        await addErrorForWorkItem(tx, job, url, message);
       }
 
       if (job.ignoreErrors && !jobMessage) {
@@ -523,6 +523,15 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
     await maybeClearScrollSession(workItem.scrollID, allWorkItemsForStepComplete, status);
+
+    // TODO get rid of this (random failure)
+    // const failHalfTheTime =  Math.floor(Math.random() * 2);
+    // let theStatus = status;
+    // if (failHalfTheTime == 1) {
+    //   theStatus = WorkItemStatus.FAILED;
+    // }
+
+    // const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, theStatus, logger, errorMessage);
     const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
 
     if (continueProcessing) {
@@ -548,8 +557,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         // Finished with the chain for this granule
         if (status != WorkItemStatus.FAILED) {
           await addJobLinksForFinishedWorkItem(tx, job, results, logger);
-        } else {
-          await addErrorsForWorkItem(tx, job, results, logger);
         }
         // If all granules are finished mark the job as finished
         job.completeBatch(thisStep.workItemCount);
