@@ -4,7 +4,8 @@ import HarmonyRequest from '../../models/harmony-request';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { getSanitizedRequestUrl } from '../../util/url';
-import { parseVariables, fullPath, getSupportedVariablesForCollection } from '../../util/variables';
+import { parseVariables, fullPath } from '../../util/variables';
+import { getServiceConfigs } from '../../models/services';
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
@@ -65,6 +66,31 @@ function buildCollectionInfo(
     // TODO set CRS (HARMONY-242)
     // crs: 'TODO get from UMM-S or services.yml capabilities.output_projections',
   };
+}
+
+/**
+ * Get a list of variables that are defined in the service configs as being available for
+ * processing for the given collection. If the returned set is empty this means there are no
+ * limits set as to which variables a service will process.
+ * @param collection - the CMR collection 
+ * @returns A Set of variable IDs obtained from service configs
+ */
+function getSupportedVariablesForCollection(
+  collection: CmrCollection,
+): Set<string> {
+  const variableIds = new Set<string>();
+  const configs = getServiceConfigs();
+  for (const serviceConfig of configs) {
+    const serviceCollection = serviceConfig.collections?.find(
+      (collectionConfig) => collectionConfig.id === collection.id,
+    );
+    if (serviceCollection?.variables) {
+      for (const variableId of serviceCollection?.variables) {
+        variableIds.add(variableId);
+      }
+    }
+  }
+  return variableIds;
 }
 
 /**
