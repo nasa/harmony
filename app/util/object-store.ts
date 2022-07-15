@@ -114,7 +114,7 @@ export class S3ObjectStore {
 
   /**
    * Get the parsed JSON object for the JSON file at the given s3 location.
-   @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the objects to
+   * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the objects to
    *   be retrieved or the object URL
    * @returns an object, parsed from JSON
    */
@@ -132,7 +132,7 @@ export class S3ObjectStore {
    * 
    * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the objects to
    *   be retrieved or the object URL
-   * @returns list of s3 objects
+   * @returns a promise resolving to a list of s3 object keys (strings)
    */
   async listObjectKeys(paramsOrUrl: string | BucketParams): Promise<string[]>  {
     let s3Objects = [];
@@ -177,7 +177,7 @@ export class S3ObjectStore {
    * Check if the object exists.
    * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the object to
    *   be retrieved or the object URL
-   * @returns boolean
+   * @returns a promise resolving to true if the object exists and false otherwise
    */
   async objectExists(paramsOrUrl: string | BucketParams): Promise<boolean> {
     try {
