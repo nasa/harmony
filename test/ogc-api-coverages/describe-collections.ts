@@ -3,12 +3,35 @@ import { describe, it } from 'mocha';
 import { generateExtent } from '../../app/frontends/ogc-coverages/describe-collections';
 import { hookDescribeCollectionRequest, hookDescribeCollectionsRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
+import { ServiceConfig } from '../../app/models/services/base-service';
+import { hookServices } from '../helpers/stub-service';
 
 describe('OGC API Coverages - describeCollections', function () {
   const collection = 'C1225776654-ASF';
   const version = '1.0.0';
 
   hookServersStartStop();
+
+  describe('when the service config defines the variables for the collection', function () {
+    const serviceConfigs: ServiceConfig<unknown>[] = [
+      {
+        name: 'first-service',
+        type: { name: 'turbo' },
+        collections: [{
+          id: collection,
+          variables: ['V1234599990-ASF', 'V1234600147-ASF'],
+        }],
+      },
+    ];
+
+    hookServices(serviceConfigs);
+    hookDescribeCollectionsRequest(collection, version);
+    it('includes an OGC collection for only the variables in the service config', function () {
+      const listing = JSON.parse(this.res.text);
+      const variables = listing.collections.map((v) => v.id);
+      expect(variables).to.eql([`${collection}/V1234599990-ASF`, `${collection}/V1234600147-ASF`]);
+    });
+  });
 
   describe('when provided a valid EOSDIS collection', function () {
     hookDescribeCollectionsRequest(collection, version);
