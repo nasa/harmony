@@ -10,6 +10,7 @@ import { getWorkForService, updateWorkItem } from './helpers/work-items';
 import { WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
 import env from '../app/util/env';
+import { jobStatus } from './helpers/jobs';
 
 const reprojectAndZarrQuery = {
   maxResults: 1,
@@ -299,6 +300,15 @@ describe('when setting ignoreErrors=true', function () {
         expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
         expect(job.progress).to.equal(100);
       });
+
+      it('includes the error details in the job status', async function () {
+        const response = await jobStatus(this.frontend, { jobID: firstSwotItem.jobID, username: 'joe' });
+        const job = JSON.parse(response.text);
+        const { errors } = job;
+        expect(errors.length).to.equal(1);
+        expect(errors[0].url).to.equal('https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc');
+        expect(errors[0].message).to.include('failed with an unknown error');
+      });
     });
   });
 
@@ -315,9 +325,9 @@ describe('when setting ignoreErrors=true', function () {
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
         'test/resources/worker-response-sample/catalog0.json',
-        'test/resources/worker-response-sample/catalog1.json',
-        'test/resources/worker-response-sample/catalog2.json',
-        'test/resources/worker-response-sample/catalog3.json',
+        'test/resources/worker-response-sample/catalog0.json',
+        'test/resources/worker-response-sample/catalog0.json',
+        'test/resources/worker-response-sample/catalog0.json',
       ];
       await updateWorkItem(this.backend, workItem);
 
@@ -388,12 +398,24 @@ describe('when setting ignoreErrors=true', function () {
         thirdSwotItem = JSON.parse(res.text).workItem;
         thirdSwotItem.status = WorkItemStatus.FAILED;
         thirdSwotItem.results = [];
+        thirdSwotItem.errorMessage = 'Did not reach 88 MPH.';
         await updateWorkItem(this.backend, thirdSwotItem);
       });
 
       it('puts the job in a FAILED state', async function () {
         const job = await Job.byJobID(db, thirdSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
+      });
+
+      it('includes the error details in the job status', async function () {
+        const response = await jobStatus(this.frontend, { jobID: thirdSwotItem.jobID, username: 'joe' });
+        const job = JSON.parse(response.text);
+        const { errors } = job;
+        expect(errors.length).to.equal(2);
+        expect(errors[0].url).to.equal('https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc');
+        expect(errors[0].message).to.include('failed with an unknown error');
+        expect(errors[1].url).to.equal('https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc');
+        expect(errors[1].message).to.include('Did not reach 88 MPH');
       });
 
       it('marks any remaining work items as canceled', async function () {
