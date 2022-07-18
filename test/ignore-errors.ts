@@ -430,4 +430,32 @@ describe('when setting ignoreErrors=true', function () {
       });
     });
   });
+
+  describe('when making a request for 4 granules and query-cmr fails', function () {
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 4 } } });
+    hookRedirect('joe');
+    hookClearScrollSessionExpect();
+
+    before(async function () {
+      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+      const { workItem } = JSON.parse(res.text);
+      workItem.status = WorkItemStatus.FAILED;
+      workItem.results = [];
+      workItem.errorMessage = 'Bad scroll session';
+      await updateWorkItem(this.backend, workItem);
+      this.workItem = workItem;
+    });
+
+    it('marks the work items as failed', async function () {
+      const currentWorkItems = (await getWorkItemsByJobId(db, this.workItem.jobID)).workItems;
+      expect(currentWorkItems.length).to.equal(1);
+      expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+    });
+
+    it('marks the job as failed', async function () {
+      const job = await Job.byJobID(db, this.workItem.jobID);
+      expect(job.status).to.equal(JobStatus.FAILED);
+    });
+  });
+
 });
