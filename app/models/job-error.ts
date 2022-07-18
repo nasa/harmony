@@ -1,7 +1,6 @@
 import db, { Transaction } from '../util/db';
 import Record from './record';
 
-
 export interface JobErrorRecord {
   id?: number;
   jobID: string;
@@ -26,7 +25,7 @@ export default class JobError extends Record {
   message: string;
 
   /**
-   * Creates a Job link from the links in a job.
+   * Creates a Job error object for a work item that failed in a job.
    *
    * @param fields - Object containing fields to set on the record
    */
@@ -38,10 +37,10 @@ export default class JobError extends Record {
   }
 
   /**
-   * Validates the job link. Returns null if the link is valid. Returns a list of errors
-   * if it is invalid.
+   * Validates the job error record. Returns null if the job error is valid.
+   * Returns a list of errors if it is invalid.
    *
-   * @returns a list of validation errors or null if the link is valid
+   * @returns a list of validation errors or null if the job error is valid
    */
   validate(): string[] {
     const errors = [];
@@ -57,6 +56,7 @@ export default class JobError extends Record {
 
 /**
  * Returns the errors for a given job
+ *
  * @param tx - the transaction to use for querying
  * @param jobID - the UUID associated with the job
  *
@@ -76,6 +76,7 @@ export async function getErrorsForJob(
 
 /**
  * Returns the number of errors for the given job
+ *
  * @param tx - the transaction to use for querying
  * @param jobID - the UUID associated with the job
  */

@@ -288,8 +288,6 @@ async function createAggregatingWorkItem(
 async function createNextWorkItems(
   tx: Transaction, workItem: WorkItem, allWorkItemsForStepComplete: boolean, results: string[],
 ): Promise<WorkflowStep> {
-  // TODO - We should not queue an item for the next step in a chain for this
-  // granule
   const nextStep = await getWorkflowStepByJobIdStepIndex(
     tx, workItem.jobID, workItem.workflowStepIndex + 1,
   );
@@ -299,7 +297,6 @@ async function createNextWorkItems(
       // if we have completed all the work items for this step or if the next step does not
       // aggregate then create a work item for the next step
       if (nextStep.hasAggregatedOutput) {
-        // TODO - is there anything we can do for aggregation steps?
         if (allWorkItemsForStepComplete) {
           await createAggregatingWorkItem(tx, workItem, nextStep);
         }
