@@ -48,8 +48,6 @@ describe('when setting ignoreErrors=true', function () {
         'test/resources/worker-response-sample/catalog0.json',
       ];
       await updateWorkItem(this.backend, workItem);
-      // since there were multiple query cmr results,
-      // multiple work items should be generated for the next step
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(2);
       expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
@@ -78,11 +76,9 @@ describe('when setting ignoreErrors=true', function () {
       });
 
       it('marks the job as successful', async function () {
-        // work item failure should trigger job failure
         const job = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.SUCCESSFUL);
         expect(job.progress).to.equal(100);
-        // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(3);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
@@ -112,8 +108,6 @@ describe('when setting ignoreErrors=true', function () {
         'test/resources/worker-response-sample/catalog0.json',
       ];
       await updateWorkItem(this.backend, workItem);
-      // since there were multiple query cmr results,
-      // multiple work items should be generated for the next step
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(2);
       expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
@@ -131,10 +125,9 @@ describe('when setting ignoreErrors=true', function () {
       });
 
       it('fails the job', async function () {
-        // work item failure should trigger job failure
+        // work item failure with only one granue should trigger job failure
         const job = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
-        // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(2);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
@@ -169,8 +162,6 @@ describe('when setting ignoreErrors=true', function () {
         'test/resources/worker-response-sample/catalog1.json',
       ];
       await updateWorkItem(this.backend, workItem);
-      // since there were multiple query cmr results,
-      // multiple work items should be generated for the next step
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
 
       expect(currentWorkItems.length).to.equal(3);
@@ -189,10 +180,8 @@ describe('when setting ignoreErrors=true', function () {
       });
 
       it('leaves the job in the running state', async function () {
-        // work item failure should trigger job failure
         const job = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.RUNNING);
-        // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(3);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
@@ -220,10 +209,9 @@ describe('when setting ignoreErrors=true', function () {
       });
 
       it('marks the job as failed', async function () {
-        // work item failure should trigger job failure
+        // all work items failing should trigger job failure
         const job = await Job.byJobID(db, secondSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
-        // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
@@ -250,8 +238,6 @@ describe('when setting ignoreErrors=true', function () {
         'test/resources/worker-response-sample/catalog2.json',
       ];
       await updateWorkItem(this.backend, workItem);
-      // since there were multiple query cmr results,
-      // multiple work items should be generated for the next step
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(4);
       expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
@@ -269,13 +255,11 @@ describe('when setting ignoreErrors=true', function () {
       });
 
       it('leaves the job in the running state', async function () {
-        // work item failure should trigger job failure
         const job = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.RUNNING);
       });
 
       it('does not queue a zarr step for the work item that failed', async function () {
-        // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
@@ -336,8 +320,7 @@ describe('when setting ignoreErrors=true', function () {
         'test/resources/worker-response-sample/catalog3.json',
       ];
       await updateWorkItem(this.backend, workItem);
-      // since there were multiple query cmr results,
-      // multiple work items should be generated for the next step
+
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(5);
       expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
@@ -363,7 +346,6 @@ describe('when setting ignoreErrors=true', function () {
       });
 
       it('leaves the job in the running state', async function () {
-        // work item failure should trigger job failure
         const job = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.RUNNING);
       });
@@ -374,6 +356,7 @@ describe('when setting ignoreErrors=true', function () {
 
       before(async function () {
         const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+
         secondSwotItem = JSON.parse(res.text).workItem;
         secondSwotItem.status = WorkItemStatus.FAILED;
         secondSwotItem.results = [];
@@ -381,13 +364,11 @@ describe('when setting ignoreErrors=true', function () {
       });
 
       it('leaves the job in the running state', async function () {
-        // work item failure should trigger job failure
         const job = await Job.byJobID(db, secondSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.RUNNING);
       });
 
       it('does not queue a zarr step for the work item that failed', async function () {
-        // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, secondSwotItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(6);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
@@ -411,7 +392,6 @@ describe('when setting ignoreErrors=true', function () {
       });
 
       it('puts the job in a FAILED state', async function () {
-        // work item failure should trigger job failure
         const job = await Job.byJobID(db, thirdSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
       });

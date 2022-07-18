@@ -403,16 +403,21 @@ async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatu
 /**
  *
  * @param workItem - The work item
+ * @param logger - The logger for the request
  */
-function getWorkItemUrl(workItem): string {
+function getWorkItemUrl(workItem, logger): string {
   let url = 'unknown';
   const localLocation = workItem.stacCatalogLocation?.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
 
   if (localLocation) {
-    const items = readCatalogItems(localLocation);
-
-    // Only consider the first item in the list
-    url = items[0].assets.data.href;
+    try {
+      const items = readCatalogItems(localLocation);
+      // Only consider the first item in the list
+      url = items[0].assets.data.href;
+    } catch (e) {
+      logger.error('Could not read catalog');
+      logger.error(e);
+    }
   }
 
   return url;
@@ -447,8 +452,7 @@ async function handleFailedWorkItems(
           jobMessage = `${jobMessage} with error: ${errorMessage}`;
         }
       } else {
-        // TODO - figure out the URL (read the STAC catalog for the location?)
-        const url = getWorkItemUrl(workItem);
+        const url = getWorkItemUrl(workItem, logger);
 
         let message = `WorkItem [${workItem.id}] failed with an unknown error`;
         if (errorMessage) {
@@ -464,11 +468,6 @@ async function handleFailedWorkItems(
           continueProcessing = false;
         }
       }
-
-      // let message = `WorkItem [${workItem.id}] failed with an unknown error`;
-      // if (errorMessage?.length > 0) {
-      //   message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
-      // }
 
       if (!continueProcessing) {
         await completeJob(tx, job, JobStatus.FAILED, logger, jobMessage);
