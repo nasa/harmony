@@ -352,31 +352,17 @@ async function maybeQueueQueryCmrWorkItem(
   }
 }
 
-// Update work item flow
-
-// Should we try to validate the status field?
-// Get all the database entries
-// Return 409 if job is in terminal state
-// Update the work item database entry
-// Check for and handle a failed status
-// If we should continue on figure out the next step to work on
-// If we just finished with the last query-cmr step clear the scrolling session
-// If there's another step for this work item create the next work items
-// * Creates another query-cmr work item if it's required TODO: Move this to the same if as the scrolling session check
-// Special case for if there's supposed to be a next step, but there are no catalogs to pass to it
-// If we're at the last step in the chain
-//  - create the links for the jobs
-//  - mark a batch as complete for the job? What is this?
-//  - check if the items completed matches the number of work items for this step
-//     - Mark the job as complete and successful and end
-//  - check if the job is previewing and pause if so
-//  - save the job (why are we only saving the )
-
-
 /**
- * TODO implement
+ * If a work item has an error adds the error to the job_errors database table.
+ *
+ * @param tx - The database transaction
+ * @param job - The job record
+ * @param url - The URL to include in the error
+ * @param message - An error message to include in the error
  */
-async function addErrorForWorkItem(tx, job, url, message): Promise<void> {
+async function addErrorForWorkItem(
+  tx: Transaction, job: Job, url: string, message: string,
+): Promise<void> {
   const error = new JobError({
     jobID: job.jobID,
     url,
@@ -386,7 +372,12 @@ async function addErrorForWorkItem(tx, job, url, message): Promise<void> {
 }
 
 /**
- * TODO implement
+ * Returns the final job status for the request based on whether all items were
+ * successful, some were successful and some failed, or all items failed.
+ *
+ * @param tx - The database transaction
+ * @param job - The job record
+ * @returns the final job status for the request
  */
 async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatus> {
   let finalStatus = JobStatus.SUCCESSFUL;
@@ -401,9 +392,12 @@ async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatu
 }
 
 /**
+ * Returns a URL for the work item which will be stored with a job error.
  *
  * @param workItem - The work item
  * @param logger - The logger for the request
+ *
+ * @returns a relevant URL for the work item that failed if a data URL exists
  */
 function getWorkItemUrl(workItem, logger): string {
   let url = 'unknown';
@@ -424,6 +418,9 @@ function getWorkItemUrl(workItem, logger): string {
 }
 
 /**
+ * Checks if the work item failed and if so handles the logic of determining whether to
+ * fail the job or continue to processing. If there's an error it adds it to the job_errors
+ * table.
  *
  * @param tx - The database transaction
  * @param job - The job associated with the work item
@@ -500,6 +497,7 @@ async function maybeClearScrollSession(
 
 /**
  * Update a work item from a service response
+ *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @returns Resolves when the request is complete
@@ -531,15 +529,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
     await maybeClearScrollSession(workItem.scrollID, allWorkItemsForStepComplete, status);
-
-    // TODO get rid of this (random failure)
-    // const failHalfTheTime =  Math.floor(Math.random() * 2);
-    // let theStatus = status;
-    // if (failHalfTheTime == 1) {
-    //   theStatus = WorkItemStatus.FAILED;
-    // }
-
-    // const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, theStatus, logger, errorMessage);
     const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
 
     if (continueProcessing) {
@@ -554,9 +543,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
         } else {
           // Failed to create the next work items - fail the job rather than leaving it orphaned
           // in the running state
-
-          // TODO mark as successful with errors - note we should just ignore this if there are more work items that
-          // have not finished for this job, but otherwise go ahead and mark this job as failed / successful with errors
           logger.error('The work item update should have contained results to queue a next work item, but it did not.');
           const message = 'Harmony internal failure: could not create the next work items for the request.';
           await completeJob(tx, job, JobStatus.FAILED, logger, message);
