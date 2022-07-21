@@ -10,8 +10,11 @@ export enum WorkItemStatus {
   CANCELED = 'canceled',
 }
 
-// Future-proofing for when we have other success statuses like 'SUCCESSFUL_WITH_WARNINGS'
-export const SUCCESSFUL_WORK_ITEM_STATUSES = [WorkItemStatus.SUCCESSFUL];
+export const COMPLETED_WORK_ITEM_STATUSES = [
+  WorkItemStatus.SUCCESSFUL,
+  WorkItemStatus.FAILED,
+  WorkItemStatus.CANCELED,
+];
 
 export interface WorkItemRecord {
   // The database ID for the record

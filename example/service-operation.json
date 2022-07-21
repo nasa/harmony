@@ -1,12 +1,14 @@
 {
-  "$schema": "../app/schemas/data-operation/0.16.0/data-operation-v0.16.0.json",
-  "version": "0.16.0",
+  "$schema": "../app/schemas/data-operation/0.17.0/data-operation-v0.17.0.json",
+  "version": "0.17.0",
   "callback": "http://localhost/some-path",
   "stagingLocation": "s3://example-bucket/public/some-org/some-service/some-uuid/",
   "user": "jdoe",
   "sources": [
     {
       "collection": "C1233800302-EEDTEST",
+      "shortName": "harmony_example",
+      "versionId": "1",
       "variables": [
         {
           "id": "V1233801695-EEDTEST",

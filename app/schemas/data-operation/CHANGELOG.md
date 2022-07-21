@@ -1,3 +1,8 @@
+## [0.17.0] - 2022-07-12
+### Added
+- sources.shortName - The CMR short name for a source
+- sources.versionId - The CMR version id for a source
+
 ## [0.16.0] - 2022-05-12
 ### Added
 - subset.dimensions - An array containing the dimensions by which to subset. Each dimension contains a name and optionally a min and max value

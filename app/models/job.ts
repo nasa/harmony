@@ -15,16 +15,17 @@ import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 export const EXPIRATION_DAYS = 30;
 
 import env = require('../util/env');
-
+import JobError from './job-error';
 const { awsDefaultRegion } = env;
 
 const serializedJobFields = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'dataExpiration', 'links', 'request', 'numInputGranules', 'jobID',
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'dataExpiration',
+  'links', 'request', 'numInputGranules', 'jobID',
 ];
 
 export const jobRecordFields = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request', 'numInputGranules',
-  'jobID', 'requestId', 'batchesCompleted', 'isAsync',
+  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
+  'numInputGranules', 'jobID', 'requestId', 'batchesCompleted', 'isAsync', 'ignoreErrors',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -32,16 +33,19 @@ const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegio
 export enum JobStatus {
   ACCEPTED = 'accepted',
   RUNNING = 'running',
+  RUNNING_WITH_ERRORS = 'running_with_errors',
   SUCCESSFUL = 'successful',
   FAILED = 'failed',
   CANCELED = 'canceled',
   PAUSED = 'paused',
   PREVIEWING = 'previewing',
+  COMPLETE_WITH_ERRORS = 'complete_with_errors',
 }
 
 export enum JobEvent {
   CANCEL = 'CANCEL',
   COMPLETE = 'COMPLETE',
+  COMPLETE_WITH_ERRORS = 'COMPLETE_WITH_ERRORS', // TODO - where does this get used
   FAIL = 'FAIL',
   PAUSE = 'PAUSE',
   RESUME = 'RESUME',
@@ -60,8 +64,10 @@ export interface JobRecord {
   progress?: number;
   batchesCompleted?: number;
   links?: JobLinkOrRecord[];
+  errors?: JobError[];
   request: string;
   isAsync?: boolean;
+  ignoreErrors?: boolean;
   createdAt?: Date | number;
   updatedAt?: Date | number;
   numInputGranules: number;
@@ -80,6 +86,7 @@ export interface JobQuery {
     batchesCompleted?: number;
     request?: string;
     isAsync?: boolean;
+    ignoreErrors?: boolean;
     createdAt?: number;
     updatedAt?: number;
   };
@@ -116,6 +123,21 @@ const stateMachine = createMachine(
         },
         on: Object.fromEntries([
           [JobEvent.COMPLETE, { target: JobStatus.SUCCESSFUL }],
+          [JobEvent.COMPLETE_WITH_ERRORS, { target: JobStatus.COMPLETE_WITH_ERRORS }],
+          [JobEvent.CANCEL, { target: JobStatus.CANCELED }],
+          [JobEvent.FAIL, { target: JobStatus.FAILED }],
+          [JobEvent.PAUSE, { target: JobStatus.PAUSED }],
+        ]),
+      },
+      running_with_errors: {
+        id: JobStatus.RUNNING_WITH_ERRORS,
+        meta: {
+          defaultMessage: 'The job is being processed, but some items have failed processing',
+          active: true,
+        },
+        on: Object.fromEntries([
+          [JobEvent.COMPLETE, { target: JobStatus.SUCCESSFUL }],
+          [JobEvent.COMPLETE_WITH_ERRORS, { target: JobStatus.COMPLETE_WITH_ERRORS }],
           [JobEvent.CANCEL, { target: JobStatus.CANCELED }],
           [JobEvent.FAIL, { target: JobStatus.FAILED }],
           [JobEvent.PAUSE, { target: JobStatus.PAUSED }],
@@ -125,6 +147,13 @@ const stateMachine = createMachine(
         id: JobStatus.SUCCESSFUL,
         meta: {
           defaultMessage: 'The job has completed successfully',
+        },
+        type: 'final',
+      },
+      complete_with_errors: {
+        id: JobStatus.COMPLETE_WITH_ERRORS,
+        meta: {
+          defaultMessage: 'The job has completed with errors. See the errors field for more details',
         },
         type: 'final',
       },
@@ -202,7 +231,7 @@ const defaultMessages = Object.values(statesToDefaultMessages);
  */
 export function canTransition(
   currentStatus: JobStatus,
-  desiredStatus: JobStatus, 
+  desiredStatus: JobStatus,
   event: JobEvent,
 ): boolean {
   const state = stateMachine.transition(currentStatus, event);
@@ -220,7 +249,7 @@ export function canTransition(
  */
 export function validateTransition(
   currentStatus: JobStatus,
-  desiredStatus: JobStatus, 
+  desiredStatus: JobStatus,
   event: JobEvent,
   errorMessage = `Job status cannot be updated from ${currentStatus} to ${desiredStatus}.`,
 ): void {
@@ -255,6 +284,8 @@ export class Job extends Record implements JobRecord {
 
   links: JobLink[];
 
+  errors: JobError[];
+
   message: string;
 
   username: string;
@@ -280,6 +311,8 @@ export class Job extends Record implements JobRecord {
   numInputGranules: number;
 
   collectionIds: string[];
+
+  ignoreErrors: boolean;
 
 
   /**
@@ -487,6 +520,9 @@ export class Job extends Record implements JobRecord {
     if (fields.createdAt) {
       this.originalStatus = this.status;
     }
+
+    // Make sure this field gets set to a boolean
+    this.ignoreErrors = fields.ignoreErrors || false;
   }
 
   /**
@@ -626,11 +662,24 @@ export class Job extends Record implements JobRecord {
    * providing a message will override any prior message, including warnings.
    * You must call `#save` to persist the change
    *
-   * @param message - (optional) a human-readable success message.  See method description.
+   * @param message - (optional) a human-readable status message.  See method description.
    */
   succeed(message?: string): void {
     validateTransition(this.status, JobStatus.SUCCESSFUL, JobEvent.COMPLETE);
     this.updateStatus(JobStatus.SUCCESSFUL, message);
+  }
+
+  /**
+   * Updates the status to complete_with_errors, providing the optional message. Generally you
+   * should only set a message if there is information to provide to users about the result, as
+   * providing a message will override any prior message, including warnings.
+   * You must call `#save` to persist the change
+   *
+   * @param message - (optional) a human-readable status message.  See method description.
+   */
+  complete_with_errors(message?: string): void {
+    validateTransition(this.status, JobStatus.COMPLETE_WITH_ERRORS, JobEvent.COMPLETE_WITH_ERRORS);
+    this.updateStatus(JobStatus.COMPLETE_WITH_ERRORS, message);
   }
 
   /**
@@ -652,7 +701,7 @@ export class Job extends Record implements JobRecord {
       // different status
       this.message = statesToDefaultMessages[status];
     }
-    if (this.status === JobStatus.SUCCESSFUL) {
+    if (this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.COMPLETE_WITH_ERRORS) {
       this.progress = 100;
     }
   }
@@ -666,7 +715,7 @@ export class Job extends Record implements JobRecord {
    */
   completeBatch(totalItemCount: number = this.numInputGranules): void {
     this.batchesCompleted += 1;
-    // Only allow progress to be set to 100 when the job status is set to successful
+    // Only allow progress to be set to 100 when the job completes
     let progress = Math.min(100 * (this.batchesCompleted / totalItemCount), 99);
     // don't allow negative progress
     progress = Math.max(0, progress);
@@ -823,6 +872,9 @@ export class Job extends Record implements JobRecord {
     delete job.originalStatus;
     delete job.batchesCompleted;
     delete job.collectionIds;
+    delete job.isAsync;
+    delete job.ignoreErrors;
+
     return job;
   }
 
@@ -839,7 +891,7 @@ export class Job extends Record implements JobRecord {
 
   /**
    *  Computes and returns the date the data produced by the job will expire based on `createdAt`
-   * 
+   *
    * @returns the date the data produced by the job will expire
    */
   getDataExpiration(): Date {

@@ -375,8 +375,8 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       expect(maxCmrGranules).to.equal(3);
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
-        getStacLocation(workItem, 'catalog0.json'), 
-        getStacLocation(workItem, 'catalog1.json'), 
+        getStacLocation(workItem, 'catalog0.json'),
+        getStacLocation(workItem, 'catalog1.json'),
         getStacLocation(workItem, 'catalog2.json'),
       ];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
@@ -418,7 +418,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
       it('does not allow any further work item updates', async function () {
         firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-        const res = await await updateWorkItem(this.backend, firstSwotItem);
+        const res = await updateWorkItem(this.backend, firstSwotItem);
         expect(res.status).to.equal(409);
 
         const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
@@ -501,9 +501,9 @@ describe('When a request spans multiple CMR pages', function () {
   describe('and contains no aggregating steps', function () {
     const collection = 'C1233800302-EEDTEST';
     hookServersStartStop();
-    
+
     before(async function () {
-      // ensure that we're getting only the items 
+      // ensure that we're getting only the items
       // we created  for this test when invoking getWorkForService
       await truncateAll();
     });
@@ -533,8 +533,8 @@ describe('When a request spans multiple CMR pages', function () {
           expect(maxCmrGranules).equals(5);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
-            getStacLocation(workItem, 'catalog0.json'), 
-            getStacLocation(workItem, 'catalog1.json'), 
+            getStacLocation(workItem, 'catalog0.json'),
+            getStacLocation(workItem, 'catalog1.json'),
             getStacLocation(workItem, 'catalog2.json')];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
           await updateWorkItem(this.backend, workItem);
@@ -549,8 +549,8 @@ describe('When a request spans multiple CMR pages', function () {
           expect(maxCmrGranules).equals(2);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
-            getStacLocation(workItem, 'catalog0.json'), 
-            getStacLocation(workItem, 'catalog1.json'), 
+            getStacLocation(workItem, 'catalog0.json'),
+            getStacLocation(workItem, 'catalog1.json'),
           ];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
           await updateWorkItem(this.backend, workItem);
@@ -576,21 +576,21 @@ describe('When a request spans multiple CMR pages', function () {
   describe('and contains an aggregating step', async function () {
     const aggregateService = 'bar';
     hookServersStartStop();
-  
+
     before(async function () {
       await truncateAll();
 
       const job = buildJob({ numInputGranules: 5 });
       await job.save(db);
       this.jobID = job.jobID;
-  
+
       await buildWorkflowStep({
         jobID: job.jobID,
         serviceID: 'harmonyservices/query-cmr:latest',
         stepIndex: 1,
         workItemCount: 2,
       }).save(db);
-  
+
       await buildWorkflowStep({
         jobID: job.jobID,
         serviceID: aggregateService,
@@ -598,7 +598,7 @@ describe('When a request spans multiple CMR pages', function () {
         workItemCount: 1,
         hasAggregatedOutput: true,
       }).save(db);
-  
+
       await buildWorkItem({
         jobID: job.jobID,
         serviceID: 'harmonyservices/query-cmr:latest',
@@ -610,7 +610,7 @@ describe('When a request spans multiple CMR pages', function () {
     after(async function () {
       await truncateAll();
     });
-    
+
     describe('when checking for a query-cmr work item', function () {
       it('finds a query-cmr item along with a maxCmrGranules limit', async function () {
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
@@ -618,8 +618,8 @@ describe('When a request spans multiple CMR pages', function () {
         expect(maxCmrGranules).equals(5);
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = [
-          getStacLocation(workItem, 'catalog0.json'), 
-          getStacLocation(workItem, 'catalog1.json'), 
+          getStacLocation(workItem, 'catalog0.json'),
+          getStacLocation(workItem, 'catalog1.json'),
           getStacLocation(workItem, 'catalog2.json')];
         await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
         await updateWorkItem(this.backend, workItem);
@@ -636,7 +636,7 @@ describe('When a request spans multiple CMR pages', function () {
         expect(maxCmrGranules).equals(2);
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = [
-          getStacLocation(workItem, 'catalog0.json'), 
+          getStacLocation(workItem, 'catalog0.json'),
           getStacLocation(workItem, 'catalog1.json')];
         await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
         await updateWorkItem(this.backend, workItem);
@@ -659,5 +659,5 @@ describe('When a request spans multiple CMR pages', function () {
         expect(workItem).to.not.equal(undefined);
       });
     });
-  });  
+  });
 });

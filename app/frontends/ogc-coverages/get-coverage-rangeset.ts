@@ -64,6 +64,9 @@ export default function getCoverageRangeset(
   if (query.forceasync) {
     operation.isSynchronous = false;
   }
+  if (query.ignoreerrors) {
+    operation.ignoreErrors = true;
+  }
   try {
     const subset = parseSubsetParams(wrap(query.subset));
     operation.dimensions = [];
@@ -101,7 +104,8 @@ export default function getCoverageRangeset(
 
   const varInfos = parseVariables(req.collections, req.params.collectionId);
   for (const varInfo of varInfos) {
-    operation.addSource(varInfo.collectionId, varInfo.variables, varInfo.coordinateVariables);
+    operation.addSource(varInfo.collectionId, varInfo.shortName, varInfo.versionId,
+      varInfo.variables, varInfo.coordinateVariables);
   }
 
   req.operation = operation;

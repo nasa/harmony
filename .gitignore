@@ -32,3 +32,6 @@ workload/.python-version
 
 .idea
 .dccache
+
+# notebook outputs
+docs/harmony_dimension_subset_results/

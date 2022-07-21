@@ -15,10 +15,14 @@ process.env.SHARED_SECRET_KEY = 'foo';
 // needed to keep lots of tests from auto-pausing
 process.env.PREVIEW_THRESHOLD = '500';
 
+// prevent tests from using a different page size and creating many fixtures
+process.env.CMR_MAX_PAGE_SIZE = '100';
+
 // eslint-disable-next-line import/first
 import env from '../../app/util/env'; // Must set required env before loading the env file
 
 env.nodeEnv = 'test';
+process.setMaxListeners(Infinity);
 
 use(chaiAsPromised);
 
