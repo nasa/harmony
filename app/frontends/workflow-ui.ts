@@ -25,6 +25,8 @@ const statusClass = {
   [JobStatus.RUNNING]: 'info',
   [JobStatus.PAUSED]: 'warning',
   [JobStatus.PREVIEWING]: 'info',
+  [JobStatus.COMPLETE_WITH_ERRORS]: 'success',
+  [JobStatus.RUNNING_WITH_ERRORS]: 'warning',
 };
 
 /**

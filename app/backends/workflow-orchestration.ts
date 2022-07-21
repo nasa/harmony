@@ -468,6 +468,10 @@ async function handleFailedWorkItems(
       } else {
         // Need to make sure we expect one fewer granule to complete
         await decrementFutureWorkItemCount(tx, job.jobID, workflowStep.stepIndex);
+        if (job.status == JobStatus.RUNNING) {
+          job.status = JobStatus.RUNNING_WITH_ERRORS;
+          await job.save(tx);
+        }
       }
     }
   }
@@ -526,8 +530,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
     await maybeClearScrollSession(workItem.scrollID, allWorkItemsForStepComplete, status);
-    const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
 
+    const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
     if (continueProcessing) {
       let nextStep = null;
       if (status != WorkItemStatus.FAILED) {

@@ -180,9 +180,9 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, firstSwotItem);
       });
 
-      it('leaves the job in the running state', async function () {
+      it('changes the job status to running_with_errors', async function () {
         const job = await Job.byJobID(db, firstSwotItem.jobID);
-        expect(job.status).to.equal(JobStatus.RUNNING);
+        expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(3);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
@@ -255,9 +255,9 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, firstSwotItem);
       });
 
-      it('leaves the job in the running state', async function () {
+      it('changes the job status to running_with_errors', async function () {
         const job = await Job.byJobID(db, firstSwotItem.jobID);
-        expect(job.status).to.equal(JobStatus.RUNNING);
+        expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
       });
 
       it('does not queue a zarr step for the work item that failed', async function () {
@@ -373,9 +373,9 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, secondSwotItem);
       });
 
-      it('leaves the job in the running state', async function () {
+      it('changes the job status to running_with_errors', async function () {
         const job = await Job.byJobID(db, secondSwotItem.jobID);
-        expect(job.status).to.equal(JobStatus.RUNNING);
+        expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
       });
 
       it('does not queue a zarr step for the work item that failed', async function () {
@@ -455,6 +455,111 @@ describe('when setting ignoreErrors=true', function () {
     it('marks the job as failed', async function () {
       const job = await Job.byJobID(db, this.workItem.jobID);
       expect(job.status).to.equal(JobStatus.FAILED);
+    });
+  });
+
+  describe('When a request spans multiple CMR pages', function () {
+    hookClearScrollSessionExpect();
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 5 } } });
+    hookRedirect('joe');
+
+    describe('when completing the first query-cmr work item', function () {
+
+      let workItemJobID;
+
+      before(async function () {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        const { workItem } = JSON.parse(res.text);
+        workItemJobID = workItem.jobID;
+        workItem.status = WorkItemStatus.SUCCESSFUL;
+        workItem.results = [
+          'test/resources/worker-response-sample/catalog0.json',
+          'test/resources/worker-response-sample/catalog1.json',
+          'test/resources/worker-response-sample/catalog2.json'];
+        await updateWorkItem(this.backend, workItem);
+      });
+
+      it('queues 3 swot-reproject work items and 1 more query-cmr work item', async function () {
+        const currentWorkItems = (await getWorkItemsByJobId(db, workItemJobID)).workItems;
+        expect(currentWorkItems.length).to.equal(5);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+      });
+
+      it('leaves the job in the running state', async function () {
+        const job = await Job.byJobID(db, workItemJobID);
+        expect(job.status).to.equal(JobStatus.RUNNING);
+      });
+
+      describe('when the first granule swot-reproject and netcdf-to-zarr work items succeed', async function () {
+        let firstSwotItem;
+
+        before(async function () {
+          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+
+          firstSwotItem = JSON.parse(res.text).workItem;
+          firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
+          firstSwotItem.results = ['test/resources/worker-response-sample/catalog0.json'];
+          await updateWorkItem(this.backend, firstSwotItem);
+
+          const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          const zarrItem = JSON.parse(res2.text).workItem;
+          zarrItem.status = WorkItemStatus.SUCCESSFUL;
+          zarrItem.results = ['test/resources/worker-response-sample/catalog0.json'];
+          await updateWorkItem(this.backend, zarrItem);
+        });
+
+        it('leaves the job in the running state', async function () {
+          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          expect(job.status).to.equal(JobStatus.RUNNING);
+        });
+      });
+    });
+
+    describe('when the next swot-reproject item fails', function () {
+      let secondSwotItem;
+      before(async function () {
+        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+
+        secondSwotItem = JSON.parse(res.text).workItem;
+        secondSwotItem.status = WorkItemStatus.FAILED;
+        secondSwotItem.results = [];
+        await updateWorkItem(this.backend, secondSwotItem);
+      });
+
+      it('updates the job to the running_with_errors state', async function () {
+        const job = await Job.byJobID(db, secondSwotItem.jobID);
+        expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
+      });
+    });
+
+    describe('when the next query-cmr work item fails', function () {
+      let secondQueryCmrItem;
+      before(async function () {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+
+        secondQueryCmrItem = JSON.parse(res.text).workItem;
+        secondQueryCmrItem.status = WorkItemStatus.FAILED;
+        secondQueryCmrItem.results = [];
+        await updateWorkItem(this.backend, secondQueryCmrItem);
+      });
+
+      it('updates the job to the failed state', async function () {
+        const job = await Job.byJobID(db, secondQueryCmrItem.jobID);
+        expect(job.status).to.equal(JobStatus.FAILED);
+      });
+
+      it('cancels any remaining work items', async function () {
+        const currentWorkItems = (await getWorkItemsByJobId(db, secondQueryCmrItem.jobID)).workItems;
+        expect(currentWorkItems.length).to.equal(6);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+      });
     });
   });
 

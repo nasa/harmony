@@ -26,12 +26,12 @@ exports.up = function(knex) {
     t.index(['jobID']);
   })
   .then(() => {
-    // Add complete_with_errors state
+    // Add complete_with_errors and running_with_errors states
     return knex.schema.raw(`
       ALTER TABLE "jobs"
       DROP CONSTRAINT "jobs_status_check",
       ADD CONSTRAINT "jobs_status_check"
-      CHECK (status IN ('accepted', 'running', 'successful', 'complete_with_errors', 'failed', 'canceled', 'paused', 'previewing'))
+      CHECK (status IN ('accepted', 'running', 'running_with_errors', 'successful', 'complete_with_errors', 'failed', 'canceled', 'paused', 'previewing'))
     `);
   })
   .then(() => {

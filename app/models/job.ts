@@ -16,7 +16,6 @@ export const EXPIRATION_DAYS = 30;
 
 import env = require('../util/env');
 import JobError from './job-error';
-
 const { awsDefaultRegion } = env;
 
 const serializedJobFields = [
@@ -34,6 +33,7 @@ const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegio
 export enum JobStatus {
   ACCEPTED = 'accepted',
   RUNNING = 'running',
+  RUNNING_WITH_ERRORS = 'running_with_errors',
   SUCCESSFUL = 'successful',
   FAILED = 'failed',
   CANCELED = 'canceled',
@@ -119,6 +119,20 @@ const stateMachine = createMachine(
         id: JobStatus.RUNNING,
         meta: {
           defaultMessage: 'The job is being processed',
+          active: true,
+        },
+        on: Object.fromEntries([
+          [JobEvent.COMPLETE, { target: JobStatus.SUCCESSFUL }],
+          [JobEvent.COMPLETE_WITH_ERRORS, { target: JobStatus.COMPLETE_WITH_ERRORS }],
+          [JobEvent.CANCEL, { target: JobStatus.CANCELED }],
+          [JobEvent.FAIL, { target: JobStatus.FAILED }],
+          [JobEvent.PAUSE, { target: JobStatus.PAUSED }],
+        ]),
+      },
+      running_with_errors: {
+        id: JobStatus.RUNNING_WITH_ERRORS,
+        meta: {
+          defaultMessage: 'The job is being processed, but some items have failed processing',
           active: true,
         },
         on: Object.fromEntries([
