@@ -662,7 +662,7 @@ export class Job extends Record implements JobRecord {
    * providing a message will override any prior message, including warnings.
    * You must call `#save` to persist the change
    *
-   * @param message - (optional) a human-readable success message.  See method description.
+   * @param message - (optional) a human-readable status message.  See method description.
    */
   succeed(message?: string): void {
     validateTransition(this.status, JobStatus.SUCCESSFUL, JobEvent.COMPLETE);
@@ -675,7 +675,7 @@ export class Job extends Record implements JobRecord {
    * providing a message will override any prior message, including warnings.
    * You must call `#save` to persist the change
    *
-   * @param message - (optional) a human-readable success message.  See method description.
+   * @param message - (optional) a human-readable status message.  See method description.
    */
   complete_with_errors(message?: string): void {
     validateTransition(this.status, JobStatus.COMPLETE_WITH_ERRORS, JobEvent.COMPLETE_WITH_ERRORS);
