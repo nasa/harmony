@@ -12,6 +12,8 @@ import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagin
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 import env = require('../util/env');
+import JobError, { getErrorsForJob } from '../models/job-error';
+import _ from 'lodash';
 
 /**
  * Returns true if the job contains S3 direct access links
@@ -85,15 +87,19 @@ function getMessageForDisplay(job: Job, urlRoot: string): string {
  * @param job - the serialized job
  * @param urlRoot - the root URL to be used when constructing links
  * @param linkType - the type to use for data links (http|https|s3|none)
+ * @param errors - a list of errors for the job
  * @returns the job for display
  */
-function getJobForDisplay(job: Job, urlRoot: string, linkType?: string): Job {
+function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?: JobError[]): Job {
   const serializedJob = job.serialize(urlRoot, linkType);
   const statusLinkRel = linkType === 'none' ? 'item' : 'self';
   serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel);
   serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
-  delete serializedJob.isAsync;
-  delete serializedJob.batchesCompleted;
+
+  if (errors.length > 0) {
+    serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as unknown as JobError[];
+  }
+
   return serializedJob;
 }
 
@@ -126,7 +132,7 @@ export async function getJobsListing(
     await db.transaction(async (tx) => {
       listing = await Job.queryAll(tx, query, false, page, limit);
     });
-    const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root, 'none'));
+    const serializedJobs = listing.data.map((j) => getJobForDisplay(j, root, 'none', []));
     const response: JobListing = {
       count: listing.pagination.total,
       jobs: serializedJobs,
@@ -160,8 +166,11 @@ export async function getJobStatus(
     const { page, limit } = getPagingParams(req, env.defaultResultPageSize);
     let job: Job;
     let pagination;
+    let errors: JobError[];
+
     await db.transaction(async (tx) => {
       ({ job, pagination } = await Job.byRequestId(tx, jobID, page, limit));
+      errors = await getErrorsForJob(tx, jobID);
     });
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
@@ -172,7 +181,7 @@ export async function getJobStatus(
     const urlRoot = getRequestRoot(req);
     const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
     job.links = job.links.concat(pagingLinks);
-    res.send(getJobForDisplay(job, urlRoot, linkType));
+    res.send(getJobForDisplay(job, urlRoot, linkType, errors));
   } catch (e) {
     req.context.logger.error(e);
     next(e);

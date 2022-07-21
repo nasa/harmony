@@ -198,7 +198,7 @@ describe('Work Backends', function () {
       hookClearScrollSessionExpect();
 
       const failedWorkItemRecord = {
-        ...workItemRecord, ...{ status: WorkItemStatus.FAILED },
+        ...workItemRecord, ...{ status: WorkItemStatus.FAILED, scrollID: '-1234' },
       };
 
       hookWorkItemCreation(failedWorkItemRecord);
@@ -208,7 +208,8 @@ describe('Work Backends', function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.FAILED);
       });
-      it('sets the job status is set to failed', async function () {
+
+      it('sets the job status to failed', async function () {
         const job = await Job.byJobID(db, this.job.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
       });
@@ -222,6 +223,7 @@ describe('Work Backends', function () {
         ...workItemRecord,
         ...{
           status: WorkItemStatus.SUCCESSFUL,
+          scrollID: '-1234',
           results: ['test/resources/worker-response-sample/catalog0.json'],
         },
       };

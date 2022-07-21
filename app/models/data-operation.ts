@@ -293,6 +293,8 @@ export default class DataOperation {
 
   requestStartTime: Date; // The time that the initial request to harmony was received
 
+  ignoreErrors?: boolean;
+
   /**
    * Creates an instance of DataOperation.
    *
