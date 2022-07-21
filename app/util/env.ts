@@ -106,6 +106,7 @@ interface HarmonyEnv {
   useLocalstack: boolean;
   workFailerPeriodSec: number;
   workReaperPeriodSec: number;
+  maxErrorsForJob: number;
 }
 
 // special cases

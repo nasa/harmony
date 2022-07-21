@@ -8,14 +8,15 @@ import env from '../util/env';
 import { readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
-import JobLink from '../models/job-link';
+import JobLink, { getJobDataLinkCount } from '../models/job-link';
 import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
-import WorkflowStep, { getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
+import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { ServiceError } from '../util/errors';
 import { clearScrollSession } from '../util/cmr';
-import { SUCCESSFUL_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
+import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
+import JobError, { getErrorCountForJob } from '../models/job-error';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
@@ -92,7 +93,7 @@ export async function getWork(
  * @param results  - an array of paths to STAC catalogs
  * @param logger - The logger for the request
  */
-async function _handleWorkItemResults(
+async function addJobLinksForFinishedWorkItem(
   tx: Transaction,
   job: Job,
   results: string[],
@@ -285,25 +286,38 @@ async function createAggregatingWorkItem(
  * @param results - an array of paths to STAC catalogs
  */
 async function createNextWorkItems(
-  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, results: string[],
-): Promise<void> {
-  if (nextStep.hasAggregatedOutput) {
-    await createAggregatingWorkItem(tx, currentWorkItem, nextStep);
-  } else {
-    // Create a new work item for each result using the next step
-    const newItems = results.map(result =>
-      new WorkItem({
-        jobID: currentWorkItem.jobID,
-        serviceID: nextStep.serviceID,
-        status: WorkItemStatus.READY,
-        stacCatalogLocation: result,
-        workflowStepIndex: nextStep.stepIndex,
-      }),
-    );
-    for (const batch of _.chunk(newItems, batchSize)) {
-      await WorkItem.insertBatch(tx, batch);
+  tx: Transaction, workItem: WorkItem, allWorkItemsForStepComplete: boolean, results: string[],
+): Promise<WorkflowStep> {
+  const nextStep = await getWorkflowStepByJobIdStepIndex(
+    tx, workItem.jobID, workItem.workflowStepIndex + 1,
+  );
+
+  if (nextStep) {
+    if (results && results.length > 0) {
+      // if we have completed all the work items for this step or if the next step does not
+      // aggregate then create a work item for the next step
+      if (nextStep.hasAggregatedOutput) {
+        if (allWorkItemsForStepComplete) {
+          await createAggregatingWorkItem(tx, workItem, nextStep);
+        }
+      } else {
+        // Create a new work item for each result using the next step
+        const newItems = results.map(result =>
+          new WorkItem({
+            jobID: workItem.jobID,
+            serviceID: nextStep.serviceID,
+            status: WorkItemStatus.READY,
+            stacCatalogLocation: result,
+            workflowStepIndex: nextStep.stepIndex,
+          }),
+        );
+        for (const batch of _.chunk(newItems, batchSize)) {
+          await WorkItem.insertBatch(tx, batch);
+        }
+      }
     }
   }
+  return nextStep;
 }
 
 /**
@@ -312,7 +326,7 @@ async function createNextWorkItems(
  * @param currentWorkItem - The current work item
  * @param nextStep - the next step in the workflow
  */
-async function handleQueryCmrWork(
+async function maybeQueueQueryCmrWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
 ): Promise<void> {
   if (currentWorkItem.scrollID) {
@@ -336,7 +350,155 @@ async function handleQueryCmrWork(
 }
 
 /**
+ * If a work item has an error adds the error to the job_errors database table.
+ *
+ * @param tx - The database transaction
+ * @param job - The job record
+ * @param url - The URL to include in the error
+ * @param message - An error message to include in the error
+ */
+async function addErrorForWorkItem(
+  tx: Transaction, job: Job, url: string, message: string,
+): Promise<void> {
+  const error = new JobError({
+    jobID: job.jobID,
+    url,
+    message,
+  });
+  await error.save(tx);
+}
+
+/**
+ * Returns the final job status for the request based on whether all items were
+ * successful, some were successful and some failed, or all items failed.
+ *
+ * @param tx - The database transaction
+ * @param job - The job record
+ * @returns the final job status for the request
+ */
+async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatus> {
+  let finalStatus = JobStatus.SUCCESSFUL;
+  if (await getErrorCountForJob(tx, job.jobID) > 0) {
+    if (await getJobDataLinkCount(tx, job.jobID) > 0) {
+      finalStatus = JobStatus.COMPLETE_WITH_ERRORS;
+    } else {
+      finalStatus = JobStatus.FAILED;
+    }
+  }
+  return finalStatus;
+}
+
+/**
+ * Returns a URL for the work item which will be stored with a job error.
+ *
+ * @param workItem - The work item
+ * @param logger - The logger for the request
+ *
+ * @returns a relevant URL for the work item that failed if a data URL exists
+ */
+function getWorkItemUrl(workItem, logger): string {
+  let url = 'unknown';
+  const localLocation = workItem.stacCatalogLocation?.replace(PATH_TO_CONTAINER_ARTIFACTS, env.hostVolumePath);
+
+  if (localLocation) {
+    try {
+      const items = readCatalogItems(localLocation);
+      // Only consider the first item in the list
+      url = items[0].assets.data.href;
+    } catch (e) {
+      logger.error('Could not read catalog');
+      logger.error(e);
+    }
+  }
+
+  return url;
+}
+
+/**
+ * Checks if the work item failed and if so handles the logic of determining whether to
+ * fail the job or continue to processing. If there's an error it adds it to the job_errors
+ * table.
+ *
+ * @param tx - The database transaction
+ * @param job - The job associated with the work item
+ * @param workItem - The work item that just finished
+ * @param workflowStep - The current workflow step
+ * @param status - The status sent with the work item update
+ * @param errorMessage - The error message associated with the work item update (if any)
+ * @param logger - The logger for the request
+ *
+ * @returns whether to continue processing work item updates or end
+ */
+async function handleFailedWorkItems(
+  tx, job, workItem: WorkItem, workflowStep: WorkflowStep, status, logger, errorMessage,
+): Promise<boolean> {
+  let continueProcessing = true;
+  // If the response is an error then set the job status to 'failed'
+  if (status === WorkItemStatus.FAILED) {
+    continueProcessing = job.ignoreErrors;
+    if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
+      let jobMessage;
+      if (workItem.scrollID) {
+        // Fail the request if query-cmr fails to populate granules
+        continueProcessing = false;
+        jobMessage = `WorkItem [${workItem.id}] failed to query CMR for granule information`;
+        if (errorMessage) {
+          jobMessage = `${jobMessage} with error: ${errorMessage}`;
+        }
+      } else {
+        const url = getWorkItemUrl(workItem, logger);
+
+        let message = `WorkItem [${workItem.id}] failed with an unknown error`;
+        if (errorMessage) {
+          message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
+        }
+        await addErrorForWorkItem(tx, job, url, message);
+      }
+
+      if (job.ignoreErrors && !jobMessage) {
+        const errorCount =  await getErrorCountForJob(tx, job.jobID);
+        if (errorCount > env.maxErrorsForJob) {
+          jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded`;
+          continueProcessing = false;
+        }
+      }
+
+      if (!continueProcessing) {
+        await completeJob(tx, job, JobStatus.FAILED, logger, jobMessage);
+      } else {
+        // Need to make sure we expect one fewer granule to complete
+        await decrementFutureWorkItemCount(tx, job.jobID, workflowStep.stepIndex);
+        if (job.status == JobStatus.RUNNING) {
+          job.status = JobStatus.RUNNING_WITH_ERRORS;
+          await job.save(tx);
+        }
+      }
+    }
+  }
+  return continueProcessing;
+}
+
+/**
+ * Clears the CMR scrolling session if the work item has a scroll ID and the work item
+ * failed or has scrolled through the expected number of items.
+ *
+ * @param workflowStep - The current workflow step
+ * @param status - The work item status
+ * @param scrollID - The scrollID for the work item (may be null)
+ */
+async function maybeClearScrollSession(
+  scrollID: string, allWorkItemsForStepComplete: boolean, status: WorkItemStatus,
+): Promise<void> {
+  if (scrollID) {
+    if (allWorkItemsForStepComplete || status === WorkItemStatus.FAILED) {
+      await clearScrollSession(scrollID);
+    }
+  }
+}
+
+/**
  * Update a work item from a service response
+ *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @returns Resolves when the request is complete
@@ -347,58 +509,38 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
   const { logger } = req.context;
   logger.info(`Updating work item for ${id} to ${status}`);
+  let responded = false;
   await db.transaction(async (tx) => {
     const workItem = await getWorkItemById(tx, parseInt(id, 10));
-    const job: Job = await Job.byJobID(tx, workItem.jobID, false, false);
+    const job = await Job.byJobID(tx, workItem.jobID, false, false);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
-    const isQueryCmr = workItem.serviceID.match(/query-cmr/);
 
-    // If the job was already canceled or failed then send 400 response
+    // If the job was already canceled or failed then send 409 response
     if ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
       res.status(409).send(`Job was already ${job.status}.`);
-      // TODO investigate whether or not returning here could lead to work items staying in the 'running' state
+      // Note work item will stay in the running state, but the reaper will clean it up
+      responded = true;
       return;
     }
 
     await updateWorkItemStatus(tx, id, status as WorkItemStatus, totalGranulesSize);
-    // If the response is an error then set the job status to 'failed'
-    if (status === WorkItemStatus.FAILED) {
-      if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
-        if (isQueryCmr) {
-          await clearScrollSession(workItem.scrollID);
-        }
-        let message = 'Unknown error';
-        if (errorMessage) {
-          message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
-        }
-        await completeJob(tx, job, JobStatus.FAILED, logger, message);
-      }
-    } else {
-      const nextStep = await getWorkflowStepByJobIdStepIndex(
-        tx,
-        workItem.jobID,
-        workItem.workflowStepIndex + 1,
-      );
+    const completedWorkItemCount = await workItemCountForStep(
+      tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
+    );
+    const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
-      const successWorkItemCount = await workItemCountForStep(
-        tx,
-        workItem.jobID,
-        workItem.workflowStepIndex,
-        SUCCESSFUL_WORK_ITEM_STATUSES,
-      );
+    await maybeClearScrollSession(workItem.scrollID, allWorkItemsForStepComplete, status);
 
-      if (isQueryCmr && successWorkItemCount === thisStep.workItemCount) {
-        await clearScrollSession(workItem.scrollID);
+    const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
+    if (continueProcessing) {
+      let nextStep = null;
+      if (status != WorkItemStatus.FAILED) {
+        nextStep = await createNextWorkItems(tx, workItem, allWorkItemsForStepComplete, results);
       }
 
       if (nextStep) {
         if (results && results.length > 0) {
-          // if we have completed all the work items for this step or if the next step does not
-          // aggregate then create a work item for the next step
-          if (successWorkItemCount === thisStep.workItemCount || !nextStep.hasAggregatedOutput) {
-            await createNextWorkItems(tx, workItem, nextStep, results);
-          }
-          await handleQueryCmrWork(tx, workItem, nextStep);
+          await maybeQueueQueryCmrWorkItem(tx, workItem, nextStep);
         } else {
           // Failed to create the next work items - fail the job rather than leaving it orphaned
           // in the running state
@@ -407,14 +549,17 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
           await completeJob(tx, job, JobStatus.FAILED, logger, message);
         }
       } else {
-        // 1. add job links for the results
-        await _handleWorkItemResults(tx, job, results, logger);
-        // 2. If the number of work items with status 'successful' equals 'workItemCount'
-        //    for the current step (which is the last) then set the job status to 'complete'.
+        // Finished with the chain for this granule
+        if (status != WorkItemStatus.FAILED) {
+          await addJobLinksForFinishedWorkItem(tx, job, results, logger);
+        }
+        // If all granules are finished mark the job as finished
         job.completeBatch(thisStep.workItemCount);
-        if (successWorkItemCount === thisStep.workItemCount) {
-          await completeJob(tx, job, JobStatus.SUCCESSFUL, logger);
+        if (allWorkItemsForStepComplete) {
+          const finalStatus = await getFinalStatusForJob(tx, job);
+          await completeJob(tx, job, finalStatus, logger);
         } else {
+          // Special case to pause the job as soon as any single granule completes when in the previewing state
           if (job.status === JobStatus.PREVIEWING) {
             job.pause();
           }
@@ -423,5 +568,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       }
     }
   });
-  res.status(204).send();
+  if (!responded) {
+    // If we haven't returned an error to the caller already return a success with no body
+    res.status(204).send();
+  }
 }

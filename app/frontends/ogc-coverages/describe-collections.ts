@@ -5,6 +5,7 @@ import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
 import { getSanitizedRequestUrl } from '../../util/url';
 import { parseVariables, fullPath } from '../../util/variables';
+import { getServiceConfigs } from '../../models/services';
 
 const WGS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 const gregorian = 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian';
@@ -68,6 +69,31 @@ function buildCollectionInfo(
 }
 
 /**
+ * Get a list of variables that are defined in the service configs as being available for
+ * processing for the given collection. If the returned set is empty this means there are no
+ * limits set as to which variables a service will process.
+ * @param collection - the CMR collection 
+ * @returns A Set of variable IDs obtained from service configs
+ */
+function getSupportedVariablesForCollection(
+  collection: CmrCollection,
+): Set<string> {
+  const variableIds = new Set<string>();
+  const configs = getServiceConfigs();
+  for (const serviceConfig of configs) {
+    const serviceCollection = serviceConfig.collections?.find(
+      (collectionConfig) => collectionConfig.id === collection.id,
+    );
+    if (serviceCollection?.variables) {
+      for (const variableId of serviceCollection?.variables) {
+        variableIds.add(variableId);
+      }
+    }
+  }
+  return variableIds;
+}
+
+/**
  * Express.js-style handler that responds to OGC API - Coverages describe
  * collections requests.
  *
@@ -101,14 +127,22 @@ export function describeCollections(req: HarmonyRequest, res: Response): void {
     };
     links.push(rootLink, selfLink);
     const extent = generateExtent(collection);
-    // Include a link to perform a request asking for all variables in the EOSDIS collection
-    const allVariables = { umm: { Name: 'all', LongName: 'All variables' }, meta: { 'concept-id': 'all' } };
-    ogcCollections.push(buildCollectionInfo(collection, allVariables, `${requestUrl}/all`, extent));
+    const supportedVariables = getSupportedVariablesForCollection(collection);
+    if (supportedVariables.size == 0) {
+      // Include a link to perform a request asking for all variables in the EOSDIS collection
+      // unless a service limits the variables
+      const allVariables = { umm: { Name: 'all', LongName: 'All variables' }, meta: { 'concept-id': 'all' } };
+      ogcCollections.push(buildCollectionInfo(collection, allVariables, `${requestUrl}/all`, extent));
+    }
     for (const variable of collection.variables) {
-      const collectionInfo = buildCollectionInfo(
-        collection, variable, `${requestUrl}/${encodeURIComponent(fullPath(variable))}`, extent,
-      );
-      ogcCollections.push(collectionInfo);
+      // if a service has limited the variables for the collection, only allow variables in that
+      // set 
+      if (supportedVariables.has(variable.meta['concept-id']) || supportedVariables.size === 0) {
+        const collectionInfo = buildCollectionInfo(
+          collection, variable, `${requestUrl}/${encodeURIComponent(fullPath(variable))}`, extent,
+        );
+        ogcCollections.push(collectionInfo);
+      }
     }
   }
   res.send({

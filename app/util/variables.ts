@@ -132,21 +132,24 @@ export function parseVariables(
   } else {
     // Figure out which variables belong to which collections and whether any are missing.
     // Note that a single variable name may appear in multiple collections
-    let missingVariables = variableIds;
+    const missingVariables = new Set<string>(variableIds);
     for (const collection of eosdisCollections) {
+      // Get the list of variables configured in services.yml for this collection. If the 
+      // returned set is empty then we will ignore it, otherwise we will only add variables
+      // in that set
       const coordinateVariables = getCoordinateVariables(collection.variables);
       const variables = [];
       for (const variableId of variableIds) {
         const variable = collection.variables.find((v) => doesPathMatch(v, variableId));
         if (variable) {
-          missingVariables = missingVariables.filter((v) => v !== variableId);
+          missingVariables.delete(variableId);
           variables.push(variable);
         }
       }
       variableInfo.push({ collectionId: collection.id, variables, coordinateVariables });
     }
-    if (missingVariables.length > 0) {
-      throw new RequestValidationError(`Coverages were not found for the provided CMR collection: ${missingVariables.join(', ')}`);
+    if (missingVariables.size > 0) {
+      throw new RequestValidationError(`Coverages were not found for the provided CMR collection: ${Array.from(missingVariables).join(', ')}`);
     }
   }
   return variableInfo;
