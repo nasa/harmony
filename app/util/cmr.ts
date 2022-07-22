@@ -450,7 +450,6 @@ export async function queryGranuleUsingMultipartForm(
   token: string,
   extraHeaders = {},
 ): Promise<CmrGranuleHits> {
-  // TODO: Paging / hits
   const granuleResponse = await _cmrPost('/search/granules.json', form, token, extraHeaders) as CmrGranulesResponse;
   const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
   const searchAfter = granuleResponse.headers.get('cmr-search-after');
@@ -580,8 +579,7 @@ export async function queryGranulesWithSearchAfter(
       token,
       headers,
     );
-    // TODO return totalHits as well so we can update the workflow step if totalHits changes
-    response.hits = response.granules.length;
+    // response.hits = response.granules.length;
     response.sessionKey = sessionKey;
   } else {
     // generate a session key and store the query parameters in the uploads bucket using the key

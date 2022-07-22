@@ -18,6 +18,7 @@ export interface ServiceResponse {
   batchCatalogs?: string[];
   totalGranulesSize?: number;
   error?: string;
+  hits?: number;
   scrollID?: string;
 }
 

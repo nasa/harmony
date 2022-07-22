@@ -20,9 +20,11 @@ export interface QueryCmrRequest {
  * Query the CMR as requested and create one or more STAC catalogs for the granule(s)
  *
  * @param workReq - The request to be made to the CMR
- * @returns a promise containing the combined sizes of all the granules included in the catalogs
+ * @returns a promise containing a tuple with thie total cmr hits, the combined totals of the
+ * sizes of the granules in this result, and the combined sizes of all the granules included in 
+ * the catalogs
  */
-export async function doWork(workReq: QueryCmrRequest): Promise<[number, string]> {
+export async function doWork(workReq: QueryCmrRequest): Promise<[number, number, string]> {
   const startTime = new Date().getTime();
   const operation = new DataOperation(workReq.harmonyInput, encrypter, decrypter);
   const { outputDir, scrollId } = workReq;
@@ -33,7 +35,7 @@ export async function doWork(workReq: QueryCmrRequest): Promise<[number, string]
   const mkdirTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.mkdir', { durationMs: mkdirTime - startTime });
 
-  const [totalGranulesSize, catalogs, newScrollId] = await queryGranules(operation, scrollId, workReq.maxCmrGranules);
+  const [hits, totalGranulesSize, catalogs, newScrollId] = await queryGranules(operation, scrollId, workReq.maxCmrGranules);
   const granuleScrollingTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.query-granules-scrolling', { durationMs: granuleScrollingTime - mkdirTime });
 
@@ -59,7 +61,7 @@ export async function doWork(workReq: QueryCmrRequest): Promise<[number, string]
   timingLogger.info('timing.query-cmr.catalog-summary-write', { durationMs: catalogSummaryTime - catalogWriteTime });
   timingLogger.info('timing.query-cmr.end', { durationMs: catalogSummaryTime - startTime });
 
-  return [totalGranulesSize, newScrollId];
+  return [hits, totalGranulesSize, newScrollId];
 }
 
 /**
@@ -73,10 +75,10 @@ async function doWorkHandler(req: Request, res: Response, next: NextFunction): P
   try {
     const workReq: QueryCmrRequest = req.body;
 
-    const [totalGranulesSize, scrollId] = await doWork(workReq);
+    const [hits, totalGranulesSize, scrollId] = await doWork(workReq);
 
     res.status(200);
-    res.send(JSON.stringify({ totalGranulesSize, scrollID: scrollId }));
+    res.send(JSON.stringify({ hits, totalGranulesSize, scrollID: scrollId }));
 
   } catch (e) {
     res.status(500);

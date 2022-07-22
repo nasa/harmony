@@ -84,7 +84,7 @@ async function querySearchAfter(
   scrollId: string,
   filePrefix: string,
   maxCmrGranules?: number,
-): Promise<[number, StacCatalog[], string]> {
+): Promise<[number, number, StacCatalog[], string]> {
   const [sessionKey, searchAfter] = scrollId.split(':', 2);
   const cmrResponse = await queryGranulesWithSearchAfter(
     token,
@@ -112,13 +112,15 @@ async function querySearchAfter(
 
   const newScrollId = `${sessionKey}:${newSearchAfter}`;
 
-  return [totalGranulesSize, catalogs, newScrollId];
+  return [hits, totalGranulesSize, catalogs, newScrollId];
 
 }
 
 /**
  * Queries a single page (up to 2,000 granules) using the given search after parameter,
- * producing a STAC catalog per granule.  Returns an array of STAC catalogs.
+ * producing a STAC catalog per granule.  Returns a tuple contating the total cmr hits,
+ * the total size of the granules returned by this call, an array of STAC catalogs, and
+ * a new session/search_after string (formerly scrollID).
  *
  * @param operation - The harmony data operation which contains the access token
  * @param scrollId - The id of the 
@@ -129,9 +131,9 @@ export async function queryGranules(
   operation: DataOperation,
   scrollId: string,
   maxCmrGranules?: number,
-): Promise<[number, StacCatalog[], string]> {
+): Promise<[number, number, StacCatalog[], string]> {
   const { unencryptedAccessToken } = operation;
-  const [totalGranulesSize, catalogs, newScrollId] = await querySearchAfter(unencryptedAccessToken, scrollId, `./granule_${scrollId}`, maxCmrGranules);
+  const [hits, totalGranulesSize, catalogs, newScrollId] = await querySearchAfter(unencryptedAccessToken, scrollId, `./granule_${scrollId}`, maxCmrGranules);
 
-  return [totalGranulesSize, catalogs, newScrollId];
+  return [hits, totalGranulesSize, catalogs, newScrollId];
 }

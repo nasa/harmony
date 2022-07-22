@@ -10,11 +10,10 @@ import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink, { getJobDataLinkCount } from '../models/job-link';
 import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
-import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
+import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepById, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { ServiceError } from '../util/errors';
-import { clearScrollSession } from '../util/cmr';
 import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
 import JobError, { getErrorCountForJob } from '../models/job-error';
 
@@ -479,6 +478,26 @@ async function handleFailedWorkItems(
 }
 
 /**
+ * Updated the workflow steps `workItemCount` field for the given job to match the new 
+ * 
+ * @param transaction - the transaction to use for the update
+ * @param job - A Job that has a new input granule count
+ */
+async function updateWorkItemCounts(
+  transaction: Transaction,
+  job: Job):
+  Promise<void> {
+  const workflowSteps = await getWorkflowStepsByJobId(transaction, job.jobID);
+  for (const step of workflowSteps) {
+    // don't update the query-cmr step or aggregate steps
+    if (!step.hasAggregatedOutput && step.stepIndex > 1) {
+      step.workItemCount = job.numInputGranules;
+      await step.save(transaction);
+    }
+  }
+}
+
+/**
  * Update a work item from a service response
  *
  * @param req - The request sent by the client
@@ -487,7 +506,7 @@ async function handleFailedWorkItems(
  */
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status, results, scrollID, errorMessage } = req.body;
+  const { status, hits, results, scrollID, errorMessage } = req.body;
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
   const { logger } = req.context;
   logger.info(`Updating work item for ${id} to ${status}`);
@@ -511,7 +530,11 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     );
     const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
-    // await maybeClearScrollSession(workItem.scrollID, allWorkItemsForStepComplete, status);
+    if (job.numInputGranules != hits) {
+      job.numInputGranules = hits;
+      await job.save(tx);
+      await updateWorkItemCounts(tx, job);
+    }
 
     const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
     if (continueProcessing) {

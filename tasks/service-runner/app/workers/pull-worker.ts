@@ -86,6 +86,7 @@ async function _doWork(
   logger.debug('Finished work');
   if (serviceResponse.scrollID) {
     newWorkItem.scrollID = serviceResponse.scrollID;
+    newWorkItem.hits = serviceResponse.hits;
   }
   if (serviceResponse.batchCatalogs) {
     newWorkItem.status = WorkItemStatus.SUCCESSFUL;

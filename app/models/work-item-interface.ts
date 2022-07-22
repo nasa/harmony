@@ -24,6 +24,9 @@ export interface WorkItemRecord {
   // The ID of the scroll session (only used for the query cmr service)
   scrollID?: string;
 
+  // The number of cmr hits (only used for the query cmr service)
+  hits: number;
+
   // unique identifier for the service - this should be the docker image tag (with version)
   serviceID: string;
 
