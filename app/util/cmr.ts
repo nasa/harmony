@@ -8,7 +8,7 @@ import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import { CmrError } from './errors';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
-import { cmrEndpoint, cmrMaxPageSize, harmonyClientId, uploadBucket } from './env';
+import { cmrEndpoint, cmrMaxPageSize, harmonyClientId, stagingBucket } from './env';
 import logger from './log';
 
 const clientIdHeader = {
@@ -541,6 +541,16 @@ export async function getVariablesForCollection(
 }
 
 /**
+ * Generate an s3 url to use to store/lookup stored query parameters
+ * 
+ * @param sessionKey - The session key
+ * @returns 
+ */
+function s3UrlForStoredQueryParams(sessionKey: string): string {
+  return `s3://${stagingBucket}/SearchParams/${sessionKey}/serializedQuery`;
+}
+
+/**
  * Queries and returns the CMR JSON granules for the given search after values and session key.
  *
  * @param collectionId - The ID of the collection whose granules should be searched
@@ -568,7 +578,7 @@ export async function queryGranulesWithSearchAfter(
   }
   if (sessionKey) {
     // use the session key to get the stored query parameters from the s3 bucket
-    const url = `s3://${uploadBucket}/${sessionKey}/serializedQuery`;
+    const url = s3UrlForStoredQueryParams(sessionKey);
     const storedQueryFile = await defaultObjectStore().downloadFile(url);
     const serializedQueryBuffer = await fsp.readFile(storedQueryFile);
     const storedQuery = JSON.parse(serializedQueryBuffer.toString());
@@ -584,7 +594,7 @@ export async function queryGranulesWithSearchAfter(
   } else {
     // generate a session key and store the query parameters in the uploads bucket using the key
     const newSessionKey = uuid();
-    const url = `s3://${uploadBucket}/${newSessionKey}/serializedQuery`;
+    const url = s3UrlForStoredQueryParams(newSessionKey);
     const storedQueryFile = await tmp.file();
     await fsp.writeFile(storedQueryFile.path, JSON.stringify(query), 'utf8');
     await defaultObjectStore().uploadFile(storedQueryFile.path, url);
