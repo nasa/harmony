@@ -383,15 +383,15 @@ async function getFinalStatusForJob(tx: Transaction, job: Job): Promise<JobStatu
  *
  * @returns a relevant URL for the work item that failed if a data URL exists
  */
-function getWorkItemUrl(workItem, logger): string {
+async function getWorkItemUrl(workItem, logger): Promise<string> {
   let url = 'unknown';
   if (workItem.stacCatalogLocation) {
     try {
-      const items = readCatalogItems(workItem.stacCatalogLocation);
+      const items = await readCatalogItems(workItem.stacCatalogLocation);
       // Only consider the first item in the list
       url = items[0].assets.data.href;
     } catch (e) {
-      logger.error('Could not read catalog');
+      logger.error(`Could not read catalog for ${workItem.stacCatalogLocation}`);
       logger.error(e);
     }
   }
@@ -431,8 +431,7 @@ async function handleFailedWorkItems(
           jobMessage = `${jobMessage} with error: ${errorMessage}`;
         }
       } else {
-        const url = getWorkItemUrl(workItem, logger);
-
+        const url = await getWorkItemUrl(workItem, logger);
         let message = `WorkItem [${workItem.id}] failed with an unknown error`;
         if (errorMessage) {
           message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
@@ -493,7 +492,11 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const { status, results, errorMessage } = req.body;
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
   const { logger } = req.context;
-  logger.info(`Updating work item for ${id} to ${status}`);
+  if (status === JobStatus.SUCCESSFUL) {
+    logger.info(`Updating work item for ${id} to ${status}`);
+  } else {
+    logger.warn(`Updating work item for ${id} to ${status} with message ${errorMessage}`);
+  }
   let responded = false;
   await db.transaction(async (tx) => {
     const workItem = await getWorkItemById(tx, parseInt(id, 10));
