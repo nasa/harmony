@@ -2,10 +2,9 @@ import { Logger } from 'winston';
 import db, { Transaction } from './db';
 import { Job, JobStatus, terminalStates } from '../models/job';
 import env from './env';
-import { getScrollIdForJob, updateWorkItemStatusesByJobId } from '../models/work-item';
+import { updateWorkItemStatusesByJobId } from '../models/work-item';
 import { ConflictError, NotFoundError, RequestValidationError } from './errors';
 import isUUID from './uuid';
-import { clearScrollSession } from './cmr';
 import { WorkItemStatus } from '../models/work-item-interface';
 import { getWorkflowStepsByJobId } from '../models/workflow-steps';
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
@@ -88,9 +87,6 @@ export async function cancelAndSaveJob(
 ): Promise<void> {
   await db.transaction(async (tx) => {
     const job = await lookupJob(tx, jobID, username);
-    // attempt to clear the CMR scroll session if this job had one
-    const scrollId = await getScrollIdForJob(tx, job.jobID);
-    await clearScrollSession(scrollId);
     const message = username ? 'Canceled by user.' : 'Canceled by admin.';
     await completeJob(tx, job, JobStatus.CANCELED, logger, message);
   });

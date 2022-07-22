@@ -35,7 +35,7 @@ export async function doWork(workReq: QueryCmrRequest): Promise<[number, number,
   const mkdirTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.mkdir', { durationMs: mkdirTime - startTime });
 
-  const [hits, totalGranulesSize, catalogs, newScrollId] = await queryGranules(operation, scrollId, workReq.maxCmrGranules);
+  const [totalGranulesSize, catalogs, newScrollId, hits] = await queryGranules(operation, scrollId, workReq.maxCmrGranules);
   const granuleScrollingTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.query-granules-scrolling', { durationMs: granuleScrollingTime - mkdirTime });
 

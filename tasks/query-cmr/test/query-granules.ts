@@ -7,7 +7,7 @@ import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 import * as fetch from 'node-fetch';
 import { Stream } from 'form-data';
-import { queryGranulesScrolling } from '../app/query';
+import { queryGranules } from '../app/query';
 
 import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
@@ -65,7 +65,7 @@ async function fetchPostArgsToFields(
  * the response to queryGranulesForScrollId
  * @param maxCmrGranules - limit the number of granules returned in the CMR page
  */
-function hookQueryGranulesScrolling(maxCmrGranules?: number): void {
+function hookQueryGranules(maxCmrGranules?: number): void {
   const output = {
     headers: new fetch.Headers({}),
     ...JSON.parse(fs.readFileSync(path.resolve(__dirname, 'resources/atom-granules.json'), 'utf8')),
@@ -78,7 +78,7 @@ function hookQueryGranulesScrolling(maxCmrGranules?: number): void {
     fetchPost.returns(Promise.resolve(output));
 
     // Actually call it
-    this.result = await queryGranulesScrolling(operation, 'scrollId', maxCmrGranules);
+    this.result = await queryGranules(operation, 'scrollId', maxCmrGranules);
 
     // Map the call arguments into something we can actually assert against
     this.queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
@@ -122,7 +122,7 @@ function hookQueryGranulesScrollingWithError(): void {
 
 describe('query#queryGranulesScrolling', function () {
   describe('when called with valid input sources and queries', async function () {
-    hookQueryGranulesScrolling();
+    hookQueryGranules();
 
     it('returns the combined granules sizes', function () {
       expect(this.result[0]).to.be.greaterThan(0);
@@ -176,7 +176,7 @@ describe('query#queryGranulesScrolling', function () {
   });
 
   describe('when called with a max CMR granules limit', async function () {
-    hookQueryGranulesScrolling(1);
+    hookQueryGranules(1);
 
     it('limits the STAC output', function () {
       expect(this.result[1].length).to.equal(1);
@@ -184,7 +184,7 @@ describe('query#queryGranulesScrolling', function () {
   });
 
   describe('when called with a max CMR granules limit that exceeds the number of CMR granules', async function () {
-    hookQueryGranulesScrolling(3000);
+    hookQueryGranules(3000);
 
     it('the STAC output is not limitted', function () {
       expect(this.result[1].length).to.equal(3);
