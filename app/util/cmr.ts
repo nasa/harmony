@@ -1,21 +1,23 @@
 import FormData from 'form-data';
 import * as fs from 'fs';
+import { promises as fsp } from 'fs';
+import * as tmp from 'tmp-promise';
+import { v4 as uuid } from 'uuid';
 import { get } from 'lodash';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import { CmrError } from './errors';
-import { objectStoreForProtocol } from './object-store';
+import { defaultObjectStore, objectStoreForProtocol } from './object-store';
+import { cmrEndpoint, cmrMaxPageSize, harmonyClientId, uploadBucket } from './env';
 import logger from './log';
 
-import env = require('./env');
-
 const clientIdHeader = {
-  'Client-id': `${env.harmonyClientId}`,
+  'Client-id': `${harmonyClientId}`,
 };
 
 // Exported to allow tests to override cmrApiConfig
 export const cmrApiConfig = {
-  baseURL: env.cmrEndpoint,
+  baseURL: cmrEndpoint,
   useToken: true,
 };
 
@@ -26,8 +28,6 @@ const acceptJsonHeader = {
 const jsonContentTypeHeader = {
   'Content-Type': 'application/json',
 };
-
-const { cmrMaxPageSize } = env;
 
 export enum CmrPermission {
   Read = 'read',
@@ -95,6 +95,8 @@ export interface CmrGranuleHits {
   hits: number;
   granules: CmrGranule[];
   scrollID?: string;
+  sessionKey?: string;
+  searchAfter?: string;
 }
 
 export interface CmrUmmVariable {
@@ -443,7 +445,7 @@ async function queryCollections(
  * @param extraHeaders - Additional headers to pass with the request
  * @returns The granule search results
  */
-async function queryGranuleUsingMultipartForm(
+export async function queryGranuleUsingMultipartForm(
   form: CmrQuery,
   token: string,
   extraHeaders = {},
@@ -451,11 +453,11 @@ async function queryGranuleUsingMultipartForm(
   // TODO: Paging / hits
   const granuleResponse = await _cmrPost('/search/granules.json', form, token, extraHeaders) as CmrGranulesResponse;
   const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
-  const scrollID = granuleResponse.headers.get('cmr-scroll-id');
+  const searchAfter = granuleResponse.headers.get('cmr-search-after');
   return {
     hits: cmrHits,
     granules: granuleResponse.data.feed.entry,
-    scrollID,
+    searchAfter,
   };
 }
 
@@ -537,6 +539,70 @@ export async function getVariablesForCollection(
     return getVariablesByIds(varIds, token);
   }
   return [];
+}
+
+/**
+ * Queries and returns the CMR JSON granules for the given search after values and session key.
+ *
+ * @param collectionId - The ID of the collection whose granules should be searched
+ * @param query - The CMR granule query parameters to pass
+ * @param token - Access token for user request
+ * @param limit - The maximum number of granules to return in this page of results
+ * @param sessionKey - Key used to look up query parameters
+ * @param searchAfterHeader - Value string to use for the cmr-search-after header
+ * @returns The granules associated with the input collection and a cmr-search-after header
+ */
+export async function queryGranulesWithSearchAfter(
+  token: string,
+  limit = cmrMaxPageSize,
+  query?: CmrQuery,
+  sessionKey?: string,
+  searchAfterHeader?: string,
+): Promise<CmrGranuleHits> {
+  const baseQuery = {
+    page_size: Math.min(limit, cmrMaxPageSize),
+  };
+  let response: CmrGranuleHits;
+  let headers = {};
+  if (searchAfterHeader) {
+    headers = { 'cmr-search-after': searchAfterHeader };
+  }
+  if (sessionKey) {
+    // use the session key to get the stored query parameters from the s3 bucket
+    const url = `s3://${uploadBucket}/${sessionKey}/serializedQuery`;
+    const storedQueryFile = await defaultObjectStore().downloadFile(url);
+    const serializedQueryBuffer = await fsp.readFile(storedQueryFile);
+    const storedQuery = JSON.parse(serializedQueryBuffer.toString());
+    const fullQuery = { ...baseQuery, ...storedQuery };
+    await fsp.unlink(storedQueryFile);
+    response = await queryGranuleUsingMultipartForm(
+      fullQuery,
+      token,
+      headers,
+    );
+    // TODO return totalHits as well so we can update the workflow step if totalHits changes
+    response.hits = response.granules.length;
+    response.sessionKey = sessionKey;
+  } else {
+    // generate a session key and store the query parameters in the uploads bucket using the key
+    const newSessionKey = uuid();
+    const url = `s3://${uploadBucket}/${newSessionKey}/serializedQuery`;
+    const storedQueryFile = await tmp.file();
+    await fsp.writeFile(storedQueryFile.path, JSON.stringify(query), 'utf8');
+    await defaultObjectStore().uploadFile(storedQueryFile.path, url);
+    await storedQueryFile.cleanup();
+    const fullQuery = { ...baseQuery, ...query };
+    response = await queryGranuleUsingMultipartForm(
+      fullQuery,
+      token,
+      {},
+    );
+    // NOTE response.hits in this case will be the cmr-hits total, not the number of granules
+    // returned in this request
+    response.sessionKey = newSessionKey;
+  }
+
+  return response;
 }
 
 /**

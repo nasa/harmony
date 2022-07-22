@@ -4,7 +4,7 @@ import path from 'path';
 import logger from '../../../../app/util/log';
 import DataOperation from '../../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../../app/util/crypto';
-import { queryGranulesScrolling } from '../query';
+import { queryGranules } from '../query';
 
 const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
 const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
@@ -22,7 +22,7 @@ export interface QueryCmrRequest {
  * @param workReq - The request to be made to the CMR
  * @returns a promise containing the combined sizes of all the granules included in the catalogs
  */
-export async function doWork(workReq: QueryCmrRequest): Promise<number> {
+export async function doWork(workReq: QueryCmrRequest): Promise<[number, string]> {
   const startTime = new Date().getTime();
   const operation = new DataOperation(workReq.harmonyInput, encrypter, decrypter);
   const { outputDir, scrollId } = workReq;
@@ -33,7 +33,7 @@ export async function doWork(workReq: QueryCmrRequest): Promise<number> {
   const mkdirTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.mkdir', { durationMs: mkdirTime - startTime });
 
-  const [totalGranulesSize, catalogs] = await queryGranulesScrolling(operation, scrollId, workReq.maxCmrGranules);
+  const [totalGranulesSize, catalogs, newScrollId] = await queryGranules(operation, scrollId, workReq.maxCmrGranules);
   const granuleScrollingTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.query-granules-scrolling', { durationMs: granuleScrollingTime - mkdirTime });
 
@@ -59,7 +59,7 @@ export async function doWork(workReq: QueryCmrRequest): Promise<number> {
   timingLogger.info('timing.query-cmr.catalog-summary-write', { durationMs: catalogSummaryTime - catalogWriteTime });
   timingLogger.info('timing.query-cmr.end', { durationMs: catalogSummaryTime - startTime });
 
-  return totalGranulesSize;
+  return [totalGranulesSize, newScrollId];
 }
 
 /**
@@ -73,10 +73,10 @@ async function doWorkHandler(req: Request, res: Response, next: NextFunction): P
   try {
     const workReq: QueryCmrRequest = req.body;
 
-    const totalGranulesSize = await doWork(workReq);
+    const [totalGranulesSize, scrollId] = await doWork(workReq);
 
     res.status(200);
-    res.send(JSON.stringify({ totalGranulesSize: totalGranulesSize }));
+    res.send(JSON.stringify({ totalGranulesSize, scrollID: scrollId }));
 
   } catch (e) {
     res.status(500);

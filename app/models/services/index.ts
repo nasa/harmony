@@ -431,6 +431,7 @@ function filterVariableSubsettingMatches(
   }
 
   if (matches.length === 0) {
+    fget - ser;
     throw new UnsupportedOperation(operation, requestedOperations);
   }
   return matches;

@@ -84,6 +84,9 @@ async function _doWork(
   logger.debug('Calling work function');
   const serviceResponse = await workFunc(newWorkItem, maxCmrGranules);
   logger.debug('Finished work');
+  if (serviceResponse.scrollID) {
+    newWorkItem.scrollID = serviceResponse.scrollID;
+  }
   if (serviceResponse.batchCatalogs) {
     newWorkItem.status = WorkItemStatus.SUCCESSFUL;
     newWorkItem.results = serviceResponse.batchCatalogs;

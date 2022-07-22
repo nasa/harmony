@@ -479,24 +479,6 @@ async function handleFailedWorkItems(
 }
 
 /**
- * Clears the CMR scrolling session if the work item has a scroll ID and the work item
- * failed or has scrolled through the expected number of items.
- *
- * @param workflowStep - The current workflow step
- * @param status - The work item status
- * @param scrollID - The scrollID for the work item (may be null)
- */
-async function maybeClearScrollSession(
-  scrollID: string, allWorkItemsForStepComplete: boolean, status: WorkItemStatus,
-): Promise<void> {
-  if (scrollID) {
-    if (allWorkItemsForStepComplete || status === WorkItemStatus.FAILED) {
-      await clearScrollSession(scrollID);
-    }
-  }
-}
-
-/**
  * Update a work item from a service response
  *
  * @param req - The request sent by the client
@@ -505,7 +487,7 @@ async function maybeClearScrollSession(
  */
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status, results, errorMessage } = req.body;
+  const { status, results, scrollID, errorMessage } = req.body;
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
   const { logger } = req.context;
   logger.info(`Updating work item for ${id} to ${status}`);
@@ -529,7 +511,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     );
     const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
-    await maybeClearScrollSession(workItem.scrollID, allWorkItemsForStepComplete, status);
+    // await maybeClearScrollSession(workItem.scrollID, allWorkItemsForStepComplete, status);
 
     const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
     if (continueProcessing) {
@@ -540,6 +522,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
 
       if (nextStep) {
         if (results && results.length > 0) {
+          // set the scrollID for the next work item to the one we received from the update
+          workItem.scrollID = scrollID;
           await maybeQueueQueryCmrWorkItem(tx, workItem, nextStep);
         } else {
           // Failed to create the next work items - fail the job rather than leaving it orphaned

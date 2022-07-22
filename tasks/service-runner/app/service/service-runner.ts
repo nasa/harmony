@@ -18,6 +18,7 @@ export interface ServiceResponse {
   batchCatalogs?: string[];
   totalGranulesSize?: number;
   error?: string;
+  scrollID?: string;
 }
 
 // how long to let a worker run before giving up
@@ -115,8 +116,9 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
       if (resp.status < 300) {
         const catalogs = _getStacCatalogs(`${catalogDir}`);
         const { totalGranulesSize } = resp.data;
+        const newScrollID = resp.data.scrollID;
 
-        resolve({ batchCatalogs: catalogs, totalGranulesSize });
+        resolve({ batchCatalogs: catalogs, totalGranulesSize, scrollID: newScrollID });
       } else {
         resolve({ error: resp.statusText });
       }
