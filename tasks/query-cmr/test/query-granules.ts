@@ -11,7 +11,8 @@ import { queryGranules } from '../app/query';
 
 import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
-import { CmrError } from '../../../app/util/errors';
+import { S3ObjectStore } from '@harmony/util/object-store';
+import { stub } from 'sinon';
 
 chai.use(require('chai-as-promised'));
 
@@ -77,41 +78,19 @@ function hookQueryGranules(maxCmrGranules?: number): void {
     fetchPost = sinon.stub(cmr, 'fetchPost');
     fetchPost.returns(Promise.resolve(output));
 
+    // Stub objectstore calls to store/get query params
+    const store = new S3ObjectStore();
+    const headObjectResponse = { Metadata: { foo: 'bar' }, ContentType: 'image/png' };
+    // this.headObjectStub = stub(store.s3, 'headObject').returns({ promise: () => headObjectResponse } as unknown as Request<HeadObjectOutput, AWSError>);
+    this.uploadFileStub = stub(store, 'uploadFile').returns('s3://local-staging-bucket/SearchParams/ABC123/serializedQuery')
+    this.getObjectStub = stub(store.s3, 'getObject').returns({ presign: () => 'http://example.com/signed' } as unknown as Request<GetObjectOutput, AWSError>);
+
     // Actually call it
     this.result = await queryGranules(operation, 'scrollId', maxCmrGranules);
 
     // Map the call arguments into something we can actually assert against
     this.queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
     this.queryFields = this.queryFields.sort((a, b) => a._index - b._index);
-  });
-  after(function () {
-    fetchPost.restore();
-    delete this.result;
-    delete this.queryFields;
-  });
-}
-
-/**
- * Sets up before and after hooks to run queryGranulesScrolling with an error response from the CMR
- */
-function hookQueryGranulesScrollingWithError(): void {
-  const output = {
-    headers: new fetch.Headers({}),
-    ...{
-      status: 404,
-      data: {
-        errors: [
-          'Scroll session [1234] does not exist',
-        ],
-      },
-    },
-  };
-
-  let fetchPost: sinon.SinonStub;
-  before(async function () {
-    // Stub cmr fetchPost to return the contents of queries
-    fetchPost = sinon.stub(cmr, 'fetchPost');
-    fetchPost.returns(Promise.resolve(output));
   });
   after(function () {
     fetchPost.restore();
@@ -186,17 +165,8 @@ describe('query#queryGranulesScrolling', function () {
   describe('when called with a max CMR granules limit that exceeds the number of CMR granules', async function () {
     hookQueryGranules(3000);
 
-    it('the STAC output is not limitted', function () {
+    it('the STAC output is not limited', function () {
       expect(this.result[1].length).to.equal(3);
     });
-  });
-
-  describe('when the CMR returns an error', async function () {
-    hookQueryGranulesScrollingWithError();
-
-    it('throws an error containing the CMR error message', async function () {
-      await expect(queryGranulesScrolling(operation, 'scrollId')).to.be.rejectedWith(CmrError, 'Scroll session [1234] does not exist');
-    });
-
   });
 });

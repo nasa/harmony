@@ -4,7 +4,7 @@ import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
 import env from '../app/util/env';
 import { Job, JobStatus } from '../app/models/job';
-import { hookClearScrollSessionExpect, hookRedirect } from './helpers/hooks';
+import { hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
@@ -218,7 +218,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
   const collection = 'C1233800302-EEDTEST';
   hookServersStartStop();
   describe('when requesting to both reproject and reformat for two granules', function () {
-    hookClearScrollSessionExpect();
     const reprojectAndZarrQuery = {
       maxResults: 2,
       outputCrs: 'EPSG:4326',
@@ -367,7 +366,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
     hookRedirect('joe');
-    hookClearScrollSessionExpect();
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
@@ -513,7 +511,7 @@ describe('When a request spans multiple CMR pages', function () {
     });
 
     describe('when requesting five granules', function () {
-      hookClearScrollSessionExpect();
+
       const multiPageQuery = {
         maxResults: 5,
         outputCrs: 'EPSG:4326',

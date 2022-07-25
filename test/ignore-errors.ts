@@ -3,7 +3,7 @@ import { stub } from 'sinon';
 import { getWorkItemsByJobId } from '../app/models/work-item';
 import db from '../app/util/db';
 import { Job, JobStatus } from '../app/models/job';
-import { hookClearScrollSessionExpect, hookRedirect } from './helpers/hooks';
+import { hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import { getWorkForService, updateWorkItem } from './helpers/work-items';
@@ -38,7 +38,6 @@ describe('when setting ignoreErrors=true', function () {
   describe('when making a request for a single granule and it completes successfully', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1 } } });
     hookRedirect('joe');
-    hookClearScrollSessionExpect();
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
@@ -98,7 +97,6 @@ describe('when setting ignoreErrors=true', function () {
   describe('when making a request for a single granule and one of its work items fails', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 1 } } });
     hookRedirect('joe');
-    hookClearScrollSessionExpect();
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
@@ -151,7 +149,6 @@ describe('when setting ignoreErrors=true', function () {
   describe('when making a request for two granules and both of the granules have one work item fail', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 2 } } });
     hookRedirect('joe');
-    hookClearScrollSessionExpect();
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
@@ -226,7 +223,6 @@ describe('when setting ignoreErrors=true', function () {
   describe('when making a request for 3 granules and one fails while in progress', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3 } } });
     hookRedirect('joe');
-    hookClearScrollSessionExpect();
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
@@ -315,7 +311,6 @@ describe('when setting ignoreErrors=true', function () {
   describe('when making a request for 4 granules with max allowed errors of 1 and two fail', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 4 } } });
     hookRedirect('joe');
-    hookClearScrollSessionExpect();
 
     before(async function () {
       stub(env, 'maxErrorsForJob').get(() => 1);
@@ -434,7 +429,6 @@ describe('when setting ignoreErrors=true', function () {
   describe('when making a request for 4 granules and query-cmr fails', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 4 } } });
     hookRedirect('joe');
-    hookClearScrollSessionExpect();
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
@@ -459,7 +453,6 @@ describe('when setting ignoreErrors=true', function () {
   });
 
   describe('When a request spans multiple CMR pages', function () {
-    hookClearScrollSessionExpect();
     hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 5 } } });
     hookRedirect('joe');
 

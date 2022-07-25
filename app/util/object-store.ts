@@ -21,6 +21,22 @@ interface BucketParams {
 }
 
 /**
+ * Read a stream into a string
+ * 
+ * @param readableStream - The stream to read
+ * @returns A string containing the contents of the stream
+ */
+async function streamToString(readableStream: stream.Readable): Promise<string> {
+  const chunks = [];
+
+  for await (const chunk of readableStream) {
+    chunks.push(Buffer.from(chunk));
+  }
+
+  return Buffer.concat(chunks).toString('utf-8');
+}
+
+/**
  * Class to use when interacting with S3
  *
  */
@@ -146,6 +162,20 @@ export class S3ObjectStore {
       return { Bucket: match[1], Key: match[2] };
     }
     return params;
+  }
+
+  /**
+   * Downloads the given object from the store, returning a string containing the contents of the
+   * object
+   *
+   * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the object to
+   *   be retrieved or the object URL
+   * @returns a string containing the contents of the object
+   * @throws TypeError - if an invalid URL is supplied
+   */
+  async download(paramsOrUrl: string | BucketParams): Promise<string> {
+    const getObjectResponse = this.getObject(paramsOrUrl);
+    return streamToString(getObjectResponse.createReadStream());
   }
 
   /**

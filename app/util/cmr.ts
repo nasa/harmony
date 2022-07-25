@@ -1,7 +1,6 @@
 import FormData from 'form-data';
 import * as fs from 'fs';
 import { promises as fsp } from 'fs';
-import * as tmp from 'tmp-promise';
 import { v4 as uuid } from 'uuid';
 import { get } from 'lodash';
 import fetch, { Response } from 'node-fetch';
@@ -559,7 +558,8 @@ function s3UrlForStoredQueryParams(sessionKey: string): string {
  * @param limit - The maximum number of granules to return in this page of results
  * @param sessionKey - Key used to look up query parameters
  * @param searchAfterHeader - Value string to use for the cmr-search-after header
- * @returns The granules associated with the input collection and a cmr-search-after header
+ * @returns A CmrGranuleHits object containing the granules associated with the input collection 
+ * and a session key and cmr-search-after header
  */
 export async function queryGranulesWithSearchAfter(
   token: string,
@@ -579,26 +579,20 @@ export async function queryGranulesWithSearchAfter(
   if (sessionKey) {
     // use the session key to get the stored query parameters from the s3 bucket
     const url = s3UrlForStoredQueryParams(sessionKey);
-    const storedQueryFile = await defaultObjectStore().downloadFile(url);
-    const serializedQueryBuffer = await fsp.readFile(storedQueryFile);
-    const storedQuery = JSON.parse(serializedQueryBuffer.toString());
+    const storedQueryJson = await defaultObjectStore().download(url);
+    const storedQuery = JSON.parse(storedQueryJson);
     const fullQuery = { ...baseQuery, ...storedQuery };
-    await fsp.unlink(storedQueryFile);
     response = await queryGranuleUsingMultipartForm(
       fullQuery,
       token,
       headers,
     );
-    // response.hits = response.granules.length;
     response.sessionKey = sessionKey;
   } else {
-    // generate a session key and store the query parameters in the uploads bucket using the key
+    // generate a session key and store the query parameters in the staging bucket using the key
     const newSessionKey = uuid();
     const url = s3UrlForStoredQueryParams(newSessionKey);
-    const storedQueryFile = await tmp.file();
-    await fsp.writeFile(storedQueryFile.path, JSON.stringify(query), 'utf8');
-    await defaultObjectStore().uploadFile(storedQueryFile.path, url);
-    await storedQueryFile.cleanup();
+    await defaultObjectStore().upload(JSON.stringify(query), url);
     const fullQuery = { ...baseQuery, ...query };
     response = await queryGranuleUsingMultipartForm(
       fullQuery,

@@ -6,7 +6,7 @@ import * as query from '../../app/query';
 import { doWork, QueryCmrRequest } from '../../app/routers/router';
 
 /**
- * Calls doWork with the given args, unlinking
+ * Stubs the queryGranulesScrolling method and calls doWork with the given args, unlinking
  * the written output file.  Does not delete any created directories
  *
  * @returns The URL prefix for use in matching responses
@@ -14,6 +14,10 @@ import { doWork, QueryCmrRequest } from '../../app/routers/router';
 export function hookDoWork(workReq: QueryCmrRequest, output): void {
   let outputDir = null;
   before(async function () {
+    stub(query, 'queryGranules').callsFake((...callArgs) => {
+      this.callArgs = callArgs;
+      return Promise.resolve(output);
+    });
     spy(promises, 'mkdir');
     // eslint-disable-next-line prefer-destructuring
     outputDir = workReq.outputDir;
@@ -28,5 +32,6 @@ export function hookDoWork(workReq: QueryCmrRequest, output): void {
       delete this.callArgs;
     }
     (promises.mkdir as SinonStub).restore();
+    (query.queryGranules as SinonStub).restore();
   });
 }
