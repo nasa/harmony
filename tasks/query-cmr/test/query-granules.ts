@@ -11,8 +11,7 @@ import { queryGranules } from '../app/query';
 
 import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
-import { S3ObjectStore } from '@harmony/util/object-store';
-import { stub } from 'sinon';
+import * as objStore from '../../../app/util/object-store';
 
 chai.use(require('chai-as-promised'));
 
@@ -62,8 +61,8 @@ async function fetchPostArgsToFields(
 }
 
 /**
- * Sets up before and after hooks to run queryGranulesScrolling with three granules as
- * the response to queryGranulesForScrollId
+ * Sets up before and after hooks to run queryGranules with three granules as
+ * the response to queryGranulesWithSearchAfter
  * @param maxCmrGranules - limit the number of granules returned in the CMR page
  */
 function hookQueryGranules(maxCmrGranules?: number): void {
@@ -78,12 +77,11 @@ function hookQueryGranules(maxCmrGranules?: number): void {
     fetchPost = sinon.stub(cmr, 'fetchPost');
     fetchPost.returns(Promise.resolve(output));
 
-    // Stub objectstore calls to store/get query params
-    const store = new S3ObjectStore();
-    const headObjectResponse = { Metadata: { foo: 'bar' }, ContentType: 'image/png' };
-    // this.headObjectStub = stub(store.s3, 'headObject').returns({ promise: () => headObjectResponse } as unknown as Request<HeadObjectOutput, AWSError>);
-    this.uploadFileStub = stub(store, 'uploadFile').returns('s3://local-staging-bucket/SearchParams/ABC123/serializedQuery')
-    this.getObjectStub = stub(store.s3, 'getObject').returns({ presign: () => 'http://example.com/signed' } as unknown as Request<GetObjectOutput, AWSError>);
+    // Stub object-store calls to store/get query params
+    this.store = new objStore.S3ObjectStore();
+    this.uploadStub = sinon.stub(this.store, 'upload');
+    this.downloadStub = sinon.stub(this.store, 'download').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
+    this.defaultStoreStub = sinon.stub(objStore, 'defaultObjectStore').returns(this.store);
 
     // Actually call it
     this.result = await queryGranules(operation, 'scrollId', maxCmrGranules);
@@ -93,13 +91,17 @@ function hookQueryGranules(maxCmrGranules?: number): void {
     this.queryFields = this.queryFields.sort((a, b) => a._index - b._index);
   });
   after(function () {
+    this.defaultStoreStub.restore();
+    this.uploadStub.restore();
+    this.downloadStub.restore();
     fetchPost.restore();
     delete this.result;
     delete this.queryFields;
+    delete this.store
   });
 }
 
-describe('query#queryGranulesScrolling', function () {
+describe('query#queryGranules', function () {
   describe('when called with valid input sources and queries', async function () {
     hookQueryGranules();
 
@@ -146,19 +148,19 @@ describe('query#queryGranulesScrolling', function () {
       }
     });
 
-    it('uses a scrolling CMR search', function () {
-      expect(this.queryFields[0].scroll).to.equal('true');
+    it('does not use a scrolling CMR search', function () {
+      expect(this.queryFields[0].scroll).to.equal(undefined);
     });
-    it('does not use the page_size parameter', function () {
-      expect(this.queryFields[0].page_size).to.equal(undefined);
+    it('uses the page_size parameter', function () {
+      expect(this.queryFields[0].page_size).to.equal('2000');
     });
   });
 
   describe('when called with a max CMR granules limit', async function () {
     hookQueryGranules(1);
 
-    it('limits the STAC output', function () {
-      expect(this.result[1].length).to.equal(1);
+    it('sets the page_size parameter to the limit', function () {
+      expect(this.queryFields[0].page_size).to.equal('1');
     });
   });
 

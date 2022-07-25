@@ -1,0 +1,30 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n3\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: close
+vary: Accept-Encoding
+date: Mon, 25 Jul 2022 15:34:57 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 18586502-a1a9-4675-96af-71d82befeff9
+strict-transport-security: max-age=31536000
+cmr-search-after: ["eedtest",1577844000000,1234866411]
+cmr-hits: 177
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 82
+x-request-id: v24yhUoTMyvbcwvGk9MhJz7gN3WRS-YbqxXDrrIHw1z8GQ8mE5A9FQ==
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 d203e374ba383a11f7beaf8a1353c660.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: v24yhUoTMyvbcwvGk9MhJz7gN3WRS-YbqxXDrrIHw1z8GQ8mE5A9FQ==
+
+{"feed":{"updated":"2022-07-25T15:34:57.127Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[{"producer_granule_id":"001_00_7f00ff_global","boxes":["-90 -180 90 180"],"time_start":"2020-01-01T00:00:00.000Z","updated":"2020-02-25T21:43:11.000Z","dataset_id":"Harmony Example Data","data_center":"EEDTEST","title":"001_00_7f00ff_global","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T01:59:59.000Z","id":"G1233800343-EEDTEST","original_format":"UMM_JSON","granule_size":"1.3701868057250977","browse_flag":false,"collection_concept_id":"C1233800302-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_00_7f00ff_global.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_00_7f00ff_global.tif"}]},{"producer_granule_id":"001_01_7f00ff_africa","boxes":["-34.9 -25.4 37.4 63.5"],"time_start":"2020-01-01T02:00:00.000Z","updated":"2020-02-25T21:43:11.000Z","dataset_id":"Harmony Example Data","data_center":"EEDTEST","title":"001_01_7f00ff_africa","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T03:59:59.000Z","id":"G1233800344-EEDTEST","original_format":"UMM_JSON","granule_size":"0.29718685150146484","browse_flag":false,"collection_concept_id":"C1233800302-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_01_7f00ff_africa.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_01_7f00ff_africa.tif"}]},{"producer_granule_id":"001_01_7f00ff_africa_poly","time_start":"2020-01-01T02:00:00.000Z","updated":"2020-02-25T21:43:11.000Z","dataset_id":"Harmony Example Data","data_center":"EEDTEST","title":"001_01_7f00ff_africa_poly","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-01T03:59:59.000Z","id":"G1234866411-EEDTEST","original_format":"UMM_JSON","granule_size":"0.29718685150146484","browse_flag":false,"polygons":[["36 5 34 25 34 63 37 63 37 25 36 5"]],"collection_concept_id":"C1233800302-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/001_01_7f00ff_africa.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/001_01_7f00ff_africa.tif"}]}]}}

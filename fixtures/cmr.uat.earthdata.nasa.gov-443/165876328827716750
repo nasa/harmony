@@ -1,0 +1,30 @@
+POST /search/granules.json
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n100\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"temporal\"\r\n\r\n2020-01-02T00:00:00.000Z,2020-01-02T01:00:00.000Z\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"bounding_box\"\r\n\r\n17,-90,98,90\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"collection_concept_id\"\r\n\r\nC1233800302-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"shapefile\"; filename=\"shapefile\"\r\nContent-Type: application/geo+json\r\n\r\n{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"bbox\":[-21.8726,-40.6167,58.4329,39.4943],\"type\":\"Polygon\",\"coordinates\":[[[-14.0948,31.3277],[-21.8726,8.9666],[20.3218,-40.6167],[30.6274,-40.6167],[58.4329,13.4388],[35.0996,35.7999],[5.5441,39.4943],[-14.0948,31.3277]],[[-10.5948,13.8277],[2.4330000000000003,32.2999],[29.849599999999995,30.744300000000003],[51.4329,13.4388],[29.849599999999995,-34.9778],[21.0996,-37.5056],[-16.2337,7.411],[-10.5948,13.8277]]]},\"properties\":{\"id\":null}},{\"type\":\"Feature\",\"geometry\":{\"bbox\":[-57.844699999999996,12.661,11.7663,71.9665],\"type\":\"Polygon\",\"coordinates\":[[[-57.844699999999996,37.7443],[-33.5392,12.661],[11.7663,48.2443],[-18.1781,71.9665],[-57.844699999999996,37.7443]]]},\"properties\":{\"id\":null}}],\"fileName\":\"africa_demo\"}\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+transfer-encoding: chunked
+connection: close
+vary: Accept-Encoding
+date: Mon, 25 Jul 2022 15:34:48 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: a84a2e39-5151-4bf5-bdec-c6efe8eb6b81
+strict-transport-security: max-age=31536000
+cmr-search-after: ["eedtest",1577923200000,1233800352]
+cmr-hits: 1
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 244
+x-request-id: TdowOU1qJzJBPIRiLRG9toXYh5jbTnpUHHU1PPbySSrN2E_NawlczA==
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 2b72ec8519147ac56ddc0dd5ac0b0210.cloudfront.net (CloudFront)
+x-amz-cf-pop: IAD66-C2
+x-amz-cf-id: TdowOU1qJzJBPIRiLRG9toXYh5jbTnpUHHU1PPbySSrN2E_NawlczA==
+
+{"feed":{"updated":"2022-07-25T15:34:48.263Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/granules.json","title":"ECHO granule metadata","entry":[{"producer_granule_id":"002_00_3200ff_global","boxes":["-90 -180 90 180"],"time_start":"2020-01-02T00:00:00.000Z","updated":"2020-02-25T21:43:11.000Z","dataset_id":"Harmony Example Data","data_center":"EEDTEST","title":"002_00_3200ff_global","coordinate_system":"CARTESIAN","day_night_flag":"BOTH","time_end":"2020-01-02T01:59:59.000Z","id":"G1233800352-EEDTEST","original_format":"UMM_JSON","granule_size":"1.3663883209228516","browse_flag":false,"collection_concept_id":"C1233800302-EEDTEST","online_access_flag":true,"links":[{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"application/x-netcdf","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/nc/002_00_3200ff_global.nc"},{"rel":"http://esipfed.org/ns/fedsearch/1.1/data#","type":"image/tiff","hreflang":"en-US","href":"https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-eedtest-data/C1233800302-EEDTEST/tiff/002_00_3200ff_global.tif"}]}]}}

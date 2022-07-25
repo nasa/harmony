@@ -1,6 +1,5 @@
 import FormData from 'form-data';
 import * as fs from 'fs';
-import { promises as fsp } from 'fs';
 import { v4 as uuid } from 'uuid';
 import { get } from 'lodash';
 import fetch, { Response } from 'node-fetch';
