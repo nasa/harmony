@@ -97,7 +97,7 @@ function hookQueryGranules(maxCmrGranules?: number): void {
     fetchPost.restore();
     delete this.result;
     delete this.queryFields;
-    delete this.store
+    delete this.store;
   });
 }
 

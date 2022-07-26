@@ -19,6 +19,7 @@ import JobError, { getErrorCountForJob } from '../models/job-error';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
+const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
 // Must match where the service wrapper is mounting artifacts
 export const PATH_TO_CONTAINER_ARTIFACTS = '/tmp/metadata';
 
@@ -489,11 +490,15 @@ async function updateWorkItemCounts(
   Promise<void> {
   const workflowSteps = await getWorkflowStepsByJobId(transaction, job.jobID);
   for (const step of workflowSteps) {
-    // don't update the query-cmr step or aggregate steps
-    if (!step.hasAggregatedOutput && step.stepIndex > 1) {
+    if (QUERY_CMR_SERVICE_REGEX.test(step.serviceID)) {
+      // if (step.stepIndex == 1) {
+      step.workItemCount = Math.ceil(job.numInputGranules / env.cmrMaxPageSize);
+    } else if (!step.hasAggregatedOutput) {
       step.workItemCount = job.numInputGranules;
-      await step.save(transaction);
+    } else {
+      step.workItemCount = 1;
     }
+    await step.save(transaction);
   }
 }
 
@@ -530,7 +535,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     );
     const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
-    if (job.numInputGranules != hits) {
+    if (hits && job.numInputGranules != hits) {
       job.numInputGranules = hits;
       await job.save(tx);
       await updateWorkItemCounts(tx, job);

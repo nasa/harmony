@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { getWorkItemsByJobId, getWorkItemsByJobIdAndStepIndex } from '../app/models/work-item';
-import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
+import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
 import env from '../app/util/env';
 import { Job, JobStatus } from '../app/models/job';
@@ -657,6 +657,105 @@ describe('When a request spans multiple CMR pages', function () {
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).equals(undefined);
         expect(workItem).to.not.equal(undefined);
+      });
+    });
+  });
+
+  describe('and the number of granules returned by the CMR changes while paging', function () {
+    const aggregateService = 'bar';
+    const nonAggregateService = 'foo';
+    const initialNumInputGranules = 5000;
+    const finalNumInputGranules = 10000;
+    const initialQueryCmrWorkItemCount = Math.ceil(initialNumInputGranules / env.cmrMaxPageSize);
+    const finalQueryCmrWorkItemCount = Math.ceil(finalNumInputGranules / env.cmrMaxPageSize);
+
+    hookServersStartStop();
+
+    before(async function () {
+      await truncateAll();
+      const job = buildJob({ numInputGranules: initialNumInputGranules });
+      await job.save(db);
+      this.jobID = job.jobID;
+
+      await buildWorkflowStep({
+        jobID: job.jobID,
+        serviceID: 'harmonyservices/query-cmr:latest',
+        stepIndex: 1,
+        workItemCount: initialQueryCmrWorkItemCount,
+      }).save(db);
+
+      await buildWorkflowStep({
+        jobID: job.jobID,
+        serviceID: nonAggregateService,
+        stepIndex: 2,
+        workItemCount: initialNumInputGranules,
+        hasAggregatedOutput: false,
+      }).save(db);
+
+      await buildWorkflowStep({
+        jobID: job.jobID,
+        serviceID: aggregateService,
+        stepIndex: 3,
+        workItemCount: 1,
+        hasAggregatedOutput: true,
+      }).save(db);
+
+      await buildWorkItem({
+        jobID: job.jobID,
+        serviceID: 'harmonyservices/query-cmr:latest',
+        workflowStepIndex: 1,
+        scrollID: '123abc',
+      }).save(db);
+    });
+    after(async function () {
+      await truncateAll();
+    });
+
+    describe('while retrieving granules from the CMR', function () {
+      it('sets the initial numInputGranules on the job', async function () {
+        const job = await Job.byJobID(db, this.jobID);
+        expect(job.numInputGranules).equals(initialNumInputGranules);
+      });
+      it('sets the initial number of work items for each step', async function () {
+        const workflowSteps = await getWorkflowStepsByJobId(db, this.jobID);
+        expect(workflowSteps[0].workItemCount).equals(initialQueryCmrWorkItemCount);
+        expect(workflowSteps[1].workItemCount).equals(initialNumInputGranules);
+        expect(workflowSteps[2].workItemCount).equals(1);
+      });
+
+      describe('when the CMR hits changes', async function () {
+
+        before(async function () {
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          const { workItem } = JSON.parse(res.text);
+          workItem.status = WorkItemStatus.SUCCESSFUL;
+          workItem.hits = finalNumInputGranules;
+          workItem.results = [
+            'test/resources/worker-response-sample/catalog0.json',
+            'test/resources/worker-response-sample/catalog1.json',
+            'test/resources/worker-response-sample/catalog2.json'];
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
+          await updateWorkItem(this.backend, workItem);
+        });
+        it('updates the job numInputGranules', async function () {
+          const job = await Job.byJobID(db, this.jobID);
+          expect(job.numInputGranules).equals(finalNumInputGranules);
+        });
+
+        it('updates the number of work items for the query-cmr step', async function () {
+          const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 1);
+          expect(workflowStep.workItemCount).equals(finalQueryCmrWorkItemCount);
+        });
+
+        it('updates the number of work items for the second step', async function () {
+          const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 2);
+          expect(workflowStep.workItemCount).equals(finalNumInputGranules);
+        });
+
+        it('does not update the number of work items for the aggregating step', async function () {
+          const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 3);
+          expect(workflowStep.workItemCount).equals(1);
+        });
       });
     });
   });
