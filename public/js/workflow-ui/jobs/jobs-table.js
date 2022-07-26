@@ -29,7 +29,7 @@ function initFilter(currentUser, isAdminRoute) {
         return true;
       }
       if (isAdminRoute) {
-        // check if the tag is a valid EDL username
+        // check if the tag loosely resembles a valid EDL username
         return /^user: [A-Za-z0-9\.\_]{4,30}$/.test(tag.value);
       }
       return false;
