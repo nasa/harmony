@@ -11,8 +11,12 @@ function initFilter(currentUser, isAdminRoute) {
     { value: 'status: successful', dbValue: 'successful', field: 'status'},
     { value: 'status: canceled', dbValue: "canceled", field: 'status'},
     { value: 'status: running', dbValue: "running", field: 'status'},
+    { value: 'status: running with errors', dbValue: "running_with_errors", field: 'status'},
+    { value: 'status: complete with errors', dbValue: "complete_with_errors", field: 'status'},
     { value: 'status: failed', dbValue: "failed", field: 'status'},
     { value: 'status: accepted', dbValue: "accepted", field: 'status'},
+    { value: 'status: paused', dbValue: "paused", field: 'status'},
+    { value: 'status: previewing', dbValue: "previewing", field: 'status'},
   ];
   if (isAdminRoute) {
     allowedList.push({ value: `user: ${currentUser}`, dbValue: currentUser, field: 'user'});
@@ -25,6 +29,7 @@ function initFilter(currentUser, isAdminRoute) {
         return true;
       }
       if (isAdminRoute) {
+        // check if the tag is a valid EDL username
         return /^user: [A-Za-z0-9\.\_]{4,30}$/.test(tag.value);
       }
       return false;
