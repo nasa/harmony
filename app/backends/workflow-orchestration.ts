@@ -491,7 +491,6 @@ async function updateWorkItemCounts(
   const workflowSteps = await getWorkflowStepsByJobId(transaction, job.jobID);
   for (const step of workflowSteps) {
     if (QUERY_CMR_SERVICE_REGEX.test(step.serviceID)) {
-      // if (step.stepIndex == 1) {
       step.workItemCount = Math.ceil(job.numInputGranules / env.cmrMaxPageSize);
     } else if (!step.hasAggregatedOutput) {
       step.workItemCount = job.numInputGranules;
