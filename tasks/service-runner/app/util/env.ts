@@ -62,6 +62,10 @@ interface HarmonyEnv {
   workerTimeout: number;
   workingDir: string;
   maxPutWorkRetries: number;
+  artifactBucket: string;
+  awsDefaultRegion: string;
+  useLocalstack: boolean;
+  localstackHost: string;
 }
 
 // special cases

@@ -80,7 +80,6 @@ interface HarmonyEnv {
   defaultResultPageSize: number;
   failableWorkAgeMinutes: number;
   harmonyClientId: string;
-  hostVolumePath: string;
   jobReaperPeriodSec: number;
   localstackHost: string;
   logLevel: string;

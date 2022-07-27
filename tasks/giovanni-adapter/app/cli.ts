@@ -1,12 +1,12 @@
 import yargs from 'yargs';
-import { promises as fs } from 'fs';
-import path from 'path';
 import DataOperation from '../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../app/util/crypto';
 import logger from '../../../app/util/log';
 import Catalog from './stac/catalog';
 import StacItem from './stac/item';
 import { BoundingBox } from '../../../app/util/bounding-box';
+import { resolve } from '../../../app/util/url';
+import { objectStoreForProtocol } from '../../../app/util/object-store';
 
 // giovanni globals
 import giovanni_datafield_config from '../config/giovanni-datafield.json';
@@ -93,7 +93,6 @@ export default async function main(args: string[]): Promise<void> {
   const { giovanni_url, giovanni_url_title } = await _generateGiovanniURL(operation, cmr_endpoint);
 
   // set up stac catalog
-  await fs.mkdir(options.harmonyMetadataDir, { recursive: true });
   const result = new Catalog({ description: 'Giovanni adapter service' });
 
   // generate stac item
@@ -104,7 +103,7 @@ export default async function main(args: string[]): Promise<void> {
     'type': 'application/json',
     'title': 'giovanni stac item',
   });
-  const stacItemFilename = path.join(options.harmonyMetadataDir, stacItemRelativeFilename);
+  const stacItemUrl = resolve(options.harmonyMetadataDir, stacItemRelativeFilename);
   const time_start = operation.temporal.start;
   const time_end = operation.temporal.end;
   const properties = { start_datetime: time_start, end_datetime: time_end };
@@ -124,20 +123,21 @@ export default async function main(args: string[]): Promise<void> {
     bbox,
     assets,
   });
-  await item.write(stacItemFilename, true);
+  await item.write(stacItemUrl, true);
 
   // save stac catalog
   const relativeFilename = 'catalog.json';
   const catalogFilenames = [];
-  const filename = path.join(options.harmonyMetadataDir, relativeFilename);
+  const catalogUrl = resolve(options.harmonyMetadataDir, relativeFilename);
   catalogFilenames.push(relativeFilename);
-  await result.write(filename, true);
+  await result.write(catalogUrl, true);
 
-  const catalogListFilename = path.join(options.harmonyMetadataDir, 'batch-catalogs.json');
-  const catalogCountFilename = path.join(options.harmonyMetadataDir, 'batch-count.txt');
+  const catalogListUrl = resolve(options.harmonyMetadataDir, 'batch-catalogs.json');
+  const catalogCountUrl = resolve(options.harmonyMetadataDir, 'batch-count.txt');
 
-  await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
-  await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
+  const s3 = objectStoreForProtocol('s3');
+  await s3.upload(JSON.stringify(catalogFilenames), catalogListUrl, null, 'application/json');
+  await s3.upload(catalogFilenames.length.toString(), catalogCountUrl, null, 'text/plain');
 
   const durationMs = new Date().getTime() - startTime;
   timingLogger.info('timing.giovanni-adapter.end', { durationMs });

@@ -1,10 +1,11 @@
-import * as fs from 'fs';
+import aws from 'aws-sdk';
 import { strict as assert } from 'assert';
-import path from 'path';
 import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
 import StacItem from './item';
 import { StacCatalog, StacLink } from './types';
+import { objectStoreForProtocol } from '../../../../app/util/object-store';
+import { resolve } from '../../../../app/util/url';
 
 /**
  * Implementation of the StacCatalog type with constructor, write function, and ability
@@ -50,20 +51,20 @@ export default class Catalog implements StacCatalog {
   }
 
   /**
-   * Writes this catalog and all of its children, with child filenames determined
+   * Writes this catalog and all of its children to s3, with child file paths determined
    * by their relative link paths
-   * @param filename - the filename to write this catalog to
+   * @param fileUrl - the full path to the file where this catalog should be written
    * @param pretty - if output JSON should be pretty-formatted
    */
-  async write(filename: string, pretty = false): Promise<void> {
-    const dirname = path.dirname(filename);
+  async write(fileUrl: string, pretty = false): Promise<void> {
+    const s3 = objectStoreForProtocol('s3');
     const childLinks = this.links.filter((l) => l.rel === 'child' || l.rel === 'item');
-    const promises = this.children.map(async (item, i) => {
-      const itemFilename = path.join(dirname, childLinks[i].href);
+    const promises: Promise<void | aws.S3.ManagedUpload.SendData>[] = this.children.map(async (item, i) => {
+      const itemFilename = resolve(fileUrl, childLinks[i].href);
       return item.write(itemFilename, pretty);
     });
     const json = pretty ? JSON.stringify(this, null, 2) : JSON.stringify(this);
-    promises.push(fs.promises.writeFile(filename, json));
+    promises.push(s3.upload(json, fileUrl, null, 'application/json'));
     await Promise.all(promises);
   }
 }

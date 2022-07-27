@@ -20,12 +20,6 @@ spec:
           image: harmonyservices/harmony:latest
           command:
             - "/harmony/bin/start-harmony-in-container"
-          env:
-          # this is a bit confusing because HOST_VOLUME_PATH elsewhere refers to the path on the
-          # node, not the container, but since we here we are running in a container we need to
-          # set this to where the mount point is for the 'test-volume' below
-          - name: HOST_VOLUME_PATH
-            value: "/tmp/metadata"
           envFrom:
           - configMapRef:
               name: harmony-env
@@ -34,16 +28,6 @@ spec:
           ports:
             - containerPort: 3000
             - containerPort: 3001
-          volumeMounts:
-            - mountPath: /tmp/metadata
-              name: test-volume
-      volumes:
-      - name: test-volume
-        hostPath:
-          # directory location on host
-          path: $HOST_VOLUME_PATH
-          # this field is optional
-          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service

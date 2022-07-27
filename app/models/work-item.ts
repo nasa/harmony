@@ -7,7 +7,7 @@ import DataOperation from './data-operation';
 import { activeJobStatuses, Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
-import { WorkItemRecord, WorkItemStatus } from './work-item-interface';
+import { WorkItemRecord, WorkItemStatus, getStacLocation } from './work-item-interface';
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
 // if this changes we will have to revisit this
@@ -76,6 +76,20 @@ export default class WorkItem extends Record implements WorkItemRecord {
   static async insertBatch(transaction: Transaction, workItems: WorkItem[]): Promise<void> {
     const fieldsList = workItems.map(item => _.pick(item, serializedFields));
     await super.insertBatch(transaction, workItems, fieldsList);
+  }
+
+  /**
+   * Get the s3 URL to the STAC outputs directory for this work item.
+   * Optionally pass in a target URL in which case the URL returned will be the target URL
+   * resolved relative to the STAC outputs directory.
+   * e.g. s3://artifacts/abc/123/outputs/ with a targetUrl of ./catalog0.json or catalog0.json would resolve to
+   * s3://artifacts/abc/123/outputs/catalog0.json
+   * @param targetUrl - URL to resolve against the base outptuts directory 
+   * @param isAggregate - include the word aggregate in the URL
+   * @returns - the path to the STAC outputs directory (e.g. s3://artifacts/abc/123/outputs/) or the full path to the target URL
+   */
+  getStacLocation(targetUrl = '', isAggregate = false): string {
+    return getStacLocation(this, targetUrl, isAggregate);
   }
 }
 

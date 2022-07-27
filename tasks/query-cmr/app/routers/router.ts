@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction, Router } from 'express';
-import { promises as fs } from 'fs';
-import path from 'path';
 import logger from '../../../../app/util/log';
+import { resolve } from '../../../../app/util/url';
 import DataOperation from '../../../../app/models/data-operation';
 import { createEncrypter, createDecrypter } from '../../../../app/util/crypto';
 import { queryGranulesScrolling } from '../query';
+import { objectStoreForProtocol } from '../../../../app/util/object-store';
+import { ServerError } from '../../../../app/util/errors';
 
 const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
 const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
@@ -29,31 +30,29 @@ export async function doWork(workReq: QueryCmrRequest): Promise<number> {
   const appLogger = logger.child({ application: 'query-cmr' });
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing.query-cmr.start');
-  await fs.mkdir(outputDir, { recursive: true });
-  const mkdirTime = new Date().getTime();
-  timingLogger.info('timing.query-cmr.mkdir', { durationMs: mkdirTime - startTime });
 
   const [totalGranulesSize, catalogs] = await queryGranulesScrolling(operation, scrollId, workReq.maxCmrGranules);
   const granuleScrollingTime = new Date().getTime();
-  timingLogger.info('timing.query-cmr.query-granules-scrolling', { durationMs: granuleScrollingTime - mkdirTime });
+  timingLogger.info('timing.query-cmr.query-granules-scrolling', { durationMs: granuleScrollingTime });
 
   const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {
     const relativeFilename = `catalog${i}.json`;
-    const filename = path.join(outputDir, relativeFilename);
+    const catalogUrl = resolve(outputDir, relativeFilename);
     catalogFilenames.push(relativeFilename);
-    await catalog.write(filename, true);
+    await catalog.write(catalogUrl, true);
   });
 
-  const catalogListFilename = path.join(outputDir, 'batch-catalogs.json');
-  const catalogCountFilename = path.join(outputDir, 'batch-count.txt');
+  const catalogListUrl = resolve(outputDir, 'batch-catalogs.json');
+  const catalogCountUrl = resolve(outputDir, 'batch-count.txt');
 
   await Promise.all(promises);
   const catalogWriteTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.catalog-promises-write', { durationMs: catalogWriteTime - granuleScrollingTime });
 
-  await fs.writeFile(catalogListFilename, JSON.stringify(catalogFilenames));
-  await fs.writeFile(catalogCountFilename, catalogFilenames.length.toString());
+  const s3 = objectStoreForProtocol('s3');
+  await s3.upload(JSON.stringify(catalogFilenames), catalogListUrl, null, 'application/json');
+  await s3.upload(catalogFilenames.length.toString(), catalogCountUrl, null, 'text/plain');
 
   const catalogSummaryTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.catalog-summary-write', { durationMs: catalogSummaryTime - catalogWriteTime });
@@ -77,10 +76,9 @@ async function doWorkHandler(req: Request, res: Response, next: NextFunction): P
 
     res.status(200);
     res.send(JSON.stringify({ totalGranulesSize: totalGranulesSize }));
-
   } catch (e) {
-    res.status(500);
-    next(e);
+    logger.error(e);
+    next(new ServerError('Query CMR doWorkHandler encountered an unexpected error.'));
   }
 }
 

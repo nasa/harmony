@@ -59,3 +59,20 @@ export function getRequestRoot(req): string {
     host: req.get('host'),
   });
 }
+
+/**
+ * Resolves a target URL relative to a base URL in a manner similar to that of a web browser resolving an anchor tag
+ * https://nodejs.org/api/url.html#urlresolvefrom-to
+ * @param from - the base URL
+ * @param to - the target URL
+ * @returns the resolved URL
+ */
+export function resolve(from, to): string {
+  const resolvedUrl = new URL(to, new URL(from, 'resolve://'));
+  if (resolvedUrl.protocol === 'resolve:') {
+    // `from` is a relative URL.
+    const { pathname, search, hash } = resolvedUrl;
+    return pathname + search + hash;
+  }
+  return resolvedUrl.toString();
+}

@@ -1,7 +1,10 @@
+import { hookMockS3 } from '../../../../test/helpers/object-store';
 import { before } from 'mocha';
 import { use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { configureLogToFile } from '../../../../app/util/log';
+
+hookMockS3();
 
 use(chaiAsPromised);
 

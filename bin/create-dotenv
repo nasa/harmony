@@ -30,21 +30,8 @@ PROMPT_EDL
 		OAUTH_UID=$OAUTH_UID
 		OAUTH_PASSWORD=$OAUTH_PASSWORD
 EOF
-    # prompt for HOST_VOLUME_PATH
-    echo "\nEnter the full path to the directory to use for service metadata output."
-    echo "The directory MUST be under your home directory and will be created if it does not exist."
-    read -p "Hit <Enter> for <${HOME}/metadata>: " HOST_VOLUME_PATH
-    echo ""
     
     echo "\n# Env vars used for turbo mode" >> .env
-    # Add HOST_VOLUME_PATH if it is defined (not zero length)
-    if [ ! -z "${HOST_VOLUME_PATH}" ]; then
-        echo "HOST_VOLUME_PATH=${HOST_VOLUME_PATH}" >> .env
-        mkdir -p "${HOST_VOLUME_PATH}"
-    else
-        echo "HOST_VOLUME_PATH=${HOME}/metadata" >> .env
-        mkdir -p "${HOME}/metadata"
-    fi
     
     # prompt for LOCALLY_DEPLOYED_SERVICES
     echo "Enter services to deploy (comma separated list):"
