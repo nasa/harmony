@@ -423,23 +423,25 @@ async function handleFailedWorkItems(
     continueProcessing = job.ignoreErrors;
     if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
       let jobMessage;
+      if (errorMessage) {
+        jobMessage = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
+      }
+
       if (workItem.scrollID) {
         // Fail the request if query-cmr fails to populate granules
         continueProcessing = false;
-        jobMessage = `WorkItem [${workItem.id}] failed to query CMR for granule information`;
-        if (errorMessage) {
-          jobMessage = `${jobMessage} with error: ${errorMessage}`;
+        if (!jobMessage) {
+          jobMessage = `WorkItem [${workItem.id}] failed to query CMR for granule information`;
         }
       } else {
         const url = await getWorkItemUrl(workItem, logger);
-        let message = `WorkItem [${workItem.id}] failed with an unknown error`;
-        if (errorMessage) {
-          message = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
+        if (!jobMessage) {
+          jobMessage = `WorkItem [${workItem.id}] failed with an unknown error`;
         }
-        await addErrorForWorkItem(tx, job, url, message);
+        await addErrorForWorkItem(tx, job, url, jobMessage);
       }
 
-      if (job.ignoreErrors && !jobMessage) {
+      if (continueProcessing) {
         const errorCount =  await getErrorCountForJob(tx, job.jobID);
         if (errorCount > env.maxErrorsForJob) {
           jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded`;
