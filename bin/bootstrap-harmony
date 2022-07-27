@@ -29,8 +29,5 @@ fi
 # deploy the services
 echo ""
 echo "Deploying services"
-if [[ -n "$HOST_VOLUME_PATH" ]]; then
-    mkdir -p "$HOST_VOLUME_PATH"
-    ./bin/deploy-services
-fi
+./bin/deploy-services
 

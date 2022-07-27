@@ -40,8 +40,6 @@ spec:
             - name: TEXT_LOGGER
               value: "false"
           volumeMounts:
-            - mountPath: /tmp/metadata
-              name: test-volume
             - mountPath: /tmp
               name: ephemeral-volume
           command: ["/bin/sh", "-c"]
@@ -96,17 +94,9 @@ spec:
           ports:
             - containerPort: 5000
           volumeMounts:
-            - mountPath: /tmp/metadata
-              name: test-volume
             - mountPath: /tmp
               name: ephemeral-volume
       volumes:
-      - name: test-volume
-        hostPath:
-          # directory location on host
-          path: $HOST_VOLUME_PATH
-          # this field is optional
-          type: DirectoryOrCreate
       - name: ephemeral-volume
         emptyDir: {}
 ---

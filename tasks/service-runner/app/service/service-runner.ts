@@ -1,14 +1,13 @@
 import * as k8s from '@kubernetes/client-node';
-import { existsSync, readdirSync, readFileSync } from 'fs';
 import stream from 'stream';
 import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
 import logger from '../../../../app/util/log';
-import { WorkItemRecord } from '../../../../app/models/work-item-interface';
+import { resolve as resolveUrl } from '../../../../app/util/url';
+import { objectStoreForProtocol } from '../../../../app/util/object-store';
+import { WorkItemRecord, getStacLocation } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 
-// Must match where harmony expects artifacts in workflow-orchestration.ts
-const ARTIFACT_DIRECTORY = '/tmp/metadata';
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
@@ -41,15 +40,14 @@ class LogStream extends stream.Writable {
 }
 
 /**
- * Get a list of STAC catalog in a directory
- * @param dir - the directory containing the catalogs
+ * Get a list of full s3 paths to each STAC catalog found in an S3 directory.
+ * @param dir - the s3 directory url where the catalogs are located
  */
-function _getStacCatalogs(dir: string): string[] {
-  // readdirSync should be ok since a service only ever handles one WorkItem at a time and may
-  // actually be necessary to ensure read after write consistency on EFS
-  return readdirSync(dir)
-    .filter((fileName) => fileName.match(/catalog\d*.json/))
-    .map((fileName) => `${dir}/${fileName}`);
+async function _getStacCatalogs(dir: string): Promise<string[]> {
+  const s3 = objectStoreForProtocol('s3');
+  return (await s3.listObjectKeys(dir))
+    .filter((fileKey) => fileKey.match(/catalog\d*.json/))
+    .map((fileKey) => `s3://${env.artifactBucket}/${fileKey}`);
 }
 
 /**
@@ -60,15 +58,17 @@ function _getStacCatalogs(dir: string): string[] {
  * braces.
  *
  * @param logStr - A string that contains error logging
- * @param catalogDir - A string path for the outputs directory of the WorkItem.
+ * @param catalogDir - A string path for the outputs directory of the WorkItem 
+ * (e.g. s3://artifacts/requestId/workItemId/outputs/).
  * @returns An error message parsed from the log
  */
-function _getErrorMessage(logStr: string, catalogDir: string): string {
+async function _getErrorMessage(logStr: string, catalogDir: string): Promise<string> {
   // expect JSON logs entries
   try {
-    const errorFile = `${catalogDir}/error.json`;
-    if (existsSync(errorFile)) {
-      const logEntry = JSON.parse(readFileSync(errorFile).toString());
+    const s3 = objectStoreForProtocol('s3');
+    const errorFile = resolveUrl(catalogDir, 'error.json');
+    if (await s3.objectExists(errorFile)) {
+      const logEntry = await s3.getObjectJson(errorFile);
       return logEntry.error;
     }
 
@@ -94,10 +94,8 @@ function _getErrorMessage(logStr: string, catalogDir: string): string {
   * @param maxCmrGranules - Limits the page of granules in the query-cmr task
   */
 export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranules?: number): Promise<ServiceResponse> {
-
   const { operation, scrollID } = workItem;
-  const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
-
+  const catalogDir = getStacLocation(workItem);
   return new Promise<ServiceResponse>(async (resolve) => {
     logger.debug('CALLING WORKER');
 
@@ -115,7 +113,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
       );
 
       if (resp.status < 300) {
-        const catalogs = _getStacCatalogs(`${catalogDir}`);
+        const catalogs = await _getStacCatalogs(catalogDir);
         const { totalGranulesSize } = resp.data;
         const newScrollID = resp.data.scrollID;
 
@@ -124,6 +122,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
         resolve({ error: resp.statusText });
       }
     } catch (e) {
+      logger.error(e);
       const message = e.response?.data ? e.response.data.description : e.message;
       resolve({ error: message });
     }
@@ -145,8 +144,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
       commandLine = env.invocationArgs.split(' ');
     }
 
-    const catalogDir = `${ARTIFACT_DIRECTORY}/${operation.requestId}/${workItem.id}/outputs`;
-
+    const catalogDir = getStacLocation(workItem);
     return await new Promise<ServiceResponse>((resolve) => {
       logger.debug(`CALLING WORKER for pod ${env.myPodName}`);
       // create a writable stream to capture stdout from the exec call
@@ -176,17 +174,17 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
         process.stderr as stream.Writable,
         process.stdin as stream.Readable,
         true,
-        (status: k8s.V1Status) => {
+        async (status: k8s.V1Status) => {
           logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
           try {
             if (status.status === 'Success') {
               clearTimeout(timeout);
               logger.debug('Getting STAC catalogs');
-              const catalogs = _getStacCatalogs(`${catalogDir}`);
+              const catalogs = await _getStacCatalogs(catalogDir);
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = _getErrorMessage(stdOut.logStr, catalogDir);
+              const logErr = await _getErrorMessage(stdOut.logStr, catalogDir);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }

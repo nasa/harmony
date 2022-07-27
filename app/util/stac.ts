@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import path from 'path';
 import JobLink from '../models/job-link';
+import { objectStoreForProtocol } from './object-store';
+import { resolve } from './url';
 
 export interface StacItemLink {
   href: string;
@@ -45,19 +45,19 @@ export function linksWithStacData(links: Array<JobLink>): Array<JobLink> {
 
 /**
  * Reads the content of the catalog and returns the catalog items
- * @param filename - the catalog filename
+ * @param catalogUrl - the catalog s3 url
  */
-export function readCatalogItems(filename: string): StacItem[] {
-  const dirname = path.dirname(filename);
-  const catalog = JSON.parse(fs.readFileSync(filename, 'utf-8'));
+export async function readCatalogItems(catalogUrl: string): Promise<StacItem[]> {
+  const s3 = objectStoreForProtocol('s3');
+  const catalog = await s3.getObjectJson(catalogUrl);
   const childLinks = catalog.links
     .filter((l) => l.rel === 'item')
     .map((l) => l.href);
 
   const items: StacItem[] = [];
   for (const link of childLinks) {
-    const location = `${dirname}/${link.replace('./', '/')}`;
-    const item = JSON.parse(fs.readFileSync(location, 'utf-8')) as unknown as StacItem;
+    const itemUrl = resolve(catalogUrl, link); // link has a relative path "./itemFile.json"
+    const item = await s3.getObjectJson(itemUrl) as StacItem;
     items.push(item);
   }
 

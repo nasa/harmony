@@ -8,11 +8,6 @@ source ".env"
 set +a
 eval "$env_save"
 
-if [[ -z "${HOST_VOLUME_PATH}" ]]; then
-  echo "HOST_VOLUME_PATH must be set before running this script"
-  exit 1
-fi
-
 . ./bin/create-k8s-config-maps-and-secrets
 
 # create the query-cmr service
@@ -21,7 +16,6 @@ if [ ! -f "$file" ]; then
   echo "query-cmr-sidecar.yml was not found."
   exit 1
 fi
-echo "Deploying $file using volume mount path $HOST_VOLUME_PATH"
 envsubst < $file | kubectl apply -f - -n harmony
 
 # create the other services
@@ -53,6 +47,5 @@ do
   varname=${var_prefix}_INVOCATION_ARGS
   export SERVICE_INVOCATION_ARGS=${!varname}
 
-  echo "Deploying $service using volume mount path $HOST_VOLUME_PATH"
   envsubst < $file | kubectl apply -f - -n harmony
 done

@@ -1,17 +1,15 @@
 import { Application } from 'express';
 import { afterEach, beforeEach } from 'mocha';
-import path from 'path';
-import { promises as fs } from 'fs';
 import request, { Test } from 'supertest';
 import _ from 'lodash';
 import WorkItem from '../../app/models/work-item';
 import db, { Transaction } from '../../app/util/db';
-import env from '../../app/util/env';
 import { truncateAll } from './db';
 import { hookBackendRequest } from './hooks';
 import { buildWorkflowStep, hookWorkflowStepCreation, hookWorkflowStepCreationEach } from './workflow-steps';
 import { RecordConstructor } from '../../app/models/record';
-import { WorkItemStatus, WorkItemRecord } from '../../app/models/work-item-interface';
+import { WorkItemStatus, WorkItemRecord, getStacLocation } from '../../app/models/work-item-interface';
+import { objectStoreForProtocol } from '../../app/util/object-store';
 
 export const exampleWorkItemProps = {
   jobID: '1',
@@ -198,9 +196,10 @@ export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForSer
  * @param workItemID - the ID of the work item that generated the STAC items
  */
 export async function fakeServiceStacOutput(jobID: string, workItemID: number, granuleCount = 1): Promise<void> {
-  const outputDir = path.join(env.hostVolumePath, jobID, `${workItemID}`, 'outputs');
-  await fs.mkdir(outputDir, { recursive: true });
-
+  const s3 = objectStoreForProtocol('s3');
+  const workItem = {
+    id: workItemID, jobID,
+  };
   const exampleCatalog = {
     stac_version: '1.0.0-beta.2',
     stac_extensions: [],
@@ -227,6 +226,24 @@ export async function fakeServiceStacOutput(jobID: string, workItemID: number, g
     id: '63760c1d-0094-40f4-8344-319d8a7673cc',
     type: 'Feature',
     links: [],
+    'assets': {
+      'data': {
+        'href': 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc',
+        'title': '001_00_8f00ff_global.nc',
+        'type': 'application/x-netcdf4',
+        'roles': [
+          'data',
+        ],
+      },
+      'data1': {
+        'href': 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/001_00_7f00ff_global.tif',
+        'title': '001_00_7f00ff_global.tif',
+        'type': 'image/tiff',
+        'roles': [
+          'data',
+        ],
+      },
+    },
     properties: {
       start_datetime: '2007-12-31T00:52:14.361Z',
       end_datetime: '2007-12-31T01:48:26.552Z',
@@ -240,23 +257,27 @@ export async function fakeServiceStacOutput(jobID: string, workItemID: number, g
 
       // create a fake STAC catalog
       exampleCatalog.links[1].href = `./granule${i}.json`;
-      await fs.writeFile(path.join(outputDir, `catalog${i}.json`), JSON.stringify(exampleCatalog, null, 4));
+      const catalogUrl = getStacLocation(workItem, `catalog${i}.json`);
+      await s3.upload(JSON.stringify(exampleCatalog, null, 4), catalogUrl, null, 'application/json');
 
       // create a fake STAC item
-      await fs.writeFile(path.join(outputDir, `granule${i}.json`), JSON.stringify(exampleItem, null, 4));
+      const granuleUrl = getStacLocation(workItem, `granule${i}.json`);
+      await s3.upload(JSON.stringify(exampleItem, null, 4), granuleUrl, null, 'application/json');
 
     }
 
     // create fake catalog of catalogs
-    await fs.writeFile(path.join(outputDir, 'batch-catalogs.json'), JSON.stringify(catalogOfCatalogs, null, 4));
+    const batchUrl = getStacLocation(workItem, 'batch-catalogs.json');
+    await s3.upload(JSON.stringify(catalogOfCatalogs, null, 4), batchUrl, null, 'application/json');
   } else {
     // just write out a catalog and item
 
     // create a fake STAC catalog
-    await fs.writeFile(path.join(outputDir, 'catalog.json'), JSON.stringify(exampleCatalog, null, 4));
-
+    const catalogUrl = getStacLocation(workItem, 'catalog.json');
+    await s3.upload(JSON.stringify(exampleCatalog, null, 4), catalogUrl, null, 'application/json');
     // create a fake STAC item
-    await fs.writeFile(path.join(outputDir, 'granule.json'), JSON.stringify(exampleItem, null, 4));
+    const granuleUrl = getStacLocation(workItem, 'granule.json');
+    await s3.upload(JSON.stringify(exampleItem, null, 4), granuleUrl, null, 'application/json');
 
   }
 }

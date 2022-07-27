@@ -1,13 +1,13 @@
 /* eslint-disable no-loop-func */
 import { expect } from 'chai';
 import _ from 'lodash';
-import { WorkItemStatus } from '../../app/models/work-item-interface';
+import { WorkItemStatus, getStacLocation } from '../../app/models/work-item-interface';
 import env from '../../app/util/env';
 import { truncateAll } from '../helpers/db';
 import { hookRedirect } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
-import { getWorkForService, updateWorkItem } from '../helpers/work-items';
+import { getWorkForService, updateWorkItem, fakeServiceStacOutput } from '../helpers/work-items';
 
 const originalPreviewThreshold = env.previewThreshold;
 
@@ -70,8 +70,9 @@ function previewingToPauseTest(username: string): void {
       const workItemQueryCmr = JSON.parse(resQueryCmr.text).workItem;
       workItemQueryCmr.status = WorkItemStatus.SUCCESSFUL;
       workItemQueryCmr.results = [
-        'test/resources/worker-response-sample/catalog0.json',
+        getStacLocation(workItemQueryCmr, 'catalog.json'),
       ];
+      await fakeServiceStacOutput(workItemQueryCmr.jobID, workItemQueryCmr.id);
       await updateWorkItem(this.backend, workItemQueryCmr);
 
       const resServExample = await getWorkForService(this.backend, 'harmonyservices/service-example:latest');
@@ -79,8 +80,9 @@ function previewingToPauseTest(username: string): void {
       const workItemServExample = JSON.parse(resServExample.text).workItem;
       workItemServExample.status = WorkItemStatus.SUCCESSFUL;
       workItemServExample.results = [
-        'test/resources/worker-response-sample/catalog0.json',
+        getStacLocation(workItemServExample, 'catalog.json'),
       ];
+      await fakeServiceStacOutput(workItemServExample.jobID, workItemServExample.id);
       await updateWorkItem(this.backend, workItemServExample);
     });
 
