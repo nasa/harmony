@@ -663,7 +663,7 @@ describe('When a request spans multiple CMR pages', function () {
     const aggregateService = 'bar';
     const nonAggregateService = 'foo';
     const initialNumInputGranules = 5000;
-    const finalNumInputGranules = 10000;
+    const finalNumInputGranules = 3000;
     const initialQueryCmrWorkItemCount = Math.ceil(initialNumInputGranules / env.cmrMaxPageSize);
     const finalQueryCmrWorkItemCount = Math.ceil(finalNumInputGranules / env.cmrMaxPageSize);
 
@@ -729,9 +729,9 @@ describe('When a request spans multiple CMR pages', function () {
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.hits = finalNumInputGranules;
           workItem.results = [
-            'test/resources/worker-response-sample/catalog0.json',
-            'test/resources/worker-response-sample/catalog1.json',
-            'test/resources/worker-response-sample/catalog2.json'];
+            getStacLocation(workItem, 'catalog0.json'),
+            getStacLocation(workItem, 'catalog1.json'),
+            getStacLocation(workItem, 'catalog2.json')];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
           await updateWorkItem(this.backend, workItem);
         });

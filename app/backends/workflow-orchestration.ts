@@ -522,7 +522,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     );
     const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
-    if (hits && job.numInputGranules != hits) {
+    if (hits && job.numInputGranules > hits) {
       job.numInputGranules = hits;
       await job.save(tx);
       await updateWorkItemCounts(tx, job);

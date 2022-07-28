@@ -8,8 +8,6 @@ exports.up = function up(knex) {
 };
 
 exports.down = function down(knex) {
-  return knex.schema
-    .alterTable('work_items', (t) => {
-      t.string('scrollID', 32).alter();
-    });
+  // Does nothing as we might break things if we try to reduce the column size and already
+  // have rows with longer entries in the `scrollID` co]umn
 };

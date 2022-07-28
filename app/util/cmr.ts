@@ -542,7 +542,7 @@ export async function getVariablesForCollection(
  * Generate an s3 url to use to store/lookup stored query parameters
  * 
  * @param sessionKey - The session key
- * @returns 
+ * @returns An s3 url containing the session key
  */
 function s3UrlForStoredQueryParams(sessionKey: string): string {
   return `s3://${stagingBucket}/SearchParams/${sessionKey}/serializedQuery`;
@@ -562,7 +562,7 @@ function s3UrlForStoredQueryParams(sessionKey: string): string {
  */
 export async function queryGranulesWithSearchAfter(
   token: string,
-  limit = cmrMaxPageSize,
+  limit: number,
   query?: CmrQuery,
   sessionKey?: string,
   searchAfterHeader?: string,

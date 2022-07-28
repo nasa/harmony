@@ -12,6 +12,7 @@ import { queryGranules } from '../app/query';
 import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
 import * as objStore from '../../../app/util/object-store';
+import { CmrError } from '../../../app/util/errors';
 
 chai.use(require('chai-as-promised'));
 
@@ -65,7 +66,7 @@ async function fetchPostArgsToFields(
  * the response to queryGranulesWithSearchAfter
  * @param maxCmrGranules - limit the number of granules returned in the CMR page
  */
-function hookQueryGranules(maxCmrGranules?: number): void {
+function hookQueryGranules(maxCmrGranules = 100): void {
   const output = {
     headers: new fetch.Headers({}),
     ...JSON.parse(fs.readFileSync(path.resolve(__dirname, 'resources/atom-granules.json'), 'utf8')),
@@ -98,6 +99,33 @@ function hookQueryGranules(maxCmrGranules?: number): void {
     delete this.result;
     delete this.queryFields;
     delete this.store;
+  });
+}
+
+/**
+ * Sets up before and after hooks to run queryGranules with an error response from the CMR
+ */
+function hookQueryGranulesWithError(): void {
+  const output = {
+    headers: new fetch.Headers({}),
+    ...{
+      status: 404,
+      data: {
+        errors: [
+          'Failed to query CMR',
+        ],
+      },
+    },
+  };
+
+  let fetchPost: sinon.SinonStub;
+  before(async function () {
+    // Stub cmr fetchPost to return the contents of queries
+    fetchPost = sinon.stub(cmr, 'fetchPost');
+    fetchPost.returns(Promise.resolve(output));
+  });
+  after(function () {
+    fetchPost.restore();
   });
 }
 
@@ -152,7 +180,7 @@ describe('query#queryGranules', function () {
       expect(this.queryFields[0].scroll).to.equal(undefined);
     });
     it('uses the page_size parameter', function () {
-      expect(this.queryFields[0].page_size).to.equal('2000');
+      expect(this.queryFields[0].page_size).to.equal('100');
     });
   });
 
@@ -170,5 +198,14 @@ describe('query#queryGranules', function () {
     it('the STAC output is not limited', function () {
       expect(this.result[1].length).to.equal(3);
     });
+  });
+
+  describe('when the CMR returns an error', async function () {
+    hookQueryGranulesWithError();
+
+    it('throws an error containing the CMR error message', async function () {
+      await expect(queryGranules(operation, 'scrollId')).to.be.rejectedWith(CmrError, 'Scroll session [1234] does not exist');
+    });
+
   });
 });
