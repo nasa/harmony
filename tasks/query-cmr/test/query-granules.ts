@@ -126,6 +126,8 @@ function hookQueryGranulesWithError(): void {
   });
   after(function () {
     fetchPost.restore();
+    delete this.result;
+    delete this.queryFields;
   });
 }
 
@@ -204,7 +206,7 @@ describe('query#queryGranules', function () {
     hookQueryGranulesWithError();
 
     it('throws an error containing the CMR error message', async function () {
-      await expect(queryGranules(operation, 'scrollId')).to.be.rejectedWith(CmrError, 'Scroll session [1234] does not exist');
+      await expect(queryGranules(operation, null, 1)).to.be.rejectedWith(CmrError, 'Failed to query CMR');
     });
 
   });
