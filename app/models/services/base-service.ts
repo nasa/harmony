@@ -11,6 +11,7 @@ import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
 import { WorkItemStatus } from '../work-item-interface';
+import { getRequestMetric } from '../../util/metrics';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -213,6 +214,8 @@ export default abstract class BaseService<ServiceParamType> {
     await this._createAndSaveWorkflow(job);
 
     const { isAsync, requestId } = job;
+    const requestMetric = getRequestMetric(this.operation, this.config.name);
+    logger.info(`Request metric for request ${requestId}`, { requestMetric: true, ...requestMetric } );
     this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
     return new Promise((resolve, reject) => {
       this._run(logger)

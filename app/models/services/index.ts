@@ -283,7 +283,7 @@ function supportsSpatialSubsetting(configs: ServiceConfig<unknown>[]): ServiceCo
  * @returns true if the provided operation requires reprojection and false otherwise
  */
 function requiresReprojection(operation: DataOperation): boolean {
-  return !!operation.crs;
+  return operation.shouldReproject;
 }
 
 /**
@@ -301,7 +301,7 @@ function supportsReprojection(configs: ServiceConfig<unknown>[]): ServiceConfig<
  * @returns true if the provided operation requires shapefile subsetting and false otherwise
  */
 function requiresShapefileSubsetting(operation: DataOperation): boolean {
-  return !!operation.geojson;
+  return operation.shouldShapefileSubset;
 }
 
 /**
