@@ -568,7 +568,7 @@ export async function queryGranulesWithSearchAfter(
   searchAfterHeader?: string,
 ): Promise<CmrGranuleHits> {
   const baseQuery = {
-    page_size: Math.min(limit, cmrMaxPageSize),
+    page_size: limit,
   };
   let response: CmrGranuleHits;
   let headers = {};

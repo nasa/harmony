@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { v4 as uuid } from 'uuid';
 import { getWorkItemsByJobId, getWorkItemsByJobIdAndStepIndex } from '../app/models/work-item';
 import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
@@ -662,16 +663,17 @@ describe('When a request spans multiple CMR pages', function () {
   describe('and the number of granules returned by the CMR changes while paging', function () {
     const aggregateService = 'bar';
     const nonAggregateService = 'foo';
-    const initialNumInputGranules = 5000;
-    const finalNumInputGranules = 3000;
-    const initialQueryCmrWorkItemCount = Math.ceil(initialNumInputGranules / env.cmrMaxPageSize);
-    const finalQueryCmrWorkItemCount = Math.ceil(finalNumInputGranules / env.cmrMaxPageSize);
+    const sessionId = uuid();
+    const initialCmrHits = 3;
+    env.cmrMaxPageSize = 1;
+    const initialQueryCmrWorkItemCount = Math.ceil(initialCmrHits / env.cmrMaxPageSize);
+
 
     hookServersStartStop();
 
     before(async function () {
       await truncateAll();
-      const job = buildJob({ numInputGranules: initialNumInputGranules });
+      const job = buildJob({ numInputGranules: initialCmrHits });
       await job.save(db);
       this.jobID = job.jobID;
 
@@ -686,7 +688,7 @@ describe('When a request spans multiple CMR pages', function () {
         jobID: job.jobID,
         serviceID: nonAggregateService,
         stepIndex: 2,
-        workItemCount: initialNumInputGranules,
+        workItemCount: initialCmrHits,
         hasAggregatedOutput: false,
       }).save(db);
 
@@ -702,7 +704,6 @@ describe('When a request spans multiple CMR pages', function () {
         jobID: job.jobID,
         serviceID: 'harmonyservices/query-cmr:latest',
         workflowStepIndex: 1,
-        scrollID: '123abc',
       }).save(db);
     });
     after(async function () {
@@ -712,32 +713,34 @@ describe('When a request spans multiple CMR pages', function () {
     describe('while retrieving granules from the CMR', function () {
       it('sets the initial numInputGranules on the job', async function () {
         const job = await Job.byJobID(db, this.jobID);
-        expect(job.numInputGranules).equals(initialNumInputGranules);
+        expect(job.numInputGranules).equals(initialCmrHits);
       });
       it('sets the initial number of work items for each step', async function () {
         const workflowSteps = await getWorkflowStepsByJobId(db, this.jobID);
         expect(workflowSteps[0].workItemCount).equals(initialQueryCmrWorkItemCount);
-        expect(workflowSteps[1].workItemCount).equals(initialNumInputGranules);
+        expect(workflowSteps[1].workItemCount).equals(initialCmrHits);
         expect(workflowSteps[2].workItemCount).equals(1);
       });
 
-      describe('when the CMR hits changes', async function () {
-
+      describe('when the CMR hits decreases', async function () {
+        const finalCmrHits = 2;
+        const finalQueryCmrWorkItemCount = Math.ceil(finalCmrHits / env.cmrMaxPageSize);
         before(async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
-          const { workItem } = JSON.parse(res.text);
-          workItem.status = WorkItemStatus.SUCCESSFUL;
-          workItem.hits = finalNumInputGranules;
-          workItem.results = [
-            getStacLocation(workItem, 'catalog0.json'),
-            getStacLocation(workItem, 'catalog1.json'),
-            getStacLocation(workItem, 'catalog2.json')];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
-          await updateWorkItem(this.backend, workItem);
+          for (let i = 0; i < finalQueryCmrWorkItemCount; i++) {
+            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+            const { workItem } = JSON.parse(res.text);
+            workItem.status = WorkItemStatus.SUCCESSFUL;
+            workItem.hits = finalCmrHits;
+            workItem.scrollID = `${sessionId}:["abc",123,456]`;
+            workItem.results = [
+              getStacLocation(workItem, 'catalog0.json')];
+            await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
+            await updateWorkItem(this.backend, workItem);
+          }
         });
         it('updates the job numInputGranules', async function () {
           const job = await Job.byJobID(db, this.jobID);
-          expect(job.numInputGranules).equals(finalNumInputGranules);
+          expect(job.numInputGranules).equals(finalCmrHits);
         });
 
         it('updates the number of work items for the query-cmr step', async function () {
@@ -747,12 +750,39 @@ describe('When a request spans multiple CMR pages', function () {
 
         it('updates the number of work items for the second step', async function () {
           const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 2);
-          expect(workflowStep.workItemCount).equals(finalNumInputGranules);
+          expect(workflowStep.workItemCount).equals(finalCmrHits);
         });
 
         it('does not update the number of work items for the aggregating step', async function () {
           const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 3);
           expect(workflowStep.workItemCount).equals(1);
+        });
+
+        describe('And the number of worked items matches the lower number', async function () {
+          before(async function () {
+            for (let i = 0; i < finalCmrHits; i++) {
+              const res = await getWorkForService(this.backend, nonAggregateService);
+              const { workItem } = JSON.parse(res.text);
+              workItem.status = WorkItemStatus.SUCCESSFUL;
+              workItem.results = [
+                getStacLocation(workItem, 'catalog0.json')];
+              await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
+              await updateWorkItem(this.backend, workItem);
+            }
+
+            const res = await getWorkForService(this.backend, aggregateService);
+            const { workItem } = JSON.parse(res.text);
+            workItem.status = WorkItemStatus.SUCCESSFUL;
+            workItem.results = [
+              getStacLocation(workItem, 'catalog0.json')];
+            await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
+            await updateWorkItem(this.backend, workItem);
+
+          });
+          it('completes the job', async function () {
+            const job = await Job.byJobID(db, this.jobID);
+            expect(job.status).equals(JobStatus.SUCCESSFUL);
+          });
         });
       });
     });

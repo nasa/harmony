@@ -497,7 +497,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const { status, hits, results, scrollID, errorMessage } = req.body;
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
   const { logger } = req.context;
-  if (status === JobStatus.SUCCESSFUL) {
+  if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item for ${id} to ${status}`);
   } else {
     logger.warn(`Updating work item for ${id} to ${status} with message ${errorMessage}`);
