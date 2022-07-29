@@ -3,7 +3,7 @@
 // See https://wiki.earthdata.nasa.gov/display/METS/Data+Schema+Collaboration+Space
 
 import DataOperation from '../models/data-operation';
-import { Job } from '../models/job';
+import { Job, JobStatus } from '../models/job';
 
 export interface BboxMetric {
   north: number;
@@ -123,10 +123,11 @@ export function getRequestMetric(operation: DataOperation, serviceName: string):
  *
  * @returns the product metric
  */
-export function getProductMetric(operation: DataOperation, job: Job, failed: boolean)
+export function getProductMetric(operation: DataOperation, job: Job)
   : ProductMetric {
   let httpResponseCode = 200;
 
+  const failed = ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status));
   if (failed) {
     httpResponseCode = 500;
   }
@@ -147,7 +148,7 @@ export function getProductMetric(operation: DataOperation, job: Job, failed: boo
   };
 
   const jobData = {
-    job_id: `${job.id}`,
+    job_id: `${job.jobID}`,
     startTime: job.createdAt.toISOString(),
     endTime: job.updatedAt.toISOString(),
     status: job.status,
@@ -183,10 +184,11 @@ export function getProductMetric(operation: DataOperation, job: Job, failed: boo
  * @returns Promise that resolves to the response metric for a request
  */
 export async function getResponseMetric(
-  operation: DataOperation, job: Job, failed: boolean, originalSize)
-  : Promise<ResponseMetric> {
+  operation: DataOperation, job: Job, originalSize: number,
+): Promise<ResponseMetric> {
   let httpResponseCode = 200;
 
+  const failed = ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status));
   if (failed) {
     httpResponseCode = 500;
   }
@@ -199,5 +201,6 @@ export async function getResponseMetric(
     total_time: ((job.updatedAt.getTime() - job.createdAt.getTime()) / 1000),
     original_size: originalSize,
   };
+
   return metric;
 }

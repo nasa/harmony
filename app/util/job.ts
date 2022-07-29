@@ -73,10 +73,10 @@ export async function completeJob(
       const operation = new DataOperation(JSON.parse(initialStep.operation));
 
       // Log information about the job
-      const productMetric = getProductMetric(operation, job, failed);
+      const productMetric = getProductMetric(operation, job);
 
       const originalSize = await getTotalWorkItemSizeForJobID(tx, job.jobID);
-      const responseMetric = await getResponseMetric(operation, job, failed, originalSize);
+      const responseMetric = await getResponseMetric(operation, job, originalSize);
 
       logger.info(`Job ${job.jobID} complete - product metric`, { productMetric: true, ...productMetric });
       logger.info(`Job ${job.jobID} complete - response metric`, { responseMetric: true, ...responseMetric });
