@@ -4,6 +4,7 @@
 
 import DataOperation from '../models/data-operation';
 import { Job, JobStatus } from '../models/job';
+import { isFailureStatus } from './job';
 
 export interface BboxMetric {
   north: number;
@@ -133,8 +134,7 @@ export function getProductMetric(operation: DataOperation, job: Job)
   : ProductMetric {
   let httpResponseCode = 200;
 
-  const failed = [JobStatus.FAILED, JobStatus.CANCELED].includes(job.status);
-  if (failed) {
+  if (isFailureStatus(job.status)) {
     httpResponseCode = 500;
   }
 
@@ -198,8 +198,7 @@ export async function getResponseMetric(
 ): Promise<ResponseMetric> {
   let httpResponseCode = 200;
 
-  const failed = [JobStatus.FAILED, JobStatus.CANCELED].includes(job.status);
-  if (failed) {
+  if (isFailureStatus(job.status)) {
     httpResponseCode = 500;
   }
 

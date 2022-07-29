@@ -35,6 +35,19 @@ async function lookupJob(tx: Transaction, jobID: string, username: string): Prom
   return job;
 }
 
+const failureStates = [JobStatus.FAILED, JobStatus.CANCELED];
+
+/**
+ * Returns whether the passed in status is a failure status
+ *
+ * @param status - The status to check whether it is considered a failure state
+ *
+ * @returns true if the status is a failure status and false otherwise
+ */
+export function isFailureStatus(status: JobStatus): boolean {
+  return failureStates.includes(status);
+}
+
 /**
  * Set and save the final status of the job
  * and in the case of job failure or cancellation, its work items.
@@ -57,7 +70,7 @@ export async function completeJob(
     if (!terminalStates.includes(finalStatus)) {
       throw new ConflictError(`Job cannot complete with status of ${finalStatus}.`);
     }
-    const failed = ([JobStatus.FAILED, JobStatus.CANCELED].includes(finalStatus));
+    const failed = isFailureStatus(finalStatus);
     job.updateStatus(finalStatus, message);
     await job.save(tx);
     if (failed) {
