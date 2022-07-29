@@ -3,7 +3,7 @@
 // See https://wiki.earthdata.nasa.gov/display/METS/Data+Schema+Collaboration+Space
 
 import DataOperation from '../models/data-operation';
-import { Job, JobStatus } from '../models/job';
+import { Job } from '../models/job';
 import { isFailureStatus } from './job';
 
 export interface BboxMetric {
