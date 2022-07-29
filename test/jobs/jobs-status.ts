@@ -148,7 +148,7 @@ describe('Individual job status route', function () {
       const previewSkipLinks = job.getRelatedLinks('preview-skipper');
       expect(previewSkipLinks.length).to.equal(0);
     });
-    
+
     itIncludesADataExpirationField();
   });
 
@@ -226,7 +226,7 @@ describe('Individual job status route', function () {
           expect(job.stac).to.be.undefined;
         });
 
-        itIncludesADataExpirationField();   
+        itIncludesADataExpirationField();
       });
     });
 
