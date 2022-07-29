@@ -322,7 +322,7 @@ export default abstract class BaseService<ServiceParamType> {
 
   /**
    * Creates a new work item object which will kick off the first task for this request
-   * @param stepId - The id of the step to create the work item for
+   * @param workflowStep - The step to create the work item for
    * @returns The created WorkItem for the query CMR job
    * @throws ServerError - if the work item cannot be created
    */

@@ -76,7 +76,7 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
  */
 async function _doWork(
   workItem: WorkItemRecord,
-  maxCmrGranules?: number,
+  maxCmrGranules: number,
 ): Promise<WorkItemRecord> {
   const newWorkItem = workItem;
   // work items with a scrollID are only for the query-cmr service
@@ -84,6 +84,10 @@ async function _doWork(
   logger.debug('Calling work function');
   const serviceResponse = await workFunc(newWorkItem, maxCmrGranules);
   logger.debug('Finished work');
+  if (serviceResponse.scrollID) {
+    newWorkItem.scrollID = serviceResponse.scrollID;
+    newWorkItem.hits = serviceResponse.hits;
+  }
   if (serviceResponse.batchCatalogs) {
     newWorkItem.status = WorkItemStatus.SUCCESSFUL;
     newWorkItem.results = serviceResponse.batchCatalogs;

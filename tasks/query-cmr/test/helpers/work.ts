@@ -14,7 +14,7 @@ import { doWork, QueryCmrRequest } from '../../app/routers/router';
 export function hookDoWork(workReq: QueryCmrRequest, output): void {
   let outputDir = null;
   before(async function () {
-    stub(query, 'queryGranulesScrolling').callsFake((...callArgs) => {
+    stub(query, 'queryGranules').callsFake((...callArgs) => {
       this.callArgs = callArgs;
       return Promise.resolve(output);
     });
@@ -32,6 +32,6 @@ export function hookDoWork(workReq: QueryCmrRequest, output): void {
       delete this.callArgs;
     }
     (promises.mkdir as SinonStub).restore();
-    (query.queryGranulesScrolling as SinonStub).restore();
+    (query.queryGranules as SinonStub).restore();
   });
 }

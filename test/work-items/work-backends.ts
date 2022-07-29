@@ -9,7 +9,6 @@ import db from '../../app/util/db';
 import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
-import { hookClearScrollSessionExpect } from '../helpers/hooks';
 import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../../app/models/work-item-interface';
 
 describe('Work Backends', function () {
@@ -196,7 +195,6 @@ describe('Work Backends', function () {
     describe('when the work item failed', async function () {
       hookJobCreation(jobRecord);
       hookWorkflowStepCreation(workflowStepRecod);
-      hookClearScrollSessionExpect();
 
       const failedWorkItemRecord = {
         ...workItemRecord, ...{ status: WorkItemStatus.FAILED, scrollID: '-1234' },
