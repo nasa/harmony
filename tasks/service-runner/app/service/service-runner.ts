@@ -5,7 +5,7 @@ import env from '../util/env';
 import logger from '../../../../app/util/log';
 import { resolve as resolveUrl } from '../../../../app/util/url';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
-import { WorkItemRecord, getStacLocation } from '../../../../app/models/work-item-interface';
+import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 
 const kc = new k8s.KubeConfig();
@@ -174,6 +174,8 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
         async (status: k8s.V1Status) => {
           logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
           try {
+            await objectStoreForProtocol('s3')
+              .upload(stdOut.logStr, getItemLogsLocation(workItem));
             if (status.status === 'Success') {
               clearTimeout(timeout);
               logger.debug('Getting STAC catalogs');

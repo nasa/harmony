@@ -10,9 +10,10 @@ import db from '../util/db';
 import version from '../util/version';
 import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
-import { WorkItemStatus } from '../models/work-item-interface';
+import { getItemLogsLocation, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
+import { objectStoreForProtocol } from 'app/util/object-store';
 
 /**
  * Maps job status to display class.
@@ -258,7 +259,8 @@ export async function getWorkItemsTable(
       if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
         throw new NotFoundError();
       }
-      if (([JobStatus.SUCCESSFUL, JobStatus.CANCELED, JobStatus.FAILED].indexOf(job.status) > -1) && checkJobStatus === 'true') {
+      if (([JobStatus.SUCCESSFUL, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.COMPLETE_WITH_ERRORS]
+        .indexOf(job.status) > -1) && checkJobStatus === 'true') {
         // tell the client that the job has finished
         res.status(204).json({ status: job.status });
         return;
@@ -277,6 +279,11 @@ export async function getWorkItemsTable(
         workflowItemStep() { return sanitizeImage(this.serviceID); },
         workflowItemCreatedAt() { return this.createdAt.getTime(); },
         workflowItemUpdatedAt() { return this.updatedAt.getTime(); },
+        workflowItemLogsButton() {
+          if (this.serviceID.includes('query-cmr')) return '';
+          const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
+          return `<button type="button" class="btn btn-light btn-sm logs-button" logs-url="${logsUrl}">view</button>`;
+        },
         links: [
           { ...previousPage, linkTitle: 'previous' },
           { ...nextPage, linkTitle: 'next' },
@@ -291,6 +298,29 @@ export async function getWorkItemsTable(
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * Get the logs for a work item.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The logs string for the work item
+ */
+export async function getWorkItemLogs(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { id, jobID } = req.params;
+  try {
+    const logPromise =  await objectStoreForProtocol('s3')
+      .getObject(getItemLogsLocation({ id: parseInt(id), jobID })).promise();
+    const logs = logPromise.Body.toString('utf-8');
+    res.send({ logs });
   } catch (e) {
     req.context.logger.error(e);
     next(e);

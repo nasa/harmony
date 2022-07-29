@@ -72,3 +72,12 @@ export function getStacLocation(item: { id: number, jobID: string }, targetUrl =
   const baseUrl = `s3://${env.artifactBucket}/${item.jobID}/${isAggregate ? 'aggregate-' : ''}${item.id}/outputs/`;
   return resolve(baseUrl, targetUrl);
 }
+
+/**
+ * Get the s3 URL to the logs file for a work item.
+ * @param item - the returned URL will provide the path to the logs file for this work item
+ * @returns - the path to the log file (e.g. s3://artifacts/abc/123/logs.txt)
+ */
+export function getItemLogsLocation(item: { id: number, jobID: string }): string {
+  return `s3://${env.artifactBucket}/${item.jobID}/${item.id}/logs.txt`;
+}
