@@ -53,6 +53,26 @@ const buzzJob1 = buildJob({
   numInputGranules: 10,
 });
 
+const sidJob1 = buildJob({
+  username: 'sid',
+  status: JobStatus.RUNNING_WITH_ERRORS,
+});
+
+const sidJob2 = buildJob({
+  username: 'sid',
+  status: JobStatus.COMPLETE_WITH_ERRORS,
+});
+
+const sidJob3 = buildJob({
+  username: 'sid',
+  status: JobStatus.PAUSED,
+});
+
+const sidJob4 = buildJob({
+  username: 'sid',
+  status: JobStatus.PREVIEWING,
+});
+
 describe('Workflow UI jobs route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
 
@@ -87,6 +107,10 @@ describe('Workflow UI jobs route', function () {
       await woodyJob2.save(this.trx);
       await woodySyncJob.save(this.trx);
       await buzzJob1.save(this.trx);
+      await sidJob1.save(this.trx);
+      await sidJob2.save(this.trx);
+      await sidJob3.save(this.trx);
+      await sidJob4.save(this.trx);
       this.trx.commit();
     });
 
@@ -243,7 +267,7 @@ describe('Workflow UI jobs route', function () {
           const listing = this.res.text;
           [woodyJob1.request, woodyJob2.request, woodySyncJob.request, buzzJob1.request]
             .forEach((req) => expect(listing).to.contain(mustache.render('{{req}}', { req })));
-          expect((listing.match(/job-table-row/g) || []).length).to.equal(4);
+          expect((listing.match(/job-table-row/g) || []).length).to.equal(8);
         });
 
         it('shows the users that submitted those jobs', async function () {
@@ -268,6 +292,70 @@ describe('Workflow UI jobs route', function () {
           const listing = this.res.text;
           expect(listing).to.not.contain('<td>woody</td>');
           expect(listing).to.contain('<td>buzz</td>');
+        });
+      });
+
+      describe('when the admin filters by status IN [running_with_errors, complete_with_errors, paused, previewing]', function () {
+        const jobsFilter = '[{"value":"status: running with errors","dbValue":"running_with_errors","field":"status"},' +
+        '{"value":"status: complete with errors","dbValue":"complete_with_errors","field":"status"},' +
+        '{"value":"status: paused","dbValue":"paused","field":"status"},' +
+        '{"value":"status: previewing","dbValue":"previewing","field":"status"}]';
+        hookAdminWorkflowUIJobs({ username: 'adam', disallowStatus: '', jobsFilter });
+        it('returns jobs with the aforementioned statuses', function () {
+          const listing = this.res.text;
+          expect((listing.match(/job-table-row/g) || []).length).to.equal(4);
+          expect(listing).to.contain(`<span class="badge bg-warning">${JobStatus.RUNNING_WITH_ERRORS.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge bg-success">${JobStatus.COMPLETE_WITH_ERRORS.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge bg-warning">${JobStatus.PAUSED.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge bg-info">${JobStatus.PREVIEWING.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+        });
+        it('does not have disallowStatus HTML checked', function () {
+          const listing = this.res.text;
+          expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+        });
+        it('has the appropriate status options selected', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('status: running with errors');
+          expect(listing).to.contain('status: complete with errors');
+          expect(listing).to.contain('status: paused');
+          expect(listing).to.contain('status: previewing');
+          expect(listing).to.not.contain('status: failed');
+          expect(listing).to.not.contain('status: successful');
+        });
+      });
+
+      describe('when the admin filters by status NOT IN [running_with_errors, complete_with_errors, paused, previewing]', function () {
+        const jobsFilter = '[{"value":"status: running with errors","dbValue":"running_with_errors","field":"status"},' +
+        '{"value":"status: complete with errors","dbValue":"complete_with_errors","field":"status"},' +
+        '{"value":"status: paused","dbValue":"paused","field":"status"},' +
+        '{"value":"status: previewing","dbValue":"previewing","field":"status"}]';
+        hookAdminWorkflowUIJobs({ username: 'adam', disallowStatus: 'on', jobsFilter });
+        it('returns jobs without the aforementioned statuses', function () {
+          const listing = this.res.text;
+          expect((listing.match(/job-table-row/g) || []).length).to.equal(4);
+          expect(listing).to.not.contain(`<span class="badge bg-warning">${JobStatus.RUNNING_WITH_ERRORS.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.COMPLETE_WITH_ERRORS.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-warning">${JobStatus.PAUSED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.PREVIEWING.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+        });
+        it('does have disallowStatus HTML checked', function () {
+          const listing = this.res.text;
+          expect((listing.match(/<input (?=.*name="disallowStatus")(?=.*checked).*>/g) || []).length).to.equal(1);
+        });
+        it('has the appropriate status options selected', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('status: running with errors');
+          expect(listing).to.contain('status: complete with errors');
+          expect(listing).to.contain('status: paused');
+          expect(listing).to.contain('status: previewing');
+          expect(listing).to.not.contain('status: failed');
+          expect(listing).to.not.contain('status: successful');
         });
       });
 
