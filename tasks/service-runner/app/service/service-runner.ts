@@ -98,6 +98,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
   const catalogDir = getStacLocation(workItem);
   return new Promise<ServiceResponse>(async (resolve) => {
     logger.debug('CALLING WORKER');
+    logger.debug(`maxCmrGranules = ${maxCmrGranules}`);
 
     try {
       const resp = await axios.post(`http://localhost:${env.workerPort}/work`,

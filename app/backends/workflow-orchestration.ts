@@ -49,7 +49,7 @@ async function calculateQueryCmrLimit(
         return 0;
       }
     }));
-    const queryCmrLimit = numInputGranules - sum(stacCatalogLengths);
+    const queryCmrLimit = Math.min(env.cmrMaxPageSize, numInputGranules - sum(stacCatalogLengths));
     logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
     return queryCmrLimit;
   }

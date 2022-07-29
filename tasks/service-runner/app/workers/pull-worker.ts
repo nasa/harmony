@@ -76,7 +76,7 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
  */
 async function _doWork(
   workItem: WorkItemRecord,
-  maxCmrGranules?: number,
+  maxCmrGranules: number,
 ): Promise<WorkItemRecord> {
   const newWorkItem = workItem;
   // work items with a scrollID are only for the query-cmr service
