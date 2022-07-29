@@ -736,10 +736,8 @@ describe('When a request spans multiple CMR pages', function () {
     const nonAggregateService = 'foo';
     const sessionId = uuid();
     const initialCmrHits = 3;
-    const initialQueryCmrWorkItemCount = Math.ceil(initialCmrHits / env.cmrMaxPageSize);
+    const initialQueryCmrWorkItemCount = initialCmrHits;
     let stubCmrMaxPageSize;
-    // env.cmrMaxPageSize = 1;
-    // stubCmrMaxPageSize = stub(env, 'cmrMaxPageSize').get(() => 1);
 
     before(function () {
       stubCmrMaxPageSize = stub(env, 'cmrMaxPageSize').get(() => 1);

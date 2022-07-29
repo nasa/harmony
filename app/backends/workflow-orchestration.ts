@@ -32,7 +32,7 @@ async function calculateQueryCmrLimit(
   workItem: WorkItem,
   tx,
   logger: Logger): Promise<number> {
-  if (workItem?.scrollID) { // only proceed if this is a query-cmr step
+  if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) { // only proceed if this is a query-cmr step
     const { numInputGranules } = await Job.byJobID(tx, workItem.jobID, false, false);
     let queryCmrItems = (await getWorkItemsByJobIdAndStepIndex(
       tx, workItem.jobID, workItem.workflowStepIndex, 1, Number.MAX_SAFE_INTEGER))
@@ -316,7 +316,7 @@ async function createNextWorkItems(
 async function maybeQueueQueryCmrWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
 ): Promise<void> {
-  if (currentWorkItem.scrollID) {
+  if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
     // If the current step is the query-cmr service and the number of work items for the next
     // step is less than 'workItemCount' for the next step then create a new work item for
     // the current step
@@ -423,7 +423,7 @@ async function handleFailedWorkItems(
     continueProcessing = job.ignoreErrors;
     if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
       let jobMessage;
-      if (workItem.scrollID) {
+      if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
         // Fail the request if query-cmr fails to populate granules
         continueProcessing = false;
         jobMessage = `WorkItem [${workItem.id}] failed to query CMR for granule information`;
