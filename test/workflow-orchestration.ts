@@ -519,7 +519,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
     hookRedirect('joe');
-    hookClearScrollSessionExpect();
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
