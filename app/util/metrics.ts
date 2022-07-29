@@ -89,6 +89,9 @@ function constructBboxFromOperation(operation: DataOperation): BboxMetric {
 /**
  * Returns the request metric for a request
  *
+ * @param operation - The data operation
+ * @param serviceName - The name of the service chain used for the request
+ *
  * @returns the request metric
  */
 export function getRequestMetric(operation: DataOperation, serviceName: string): RequestMetric {
@@ -121,13 +124,16 @@ export function getRequestMetric(operation: DataOperation, serviceName: string):
 /**
  * Returns the product metric for a request
  *
+ *  @param operation - The data operation
+ *  @param job - The job associated with the request
+ *
  * @returns the product metric
  */
 export function getProductMetric(operation: DataOperation, job: Job)
   : ProductMetric {
   let httpResponseCode = 200;
 
-  const failed = ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status));
+  const failed = [JobStatus.FAILED, JobStatus.CANCELED].includes(job.status);
   if (failed) {
     httpResponseCode = 500;
   }
@@ -181,6 +187,10 @@ export function getProductMetric(operation: DataOperation, job: Job)
 /**
  * Returns the response metric for a request
  *
+ *  @param operation - The data operation
+ *  @param job - The job associated with the request
+ *  @param originalSize - The sum of the sizes of all input granules for the request
+ *
  * @returns Promise that resolves to the response metric for a request
  */
 export async function getResponseMetric(
@@ -188,7 +198,7 @@ export async function getResponseMetric(
 ): Promise<ResponseMetric> {
   let httpResponseCode = 200;
 
-  const failed = ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status));
+  const failed = [JobStatus.FAILED, JobStatus.CANCELED].includes(job.status);
   if (failed) {
     httpResponseCode = 500;
   }

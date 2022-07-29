@@ -21,7 +21,7 @@ describe('Metrics construction', function () {
       });
 
       it('sets the request ID correctly', function () {
-        expect(metric.request_id).to.equal('c045c793-19f1-43b5-9547-c87a5c7dfadb');
+        expect(metric.request_id).to.equal(operation.requestId);
       });
 
       it('sets the user ID correctly', function () {
@@ -106,7 +106,7 @@ describe('Metrics construction', function () {
       });
 
       it('sets the request ID correctly', function () {
-        expect(this.metric.request_id).to.equal('c045c793-19f1-43b5-9547-c87a5c7dfadb');
+        expect(this.metric.request_id).to.equal(operation.requestId);
       });
 
       it('sets the product_data correctly', function () {
