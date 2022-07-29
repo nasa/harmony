@@ -131,7 +131,10 @@ describe('when setting ignoreErrors=true', function () {
         // work item failure with only one granue should trigger job failure
         const job = await Job.byJobID(db, firstSwotItem.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
-        const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
+      });
+
+      it('correctly sets the work items status', async function () {
+        const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(2);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);

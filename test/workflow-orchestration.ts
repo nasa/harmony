@@ -458,13 +458,14 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
     });
 
-    describe('when the first swot-reprojection service work item fails', function () {
+    describe('when the first swot-reprojection service work item fails with an error message', function () {
       let firstSwotItem;
 
       before(async function () {
         const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
         firstSwotItem = JSON.parse(res.text).workItem;
         firstSwotItem.status = WorkItemStatus.FAILED;
+        firstSwotItem.errorMessage = 'That was just a practice try, right?';
         firstSwotItem.results = [];
         await updateWorkItem(this.backend, firstSwotItem);
       });
@@ -472,13 +473,18 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       it('fails the job, and all further work items are canceled', async function () {
         // work item failure should trigger job failure
         const job = await Job.byJobID(db, firstSwotItem.jobID);
-        expect(job.status === JobStatus.FAILED);
+        expect(job.status).to.equal(JobStatus.FAILED);
         // job failure should trigger cancellation of any pending work items
         const currentWorkItems = (await getWorkItemsByJobId(db, job.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+      });
+
+      it('sets the job failure message to the error message returned by the service', async function () {
+        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        expect(job.message).to.contain('That was just a practice try, right?');
       });
 
       it('does not find any further swot-reproject work', async function () {
@@ -496,6 +502,63 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+      });
+    });
+  });
+
+
+  describe('when making a request and the job fails while in progress', function () {
+    const reprojectAndZarrQuery = {
+      maxResults: 3,
+      outputCrs: 'EPSG:4326',
+      interpolation: 'near',
+      scaleExtent: '0,2500000.3,1500000,3300000',
+      scaleSize: '1.1,2',
+      format: 'application/x-zarr',
+    };
+
+    hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
+    hookRedirect('joe');
+    hookClearScrollSessionExpect();
+
+    before(async function () {
+      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+      const { workItem, maxCmrGranules } = JSON.parse(res.text);
+      expect(maxCmrGranules).to.equal(3);
+      workItem.status = WorkItemStatus.SUCCESSFUL;
+      workItem.results = [
+        getStacLocation(workItem, 'catalog0.json'),
+        getStacLocation(workItem, 'catalog1.json'),
+        getStacLocation(workItem, 'catalog2.json'),
+      ];
+      await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
+      await updateWorkItem(this.backend, workItem);
+      // since there were multiple query cmr results,
+      // multiple work items should be generated for the next step
+      const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
+      expect(currentWorkItems.length).to.equal(4);
+      expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+    });
+
+    describe('when the first swot-reprojection service work item fails and does not provide an error message', function () {
+      let firstSwotItem;
+
+      before(async function () {
+        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        firstSwotItem = JSON.parse(res.text).workItem;
+        firstSwotItem.status = WorkItemStatus.FAILED;
+        firstSwotItem.results = [];
+        await updateWorkItem(this.backend, firstSwotItem);
+      });
+
+      it('fails the job', async function () {
+        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        expect(job.status).to.equal(JobStatus.FAILED);
+      });
+
+      it('sets the job failure message to a generic failure', async function () {
+        const job = await Job.byJobID(db, firstSwotItem.jobID);
+        expect(job.message).to.contain('failed with an unknown error');
       });
     });
   });
