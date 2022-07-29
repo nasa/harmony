@@ -10,16 +10,16 @@ import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink, { getJobDataLinkCount } from '../models/job-link';
 import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
+import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 import { objectStoreForProtocol } from '../util/object-store';
 import { resolve } from '../util/url';
-import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex } from '../models/workflow-steps';
 import { ServiceError } from '../util/errors';
-import { clearScrollSession } from '../util/cmr';
 import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
 import JobError, { getErrorCountForJob } from '../models/job-error';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000;
+const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
 
 /**
  * Calculate the granule page limit for the current query-cmr work item.
@@ -32,7 +32,7 @@ async function calculateQueryCmrLimit(
   workItem: WorkItem,
   tx,
   logger: Logger): Promise<number> {
-  if (workItem?.scrollID) { // only proceed if this is a query-cmr step
+  if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) { // only proceed if this is a query-cmr step
     const { numInputGranules } = await Job.byJobID(tx, workItem.jobID, false, false);
     let queryCmrItems = (await getWorkItemsByJobIdAndStepIndex(
       tx, workItem.jobID, workItem.workflowStepIndex, 1, Number.MAX_SAFE_INTEGER))
@@ -49,7 +49,7 @@ async function calculateQueryCmrLimit(
         return 0;
       }
     }));
-    const queryCmrLimit = numInputGranules - sum(stacCatalogLengths);
+    const queryCmrLimit = Math.min(env.cmrMaxPageSize, numInputGranules - sum(stacCatalogLengths));
     logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
     return queryCmrLimit;
   }
@@ -316,7 +316,7 @@ async function createNextWorkItems(
 async function maybeQueueQueryCmrWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
 ): Promise<void> {
-  if (currentWorkItem.scrollID) {
+  if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
     // If the current step is the query-cmr service and the number of work items for the next
     // step is less than 'workItemCount' for the next step then create a new work item for
     // the current step
@@ -423,11 +423,12 @@ async function handleFailedWorkItems(
     continueProcessing = job.ignoreErrors;
     if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
       let jobMessage;
+      
       if (errorMessage) {
         jobMessage = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
       }
 
-      if (workItem.scrollID) {
+      if (QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
         // Fail the request if query-cmr fails to populate granules
         continueProcessing = false;
         if (!jobMessage) {
@@ -465,20 +466,25 @@ async function handleFailedWorkItems(
 }
 
 /**
- * Clears the CMR scrolling session if the work item has a scroll ID and the work item
- * failed or has scrolled through the expected number of items.
- *
- * @param workflowStep - The current workflow step
- * @param status - The work item status
- * @param scrollID - The scrollID for the work item (may be null)
+ * Updated the workflow steps `workItemCount` field for the given job to match the new 
+ * 
+ * @param transaction - the transaction to use for the update
+ * @param job - A Job that has a new input granule count
  */
-async function maybeClearScrollSession(
-  scrollID: string, allWorkItemsForStepComplete: boolean, status: WorkItemStatus,
-): Promise<void> {
-  if (scrollID) {
-    if (allWorkItemsForStepComplete || status === WorkItemStatus.FAILED) {
-      await clearScrollSession(scrollID);
+async function updateWorkItemCounts(
+  transaction: Transaction,
+  job: Job):
+  Promise<void> {
+  const workflowSteps = await getWorkflowStepsByJobId(transaction, job.jobID);
+  for (const step of workflowSteps) {
+    if (QUERY_CMR_SERVICE_REGEX.test(step.serviceID)) {
+      step.workItemCount = Math.ceil(job.numInputGranules / env.cmrMaxPageSize);
+    } else if (!step.hasAggregatedOutput) {
+      step.workItemCount = job.numInputGranules;
+    } else {
+      step.workItemCount = 1;
     }
+    await step.save(transaction);
   }
 }
 
@@ -491,10 +497,10 @@ async function maybeClearScrollSession(
  */
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status, results, errorMessage } = req.body;
+  const { status, hits, results, scrollID, errorMessage } = req.body;
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
   const { logger } = req.context;
-  if (status === JobStatus.SUCCESSFUL) {
+  if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item for ${id} to ${status}`);
   } else {
     logger.warn(`Updating work item for ${id} to ${status} with message ${errorMessage}`);
@@ -519,7 +525,11 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     );
     const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
-    await maybeClearScrollSession(workItem.scrollID, allWorkItemsForStepComplete, status);
+    if (hits && job.numInputGranules > hits) {
+      job.numInputGranules = hits;
+      await job.save(tx);
+      await updateWorkItemCounts(tx, job);
+    }
 
     const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
     if (continueProcessing) {
@@ -530,6 +540,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
 
       if (nextStep) {
         if (results && results.length > 0) {
+          // set the scrollID for the next work item to the one we received from the update
+          workItem.scrollID = scrollID;
           await maybeQueueQueryCmrWorkItem(tx, workItem, nextStep);
         } else {
           // Failed to create the next work items - fail the job rather than leaving it orphaned

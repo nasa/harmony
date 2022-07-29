@@ -8,7 +8,6 @@ import { JobStatus } from '../../app/models/job';
 import { getWorkItemsByJobId } from '../../app/models/work-item';
 import db from '../../app/util/db';
 import log from '../../app/util/log';
-import { hookClearScrollSessionExpect } from '../helpers/hooks';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
 
 const aTurboJob = buildJob({ username: 'doe' });
@@ -64,7 +63,6 @@ describe('Canceling a job', async function () {
 
   describe('when cancelation is requested for a turbo workflow', async function () {
     describe('And the workflow is in the accepted or running state', async function () {
-      hookClearScrollSessionExpect();
       it('is able to cancel the job in accepted state', async function () {
         await cancelAndSaveJob(acceptedTurboJob.requestId, log, 'doe');
         const { workItems } = await getWorkItemsByJobId(db, readyTurboWorkItem.jobID);

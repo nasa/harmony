@@ -1,0 +1,27 @@
+GET /search/collections.json?concept_id=C1234-MISSING&page_size=100
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 200 OK
+content-type: application/json;charset=utf-8
+content-length: 199
+connection: close
+date: Fri, 29 Jul 2022 14:05:10 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: 3352d63b-16bd-4038-91b0-3a53d6981216
+strict-transport-security: max-age=31536000
+cmr-hits: 0
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 35
+x-request-id: vxwT-PKLHtnM8s3QVO3t0TeT_ILl5PXhd5Q0VecbXkbdCG7JetRm0w==
+vary: Accept-Encoding, User-Agent
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 65cd593770fc4ba0453da1c7897f675c.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO5-P2
+x-amz-cf-id: vxwT-PKLHtnM8s3QVO3t0TeT_ILl5PXhd5Q0VecbXkbdCG7JetRm0w==
+
+{"feed":{"updated":"2022-07-29T14:05:10.381Z","id":"https://cmr.uat.earthdata.nasa.gov:443/search/collections.json?concept_id=C1234-MISSING&page_size=100","title":"ECHO dataset metadata","entry":[]}}

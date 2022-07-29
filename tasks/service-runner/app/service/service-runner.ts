@@ -17,6 +17,8 @@ export interface ServiceResponse {
   batchCatalogs?: string[];
   totalGranulesSize?: number;
   error?: string;
+  hits?: number;
+  scrollID?: string;
 }
 
 // how long to let a worker run before giving up
@@ -96,6 +98,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
   const catalogDir = getStacLocation(workItem);
   return new Promise<ServiceResponse>(async (resolve) => {
     logger.debug('CALLING WORKER');
+    logger.debug(`maxCmrGranules = ${maxCmrGranules}`);
 
     try {
       const resp = await axios.post(`http://localhost:${env.workerPort}/work`,
@@ -113,8 +116,9 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
       if (resp.status < 300) {
         const catalogs = await _getStacCatalogs(catalogDir);
         const { totalGranulesSize } = resp.data;
+        const newScrollID = resp.data.scrollID;
 
-        resolve({ batchCatalogs: catalogs, totalGranulesSize });
+        resolve({ batchCatalogs: catalogs, totalGranulesSize, scrollID: newScrollID });
       } else {
         resolve({ error: resp.statusText });
       }

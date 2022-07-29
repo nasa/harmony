@@ -2,7 +2,6 @@ import { NextFunction } from 'express';
 import { ServerResponse } from 'http';
 import _ from 'lodash';
 import { keysToLowerCase } from '../util/object';
-import * as cmr from '../util/cmr';
 import { CmrError, RequestValidationError, ServerError } from '../util/errors';
 import { HarmonyGranule } from '../models/data-operation';
 import HarmonyRequest from '../models/harmony-request';
@@ -10,6 +9,7 @@ import { computeMbr } from '../util/spatial/mbr';
 import { BoundingBox } from '../util/bounding-box';
 import env from '../util/env';
 import { defaultObjectStore } from '../util/object-store';
+import { CmrCollection, CmrGranule, CmrQuery, filterGranuleLinks, queryGranulesForCollection, queryGranulesWithSearchAfter } from '../util/cmr';
 
 /** Reasons why the number of processed granules might be limited to less than what the CMR
  * returns
@@ -27,7 +27,7 @@ enum GranuleLimitReason {
  * @param collectionId - the CMR concept id of the collection to find
  * @returns the collection from the request that has the given id
  */
-function getCollectionFromRequest(req: HarmonyRequest, collectionId: string): cmr.CmrCollection {
+function getCollectionFromRequest(req: HarmonyRequest, collectionId: string): CmrCollection {
   return req.collections.find((collection) => collection.id === collectionId);
 }
 
@@ -37,7 +37,7 @@ function getCollectionFromRequest(req: HarmonyRequest, collectionId: string): cm
  * @param granule  -  a CMR granule record associated with the `collection`
  * @returns bbox  - a bounding box in [W S E N] format
  */
-function getBbox(collection: cmr.CmrCollection, granule: cmr.CmrGranule): BoundingBox {
+function getBbox(collection: CmrCollection, granule: CmrGranule): BoundingBox {
   // use the given bounding box (if any), else try to use the given spatial geometry
   // to find a box; if there is none, use the spatial geometry from the collection; if
   // there is none default to a bounding box for the whole world
@@ -138,7 +138,7 @@ async function cmrGranuleLocatorTurbo(
 
   if (!operation) return next();
 
-  const cmrQuery: cmr.CmrQuery = {};
+  const cmrQuery: CmrQuery = {};
 
   const start = operation.temporal?.start;
   const end = operation.temporal?.end;
@@ -171,11 +171,11 @@ async function cmrGranuleLocatorTurbo(
 
       // Only perform CMR granule query when needed by the first step
       if ( req.context.serviceConfig.steps[0].image.match('harmonyservices/query-cmr:.*') ) {
-        const { hits, scrollID } = await cmr.initiateGranuleScroll(
-          source.collection,
-          cmrQuery,
+        cmrQuery.collection_concept_id = source.collection;
+        const { hits, sessionKey } = await queryGranulesWithSearchAfter(
           req.accessToken,
           maxGranules,
+          cmrQuery,
         );
         if (hits === 0) {
           throw new RequestValidationError('No matching granules found.');
@@ -184,7 +184,7 @@ async function cmrGranuleLocatorTurbo(
         logger.info('timing.cmr-initiate-granule-scroll.end', { durationMs: msTaken, hits });
 
         operation.cmrHits += hits;
-        operation.scrollIDs.push(scrollID);
+        operation.scrollIDs.push(sessionKey);
       }
 
       const limitedMessage = getResultsLimitedMessage(req, source.collection);
@@ -228,7 +228,7 @@ async function cmrGranuleLocatorNonTurbo(
 
   let cmrResponse;
 
-  const cmrQuery: cmr.CmrQuery = {};
+  const cmrQuery: CmrQuery = {};
 
   const start = operation.temporal?.start;
   const end = operation.temporal?.end;
@@ -257,7 +257,7 @@ async function cmrGranuleLocatorNonTurbo(
       if (operation.geojson) {
         cmrQuery.geojson = operation.geojson;
       }
-      cmrResponse = await cmr.queryGranulesForCollection(
+      cmrResponse = await queryGranulesForCollection(
         source.collection,
         cmrQuery,
         req.accessToken,
@@ -276,7 +276,7 @@ async function cmrGranuleLocatorNonTurbo(
       logger.info('timing.cmr-granule-query.end', { durationMs: msTaken, hits });
       const granules = [];
       for (const granule of jsonGranules) {
-        const links = cmr.filterGranuleLinks(granule);
+        const links = filterGranuleLinks(granule);
         if (links.length > 0) {
           const collection = getCollectionFromRequest(req, source.collection);
           const box = getBbox(collection, granule);

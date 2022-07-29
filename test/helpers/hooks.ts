@@ -1,9 +1,6 @@
 import { before, after } from 'mocha';
-import { stub } from 'sinon';
 import request from 'supertest';
 import { auth } from './auth';
-import * as cmr from '../../app/util/cmr';
-import { expect } from 'chai';
 
 /**
  * Adds before / after hooks which call the given function with the given params, awaiting
@@ -98,21 +95,5 @@ export function hookBackendRequest(
   });
   afterFn(function () {
     delete this.res;
-  });
-}
-
-/**
- * Adds before/after hooks to verify that clearScrollSession is called
- */
-export function hookClearScrollSessionExpect(): void {
-  let clearScrollSessionStub: sinon.SinonStub;
-
-  before(async function () {
-    clearScrollSessionStub = stub(cmr, 'clearScrollSession');
-  });
-
-  after(() => {
-    expect(clearScrollSessionStub.called).to.be.true;
-    clearScrollSessionStub.restore();
   });
 }
