@@ -1,4 +1,3 @@
-import { before, after } from 'mocha';
 import { stub, SinonStub } from 'sinon';
 import fs from 'fs';
 import mockAws, { S3 } from 'mock-aws-s3';
@@ -12,29 +11,6 @@ S3MockPrototype.upload = function (...args): mockAws.S3.ManagedUpload {
   const result = originalUpload.call(this, ...args);
   return { on: (): void => {}, ...result };
 };
-
-/**
- * Causes calls to aws.S3 to return a mock S3 object that stores to a temp dir on the
- * local filesystem.
- *
- * @param _buckets - An optional list of buckets to create in the mock S3 (not implemented
- * yet)
- */
-export function hookMockS3(_buckets?: string[]): void {
-  let dir;
-  let stubObject;
-  before(function () {
-    dir = tmp.dirSync({ unsafeCleanup: true });
-    mockAws.config.basePath = dir.name;
-    stubObject = stub(S3ObjectStore.prototype, '_getS3')
-      .callsFake(() => new mockAws.S3());
-  });
-
-  after(function () {
-    stubObject.restore();
-    dir.removeCallback();
-  });
-}
 
 /**
  * Adds stubs to S3 object signing that retain the username from the 'A-userid' parameter.
@@ -83,4 +59,32 @@ export async function getObjectText(url: string): Promise<string> {
     });
   });
   return contents.Body.toString('utf-8');
+}
+
+/**
+ * Causes calls to aws.S3 to return a mock S3 object that stores to a temp dir on the
+ * local filesystem.
+ *
+ * @param _buckets - An optional list of buckets to create in the mock S3 (not implemented
+ * yet)
+ */
+export function hookMockS3(_buckets?: string[]): void {
+  let dir;
+  let stubObject;
+  let stubGetJson;
+  before(function () {
+    dir = tmp.dirSync({ unsafeCleanup: true });
+    mockAws.config.basePath = dir.name;
+    stubObject = stub(S3ObjectStore.prototype, '_getS3')
+      .callsFake(() => new mockAws.S3());
+    // replace getObjectJson since mock-aws-s3 doesn't work well with current function
+    stubGetJson = stub(S3ObjectStore.prototype, 'getObjectJson')
+      .callsFake(async (url) => JSON.parse(await getObjectText(url as string)));
+  });
+
+  after(function () {
+    stubObject.restore();
+    stubGetJson.restore();
+    dir.removeCallback();
+  });
 }

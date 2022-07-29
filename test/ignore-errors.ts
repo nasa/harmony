@@ -6,8 +6,8 @@ import { Job, JobStatus } from '../app/models/job';
 import { hookClearScrollSessionExpect, hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
-import { getWorkForService, updateWorkItem } from './helpers/work-items';
-import { WorkItemStatus } from '../app/models/work-item-interface';
+import { fakeServiceStacOutput, getWorkForService, updateWorkItem } from './helpers/work-items';
+import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
 import env from '../app/util/env';
 import { jobStatus } from './helpers/jobs';
@@ -46,8 +46,9 @@ describe('when setting ignoreErrors=true', function () {
       expect(maxCmrGranules).to.equal(1);
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
-        'test/resources/worker-response-sample/catalog0.json',
+        getStacLocation(workItem, 'catalog0.json'),
       ];
+      await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(2);
@@ -63,16 +64,18 @@ describe('when setting ignoreErrors=true', function () {
         firstSwotItem = JSON.parse(res.text).workItem;
         firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
         firstSwotItem.results = [
-          'test/resources/worker-response-sample/catalog0.json',
+          getStacLocation(firstSwotItem, 'catalog.json'),
         ];
+        await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
         await updateWorkItem(this.backend, firstSwotItem);
 
         const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
         zarrItem = JSON.parse(res2.text).workItem;
         zarrItem.status = WorkItemStatus.SUCCESSFUL;
         zarrItem.results = [
-          'test/resources/worker-response-sample/catalog0.json',
+          getStacLocation(zarrItem, 'catalog.json'),
         ];
+        await fakeServiceStacOutput(zarrItem.jobID, zarrItem.id);
         await updateWorkItem(this.backend, zarrItem);
       });
 
@@ -106,8 +109,9 @@ describe('when setting ignoreErrors=true', function () {
       expect(maxCmrGranules).to.equal(1);
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
-        'test/resources/worker-response-sample/catalog0.json',
+        getStacLocation(workItem, 'catalog0.json'),
       ];
+      await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(2);
@@ -159,9 +163,10 @@ describe('when setting ignoreErrors=true', function () {
       expect(maxCmrGranules).to.equal(2);
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
-        'test/resources/worker-response-sample/catalog0.json',
-        'test/resources/worker-response-sample/catalog1.json',
+        getStacLocation(workItem, 'catalog0.json'),
+        getStacLocation(workItem, 'catalog1.json'),
       ];
+      await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
 
@@ -199,7 +204,8 @@ describe('when setting ignoreErrors=true', function () {
         const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
         secondSwotItem = JSON.parse(res.text).workItem;
         secondSwotItem.status = WorkItemStatus.SUCCESSFUL;
-        secondSwotItem.results = ['test/resources/worker-response-sample/catalog0.json'];
+        secondSwotItem.results = [getStacLocation(secondSwotItem, 'catalog.json')];
+        await fakeServiceStacOutput(secondSwotItem.jobID, secondSwotItem.id);
         await updateWorkItem(this.backend, secondSwotItem);
 
         const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
@@ -234,10 +240,11 @@ describe('when setting ignoreErrors=true', function () {
       expect(maxCmrGranules).to.equal(3);
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
-        'test/resources/worker-response-sample/catalog0.json',
-        'test/resources/worker-response-sample/catalog1.json',
-        'test/resources/worker-response-sample/catalog2.json',
+        getStacLocation(workItem, 'catalog0.json'),
+        getStacLocation(workItem, 'catalog1.json'),
+        getStacLocation(workItem, 'catalog2.json'),
       ];
+      await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
       expect(currentWorkItems.length).to.equal(4);
@@ -275,11 +282,13 @@ describe('when setting ignoreErrors=true', function () {
         const workItem2 = JSON.parse(res2.text).workItem;
 
         workItem1.status = WorkItemStatus.SUCCESSFUL;
-        workItem1.results = ['test/resources/worker-response-sample/catalog0.json'];
+        workItem1.results = [getStacLocation(workItem1, 'catalog.json')];
+        await fakeServiceStacOutput(workItem1.jobID, workItem1.id);
         await updateWorkItem(this.backend, workItem1);
 
         workItem2.status = WorkItemStatus.SUCCESSFUL;
-        workItem2.results = ['test/resources/worker-response-sample/catalog0.json'];
+        workItem2.results = [getStacLocation(workItem2, 'catalog.json')];
+        await fakeServiceStacOutput(workItem2.jobID, workItem2.id);
         await updateWorkItem(this.backend, workItem2);
 
         const res3 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
@@ -289,11 +298,13 @@ describe('when setting ignoreErrors=true', function () {
         const workItem4 = JSON.parse(res4.text).workItem;
 
         workItem3.status = WorkItemStatus.SUCCESSFUL;
-        workItem3.results = ['test/resources/worker-response-sample/catalog0.json'];
+        workItem3.results = [getStacLocation(workItem3, 'catalog.json')];
+        await fakeServiceStacOutput(workItem3.jobID, workItem3.id);
         await updateWorkItem(this.backend, workItem3);
 
         workItem4.status = WorkItemStatus.SUCCESSFUL;
-        workItem4.results = ['test/resources/worker-response-sample/catalog0.json'];
+        workItem4.results = [getStacLocation(workItem4, 'catalog.json')];
+        await fakeServiceStacOutput(workItem4.jobID, workItem4.id);
         await updateWorkItem(this.backend, workItem4);
 
         const job = await Job.byJobID(db, firstSwotItem.jobID);
@@ -324,11 +335,12 @@ describe('when setting ignoreErrors=true', function () {
       expect(maxCmrGranules).to.equal(4);
       workItem.status = WorkItemStatus.SUCCESSFUL;
       workItem.results = [
-        'test/resources/worker-response-sample/catalog0.json',
-        'test/resources/worker-response-sample/catalog0.json',
-        'test/resources/worker-response-sample/catalog0.json',
-        'test/resources/worker-response-sample/catalog0.json',
+        getStacLocation(workItem, 'catalog0.json'),
+        getStacLocation(workItem, 'catalog1.json'),
+        getStacLocation(workItem, 'catalog2.json'),
+        getStacLocation(workItem, 'catalog3.json'),
       ];
+      await fakeServiceStacOutput(workItem.jobID, workItem.id, 4);
       await updateWorkItem(this.backend, workItem);
 
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
@@ -345,13 +357,15 @@ describe('when setting ignoreErrors=true', function () {
 
         firstSwotItem = JSON.parse(res.text).workItem;
         firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-        firstSwotItem.results = ['test/resources/worker-response-sample/catalog0.json'];
+        firstSwotItem.results = [getStacLocation(firstSwotItem, 'catalog.json')];
+        await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
         await updateWorkItem(this.backend, firstSwotItem);
 
         const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
         const zarrItem = JSON.parse(res2.text).workItem;
         zarrItem.status = WorkItemStatus.SUCCESSFUL;
-        zarrItem.results = ['test/resources/worker-response-sample/catalog0.json'];
+        zarrItem.results = [getStacLocation(zarrItem, 'catalog.json')];
+        await fakeServiceStacOutput(zarrItem.jobID, zarrItem.id);
         await updateWorkItem(this.backend, zarrItem);
       });
 
@@ -473,9 +487,10 @@ describe('when setting ignoreErrors=true', function () {
         workItemJobID = workItem.jobID;
         workItem.status = WorkItemStatus.SUCCESSFUL;
         workItem.results = [
-          'test/resources/worker-response-sample/catalog0.json',
-          'test/resources/worker-response-sample/catalog1.json',
-          'test/resources/worker-response-sample/catalog2.json'];
+          getStacLocation(workItem, 'catalog0.json'),
+          getStacLocation(workItem, 'catalog1.json'),
+          getStacLocation(workItem, 'catalog1.json'),
+        ];
         await updateWorkItem(this.backend, workItem);
       });
 
@@ -500,13 +515,15 @@ describe('when setting ignoreErrors=true', function () {
 
           firstSwotItem = JSON.parse(res.text).workItem;
           firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-          firstSwotItem.results = ['test/resources/worker-response-sample/catalog0.json'];
+          firstSwotItem.results = [getStacLocation(firstSwotItem, 'catalog.json')];
+          await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
           await updateWorkItem(this.backend, firstSwotItem);
 
           const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
           const zarrItem = JSON.parse(res2.text).workItem;
           zarrItem.status = WorkItemStatus.SUCCESSFUL;
-          zarrItem.results = ['test/resources/worker-response-sample/catalog0.json'];
+          zarrItem.results = [getStacLocation(zarrItem, 'catalog.json')];
+          await fakeServiceStacOutput(zarrItem.jobID, zarrItem.id);
           await updateWorkItem(this.backend, zarrItem);
         });
 
