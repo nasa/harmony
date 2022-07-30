@@ -79,7 +79,8 @@ export async function queryGranules(
   maxCmrGranules: number,
 ): Promise<[number, StacCatalog[], string, number]> {
   const { unencryptedAccessToken } = operation;
-  const [totalGranulesSize, catalogs, newScrollId, hits] = await querySearchAfter(unencryptedAccessToken, scrollId, `./granule_${scrollId}`, maxCmrGranules);
+  const [sessionKey, _searchAfter] = scrollId.split(':');
+  const [totalGranulesSize, catalogs, newScrollId, hits] = await querySearchAfter(unencryptedAccessToken, scrollId, `./granule_${sessionKey}`, maxCmrGranules);
 
   return [totalGranulesSize, catalogs, newScrollId, hits];
 }

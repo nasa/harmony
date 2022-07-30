@@ -34,8 +34,8 @@ export async function doWork(workReq: QueryCmrRequest): Promise<[number, number,
   timingLogger.info('timing.query-cmr.start');
 
   const [totalGranulesSize, catalogs, newScrollId, hits] = await queryGranules(operation, scrollId, workReq.maxCmrGranules);
-  const granuleScrollingTime = new Date().getTime();
-  timingLogger.info('timing.query-cmr.query-granules-scrolling', { durationMs: granuleScrollingTime });
+  const granuleSearchTime = new Date().getTime();
+  timingLogger.info('timing.query-cmr.query-granules-search', { durationMs: granuleSearchTime });
 
   const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {
@@ -50,7 +50,7 @@ export async function doWork(workReq: QueryCmrRequest): Promise<[number, number,
 
   await Promise.all(promises);
   const catalogWriteTime = new Date().getTime();
-  timingLogger.info('timing.query-cmr.catalog-promises-write', { durationMs: catalogWriteTime - granuleScrollingTime });
+  timingLogger.info('timing.query-cmr.catalog-promises-write', { durationMs: catalogWriteTime - granuleSearchTime });
 
   const s3 = objectStoreForProtocol('s3');
   await s3.upload(JSON.stringify(catalogFilenames), catalogListUrl, null, 'application/json');
