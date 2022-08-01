@@ -9,6 +9,7 @@ import hookServersStartStop from '../helpers/servers';
 import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { hookWorkflowUIWorkItems, hookAdminWorkflowUIWorkItems, workflowUIWorkItems } from '../helpers/workflow-ui';
+import { WorkItemStatus } from '../../app/models/work-item-interface';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
@@ -33,13 +34,13 @@ const step2 = buildWorkflowStep(
 
 // build the items
 const item1 = buildWorkItem(
-  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId },
+  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId, status: WorkItemStatus.SUCCESSFUL },
 );
 const item2 = buildWorkItem(
-  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId },
+  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId, status: WorkItemStatus.SUCCESSFUL },
 );
 const item3 = buildWorkItem(
-  { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId },
+  { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.RUNNING },
 );
 
 describe('Workflow UI work items table route', function () {
@@ -195,9 +196,9 @@ describe('Workflow UI work items table route', function () {
             .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
           expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
         });
-        it('returns links for the work item logs', async function () {
+        it('returns links for the (completed) work item logs', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-button/g) || []).length).to.equal(3);
+          expect((listing.match(/logs-button/g) || []).length).to.equal(2);
         });
       });
 
