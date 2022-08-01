@@ -331,6 +331,15 @@ export default class DataOperation {
   }
 
   /**
+   * Returns true if the operation is requesting shapefile subsetting
+   *
+   * @returns true if the operation requests shapefile subsetting
+   */
+  get shouldShapefileSubset(): boolean {
+    return !!this.geojson;
+  }
+
+  /**
    * Returns true if the operation is requesting temporal subsetting
    *
    * @returns true if the operation requests temporal subsetting
@@ -356,6 +365,15 @@ export default class DataOperation {
    */
   get shouldDimensionSubset(): boolean {
     return this.dimensions?.length > 0;
+  }
+
+  /**
+   * Returns true if the operation is requesting reprojection
+   *
+   * @returns true if the operation requests reprojection
+   */
+  get shouldReproject(): boolean {
+    return !!this.crs;
   }
 
   /**
@@ -581,9 +599,9 @@ export default class DataOperation {
 
   /**
    * Sets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
-   *   [ East, South, West, North ]
+   *   [ West, South, East, North ]
    *
-   * @param bbox - The subsetting bounding rectangle, [ East, South, West, North ]
+   * @param bbox - The subsetting bounding rectangle, [ West, South, East, North ]
    */
   set boundingRectangle(bbox: Array<number>) {
     this.model.subset.bbox = bbox;
@@ -591,9 +609,9 @@ export default class DataOperation {
 
   /**
    * Gets the bounding rectangle to be used for spatial subsetting, an array of 4 coordinates:
-   *   [ East, South, West, North ]
+   *   [ West, South, East, North ]
    *
-   * @returns The subsetting bounding rectangle, [ East, South, West, North ]
+   * @returns The subsetting bounding rectangle, [ West, South, East, North ]
    */
   get boundingRectangle(): Array<number> {
     return this.model.subset.bbox;

@@ -47,7 +47,7 @@ CREATE TABLE `work_items` (
   `id` integer not null primary key autoincrement,
   `jobID` char(36) not null,
   `workflowStepIndex` integer not null,
-  `scrollID` varchar(32),
+  `scrollID` varchar(4096),
   `serviceID` varchar(255) not null,
   `status` text check (`status` in ('ready', 'running', 'successful', 'failed', 'canceled')) not null,
   `stacCatalogLocation` varchar(255),
