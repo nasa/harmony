@@ -30,8 +30,12 @@ class LogStream extends stream.Writable {
   shouldLog = true;
 
   _write(chunk, enc: BufferEncoding, next: (error?: Error | null) => void): void {
-    const chunkStr = chunk.toString('utf8');
-    this.logStrArr.push(chunkStr);
+    let chunkStr = chunk.toString('utf8');
+    try {
+      chunkStr = JSON.parse(chunkStr);
+    } catch (e) { } finally {
+      this.logStrArr.push(chunkStr);
+    }
     if (this.shouldLog) {
       logger.debug(chunkStr, { worker: true });
     }
