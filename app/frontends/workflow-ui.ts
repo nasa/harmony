@@ -12,6 +12,7 @@ import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
 import { getItemLogsLocation, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
+import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 import { objectStoreForProtocol } from '../util/object-store';
 
@@ -271,6 +272,7 @@ export async function getWorkItemsTable(
       const nextPage = pageLinks.find((l) => l.rel === 'next');
       const previousPage = pageLinks.find((l) => l.rel === 'prev');
       setPagingHeaders(res, pagination);
+      const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
       res.render('workflow-ui/job/work-items-table', {
         job,
         statusClass: statusClass[job.status],
@@ -280,7 +282,7 @@ export async function getWorkItemsTable(
         workflowItemCreatedAt() { return this.createdAt.getTime(); },
         workflowItemUpdatedAt() { return this.updatedAt.getTime(); },
         workflowItemLogsButton() {
-          if (this.serviceID.includes('query-cmr')) return '';
+          if (!isAdmin || this.serviceID.includes('query-cmr')) return '';
           const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
           return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}">view</button>`;
         },
