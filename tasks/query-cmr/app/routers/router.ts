@@ -32,10 +32,10 @@ export async function doWork(workReq: QueryCmrRequest): Promise<[number, number,
   const appLogger = logger.child({ application: 'query-cmr' });
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing.query-cmr.start');
-
+  const queryCmrStartTime = new Date().getTime();
   const [totalGranulesSize, catalogs, newScrollId, hits] = await queryGranules(operation, scrollId, workReq.maxCmrGranules);
   const granuleSearchTime = new Date().getTime();
-  timingLogger.info('timing.query-cmr.query-granules-search', { durationMs: granuleSearchTime });
+  timingLogger.info('timing.query-cmr.query-granules-search', { durationMs: granuleSearchTime - queryCmrStartTime });
 
   const catalogFilenames = [];
   const promises = catalogs.map(async (catalog, i) => {
