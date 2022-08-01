@@ -38,22 +38,6 @@ async function loadAndNotify(jobId, page, limit, checkJobStatus, broker) {
   return stillRunning;
 }
 
-async function bindLogsClickHandler() {
-  document.querySelectorAll('.logs-button').forEach(function (btn) {
-    btn.addEventListener('click', async function (event) {
-      const link = event.target;
-      const logsUrl = link.getAttribute('logs-url');
-      const res = await fetch(logsUrl);
-      const data = await res.json();
-      if (!data.logs) {
-        alert('No logs found for this item.');
-      } else {
-        alert(data.logs);
-      }
-    }, false);
-  });
-}
-
 /**
  * Utility for initializing and refreshing a single page of the work items table.
  * After calling init, work item information will be fetched periodically
@@ -69,7 +53,6 @@ export default {
    * @param {object} broker - pubsub broker
    */
   async init(jobId, page, limit, broker) {
-    broker.subscribe('work-items-table-loaded', bindLogsClickHandler);
     broker.subscribe( // reload when the user changes the job's state
       'job-state-change',
       async function () {

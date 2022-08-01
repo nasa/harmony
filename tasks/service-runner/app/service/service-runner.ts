@@ -23,13 +23,15 @@ export interface ServiceResponse {
 const { workerTimeout } = env;
 
 class LogStream extends stream.Writable {
-  logStr = '';
+  logStrArr = [];
+  
+  logStr = (): string => this.logStrArr.join();
 
   shouldLog = true;
 
   _write(chunk, enc: BufferEncoding, next: (error?: Error | null) => void): void {
     const chunkStr = chunk.toString('utf8');
-    this.logStr += chunkStr;
+    this.logStrArr.push(chunkStr);
     if (this.shouldLog) {
       logger.debug(chunkStr, { worker: true });
     }
@@ -175,7 +177,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
           logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
           try {
             await objectStoreForProtocol('s3')
-              .upload(stdOut.logStr, getItemLogsLocation(workItem));
+              .upload(JSON.stringify(stdOut.logStrArr), getItemLogsLocation(workItem));
             if (status.status === 'Success') {
               clearTimeout(timeout);
               logger.debug('Getting STAC catalogs');
@@ -183,7 +185,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(stdOut.logStr, catalogDir);
+              const logErr = await _getErrorMessage(stdOut.logStr(), catalogDir);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }

@@ -282,7 +282,7 @@ export async function getWorkItemsTable(
         workflowItemLogsButton() {
           if (this.serviceID.includes('query-cmr')) return '';
           const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
-          return `<button type="button" class="btn btn-light btn-sm logs-button" logs-url="${logsUrl}">view</button>`;
+          return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}">view</button>`;
         },
         links: [
           { ...previousPage, linkTitle: 'previous' },
@@ -320,7 +320,7 @@ export async function getWorkItemLogs(
     const logPromise =  await objectStoreForProtocol('s3')
       .getObject(getItemLogsLocation({ id: parseInt(id), jobID })).promise();
     const logs = logPromise.Body.toString('utf-8');
-    res.send({ logs });
+    res.json(JSON.parse(logs));
   } catch (e) {
     req.context.logger.error(e);
     next(e);
