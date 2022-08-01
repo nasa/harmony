@@ -13,7 +13,7 @@ import { keysToLowerCase } from '../util/object';
 import { getItemLogsLocation, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
-import { objectStoreForProtocol } from 'app/util/object-store';
+import { objectStoreForProtocol } from '../util/object-store';
 
 /**
  * Maps job status to display class.
