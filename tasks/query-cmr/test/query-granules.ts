@@ -144,7 +144,7 @@ describe('query#queryGranules', function () {
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
-        href: './granule_scrollId_G1233800343-EEDTEST_0000000.json',
+        href: './granule_G1233800343-EEDTEST_0000000.json',
         rel: 'item',
         title: '001_00_7f00ff_global',
         type: 'application/json',
@@ -153,7 +153,7 @@ describe('query#queryGranules', function () {
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
-        href: './granule_scrollId_G1233800344-EEDTEST_0000000.json',
+        href: './granule_G1233800344-EEDTEST_0000000.json',
         rel: 'item',
         title: '001_01_7f00ff_africa',
         type: 'application/json',
@@ -162,7 +162,7 @@ describe('query#queryGranules', function () {
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
-        href: './granule_scrollId_G1234866411-EEDTEST_0000000.json',
+        href: './granule_G1234866411-EEDTEST_0000000.json',
         rel: 'item',
         title: '001_01_7f00ff_africa_poly',
         type: 'application/json',
