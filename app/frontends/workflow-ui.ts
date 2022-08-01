@@ -10,7 +10,7 @@ import db from '../util/db';
 import version from '../util/version';
 import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
-import { getItemLogsLocation, WorkItemStatus } from '../models/work-item-interface';
+import { COMPLETED_WORK_ITEM_STATUSES, getItemLogsLocation, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
 import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
@@ -282,7 +282,8 @@ export async function getWorkItemsTable(
         workflowItemCreatedAt() { return this.createdAt.getTime(); },
         workflowItemUpdatedAt() { return this.updatedAt.getTime(); },
         workflowItemLogsButton() {
-          if (!isAdmin || this.serviceID.includes('query-cmr')) return '';
+          const isComplete = COMPLETED_WORK_ITEM_STATUSES.indexOf(this.status) > -1;
+          if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
           const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
           return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}">view</button>`;
         },
