@@ -101,6 +101,7 @@ export async function getWorkflowStepsByJobId(
 }
 
 /**
+ * Returns the workflow step for the given Job ID and step index
  *
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the Job for the step

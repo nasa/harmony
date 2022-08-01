@@ -1,0 +1,29 @@
+POST /search/variables.umm_json_v1_8_1
+accept: application/json
+content-type: multipart/form-data; boundary=----------------------------012345678901234567890123
+accept-encoding: gzip,deflate
+body: ------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801695-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801696-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801716-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"concept_id\"\r\n\r\nV1233801717-EEDTEST\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_size\"\r\n\r\n1\r\n------------------------------012345678901234567890123\r\nContent-Disposition: form-data; name=\"page_num\"\r\n\r\n2\r\n------------------------------012345678901234567890123--\r\n
+
+HTTP/1.1 200 OK
+content-type: application/vnd.nasa.cmr.umm_results+json;version=1.8.1; charset=utf-8
+content-length: 936
+connection: close
+date: Fri, 29 Jul 2022 14:05:18 GMT
+x-frame-options: SAMEORIGIN
+access-control-allow-origin: *
+x-xss-protection: 1; mode=block
+cmr-request-id: fd46b338-56e3-483c-a30a-40b16742dc39
+strict-transport-security: max-age=31536000
+cmr-search-after: ["blue_var","EEDTEST","blue_var","EEDTEST"]
+cmr-hits: 4
+access-control-expose-headers: CMR-Hits, CMR-Request-Id, X-Request-Id, CMR-Scroll-Id, CMR-Search-After, CMR-Timed-Out, CMR-Shapefile-Original-Point-Count, CMR-Shapefile-Simplified-Point-Count
+x-content-type-options: nosniff
+cmr-took: 21
+x-request-id: bT6avagCxCv3z6vGN1FusksrXIrrNc13sUAgepJEl62ODNHaHxWNmw==
+server: ServerTokens ProductOnly
+x-cache: Miss from cloudfront
+via: 1.1 3c22982dfb94f708939a6ef528c5e55c.cloudfront.net (CloudFront)
+x-amz-cf-pop: SFO5-P2
+x-amz-cf-id: bT6avagCxCv3z6vGN1FusksrXIrrNc13sUAgepJEl62ODNHaHxWNmw==
+
+{"hits":4,"took":20,"items":[{"meta":{"revision-id":1,"deleted":false,"format":"application/vnd.nasa.cmr.umm+json","provider-id":"EEDTEST","user-id":"scantrell8277","native-id":"mmt_variable_3971","concept-id":"V1233801716-EEDTEST","revision-date":"2020-02-25T20:19:42.497Z","concept-type":"variable"},"umm":{"VariableType":"SCIENCE_VARIABLE","DataType":"byte","VariableSubType":"OTHER","Offset":0.0,"Scale":1.0,"Sets":[{"Name":"Data Fields","Type":"General","Size":4.0,"Index":3.0}],"Dimensions":[{"Name":"Latitude","Size":1800.0,"Type":"LATITUDE_DIMENSION"},{"Name":"Longitude","Size":3600.0,"Type":"LONGITUDE_DIMENSION"}],"Definition":"Blue channel value","Name":"blue_var","ValidRanges":[{"Min":0.0,"Max":255.0}],"MetadataSpecification":{"URL":"https://cdn.earthdata.nasa.gov/umm/variable/v1.8.1","Name":"UMM-Var","Version":"1.8.1"},"LongName":"Blue channel"},"associations":{"collections":[{"concept-id":"C1233800302-EEDTEST"}]}}]}

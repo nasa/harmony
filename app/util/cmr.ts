@@ -1,21 +1,21 @@
 import FormData from 'form-data';
 import * as fs from 'fs';
+import { v4 as uuid } from 'uuid';
 import { get } from 'lodash';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import { CmrError } from './errors';
-import { objectStoreForProtocol } from './object-store';
+import { defaultObjectStore, objectStoreForProtocol } from './object-store';
+import { cmrEndpoint, cmrMaxPageSize, harmonyClientId, stagingBucket } from './env';
 import logger from './log';
 
-import env = require('./env');
-
 const clientIdHeader = {
-  'Client-id': `${env.harmonyClientId}`,
+  'Client-id': `${harmonyClientId}`,
 };
 
 // Exported to allow tests to override cmrApiConfig
 export const cmrApiConfig = {
-  baseURL: env.cmrEndpoint,
+  baseURL: cmrEndpoint,
   useToken: true,
 };
 
@@ -26,8 +26,6 @@ const acceptJsonHeader = {
 const jsonContentTypeHeader = {
   'Content-Type': 'application/json',
 };
-
-const { cmrMaxPageSize } = env;
 
 export enum CmrPermission {
   Read = 'read',
@@ -95,6 +93,8 @@ export interface CmrGranuleHits {
   hits: number;
   granules: CmrGranule[];
   scrollID?: string;
+  sessionKey?: string;
+  searchAfter?: string;
 }
 
 export interface CmrUmmVariable {
@@ -443,19 +443,18 @@ async function queryCollections(
  * @param extraHeaders - Additional headers to pass with the request
  * @returns The granule search results
  */
-async function queryGranuleUsingMultipartForm(
+export async function queryGranuleUsingMultipartForm(
   form: CmrQuery,
   token: string,
   extraHeaders = {},
 ): Promise<CmrGranuleHits> {
-  // TODO: Paging / hits
   const granuleResponse = await _cmrPost('/search/granules.json', form, token, extraHeaders) as CmrGranulesResponse;
   const cmrHits = parseInt(granuleResponse.headers.get('cmr-hits'), 10);
-  const scrollID = granuleResponse.headers.get('cmr-scroll-id');
+  const searchAfter = granuleResponse.headers.get('cmr-search-after');
   return {
     hits: cmrHits,
     granules: granuleResponse.data.feed.entry,
-    scrollID,
+    searchAfter,
   };
 }
 
@@ -540,6 +539,74 @@ export async function getVariablesForCollection(
 }
 
 /**
+ * Generate an s3 url to use to store/lookup stored query parameters
+ * 
+ * @param sessionKey - The session key
+ * @returns An s3 url containing the session key
+ */
+function s3UrlForStoredQueryParams(sessionKey: string): string {
+  return `s3://${stagingBucket}/SearchParams/${sessionKey}/serializedQuery`;
+}
+
+/**
+ * Queries and returns the CMR JSON granules for the given search after values and session key.
+ *
+ * @param collectionId - The ID of the collection whose granules should be searched
+ * @param query - The CMR granule query parameters to pass
+ * @param token - Access token for user request
+ * @param limit - The maximum number of granules to return in this page of results
+ * @param sessionKey - Key used to look up query parameters
+ * @param searchAfterHeader - Value string to use for the cmr-search-after header
+ * @returns A CmrGranuleHits object containing the granules associated with the input collection 
+ * and a session key and cmr-search-after header
+ */
+export async function queryGranulesWithSearchAfter(
+  token: string,
+  limit: number,
+  query?: CmrQuery,
+  sessionKey?: string,
+  searchAfterHeader?: string,
+): Promise<CmrGranuleHits> {
+  const baseQuery = {
+    page_size: cmrMaxPageSize ? Math.min(limit, cmrMaxPageSize) : limit,
+  };
+  let response: CmrGranuleHits;
+  let headers = {};
+  if (searchAfterHeader) {
+    headers = { 'cmr-search-after': searchAfterHeader };
+  }
+  if (sessionKey) {
+    // use the session key to get the stored query parameters from the s3 bucket
+    const url = s3UrlForStoredQueryParams(sessionKey);
+    const storedQueryJson = await defaultObjectStore().download(url);
+    const storedQuery = JSON.parse(storedQueryJson);
+    const fullQuery = { ...baseQuery, ...storedQuery };
+    response = await queryGranuleUsingMultipartForm(
+      fullQuery,
+      token,
+      headers,
+    );
+    response.sessionKey = sessionKey;
+  } else {
+    // generate a session key and store the query parameters in the staging bucket using the key
+    const newSessionKey = uuid();
+    const url = s3UrlForStoredQueryParams(newSessionKey);
+    await defaultObjectStore().upload(JSON.stringify(query), url);
+    const fullQuery = { ...baseQuery, ...query };
+    response = await queryGranuleUsingMultipartForm(
+      fullQuery,
+      token,
+      {},
+    );
+    // NOTE response.hits in this case will be the cmr-hits total, not the number of granules
+    // returned in this request
+    response.sessionKey = newSessionKey;
+  }
+
+  return response;
+}
+
+/**
  * Queries and returns the CMR JSON granules for the given collection ID with the given query
  * params.  Uses multipart/form-data POST to accommodate large queries and shapefiles.
  *
@@ -561,82 +628,6 @@ export function queryGranulesForCollection(
     ...baseQuery,
     ...query,
   }, token);
-}
-
-/**
- * Queries and returns the CMR JSON granules for the given collection ID with the given query
- * params.  Uses multipart/form-data POST to accommodate large queries and shapefiles.
- *
- * @param collectionId - The ID of the collection whose granules should be searched
- * @param query - The CMR granule query parameters to pass
- * @param token - Access token for user request
- * @param limit - The maximum number of granules to return
- * @returns The granules associated with the input collection
- */
-export async function initiateGranuleScroll(
-  collectionId: string,
-  query: CmrQuery,
-  token: string,
-  limit = 10,
-): Promise<CmrGranuleHits> {
-  const baseQuery = {
-    collection_concept_id: collectionId,
-    page_size: Math.min(limit, cmrMaxPageSize),
-    scroll: 'defer',
-  };
-  logger.debug(`Scroll session will be initiated with page size of ${baseQuery.page_size} (min of ${[limit, cmrMaxPageSize]}).`);
-  const resp = await queryGranuleUsingMultipartForm({
-    ...baseQuery,
-    ...query,
-  }, token);
-
-  const { scrollID } = resp;
-  logger.debug(`Initiated scroll session with scroll-id: ${scrollID}`);
-
-  return resp;
-}
-
-/**
- * Clear a CMR scroll session to allow the CMR to free associated resources
- *
- * @param scrollID - the scroll-id of the scroll session
- */
-export async function clearScrollSession(scrollId: string): Promise<void> {
-  logger.debug(`Clearing scroll session for scroll-id: ${scrollId}`);
-  if (scrollId) {
-    try {
-      await _cmrPostBody('/search/clear-scroll', { scroll_id: scrollId });
-    } catch {
-      // Do nothing - CMR will close the scroll session after ten minutes anyway.
-      logger.debug(`Failed to clear scroll session for scroll-id: ${scrollId}`);
-    }
-  }
-}
-
-/**
- * Queries and returns the CMR JSON granules for the given scrollId.
- *
- * @param scrollId - Scroll session id used in the CMR-Scroll-Id header
- * @param token - Access token for user request
- * @param limit - The maximum number of granules to return. This may result in
- * truncation of the page of results that is returned.
- * @returns The granules associated with the input collection
- */
-export async function queryGranulesForScrollId(
-  scrollId: string, token: string, limit = cmrMaxPageSize,
-): Promise<CmrGranuleHits> {
-  const cmrQuery = {
-    scroll: 'true',
-  };
-
-  const response = await queryGranuleUsingMultipartForm(
-    cmrQuery,
-    token,
-    { 'CMR-scroll-id': scrollId },
-  );
-  response.granules = response.granules.slice(0, limit);
-  response.hits = response.granules.length;
-  return response;
 }
 
 /**

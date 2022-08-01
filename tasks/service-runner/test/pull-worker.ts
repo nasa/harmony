@@ -168,7 +168,7 @@ describe('Pull Worker', async function () {
           id: 1,
         });
         it('calls runQueryCmrFromPull', async function () {
-          await _doWork(workItem);
+          await _doWork(workItem, 1);
           expect(queryCmrSpy.called).to.be.true;
         });
       });
@@ -182,7 +182,7 @@ describe('Pull Worker', async function () {
           id: 1,
         });
         it('calls runServiceFromPull', async function () {
-          await _doWork(workItem);
+          await _doWork(workItem, 1);
           expect(serviceSpy.called).to.be.true;
         });
       });

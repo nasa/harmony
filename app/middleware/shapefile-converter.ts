@@ -31,7 +31,7 @@ async function _esriToGeoJson(filename: string): Promise<string> {
     const geojson = rewind(await shpjs.parseZip(buffer));
     await fs.writeFile(geoJsonFile.path, JSON.stringify(geojson), 'utf8');
   } catch (e) {
-    if (geoJsonFile) geoJsonFile.cleanup();
+    if (geoJsonFile) await geoJsonFile.cleanup();
     if (e instanceof RequestValidationError) throw e;
     throw new RequestValidationError('The provided ESRI Shapefile file could not be parsed. Please check its validity before retrying.');
   }

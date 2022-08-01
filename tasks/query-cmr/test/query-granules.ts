@@ -7,10 +7,11 @@ import { describe, it } from 'mocha';
 import * as sinon from 'sinon';
 import * as fetch from 'node-fetch';
 import { Stream } from 'form-data';
-import { queryGranulesScrolling } from '../app/query';
+import { queryGranules } from '../app/query';
 
 import * as cmr from '../../../app/util/cmr';
 import DataOperation from '../../../app/models/data-operation';
+import * as objStore from '../../../app/util/object-store';
 import { CmrError } from '../../../app/util/errors';
 
 chai.use(require('chai-as-promised'));
@@ -61,11 +62,11 @@ async function fetchPostArgsToFields(
 }
 
 /**
- * Sets up before and after hooks to run queryGranulesScrolling with three granules as
- * the response to queryGranulesForScrollId
+ * Sets up before and after hooks to run queryGranules with three granules as
+ * the response to queryGranulesWithSearchAfter
  * @param maxCmrGranules - limit the number of granules returned in the CMR page
  */
-function hookQueryGranulesScrolling(maxCmrGranules?: number): void {
+function hookQueryGranules(maxCmrGranules = 100): void {
   const output = {
     headers: new fetch.Headers({}),
     ...JSON.parse(fs.readFileSync(path.resolve(__dirname, 'resources/atom-granules.json'), 'utf8')),
@@ -77,31 +78,41 @@ function hookQueryGranulesScrolling(maxCmrGranules?: number): void {
     fetchPost = sinon.stub(cmr, 'fetchPost');
     fetchPost.returns(Promise.resolve(output));
 
+    // Stub object-store calls to store/get query params
+    this.store = new objStore.S3ObjectStore();
+    this.uploadStub = sinon.stub(this.store, 'upload');
+    this.downloadStub = sinon.stub(this.store, 'download').returns(Promise.resolve('{"collection_concept_id": "C001-TEST"}'));
+    this.defaultStoreStub = sinon.stub(objStore, 'defaultObjectStore').returns(this.store);
+
     // Actually call it
-    this.result = await queryGranulesScrolling(operation, 'scrollId', maxCmrGranules);
+    this.result = await queryGranules(operation, 'scrollId', maxCmrGranules);
 
     // Map the call arguments into something we can actually assert against
     this.queryFields = await Promise.all(fetchPost.args.map(fetchPostArgsToFields));
     this.queryFields = this.queryFields.sort((a, b) => a._index - b._index);
   });
   after(function () {
+    this.defaultStoreStub.restore();
+    this.uploadStub.restore();
+    this.downloadStub.restore();
     fetchPost.restore();
     delete this.result;
     delete this.queryFields;
+    delete this.store;
   });
 }
 
 /**
- * Sets up before and after hooks to run queryGranulesScrolling with an error response from the CMR
+ * Sets up before and after hooks to run queryGranules with an error response from the CMR
  */
-function hookQueryGranulesScrollingWithError(): void {
+function hookQueryGranulesWithError(): void {
   const output = {
     headers: new fetch.Headers({}),
     ...{
       status: 404,
       data: {
         errors: [
-          'Scroll session [1234] does not exist',
+          'Failed to query CMR',
         ],
       },
     },
@@ -120,9 +131,9 @@ function hookQueryGranulesScrollingWithError(): void {
   });
 }
 
-describe('query#queryGranulesScrolling', function () {
+describe('query#queryGranules', function () {
   describe('when called with valid input sources and queries', async function () {
-    hookQueryGranulesScrolling();
+    hookQueryGranules();
 
     it('returns the combined granules sizes', function () {
       expect(this.result[0]).to.be.greaterThan(0);
@@ -133,7 +144,7 @@ describe('query#queryGranulesScrolling', function () {
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
-        href: './granule_scrollId_G1233800343-EEDTEST_0000000.json',
+        href: './granule_G1233800343-EEDTEST_0000000.json',
         rel: 'item',
         title: '001_00_7f00ff_global',
         type: 'application/json',
@@ -142,7 +153,7 @@ describe('query#queryGranulesScrolling', function () {
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
-        href: './granule_scrollId_G1233800344-EEDTEST_0000000.json',
+        href: './granule_G1233800344-EEDTEST_0000000.json',
         rel: 'item',
         title: '001_01_7f00ff_africa',
         type: 'application/json',
@@ -151,7 +162,7 @@ describe('query#queryGranulesScrolling', function () {
         href: 'https://cmr.uat.earthdata.nasa.gov/search/concepts/C1233800302-EEDTEST',
         rel: 'harmony_source',
       }, {
-        href: './granule_scrollId_G1234866411-EEDTEST_0000000.json',
+        href: './granule_G1234866411-EEDTEST_0000000.json',
         rel: 'item',
         title: '001_01_7f00ff_africa_poly',
         type: 'application/json',
@@ -167,35 +178,35 @@ describe('query#queryGranulesScrolling', function () {
       }
     });
 
-    it('uses a scrolling CMR search', function () {
-      expect(this.queryFields[0].scroll).to.equal('true');
+    it('does not use a scrolling CMR search', function () {
+      expect(this.queryFields[0].scroll).to.equal(undefined);
     });
-    it('does not use the page_size parameter', function () {
-      expect(this.queryFields[0].page_size).to.equal(undefined);
+    it('uses the page_size parameter', function () {
+      expect(this.queryFields[0].page_size).to.equal('100');
     });
   });
 
   describe('when called with a max CMR granules limit', async function () {
-    hookQueryGranulesScrolling(1);
+    hookQueryGranules(1);
 
-    it('limits the STAC output', function () {
-      expect(this.result[1].length).to.equal(1);
+    it('sets the page_size parameter to the limit', function () {
+      expect(this.queryFields[0].page_size).to.equal('1');
     });
   });
 
   describe('when called with a max CMR granules limit that exceeds the number of CMR granules', async function () {
-    hookQueryGranulesScrolling(3000);
+    hookQueryGranules(3000);
 
-    it('the STAC output is not limitted', function () {
+    it('the STAC output is not limited', function () {
       expect(this.result[1].length).to.equal(3);
     });
   });
 
   describe('when the CMR returns an error', async function () {
-    hookQueryGranulesScrollingWithError();
+    hookQueryGranulesWithError();
 
     it('throws an error containing the CMR error message', async function () {
-      await expect(queryGranulesScrolling(operation, 'scrollId')).to.be.rejectedWith(CmrError, 'Scroll session [1234] does not exist');
+      await expect(queryGranules(operation, null, 1)).to.be.rejectedWith(CmrError, 'Failed to query CMR');
     });
 
   });

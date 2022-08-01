@@ -1,10 +1,11 @@
 import { expect } from 'chai';
+import { v4 as uuid } from 'uuid';
 import { getWorkItemsByJobId, getWorkItemsByJobIdAndStepIndex } from '../app/models/work-item';
-import { getWorkflowStepsByJobId } from '../app/models/workflow-steps';
+import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
 import env from '../app/util/env';
 import { Job, JobStatus } from '../app/models/job';
-import { hookClearScrollSessionExpect, hookRedirect } from './helpers/hooks';
+import { hookRedirect } from './helpers/hooks';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
@@ -14,6 +15,77 @@ import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/w
 import { truncateAll } from './helpers/db';
 import { getObjectText } from './helpers/object-store';
 import { stub } from 'sinon';
+
+/**
+ * Create a job and some work times to be used by tests
+ * 
+ * @param initialCmrHits - The number of hits returned by the CMR the first time it is queries
+ * @param initialQueryCmrWorkItemCount - The number of query-cmr work items anticipated by the
+ * initial number of cmr hits
+ * @param nonAggregateService - identifier for a service that does not aggregate 
+ * @param aggregateService - identifier for a service that does aggregate
+ * @returns a promise containing the id of the created job
+ */
+async function createJobAndWorkItems(
+  initialCmrHits: number,
+  initialQueryCmrWorkItemCount: number,
+  nonAggregateService: string,
+  aggregateService: string): Promise<string> {
+  await truncateAll();
+  const job = buildJob({ numInputGranules: initialCmrHits });
+  await job.save(db);
+
+  await buildWorkflowStep({
+    jobID: job.jobID,
+    serviceID: 'harmonyservices/query-cmr:latest',
+    stepIndex: 1,
+    workItemCount: initialQueryCmrWorkItemCount,
+  }).save(db);
+
+  await buildWorkflowStep({
+    jobID: job.jobID,
+    serviceID: nonAggregateService,
+    stepIndex: 2,
+    workItemCount: initialCmrHits,
+    hasAggregatedOutput: false,
+  }).save(db);
+
+  await buildWorkflowStep({
+    jobID: job.jobID,
+    serviceID: aggregateService,
+    stepIndex: 3,
+    workItemCount: 1,
+    hasAggregatedOutput: true,
+  }).save(db);
+
+  await buildWorkItem({
+    jobID: job.jobID,
+    serviceID: 'harmonyservices/query-cmr:latest',
+    workflowStepIndex: 1,
+  }).save(db);
+
+  return job.jobID;
+}
+
+/**
+ * Defines tests that ensure that the initial conditions for a job are correct
+ * 
+ * @param initialCmrHits - The number of hits returned by the CMR the first time it is queries
+ * @param initialQueryCmrWorkItemCount - The number of query-cmr work items anticipated by the
+ * initial number of cmr hits
+ */
+async function testInitialConditions(initialCmrHits: number, initialQueryCmrWorkItemCount: number): Promise<void> {
+  it('sets the initial numInputGranules on the job', async function () {
+    const job = await Job.byJobID(db, this.jobID);
+    expect(job.numInputGranules).equals(initialCmrHits);
+  });
+  it('sets the initial number of work items for each step', async function () {
+    const workflowSteps = await getWorkflowStepsByJobId(db, this.jobID);
+    expect(workflowSteps[0].workItemCount).equals(initialQueryCmrWorkItemCount);
+    expect(workflowSteps[1].workItemCount).equals(initialCmrHits);
+    expect(workflowSteps[2].workItemCount).equals(1);
+  });
+}
 
 describe('when a work item callback request does not return the results to construct the next work item(s)', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -214,7 +286,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
   const collection = 'C1233800302-EEDTEST';
   hookServersStartStop();
   describe('when requesting to both reproject and reformat for two granules', function () {
-    hookClearScrollSessionExpect();
     const reprojectAndZarrQuery = {
       maxResults: 2,
       outputCrs: 'EPSG:4326',
@@ -367,7 +438,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
     hookRedirect('joe');
-    hookClearScrollSessionExpect();
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
@@ -449,7 +519,6 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
     hookRangesetRequest('1.0.0', collection, 'all', { query: reprojectAndZarrQuery });
     hookRedirect('joe');
-    hookClearScrollSessionExpect();
 
     before(async function () {
       const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
@@ -575,7 +644,7 @@ describe('When a request spans multiple CMR pages', function () {
     });
 
     describe('when requesting five granules', function () {
-      hookClearScrollSessionExpect();
+
       const multiPageQuery = {
         maxResults: 5,
         outputCrs: 'EPSG:4326',
@@ -720,6 +789,171 @@ describe('When a request spans multiple CMR pages', function () {
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).equals(undefined);
         expect(workItem).to.not.equal(undefined);
+      });
+    });
+  });
+
+  describe('and the number of granules returned by the CMR changes while paging', function () {
+    const aggregateService = 'bar';
+    const nonAggregateService = 'foo';
+    const sessionId = uuid();
+    const initialCmrHits = 3;
+    const initialQueryCmrWorkItemCount = initialCmrHits;
+    let stubCmrMaxPageSize;
+
+    before(function () {
+      stubCmrMaxPageSize = stub(env, 'cmrMaxPageSize').get(() => 1);
+    });
+
+    hookServersStartStop();
+
+    after(async function () {
+      await truncateAll();
+      delete this.jobID;
+      stubCmrMaxPageSize.restore();
+    });
+
+    describe('while retrieving granules from the CMR', function () {
+      describe('when the CMR hits decreases', function () {
+        const finalCmrHits = 2;
+        let finalQueryCmrWorkItemCount;
+        before(async function () {
+          await truncateAll();
+          finalQueryCmrWorkItemCount = Math.ceil(finalCmrHits / env.cmrMaxPageSize);
+          this.jobID = await createJobAndWorkItems(initialCmrHits, initialQueryCmrWorkItemCount, nonAggregateService, aggregateService);
+          await testInitialConditions(initialCmrHits, initialQueryCmrWorkItemCount);
+
+          for (let i = 0; i < finalQueryCmrWorkItemCount; i++) {
+            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+            const { workItem } = JSON.parse(res.text);
+            workItem.status = WorkItemStatus.SUCCESSFUL;
+            workItem.hits = finalCmrHits;
+            workItem.scrollID = `${sessionId}:["abc",123,456]`;
+            workItem.results = [
+              getStacLocation(workItem, 'catalog.json')];
+            await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
+            await updateWorkItem(this.backend, workItem);
+          }
+        });
+        it('updates the job numInputGranules', async function () {
+          const job = await Job.byJobID(db, this.jobID);
+          expect(job.numInputGranules).equals(finalCmrHits);
+        });
+
+        it('updates the number of work items for the query-cmr step', async function () {
+          const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 1);
+          expect(workflowStep.workItemCount).equals(finalQueryCmrWorkItemCount);
+        });
+
+        it('updates the number of work items for the second step', async function () {
+          const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 2);
+          expect(workflowStep.workItemCount).equals(finalCmrHits);
+        });
+
+        it('does not update the number of work items for the aggregating step', async function () {
+          const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 3);
+          expect(workflowStep.workItemCount).equals(1);
+        });
+
+        describe('and the number of worked items matches the new number', async function () {
+          before(async function () {
+            for (let i = 0; i < finalCmrHits; i++) {
+              const res = await getWorkForService(this.backend, nonAggregateService);
+              const { workItem } = JSON.parse(res.text);
+              workItem.status = WorkItemStatus.SUCCESSFUL;
+              workItem.results = [
+                getStacLocation(workItem, 'catalog.json')];
+              await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
+              await updateWorkItem(this.backend, workItem);
+            }
+
+            const res = await getWorkForService(this.backend, aggregateService);
+            const { workItem } = JSON.parse(res.text);
+            workItem.status = WorkItemStatus.SUCCESSFUL;
+            workItem.results = [
+              getStacLocation(workItem, 'catalog.json')];
+            await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
+            await updateWorkItem(this.backend, workItem);
+
+          });
+          it('completes the job', async function () {
+            const job = await Job.byJobID(db, this.jobID);
+            expect(job.status).equals(JobStatus.SUCCESSFUL);
+          });
+        });
+      });
+
+      describe('when the CMR hits increases', async function () {
+        const finalCmrHits = 5;
+        before(async function () {
+          await truncateAll();
+          this.jobID = await createJobAndWorkItems(initialCmrHits, initialQueryCmrWorkItemCount, nonAggregateService, aggregateService);
+          await testInitialConditions(initialCmrHits, initialQueryCmrWorkItemCount);
+
+          for (let i = 0; i < initialQueryCmrWorkItemCount; i++) {
+            const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+            const { workItem } = JSON.parse(res.text);
+            workItem.status = WorkItemStatus.SUCCESSFUL;
+            workItem.hits = finalCmrHits;
+            workItem.scrollID = `${sessionId}:["abc",123,456]`;
+            workItem.results = [
+              getStacLocation(workItem, 'catalog.json')];
+            await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
+            await updateWorkItem(this.backend, workItem);
+          }
+        });
+
+        it('does not look for more granules for the job', async function () {
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          expect(res.statusCode).equals(404);
+        });
+
+        it('does not update the job numInputGranules', async function () {
+          const job = await Job.byJobID(db, this.jobID);
+          expect(job.numInputGranules).equals(initialCmrHits);
+        });
+
+        it('does not update the number of work items for the query-cmr step', async function () {
+          const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 1);
+          expect(workflowStep.workItemCount).equals(initialQueryCmrWorkItemCount);
+        });
+
+        it('does not update the number of work items for the second step', async function () {
+          const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 2);
+          expect(workflowStep.workItemCount).equals(initialCmrHits);
+        });
+
+        it('does not update the number of work items for the aggregating step', async function () {
+          const workflowStep = await getWorkflowStepByJobIdStepIndex(db, this.jobID, 3);
+          expect(workflowStep.workItemCount).equals(1);
+        });
+
+        describe('and the number of worked items matches the initial number', function () {
+          before(async function () {
+            for (let i = 0; i < initialCmrHits; i++) {
+              const res = await getWorkForService(this.backend, nonAggregateService);
+              const { workItem } = JSON.parse(res.text);
+              workItem.status = WorkItemStatus.SUCCESSFUL;
+              workItem.results = [
+                getStacLocation(workItem, 'catalog.json')];
+              await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
+              await updateWorkItem(this.backend, workItem);
+            }
+
+            const res = await getWorkForService(this.backend, aggregateService);
+            const { workItem } = JSON.parse(res.text);
+            workItem.status = WorkItemStatus.SUCCESSFUL;
+            workItem.results = [
+              getStacLocation(workItem, 'catalog.json')];
+            await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
+            await updateWorkItem(this.backend, workItem);
+
+          });
+          it('completes the job', async function () {
+            const job = await Job.byJobID(db, this.jobID);
+            expect(job.status).equals(JobStatus.SUCCESSFUL);
+          });
+        });
       });
     });
   });
