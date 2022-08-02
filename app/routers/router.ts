@@ -13,7 +13,7 @@ import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-a
 import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
 import { getJobsListing, getJobStatus, cancelJob, resumeJob, pauseJob, skipJobPreview } from '../frontends/jobs';
-import { getJobs, getJob, getWorkItemsTable, getJobLinks } from '../frontends/workflow-ui';
+import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs } from '../frontends/workflow-ui';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
@@ -236,6 +236,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/admin/workflow-ui/:jobID', asyncHandler(getJob));
   result.get('/admin/workflow-ui/:jobID/work-items', asyncHandler(getWorkItemsTable));
   result.get('/admin/workflow-ui/:jobID/links', asyncHandler(getJobLinks));
+  result.get('/admin/workflow-ui/:jobID/:id/logs', asyncHandler(getWorkItemLogs));
 
   result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
 

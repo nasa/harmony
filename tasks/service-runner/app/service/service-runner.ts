@@ -5,7 +5,7 @@ import env from '../util/env';
 import logger from '../../../../app/util/log';
 import { resolve as resolveUrl } from '../../../../app/util/url';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
-import { WorkItemRecord, getStacLocation } from '../../../../app/models/work-item-interface';
+import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 
 const kc = new k8s.KubeConfig();
@@ -25,13 +25,19 @@ export interface ServiceResponse {
 const { workerTimeout } = env;
 
 class LogStream extends stream.Writable {
-  logStr = '';
+  logStrArr = [];
+  
+  logStr = (): string => this.logStrArr.join();
 
   shouldLog = true;
 
   _write(chunk, enc: BufferEncoding, next: (error?: Error | null) => void): void {
-    const chunkStr = chunk.toString('utf8');
-    this.logStr += chunkStr;
+    let chunkStr = chunk.toString('utf8');
+    try {
+      chunkStr = JSON.parse(chunkStr);
+    } catch (e) { } finally {
+      this.logStrArr.push(chunkStr);
+    }
     if (this.shouldLog) {
       logger.debug(chunkStr, { worker: true });
     }
@@ -178,6 +184,8 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
         async (status: k8s.V1Status) => {
           logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
           try {
+            await objectStoreForProtocol('s3')
+              .upload(JSON.stringify(stdOut.logStrArr), getItemLogsLocation(workItem));
             if (status.status === 'Success') {
               clearTimeout(timeout);
               logger.debug('Getting STAC catalogs');
@@ -185,7 +193,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(stdOut.logStr, catalogDir);
+              const logErr = await _getErrorMessage(stdOut.logStr(), catalogDir);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }

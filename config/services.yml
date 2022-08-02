@@ -340,6 +340,7 @@ https://cmr.earthdata.nasa.gov:
           STAGING_PATH: public/sds/HOSS
     umm_s:
       - S2164732315-XYZ_PROV
+      - S2378172160-ORNL_CLOUD
     #   - Add GES-DISC production UMM-S record here.
     collections: []
     capabilities:
@@ -704,6 +705,7 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s:
       - S1240682712-EEDTEST
       - S1241070355-GES_DISC # GESDISC_HOSS
+      - S1246887053-ORNL_CLOUD
     collections: []
     capabilities:
       subsetting:
