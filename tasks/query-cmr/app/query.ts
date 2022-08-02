@@ -16,7 +16,7 @@ export interface DataSource {
  * @param token - The token to use for the query
  * @param scrollId - Scroll session id used in the CMR-Scroll-Id header for granule search
  * @param maxCmrGranules - The maximum size of the page to request from CMR
- * @param filePrefix - The prefix to give each file placed in the directory
+ * @param filePrefix - The prefix to give each granule STAC item placed in the directory
  * @returns a tuple containing
  * the total size of the granules returned by this call, an array of STAC catalogs,
  * a new session/search_after string (formerly scrollID), and the total cmr hits.
@@ -79,7 +79,7 @@ export async function queryGranules(
   maxCmrGranules: number,
 ): Promise<[number, StacCatalog[], string, number]> {
   const { unencryptedAccessToken } = operation;
-  const [totalGranulesSize, catalogs, newScrollId, hits] = await querySearchAfter(unencryptedAccessToken, scrollId, `./granule_${scrollId}`, maxCmrGranules);
+  const [totalGranulesSize, catalogs, newScrollId, hits] = await querySearchAfter(unencryptedAccessToken, scrollId, './granule', maxCmrGranules);
 
   return [totalGranulesSize, catalogs, newScrollId, hits];
 }
