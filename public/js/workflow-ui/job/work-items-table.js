@@ -67,11 +67,7 @@ export default {
       await new Promise(res => setTimeout(res, fiveSeconds));
       jobIsRunning = await loadAndNotify(jobId, page, limit, true, broker);
     }
-    // back off now since the work items are likely
-    // close to being complete
-    setInterval(
-      () => loadAndNotify(jobId, page, limit, false, broker),
-      fiveSeconds * 3,
-    );
+    // reload the table one last time
+    loadAndNotify(jobId, page, limit, false, broker)
   },
 }
