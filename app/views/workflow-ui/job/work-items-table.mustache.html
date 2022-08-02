@@ -9,6 +9,7 @@
             <th scope="col">stepName</th>
             <th scope="col">id</th>
             <th scope="col">status</th>
+            <th scope="col">logs</th>
             <th scope="col">createdAt</th>
             <th scope="col">updatedAt</th>
         </tr>
@@ -20,6 +21,7 @@
             <td>{{workflowItemStep}}</td>
             <td>{{id}}</td>
             <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
+            <td>{{{workflowItemLogsButton}}}</td>
             <td class="date-td" data-time="{{workflowItemCreatedAt}}"></td>
             <td class="date-td" data-time="{{workflowItemUpdatedAt}}"></td>
         </tr>
