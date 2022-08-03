@@ -1,6 +1,6 @@
 <table class="table table-sm">
     <thead>
-        <tr>
+        <tr class="align-middle">
             <th scope="col">jobID</th>
             {{#isAdminRoute}}
             <th scope="col">user</th>
@@ -8,7 +8,16 @@
             <th scope="col">request</th>
             <th scope="col">status</th>
             <th scope="col">message</th>
-            <th scope="col">granules</th>
+            <th scope="col" class="d-flex flex-row align-items-center"><div>granules</div>&nbsp;
+                <div class="d-flex flex-column">
+                <a href="">
+                    <i class="bi bi-sort-numeric-up" title="apply ascending sort"></i>
+                </a>
+                <a href="" class="link-dark">
+                    <i class="bi bi-sort-numeric-down-alt" title="apply descending sort"></i>
+                </a>
+                </div>
+            </th>
             <th scope="col">progress</th>
             <th scope="col">createdAt</th>
         </tr>
