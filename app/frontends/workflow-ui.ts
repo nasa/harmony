@@ -157,10 +157,10 @@ export async function getJobs(
         });
         const setValueStr = "document.getElementById('sort-granules').value";
         const submitFormStr = "document.getElementById('jobs-query-form').submit()";
-        return `<a href="#" onclick="${setValueStr}'=${asc.sortGranulesValue}';${submitFormStr};" class="${asc.colorClass}">
+        return `<a href="#" onclick="${setValueStr}='${asc.sortGranulesValue}';${submitFormStr};" class="${asc.colorClass}">
           <i class="bi bi-sort-numeric-up" title="${asc.title}"></i>
         </a>
-        <a href="#" onclick="${setValueStr}'=${desc.sortGranulesValue}';${submitFormStr};" class="${desc.colorClass}">
+        <a href="#" onclick="${setValueStr}='${desc.sortGranulesValue}';${submitFormStr};" class="${desc.colorClass}">
           <i class="bi bi-sort-numeric-down-alt" title="${desc.title}"></i>
         </a>`;
       },
