@@ -11,7 +11,7 @@ import version from '../util/version';
 import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
 import { COMPLETED_WORK_ITEM_STATUSES, getItemLogsLocation, WorkItemStatus } from '../models/work-item-interface';
-import { getRequestRoot, getRequestUrl } from '../util/url';
+import { getRequestRoot } from '../util/url';
 import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 import { objectStoreForProtocol } from '../util/object-store';
