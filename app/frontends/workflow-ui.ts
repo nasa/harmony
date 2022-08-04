@@ -155,6 +155,7 @@ export async function getJobs(
           const sortGranulesValue = !isSorted ? sortValue : '';
           return { sortGranulesValue, colorClass, title };
         });
+        // onclick, set a hidden form value that represents the current sort value, then submit the form
         const setValueStr = "document.getElementById('sort-granules').value";
         const submitFormStr = "document.getElementById('jobs-query-form').submit()";
         return `<a href="#" onclick="${setValueStr}='${asc.sortGranulesValue}';${submitFormStr};" class="${asc.colorClass}">
