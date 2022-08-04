@@ -11,7 +11,7 @@ import version from '../util/version';
 import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
 import { COMPLETED_WORK_ITEM_STATUSES, getItemLogsLocation, WorkItemStatus } from '../models/work-item-interface';
-import { getRequestRoot } from '../util/url';
+import { getRequestRoot, getRequestUrl } from '../util/url';
 import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 import { objectStoreForProtocol } from '../util/object-store';
@@ -137,6 +137,23 @@ export async function getJobs(
           req.context.logger.error(e);
           return this.request;
         }
+      },
+      // job table sorting
+      sortGranules() {
+        // return a link that either lets the user apply or unapply an asc or desc sort
+        const [ asc, desc ] = [ 'asc', 'desc' ].map((sortValue) => {
+          const isSorted = requestQuery.sortgranules === sortValue;
+          const url = getRequestUrl(req, true, { sortGranules: isSorted ? '' : sortValue });
+          const colorClass = isSorted ? 'link-dark' : '';
+          const title = `${isSorted ? 'un' : ''}apply ${sortValue === 'asc' ? 'ascending' : 'descending'} sort`;
+          return { url, colorClass, title };
+        });
+        return `<a href="${asc.url}" class="${asc.colorClass}">
+          <i class="bi bi-sort-numeric-up" title="${asc.title}"></i>
+        </a>
+        <a href="${desc.url}" class="${desc.colorClass}">
+          <i class="bi bi-sort-numeric-down-alt" title="${desc.title}"></i>
+        </a>`;
       },
       // job table filters HTML
       disallowStatusChecked: disallowStatus ? 'checked' : '',
