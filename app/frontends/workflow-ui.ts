@@ -145,19 +145,22 @@ export async function getJobs(
         }
       },
       // job table sorting
-      sortGranules() {
+      sortGranules: requestQuery.sortgranules,
+      sortGranulesLinks() {
         // return links that lets the user apply or unapply an asc or desc sort
         const [ asc, desc ] = [ 'asc', 'desc' ].map((sortValue) => {
           const isSorted = requestQuery.sortgranules === sortValue;
-          const url = getRequestUrl(req, true, { sortGranules: isSorted ? '' : sortValue });
           const colorClass = isSorted ? 'link-dark' : '';
           const title = `${isSorted ? 'un' : ''}apply ${sortValue === 'asc' ? 'ascending' : 'descending'} sort`;
-          return { url, colorClass, title };
+          const sortGranulesValue = !isSorted ? sortValue : '';
+          return { sortGranulesValue, colorClass, title };
         });
-        return `<a href="${asc.url}" class="${asc.colorClass}">
+        const setValueStr = "document.getElementById('sort-granules').value=";
+        const submitFormStr = "document.getElementById('jobs-query-form').submit()";
+        return `<a href="#" onclick="${setValueStr}'${asc.sortGranulesValue}';${submitFormStr};" class="${asc.colorClass}">
           <i class="bi bi-sort-numeric-up" title="${asc.title}"></i>
         </a>
-        <a href="${desc.url}" class="${desc.colorClass}">
+        <a href="#" onclick="${setValueStr}'${desc.sortGranulesValue}';${submitFormStr};" class="${desc.colorClass}">
           <i class="bi bi-sort-numeric-down-alt" title="${desc.title}"></i>
         </a>`;
       },

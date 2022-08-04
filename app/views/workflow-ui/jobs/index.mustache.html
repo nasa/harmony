@@ -44,9 +44,10 @@
     <div class="container-fluid">
         <div class="row pb-4">
             <div class="col-2">
-                <form action="{{currentPage}}" method="get">
+                <form id="jobs-query-form" action="{{currentPage}}" method="get">
                     <input type="hidden" name="page" value="{{page}}" />
                     <input type="hidden" name="limit" value="{{limit}}" />
+                    <input id="sort-granules" type="hidden" name="sortGranules" value="{{sortGranules}}" />
                     <input name="jobsFilter" class="jobs-filter mb-2" placeholder="add a filter"
                         value="{{selectedFilters}}" data-current-user="{{currentUser}}"
                         data-is-admin-route="{{isAdminRoute}}">
