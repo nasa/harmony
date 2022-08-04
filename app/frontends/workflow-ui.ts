@@ -89,6 +89,12 @@ export async function getJobs(
   try {
     const requestQuery = keysToLowerCase(req.query);
     const jobQuery: JobQuery = { where: {}, whereIn: {} };
+    if (requestQuery.sortgranules) {
+      jobQuery.orderBy = {
+        field: 'numInputGranules',
+        value: requestQuery.sortgranules,
+      };
+    }
     if (!req.context.isAdminAccess) {
       jobQuery.where.username = req.user;
     }
@@ -140,7 +146,7 @@ export async function getJobs(
       },
       // job table sorting
       sortGranules() {
-        // return a link that either lets the user apply or unapply an asc or desc sort
+        // return links that lets the user apply or unapply an asc or desc sort
         const [ asc, desc ] = [ 'asc', 'desc' ].map((sortValue) => {
           const isSorted = requestQuery.sortgranules === sortValue;
           const url = getRequestUrl(req, true, { sortGranules: isSorted ? '' : sortValue });
