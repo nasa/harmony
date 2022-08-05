@@ -158,11 +158,11 @@ export async function getJobs(
         // onclick, set a hidden form value that represents the current sort value, then submit the form
         const setValueStr = "document.getElementById('sort-granules').value";
         const submitFormStr = "document.getElementById('jobs-query-form').submit()";
-        return `<a href="#" onclick="${setValueStr}='${asc.sortGranulesValue}';${submitFormStr};" class="${asc.colorClass}">
-          <i class="bi bi-sort-numeric-up" title="${asc.title}"></i>
+        return `<a href="#" onclick="${setValueStr}='${asc.sortGranulesValue}';${submitFormStr};" class="${asc.colorClass}" style="height:12px;">
+          <i class="bi bi-caret-up-fill" title="${asc.title}"></i>
         </a>
         <a href="#" onclick="${setValueStr}='${desc.sortGranulesValue}';${submitFormStr};" class="${desc.colorClass}">
-          <i class="bi bi-sort-numeric-down-alt" title="${desc.title}"></i>
+          <i class="bi bi-caret-down-fill" title="${desc.title}"></i>
         </a>`;
       },
       // job table filters HTML
