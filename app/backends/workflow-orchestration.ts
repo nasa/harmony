@@ -502,8 +502,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const { logger } = req.context;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item for ${id} to ${status}`);
-  } else {
-
   }
   let responded = false;
   await db.transaction(async (tx) => {
