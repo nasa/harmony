@@ -17,7 +17,7 @@ const woodyJob1 = buildJob({
   links: [{ href: 'http://example.com/woody1', rel: 'link', type: 'text/plain' }],
   request: 'http://example.com/harmony?request=woody1&turbo=false',
   isAsync: true,
-  numInputGranules: 3,
+  numInputGranules: 89723,
 });
 
 const woodyJob2 = buildJob({
@@ -28,7 +28,7 @@ const woodyJob2 = buildJob({
   links: [{ href: 's3://somebucket/mydata', rel: 'data', type: 'image/tiff' }],
   request: 'http://example.com/harmony?request=woody2&turbo=true',
   isAsync: true,
-  numInputGranules: 5,
+  numInputGranules: 35051,
 });
 
 const woodySyncJob = buildJob({
@@ -39,7 +39,7 @@ const woodySyncJob = buildJob({
   links: [],
   request: 'http://example.com/harmony?request=woody2',
   isAsync: false,
-  numInputGranules: 1,
+  numInputGranules: 12615,
 });
 
 const buzzJob1 = buildJob({
@@ -152,6 +152,24 @@ describe('Workflow UI jobs route', function () {
       });
       it('returns only one job', function () {
         const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who asks for page 1, with a limit of 1, descending', function () {
+      hookWorkflowUIJobs({ username: 'woody', limit: 1, sortGranules: 'desc' });
+      it('returns the largest job', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain('89723');
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who asks for page 1, with a limit of 1, ascending', function () {
+      hookWorkflowUIJobs({ username: 'woody', limit: 1, sortGranules: 'asc' });
+      it('returns the smallest job', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain('12615');
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
       });
     });
