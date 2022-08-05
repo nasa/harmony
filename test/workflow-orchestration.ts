@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { getWorkItemsByJobId, getWorkItemsByJobIdAndStepIndex } from '../app/models/work-item';
+import { getWorkItemById, getWorkItemsByJobId, getWorkItemsByJobIdAndStepIndex } from '../app/models/work-item';
 import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../app/models/workflow-steps';
 import db from '../app/util/db';
 import env from '../app/util/env';
@@ -462,12 +462,20 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       let firstSwotItem;
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-        firstSwotItem = JSON.parse(res.text).workItem;
-        firstSwotItem.status = WorkItemStatus.FAILED;
-        firstSwotItem.errorMessage = 'That was just a practice try, right?';
-        firstSwotItem.results = [];
-        await updateWorkItem(this.backend, firstSwotItem);
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          firstSwotItem = JSON.parse(res.text).workItem;
+          firstSwotItem.status = WorkItemStatus.FAILED;
+          firstSwotItem.errorMessage = 'That was just a practice try, right?';
+          firstSwotItem.results = [];
+          await updateWorkItem(this.backend, firstSwotItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, firstSwotItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
       });
 
       it('fails the job, and all further work items are canceled', async function () {
@@ -543,11 +551,19 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       let firstSwotItem;
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-        firstSwotItem = JSON.parse(res.text).workItem;
-        firstSwotItem.status = WorkItemStatus.FAILED;
-        firstSwotItem.results = [];
-        await updateWorkItem(this.backend, firstSwotItem);
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          firstSwotItem = JSON.parse(res.text).workItem;
+          firstSwotItem.status = WorkItemStatus.FAILED;
+          firstSwotItem.results = [];
+          await updateWorkItem(this.backend, firstSwotItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, firstSwotItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
       });
 
       it('fails the job', async function () {

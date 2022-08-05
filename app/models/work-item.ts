@@ -15,7 +15,7 @@ const QUERY_CMR_STEP_INDEX = 1;
 
 // The fields to save to the database
 const serializedFields = [
-  'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
+  'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex',
 ];
 
@@ -56,6 +56,9 @@ export default class WorkItem extends Record implements WorkItemRecord {
 
   // The sum of the sizes of the granules associated with this work item
   totalGranulesSize?: number;
+
+  // The number of times this work-item has been retried
+  retryCount: number;
 
   /**
    * Saves the work item to the database using the given transaction.

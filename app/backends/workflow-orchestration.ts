@@ -503,7 +503,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item for ${id} to ${status}`);
   } else {
-    logger.warn(`Updating work item for ${id} to ${status} with message ${errorMessage}`);
+
   }
   let responded = false;
   await db.transaction(async (tx) => {
@@ -517,6 +517,20 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       // Note work item will stay in the running state, but the reaper will clean it up
       responded = true;
       return;
+    }
+
+    // retry failed work-items up to a limit
+    if (status === WorkItemStatus.FAILED) {
+      if (workItem.retryCount < env.workItemRetryLimit) {
+        logger.warn(`Retrying failed work-item ${id}`);
+        workItem.retryCount += 1;
+        workItem.status = WorkItemStatus.READY;
+        await workItem.save(tx);
+        return;
+      } else {
+        logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
+        logger.warn(`Updating work item for ${id} to ${status} with message ${errorMessage}`);
+      }
     }
 
     await updateWorkItemStatus(tx, id, status as WorkItemStatus, totalGranulesSize);

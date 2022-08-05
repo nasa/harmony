@@ -188,6 +188,9 @@ WORKER_TIMEOUT=14400000
 # first retry regardless of the parameters.
 MAX_DOWNLOAD_RETRIES=10
 
+# Number of times to retry a failed work item
+WORK_ITEM_RETRY_LIMIT=3
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #

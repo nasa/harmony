@@ -2,12 +2,12 @@ import { Job, JobRecord, JobStatus } from './../../app/models/job';
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { getWorkItemById } from '../../app/models/work-item';
+import WorkItem, { getWorkItemById } from '../../app/models/work-item';
 import { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
 import { hookJobCreation } from '../helpers/jobs';
-import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput } from '../helpers/work-items';
+import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
 import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../../app/models/work-item-interface';
 
@@ -140,7 +140,7 @@ describe('Work Backends', function () {
 
       it('returns the correct fields for a work item', function () {
         expect(Object.keys(this.res.body.workItem)).to.eql([
-          'id', 'jobID', 'createdAt', 'updatedAt', 'scrollID', 'serviceID', 'status',
+          'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
           'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'operation',
         ]);
       });
@@ -196,14 +196,30 @@ describe('Work Backends', function () {
       hookJobCreation(jobRecord);
       hookWorkflowStepCreation(workflowStepRecod);
 
-      const failedWorkItemRecord = {
-        ...workItemRecord, ...{ status: WorkItemStatus.FAILED, scrollID: '-1234' },
-      };
+      // const failedWorkItemRecord = {
+      //   ...workItemRecord, ...{ status: WorkItemStatus.FAILED, scrollID: '-1234' },
+      // };
 
-      hookWorkItemCreation(failedWorkItemRecord);
-      hookWorkItemUpdate((r) => r.send(failedWorkItemRecord));
+      hookWorkItemCreation(workItemRecord);
+      before(async function () {
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res = await getWorkForService(this.backend, workItemRecord.serviceID);
+          const tmpWorkItem = JSON.parse(res.text).workItem as WorkItem;
+          tmpWorkItem.status = WorkItemStatus.FAILED;
+          tmpWorkItem.results = [];
 
-      it('sets the work item status is set to failed', async function () {
+          console.log(tmpWorkItem);
+          await updateWorkItem(this.backend, tmpWorkItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, this.workItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
+      });
+
+      it('sets the work item status to failed', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.FAILED);
       });
