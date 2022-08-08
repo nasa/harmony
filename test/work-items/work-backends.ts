@@ -195,11 +195,6 @@ describe('Work Backends', function () {
     describe('when the work item failed', async function () {
       hookJobCreation(jobRecord);
       hookWorkflowStepCreation(workflowStepRecod);
-
-      // const failedWorkItemRecord = {
-      //   ...workItemRecord, ...{ status: WorkItemStatus.FAILED, scrollID: '-1234' },
-      // };
-
       hookWorkItemCreation(workItemRecord);
       before(async function () {
         let shouldLoop = true;

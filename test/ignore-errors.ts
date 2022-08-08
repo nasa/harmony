@@ -226,12 +226,6 @@ describe('when setting ignoreErrors=true', function () {
         await fakeServiceStacOutput(secondSwotItem.jobID, secondSwotItem.id);
         await updateWorkItem(this.backend, secondSwotItem);
 
-        // const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
-        // zarrItem = JSON.parse(res2.text).workItem;
-        // zarrItem.status = WorkItemStatus.FAILED;
-        // zarrItem.results = [];
-        // await updateWorkItem(this.backend, zarrItem);
-
         let shouldLoop = true;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
