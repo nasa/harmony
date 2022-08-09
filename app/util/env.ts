@@ -106,6 +106,7 @@ interface HarmonyEnv {
   workFailerPeriodSec: number;
   workReaperPeriodSec: number;
   maxErrorsForJob: number;
+  workItemRetryLimit: number;
 }
 
 // special cases

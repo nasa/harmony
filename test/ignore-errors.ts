@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { stub } from 'sinon';
-import { getWorkItemsByJobId } from '../app/models/work-item';
+import WorkItem, { getWorkItemById, getWorkItemsByJobId } from '../app/models/work-item';
 import db from '../app/util/db';
 import { Job, JobStatus } from '../app/models/job';
 import { hookRedirect } from './helpers/hooks';
@@ -120,11 +120,20 @@ describe('when setting ignoreErrors=true', function () {
       let firstSwotItem;
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-        firstSwotItem = JSON.parse(res.text).workItem;
-        firstSwotItem.status = WorkItemStatus.FAILED;
-        firstSwotItem.results = [];
-        await updateWorkItem(this.backend, firstSwotItem);
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          firstSwotItem = JSON.parse(res.text).workItem;
+          firstSwotItem.status = WorkItemStatus.FAILED;
+          firstSwotItem.results = [];
+
+          await updateWorkItem(this.backend, firstSwotItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, firstSwotItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
       });
 
       it('fails the job', async function () {
@@ -178,11 +187,20 @@ describe('when setting ignoreErrors=true', function () {
       let firstSwotItem;
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-        firstSwotItem = JSON.parse(res.text).workItem;
-        firstSwotItem.status = WorkItemStatus.FAILED;
-        firstSwotItem.results = [];
-        await updateWorkItem(this.backend, firstSwotItem);
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          firstSwotItem = JSON.parse(res.text).workItem;
+          firstSwotItem.status = WorkItemStatus.FAILED;
+          firstSwotItem.results = [];
+
+          await updateWorkItem(this.backend, firstSwotItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, firstSwotItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
       });
 
       it('changes the job status to running_with_errors', async function () {
@@ -208,11 +226,19 @@ describe('when setting ignoreErrors=true', function () {
         await fakeServiceStacOutput(secondSwotItem.jobID, secondSwotItem.id);
         await updateWorkItem(this.backend, secondSwotItem);
 
-        const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
-        zarrItem = JSON.parse(res2.text).workItem;
-        zarrItem.status = WorkItemStatus.FAILED;
-        zarrItem.results = [];
-        await updateWorkItem(this.backend, zarrItem);
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          zarrItem = JSON.parse(res2.text).workItem;
+          zarrItem.status = WorkItemStatus.FAILED;
+          zarrItem.results = [];
+          await updateWorkItem(this.backend, zarrItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, zarrItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
       });
 
       it('marks the job as failed', async function () {
@@ -254,11 +280,20 @@ describe('when setting ignoreErrors=true', function () {
       let firstSwotItem;
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-        firstSwotItem = JSON.parse(res.text).workItem;
-        firstSwotItem.status = WorkItemStatus.FAILED;
-        firstSwotItem.results = [];
-        await updateWorkItem(this.backend, firstSwotItem);
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          firstSwotItem = JSON.parse(res.text).workItem;
+          firstSwotItem.status = WorkItemStatus.FAILED;
+          firstSwotItem.results = [];
+
+          await updateWorkItem(this.backend, firstSwotItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, firstSwotItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
       });
 
       it('changes the job status to running_with_errors', async function () {
@@ -377,12 +412,20 @@ describe('when setting ignoreErrors=true', function () {
       let secondSwotItem;
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          secondSwotItem = JSON.parse(res.text).workItem;
+          secondSwotItem.status = WorkItemStatus.FAILED;
+          secondSwotItem.results = [];
 
-        secondSwotItem = JSON.parse(res.text).workItem;
-        secondSwotItem.status = WorkItemStatus.FAILED;
-        secondSwotItem.results = [];
-        await updateWorkItem(this.backend, secondSwotItem);
+          await updateWorkItem(this.backend, secondSwotItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, secondSwotItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
       });
 
       it('changes the job status to running_with_errors', async function () {
@@ -406,12 +449,21 @@ describe('when setting ignoreErrors=true', function () {
       let thirdSwotItem;
 
       before(async function () {
-        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-        thirdSwotItem = JSON.parse(res.text).workItem;
-        thirdSwotItem.status = WorkItemStatus.FAILED;
-        thirdSwotItem.results = [];
-        thirdSwotItem.errorMessage = 'Did not reach 88 MPH.';
-        await updateWorkItem(this.backend, thirdSwotItem);
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          thirdSwotItem = JSON.parse(res.text).workItem;
+          thirdSwotItem.status = WorkItemStatus.FAILED;
+          thirdSwotItem.results = [];
+          thirdSwotItem.errorMessage = 'Did not reach 88 MPH.';
+
+          await updateWorkItem(this.backend, thirdSwotItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, thirdSwotItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
       });
 
       it('puts the job in a FAILED state', async function () {
@@ -448,12 +500,21 @@ describe('when setting ignoreErrors=true', function () {
     hookRedirect('joe');
 
     before(async function () {
-      const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
-      const { workItem } = JSON.parse(res.text);
-      workItem.status = WorkItemStatus.FAILED;
-      workItem.results = [];
-      workItem.errorMessage = 'Bad scroll session';
-      await updateWorkItem(this.backend, workItem);
+      let shouldLoop = true;
+      let workItem: WorkItem;
+      // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+      while (shouldLoop) {
+        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        workItem = JSON.parse(res.text).workItem as WorkItem;
+        workItem.status = WorkItemStatus.FAILED;
+        workItem.results = [];
+        workItem.errorMessage = 'Bad scroll session';
+        await updateWorkItem(this.backend, workItem);
+        // check to see if the work-item has failed completely
+        workItem = await getWorkItemById(db, workItem.id);
+        shouldLoop = workItem.status != WorkItemStatus.FAILED;
+      }
+
       this.workItem = workItem;
     });
 
@@ -533,12 +594,20 @@ describe('when setting ignoreErrors=true', function () {
     describe('when the next swot-reproject item fails', function () {
       let secondSwotItem;
       before(async function () {
-        const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          secondSwotItem = JSON.parse(res.text).workItem;
+          secondSwotItem.status = WorkItemStatus.FAILED;
+          secondSwotItem.results = [];
 
-        secondSwotItem = JSON.parse(res.text).workItem;
-        secondSwotItem.status = WorkItemStatus.FAILED;
-        secondSwotItem.results = [];
-        await updateWorkItem(this.backend, secondSwotItem);
+          await updateWorkItem(this.backend, secondSwotItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, secondSwotItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
       });
 
       it('updates the job to the running_with_errors state', async function () {
@@ -550,12 +619,20 @@ describe('when setting ignoreErrors=true', function () {
     describe('when the next query-cmr work item fails', function () {
       let secondQueryCmrItem;
       before(async function () {
-        const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+        let shouldLoop = true;
+        // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
+        while (shouldLoop) {
+          const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
+          secondQueryCmrItem = JSON.parse(res.text).workItem;
+          secondQueryCmrItem.status = WorkItemStatus.FAILED;
+          secondQueryCmrItem.results = [];
 
-        secondQueryCmrItem = JSON.parse(res.text).workItem;
-        secondQueryCmrItem.status = WorkItemStatus.FAILED;
-        secondQueryCmrItem.results = [];
-        await updateWorkItem(this.backend, secondQueryCmrItem);
+          await updateWorkItem(this.backend, secondQueryCmrItem);
+
+          // check to see if the work-item has failed completely
+          const workItem = await getWorkItemById(db, secondQueryCmrItem.id);
+          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+        }
       });
 
       it('updates the job to the failed state', async function () {

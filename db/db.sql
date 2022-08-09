@@ -52,6 +52,7 @@ CREATE TABLE `work_items` (
   `status` text check (`status` in ('ready', 'running', 'successful', 'failed', 'canceled')) not null,
   `stacCatalogLocation` varchar(255),
   `totalGranulesSize` double precision not null default 0,
+  `retryCount` integer not null default 0,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID)
