@@ -363,6 +363,7 @@ export async function getWorkItemsByAgeAndStatus(
   olderThanMinutes: number,
   statuses: WorkItemStatus[],
 ): Promise<WorkItem[]> {
+  // TODO - update to only look at running and running_with_errors jobs
   const pastDate = subMinutes(new Date(), olderThanMinutes);
   const workItems = (await tx(WorkItem.table)
     .select()

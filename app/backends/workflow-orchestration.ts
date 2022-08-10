@@ -489,6 +489,98 @@ async function updateWorkItemCounts(
 }
 
 /**
+ * Doc
+ * @param tx - doc
+ * @param status - doc
+ * @param results - doc
+ * @param hits - doc
+ * @param scrollID - doc
+ * @param errorMessage - doc
+ * @param totalGranulesSize - doc
+ * @param workItem - doc
+ * @param job - doc
+ * @param logger - doc
+ * @returns 
+ */
+async function proccessItemUpdate(
+  tx,
+  status,
+  results,
+  hits,
+  scrollID,
+  errorMessage,
+  totalGranulesSize,
+  workItem,
+  job,
+  logger): Promise<void> {
+  // retry failed work-items up to a limit
+  if (status === WorkItemStatus.FAILED) {
+    if (workItem.retryCount < env.workItemRetryLimit) {
+      logger.warn(`Retrying failed work-item ${workItem.id}`);
+      workItem.retryCount += 1;
+      workItem.status = WorkItemStatus.READY;
+      await workItem.save(tx);
+      return;
+    } else {
+      logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
+      logger.warn(`Updating work item for ${workItem.id} to ${status} with message ${errorMessage}`);
+    }
+  }
+  const totalGranules = totalGranulesSize ? parseFloat(totalGranulesSize) : 0;
+  await updateWorkItemStatus(tx, String(workItem.id), status as WorkItemStatus, totalGranules);
+  const completedWorkItemCount = await workItemCountForStep(
+    tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
+  );
+  const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
+  const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
+
+  if (hits && job.numInputGranules > hits) {
+    job.numInputGranules = hits;
+    await job.save(tx);
+    await updateWorkItemCounts(tx, job);
+  }
+
+  const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
+  if (continueProcessing) {
+    let nextStep = null;
+    if (status != WorkItemStatus.FAILED) {
+      nextStep = await createNextWorkItems(tx, workItem, allWorkItemsForStepComplete, results);
+    }
+
+    if (nextStep) {
+      if (results && results.length > 0) {
+        // set the scrollID for the next work item to the one we received from the update
+        workItem.scrollID = scrollID;
+        await maybeQueueQueryCmrWorkItem(tx, workItem, nextStep);
+      } else {
+        // Failed to create the next work items - fail the job rather than leaving it orphaned
+        // in the running state
+        logger.error('The work item update should have contained results to queue a next work item, but it did not.');
+        const message = 'Harmony internal failure: could not create the next work items for the request.';
+        await completeJob(tx, job, JobStatus.FAILED, logger, message);
+      }
+    } else {
+      // Finished with the chain for this granule
+      if (status != WorkItemStatus.FAILED) {
+        await addJobLinksForFinishedWorkItem(tx, job, results, logger);
+      }
+      // If all granules are finished mark the job as finished
+      job.completeBatch(thisStep.workItemCount);
+      if (allWorkItemsForStepComplete) {
+        const finalStatus = await getFinalStatusForJob(tx, job);
+        await completeJob(tx, job, finalStatus, logger);
+      } else {
+        // Special case to pause the job as soon as any single granule completes when in the previewing state
+        if (job.status === JobStatus.PREVIEWING) {
+          job.pause();
+        }
+        await job.save(tx);
+      }
+    }
+  }
+}
+
+/**
  * Update a work item from a service response
  *
  * @param req - The request sent by the client
@@ -498,7 +590,6 @@ async function updateWorkItemCounts(
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
   const { status, hits, results, scrollID, errorMessage } = req.body;
-  const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
   const { logger } = req.context;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item for ${id} to ${status}`);
@@ -507,7 +598,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   await db.transaction(async (tx) => {
     const workItem = await getWorkItemById(tx, parseInt(id, 10));
     const job = await Job.byJobID(tx, workItem.jobID, false, false);
-    const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
 
     // If the job was already canceled or failed then send 409 response
     if ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
@@ -516,71 +606,14 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       responded = true;
       return;
     }
-
-    // retry failed work-items up to a limit
-    if (status === WorkItemStatus.FAILED) {
-      if (workItem.retryCount < env.workItemRetryLimit) {
-        logger.warn(`Retrying failed work-item ${id}`);
-        workItem.retryCount += 1;
-        workItem.status = WorkItemStatus.READY;
-        await workItem.save(tx);
-        return;
-      } else {
-        logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
-        logger.warn(`Updating work item for ${id} to ${status} with message ${errorMessage}`);
-      }
+    // If the item was already complete, send 409 (could happen with retries)
+    if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
+      res.status(409).send(`WorkItem was already ${workItem.status}.`);
+      responded = true;
+      return;
     }
-
-    await updateWorkItemStatus(tx, id, status as WorkItemStatus, totalGranulesSize);
-    const completedWorkItemCount = await workItemCountForStep(
-      tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
-    );
-    const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
-
-    if (hits && job.numInputGranules > hits) {
-      job.numInputGranules = hits;
-      await job.save(tx);
-      await updateWorkItemCounts(tx, job);
-    }
-
-    const continueProcessing = await handleFailedWorkItems(tx, job, workItem, thisStep, status, logger, errorMessage);
-    if (continueProcessing) {
-      let nextStep = null;
-      if (status != WorkItemStatus.FAILED) {
-        nextStep = await createNextWorkItems(tx, workItem, allWorkItemsForStepComplete, results);
-      }
-
-      if (nextStep) {
-        if (results && results.length > 0) {
-          // set the scrollID for the next work item to the one we received from the update
-          workItem.scrollID = scrollID;
-          await maybeQueueQueryCmrWorkItem(tx, workItem, nextStep);
-        } else {
-          // Failed to create the next work items - fail the job rather than leaving it orphaned
-          // in the running state
-          logger.error('The work item update should have contained results to queue a next work item, but it did not.');
-          const message = 'Harmony internal failure: could not create the next work items for the request.';
-          await completeJob(tx, job, JobStatus.FAILED, logger, message);
-        }
-      } else {
-        // Finished with the chain for this granule
-        if (status != WorkItemStatus.FAILED) {
-          await addJobLinksForFinishedWorkItem(tx, job, results, logger);
-        }
-        // If all granules are finished mark the job as finished
-        job.completeBatch(thisStep.workItemCount);
-        if (allWorkItemsForStepComplete) {
-          const finalStatus = await getFinalStatusForJob(tx, job);
-          await completeJob(tx, job, finalStatus, logger);
-        } else {
-          // Special case to pause the job as soon as any single granule completes when in the previewing state
-          if (job.status === JobStatus.PREVIEWING) {
-            job.pause();
-          }
-          await job.save(tx);
-        }
-      }
-    }
+    await proccessItemUpdate(tx, status, results, hits, scrollID, 
+      errorMessage, req.body.totalGranulesSize, workItem, job, logger);
   });
   if (!responded) {
     // If we haven't returned an error to the caller already return a success with no body
