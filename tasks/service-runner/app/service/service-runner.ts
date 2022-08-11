@@ -110,7 +110,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
       const resp = await axios.post(`http://localhost:${env.workerPort}/work`,
         {
           outputDir: catalogDir,
-          harmonyInput: `${JSON.stringify(operation)}`,
+          harmonyInput: operation,
           scrollId: scrollID,
           maxCmrGranules,
         },
