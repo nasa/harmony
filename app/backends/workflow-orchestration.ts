@@ -489,18 +489,19 @@ async function updateWorkItemCounts(
 }
 
 /**
- * Doc
- * @param tx - doc
- * @param status - doc
- * @param results - doc
- * @param hits - doc
- * @param scrollID - doc
- * @param errorMessage - doc
- * @param totalGranulesSize - doc
- * @param workItem - doc
- * @param job - doc
- * @param logger - doc
- * @returns 
+ * Update the work item and also complete any necessary further processing
+ * such as handling any necessary retries, creating subsequent work items, 
+ * updating the job, adding job links, and creating aggregate STAC catalogs.
+ * @param tx - the transaction to perform the updates with
+ * @param status - the status that will be used to update the work item
+ * @param results - locations of any STAC results
+ * @param hits - the number of hits returned by the CMR (only for query-cmr work items)
+ * @param scrollID - data to be used in CMR search-after header in subsequent CMR granule searches
+ * @param errorMessage -  the (optional) error string returned by the service
+ * @param totalGranulesSize - the combined sizes of all the input granules for this work item
+ * @param workItem - the work item instance to be updated
+ * @param job -  the job that is relevant to this work item update
+ * @param logger - a logger instance
  */
 async function proccessItemUpdate(
   tx,
