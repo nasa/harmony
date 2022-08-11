@@ -609,7 +609,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     }
     // Don't allow updates to work items that are already in a terminal state
     if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
-      res.status(409).send(`WorkItem was already ${workItem.status}.`);
+      res.status(409).send(`WorkItem was already ${workItem.status}`);
       responded = true;
       return;
     }
