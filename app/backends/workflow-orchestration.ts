@@ -421,7 +421,7 @@ async function handleFailedWorkItems(
   // If the response is an error then set the job status to 'failed'
   if (status === WorkItemStatus.FAILED) {
     continueProcessing = job.ignoreErrors;
-    if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
+    if (!job.isComplete()) {
       let jobMessage;
       
       if (errorMessage) {
@@ -599,14 +599,15 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     const workItem = await getWorkItemById(tx, parseInt(id, 10));
     const job = await Job.byJobID(tx, workItem.jobID, false, false);
 
-    // If the job was already canceled or failed then send 409 response
-    if ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
+    // If the job was already in a terminal state then send 409 response
+    // unless we are just canceling the work item
+    if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
       res.status(409).send(`Job was already ${job.status}.`);
       // Note work item will stay in the running state, but the reaper will clean it up
       responded = true;
       return;
     }
-    // If the item was already complete, send 409 (could happen with retries)
+    // Don't allow updates to work items that are already in a terminal state
     if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
       res.status(409).send(`WorkItem was already ${workItem.status}.`);
       responded = true;

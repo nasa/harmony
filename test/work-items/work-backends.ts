@@ -1,4 +1,5 @@
-import { Job, JobRecord, JobStatus } from './../../app/models/job';
+import { WorkItemStatus, getStacLocation, WorkItemRecord } from './../../app/models/work-item-interface';
+import { Job, JobRecord, JobStatus, terminalStates } from './../../app/models/job';
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
@@ -9,7 +10,6 @@ import db from '../../app/util/db';
 import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
-import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../../app/models/work-item-interface';
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();
@@ -23,7 +23,7 @@ describe('Work Backends', function () {
     id: 1,
   } as Partial<WorkItemRecord>;
 
-  const workflowStepRecod = {
+  const workflowStepRecord = {
     jobID: jobRecord.jobID,
     serviceID: service,
     stepIndex: 0,
@@ -191,10 +191,10 @@ describe('Work Backends', function () {
     });
   });
 
-  describe('updating a work item', function () {
+  describe('Updating a work item', function () {
     describe('when the work item failed', async function () {
       hookJobCreation(jobRecord);
-      hookWorkflowStepCreation(workflowStepRecod);
+      hookWorkflowStepCreation(workflowStepRecord);
       hookWorkItemCreation(workItemRecord);
       before(async function () {
         let shouldLoop = true;
@@ -205,7 +205,6 @@ describe('Work Backends', function () {
           tmpWorkItem.status = WorkItemStatus.FAILED;
           tmpWorkItem.results = [];
 
-          console.log(tmpWorkItem);
           await updateWorkItem(this.backend, tmpWorkItem);
 
           // check to see if the work-item has failed completely
@@ -227,7 +226,7 @@ describe('Work Backends', function () {
 
     describe('and the work item succeeded', async function () {
       hookJobCreation(jobRecord);
-      hookWorkflowStepCreation(workflowStepRecod);
+      hookWorkflowStepCreation(workflowStepRecord);
       hookWorkItemCreation(workItemRecord);
       const successfulWorkItemRecord = {
         ...workItemRecord,
@@ -271,5 +270,52 @@ describe('Work Backends', function () {
         });
       });
     });
+
+    // tests to make sure work-items cannot be updated for jobs in a terminal state
+    // with the exception that we do allow canceling work-items
+    for (const terminalState of terminalStates) {
+      describe(`When the job is already in state "${terminalState}"`, async function () {
+        hookJobCreation({ ...jobRecord, ...{ status: terminalState } });
+        hookWorkflowStepCreation(workflowStepRecord);
+        hookWorkItemCreation(workItemRecord);
+        for (const updateState of Object.values(WorkItemStatus).filter(k => k !== WorkItemStatus.CANCELED)) {
+          describe(`And an attempt is made to update the work-item to state "${updateState}"`, async function () {
+            before(async function () {
+              this.job.status =
+                this.workItem.status = updateState;
+              this.response = await updateWorkItem(this.backend, this.workItem);
+            });
+            it('fails the update', function () {
+              expect(this.response.status).to.equal(409);
+              expect(this.response.text).to.equal(`Job was already ${terminalState}.`);
+            });
+          });
+        }
+      });
+    }
+
+    // tests to make sure work-items cannot be updated once they are in a terminal state
+    for (const terminalState of [WorkItemStatus.CANCELED, WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL]) {
+      describe(`When the work-item is already in state "${terminalState}"`, async function () {
+        const newWorkItemRecord = {
+          ...workItemRecord, ...{ status: terminalState },
+        };
+        hookJobCreation(jobRecord);
+        hookWorkflowStepCreation(workflowStepRecord);
+        hookWorkItemCreation(newWorkItemRecord);
+        for (const updateState of Object.values(WorkItemStatus)) {
+          describe(`And an attempt is made to update the work-item to state "${updateState}"`, async function () {
+            before(async function () {
+              this.workItem.status = updateState;
+              this.response = await updateWorkItem(this.backend, this.workItem);
+            });
+            it('fails the update', function () {
+              expect(this.response.status).to.equal(409);
+              expect(this.response.text).to.equal(`WorkItem was already ${terminalState}`);
+            });
+          });
+        }
+      });
+    }
   });
 });
