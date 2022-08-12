@@ -415,7 +415,8 @@ async function getWorkItemUrl(workItem, logger): Promise<string> {
  * @returns whether to continue processing work item updates or end
  */
 async function handleFailedWorkItems(
-  tx, job, workItem: WorkItem, workflowStep: WorkflowStep, status, logger, errorMessage,
+  tx: Transaction, job: Job, workItem: WorkItem, workflowStep: WorkflowStep, status: WorkItemStatus,
+  logger: Logger, errorMessage: string,
 ): Promise<boolean> {
   let continueProcessing = true;
   // If the response is an error then set the job status to 'failed'
@@ -504,16 +505,16 @@ async function updateWorkItemCounts(
  * @param logger - a logger instance
  */
 async function proccessItemUpdate(
-  tx,
-  status,
-  results,
-  hits,
-  scrollID,
-  errorMessage,
-  totalGranulesSize,
-  workItem,
-  job,
-  logger): Promise<void> {
+  tx: Transaction,
+  status: WorkItemStatus,
+  results: string[],
+  hits: number,
+  scrollID: string,
+  errorMessage: string,
+  totalGranulesSize: string,
+  workItem: WorkItem,
+  job: Job,
+  logger: Logger): Promise<void> {
   // retry failed work-items up to a limit
   if (status === WorkItemStatus.FAILED) {
     if (workItem.retryCount < env.workItemRetryLimit) {
