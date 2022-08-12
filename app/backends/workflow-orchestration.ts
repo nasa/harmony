@@ -491,7 +491,7 @@ async function updateWorkItemCounts(
 
 /**
  * Update the work item and also complete any necessary further processing
- * such as handling any necessary retries, creating subsequent work items, 
+ * such as handling retries, creating subsequent work items, 
  * updating the job, adding job links, and creating aggregate STAC catalogs.
  * @param tx - the transaction to perform the updates with
  * @param status - the status that will be used to update the work item
@@ -504,7 +504,7 @@ async function updateWorkItemCounts(
  * @param job -  the job that is relevant to this work item update
  * @param logger - a logger instance
  */
-async function proccessItemUpdate(
+export async function proccessWorkItemUpdate(
   tx: Transaction,
   status: WorkItemStatus,
   results: string[],
@@ -615,7 +615,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       responded = true;
       return;
     }
-    await proccessItemUpdate(tx, status, results, hits, scrollID, 
+    await proccessWorkItemUpdate(tx, status, results, hits, scrollID, 
       errorMessage, req.body.totalGranulesSize, workItem, job, logger);
   });
   if (!responded) {
