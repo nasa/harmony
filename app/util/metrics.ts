@@ -24,7 +24,9 @@ export interface RequestMetric {
   referrer_request_id?: string; // We do not have this information
   request_id: string;
   user_id: string;
-  user_ip?: string; // We do not have this information
+  // We do not have the user_ip information, but the metrics team needs it set to a blank string
+  // rather than omitting it
+  user_ip: string;
   rangeBeginDateTime?: string;
   rangeEndDateTime?: string;
   bbox?: BboxMetric;
@@ -101,6 +103,7 @@ export function getRequestMetric(operation: DataOperation, serviceName: string):
 
   const metric: RequestMetric = {
     request_id: operation.requestId,
+    user_ip: '',
     user_id: operation.user,
     parameters: { service_name: serviceName },
   };
