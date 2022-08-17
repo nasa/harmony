@@ -16,12 +16,16 @@ describe('Metrics construction', function () {
 
       it('includes all of the fields in the metric', function () {
         expect(Object.keys(metric)).to.eql([
-          'request_id', 'user_id', 'parameters', 'bbox', 'rangeBeginDateTime', 'rangeEndDateTime',
+          'request_id', 'user_ip', 'user_id', 'parameters', 'bbox', 'rangeBeginDateTime', 'rangeEndDateTime',
         ]);
       });
 
       it('sets the request ID correctly', function () {
         expect(metric.request_id).to.equal(operation.requestId);
+      });
+
+      it('sets the user IP to a blank string', function () {
+        expect(metric.user_ip).to.equal('');
       });
 
       it('sets the user ID correctly', function () {
@@ -53,7 +57,7 @@ describe('Metrics construction', function () {
 
       it('does not include a bbox in the metric', function () {
         expect(Object.keys(metric)).to.eql([
-          'request_id', 'user_id', 'parameters', 'rangeBeginDateTime', 'rangeEndDateTime',
+          'request_id', 'user_ip', 'user_id', 'parameters', 'rangeBeginDateTime', 'rangeEndDateTime',
         ]);
       });
     });
@@ -66,7 +70,7 @@ describe('Metrics construction', function () {
 
       it('does not include a rangeBeginDateTime in the metric', function () {
         expect(Object.keys(metric)).to.eql([
-          'request_id', 'user_id', 'parameters', 'bbox', 'rangeEndDateTime',
+          'request_id', 'user_ip', 'user_id', 'parameters', 'bbox', 'rangeEndDateTime',
         ]);
       });
     });
@@ -79,7 +83,7 @@ describe('Metrics construction', function () {
 
       it('does not include a rangeEndDateTime in the metric', function () {
         expect(Object.keys(metric)).to.eql([
-          'request_id', 'user_id', 'parameters', 'bbox', 'rangeBeginDateTime',
+          'request_id', 'user_ip', 'user_id', 'parameters', 'bbox', 'rangeBeginDateTime',
         ]);
       });
     });
