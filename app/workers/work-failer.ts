@@ -4,7 +4,7 @@ import env from '../util/env';
 import { Worker } from './worker';
 import db from '../util/db';
 import sleep from '../util/sleep';
-import { Job } from '../models/job';
+import { Job, JobStatus } from '../models/job';
 import { WorkItemStatus } from '../models/work-item-interface';
 import { proccessWorkItemUpdate } from '../backends/workflow-orchestration';
 
@@ -39,6 +39,7 @@ export default class WorkFailer implements Worker {
     };
     const workItems = await getWorkItemsByAgeAndStatus(
       db, olderThanMinutes, [WorkItemStatus.RUNNING],
+      [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
     );
     if (workItems.length) {
       const workItemIds = workItems.map((item) => item.id);

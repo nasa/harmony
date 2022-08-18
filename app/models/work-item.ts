@@ -357,21 +357,23 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
  * that also have a particular status.
  * @param tx - the transaction to use for querying
  * @param olderThanMinutes - retrieve WorkItems with createdAt older than olderThanMinutes
- * @param statuses - only WorkItems with these statuses will be retrieved
+ * @param workItemStatuses - only WorkItems with these statuses will be retrieved
+ * @param jobStatuses - only WorkItems associated with jobs with these statuses will be retrieved
  * @returns - all WorkItems that meet the olderThanMinutes and status constraints
 */
 export async function getWorkItemsByAgeAndStatus(
   tx: Transaction,
   olderThanMinutes: number,
-  statuses: WorkItemStatus[],
+  workItemStatuses: WorkItemStatus[],
+  jobStatuses: JobStatus[],
 ): Promise<WorkItem[]> {
   const pastDate = subMinutes(new Date(), olderThanMinutes);
   const workItems = (await tx(`${WorkItem.table} as w`)
     .innerJoin(Job.table, 'w.jobID', '=', `${Job.table}.jobID`)
     .select(...tableFields)
-    .whereIn(`${Job.table}.status`, [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS])
+    .whereIn(`${Job.table}.status`, jobStatuses)
     .where('w.createdAt', '<', pastDate)
-    .whereIn('w.status', statuses))
+    .whereIn('w.status', workItemStatuses))
     .map((item) => new WorkItem(item));
 
   return workItems;
