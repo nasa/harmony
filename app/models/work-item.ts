@@ -353,10 +353,10 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
 
 /**
  * Get all WorkItems (from running jobs) 
- * that are older than a particular age (minutes), 
+ * that haven't been updated for a particular amount of time (minutes), 
  * that also have a particular status.
  * @param tx - the transaction to use for querying
- * @param olderThanMinutes - retrieve WorkItems with createdAt older than olderThanMinutes
+ * @param olderThanMinutes - retrieve WorkItems with updatedAt older than olderThanMinutes
  * @param workItemStatuses - only WorkItems with these statuses will be retrieved
  * @param jobStatuses - only WorkItems associated with jobs with these statuses will be retrieved
  * @returns - all WorkItems that meet the olderThanMinutes and status constraints
@@ -372,7 +372,7 @@ export async function getWorkItemsByAgeAndStatus(
     .innerJoin(Job.table, 'w.jobID', '=', `${Job.table}.jobID`)
     .select(...tableFields)
     .whereIn(`${Job.table}.status`, jobStatuses)
-    .where('w.createdAt', '<', pastDate)
+    .where('w.updatedAt', '<', pastDate)
     .whereIn('w.status', workItemStatuses))
     .map((item) => new WorkItem(item));
 

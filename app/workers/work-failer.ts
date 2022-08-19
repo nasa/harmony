@@ -36,7 +36,7 @@ export default class WorkFailer implements Worker {
     let response: {
       workItemIds: number[],
       jobIds: string[]
-    };
+    } = { workItemIds: [], jobIds: [] };
     const workItems = await getWorkItemsByAgeAndStatus(
       db, olderThanMinutes, [WorkItemStatus.RUNNING],
       [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
