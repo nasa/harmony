@@ -73,6 +73,17 @@ CREATE TABLE `workflow_steps` (
   UNIQUE(jobID, stepIndex)
 );
 
+CREATE TABLE `work_item_updates` (
+  `id` integer not null primary key autoincrement,
+  `workItemID` integer no null,
+  `status` check (`status` in ('ready', 'running', 'successful', 'failed', 'canceled')) not null,,
+  `hits` integer, 
+  `results` text,
+  `scrollID` varchar(4096),
+  `errorMessage` varchar(4096)
+  FOREIGN KEY(workItemID) REFERENCES work_items(id)
+);
+
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);
 CREATE INDEX jobs_updatedAt_id ON jobs(updatedAt);
 CREATE INDEX jobs_username_idx ON jobs(username);

@@ -64,6 +64,35 @@ export interface WorkItemRecord {
 }
 
 /**
+ * Interface the defines the fields in a work-item update from a service
+ */
+export interface WorkItemUpdateRecord {
+  // The database ID for the record
+  id: number;
+
+  // the database ID of the related WorkItem
+  workItemID: number;
+
+  // The status of the operation - see WorkItemStatus
+  status?: WorkItemStatus;
+
+  // The ID of the scroll session (only used for the query cmr service)
+  scrollID?: string;
+
+  // The number of cmr hits (only used for the query cmr service)
+  hits?: number;
+
+  // The sum of the sizes of the granules associated with this work item
+  totalGranulesSize?: number;
+
+  // The location of the resulting STAC catalog(s) - array serialized into a JSON string
+  serializedResults?: string;
+
+  // error message if status === FAILED
+  errorMessage?: string;
+}
+
+/**
  * Get the s3 URL to the STAC outputs directory for a work item.
  * Optionally pass in a target URL in which case the URL returned will be the target URL
  * resolved relative to the STAC outputs directory.
