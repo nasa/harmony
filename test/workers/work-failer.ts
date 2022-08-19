@@ -105,7 +105,7 @@ describe('WorkFailer', function () {
       workItemIds: number[];
       jobIds: string[];
     };
-    it('retries work items (for running jobs) that have been running for too long', async function () {
+    it('calls proccessWorkItemUpdates for work items that have been running for too long', async function () {
       MockDate.set('1/2/2000');
       initialResponse = await workFailer.proccessWorkItemUpdates(failDurationMinutes);
       
@@ -123,7 +123,7 @@ describe('WorkFailer', function () {
       expect(initialResponse.workItemIds.length).to.equal(3);
     });
 
-    it('does not proccess long running work items in the READY state', async function () {
+    it('does not proccess long-running work items in the READY state', async function () {
       const readyItemJobItems = (await getWorkItemsByJobId(this.trx, readyItemJob.jobID)).workItems;
       const readyItem = readyItemJobItems.filter((item) => item.status === WorkItemStatus.READY)[0];
       expect(readyItem.id === readyItemJobItem2.id);
@@ -131,7 +131,7 @@ describe('WorkFailer', function () {
       expect(!initialResponse.workItemIds.includes(readyItem.id));
     });
 
-    it('does not proccess jobs without long running work items', async function () {
+    it('does not proccess jobs without long-running work items', async function () {
       expect(!initialResponse.jobIds.includes(noneOldJob.jobID));
       expect(!initialResponse.workItemIds.includes(noneOldJob.id));
     });
@@ -142,7 +142,7 @@ describe('WorkFailer', function () {
       expect(subsequentResponse.workItemIds.length).to.equal(0);
     });
 
-    it('keeps processing items while the retryCount is not exhausted', async function () {
+    it('keeps processing long-running items when they are re-queued', async function () {
       // simulate that twoOldJob's items are RUNNING again after the initial re-queuing
       MockDate.set('1/2/2000');
       let twoOldJobItems = (await getWorkItemsByJobId(this.trx, twoOldJob.jobID)).workItems;
