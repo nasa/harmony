@@ -17,11 +17,10 @@ const config: WorkFailerConfig = { logger };
 const workFailer = new WorkFailer(config);
 
 // 11 hours -- any RUNNING items that haven't been updatedAt for this long should get picked up
-// by the WorkFailer and either retried or failed once retries are exhausted
+// by the WorkFailer
 const failDurationMinutes = 11 * 60; 
 
 describe('WorkFailer', function () {
-  // we'll trigger the WorkFailer this many times
   let retryLimit: number;
 
   // WorkItem initial createAt/updatedAt dates
@@ -109,10 +108,12 @@ describe('WorkFailer', function () {
       MockDate.set('1/2/2000');
       initialResponse = await workFailer.proccessWorkItemUpdates(failDurationMinutes);
       
+      // check that both old items were re-queued
       const twoOldJobItems = (await getWorkItemsByJobId(this.trx, twoOldJob.jobID)).workItems;
       expect(twoOldJobItems.filter((item) => item.status === WorkItemStatus.READY).length).to.equal(2);
       expect(twoOldJobItems.filter((item) => item.retryCount === 1).length).to.equal(2);
 
+      // check that only the one old item was re-queued
       const oneOldJobItems = (await getWorkItemsByJobId(this.trx, oneOldJob.jobID)).workItems;
       expect(oneOldJobItems.filter((item) => item.status === WorkItemStatus.READY).length).to.equal(1);
       expect(oneOldJobItems.filter((item) => item.retryCount === 1).length).to.equal(1);
@@ -124,9 +125,11 @@ describe('WorkFailer', function () {
     });
 
     it('does not proccess long-running work items in the READY state', async function () {
+      // check that the old READY item is unchanged
       const readyItemJobItems = (await getWorkItemsByJobId(this.trx, readyItemJob.jobID)).workItems;
       const readyItem = readyItemJobItems.filter((item) => item.status === WorkItemStatus.READY)[0];
       expect(readyItem.id === readyItemJobItem2.id);
+      // check that the old READY item was not processed by the WorkFailer
       expect(!initialResponse.jobIds.includes(readyItemJob.jobID));
       expect(!initialResponse.workItemIds.includes(readyItem.id));
     });
