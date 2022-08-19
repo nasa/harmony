@@ -821,15 +821,6 @@ export class Job extends Record implements JobRecord {
     return data.length !== 0;
   }
 
-  // /**
-  //  * Updates the status and progress fields based on work item statuses.
-  //  * Work around for presumed race condition when work items are updated that can prevent
-  //  * the job status/progress from getting updated correctly.
-  //  */
-  // async updateStatusAndProgress(): Promise<void> {
-    
-  // }
-
   /**
    * Validates and saves the job using the given transaction.  Throws an error if the
    * job is not valid.  New jobs will be inserted and have their id, createdAt, and
