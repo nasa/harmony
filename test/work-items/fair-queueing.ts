@@ -104,7 +104,7 @@ describe('Fair Queueing', function () {
         expect(results[1].body.workItem.jobID).to.equal('job3');
       });
       it('returns the rest of the work items in fair queueing order', function () {
-        const jobIds = results.slice(2, 5).map((result) => result.body.workItem.jobID);
+        const jobIds = results.slice(2, 5).map((result) => result.body.workItem?.jobID);
         expect(jobIds).to.eql(['job6', 'job1', 'job7']);
       });
       it('returns a 404 status when no work is available', function () {
