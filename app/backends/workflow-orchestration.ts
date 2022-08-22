@@ -604,7 +604,12 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     { workItemID: id, status, hits, serializedResults: JSON.stringify(results), scrollID, errorMessage, totalGranulesSize },
   );
 
-  // asynchronously handle the update
+  // asynchronously handle the update so that the service is not waiting for a response
+  // during a potentially long update. If the asynchronous update fails the work-item will
+  // eventually be retried by the timeout handler. In any case there is not much the service
+  // can do if the update fails, so it is OK for us to ignore the promise here. The service
+  // can still retry for network or similar failures, but we don't want it to retry for things
+  // like 409 errors.
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   handleWorkItemUpdate(update, req.context.logger);
 
