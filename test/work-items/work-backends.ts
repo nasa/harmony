@@ -10,6 +10,9 @@ import db from '../../app/util/db';
 import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
+import { handleWorkItemUpdate } from '../../app/backends/workflow-orchestration';
+import WorkItemUpdate from '../../app/models/work-item-update';
+import logger from '../../app/util/log';
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();
@@ -283,11 +286,16 @@ describe('Work Backends', function () {
             before(async function () {
               this.job.status =
                 this.workItem.status = updateState;
-              this.response = await updateWorkItem(this.backend, this.workItem);
+              this.workItem.status = updateState;
+              const workItemUpdate = new WorkItemUpdate({
+                ... this.workItem,
+              });
+              workItemUpdate.workItemID = this.workItem.id;
+              await handleWorkItemUpdate(workItemUpdate, logger.child({ application: 'test' }));
+              this.workItem = await getWorkItemById(db, workItemRecord.id);
             });
             it('fails the update', function () {
-              expect(this.response.status).to.equal(409);
-              expect(this.response.text).to.equal(`Job was already ${terminalState}.`);
+              expect(this.workItem.status).to.equal(WorkItemStatus.READY);
             });
           });
         }
@@ -307,11 +315,15 @@ describe('Work Backends', function () {
           describe(`And an attempt is made to update the work-item to state "${updateState}"`, async function () {
             before(async function () {
               this.workItem.status = updateState;
-              this.response = await updateWorkItem(this.backend, this.workItem);
+              const workItemUpdate = new WorkItemUpdate({
+                ... this.workItem,
+              });
+              workItemUpdate.workItemID = this.workItem.id;
+              await handleWorkItemUpdate(workItemUpdate, logger.child({ application: 'test' }));
+              this.workItem = await getWorkItemById(db, workItemRecord.id);
             });
             it('fails the update', function () {
-              expect(this.response.status).to.equal(409);
-              expect(this.response.text).to.equal(`WorkItem was already ${terminalState}`);
+              expect(this.workItem.status).to.equal(terminalState);
             });
           });
         }
