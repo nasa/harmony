@@ -50,7 +50,7 @@ export default class WorkFailer implements Worker {
             processWorkItemUpdate(
               db, WorkItemStatus.FAILED, [],
               null, item.scrollID, 
-              `Work item took too long (more than ${lastUpdateOlderThanMinutes} minutes) to complete.`,
+              `Work item has not been updated for over ${lastUpdateOlderThanMinutes} minutes.`,
               String(item.totalGranulesSize), item, job, this.logger)
               .catch((e) => {
                 this.logger.error(`Work Failer encountered error for item ${item.id} (job ${jobId})`);
@@ -58,7 +58,7 @@ export default class WorkFailer implements Worker {
               });
           }
         } catch (e) {
-          this.logger.error(`Error attempting to proccess work item updates for job ${jobId}.`);
+          this.logger.error(`Error attempting to process work item updates for job ${jobId}.`);
           this.logger.error(e);
         }
       }
@@ -66,7 +66,7 @@ export default class WorkFailer implements Worker {
         jobIds: Array.from(jobIds.values()),
         workItemIds,
       };
-      this.logger.info('Work failer proccessed work item updates for ' +
+      this.logger.info('Work failer processed work item updates for ' +
         `${jobIds.size} jobs and ${workItems.length} work items.`);
     }
     return response;
