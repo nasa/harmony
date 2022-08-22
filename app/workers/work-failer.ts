@@ -13,8 +13,9 @@ export interface WorkFailerConfig {
 }
 
 /**
- * Calls the update work item route with status=FAILED for work items that are taking
- * too long to complete.
+ * Updates work items to status=FAILED for work items that haven't been updated
+ * for a specified duration (env.workFailerPeriodSec). If retries haven't been exhausted,
+ * work item statuses may be reset to RUNNING instead.
  */
 export default class WorkFailer implements Worker {
   isRunning: boolean;
