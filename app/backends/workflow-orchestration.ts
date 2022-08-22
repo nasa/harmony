@@ -19,7 +19,7 @@ import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
 
 const MAX_TRY_COUNT = 1;
-const RETRY_DELAY = 1000;
+const RETRY_DELAY = 1000 * 120;
 const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
 
 /**
@@ -424,7 +424,7 @@ async function handleFailedWorkItems(
     continueProcessing = job.ignoreErrors;
     if (!job.isComplete()) {
       let jobMessage;
-      
+
       if (errorMessage) {
         jobMessage = `WorkItem [${workItem.id}] failed with error: ${errorMessage}`;
       }
@@ -467,8 +467,8 @@ async function handleFailedWorkItems(
 }
 
 /**
- * Updated the workflow steps `workItemCount` field for the given job to match the new 
- * 
+ * Updated the workflow steps `workItemCount` field for the given job to match the new
+ *
  * @param transaction - the transaction to use for the update
  * @param job - A Job that has a new input granule count
  */
