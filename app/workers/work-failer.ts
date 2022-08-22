@@ -1,5 +1,5 @@
 import { Logger } from 'winston';
-import { getWorkItemsByAgeAndStatus } from '../models/work-item';
+import { getWorkItemsByUpdateAgeAndStatus } from '../models/work-item';
 import env from '../util/env';
 import { Worker } from './worker';
 import db from '../util/db';
@@ -35,7 +35,7 @@ export default class WorkFailer implements Worker {
       workItemIds: number[],
       jobIds: string[]
     } = { workItemIds: [], jobIds: [] };
-    const workItems = await getWorkItemsByAgeAndStatus(
+    const workItems = await getWorkItemsByUpdateAgeAndStatus(
       db, lastUpdateOlderThanMinutes, [WorkItemStatus.RUNNING],
       [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
     );

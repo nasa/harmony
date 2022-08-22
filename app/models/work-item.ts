@@ -361,7 +361,7 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
  * @param jobStatuses - only WorkItems associated with jobs with these statuses will be retrieved
  * @returns all WorkItems that meet the lastUpdateOlderThanMinutes and status constraints
 */
-export async function getWorkItemsByAgeAndStatus(
+export async function getWorkItemsByUpdateAgeAndStatus(
   tx: Transaction,
   lastUpdateOlderThanMinutes: number,
   workItemStatuses: WorkItemStatus[],
