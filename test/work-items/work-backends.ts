@@ -308,7 +308,7 @@ describe('Work Backends', function () {
               this.workItem.status = updateState;
               await updateWorkItem(this.backend, this.workItem);
             });
-            it('fails the update', async function () {
+            it('fails to update the work item', async function () {
               const workItem = await getWorkItemById(db, workItemRecord.id);
               expect(workItem.status).to.equal(terminalState);
             });

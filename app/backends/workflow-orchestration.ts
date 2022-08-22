@@ -600,9 +600,16 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const { status, hits, results, scrollID, errorMessage } = req.body;
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
 
-  const update = new WorkItemUpdate(
-    { workItemID: id, status, hits, serializedResults: JSON.stringify(results), scrollID, errorMessage, totalGranulesSize },
-  );
+  const update =
+  {
+    workItemID: parseInt(id),
+    status,
+    hits,
+    results,
+    scrollID,
+    errorMessage,
+    totalGranulesSize,
+  };
 
   // asynchronously handle the update so that the service is not waiting for a response
   // during a potentially long update. If the asynchronous update fails the work-item will
