@@ -99,22 +99,22 @@ describe('WorkFailer', function () {
     env.workItemRetryLimit = retryLimit;
   });
 
-  describe('.proccessWorkItemUpdates', async function () {
+  describe('.processWorkItemUpdates', async function () {
     let initialResponse: {
       workItemIds: number[];
       jobIds: string[];
     };
-    it('calls proccessWorkItemUpdates for work items that have been running for too long', async function () {
-      MockDate.set('1/2/2000');
-      initialResponse = await workFailer.proccessWorkItemUpdates(failDurationMinutes);
+    it('proccesses work item updates for items that are RUNNING and have not been updated for the specified duration', async function () {
+      MockDate.set('1/2/2000'); // some items should now be a day old
+      initialResponse = await workFailer.processWorkItemUpdates(failDurationMinutes);
       
       // check that both old items were re-queued
-      const twoOldJobItems = (await getWorkItemsByJobId(this.trx, twoOldJob.jobID)).workItems;
+      const twoOldJobItems = (await getWorkItemsByJobId(db, twoOldJob.jobID)).workItems;
       expect(twoOldJobItems.filter((item) => item.status === WorkItemStatus.READY).length).to.equal(2);
       expect(twoOldJobItems.filter((item) => item.retryCount === 1).length).to.equal(2);
 
       // check that only the one old item was re-queued
-      const oneOldJobItems = (await getWorkItemsByJobId(this.trx, oneOldJob.jobID)).workItems;
+      const oneOldJobItems = (await getWorkItemsByJobId(db, oneOldJob.jobID)).workItems;
       expect(oneOldJobItems.filter((item) => item.status === WorkItemStatus.READY).length).to.equal(1);
       expect(oneOldJobItems.filter((item) => item.retryCount === 1).length).to.equal(1);
       expect(oneOldJobItems.filter((item) => item.status === WorkItemStatus.RUNNING).length).to.equal(1);
@@ -124,11 +124,12 @@ describe('WorkFailer', function () {
       expect(initialResponse.workItemIds.length).to.equal(3);
     });
 
-    it('does not proccess long-running work items in the READY state', async function () {
+    it('does not proccess old work items that are in the READY state', async function () {
       // check that the old READY item is unchanged
-      const readyItemJobItems = (await getWorkItemsByJobId(this.trx, readyItemJob.jobID)).workItems;
+      const readyItemJobItems = (await getWorkItemsByJobId(db, readyItemJob.jobID)).workItems;
       const readyItem = readyItemJobItems.filter((item) => item.status === WorkItemStatus.READY)[0];
       expect(readyItem.id === readyItemJobItem2.id);
+      
       // check that the old READY item was not processed by the WorkFailer
       expect(!initialResponse.jobIds.includes(readyItemJob.jobID));
       expect(!initialResponse.workItemIds.includes(readyItem.id));
@@ -140,7 +141,7 @@ describe('WorkFailer', function () {
     });
 
     it('should not find any items to proccess upon immediate subsequent invocation', async function () {
-      const subsequentResponse = await workFailer.proccessWorkItemUpdates(failDurationMinutes);
+      const subsequentResponse = await workFailer.processWorkItemUpdates(failDurationMinutes);
       expect(subsequentResponse.jobIds.length).to.equal(0);
       expect(subsequentResponse.workItemIds.length).to.equal(0);
     });
@@ -148,7 +149,7 @@ describe('WorkFailer', function () {
     it('keeps processing long-running items when they are re-queued', async function () {
       // simulate that twoOldJob's items are RUNNING again after the initial re-queuing
       MockDate.set('1/2/2000');
-      let twoOldJobItems = (await getWorkItemsByJobId(this.trx, twoOldJob.jobID)).workItems;
+      let twoOldJobItems = (await getWorkItemsByJobId(db, twoOldJob.jobID)).workItems;
       for (const item of twoOldJobItems) {
         item.status = WorkItemStatus.RUNNING;
         await item.save(db);
@@ -158,7 +159,7 @@ describe('WorkFailer', function () {
       // have been running for a whole day and should get picked up again by the WorkFailer
       MockDate.set('1/3/2000');
 
-      const response = await workFailer.proccessWorkItemUpdates(failDurationMinutes);
+      const response = await workFailer.processWorkItemUpdates(failDurationMinutes);
       
       twoOldJobItems = (await getWorkItemsByJobId(db, twoOldJob.jobID)).workItems;
       expect(twoOldJobItems.filter((item) => item.status === WorkItemStatus.READY).length).to.equal(2);

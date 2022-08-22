@@ -6,15 +6,15 @@ import db from '../util/db';
 import sleep from '../util/sleep';
 import { Job, JobStatus } from '../models/job';
 import { WorkItemStatus } from '../models/work-item-interface';
-import { proccessWorkItemUpdate } from '../backends/workflow-orchestration';
+import { processWorkItemUpdate } from '../backends/workflow-orchestration';
 
 export interface WorkFailerConfig {
   logger: Logger;
 }
 
 /**
- * Fails/retries the work items that are taking too long to complete.
- * (WorkItem failures are persisted when no retries are left.)
+ * Calls the update work item route with status=FAILED for work items that are taking
+ * too long to complete.
  */
 export default class WorkFailer implements Worker {
   isRunning: boolean;
@@ -26,19 +26,17 @@ export default class WorkFailer implements Worker {
   }
 
   /**
-   * Find work items that're older than olderThanMinutes and call proccessWorkItemUpdate
-   * which will either result in the item being failed or retried depending on the number
-   * of retries that are left.
-   * @param olderThanMinutes - upper limit on work item age
-   * @returns \{ workItemIds: number[], jobIds: string[] \}
+   * Find work items that're older than lastUpdateOlderThanMinutes and call processWorkItemUpdate.
+   * @param lastUpdateOlderThanMinutes - upper limit on the duration since the last update
+   * @returns The ids of items and jobs that were processed: \{ workItemIds: number[], jobIds: string[] \}
    */
-  async proccessWorkItemUpdates(olderThanMinutes: number): Promise<{ workItemIds: number[], jobIds: string[] }> {
+  async processWorkItemUpdates(lastUpdateOlderThanMinutes: number): Promise<{ workItemIds: number[], jobIds: string[] }> {
     let response: {
       workItemIds: number[],
       jobIds: string[]
     } = { workItemIds: [], jobIds: [] };
     const workItems = await getWorkItemsByAgeAndStatus(
-      db, olderThanMinutes, [WorkItemStatus.RUNNING],
+      db, lastUpdateOlderThanMinutes, [WorkItemStatus.RUNNING],
       [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
     );
     if (workItems.length) {
@@ -49,10 +47,10 @@ export default class WorkFailer implements Worker {
           const job = await Job.byJobID(db, jobId, false, true);
           const itemsForJob = workItems.filter((item) => item.jobID == job.jobID);
           for (const item of itemsForJob) { 
-            proccessWorkItemUpdate(
+            processWorkItemUpdate(
               db, WorkItemStatus.FAILED, [],
               null, item.scrollID, 
-              `Work item took too long (more than ${olderThanMinutes} minutes) to complete.`,
+              `Work item took too long (more than ${lastUpdateOlderThanMinutes} minutes) to complete.`,
               String(item.totalGranulesSize), item, job, this.logger)
               .catch((e) => {
                 this.logger.error(`Work Failer encountered error for item ${item.id} (job ${jobId})`);
@@ -83,7 +81,7 @@ export default class WorkFailer implements Worker {
       }
       this.logger.info('Starting work failer');
       try {
-        await this.proccessWorkItemUpdates(
+        await this.processWorkItemUpdates(
           env.failableWorkAgeMinutes,
         );
       } catch (e) {

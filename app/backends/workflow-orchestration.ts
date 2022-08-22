@@ -504,7 +504,7 @@ async function updateWorkItemCounts(
  * @param job -  the job that is relevant to this work item update
  * @param logger - a logger instance
  */
-export async function proccessWorkItemUpdate(
+export async function processWorkItemUpdate(
   tx: Transaction,
   status: WorkItemStatus,
   results: string[],
@@ -615,7 +615,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       responded = true;
       return;
     }
-    await proccessWorkItemUpdate(tx, status, results, hits, scrollID, 
+    await processWorkItemUpdate(tx, status, results, hits, scrollID, 
       errorMessage, req.body.totalGranulesSize, workItem, job, logger);
   });
   if (!responded) {
