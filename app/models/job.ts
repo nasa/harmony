@@ -94,6 +94,10 @@ export interface JobQuery {
     status?: { in: boolean, values: string[] };
     username?: { in: boolean, values: string[] };
   }
+  orderBy?: {
+    field: string;
+    value: string;
+  }
 }
 
 // State machine definition for jobs. This is not used to maintain state, just to enforce
@@ -335,7 +339,9 @@ export class Job extends Record implements JobRecord {
     const items = await transaction('jobs')
       .select()
       .where(constraints.where)
-      .orderBy('createdAt', 'desc')
+      .orderBy(
+        constraints?.orderBy?.field ?? 'createdAt', 
+        constraints?.orderBy?.value ?? 'desc')
       .modify((queryBuilder) => {
         if (constraints.whereIn) {
           for (const jobField in constraints.whereIn) {

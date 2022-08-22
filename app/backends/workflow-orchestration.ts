@@ -421,7 +421,7 @@ async function handleFailedWorkItems(
   // If the response is an error then set the job status to 'failed'
   if (status === WorkItemStatus.FAILED) {
     continueProcessing = job.ignoreErrors;
-    if (![JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
+    if (!job.isComplete()) {
       let jobMessage;
       
       if (errorMessage) {
@@ -502,8 +502,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const { logger } = req.context;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item for ${id} to ${status}`);
-  } else {
-    logger.warn(`Updating work item for ${id} to ${status} with message ${errorMessage}`);
   }
   let responded = false;
   await db.transaction(async (tx) => {
@@ -511,12 +509,34 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     const job = await Job.byJobID(tx, workItem.jobID, false, false);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
 
-    // If the job was already canceled or failed then send 409 response
-    if ([JobStatus.FAILED, JobStatus.CANCELED].includes(job.status)) {
+    // If the job was already in a terminal state then send 409 response
+    // unless we are just canceling the work item
+    if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
       res.status(409).send(`Job was already ${job.status}.`);
       // Note work item will stay in the running state, but the reaper will clean it up
       responded = true;
       return;
+    }
+
+    // Don't allow updates to work items that are already in a terminal state
+    if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
+      res.status(409).send(`WorkItem was already ${workItem.status}`);
+      responded = true;
+      return;
+    }
+
+    // retry failed work-items up to a limit
+    if (status === WorkItemStatus.FAILED) {
+      if (workItem.retryCount < env.workItemRetryLimit) {
+        logger.warn(`Retrying failed work-item ${id}`);
+        workItem.retryCount += 1;
+        workItem.status = WorkItemStatus.READY;
+        await workItem.save(tx);
+        return;
+      } else {
+        logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
+        logger.warn(`Updating work item for ${id} to ${status} with message ${errorMessage}`);
+      }
     }
 
     await updateWorkItemStatus(tx, id, status as WorkItemStatus, totalGranulesSize);
