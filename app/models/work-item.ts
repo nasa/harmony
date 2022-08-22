@@ -112,7 +112,7 @@ export async function getNextWorkItem(
 ): Promise<WorkItem> {
   let workItemData;
   const acceptableJobStatuses = _.cloneDeep(activeJobStatuses);
-  // Now that we use search-after instead of scrolling we could allow pausing of query-cmr
+  // TODO: Now that we use search-after instead of scrolling we could allow pausing of query-cmr
   // work items and start them back up when the job is resumed because there is no session
   if (serviceID.includes('query-cmr')) {
     acceptableJobStatuses.push(JobStatus.PAUSED);
