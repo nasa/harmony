@@ -87,7 +87,7 @@ export default class WorkItem extends Record implements WorkItemRecord {
    * resolved relative to the STAC outputs directory.
    * e.g. s3://artifacts/abc/123/outputs/ with a targetUrl of ./catalog0.json or catalog0.json would resolve to
    * s3://artifacts/abc/123/outputs/catalog0.json
-   * @param targetUrl - URL to resolve against the base outptuts directory 
+   * @param targetUrl - URL to resolve against the base outptuts directory
    * @param isAggregate - include the word aggregate in the URL
    * @returns - the path to the STAC outputs directory (e.g. s3://artifacts/abc/123/outputs/) or the full path to the target URL
    */
@@ -112,14 +112,14 @@ export async function getNextWorkItem(
 ): Promise<WorkItem> {
   let workItemData;
   const acceptableJobStatuses = _.cloneDeep(activeJobStatuses);
-  // The query-cmr service should keep going for paused jobs to avoid the ten minute CMR
-  // scroll session timeout
+  // TODO: Now that we use search-after instead of scrolling we could allow pausing of query-cmr
+  // work items and start them back up when the job is resumed because there is no session
   if (serviceID.includes('query-cmr')) {
     acceptableJobStatuses.push(JobStatus.PAUSED);
   }
 
   try {
-    // query to get users that have active jobs that have available work items for the service
+    // Find users with work items queued for the service
     const subQueryForUsersRequestingService =
       tx(Job.table)
         .select('username')
@@ -137,40 +137,48 @@ export async function getNextWorkItem(
       .first();
 
     if (userData?.username) {
-      let workItemDataQuery = tx(`${WorkItem.table} as w`)
-        .forUpdate()
-        .join(`${Job.table} as j`, 'w.jobID', 'j.jobID')
-        .join(`${WorkflowStep.table} as wf`, function () {
-          this.on('w.jobID', '=', 'wf.jobID')
-            .on('w.workflowStepIndex', '=', 'wf.stepIndex');
-        })
-        .select(...tableFields, 'wf.operation')
-        .whereIn('j.status', acceptableJobStatuses)
-        .where('w.status', '=', 'ready')
-        .where('w.serviceID', '=', serviceID)
-        .where('j.username', '=', userData.username)
-        .orderBy('j.isAsync', 'asc')
-        .orderBy('j.updatedAt', 'asc')
+      // query to choose the job that should be worked on next based on fair queueing policy
+      const jobData = await tx(Job.table)
+        .select([`${Job.table}.jobID`])
+        .join(`${WorkItem.table} as w`, `${Job.table}.jobID`, 'w.jobID')
+        .where('username', '=', userData.username)
+        .whereIn(`${Job.table}.status`, acceptableJobStatuses)
+        .where({ 'w.status': 'ready', serviceID })
+        .orderBy('isAsync', 'asc')
+        .orderBy(`${Job.table}.updatedAt`, 'asc')
         .first();
 
-      if (db.client.config.client === 'pg') {
-        workItemDataQuery = workItemDataQuery.skipLocked();
+      if (jobData?.jobID) {
+        let workItemDataQuery = tx(`${WorkItem.table} as w`)
+          .forUpdate()
+          .join(`${WorkflowStep.table} as wf`, function () {
+            this.on('w.jobID', '=', 'wf.jobID')
+              .on('w.workflowStepIndex', '=', 'wf.stepIndex');
+          })
+          .select(...tableFields, 'wf.operation')
+          .where('w.jobID', '=', jobData.jobID)
+          .where('w.status', '=', 'ready')
+          .where('w.serviceID', '=', serviceID)
+          .first();
+
+        if (db.client.config.client === 'pg') {
+          workItemDataQuery = workItemDataQuery.skipLocked();
+        }
+
+        workItemData = await workItemDataQuery;
+
+        if (workItemData) {
+          workItemData.operation = JSON.parse(workItemData.operation);
+          await tx(WorkItem.table)
+            .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
+            .where({ id: workItemData.id });
+          // need to update the job otherwise long running jobs won't count against
+          // the user's priority
+          await tx(Job.table)
+            .update({ updatedAt: new Date() })
+            .where({ jobID: workItemData.jobID });
+        }
       }
-
-      workItemData = await workItemDataQuery;
-
-      if (workItemData) {
-        workItemData.operation = JSON.parse(workItemData.operation);
-        await tx(WorkItem.table)
-          .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
-          .where({ id: workItemData.id });
-        // need to update the job otherwise long running jobs won't count against
-        // the user's priority
-        await tx(Job.table)
-          .update({ updatedAt: new Date() })
-          .where({ jobID: workItemData.jobID });
-      }
-
     }
   } catch (e) {
     logger.error(`Error getting next work item for service [${serviceID}]`);

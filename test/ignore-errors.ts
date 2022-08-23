@@ -156,8 +156,9 @@ describe('when setting ignoreErrors=true', function () {
 
       it('does not allow any further work item updates', async function () {
         firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-        const res = await updateWorkItem(this.backend, firstSwotItem);
-        expect(res.status).to.equal(409);
+        await updateWorkItem(this.backend, firstSwotItem);
+        const swotItem = await getWorkItemById(db, firstSwotItem.id);
+        expect(swotItem.status).to.equal(WorkItemStatus.FAILED);
       });
     });
   });
