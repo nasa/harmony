@@ -45,8 +45,7 @@ export default class WorkFailer implements Worker {
       const jobIds = new Set(workItems.map((item) => item.jobID));
       for (const jobId of jobIds) {
         try {
-          const job = await Job.byJobID(db, jobId, false, true);
-          const itemsForJob = workItems.filter((item) => item.jobID == job.jobID);
+          const itemsForJob = workItems.filter((item) => item.jobID === jobId);
           await Promise.all(itemsForJob.map((item) => { 
             return handleWorkItemUpdate(
               { workItemID: item.id, status: WorkItemStatus.FAILED,
