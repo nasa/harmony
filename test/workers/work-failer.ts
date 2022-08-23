@@ -164,7 +164,7 @@ describe('WorkFailer', function () {
       jobStatus, // The job status that we expect to see after the work failer runs
     ]: 
     [Job, number, string, string, WorkItemStatus[], number, JobStatus]) => {
-      it(`keeps processing updates for old items, triggering retries until exhausted (retry date: ${runningDate}, jobID: ${job.jobID})`, async () => {
+      it(`keeps processing updates for old items, triggering retries until exhausted (running date: ${runningDate}, jobID: ${job.jobID})`, async () => {
         // simulate that job's old items are RUNNING again
         MockDate.set(runningDate);
         let items = (await getWorkItemsByJobId(db, job.jobID)).workItems;
