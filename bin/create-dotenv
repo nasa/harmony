@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ -f .env ]; then
     echo "Skipping generating .env file because it already exists."
