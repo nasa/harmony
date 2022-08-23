@@ -502,8 +502,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
       it('does not allow any further work item updates', async function () {
         firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
-        const res = await updateWorkItem(this.backend, firstSwotItem);
-        expect(res.status).to.equal(409);
+        await updateWorkItem(this.backend, firstSwotItem);
 
         const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);

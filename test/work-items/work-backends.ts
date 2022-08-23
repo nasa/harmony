@@ -281,13 +281,12 @@ describe('Work Backends', function () {
         for (const updateState of Object.values(WorkItemStatus).filter(k => k !== WorkItemStatus.CANCELED)) {
           describe(`And an attempt is made to update the work-item to state "${updateState}"`, async function () {
             before(async function () {
-              this.job.status =
-                this.workItem.status = updateState;
-              this.response = await updateWorkItem(this.backend, this.workItem);
+              this.workItem.status = updateState;
+              await updateWorkItem(this.backend, this.workItem);
             });
-            it('fails the update', function () {
-              expect(this.response.status).to.equal(409);
-              expect(this.response.text).to.equal(`Job was already ${terminalState}.`);
+            it('fails the update', async function () {
+              const workItem = await getWorkItemById(db, workItemRecord.id);
+              expect(workItem.status).to.equal(WorkItemStatus.READY);
             });
           });
         }
@@ -307,11 +306,11 @@ describe('Work Backends', function () {
           describe(`And an attempt is made to update the work-item to state "${updateState}"`, async function () {
             before(async function () {
               this.workItem.status = updateState;
-              this.response = await updateWorkItem(this.backend, this.workItem);
+              await updateWorkItem(this.backend, this.workItem);
             });
-            it('fails the update', function () {
-              expect(this.response.status).to.equal(409);
-              expect(this.response.text).to.equal(`WorkItem was already ${terminalState}`);
+            it('fails to update the work item', async function () {
+              const workItem = await getWorkItemById(db, workItemRecord.id);
+              expect(workItem.status).to.equal(terminalState);
             });
           });
         }

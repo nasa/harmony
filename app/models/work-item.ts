@@ -198,7 +198,7 @@ export async function getNextWorkItem(
  */
 export async function updateWorkItemStatus(
   tx: Transaction,
-  id: string,
+  id: number,
   status: WorkItemStatus,
   totalGranulesSize: number,
 ): Promise<void> {

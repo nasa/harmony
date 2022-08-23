@@ -16,6 +16,7 @@ import { resolve } from '../util/url';
 import { ServiceError } from '../util/errors';
 import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
 import JobError, { getErrorCountForJob } from '../models/job-error';
+import WorkItemUpdate from '../models/work-item-update';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -489,57 +490,50 @@ async function updateWorkItemCounts(
 }
 
 /**
- * Update a work item from a service response
- *
- * @param req - The request sent by the client
- * @param res - The response to send to the client
- * @returns Resolves when the request is complete
+ * Update job status/progress in response to a service provided work item update
+ * 
+ * @param update - information about the work item update
  */
-export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
-  const { id } = req.params;
-  const { status, hits, results, scrollID, errorMessage } = req.body;
-  const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
-  const { logger } = req.context;
+export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logger): Promise<void> {
+  const { workItemID, status, hits, results, scrollID, errorMessage, totalGranulesSize } = update;
   if (status === WorkItemStatus.SUCCESSFUL) {
-    logger.info(`Updating work item for ${id} to ${status}`);
+    logger.info(`Updating work item ${workItemID} to ${status}`);
   }
-  let responded = false;
   await db.transaction(async (tx) => {
-    const workItem = await getWorkItemById(tx, parseInt(id, 10));
-    const job = await Job.byJobID(tx, workItem.jobID, false, false);
+    const workItem = await getWorkItemById(tx, workItemID);
+    const job = await Job.byJobID(tx, workItem.jobID, false, true);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
 
     // If the job was already in a terminal state then send 409 response
     // unless we are just canceling the work item
     if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
-      res.status(409).send(`Job was already ${job.status}.`);
+      logger.warn(`Job was already ${job.status}.`);
       // Note work item will stay in the running state, but the reaper will clean it up
-      responded = true;
       return;
     }
 
     // Don't allow updates to work items that are already in a terminal state
     if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
-      res.status(409).send(`WorkItem was already ${workItem.status}`);
-      responded = true;
+      logger.warn(`WorkItem was already ${workItem.status}`);
       return;
     }
 
     // retry failed work-items up to a limit
     if (status === WorkItemStatus.FAILED) {
       if (workItem.retryCount < env.workItemRetryLimit) {
-        logger.warn(`Retrying failed work-item ${id}`);
+        logger.warn(`Retrying failed work-item ${workItemID}`);
         workItem.retryCount += 1;
         workItem.status = WorkItemStatus.READY;
         await workItem.save(tx);
         return;
       } else {
         logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
-        logger.warn(`Updating work item for ${id} to ${status} with message ${errorMessage}`);
+        logger.warn(`Updating work item for ${workItemID} to ${status} with message ${errorMessage}`);
       }
     }
 
-    await updateWorkItemStatus(tx, id, status as WorkItemStatus, totalGranulesSize);
+    await updateWorkItemStatus(tx, workItemID, status as WorkItemStatus, totalGranulesSize);
+
     const completedWorkItemCount = await workItemCountForStep(
       tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
     );
@@ -590,8 +584,42 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
       }
     }
   });
-  if (!responded) {
-    // If we haven't returned an error to the caller already return a success with no body
-    res.status(204).send();
-  }
+}
+
+/**
+ * Update a work item from a service response. This function stores the update without further
+ * processing and then responds quickly. Processing the update is handled asynchronously 
+ * (see `handleWorkItemUpdate`)
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @returns Resolves when the request is complete
+ */
+export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
+  const { id } = req.params;
+  const { status, hits, results, scrollID, errorMessage } = req.body;
+  const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
+
+  const update =
+  {
+    workItemID: parseInt(id),
+    status,
+    hits,
+    results,
+    scrollID,
+    errorMessage,
+    totalGranulesSize,
+  };
+
+  // asynchronously handle the update so that the service is not waiting for a response
+  // during a potentially long update. If the asynchronous update fails the work-item will
+  // eventually be retried by the timeout handler. In any case there is not much the service
+  // can do if the update fails, so it is OK for us to ignore the promise here. The service
+  // can still retry for network or similar failures, but we don't want it to retry for things
+  // like 409 errors.
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  handleWorkItemUpdate(update, req.context.logger);
+
+  // Return a success with no body
+  res.status(204).send();
 }
