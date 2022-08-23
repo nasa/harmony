@@ -40,7 +40,7 @@ export default class WorkFailer implements Worker {
       db, lastUpdateOlderThanMinutes, [WorkItemStatus.RUNNING],
       [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
     );
-    if (workItems.length) {
+    if (workItems?.length > 0) {
       const workItemIds = workItems.map((item) => item.id);
       const jobIds = new Set(workItems.map((item) => item.jobID));
       for (const jobId of jobIds) {
