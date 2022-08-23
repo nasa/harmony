@@ -6,7 +6,7 @@ import db from '../util/db';
 import sleep from '../util/sleep';
 import { Job, JobStatus } from '../models/job';
 import { WorkItemStatus } from '../models/work-item-interface';
-import { processWorkItemUpdate } from '../backends/workflow-orchestration';
+import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
 
 export interface WorkFailerConfig {
   logger: Logger;
@@ -27,11 +27,11 @@ export default class WorkFailer implements Worker {
   }
 
   /**
-   * Find work items that're older than lastUpdateOlderThanMinutes and call processWorkItemUpdate.
+   * Find work items that're older than lastUpdateOlderThanMinutes and call handleWorkItemUpdate.
    * @param lastUpdateOlderThanMinutes - upper limit on the duration since the last update
    * @returns The ids of items and jobs that were processed: \{ workItemIds: number[], jobIds: string[] \}
    */
-  async processWorkItemUpdates(lastUpdateOlderThanMinutes: number): Promise<{ workItemIds: number[], jobIds: string[] }> {
+  async handleWorkItemUpdates(lastUpdateOlderThanMinutes: number): Promise<{ workItemIds: number[], jobIds: string[] }> {
     let response: {
       workItemIds: number[],
       jobIds: string[]
@@ -47,17 +47,13 @@ export default class WorkFailer implements Worker {
         try {
           const job = await Job.byJobID(db, jobId, false, true);
           const itemsForJob = workItems.filter((item) => item.jobID == job.jobID);
-          for (const item of itemsForJob) { 
-            processWorkItemUpdate(
-              db, WorkItemStatus.FAILED, [],
-              null, item.scrollID, 
-              `Work item has not been updated for over ${lastUpdateOlderThanMinutes} minutes.`,
-              String(item.totalGranulesSize), item, job, this.logger)
-              .catch((e) => {
-                this.logger.error(`Work Failer encountered error for item ${item.id} (job ${jobId})`);
-                this.logger.error(e);
-              });
-          }
+          await Promise.all(itemsForJob.map((item) => { 
+            return handleWorkItemUpdate(
+              { workItemID: item.id, status: WorkItemStatus.FAILED,
+                scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
+                errorMessage: `Work item has not been updated for over ${lastUpdateOlderThanMinutes} minutes.` },
+              this.logger);
+          }));
         } catch (e) {
           this.logger.error(`Error attempting to process work item updates for job ${jobId}.`);
           this.logger.error(e);
@@ -82,7 +78,7 @@ export default class WorkFailer implements Worker {
       }
       this.logger.info('Starting work failer');
       try {
-        await this.processWorkItemUpdates(
+        await this.handleWorkItemUpdates(
           env.failableWorkAgeMinutes,
         );
       } catch (e) {

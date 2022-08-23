@@ -11,6 +11,7 @@ import { expect } from 'chai';
 import WorkFailer, { WorkFailerConfig } from '../../app/workers/work-failer';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
 import env from '../../app/util/env';
+import { buildWorkflowStep } from '../helpers/workflow-steps';
 
 
 const config: WorkFailerConfig = { logger };
@@ -27,7 +28,7 @@ describe('WorkFailer', function () {
   // (which should determine which items get picked up 
   // by the WorkFailer)
   const oldDate = '1/1/2000'; // "old" work items will get created on this date
-  const newDate = '1/5/2000'; // "new" work items will get created on this date
+  const newDate = '1/30/2000'; // "new" work items will get created on this date
 
   // declare these up here in order to access
   // them in "it" block scopes
@@ -48,46 +49,44 @@ describe('WorkFailer', function () {
     // (they will have been running for a while by the time the WorkFailer is triggered)
     twoOldJob = buildJob({ status: JobStatus.RUNNING });
     await twoOldJob.save(this.trx);
-    
     MockDate.set(oldDate);
-    const twoOldJobItem1 = buildWorkItem({ jobID: twoOldJob.jobID, status: WorkItemStatus.RUNNING });
+    const twoOldJobItem1 = buildWorkItem({ jobID: twoOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
     await twoOldJobItem1.save(this.trx);
-    const twoOldJobItem2 = buildWorkItem({ jobID: twoOldJob.jobID, status: WorkItemStatus.RUNNING });
+    const twoOldJobItem2 = buildWorkItem({ jobID: twoOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
     await twoOldJobItem2.save(this.trx);
+    await buildWorkflowStep({ jobID: twoOldJob.jobID, stepIndex: 0 }).save(this.trx);
     MockDate.reset();
 
     // this job has 1 (out of 2) old work items (both RUNNING)
     oneOldJob = buildJob({ status: JobStatus.RUNNING_WITH_ERRORS });
     await oneOldJob.save(this.trx);
-    
     MockDate.set(newDate);
-    const oneOldJobItem1 = buildWorkItem({ jobID: oneOldJob.jobID, status: WorkItemStatus.RUNNING });
+    const oneOldJobItem1 = buildWorkItem({ jobID: oneOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
     await oneOldJobItem1.save(this.trx);
-    
     MockDate.set(oldDate);
-    const oneOldJobItem2 = buildWorkItem({ jobID: oneOldJob.jobID, status: WorkItemStatus.RUNNING });
+    const oneOldJobItem2 = buildWorkItem({ jobID: oneOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
     await oneOldJobItem2.save(this.trx);
+    await buildWorkflowStep({ jobID: oneOldJobItem2.jobID, stepIndex: 0 }).save(this.trx);
     MockDate.reset();
 
     // this job has 0 old work items
     noneOldJob = buildJob({ status: JobStatus.RUNNING });
     await noneOldJob.save(this.trx);
-    
     MockDate.set(newDate);
-    const noneOldJobItem1 = buildWorkItem({ jobID: noneOldJob.jobID, status: WorkItemStatus.RUNNING });
+    const noneOldJobItem1 = buildWorkItem({ jobID: noneOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
     await noneOldJobItem1.save(this.trx);
+    await buildWorkflowStep({ jobID: noneOldJobItem1.jobID, stepIndex: 0 }).save(this.trx);
 
     // this job has an old work item in the READY state and a new one in the RUNNING state
     readyItemJob = buildJob({ status: JobStatus.RUNNING });
     await readyItemJob.save(this.trx);
-    
     MockDate.set(newDate);
-    const readyItemJobItem1 = buildWorkItem({ jobID: readyItemJob.jobID, status: WorkItemStatus.RUNNING });
+    const readyItemJobItem1 = buildWorkItem({ jobID: readyItemJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
     await readyItemJobItem1.save(this.trx);
-
     MockDate.set(oldDate);
-    readyItemJobItem2 = buildWorkItem({ jobID: readyItemJob.jobID, status: WorkItemStatus.READY });
+    readyItemJobItem2 = buildWorkItem({ jobID: readyItemJob.jobID, status: WorkItemStatus.READY, workflowStepIndex: 0 });
     await readyItemJobItem2.save(this.trx);
+    await buildWorkflowStep({ jobID: readyItemJobItem2.jobID, stepIndex: 0 }).save(this.trx);
     
     await this.trx.commit();
     MockDate.reset();
@@ -99,14 +98,14 @@ describe('WorkFailer', function () {
     env.workItemRetryLimit = retryLimit;
   });
 
-  describe('.processWorkItemUpdates', async function () {
+  describe('.handleWorkItemUpdates', async function () {
     let initialResponse: {
       workItemIds: number[];
       jobIds: string[];
     };
     it('proccesses work item updates for items that are RUNNING and have not been updated for the specified duration', async function () {
       MockDate.set('1/2/2000'); // some items should now be a day old
-      initialResponse = await workFailer.processWorkItemUpdates(failDurationMinutes);
+      initialResponse = await workFailer.handleWorkItemUpdates(failDurationMinutes);
       
       // check that both old items were re-queued
       const twoOldJobItems = (await getWorkItemsByJobId(db, twoOldJob.jobID)).workItems;
@@ -141,32 +140,50 @@ describe('WorkFailer', function () {
     });
 
     it('should not find any items to proccess upon immediate subsequent invocation', async function () {
-      const subsequentResponse = await workFailer.processWorkItemUpdates(failDurationMinutes);
+      const subsequentResponse = await workFailer.handleWorkItemUpdates(failDurationMinutes);
       expect(subsequentResponse.jobIds.length).to.equal(0);
       expect(subsequentResponse.workItemIds.length).to.equal(0);
     });
 
-    it('keeps processing long-running items when they are re-queued', async function () {
-      // simulate that twoOldJob's items are RUNNING again after the initial re-queuing
-      MockDate.set('1/2/2000');
-      let twoOldJobItems = (await getWorkItemsByJobId(db, twoOldJob.jobID)).workItems;
-      for (const item of twoOldJobItems) {
-        item.status = WorkItemStatus.RUNNING;
-        await item.save(db);
-      }
+    [
+      [2, '1/2/2000', '1/3/2000', WorkItemStatus.READY, WorkItemStatus.READY, JobStatus.RUNNING],
+      [3, '1/3/2000', '1/4/2000', WorkItemStatus.READY, WorkItemStatus.READY, JobStatus.RUNNING],
+      [3, '1/4/2000', '1/5/2000', WorkItemStatus.FAILED, WorkItemStatus.CANCELED, JobStatus.FAILED],
+    ].forEach(([retryCount, runningDate, failerDate, workItemStatus1, workItemStatus2, jobStatus]) => {
+      it(`keeps processing, triggering retries until exhausted, with retryCount = ${retryCount}`, async () => {
+        // simulate that twoOldJob's items are RUNNING again after being re-queued by the retry logic
+        MockDate.set(runningDate);
+        let twoOldJobItems = (await getWorkItemsByJobId(db, twoOldJob.jobID)).workItems;
+        for (const item of twoOldJobItems) {
+          item.status = WorkItemStatus.RUNNING;
+          await item.save(db);
+        }
 
-      // advance by a day so that twoOldJob's WorkItems will
-      // have been running for a whole day and should get picked up again by the WorkFailer
-      MockDate.set('1/3/2000');
+        // advance by a day so that twoOldJob's WorkItems will
+        // have been running for a whole day and should get picked up again by the WorkFailer
+        MockDate.set(failerDate);
 
-      const response = await workFailer.processWorkItemUpdates(failDurationMinutes);
-      
-      twoOldJobItems = (await getWorkItemsByJobId(db, twoOldJob.jobID)).workItems;
-      expect(twoOldJobItems.filter((item) => item.status === WorkItemStatus.READY).length).to.equal(2);
-      expect(twoOldJobItems.filter((item) => item.retryCount === 2).length).to.equal(2);
+        const response = await workFailer.handleWorkItemUpdates(failDurationMinutes);
+        
+        twoOldJobItems = (await getWorkItemsByJobId(db, twoOldJob.jobID)).workItems;
+        
+        // check that the item retry count was updated appropriately
+        expect(twoOldJobItems.filter((item) => item.retryCount === retryCount).length).to.equal(2);
+        
+        // check that the item status was updated appropriately
+        expect(twoOldJobItems.length == 2);
+        [workItemStatus1, workItemStatus2]. forEach((status) => {
+          expect(twoOldJobItems.filter((item) => item.status === status).length > 0);
+        });
+        
+        // check that the work failer processed only this job and its items
+        expect(response.jobIds.length).to.equal(1);
+        expect(response.workItemIds.length).to.equal(2);
 
-      expect(response.jobIds.length).to.equal(1);
-      expect(response.workItemIds.length).to.equal(2);
+        // check that the job status was appropriately updated as a result of the item updates
+        const job = await Job.byJobID(db, twoOldJob.jobID);
+        expect(job.status === jobStatus);
+      });
     });
   });
 });
