@@ -4,7 +4,7 @@ import env from '../util/env';
 import { Worker } from './worker';
 import db from '../util/db';
 import sleep from '../util/sleep';
-import { Job, JobStatus } from '../models/job';
+import { JobStatus } from '../models/job';
 import { WorkItemStatus } from '../models/work-item-interface';
 import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
 
