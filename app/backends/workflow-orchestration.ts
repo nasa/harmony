@@ -416,7 +416,8 @@ async function getWorkItemUrl(workItem, logger): Promise<string> {
  * @returns whether to continue processing work item updates or end
  */
 async function handleFailedWorkItems(
-  tx, job, workItem: WorkItem, workflowStep: WorkflowStep, status, logger, errorMessage,
+  tx: Transaction, job: Job, workItem: WorkItem, workflowStep: WorkflowStep, status: WorkItemStatus,
+  logger: Logger, errorMessage: string,
 ): Promise<boolean> {
   let continueProcessing = true;
   // If the response is an error then set the job status to 'failed'

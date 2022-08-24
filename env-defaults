@@ -158,7 +158,8 @@ REAPABLE_WORK_AGE_MINUTES=1440
 # The time (in seconds) between invocations of the work failer service
 WORK_FAILER_PERIOD_SEC=360
 
-# WorkItems and associated job (in a running state) older than this many minutes are set to failed by the work failer
+# WorkItems that have not been updated for more than this many minutes are
+# updated by the work failer (resulting either in job and work item failure or a retry)
 FAILABLE_WORK_AGE_MINUTES=240
 
 # The number of seconds to allow a pod to continue processing an active request before terminating a pod
