@@ -1,19 +1,21 @@
 import { Logger } from 'winston';
-import { getWorkItemsByAgeAndStatus, updateWorkItemStatuses } from '../models/work-item';
+import { getWorkItemsByUpdateAgeAndStatus } from '../models/work-item';
 import env from '../util/env';
 import { Worker } from './worker';
-import db, { Transaction } from '../util/db';
+import db from '../util/db';
 import sleep from '../util/sleep';
-import { Job, JobStatus } from '../models/job';
-import { completeJob } from '../util/job';
+import { JobStatus } from '../models/job';
 import { WorkItemStatus } from '../models/work-item-interface';
+import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
 
 export interface WorkFailerConfig {
   logger: Logger;
 }
 
 /**
- * Fails the work items (and associated jobs) that are taking too long to complete.
+ * Updates work items to status=FAILED for work items that haven't been updated
+ * for a specified duration (env.workFailerPeriodSec). If retries haven't been exhausted,
+ * work item statuses may be reset to READY instead.
  */
 export default class WorkFailer implements Worker {
   isRunning: boolean;
@@ -25,42 +27,45 @@ export default class WorkFailer implements Worker {
   }
 
   /**
-   * Find work items that're older than olderThanMinutes. Fail them and any associated jobs.
-   * @param olderThanMinutes - upper limit on work item age
-   * @param tx - the transaction to use for database interactions
-   * @returns \{ failedWorkItemIds: number[], failedJobIds: string[] \}
+   * Find work items that're older than lastUpdateOlderThanMinutes and call handleWorkItemUpdate.
+   * @param lastUpdateOlderThanMinutes - upper limit on the duration since the last update
+   * @returns The ids of items and jobs that were processed: \{ workItemIds: number[], jobIds: string[] \}
    */
-  async failWork(olderThanMinutes: number, tx: Transaction): Promise<{ failedWorkItemIds: number[], failedJobIds: string[] }> {
-    let failedItems: {
-      failedWorkItemIds: number[],
-      failedJobIds: string[]
-    };
-    try {
-      const workItems = await getWorkItemsByAgeAndStatus(
-        tx, olderThanMinutes, [WorkItemStatus.RUNNING],
-      );
-      if (workItems.length) {
-        const workItemIds = workItems.map((item) => item.id);
-        await updateWorkItemStatuses(tx, workItemIds, WorkItemStatus.FAILED);
-        const jobIds = new Set(workItems.map((item) => item.jobID));
-        for (const jobId of jobIds) {
-          const job = await Job.byJobID(tx, jobId, false, true);
-          await completeJob(
-            tx, job, JobStatus.FAILED, this.logger,
-            `Job failed because one or more work items took too long (more than ${olderThanMinutes} minutes) to complete.`,
-          );
+  async handleWorkItemUpdates(lastUpdateOlderThanMinutes: number): Promise<{ workItemIds: number[], jobIds: string[] }> {
+    let response: {
+      workItemIds: number[],
+      jobIds: string[]
+    } = { workItemIds: [], jobIds: [] };
+    const workItems = await getWorkItemsByUpdateAgeAndStatus(
+      db, lastUpdateOlderThanMinutes, [WorkItemStatus.RUNNING],
+      [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
+    );
+    if (workItems?.length > 0) {
+      const workItemIds = workItems.map((item) => item.id);
+      const jobIds = new Set(workItems.map((item) => item.jobID));
+      for (const jobId of jobIds) {
+        try {
+          const itemsForJob = workItems.filter((item) => item.jobID === jobId);
+          await Promise.all(itemsForJob.map((item) => { 
+            return handleWorkItemUpdate(
+              { workItemID: item.id, status: WorkItemStatus.FAILED,
+                scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
+                errorMessage: `Work item has not been updated for over ${lastUpdateOlderThanMinutes} minutes.` },
+              this.logger);
+          }));
+        } catch (e) {
+          this.logger.error(`Error attempting to process work item updates for job ${jobId}.`);
+          this.logger.error(e);
         }
-        failedItems = {
-          failedJobIds: Array.from(jobIds.values()),
-          failedWorkItemIds: workItemIds,
-        };
-        this.logger.info(`Work failer failed ${jobIds.size} jobs and ${workItems.length} work items.`);
       }
-    } catch (e) {
-      this.logger.error('Error attempting to fail long-running work items.');
-      this.logger.error(e);
+      response = {
+        jobIds: Array.from(jobIds.values()),
+        workItemIds,
+      };
+      this.logger.info('Work failer processed work item updates for ' +
+        `${jobIds.size} jobs and ${workItems.length} work items.`);
     }
-    return failedItems;
+    return response;
   }
 
   async start(): Promise<void> {
@@ -72,14 +77,11 @@ export default class WorkFailer implements Worker {
       }
       this.logger.info('Starting work failer');
       try {
-        await db.transaction(async (tx) => {
-          await this.failWork(
-            env.failableWorkAgeMinutes,
-            tx,
-          );
-        });
+        await this.handleWorkItemUpdates(
+          env.failableWorkAgeMinutes,
+        );
       } catch (e) {
-        this.logger.error('Work failer failed to find work items to fail');
+        this.logger.error('Work failer encountered an unexpected error');
         this.logger.error(e);
       } finally {
         firstRun = false;
