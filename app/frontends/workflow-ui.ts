@@ -32,32 +32,34 @@ const statusClass = {
 };
 
 /**
- * Return an object that contains key value entries for jobs table filters.
+ * Return an object that contains key value entries for jobs or work items table filters.
  * @param requestQuery - the Record given by keysToLowerCase
  * @param isAdminAccess - is the requesting user an admin
+ * @param statusEnum - which status (e.g. JobStatus, WorkItemStatus) to validate accepted form values against
  * @param maxFilters - set a limit on the number of user requested filters
  * @returns object containing filter values
  */
-function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any */
+function parseFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
   requestQuery: Record<string, any>,
   isAdminAccess: boolean,
+  statusEnum: any,
   maxFilters = 30,
 ): {
-    statusValues: string[], // need for querying db
+    statusValues: JobStatus[] | WorkItemStatus[], // need for querying db
     userValues: string[], // need for querying db
     originalValues: string[] // needed for populating filter input
   } {
-  if (!requestQuery.jobsfilter) {
+  if (!requestQuery.tablefilter) {
     return {
       statusValues: [],
       userValues: [],
       originalValues: [],
     };
   }
-  const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.jobsfilter);
+  const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
   const validStatusSelections = selectedOptions
-    .filter(option => option.field === 'status' && Object.values<string>(JobStatus).includes(option.dbValue));
-  const statusValues = validStatusSelections.map(option => option.dbValue);
+    .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
+  const statusValues: JobStatus[] | WorkItemStatus[] = validStatusSelections.map(option => statusEnum(option.dbValue));
   const validUserSelections = selectedOptions
     .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
   const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
@@ -100,16 +102,16 @@ export async function getJobs(
     }
     const disallowStatus = requestQuery.disallowstatus === 'on';
     const disallowUser = requestQuery.disallowuser === 'on';
-    const jobsFilter = parseJobsFilter(requestQuery, req.context.isAdminAccess);
-    if (jobsFilter.statusValues.length) {
+    const filters = parseFilters(requestQuery, req.context.isAdminAccess, JobStatus);
+    if (filters.statusValues.length) {
       jobQuery.whereIn.status = {
-        values: jobsFilter.statusValues,
+        values: filters.statusValues,
         in: !disallowStatus,
       };
     }
-    if (jobsFilter.userValues.length) {
+    if (filters.userValues.length) {
       jobQuery.whereIn.username = {
-        values: jobsFilter.userValues,
+        values: filters.userValues,
         in: !disallowUser,
       };
     }
@@ -119,13 +121,11 @@ export async function getJobs(
     const pageLinks = getPagingLinks(req, pagination);
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
-    const currentPage = pageLinks.find((l) => l.rel === 'self');
     res.render('workflow-ui/jobs/index', {
       version,
       page,
       limit,
       currentUser: req.user,
-      currentPage: currentPage.href,
       isAdminRoute: req.context.isAdminAccess,
       // job table row HTML
       jobs,
@@ -168,7 +168,7 @@ export async function getJobs(
       // job table filters HTML
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       disallowUserChecked: disallowUser ? 'checked' : '',
-      selectedFilters: jobsFilter.originalValues,
+      selectedFilters: filters.originalValues,
       // job table paging buttons HTML
       links: [
         { ...previousPage, linkTitle: 'previous' },
@@ -197,7 +197,6 @@ export async function getJob(
   const { jobID } = req.params;
   try {
     validateJobId(jobID);
-    const { page, limit } = getPagingParams(req, 1000);
     const job = await Job.byJobID(db, jobID, false);
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
@@ -205,12 +204,18 @@ export async function getJob(
     if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
       throw new NotFoundError();
     }
+    const { page, limit } = getPagingParams(req, 1000);
+    const requestQuery = keysToLowerCase(req.query);
+    const disallowStatus = requestQuery.disallowstatus === 'on';
+    const tableFilter = parseFilters(requestQuery, req.context.isAdminAccess, WorkItemStatus);
     res.render('workflow-ui/job/index', {
       job,
       page,
       limit,
       version,
       isAdminRoute: req.context.isAdminAccess,
+      disallowStatusChecked: disallowStatus ? 'checked' : '',
+      selectedFilters: tableFilter.originalValues,
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -294,7 +299,14 @@ export async function getWorkItemsTable(
         return;
       }
       const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
-      const { workItems, pagination } = await getWorkItemsByJobId(db, job.jobID, page, limit, 'asc');
+      const requestQuery = keysToLowerCase(req.query);
+      const tableFilter = parseFilters(requestQuery, req.context.isAdminAccess, WorkItemStatus);
+      const { workItems, pagination } = await getWorkItemsByJobId(
+        db, 
+        job.jobID, 
+        page, limit, 
+        'asc', 
+        tableFilter.statusValues);
       const pageLinks = getPagingLinks(req, pagination);
       const nextPage = pageLinks.find((l) => l.rel === 'next');
       const previousPage = pageLinks.find((l) => l.rel === 'prev');

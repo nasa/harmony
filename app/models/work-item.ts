@@ -280,6 +280,7 @@ export async function getWorkItemById(
  * @param currentPage - the page of work items to get
  * @param perPage - number of results to include per page
  * @param sortOrder - orderBy string (desc or asc)
+ * @param statuses - the WorkItemStatus[] to filter on
  *
  * @returns A promise with the work items array
  */
@@ -289,11 +290,17 @@ export async function getWorkItemsByJobId(
   currentPage = 0,
   perPage = 10,
   sortOrder: 'asc' | 'desc' = 'asc',
+  statuses: WorkItemStatus[] = [],
 ): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
   const result = await tx(WorkItem.table)
     .select()
     .where({ jobID })
     .orderBy('id', sortOrder)
+    .modify((queryBuilder) => {
+      if (statuses.length > 0) {
+        void queryBuilder.whereIn('status', statuses);
+      }
+    })
     .paginate({ currentPage, perPage, isLengthAware: true });
 
   return {

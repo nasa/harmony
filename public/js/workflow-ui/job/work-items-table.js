@@ -10,8 +10,12 @@ import { formatDates } from "../table.js";
  * @returns Boolean indicating whether the job is still running. 
  */
 async function load(jobId, page, limit, checkJobStatus) {
-  const tableUrl = `./${jobId}/work-items?page=${page}&limit=${limit}`;
-  const res = await fetch(tableUrl + `&checkJobStatus=${checkJobStatus}`);
+  const filterInput = document.querySelector('input[name="tableFilter"]');
+  let tableUrl = `./${jobId}/work-items?page=${page}&limit=${limit}&checkJobStatus=${checkJobStatus}`;
+  if (filterInput) {
+    tableUrl += '&tableFilter=' + encodeURIComponent(filterInput.value);
+  }
+  const res = await fetch(tableUrl);
   if (res.status === 200) {
     const template = await res.text();
     document.getElementById('workflow-items-table-container').innerHTML = template;
@@ -39,6 +43,37 @@ async function loadAndNotify(jobId, page, limit, checkJobStatus, broker) {
 }
 
 /**
+ * Build the work items filter (for filtering by 'status').
+ */
+ function initFilter() {
+  var filterInput = document.querySelector('input[name="tableFilter"]');
+  const allowedList = [
+    { value: 'status: ready', dbValue: 'ready', field: 'status'},
+    { value: 'status: successful', dbValue: 'successful', field: 'status'},
+    { value: 'status: canceled', dbValue: "canceled", field: 'status'},
+    { value: 'status: running', dbValue: "running", field: 'status'},
+    { value: 'status: failed', dbValue: "failed", field: 'status'},
+  ];
+  const allowedValues = allowedList.map(t => t.value);
+  new Tagify(filterInput, {
+    whitelist: allowedList,
+    validate: function (tag) {
+      if (allowedValues.includes(tag.value)) {
+        return true;
+      }
+      return false;
+    },
+    editTags: false,
+    maxTags: 30,
+    dropdown: {
+      maxItems: 15,
+      enabled: 0,
+      closeOnSelect: true
+    }
+  })
+}
+
+/**
  * Utility for initializing and refreshing a single page of the work items table.
  * After calling init, work item information will be fetched periodically
  * so that the user can see updates in near real time.
@@ -53,6 +88,7 @@ export default {
    * @param {object} broker - pubsub broker
    */
   async init(jobId, page, limit, broker) {
+    initFilter();
     broker.subscribe( // reload when the user changes the job's state
       'job-state-change',
       async function () {

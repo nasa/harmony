@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../../../css/eui.min.css">
     <link rel="stylesheet" href="../../../css/default.css">
+    <link href="https://unpkg.com/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="../../../css/workflow-ui/default.css">
+    <script src="https://unpkg.com/@yaireo/tagify"></script>
+    <script src="https://unpkg.com/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
         integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"
         defer></script>
@@ -49,8 +53,24 @@
         </div>
     </nav>
     <div class="container-fluid">
-        <div class="row pb-4 px-4">
-            <div class="col-12" id="workflow-items-table-container" data-page="{{page}}" data-limit={{limit}}
+        <div class="row pb-4">
+            <div class="col-2">
+                <form id="work-items-query-form" action="./{{job.jobID}}" method="get">
+                    <input type="hidden" name="page" value="{{page}}" />
+                    <input type="hidden" name="limit" value="{{limit}}" />
+                    <input name="tableFilter" class="table-filter mb-2" placeholder="add a filter"
+                        value="{{selectedFilters}}"
+                        data-is-admin-route="{{isAdminRoute}}">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="disallowStatus" {{disallowStatusChecked}}>
+                        <label class="form-check-label" for="disallowStatus">
+                            negate statuses
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3"><i class="bi bi-filter-circle"></i> apply</button>
+                </form>
+            </div>
+            <div class="col-10" id="workflow-items-table-container" data-page="{{page}}" data-limit={{limit}}
                 data-job-id={{job.jobID}}>
 
             </div>
