@@ -67,13 +67,14 @@ export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
   const { logger } = req.context;
-  const { serviceID } = req.query;
+  const { serviceID, podName } = req.query;
   let workItem: WorkItem, maxCmrGranules: number;
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
     maxCmrGranules = await calculateQueryCmrLimit(workItem, tx, logger);
   });
   if (workItem) {
+    logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
     res.send({ workItem, maxCmrGranules });
   } else if (tryCount < MAX_TRY_COUNT) {
     setTimeout(async () => {
@@ -514,7 +515,7 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
 
     // Don't allow updates to work items that are already in a terminal state
     if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
-      logger.warn(`WorkItem was already ${workItem.status}`);
+      logger.warn(`WorkItem ${workItemID} was already ${workItem.status}`);
       return;
     }
 

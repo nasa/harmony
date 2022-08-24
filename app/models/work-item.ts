@@ -149,34 +149,37 @@ export async function getNextWorkItem(
         .first();
 
       if (jobData?.jobID) {
-        let workItemDataQuery = tx(`${WorkItem.table} as w`)
-          .forUpdate()
-          .join(`${WorkflowStep.table} as wf`, function () {
-            this.on('w.jobID', '=', 'wf.jobID')
-              .on('w.workflowStepIndex', '=', 'wf.stepIndex');
-          })
-          .select(...tableFields, 'wf.operation')
-          .where('w.jobID', '=', jobData.jobID)
-          .where('w.status', '=', 'ready')
-          .where('w.serviceID', '=', serviceID)
+        const workflowStepData = await tx(WorkflowStep.table)
+          .select(['operation'])
+          .where('jobID', '=', jobData.jobID)
           .first();
+        if (workflowStepData?.operation) {
+          const { operation } = workflowStepData;
+          let workItemDataQuery = tx(`${WorkItem.table} as w`)
+            .forUpdate()
+            .select(tableFields)
+            .where('w.jobID', '=', jobData.jobID)
+            .where('w.status', '=', 'ready')
+            .where('w.serviceID', '=', serviceID)
+            .first();
 
-        if (db.client.config.client === 'pg') {
-          workItemDataQuery = workItemDataQuery.skipLocked();
-        }
+          if (db.client.config.client === 'pg') {
+            workItemDataQuery = workItemDataQuery.skipLocked();
+          }
 
-        workItemData = await workItemDataQuery;
+          workItemData = await workItemDataQuery;
 
-        if (workItemData) {
-          workItemData.operation = JSON.parse(workItemData.operation);
-          await tx(WorkItem.table)
-            .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
-            .where({ id: workItemData.id });
-          // need to update the job otherwise long running jobs won't count against
-          // the user's priority
-          await tx(Job.table)
-            .update({ updatedAt: new Date() })
-            .where({ jobID: workItemData.jobID });
+          if (workItemData) {
+            workItemData.operation = JSON.parse(operation);
+            await tx(WorkItem.table)
+              .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
+              .where({ id: workItemData.id });
+            // need to update the job otherwise long running jobs won't count against
+            // the user's priority
+            await tx(Job.table)
+              .update({ updatedAt: new Date() })
+              .where({ jobID: workItemData.jobID });
+          }
         }
       }
     }
@@ -202,18 +205,17 @@ export async function updateWorkItemStatus(
   status: WorkItemStatus,
   totalGranulesSize: number,
 ): Promise<void> {
-  const workItem = await tx(WorkItem.table)
-    .forUpdate()
-    .select()
-    .where({ id })
-    .first() as WorkItem;
+  logger.debug(`updatedWorkItemStatus: Updating status for work item ${id} to ${status}`);
 
-  if (workItem) {
+  try {
     await tx(WorkItem.table)
       .update({ status, totalGranulesSize, updatedAt: new Date() })
-      .where({ id: workItem.id });
-  } else {
-    throw new Error(`id [${id}] does not exist in table ${WorkItem.table}`);
+      .where({ id });
+    logger.debug(`Status for work item ${id} set to ${status}`);
+  } catch (e) {
+    logger.error(`Failed to update work item ${id} status to ${status}`);
+    logger.error(e);
+    throw e;
   }
 }
 

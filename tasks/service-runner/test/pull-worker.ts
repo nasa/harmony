@@ -15,17 +15,14 @@ const {
   _pullWork,
   _doWork,
   _pullAndDoWork,
-  _primeCmrService,
   _primeService,
   axiosUpdateWork } = pullWorker.exportedForTesting;
 
 describe('Pull Worker', async function () {
   describe('on start', async function () {
-    let queryCmrSpy: sinon.SinonSpy;
     let serviceSpy: sinon.SinonSpy;
     const invocArgs = env.invocationArgs;
     beforeEach(function () {
-      queryCmrSpy = sinon.spy(pullWorker.exportedForTesting, '_primeCmrService');
       serviceSpy = sinon.spy(pullWorker.exportedForTesting, '_primeService');
 
       env.invocationArgs = 'abc\n123';
@@ -33,17 +30,7 @@ describe('Pull Worker', async function () {
 
     afterEach(function () {
       env.invocationArgs = invocArgs;
-      queryCmrSpy.restore();
       serviceSpy.restore();
-    });
-
-    describe('when the service is query-cmr', async function () {
-      it('primes the CMR service', async function () {
-        env.harmonyService = 'harmonyservices/query-cmr:latest';
-        const worker = new PullWorker();
-        await worker.start(false);
-        expect(queryCmrSpy.called).to.be.true;
-      });
     });
 
     describe('when the service is not query-cmr', async function () {
@@ -63,12 +50,12 @@ describe('Pull Worker', async function () {
 
     beforeEach(async function () {
       exitStub = sinon.stub(process, 'exit');
-      queryCMRStub = sinon.stub(pullWorker.exportedForTesting, '_primeCmrService').callsFake(
+      queryCMRStub = sinon.stub(pullWorker.exportedForTesting, '_primeService').callsFake(
         async function () {
           throw new Error('primer failed');
         },
       );
-      env.harmonyService = 'harmonyservices/query-cmr:latest';
+      env.harmonyService = 'harmonyservices/service-example:latest';
     });
 
     afterEach(function () {
@@ -288,13 +275,6 @@ describe('Pull Worker', async function () {
       env.invocationArgs = invocArgs;
       queryCmrSpy.restore();
       serviceSpy.restore();
-    });
-
-    describe('When the query-cmr service is primed', async function () {
-      it('calls runQueryCmrFromPull', async function () {
-        await _primeCmrService();
-        expect(queryCmrSpy.called).to.be.true;
-      });
     });
 
     describe('When a service is primed', async function () {

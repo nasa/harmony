@@ -47,7 +47,7 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
   try {
     const response = await axiosGetWork
       .get(workUrl, {
-        params: { serviceID: env.harmonyService },
+        params: { serviceID: env.harmonyService, podName: env.myPodName },
         responseType: 'json',
         validateStatus(status) {
           return status === 404 || (status >= 200 && status < 400);
@@ -131,6 +131,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
 
     const work = await _pullWork();
     if (!work.error && work.item) {
+      logger.debug(`Performing work for work item with id ${work.item.id} for job id ${work.item.jobID}`);
       const workItem = await _doWork(work.item, work.maxCmrGranules);
       // call back to Harmony to mark the work unit as complete or failed
       logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
@@ -172,26 +173,6 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
 }
 
 /**
- * Call the sidecar query-cmr service once to get around a k8s client bug
- * only exported so we can spy during testing
- */
-async function _primeCmrService(): Promise<void> {
-  const exampleWorkItemProps = {
-    jobID: '1',
-    serviceID: 'harmony-services/query-cmr:latest',
-    status: WorkItemStatus.READY,
-    workflowStepIndex: 0,
-    operation: { requestId: 'abc' },
-    scrollID: '1234',
-  } as WorkItemRecord;
-
-  runQueryCmrFromPull(exampleWorkItemProps).catch((e) => {
-    logger.error('Failed to prime service');
-    throw e;
-  });
-}
-
-/**
  * Call the sidecar service once to get around a k8s client bug
  */
 async function _primeService(): Promise<void> {
@@ -213,7 +194,6 @@ export const exportedForTesting = {
   _pullWork,
   _doWork,
   _pullAndDoWork,
-  _primeCmrService,
   _primeService,
   axiosGetWork,
   axiosUpdateWork,
@@ -226,10 +206,7 @@ export default class PullWorker implements Worker {
     let primeCount = 0;
     while (!isPrimed && primeCount < maxPrimeRetries) {
       try {
-        if (env.harmonyService.includes('harmonyservices/query-cmr')) {
-          // called this way to support sinon spy
-          await exportedForTesting._primeCmrService();
-        } else {
+        if (!env.harmonyService.includes('harmonyservices/query-cmr')) {
           // called this way to support sinon spy
           await exportedForTesting._primeService();
         }
