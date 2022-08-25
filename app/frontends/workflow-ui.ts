@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { sanitizeImage } from '../util/string';
 import { validateJobId } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
-import { getWorkItemsByJobId } from '../models/work-item';
+import { getWorkItemsByJobId, queryAll } from '../models/work-item';
 import { NotFoundError, RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
@@ -10,7 +10,7 @@ import db from '../util/db';
 import version from '../util/version';
 import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
-import { COMPLETED_WORK_ITEM_STATUSES, getItemLogsLocation, WorkItemStatus } from '../models/work-item-interface';
+import { COMPLETED_WORK_ITEM_STATUSES, getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
 import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
@@ -301,12 +301,14 @@ export async function getWorkItemsTable(
       const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
       const requestQuery = keysToLowerCase(req.query);
       const tableFilter = parseFilters(requestQuery, req.context.isAdminAccess, WorkItemStatus);
-      const { workItems, pagination } = await getWorkItemsByJobId(
-        db, 
-        job.jobID, 
-        page, limit, 
-        'asc', 
-        <WorkItemStatus[]> tableFilter.statusValues);
+      const itemQuery: WorkItemQuery = { where: { jobID }, whereIn: {}, orderBy: { field: 'id', value: 'asc' } };
+      if (tableFilter.statusValues.length) {
+        itemQuery.whereIn.status = {
+          values: tableFilter.statusValues,
+          in: !(requestQuery.disallowstatus === 'on'),
+        };
+      }
+      const { workItems, pagination } = await queryAll(db, itemQuery, page, limit);
       const pageLinks = getPagingLinks(req, pagination);
       const nextPage = pageLinks.find((l) => l.rel === 'next');
       const previousPage = pageLinks.find((l) => l.rel === 'prev');

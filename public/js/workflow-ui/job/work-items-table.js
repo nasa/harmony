@@ -11,7 +11,7 @@ import { formatDates } from "../table.js";
  */
 async function load(jobId, page, limit, checkJobStatus) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
-  const disallowStatus = document.querySelector('input[name="disallowStatus"]').value;
+  const disallowStatus = document.querySelector('input[name="disallowStatus"]').checked ? 'on': '';
   let tableUrl = `./${jobId}/work-items?page=${page}&limit=${limit}&checkJobStatus=${checkJobStatus}`;
   if (filterInput) {
     tableUrl += `&tableFilter=${encodeURIComponent(filterInput.value)}&disallowStatus=${disallowStatus}`;
