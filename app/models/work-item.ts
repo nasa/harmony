@@ -140,6 +140,7 @@ export async function getNextWorkItem(
       // query to choose the job that should be worked on next based on fair queueing policy
       const jobData = await tx(Job.table)
         .select([`${Job.table}.jobID`])
+        .forUpdate()
         .join(`${WorkItem.table} as w`, `${Job.table}.jobID`, 'w.jobID')
         .where('username', '=', userData.username)
         .whereIn(`${Job.table}.status`, acceptableJobStatuses)
@@ -280,6 +281,21 @@ export async function getWorkItemById(
 
   const workItem = workItemData && new WorkItem(workItemData);
   return workItem;
+}
+
+/**
+ * Get the jobID for the given work item
+ * 
+ * @param id - the work item id
+ * @returns A map with the jobID and workflowStepIndex for the given work item
+ */
+export async function getJobIdForWorkItem(id: number): Promise<string> {
+  return (
+    await db(WorkItem.table)
+      .select('jobID')
+      .where({ id })
+      .first()
+  ).jobID;
 }
 
 /**

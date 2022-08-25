@@ -9,7 +9,7 @@ import { readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink, { getJobDataLinkCount } from '../models/job-link';
-import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
+import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getJobIdForWorkItem } from '../models/work-item';
 import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 import { objectStoreForProtocol } from '../util/object-store';
 import { resolve } from '../util/url';
@@ -502,8 +502,12 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
   await db.transaction(async (tx) => {
-    const workItem = await getWorkItemById(tx, workItemID, true);
-    const job = await Job.byJobID(tx, workItem.jobID, false, true);
+    // get the jobID for the work item
+    const jobID = await getJobIdForWorkItem(workItemID);
+    const job = await Job.byJobID(tx, jobID, false, true);
+    // lock the work item to we can update it - need to do this after locking jobs table above
+    // to avoid deadlocks
+    const workItem = await getWorkItemById(tx, workItemID, false);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
 
     // If the job was already in a terminal state then send 409 response
@@ -522,7 +526,6 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
 
     // retry failed work-items up to a limit
     if (status === WorkItemStatus.FAILED) {
-      // lock the work item to we can update it
       if (workItem.retryCount < env.workItemRetryLimit) {
         logger.warn(`Retrying failed work-item ${workItemID}`);
         workItem.retryCount += 1;
