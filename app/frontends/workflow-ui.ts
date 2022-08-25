@@ -45,7 +45,7 @@ function parseFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
   statusEnum: any,
   maxFilters = 30,
 ): {
-    statusValues: JobStatus[] | WorkItemStatus[], // need for querying db
+    statusValues: string[], // need for querying db
     userValues: string[], // need for querying db
     originalValues: string[] // needed for populating filter input
   } {
@@ -59,7 +59,7 @@ function parseFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
   const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
   const validStatusSelections = selectedOptions
     .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
-  const statusValues: JobStatus[] | WorkItemStatus[] = validStatusSelections.map(option => statusEnum(option.dbValue));
+  const statusValues = validStatusSelections.map(option => option.dbValue);
   const validUserSelections = selectedOptions
     .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
   const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
@@ -306,7 +306,7 @@ export async function getWorkItemsTable(
         job.jobID, 
         page, limit, 
         'asc', 
-        tableFilter.statusValues);
+        <WorkItemStatus[]> tableFilter.statusValues);
       const pageLinks = getPagingLinks(req, pagination);
       const nextPage = pageLinks.find((l) => l.rel === 'next');
       const previousPage = pageLinks.find((l) => l.rel === 'prev');
