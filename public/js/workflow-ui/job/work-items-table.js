@@ -86,9 +86,11 @@ export default {
    * @param {string} jobId - id of the job that the work items are linked to
    * @param {number} page - page number for the work items
    * @param {number} limit - limit on the number of work items in a page
+   * @param {string} disallowStatus - whether to load the table with disallow status "on" or "off"
+   * @param {object} filters - 
    * @param {object} broker - pubsub broker
    */
-  async init(jobId, page, limit, broker) {
+  async init(jobId, page, limit, disallowStatus, filters, broker) {
     initFilter();
     broker.subscribe( // reload when the user changes the job's state
       'job-state-change',

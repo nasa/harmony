@@ -31,7 +31,7 @@
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
-            </button> 
+            </button>
         </div>
     </nav>
     <nav class="ml-0 pl-0"
@@ -59,19 +59,20 @@
                     <input type="hidden" name="page" value="{{page}}" />
                     <input type="hidden" name="limit" value="{{limit}}" />
                     <input name="tableFilter" class="table-filter mb-2" placeholder="add a filter"
-                        value="{{selectedFilters}}"
-                        data-is-admin-route="{{isAdminRoute}}">
+                        value="{{selectedFilters}}" data-is-admin-route="{{isAdminRoute}}">
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" name="disallowStatus" {{disallowStatusChecked}}>
                         <label class="form-check-label" for="disallowStatus">
                             negate statuses
                         </label>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm mt-3"><i class="bi bi-filter-circle"></i> apply</button>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3"><i class="bi bi-filter-circle"></i>
+                        apply</button>
                 </form>
             </div>
-            <div class="col-10" id="workflow-items-table-container" data-page="{{page}}" data-limit={{limit}}
-                data-job-id={{job.jobID}}>
+            <div class="col-10" id="workflow-items-table-container" data-page="{{page}}" data-limit="{{limit}}"
+                data-job-id="{{job.jobID}}" data-disallow-status-checked="{{disallowStatusChecked}}"
+                data-filters='{{tableFilter}}'>
 
             </div>
         </div>

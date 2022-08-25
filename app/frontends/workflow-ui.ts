@@ -216,6 +216,7 @@ export async function getJob(
       isAdminRoute: req.context.isAdminAccess,
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       selectedFilters: tableFilter.originalValues,
+      tableFilter: JSON.stringify(requestQuery.tablefilter),
     });
   } catch (e) {
     req.context.logger.error(e);
