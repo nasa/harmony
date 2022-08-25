@@ -162,6 +162,7 @@ export async function getNextWorkItem(
             .where('w.jobID', '=', jobData.jobID)
             .where('w.status', '=', 'ready')
             .where('w.serviceID', '=', serviceID)
+            .orderBy('w.id', 'asc')
             .first();
 
           if (db.client.config.client === 'pg') {
