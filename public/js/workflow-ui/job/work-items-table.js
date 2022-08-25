@@ -11,9 +11,10 @@ import { formatDates } from "../table.js";
  */
 async function load(jobId, page, limit, checkJobStatus) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
+  const disallowStatus = document.querySelector('input[name="disallowStatus"]').value;
   let tableUrl = `./${jobId}/work-items?page=${page}&limit=${limit}&checkJobStatus=${checkJobStatus}`;
   if (filterInput) {
-    tableUrl += '&tableFilter=' + encodeURIComponent(filterInput.value);
+    tableUrl += `&tableFilter=${encodeURIComponent(filterInput.value)}&disallowStatus=${disallowStatus}`;
   }
   const res = await fetch(tableUrl);
   if (res.status === 200) {
