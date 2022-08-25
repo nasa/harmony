@@ -502,7 +502,7 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
   await db.transaction(async (tx) => {
-    const workItem = await getWorkItemById(tx, workItemID);
+    const workItem = await getWorkItemById(tx, workItemID, true);
     const job = await Job.byJobID(tx, workItem.jobID, false, true);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
 
@@ -522,6 +522,7 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
 
     // retry failed work-items up to a limit
     if (status === WorkItemStatus.FAILED) {
+      // lock the work item to we can update it
       if (workItem.retryCount < env.workItemRetryLimit) {
         logger.warn(`Retrying failed work-item ${workItemID}`);
         workItem.retryCount += 1;

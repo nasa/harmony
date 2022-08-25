@@ -259,17 +259,24 @@ export async function updateWorkItemStatusesByJobId(
  * Returns the next work item to process for a service
  * @param tx - the transaction to use for querying
  * @param id - the work item ID
+ * @param lock - if true the work item is selected for update (locked)
  *
  * @returns A promise with the work item or null if none
  */
 export async function getWorkItemById(
   tx: Transaction,
   id: number,
+  lock = false,
+
 ): Promise<WorkItem> {
-  const workItemData = await tx(WorkItem.table)
+  let query = tx(WorkItem.table)
     .select()
     .where({ id })
     .first();
+  if (lock) {
+    query = query.forUpdate();
+  }
+  const workItemData = await query;
 
   const workItem = workItemData && new WorkItem(workItemData);
   return workItem;
