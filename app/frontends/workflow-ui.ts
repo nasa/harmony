@@ -408,12 +408,9 @@ export async function retry(
     if (item.retryCount >= env.workItemRetryLimit) {
       res.status(200).send({ message: 'The item does not have any retries left.' });
     }
-    if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
-      throw new NotFoundError();
-    }
     const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
     if (!isAdmin && (job.username != req.user)) {
-      // if the job is shareable but this non-admin user (req.user) does not own the job,
+      // if a non-admin user (req.user) does not own the job,
       // they shouldn't be able to trigger a retry
       throw new ForbiddenError();
     }
