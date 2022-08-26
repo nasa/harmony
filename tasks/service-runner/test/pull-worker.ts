@@ -44,13 +44,13 @@ describe('Pull Worker', async function () {
   });
 
   describe('on start with primer errors', async function () {
-    let queryCMRStub: SinonStub;
+    let serviceStub: SinonStub;
     let exitStub: SinonStub;
     const { harmonyService } = env;
 
     beforeEach(async function () {
       exitStub = sinon.stub(process, 'exit');
-      queryCMRStub = sinon.stub(pullWorker.exportedForTesting, '_primeService').callsFake(
+      serviceStub = sinon.stub(pullWorker.exportedForTesting, '_primeService').callsFake(
         async function () {
           throw new Error('primer failed');
         },
@@ -60,7 +60,7 @@ describe('Pull Worker', async function () {
 
     afterEach(function () {
       exitStub.restore();
-      queryCMRStub.restore();
+      serviceStub.restore();
       env.harmonyService = harmonyService;
     });
 
@@ -68,7 +68,7 @@ describe('Pull Worker', async function () {
       const worker = new PullWorker();
       await worker.start(false);
       expect(exitStub.called).to.be.true;
-      expect(queryCMRStub.callCount).to.equal(2);
+      expect(serviceStub.callCount).to.equal(2);
     });
   });
 
