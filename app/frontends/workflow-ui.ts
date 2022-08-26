@@ -2,8 +2,8 @@ import { Response, NextFunction } from 'express';
 import { sanitizeImage } from '../util/string';
 import { validateJobId } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
-import { queryAll } from '../models/work-item';
-import { NotFoundError, RequestValidationError } from '../util/errors';
+import { getWorkItemById, queryAll } from '../models/work-item';
+import { ForbiddenError, NotFoundError, RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
@@ -15,6 +15,7 @@ import { getRequestRoot } from '../util/url';
 import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 import { objectStoreForProtocol } from '../util/object-store';
+import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
 
 /**
  * Maps job status to display class.
@@ -330,7 +331,7 @@ export async function getWorkItemsTable(
           const isComplete = COMPLETED_WORK_ITEM_STATUSES.indexOf(this.status) > -1;
           if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
           const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
-          return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}">view</button>`;
+          return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}" title="view logs"><i class="bi bi-body-text"></i></button>`;
         },
         links: [
           { ...previousPage, linkTitle: 'previous' },
@@ -369,6 +370,50 @@ export async function getWorkItemLogs(
       .getObject(getItemLogsLocation({ id: parseInt(id), jobID })).promise();
     const logs = logPromise.Body.toString('utf-8');
     res.json(JSON.parse(logs));
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * 
+ * @param req 
+ * @param res 
+ * @param next 
+ * @returns 
+ */
+export async function retry(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobID, id } = req.params;
+  try {
+    validateJobId(jobID);
+    const job = await Job.byJobID(db, jobID, false);
+    const item = await getWorkItemById(db, parseInt(id));
+    if (!job) {
+      throw new NotFoundError(`Unable to find job ${jobID}`);
+    }
+    if (!item) {
+      throw new NotFoundError(`Unable to find item ${id}`);
+    }
+    if (item.retryCount >= env.workItemRetryLimit) {
+      res.status(200).send({ message: 'The item does not have any retries left.' });
+    }
+    if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+      throw new NotFoundError();
+    }
+    if (!req.context.isAdminAccess && (job.username != req.user)) {
+      // if the job is shareable but this non-admin user (req.user) does not own the job,
+      // they shouldn't be able to trigger a retry
+      throw new ForbiddenError();
+    }
+    await handleWorkItemUpdate(
+      { workItemID: item.id, status: WorkItemStatus.FAILED,
+        scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
+        errorMessage: 'A user has attempted to trigger a retry via the user interface.' },
+      this.logger);
+    res.status(200).send({ message: 'The item was updated successfully and should be set to "ready" momentarily.' });
   } catch (e) {
     req.context.logger.error(e);
     next(e);
