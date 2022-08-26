@@ -189,7 +189,7 @@ export async function getJobs(
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
- * @returns The workflow UI page where the user can visualize the job as it happens
+ * @returns The workflow UI page where the user can visualize the job as it progresses
  */
 export async function getJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
@@ -209,7 +209,7 @@ export async function getJob(
     const disallowStatus = requestQuery.disallowstatus === 'on';
     const tableFilter = parseFilters(requestQuery, req.context.isAdminAccess, WorkItemStatus);
     res.render('workflow-ui/job/index', {
-      // most of these values will be used to poll
+      // most of these values will be used to poll (getWorkItemsTable)
       // for work items or set hidden form values for when
       // the user makes a request to filter the work items table
       job,
