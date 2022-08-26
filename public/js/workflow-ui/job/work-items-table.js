@@ -6,16 +6,14 @@ import { formatDates } from "../table.js";
  * @param {string} jobId - id of the job that the work items are linked to
  * @param {number} page - page number for the work items
  * @param {number} limit - limit on the number of work items in a page
+ * @param {string} disallowStatus - whether to load the table with disallow status "on" or "off"
+ * @param {string} tableFilter - a list of filter objects (as a string)
  * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
  * @returns Boolean indicating whether the job is still running. 
  */
-async function load(jobId, page, limit, checkJobStatus) {
-  const filterInput = document.querySelector('input[name="tableFilter"]');
-  const disallowStatus = document.querySelector('input[name="disallowStatus"]').checked ? 'on': '';
+async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobStatus) {
   let tableUrl = `./${jobId}/work-items?page=${page}&limit=${limit}&checkJobStatus=${checkJobStatus}`;
-  if (filterInput) {
-    tableUrl += `&tableFilter=${encodeURIComponent(filterInput.value)}&disallowStatus=${disallowStatus}`;
-  }
+  tableUrl += `&tableFilter=${encodeURIComponent(tableFilter)}&disallowStatus=${disallowStatus}`;
   const res = await fetch(tableUrl);
   if (res.status === 200) {
     const template = await res.text();
@@ -33,12 +31,14 @@ async function load(jobId, page, limit, checkJobStatus) {
  * @param {string} jobId - id of the job that the work items are linked to
  * @param {number} page - page number for the work items
  * @param {number} limit - limit on the number of work items in a page
+ * @param {string} disallowStatus - whether to load the table with disallow status "on" or "off"
+ * @param {string} tableFilter - a list of filter objects (as a string)
  * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
  * @param {object} broker - pubsub broker
  * @returns Boolean indicating whether the job is still running. 
  */
-async function loadAndNotify(jobId, page, limit, checkJobStatus, broker) {
-  const stillRunning = await load(jobId, page, limit, checkJobStatus);
+async function loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, checkJobStatus, broker) {
+  const stillRunning = await load(jobId, page, limit, disallowStatus, tableFilter, checkJobStatus);
   broker.publish('work-items-table-loaded');
   return stillRunning;
 }
@@ -87,26 +87,26 @@ export default {
    * @param {number} page - page number for the work items
    * @param {number} limit - limit on the number of work items in a page
    * @param {string} disallowStatus - whether to load the table with disallow status "on" or "off"
-   * @param {object} filters - 
+   * @param {string} tableFilter - a list of filter objects (as a string)
    * @param {object} broker - pubsub broker
    */
-  async init(jobId, page, limit, disallowStatus, filters, broker) {
+  async init(jobId, page, limit, disallowStatus, tableFilter, broker) {
     initFilter();
     broker.subscribe( // reload when the user changes the job's state
       'job-state-change',
       async function () {
-        loadAndNotify(jobId, page, limit, false, broker);
+        loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false, broker);
       }
     );
     // do an initial table load immediately
-    let jobIsRunning = await loadAndNotify(jobId, page, limit, false, broker);
+    let jobIsRunning = await loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false, broker);
     // reload the table every 5 seconds until the job is almost done
     const fiveSeconds = 5 * 1000;
     while (jobIsRunning) {
       await new Promise(res => setTimeout(res, fiveSeconds));
-      jobIsRunning = await loadAndNotify(jobId, page, limit, true, broker);
+      jobIsRunning = await loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, true, broker);
     }
     // reload the table one last time
-    loadAndNotify(jobId, page, limit, false, broker)
+    loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false, broker)
   },
 }

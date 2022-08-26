@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { sanitizeImage } from '../util/string';
 import { validateJobId } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
-import { getWorkItemsByJobId, queryAll } from '../models/work-item';
+import { queryAll } from '../models/work-item';
 import { NotFoundError, RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
@@ -216,7 +216,7 @@ export async function getJob(
       isAdminRoute: req.context.isAdminAccess,
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       selectedFilters: tableFilter.originalValues,
-      tableFilter: JSON.stringify(requestQuery.tablefilter),
+      tableFilter: requestQuery.tablefilter,
     });
   } catch (e) {
     req.context.logger.error(e);

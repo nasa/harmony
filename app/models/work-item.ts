@@ -288,7 +288,6 @@ export async function queryAll(
   currentPage = 0,
   perPage = 10,
 ): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
-  console.log('query items');
   const items = await transaction(WorkItem.table)
     .select()
     .where(constraints.where)
