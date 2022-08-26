@@ -501,13 +501,14 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
+  // get the jobID for the work item
+  const jobID = await getJobIdForWorkItem(workItemID);
+
   await db.transaction(async (tx) => {
-    // get the jobID for the work item
-    const jobID = await getJobIdForWorkItem(workItemID);
     const job = await Job.byJobID(tx, jobID, false, true);
     // lock the work item to we can update it - need to do this after locking jobs table above
     // to avoid deadlocks
-    const workItem = await getWorkItemById(tx, workItemID, false);
+    const workItem = await getWorkItemById(tx, workItemID, true);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
 
     // If the job was already in a terminal state then send 409 response
