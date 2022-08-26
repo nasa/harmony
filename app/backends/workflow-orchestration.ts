@@ -624,8 +624,13 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   // can do if the update fails, so it is OK for us to ignore the promise here. The service
   // can still retry for network or similar failures, but we don't want it to retry for things
   // like 409 errors.
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  handleWorkItemUpdate(update, req.context.logger);
+  if (db.client.config.client === 'pg') {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    handleWorkItemUpdate(update, req.context.logger);
+  } else {
+    // tests break if we don't await this
+    await handleWorkItemUpdate(update, req.context.logger);
+  }
 
   // Return a success with no body
   res.status(204).send();
