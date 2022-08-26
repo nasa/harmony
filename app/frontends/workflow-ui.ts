@@ -333,6 +333,14 @@ export async function getWorkItemsTable(
           const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
           return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}" title="view logs"><i class="bi bi-body-text"></i></button>`;
         },
+        workflowItemRetryButton() {
+          const sharedWithNonAdmin = (!isAdmin && (job.username != req.user));
+          const isRunning = WorkItemStatus.RUNNING === this.status;
+          const noRetriesLeft = this.retryCount >= env.workItemRetryLimit;
+          if (!isRunning || sharedWithNonAdmin || noRetriesLeft) return '';
+          const retryUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/retry`;
+          return `<a type="button" target="__blank" class="btn btn-light btn-sm retry-button" href="${retryUrl}" title="retry this item"><i class="bi bi-arrow-clockwise"></i></button>`;
+        },
         links: [
           { ...previousPage, linkTitle: 'previous' },
           { ...nextPage, linkTitle: 'next' },
@@ -403,7 +411,8 @@ export async function retry(
     if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
       throw new NotFoundError();
     }
-    if (!req.context.isAdminAccess && (job.username != req.user)) {
+    const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    if (!isAdmin && (job.username != req.user)) {
       // if the job is shareable but this non-admin user (req.user) does not own the job,
       // they shouldn't be able to trigger a retry
       throw new ForbiddenError();
