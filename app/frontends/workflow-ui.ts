@@ -102,16 +102,16 @@ export async function getJobs(
     }
     const disallowStatus = requestQuery.disallowstatus === 'on';
     const disallowUser = requestQuery.disallowuser === 'on';
-    const filters = parseFilters(requestQuery, req.context.isAdminAccess, JobStatus);
-    if (filters.statusValues.length) {
+    const tableFilter = parseFilters(requestQuery, req.context.isAdminAccess, JobStatus);
+    if (tableFilter.statusValues.length) {
       jobQuery.whereIn.status = {
-        values: filters.statusValues,
+        values: tableFilter.statusValues,
         in: !disallowStatus,
       };
     }
-    if (filters.userValues.length) {
+    if (tableFilter.userValues.length) {
       jobQuery.whereIn.username = {
-        values: filters.userValues,
+        values: tableFilter.userValues,
         in: !disallowUser,
       };
     }
@@ -168,7 +168,7 @@ export async function getJobs(
       // job table filters HTML
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       disallowUserChecked: disallowUser ? 'checked' : '',
-      selectedFilters: filters.originalValues,
+      selectedFilters: tableFilter.originalValues,
       // job table paging buttons HTML
       links: [
         { ...previousPage, linkTitle: 'previous' },
@@ -209,14 +209,17 @@ export async function getJob(
     const disallowStatus = requestQuery.disallowstatus === 'on';
     const tableFilter = parseFilters(requestQuery, req.context.isAdminAccess, WorkItemStatus);
     res.render('workflow-ui/job/index', {
+      // most of these values will be used to poll
+      // for work items or set hidden form values for when
+      // the user makes a request to filter the work items table
       job,
       page,
       limit,
-      version,
-      isAdminRoute: req.context.isAdminAccess,
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       selectedFilters: tableFilter.originalValues,
       tableFilter: requestQuery.tablefilter,
+      version,
+      isAdminRoute: req.context.isAdminAccess,
     });
   } catch (e) {
     req.context.logger.error(e);
