@@ -9,7 +9,7 @@ import { readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink, { getJobDataLinkCount } from '../models/job-link';
-import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex } from '../models/work-item';
+import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getJobIdForWorkItem } from '../models/work-item';
 import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 import { objectStoreForProtocol } from '../util/object-store';
 import { resolve } from '../util/url';
@@ -67,13 +67,14 @@ export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
   const { logger } = req.context;
-  const { serviceID } = req.query;
+  const { serviceID, podName } = req.query;
   let workItem: WorkItem, maxCmrGranules: number;
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
     maxCmrGranules = await calculateQueryCmrLimit(workItem, tx, logger);
   });
   if (workItem) {
+    logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
     res.send({ workItem, maxCmrGranules });
   } else if (tryCount < MAX_TRY_COUNT) {
     setTimeout(async () => {
@@ -500,9 +501,14 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
+  // get the jobID for the work item
+  const jobID = await getJobIdForWorkItem(workItemID);
+
   await db.transaction(async (tx) => {
-    const workItem = await getWorkItemById(tx, workItemID);
-    const job = await Job.byJobID(tx, workItem.jobID, false, true);
+    const job = await Job.byJobID(tx, jobID, false, true);
+    // lock the work item to we can update it - need to do this after locking jobs table above
+    // to avoid deadlocks
+    const workItem = await getWorkItemById(tx, workItemID, true);
     const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
 
     // If the job was already in a terminal state then send 409 response
@@ -515,7 +521,7 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
 
     // Don't allow updates to work items that are already in a terminal state
     if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
-      logger.warn(`WorkItem was already ${workItem.status}`);
+      logger.warn(`WorkItem ${workItemID} was already ${workItem.status}`);
       return;
     }
 
@@ -618,8 +624,13 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   // can do if the update fails, so it is OK for us to ignore the promise here. The service
   // can still retry for network or similar failures, but we don't want it to retry for things
   // like 409 errors.
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  handleWorkItemUpdate(update, req.context.logger);
+  if (db.client.config.client === 'pg') {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    handleWorkItemUpdate(update, req.context.logger);
+  } else {
+    // tests break if we don't await this
+    await handleWorkItemUpdate(update, req.context.logger);
+  }
 
   // Return a success with no body
   res.status(204).send();
