@@ -661,8 +661,8 @@ export class Job extends Record implements JobRecord {
   resume(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.RESUME,
       `Job status is ${this.status} - only paused jobs can be resumed.`);
-    const defaultMessage = statesToDefaultMessages[JobStatus.PAUSED];
-    let message = removeMessageParts(this.message, [defaultMessage]);
+    const defaultPausedMessage = statesToDefaultMessages[JobStatus.PAUSED];
+    let message = removeMessageParts(this.message, [defaultPausedMessage]);
     message ||= statesToDefaultMessages[JobStatus.RUNNING];
     this.updateStatus(JobStatus.RUNNING, message);
   }
