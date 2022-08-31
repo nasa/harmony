@@ -545,7 +545,13 @@ describe('Pausing and resuming a job - admin endpoint', function () {
       hookServersStartStop({ skipEarthdataLogin: false });
       describe('Resuming a job', function () {
         hookTransaction();
-        const joeJob1 = buildJob({ username: normalUsername });
+        const resultsLimitedMessage = 'CMR query identified 177 granules, but the request has been limited to ' +
+          'process only the first 3 granules because you requested 3 maxResults.';
+        const joeJob1 = buildJob({ 
+          username: normalUsername,
+          status: JobStatus.RUNNING,
+          message: resultsLimitedMessage,
+        });
         before(async function () {
           joeJob1.pause();
           await joeJob1.save(this.trx);
@@ -599,14 +605,14 @@ describe('Pausing and resuming a job - admin endpoint', function () {
               const actualJob = JSON.parse(this.res.text);
               expect(actualJob.status).to.eql('running');
             });
-            it('sets the message to the job is being processed', function () {
+            it('sets the message to the previous "running" state message', function () {
               const actualJob = JSON.parse(this.res.text);
-              expect(actualJob.message).to.eql('The job is being processed');
+              expect(actualJob.message).to.eql(resultsLimitedMessage);
             });
             it('does not modify any of the other job fields', function () {
               const actualJob = new Job(JSON.parse(this.res.text));
               const expectedJob: JobRecord = _.cloneDeep(joeJob1);
-              expectedJob.message = 'The job is being processed';
+              expectedJob.message = resultsLimitedMessage;
               expectedJob.status = JobStatus.RUNNING;
               expect(jobsEqual(expectedJob, actualJob)).to.be.true;
             });
