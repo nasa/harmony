@@ -643,9 +643,10 @@ export class Job extends Record implements JobRecord {
   pause(): void {
     validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
     let newMessage = `${statesToDefaultMessages[JobStatus.PAUSED]}.`;
+    const messagePartsToRemove = activeJobStatuses.map((status) => statesToDefaultMessages[status]);
     const retainedMessage = removeMessageParts(
       this.message, 
-      activeJobStatuses,
+      messagePartsToRemove,
       (part) => part.includes('CMR query identified'));
     if (retainedMessage) {
       newMessage = `${newMessage} ${retainedMessage}`;
