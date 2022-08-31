@@ -226,6 +226,40 @@ export const statesToDefaultMessages: any = Object.values(stateMachine.states).r
 
 const defaultMessages = Object.values(statesToDefaultMessages);
 
+
+/**
+ * When the job status is updated we might want to remove some of the prior message parts
+ * while retaining some of the information from the message. For example, we might want
+ * "The job is generating a preview before auto-pausing. The CMR identified 10 granules." to become
+ * "The CMR identified 10 granules." when a job goes from previewing to running.
+ * @param message - the job message that may need changing
+ * @param partsToRemove - an array of strings to remove (sentences without periods--e.g. ["the job is paused"])
+ * @param partsFilter - an optional filter for removal of message parts that do not match this filter
+ * @returns the new message, with partsToRemove removed and sentence structure maintained,
+ * or an empty string if the new message has no retained parts
+ */
+function removeMessageParts(
+  message: string,
+  partsToRemove,
+  partsFilter: (p: string) => boolean = undefined,
+): string {
+  if (!message) {
+    return;
+  }
+  let acceptableParts = message
+    .split('.')
+    .map((part) => part.trim())
+    .filter((part) => part && !partsToRemove.includes(part));
+  if (partsFilter) {
+    acceptableParts = acceptableParts.filter(partsFilter);
+  }
+  if (acceptableParts.length > 0) {
+    return acceptableParts.join('. ') + '.';
+  } else {
+    return '';
+  }
+}
+
 /**
  * Check if a desired transition (for job status) is acceptable according to the state machine.
  * @param currentStatus - the current job status
@@ -608,14 +642,13 @@ export class Job extends Record implements JobRecord {
    */
   pause(): void {
     validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
-    // retain some parts of the current message
-    // and prepend the default paused message to it
-    let newMessage = `${statesToDefaultMessages.paused}.`;
-    const retainedSentences = this.message
-      .split('.').map((sentence) => sentence.trim())
-      .filter((sentence) => sentence && sentence.includes('CMR query identified'));
-    if (retainedSentences.length > 0) {
-      newMessage = `${newMessage} ${[retainedSentences].join('. ')}.`;
+    let newMessage = `${statesToDefaultMessages[JobStatus.PAUSED]}.`;
+    const retainedMessage = removeMessageParts(
+      this.message, 
+      activeJobStatuses,
+      (part) => part.includes('CMR query identified'));
+    if (retainedMessage) {
+      newMessage = `${newMessage} ${retainedMessage}`;
     }
     this.updateStatus(JobStatus.PAUSED, newMessage);
   }
@@ -629,7 +662,7 @@ export class Job extends Record implements JobRecord {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.RESUME,
       `Job status is ${this.status} - only paused jobs can be resumed.`);
     const defaultMessage = statesToDefaultMessages[JobStatus.PAUSED];
-    let message = this.message.replace(`${defaultMessage}.`, '').trim();
+    let message = removeMessageParts(this.message, [defaultMessage]);
     message ||= statesToDefaultMessages[JobStatus.RUNNING];
     this.updateStatus(JobStatus.RUNNING, message);
   }
@@ -641,9 +674,10 @@ export class Job extends Record implements JobRecord {
    */
   skipPreview(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.SKIP_PREVIEW,
-      `Job status is ${this.status} - only previewing jobs can skip preview.`);
-    const defaultMessage = statesToDefaultMessages[JobStatus.PREVIEWING];
-    let message = this.message.replace(defaultMessage, '').replace('. ', '').trim();
+      `Job status is ${this.status} - only previewing or paused jobs can skip preview.`);
+    const messagePartsToRemove = [statesToDefaultMessages[JobStatus.PREVIEWING], 
+      statesToDefaultMessages[JobStatus.PAUSED]];
+    let message = removeMessageParts(this.message, messagePartsToRemove);
     message ||= statesToDefaultMessages[JobStatus.RUNNING];
     this.updateStatus(JobStatus.RUNNING, message);
   }
@@ -703,11 +737,17 @@ export class Job extends Record implements JobRecord {
    * will use a default message corresponding to the status.
    * You must call `#save` to persist the change
    *
-   * @param status - The new status, one of successful, failed, running, accepted
+   * @param status - The new status, one of successful, failed, running,
+   * accepted, running_with_errors, complete_with_errors, paused, previewing
    * @param message - (optional) a human-readable status message
    */
   updateStatus(status: JobStatus, message?: string): void {
     this.status = status;
+    // prior default messages related to the previous state may need to be removed
+    const messagePartsToRemove = Object.values(JobStatus)
+      .filter((state) => status !== state)
+      .map((state) => statesToDefaultMessages[state]);
+    this.message = removeMessageParts(this.message, messagePartsToRemove);
     if (message) {
       // Update the message if a new one was provided
       this.message = message;
