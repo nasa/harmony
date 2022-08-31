@@ -195,7 +195,7 @@ const stateMachine = createMachine(
       paused: {
         id: JobStatus.PAUSED,
         meta: {
-          defaultMessage: 'The job is paused',
+          defaultMessage: 'The job is paused and may be resumed using the provided link',
         },
         on: Object.fromEntries([
           [JobEvent.SKIP_PREVIEW, { target: JobStatus.RUNNING }],
@@ -720,7 +720,6 @@ export class Job extends Record implements JobRecord {
     if (this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.COMPLETE_WITH_ERRORS) {
       this.progress = 100;
     }
-    console.log('updated message ' + this.message);
   }
 
   /**

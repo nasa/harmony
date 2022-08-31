@@ -322,7 +322,7 @@ describe('Skipping job preview', function () {
         describe('When a job is paused', function () {
           let token;
           hookTransaction();
-          const message = 'The job is paused';
+          const message = 'The job is paused and may be resumed using the provided link';
           const pausedJob = buildJob({ username: normalUsername, message });
           pausedJob.status = JobStatus.PAUSED;
           before(async function () {

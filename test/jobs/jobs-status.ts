@@ -130,7 +130,7 @@ describe('Individual job status route', function () {
 
     it('returns a human-readable message field corresponding to its state', function () {
       const job = JSON.parse(this.res.text);
-      expect(job.message).to.include('The job is paused');
+      expect(job.message).to.include('The job is paused and may be resumed using the provided link');
     });
 
     it('includes links for canceling and resuming the job', function () {

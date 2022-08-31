@@ -483,7 +483,7 @@ describe('Pausing and resuming a job - user endpoint', function () {
 
             it('sets the appropriate message', function () {
               const actualJob = JSON.parse(this.res.text);
-              expect(actualJob.message).to.eql('The job is paused. The job may be resumed using the provided link.');
+              expect(actualJob.message).to.eql('The job is paused and may be resumed using the provided link.');
             });
 
             it('provides a link for resuming the job', function () {
@@ -677,7 +677,7 @@ describe('Pausing and resuming a job - admin endpoint', function () {
             });
             it('sets the appropriate message', function () {
               const actualJob = JSON.parse(this.res.text);
-              expect(actualJob.message).to.eql('The job is paused. The job may be resumed using the provided link.');
+              expect(actualJob.message).to.eql('The job is paused and may be resumed using the provided link.');
             });
             it('provides a link for resuming the job', function () {
               const actualJob = JSON.parse(this.res.text);
