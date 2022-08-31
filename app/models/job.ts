@@ -645,7 +645,7 @@ export class Job extends Record implements JobRecord {
     let newMessage = `${statesToDefaultMessages[JobStatus.PAUSED]}.`;
     const messagePartsToRemove = activeJobStatuses.map((status) => statesToDefaultMessages[status]);
     const retainedMessage = removeMessageParts(
-      this.message, 
+      this.message,
       messagePartsToRemove,
       (part) => part.includes('CMR query identified'));
     if (retainedMessage) {
