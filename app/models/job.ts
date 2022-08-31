@@ -615,7 +615,7 @@ export class Job extends Record implements JobRecord {
       .split('.').map((sentence) => sentence.trim())
       .filter((sentence) => sentence && sentence.includes('CMR query identified'));
     if (retainedSentences.length > 0) {
-      newMessage = `${newMessage}${[retainedSentences].join('. ')}.`;
+      newMessage = `${newMessage} ${[retainedSentences].join('. ')}.`;
     }
     this.updateStatus(JobStatus.PAUSED, newMessage);
   }
