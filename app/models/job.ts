@@ -600,17 +600,24 @@ export class Job extends Record implements JobRecord {
   }
 
   /**
-   * Updates the status to paused providing the optional message or the default
-   * if none is provided.  You should generally provide a message if possible.
+   * Updates the status to paused.
    * Only jobs in the RUNNING state may be paused.
    * You must call `#save` to persist the change.
    *
-   * @param message - a human-readable message to indicate the state of the job
    * @throws An error if the job is not currently in the RUNNING state
    */
-  pause(message = statesToDefaultMessages.paused): void {
+  pause(): void {
     validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
-    this.updateStatus(JobStatus.PAUSED, message);
+    // retain some parts of the current message
+    // and prepend the default paused message to it
+    let newMessage = `${statesToDefaultMessages.paused}.`;
+    const retainedSentences = this.message
+      .split('.').map((sentence) => sentence.trim())
+      .filter((sentence) => sentence && sentence.includes('CMR query identified'));
+    if (retainedSentences.length > 0) {
+      newMessage = `${newMessage}${[retainedSentences].join('. ')}.`;
+    }
+    this.updateStatus(JobStatus.PAUSED, newMessage);
   }
 
   /**
@@ -621,7 +628,10 @@ export class Job extends Record implements JobRecord {
   resume(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.RESUME,
       `Job status is ${this.status} - only paused jobs can be resumed.`);
-    this.updateStatus(JobStatus.RUNNING);
+    const defaultMessage = statesToDefaultMessages[JobStatus.PAUSED];
+    let message = this.message.replace(`${defaultMessage}.`, '').trim();
+    message ||= statesToDefaultMessages[JobStatus.RUNNING];
+    this.updateStatus(JobStatus.RUNNING, message);
   }
 
   /**
@@ -710,6 +720,7 @@ export class Job extends Record implements JobRecord {
     if (this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.COMPLETE_WITH_ERRORS) {
       this.progress = 100;
     }
+    console.log('updated message ' + this.message);
   }
 
   /**

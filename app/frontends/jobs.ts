@@ -76,7 +76,7 @@ function getMessageForDisplay(job: Job, urlRoot: string): string {
       + `${env.awsDefaultRegion} with keys from ${urlRoot}/cloud-access.sh`;
   }
   if (job.status === JobStatus.PAUSED) {
-    message += '. The job may be resumed using the provided link.';
+    message += ' The job may be resumed using the provided link.';
   }
   return message;
 }
