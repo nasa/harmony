@@ -4,12 +4,12 @@ import { Job, JobStatus } from '../../app/models/job';
 import { hookTransaction } from '../helpers/db';
 import { expect } from 'chai';
 
-hookTransaction();
 
 describe('skipPreview, pause and resume job message handling', async function () {
   describe('for a RUNNING job', function () {
     describe('with a default running message', function () {
       let job;
+      hookTransaction();
       before(async function () {
         job = buildJob({ status: JobStatus.RUNNING, message: 'The job is being processed.' });
         await job.save(this.trx);
@@ -30,6 +30,7 @@ describe('skipPreview, pause and resume job message handling', async function ()
     describe('with a results limited running message', function () {
       let job;
       let limitedMessage;
+      hookTransaction();
       before(async function () {
         limitedMessage = 'CMR query identified 10 granules, but the request has been limited.';
         job = buildJob({ status: JobStatus.RUNNING, message: limitedMessage });
@@ -53,6 +54,7 @@ describe('skipPreview, pause and resume job message handling', async function ()
     describe('with a default previewing message', function () {
       let job;
       let skipJob;
+      hookTransaction();
       before(async function () {
         job = buildJob({ status: JobStatus.PREVIEWING, message: 'The job is generating a preview before auto-pausing.' });
         await job.save(this.trx);
@@ -98,6 +100,7 @@ describe('skipPreview, pause and resume job message handling', async function ()
       let job;
       let skipJob;
       let limitedMessage;
+      hookTransaction();
       before(async function () {
         limitedMessage = 'CMR query identified 10 granules, but the request has been limited.';
         job = buildJob({ status: JobStatus.PREVIEWING, message: `The job is generating a preview before auto-pausing. ${limitedMessage}` });
