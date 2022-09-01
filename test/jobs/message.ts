@@ -6,10 +6,10 @@ import { expect } from 'chai';
 import { baseResultsLimitedMessage } from '../../app/middleware/cmr-granule-locator';
 
 
-describe('skipPreview, pause and resume job message handling', async function () {
+describe('skipPreview, pause, resume, and updateStatus job message handling', async function () {
   describe('for a RUNNING job', function () {
     describe('with a default running message', function () {
-      let job;
+      let job: Job;
       hookTransaction();
       before(async function () {
         job = buildJob({ status: JobStatus.RUNNING, message: 'The job is being processed.' });
@@ -29,8 +29,8 @@ describe('skipPreview, pause and resume job message handling', async function ()
       });
     });
     describe('with a results limited running message', function () {
-      let job;
-      let limitedMessage;
+      let job: Job;
+      let limitedMessage: string;
       hookTransaction();
       before(async function () {
         limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;
@@ -53,8 +53,8 @@ describe('skipPreview, pause and resume job message handling', async function ()
   });
   describe('for a PREVIEWING job', function () {
     describe('with a default previewing message', function () {
-      let job;
-      let skipJob;
+      let job: Job;
+      let skipJob: Job;
       hookTransaction();
       before(async function () {
         job = buildJob({ status: JobStatus.PREVIEWING, message: 'The job is generating a preview before auto-pausing.' });
@@ -98,9 +98,10 @@ describe('skipPreview, pause and resume job message handling', async function ()
       });
     });
     describe('with a results limited previewing message', function () {
-      let job;
-      let skipJob;
-      let limitedMessage;
+      let job: Job;
+      let skipJob: Job;
+      let completeJob: Job;
+      let limitedMessage: string;
       hookTransaction();
       before(async function () {
         limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;
@@ -108,6 +109,8 @@ describe('skipPreview, pause and resume job message handling', async function ()
         await job.save(this.trx);
         skipJob = buildJob({ status: JobStatus.PREVIEWING, message: `The job is generating a preview before auto-pausing. ${limitedMessage}` });
         await skipJob.save(this.trx);
+        completeJob = buildJob({ status: JobStatus.PREVIEWING, message: `The job is generating a preview before auto-pausing. ${limitedMessage}` });
+        await completeJob.save(this.trx);
       });
       describe('which is paused, then resumed', function () {
         it('sets the appropriate message when paused', async function () {
@@ -140,6 +143,20 @@ describe('skipPreview, pause and resume job message handling', async function ()
           skipJob.resume();
           await skipJob.save(this.trx);
           const updatedJob = await Job.byJobID(this.trx, skipJob.jobID);
+          expect(updatedJob.message).to.eq(limitedMessage);
+        });
+      });
+      describe('which is paused, then completed', function () {
+        it('sets the appropriate message when paused', async function () {
+          completeJob.pause();
+          await completeJob.save(this.trx);
+          const updatedJob = await Job.byJobID(this.trx, completeJob.jobID);
+          expect(updatedJob.message).to.eq(`The job is paused and may be resumed using the provided link. ${limitedMessage}`);
+        });
+        it('sets the appropriate message when completed', async function () {
+          completeJob.updateStatus(JobStatus.SUCCESSFUL);
+          await completeJob.save(this.trx);
+          const updatedJob = await Job.byJobID(this.trx, completeJob.jobID);
           expect(updatedJob.message).to.eq(limitedMessage);
         });
       });
