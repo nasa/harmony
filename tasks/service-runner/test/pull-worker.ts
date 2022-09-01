@@ -205,7 +205,7 @@ describe('Pull Worker', async function () {
       beforeEach(function () {
         mkdirSync('/tmp/abc123');
         writeFileSync('/tmp/abc123/work', '1');
-        pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () { return {} });
+        pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () { return {}; });
         doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(async function (): Promise<WorkItem> {
           return new WorkItem({});
         });
