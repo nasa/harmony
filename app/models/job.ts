@@ -745,6 +745,7 @@ export class Job extends Record implements JobRecord {
   updateStatus(status: JobStatus, message?: string): void {
     this.status = status;
     // prior default messages related to the previous state may need to be removed
+    // (e.g. cases where the status is updated but no new message is provided)
     const messagePartsToRemove = Object.values(JobStatus)
       .filter((state) => status !== state)
       .map((state) => statesToDefaultMessages[state]);
