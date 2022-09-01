@@ -64,6 +64,20 @@ describe('Backend service metrics endpoint', function () {
         status: WorkItemStatus.RUNNING,
         workflowStepIndex: 1,
       }).save(db);
+
+      await buildWorkItem({
+        jobID: 'abc123',
+        serviceID,
+        status: WorkItemStatus.SUCCESSFUL,
+        workflowStepIndex: 1,
+      }).save(db);
+
+      await buildWorkItem({
+        jobID: 'abc123',
+        serviceID,
+        status: WorkItemStatus.FAILED,
+        workflowStepIndex: 1,
+      }).save(db);
     });
 
     hookServiceMetrics(serviceID);
