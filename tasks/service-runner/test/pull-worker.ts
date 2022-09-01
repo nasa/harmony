@@ -9,7 +9,7 @@ import { hookGetWorkRequest } from './helpers/pull-worker';
 import * as pullWorker from '../app/workers/pull-worker';
 import PullWorker from '../app/workers/pull-worker';
 import * as serviceRunner from '../app/service/service-runner';
-import { existsSync, writeFileSync } from 'fs';
+import { existsSync, writeFileSync, mkdirSync } from 'fs';
 
 const {
   _pullWork,
@@ -195,6 +195,37 @@ describe('Pull Worker', async function () {
         await _pullAndDoWork(false);
         expect(pullWorkSpy.called).to.be.false;
         expect(doWorkSpy.called).to.be.false;
+      });
+    });
+
+    describe('when _pullWork runs', async function () {
+      let pullStub: SinonStub;
+      let doWorkStub: SinonStub;
+      const mock = new MockAdapter(axiosUpdateWork);
+      beforeEach(function () {
+        mkdirSync('/tmp/abc123');
+        writeFileSync('/tmp/abc123/work', '1');
+        pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () { return {} });
+        doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(async function (): Promise<WorkItem> {
+          return new WorkItem({});
+        });
+        mock.onPut().reply(200, 'OK');
+      });
+      this.afterEach(function () {
+        pullStub.restore();
+        doWorkStub.restore();
+        mock.restore();
+      });
+
+      it('cleans the /tmp directory', async function () {
+        await _pullAndDoWork(false);
+        expect(existsSync('/tmp/abc123')).to.be.false;
+      });
+
+      it('does not delete /tmp/TERMINATING', async function () {
+        writeFileSync('/tmp/TERMINATING', '1');
+        await _pullAndDoWork(false);
+        expect(existsSync('/tmp/TERMINATING')).to.be.true;
       });
     });
 
