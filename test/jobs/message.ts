@@ -3,6 +3,7 @@ import { buildJob } from '../helpers/jobs';
 import { Job, JobStatus } from '../../app/models/job';
 import { hookTransaction } from '../helpers/db';
 import { expect } from 'chai';
+import { baseResultsLimitedMessage } from 'app/middleware/cmr-granule-locator';
 
 
 describe('skipPreview, pause and resume job message handling', async function () {
@@ -32,7 +33,7 @@ describe('skipPreview, pause and resume job message handling', async function ()
       let limitedMessage;
       hookTransaction();
       before(async function () {
-        limitedMessage = 'CMR query identified 10 granules, but the request has been limited.';
+        limitedMessage = baseResultsLimitedMessage(100, 10);
         job = buildJob({ status: JobStatus.RUNNING, message: limitedMessage });
         await job.save(this.trx);
       });
@@ -102,7 +103,7 @@ describe('skipPreview, pause and resume job message handling', async function ()
       let limitedMessage;
       hookTransaction();
       before(async function () {
-        limitedMessage = 'CMR query identified 10 granules, but the request has been limited.';
+        limitedMessage = baseResultsLimitedMessage(100, 10);
         job = buildJob({ status: JobStatus.PREVIEWING, message: `The job is generating a preview before auto-pausing. ${limitedMessage}` });
         await job.save(this.trx);
         skipJob = buildJob({ status: JobStatus.PREVIEWING, message: `The job is generating a preview before auto-pausing. ${limitedMessage}` });
