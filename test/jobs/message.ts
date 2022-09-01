@@ -3,7 +3,7 @@ import { buildJob } from '../helpers/jobs';
 import { Job, JobStatus } from '../../app/models/job';
 import { hookTransaction } from '../helpers/db';
 import { expect } from 'chai';
-import { baseResultsLimitedMessage } from 'app/middleware/cmr-granule-locator';
+import { baseResultsLimitedMessage } from '../../app/middleware/cmr-granule-locator';
 
 
 describe('skipPreview, pause and resume job message handling', async function () {
