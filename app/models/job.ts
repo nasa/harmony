@@ -675,7 +675,7 @@ export class Job extends Record implements JobRecord {
    */
   skipPreview(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.SKIP_PREVIEW,
-      `Job status is ${this.status} - only previewing or paused jobs can skip preview.`);
+      `Job status is ${this.status} - only previewing jobs can skip preview.`);
     const messagePartsToRemove = [statesToDefaultMessages[JobStatus.PREVIEWING], 
       statesToDefaultMessages[JobStatus.PAUSED]];
     let message = removeMessageParts(this.message, messagePartsToRemove);

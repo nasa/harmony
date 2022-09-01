@@ -123,7 +123,7 @@ function skipJobPreviewCommonTests(
           const response = JSON.parse(this.res.text);
           expect(response).to.eql({
             code: 'harmony.ConflictError',
-            description: 'Error: Job status is running - only previewing or paused jobs can skip preview.',
+            description: 'Error: Job status is running - only previewing jobs can skip preview.',
           });
         });
       });
@@ -148,7 +148,7 @@ function skipJobPreviewCommonTests(
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
           code: 'harmony.ConflictError',
-          description: 'Error: Job status is successful - only previewing or paused jobs can skip preview.',
+          description: 'Error: Job status is successful - only previewing jobs can skip preview.',
         });
       });
     });
@@ -171,7 +171,7 @@ function skipJobPreviewCommonTests(
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
           code: 'harmony.ConflictError',
-          description: 'Error: Job status is failed - only previewing or paused jobs can skip preview.',
+          description: 'Error: Job status is failed - only previewing jobs can skip preview.',
         });
       });
     });
@@ -195,7 +195,7 @@ function skipJobPreviewCommonTests(
         const response = JSON.parse(this.res.text);
         expect(response).to.eql({
           code: 'harmony.ConflictError',
-          description: 'Error: Job status is canceled - only previewing or paused jobs can skip preview.',
+          description: 'Error: Job status is canceled - only previewing jobs can skip preview.',
         });
       });
     });
