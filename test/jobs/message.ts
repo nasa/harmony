@@ -33,7 +33,7 @@ describe('skipPreview, pause and resume job message handling', async function ()
       let limitedMessage;
       hookTransaction();
       before(async function () {
-        limitedMessage = baseResultsLimitedMessage(100, 10);
+        limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;
         job = buildJob({ status: JobStatus.RUNNING, message: limitedMessage });
         await job.save(this.trx);
       });
@@ -103,7 +103,7 @@ describe('skipPreview, pause and resume job message handling', async function ()
       let limitedMessage;
       hookTransaction();
       before(async function () {
-        limitedMessage = baseResultsLimitedMessage(100, 10);
+        limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;
         job = buildJob({ status: JobStatus.PREVIEWING, message: `The job is generating a preview before auto-pausing. ${limitedMessage}` });
         await job.save(this.trx);
         skipJob = buildJob({ status: JobStatus.PREVIEWING, message: `The job is generating a preview before auto-pausing. ${limitedMessage}` });
