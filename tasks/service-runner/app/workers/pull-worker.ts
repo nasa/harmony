@@ -131,7 +131,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
   const workingFilePath = path.join(LOCKFILE_DIR, 'WORKING');
   try {
     // remove any previous work items to prevent the pod from running out of disk space
-    const regex = /^(?!WORKING|TERMINATING)([a-z0-9]+)$/;
+    const regex = /^(?!WORKING|TERMINATING)(.+)$/;
     await emptyDirectory(WORK_DIR, regex);
     // write out the WORKING file to prevent pod termination while working
     await fs.writeFile(workingFilePath, '1');
