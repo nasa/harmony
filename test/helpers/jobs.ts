@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid';
 import { Application } from 'express';
 import _ from 'lodash';
 import JobLink from '../../app/models/job-link';
-import { Job, JobStatus, JobRecord, jobRecordFields } from '../../app/models/job';
+import { Job, JobStatus, JobRecord, jobRecordFields, SerializedJob } from '../../app/models/job';
 import { JobListing } from '../../app/frontends/jobs';
 import db, { Transaction } from '../../app/util/db';
 import { hookRequest } from './hooks';
@@ -143,7 +143,7 @@ export function areStacJobLinksEqual(jobLinks: JobLink[], stacLinks: JobLink[]):
  */
 export function jobsEqual(
   jobRecord: JobRecord,
-  serializedJob: Job,
+  serializedJob: SerializedJob,
   skipLinks = false,
   skipMessage = false): boolean {
   const recordLinks = new Job(jobRecord).getRelatedLinks('data');
@@ -167,7 +167,7 @@ export function jobsEqual(
  * @returns true if the object is found
  */
 export function containsJob(job: JobRecord, jobList: JobListing): boolean {
-  return !!jobList.jobs.find((j) => jobsEqual(job, new Job(j), true));
+  return !!jobList.jobs.find((j) => jobsEqual(job, j, true));
 }
 
 /**
