@@ -316,7 +316,7 @@ export class Job extends DBRecord implements JobRecord {
 
   errors: JobError[];
 
-  messageMap: Record<JobStatus, string>;
+  statesToMessages: Record<JobStatus, string>;
 
   username: string;
 
@@ -348,24 +348,24 @@ export class Job extends DBRecord implements JobRecord {
    * Get the current job message.
    */
   get message(): string {
-    return this?.messageMap[this.status] || statesToDefaultMessages[this.status];
+    return this?.statesToMessages[this.status] || statesToDefaultMessages[this.status];
   }
 
   /**
-   * Set the current job message in this.messageMap using "message",
+   * Set the current job message in this.statesToMessages using "message",
    * which may be a plain string (older persisted jobs, or new/not-yet-persisted jobs)
-   * or stringified JSON, in which case we'll initialize the entire messageMap.
+   * or stringified JSON, in which case we'll initialize the entire statesToMessages.
    * @param message - a message string or stringified message map string
    */
   set message(message: string) {
     if (!message) {
       return;
     }
-    this.messageMap ??= cloneDeep(statesToDefaultMessages);
+    this.statesToMessages ??= cloneDeep(statesToDefaultMessages);
     try {
-      this.messageMap = JSON.parse(message);
+      this.statesToMessages = JSON.parse(message);
     } catch (e) {
-      this.messageMap[this.status] = message;
+      this.statesToMessages[this.status] = message;
     }
   }
 
@@ -658,7 +658,7 @@ export class Job extends DBRecord implements JobRecord {
    */
   pause(): void {
     validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
-    this.updateStatus(JobStatus.PAUSED, this.messageMap[JobStatus.PAUSED]);
+    this.updateStatus(JobStatus.PAUSED, this.statesToMessages[JobStatus.PAUSED]);
   }
 
   /**
@@ -669,7 +669,7 @@ export class Job extends DBRecord implements JobRecord {
   resume(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.RESUME,
       `Job status is ${this.status} - only paused jobs can be resumed.`);
-    this.updateStatus(JobStatus.RUNNING, this.messageMap[JobStatus.RUNNING]);
+    this.updateStatus(JobStatus.RUNNING, this.statesToMessages[JobStatus.RUNNING]);
   }
 
   /**
@@ -680,7 +680,7 @@ export class Job extends DBRecord implements JobRecord {
   skipPreview(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.SKIP_PREVIEW,
       `Job status is ${this.status} - only previewing jobs can skip preview.`);
-    this.updateStatus(JobStatus.RUNNING, this.messageMap[JobStatus.RUNNING]);
+    this.updateStatus(JobStatus.RUNNING, this.statesToMessages[JobStatus.RUNNING]);
   }
 
   /**
