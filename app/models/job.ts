@@ -316,7 +316,7 @@ export class Job extends DBRecord implements JobRecord {
 
   errors: JobError[];
 
-  statesToMessages: Record<JobStatus, string>;
+  statesToMessages: { [key in JobStatus]?: string };
 
   username: string;
 
@@ -361,7 +361,7 @@ export class Job extends DBRecord implements JobRecord {
     if (!message) {
       return;
     }
-    this.statesToMessages ??= cloneDeep(statesToDefaultMessages);
+    this.statesToMessages ??= {};
     try {
       this.statesToMessages = JSON.parse(message);
     } catch (e) {
@@ -880,6 +880,7 @@ export class Job extends DBRecord implements JobRecord {
     const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
     dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
     dbRecord.message = JSON.stringify(this.statesToMessages || {});
+    console.log(dbRecord);
     await super.save(transaction, dbRecord);
     const promises = [];
     for (const link of this.links) {
