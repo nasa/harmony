@@ -109,6 +109,7 @@ export interface JobQuery {
     username?: string;
     requestId?: string;
     status?: string;
+    message?: string;
     progress?: number;
     batchesCompleted?: number;
     request?: string;
@@ -347,10 +348,7 @@ export class Job extends DBRecord implements JobRecord {
    * Get the current job message.
    */
   get message(): string {
-    if (!this.messageMap || !this.messageMap[this.status]) {
-      return statesToDefaultMessages[this.status];
-    }
-    return this.messageMap[this.status];
+    return this?.messageMap[this.status] || statesToDefaultMessages[this.status];
   }
 
   /**
