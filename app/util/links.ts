@@ -1,4 +1,4 @@
-import { canTransition, Job, JobEvent, JobStatus, SerializedJob } from '../models/job';
+import { canTransition, JobEvent, JobStatus, SerializedJob } from '../models/job';
 import JobLink from '../models/job-link';
 import env = require('./env');
 
