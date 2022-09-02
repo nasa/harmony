@@ -7,7 +7,7 @@ import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runn
 import sleep from '../../../../app/util/sleep';
 import createAxiosClientWithRetry from '../util/axios-clients';
 import path from 'path';
-import { promises as fs } from 'fs';
+import { existsSync, rmSync, promises as fs } from 'fs';
 import { exit } from 'process';
 
 // Poll every 500 ms for now. Potentially make this a configuration item.
@@ -30,7 +30,8 @@ let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
 
-const LOCKFILE_DIR = '/tmp';
+const WORK_DIR = '/tmp';
+const LOCKFILE_DIR = WORK_DIR;
 
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
@@ -67,6 +68,27 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
     return { status: 500, error: err.message };
   }
 }
+
+/**
+ * Remove files and subdirectories from a directory, optionally skipping certain files
+ * 
+ * @param directory - the path to the directory to be emptied
+ * @param matchingFilter - RegExp matching files/directories that should be deleted
+ * 
+ */
+async function emptyDirectory(directory: string, matchingFilter?: RegExp): Promise<void> {
+  const regex = matchingFilter || /^.*$/;
+
+  if (existsSync(directory)) {
+    const files = await fs.readdir(directory);
+    files.filter(f => regex.test(f))
+      .map(f => rmSync(path.join(directory, f), { recursive: true, force: true }));
+
+  } else {
+    logger.error(`Directory ${directory} not found`);
+  }
+}
+
 
 /**
  * Call a service to perform some work
@@ -108,6 +130,9 @@ async function _doWork(
 async function _pullAndDoWork(repeat = true): Promise<void> {
   const workingFilePath = path.join(LOCKFILE_DIR, 'WORKING');
   try {
+    // remove any previous work items to prevent the pod from running out of disk space
+    const regex = /^(?!WORKING|TERMINATING)(.+)$/;
+    await emptyDirectory(WORK_DIR, regex);
     // write out the WORKING file to prevent pod termination while working
     await fs.writeFile(workingFilePath, '1');
 
