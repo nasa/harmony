@@ -41,7 +41,7 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         job.pause();
         await job.save(this.trx);
         const updatedJob = await Job.byJobID(this.trx, job.jobID);
-        expect(updatedJob.message).to.eq(`The job is paused and may be resumed using the provided link. ${limitedMessage}`);
+        expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link.');
       });
       it('sets the appropriate message when resumed', async function () {
         job.resume();
@@ -117,7 +117,7 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
           job.pause();
           await job.save(this.trx);
           const updatedJob = await Job.byJobID(this.trx, job.jobID);
-          expect(updatedJob.message).to.eq(`The job is paused and may be resumed using the provided link. ${limitedMessage}`);
+          expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link.');
         });
         it('sets the appropriate message when resumed', async function () {
           job.resume();
@@ -137,7 +137,7 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
           skipJob.pause();
           await skipJob.save(this.trx);
           const updatedJob = await Job.byJobID(this.trx, skipJob.jobID);
-          expect(updatedJob.message).to.eq(`The job is paused and may be resumed using the provided link. ${limitedMessage}`);
+          expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link.');
         });
         it('sets the appropriate message when resumed', async function () {
           skipJob.resume();
@@ -151,7 +151,7 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
           completeJob.pause();
           await completeJob.save(this.trx);
           const updatedJob = await Job.byJobID(this.trx, completeJob.jobID);
-          expect(updatedJob.message).to.eq(`The job is paused and may be resumed using the provided link. ${limitedMessage}`);
+          expect(updatedJob.message).to.eq('The job is paused and may be resumed using the provided link.');
         });
         it('sets the appropriate message when completed', async function () {
           completeJob.updateStatus(JobStatus.SUCCESSFUL);
