@@ -400,6 +400,108 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
     });
   });
 
+  describe('when a granule limit is set on a service and a collection for that service', function () {
+    const serviceConfigs: ServiceConfig<unknown>[] = [
+      {
+        name: 'nexus-service',
+        collections: [
+          {
+            id: collection,
+            granule_limit: 5,
+          },
+        ],
+        type: {
+          name: 'turbo',
+        },
+        steps: [{
+          image: 'harmonyservices/query-cmr:fake-test',
+        }],
+        granule_limit: 4,
+        capabilities: {
+          subsetting: {
+            variable: true,
+          },
+        },
+      }];
+    hookServices(serviceConfigs);
+    StubService.hook({ params: { redirect: 'http://example.com' } });
+
+    describe('and maxResults is not set for the query', function () {
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 4 granules because the service nexus-service is limited to 4\.$/);
+        });
+
+        it('returns up to the granule limit configured for the collection', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(4);
+        });
+      });
+    });
+
+    describe('and maxResults from the a query is set to a value greater than the granule limit for the collection', function () {
+      const maxResults = 10;
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by the collection configuration', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 4 granules because the service nexus-service is limited to 4\.$/);
+        });
+
+        it('returns up to the granule limit configured for the collection', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(4);
+        });
+      });
+    });
+
+    describe('and maxResults from the a query is set to a value less than the granule limit for the collection', function () {
+      const maxResults = 2;
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
+      describe('retrieving its job status', function () {
+        hookRedirect('jdoe1');
+        it('returns a human-readable message field indicating the request has been limited to a subset of the granules determined by maxResults', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 2 granules because you requested 2 maxResults\.$/);
+        });
+
+        it('returns up to maxGraunules', function () {
+          const job = JSON.parse(this.res.text);
+          expect(job.numInputGranules).to.equal(2);
+        });
+      });
+    });
+
+    describe('when the collection granule limit is greater than the CMR hits, but the CMR hits is greater than the system limit', function () {
+      before(function () {
+        this.glStub = stub(env, 'maxGranuleLimit').get(() => 3);
+      });
+      after(function () {
+        this.glStub.restore();
+      });
+
+      hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: {} });
+      hookRedirect('jdoe1');
+
+      it('returns a warning message about maxResults limiting the number of results', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.message).to.match(/^CMR query identified \d{3,} granules, but the request has been limited to process only the first 3 granules because of system constraints\.$/);
+      });
+
+      it('limits the input granules to the system limit', function () {
+        const job = JSON.parse(this.res.text);
+        expect(job.numInputGranules).to.equal(3);
+      });
+    });
+  });
+
   describe('when a granule limit is set on a collection', function () {
     const serviceConfigs: ServiceConfig<unknown>[] = [
       {
@@ -407,7 +509,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         collections: [
           {
             id: collection,
-            granuleLimit: 5,
+            granule_limit: 5,
           },
         ],
         type: {
