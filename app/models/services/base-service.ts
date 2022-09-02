@@ -316,6 +316,11 @@ export default abstract class BaseService<ServiceParamType> {
       collectionIds: this.operation.collectionIds,
       ignoreErrors: this.operation.ignoreErrors,
     });
+    if (!skipPreview && this.operation.message) {
+      // previewing message will get set via Job constructor
+      // but we should also save the running message for later
+      job.statesToMessages[JobStatus.RUNNING] = this.operation.message;
+    }
     job.addStagingBucketLink(this.operation.stagingLocation);
     return job;
   }
