@@ -1,5 +1,5 @@
 import { ILengthAwarePagination } from 'knex-paginate';
-import { Job } from '../models/job';
+import { Job, SerializedJob } from '../models/job';
 import { keysToLowerCase } from '../util/object';
 import isUUID from '../util/uuid';
 import { getRequestRoot } from '../util/url';
@@ -21,7 +21,7 @@ import env from '../util/env';
  * @returns Resolves when the request is complete
  */
 async function handleStacRequest(
-  req, res, callback: (job: Job, pagination: ILengthAwarePagination) => void, pagingParams: PagingParams, linkType?: string,
+  req, res, callback: (job: SerializedJob, pagination: ILengthAwarePagination) => void, pagingParams: PagingParams, linkType?: string,
 ): Promise<void> {
   const { jobId } = req.params;
   if (!isUUID(jobId)) {
@@ -86,7 +86,7 @@ export async function getStacCatalog(req, res, next): Promise<void> {
     const pagingParams = getPagingParams(req, env.defaultResultPageSize);
     await handleStacRequest(
       req, res,
-      (job: Job, pagination: ILengthAwarePagination) => {
+      (job: SerializedJob, pagination: ILengthAwarePagination) => {
         const pagingLinks = getPagingLinks(req, pagination).map((link) => new JobLink(link));
         return stacCatalogCreate(
           job.jobID, job.request, job.links, pagingLinks, linkType,
@@ -120,10 +120,10 @@ export async function getStacItem(req, res, next): Promise<void> {
     await handleStacRequest(
       req,
       res,
-      (job: Job) => stacItemCreate.apply(
+      (job: SerializedJob) => stacItemCreate.apply(
         null,
         [job.jobID, job.request, job.links[0], itemIndexInt,
-          linkType, job.createdAt, job.getDataExpiration()],
+          linkType, job.createdAt, job.dataExpiration],
       ),
       pagingParams,
       linkType,

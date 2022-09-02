@@ -1,4 +1,4 @@
-import { pick } from 'lodash';
+import { pick, cloneDeep } from 'lodash';
 import { ILengthAwarePagination } from 'knex-paginate'; // For types only
 import subMinutes from 'date-fns/subMinutes';
 import { createMachine } from 'xstate';
@@ -7,7 +7,7 @@ import { removeEmptyProperties } from '../util/object';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
-import Record from './record';
+import DBRecord from './record';
 import { Transaction } from '../util/db';
 import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 
@@ -17,11 +17,6 @@ export const EXPIRATION_DAYS = 30;
 import env = require('../util/env');
 import JobError from './job-error';
 const { awsDefaultRegion } = env;
-
-const serializedJobFields = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'dataExpiration',
-  'links', 'request', 'numInputGranules', 'jobID',
-];
 
 export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
@@ -74,6 +69,39 @@ export interface JobRecord {
   collectionIds: string[];
 }
 
+/**
+ * The format of a Job when returned to an end user. Serialized in
+ * the sense of displaying to an end user, not in the sense of serializing
+ * to the database.
+ */
+export class SerializedJob {
+  jobID: string;
+
+  username: string;
+
+  status: JobStatus;
+
+  message: string;
+
+  progress: number;
+
+  createdAt: Date;
+
+  updatedAt: Date;
+
+  dataExpiration?: Date;
+
+  links: JobLink[];
+
+  request: string;
+
+  numInputGranules: number;
+
+  errors: JobError[];
+
+  getRelatedLinks: (rel: string) => JobLink[];
+}
+
 export interface JobQuery {
   where?: {
     id?: number;
@@ -81,7 +109,6 @@ export interface JobQuery {
     username?: string;
     requestId?: string;
     status?: string;
-    message?: string;
     progress?: number;
     batchesCompleted?: number;
     request?: string;
@@ -224,42 +251,6 @@ export const statesToDefaultMessages: any = Object.values(stateMachine.states).r
   },
   {});
 
-const defaultMessages = Object.values(statesToDefaultMessages);
-
-
-/**
- * When the job status is updated we might want to remove some of the prior message parts
- * while retaining some of the information from the message. For example, we might want
- * "The job is generating a preview before auto-pausing. The CMR identified 10 granules." to become
- * "The CMR identified 10 granules." when a job goes from previewing to running.
- * @param message - the job message that may need changing
- * @param partsToRemove - an array of strings to remove (sentences without periods--e.g. ["the job is paused"])
- * @param partsFilter - an optional filter for removal of message parts that do not match this filter
- * @returns the new message, with partsToRemove removed and sentence structure maintained,
- * or an empty string if the new message has no retained parts
- */
-function removeMessageParts(
-  message: string,
-  partsToRemove,
-  partsFilter: (p: string) => boolean = undefined,
-): string {
-  if (!message) {
-    return;
-  }
-  let acceptableParts = message
-    .split('.')
-    .map((part) => part.trim())
-    .filter((part) => part && !partsToRemove.includes(part));
-  if (partsFilter) {
-    acceptableParts = acceptableParts.filter(partsFilter);
-  }
-  if (acceptableParts.length > 0) {
-    return acceptableParts.join('. ') + '.';
-  } else {
-    return '';
-  }
-}
-
 /**
  * Check if a desired transition (for job status) is acceptable according to the state machine.
  * @param currentStatus - the current job status
@@ -315,7 +306,7 @@ export function validateTransition(
  *   - updatedAt: (Date) the date / time at which the job was last updated
  *   - dataExpiration: (Date) the date / time at which the generated data will be deleted
  */
-export class Job extends Record implements JobRecord {
+export class Job extends DBRecord implements JobRecord {
   static table = 'jobs';
 
   static statuses: JobStatus;
@@ -324,7 +315,7 @@ export class Job extends Record implements JobRecord {
 
   errors: JobError[];
 
-  message: string;
+  messageMap: Record<JobStatus, string>;
 
   username: string;
 
@@ -352,6 +343,33 @@ export class Job extends Record implements JobRecord {
 
   ignoreErrors: boolean;
 
+  /**
+   * Get the current job message.
+   */
+  get message(): string {
+    if (!this.messageMap || !this.messageMap[this.status]) {
+      return statesToDefaultMessages[this.status];
+    }
+    return this.messageMap[this.status];
+  }
+
+  /**
+   * Set the current job message in this.messageMap using "message",
+   * which may be a plain string (older persisted jobs, or new/not-yet-persisted jobs)
+   * or stringified JSON, in which case we'll initialize the entire messageMap.
+   * @param message - a message string or stringified message map string
+   */
+  set message(message: string) {
+    if (!message) {
+      return;
+    }
+    this.messageMap ??= cloneDeep(statesToDefaultMessages);
+    try {
+      this.messageMap = JSON.parse(message);
+    } catch (e) {
+      this.messageMap[this.status] = message;
+    }
+  }
 
   /**
    * Returns an array of all jobs that match the given constraints
@@ -552,7 +570,7 @@ export class Job extends Record implements JobRecord {
     this.progress = fields.progress || 0;
     this.batchesCompleted = fields.batchesCompleted || 0;
     this.links = fields.links ? fields.links.map((l) => new JobLink(l)) : [];
-    // collectionIds is stringified json when returned from db
+    // collectionIds is stringified JSON when returned from database
     this.collectionIds = (typeof fields.collectionIds === 'string'
       ? JSON.parse(fields.collectionIds) : fields.collectionIds)
       || [];
@@ -642,16 +660,7 @@ export class Job extends Record implements JobRecord {
    */
   pause(): void {
     validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
-    let newMessage = `${statesToDefaultMessages[JobStatus.PAUSED]}.`;
-    const messagePartsToRemove = activeJobStatuses.map((status) => statesToDefaultMessages[status]);
-    const retainedMessage = removeMessageParts(
-      this.message,
-      messagePartsToRemove,
-      (part) => part.includes('CMR query identified'));
-    if (retainedMessage) {
-      newMessage = `${newMessage} ${retainedMessage}`;
-    }
-    this.updateStatus(JobStatus.PAUSED, newMessage);
+    this.updateStatus(JobStatus.PAUSED, this.messageMap[JobStatus.PAUSED]);
   }
 
   /**
@@ -662,10 +671,7 @@ export class Job extends Record implements JobRecord {
   resume(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.RESUME,
       `Job status is ${this.status} - only paused jobs can be resumed.`);
-    const defaultPausedMessage = statesToDefaultMessages[JobStatus.PAUSED];
-    let message = removeMessageParts(this.message, [defaultPausedMessage]);
-    message ||= statesToDefaultMessages[JobStatus.RUNNING];
-    this.updateStatus(JobStatus.RUNNING, message);
+    this.updateStatus(JobStatus.RUNNING, this.messageMap[JobStatus.RUNNING]);
   }
 
   /**
@@ -676,11 +682,7 @@ export class Job extends Record implements JobRecord {
   skipPreview(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.SKIP_PREVIEW,
       `Job status is ${this.status} - only previewing jobs can skip preview.`);
-    const messagePartsToRemove = [statesToDefaultMessages[JobStatus.PREVIEWING], 
-      statesToDefaultMessages[JobStatus.PAUSED]];
-    let message = removeMessageParts(this.message, messagePartsToRemove);
-    message ||= statesToDefaultMessages[JobStatus.RUNNING];
-    this.updateStatus(JobStatus.RUNNING, message);
+    this.updateStatus(JobStatus.RUNNING, this.messageMap[JobStatus.RUNNING]);
   }
 
   /**
@@ -744,20 +746,9 @@ export class Job extends Record implements JobRecord {
    */
   updateStatus(status: JobStatus, message?: string): void {
     this.status = status;
-    // prior default messages related to the previous state may need to be removed
-    // (e.g. cases where the status is updated but no new message is provided)
-    const messagePartsToRemove = Object.values(JobStatus)
-      .filter((state) => status !== state)
-      .map((state) => statesToDefaultMessages[state]);
-    this.message = removeMessageParts(this.message, messagePartsToRemove);
     if (message) {
       // Update the message if a new one was provided
       this.message = message;
-    }
-    if (!this.message || defaultMessages.includes(this.message)) {
-      // Update the message to a default one if it's currently a default one for a
-      // different status
-      this.message = statesToDefaultMessages[status];
     }
     if (this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.COMPLETE_WITH_ERRORS) {
       this.progress = 100;
@@ -909,11 +900,22 @@ export class Job extends Record implements JobRecord {
    * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3 | none)
    * @returns an object with the serialized job fields.
    */
-  serialize(urlRoot?: string, linkType?: string): Job {
-    this.dataExpiration = this.getDataExpiration();
-    const serializedJob = pick(this, serializedJobFields) as Job;
-    serializedJob.updatedAt = new Date(serializedJob.updatedAt);
-    serializedJob.createdAt = new Date(serializedJob.createdAt);
+  serialize(urlRoot?: string, linkType?: string): SerializedJob {
+    const serializedJob: SerializedJob = {
+      username: this.username,
+      status: this.status,
+      message: this.message,
+      progress: this.progress,
+      createdAt: new Date(this.createdAt),
+      updatedAt: new Date(this.updatedAt),
+      dataExpiration: this.getDataExpiration(),
+      links: this.links,
+      request: this.request,
+      numInputGranules: this.numInputGranules,
+      jobID: this.jobID,
+      errors: [],
+      getRelatedLinks: this.getRelatedLinks,
+    };
     if (urlRoot && linkType !== 'none') {
       serializedJob.links = serializedJob.links.map((link) => {
         const serializedLink = link.serialize();
@@ -926,14 +928,7 @@ export class Job extends Record implements JobRecord {
         return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
       }) as unknown as JobLink[];
     }
-    const job = new Job(serializedJob as JobRecord); // We need to clean this up
-    delete job.originalStatus;
-    delete job.batchesCompleted;
-    delete job.collectionIds;
-    delete job.isAsync;
-    delete job.ignoreErrors;
-
-    return job;
+    return serializedJob;
   }
 
   /**

@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { Logger } from 'winston';
-import { Job, JobStatus, JobQuery } from '../models/job';
+import { Job, JobStatus, JobQuery, SerializedJob } from '../models/job';
 import { keysToLowerCase } from '../util/object';
 import { cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, skipPreviewAndSaveJob, validateJobId } from '../util/job';
 import JobLink from '../models/job-link';
@@ -21,7 +21,7 @@ import _ from 'lodash';
  * @param job - the serialized job
  * @returns true if job contains S3 direct access links and false otherwise
  */
-function containsS3DirectAccessLink(job: Job): boolean {
+function containsS3DirectAccessLink(job: SerializedJob): boolean {
   const dataLinks = job.getRelatedLinks('data');
   return dataLinks.some((l) => l.href.match(/^s3:\/\/.*$/));
 }
@@ -36,7 +36,7 @@ function containsS3DirectAccessLink(job: Job): boolean {
  * @param statusLinkRel - the type of relation (self|item) for the status link
  * @returns a list of job links
  */
-function getLinksForDisplay(job: Job, urlRoot: string, statusLinkRel: string): JobLink[] {
+function getLinksForDisplay(job: SerializedJob, urlRoot: string, statusLinkRel: string): JobLink[] {
   let { links } = job;
   const dataLinks = job.getRelatedLinks('data');
   if (containsS3DirectAccessLink(job)) {
@@ -66,7 +66,7 @@ function getLinksForDisplay(job: Job, urlRoot: string, statusLinkRel: string): J
  * @param job - the serialized job
  * @param urlRoot - the root URL to be used when constructing links
  */
-function getMessageForDisplay(job: Job, urlRoot: string): string {
+function getMessageForDisplay(job: SerializedJob, urlRoot: string): string {
   let { message } = job;
   if (containsS3DirectAccessLink(job)) {
     if (!message.endsWith('.')) {
@@ -87,14 +87,13 @@ function getMessageForDisplay(job: Job, urlRoot: string): string {
  * @param errors - a list of errors for the job
  * @returns the job for display
  */
-function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?: JobError[]): Job {
+function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?: JobError[]): SerializedJob {
   const serializedJob = job.serialize(urlRoot, linkType);
   const statusLinkRel = linkType === 'none' ? 'item' : 'self';
   serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel);
   serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
-
   if (errors.length > 0) {
-    serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as unknown as JobError[];
+    serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as JobError[];
   }
 
   return serializedJob;
@@ -102,7 +101,7 @@ function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?:
 
 export interface JobListing {
   count: number;
-  jobs: Job[];
+  jobs: SerializedJob[];
   links: Link[];
 }
 /**

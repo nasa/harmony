@@ -62,10 +62,10 @@ export default class NoOpService extends BaseService<void> {
       request: requestUrl,
       numInputGranules: this.operation.cmrHits,
     });
-    job = job.serialize(harmonyRoot);
+    const serializedJob = job.serialize(harmonyRoot);
     // No-op service response should look like a job, but doesn't actually create one
     // so do not include a jobID in the response.
-    delete job.jobID;
+    delete serializedJob.jobID;
     const response = {
       error: null,
       redirect: null,
@@ -73,7 +73,7 @@ export default class NoOpService extends BaseService<void> {
       onComplete: null,
       headers: { contentType: 'application/json' },
       statusCode: 200,
-      content: JSON.stringify(job),
+      content: JSON.stringify(serializedJob),
     };
 
     return response;
