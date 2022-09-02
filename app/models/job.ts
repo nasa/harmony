@@ -877,10 +877,9 @@ export class Job extends DBRecord implements JobRecord {
     this.validateStatus();
     this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
-    // Cannot say Record<string, unknown> because of conflict with imported database Record class
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dbRecord = pick(this, jobRecordFields) as any;
+    const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
     dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
+    dbRecord.message = JSON.stringify(this.statesToMessages || {});
     await super.save(transaction, dbRecord);
     const promises = [];
     for (const link of this.links) {
