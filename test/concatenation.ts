@@ -194,7 +194,12 @@ describe('testing concatenation', function () {
       };
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest('1.0.0', zarrCollection, 'all', { query });
-      it('sets the concatenate flag on the operation to be true by default', function () {
+      // We should be setting to true by default, but there's a bug with concatenation with the
+      // service right now, so we are defaulting to false
+      it('sets the concatenate flag on the operation to be false by default', function () {
+        expect(this.service.operation.shouldConcatenate).to.equal(false);
+      });
+      xit('sets the concatenate flag on the operation to be true by default', function () {
         expect(this.service.operation.shouldConcatenate).to.equal(true);
       });
     });
