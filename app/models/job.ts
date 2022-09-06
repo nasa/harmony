@@ -97,9 +97,28 @@ export class SerializedJob {
 
   numInputGranules: number;
 
-  errors: JobError[];
+  errors?: JobError[];
 
-  getRelatedLinks: (rel: string) => JobLink[];
+  /**
+   * Returns only the links with a rel that matches the passed in value.
+   *
+   * @param rel - the relation to return links for
+   * @returns the job output links with the given rel
+   */
+  getRelatedLinks(rel: string): JobLink[] {
+    const links = this.links.filter((link) => link.rel === rel);
+    return links.map(removeEmptyProperties) as JobLink[];
+  }
+
+  /**
+   * Constructs a serialized job from an object.
+   * @param fields - the fields to initialize the SerializedJob with.
+   */
+  constructor(fields: SerializedJob) {
+    if (fields) {
+      Object.assign(this, fields);
+    }
+  }
 }
 
 export interface JobQuery {
@@ -316,7 +335,7 @@ export class Job extends DBRecord implements JobRecord {
 
   errors: JobError[];
 
-  statesToMessages: { [key in JobStatus]?: string };
+  private statesToMessages: { [key in JobStatus]?: string };
 
   username: string;
 
@@ -345,28 +364,25 @@ export class Job extends DBRecord implements JobRecord {
   ignoreErrors: boolean;
 
   /**
-   * Get the current job message.
+   * Get the job message for a particular status.
+   * @param status - the JobStatus that the message is for (defaults to this.status)
+   * @returns the message string
    */
-  get message(): string {
-    return this?.statesToMessages[this.status] || statesToDefaultMessages[this.status];
+  getMessage(status: JobStatus = this.status): string {
+    return this?.statesToMessages?.[status] || statesToDefaultMessages[status];
   }
 
   /**
-   * Set the current job message in this.statesToMessages using "message",
-   * which may be a plain string (older persisted jobs, or new/not-yet-persisted jobs)
-   * or stringified JSON, in which case we'll initialize the entire statesToMessages.
+   * Set the job message in this.statesToMessages using "message".
    * @param message - a message string or stringified message map string
+   * @param status - which status to set the message for (defaults to this.status)
    */
-  set message(message: string) {
+  setMessage(message: string, status: JobStatus = this.status): void {
     if (!message) {
       return;
     }
     this.statesToMessages ??= {};
-    try {
-      this.statesToMessages = JSON.parse(message);
-    } catch (e) {
-      this.statesToMessages[this.status] = message;
-    }
+    this.statesToMessages[status] = message;
   }
 
   /**
@@ -564,7 +580,18 @@ export class Job extends DBRecord implements JobRecord {
    */
   constructor(fields: JobRecord) {
     super(fields);
-    this.updateStatus(fields.status || JobStatus.ACCEPTED, fields.message);
+    let initialMessage: string;
+    try {
+      // newer jobs will have stringified JSON stored in the DB
+      this.statesToMessages = JSON.parse(fields.message);
+      initialMessage = this.getMessage();
+    } catch (e) {
+      // this implies that the message is a plain string, i.e.
+      // (a) we're initializing an older job from a databse record or
+      // (b) a JobRecord that is not emanating from the database
+      initialMessage = fields.message;
+    }
+    this.updateStatus(fields.status || JobStatus.ACCEPTED, initialMessage);
     this.progress = fields.progress || 0;
     this.batchesCompleted = fields.batchesCompleted || 0;
     this.links = fields.links ? fields.links.map((l) => new JobLink(l)) : [];
@@ -658,7 +685,7 @@ export class Job extends DBRecord implements JobRecord {
    */
   pause(): void {
     validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
-    this.updateStatus(JobStatus.PAUSED, this.statesToMessages[JobStatus.PAUSED]);
+    this.updateStatus(JobStatus.PAUSED, this.getMessage(JobStatus.PAUSED));
   }
 
   /**
@@ -669,7 +696,7 @@ export class Job extends DBRecord implements JobRecord {
   resume(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.RESUME,
       `Job status is ${this.status} - only paused jobs can be resumed.`);
-    this.updateStatus(JobStatus.RUNNING, this.statesToMessages[JobStatus.RUNNING]);
+    this.updateStatus(JobStatus.RUNNING, this.getMessage(JobStatus.RUNNING));
   }
 
   /**
@@ -680,7 +707,7 @@ export class Job extends DBRecord implements JobRecord {
   skipPreview(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.SKIP_PREVIEW,
       `Job status is ${this.status} - only previewing jobs can skip preview.`);
-    this.updateStatus(JobStatus.RUNNING, this.statesToMessages[JobStatus.RUNNING]);
+    this.updateStatus(JobStatus.RUNNING, this.getMessage(JobStatus.RUNNING));
   }
 
   /**
@@ -746,7 +773,7 @@ export class Job extends DBRecord implements JobRecord {
     this.status = status;
     if (message) {
       // Update the message if a new one was provided
-      this.message = message;
+      this.setMessage(message);
     }
     if (this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.COMPLETE_WITH_ERRORS) {
       this.progress = 100;
@@ -875,12 +902,10 @@ export class Job extends DBRecord implements JobRecord {
     // Need to validate the original status before removing it as part of saving to the database
     // May want to change in the future to have a way to have non-database fields on a record.
     this.validateStatus();
-    this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
     const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
     dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
     dbRecord.message = JSON.stringify(this.statesToMessages || {});
-    console.log(dbRecord);
     await super.save(transaction, dbRecord);
     const promises = [];
     for (const link of this.links) {
@@ -902,7 +927,7 @@ export class Job extends DBRecord implements JobRecord {
     const serializedJob: SerializedJob = {
       username: this.username,
       status: this.status,
-      message: this.message,
+      message: this.getMessage(),
       progress: this.progress,
       createdAt: new Date(this.createdAt),
       updatedAt: new Date(this.updatedAt),
@@ -911,7 +936,6 @@ export class Job extends DBRecord implements JobRecord {
       request: this.request,
       numInputGranules: this.numInputGranules,
       jobID: this.jobID,
-      errors: [],
       getRelatedLinks: this.getRelatedLinks,
     };
     if (urlRoot && linkType !== 'none') {

@@ -221,8 +221,8 @@ describe('Skipping job preview', function () {
           let token;
           hookTransaction();
           const message = 'The job is generating a preview before auto-pausing. CMR query identified 176 granules, but the request has been limited to process only the first 101 granules because you requested 101 maxResults.';
-          const previewingJob = buildJob({ username: normalUsername, message });
-          previewingJob.status = JobStatus.PREVIEWING;
+          job
+          const previewingJob = buildJob({ username: normalUsername, message, status: JobStatus.PREVIEWING });
           before(async function () {
             await previewingJob.save(this.trx);
             const workflowStep = buildWorkflowStep({ jobID: previewingJob.requestId });
@@ -323,8 +323,7 @@ describe('Skipping job preview', function () {
           let token;
           hookTransaction();
           const message = 'The job is paused and may be resumed using the provided link';
-          const pausedJob = buildJob({ username: normalUsername, message });
-          pausedJob.status = JobStatus.PAUSED;
+          const pausedJob = buildJob({ username: normalUsername, message, status: JobStatus.PAUSED });
           before(async function () {
             await pausedJob.save(this.trx);
             const workflowStep = buildWorkflowStep({ jobID: pausedJob.requestId });
@@ -433,8 +432,7 @@ describe('Skipping job preview', function () {
         describe('When a job is previewing', function () {
           hookTransaction();
           const message = 'The job is generating a preview before auto-pausing';
-          const previewingJob = buildJob({ username: normalUsername, message });
-          previewingJob.status = JobStatus.PREVIEWING;
+          const previewingJob = buildJob({ username: normalUsername, message, status: JobStatus.PREVIEWING });
           before(async function () {
             await previewingJob.save(this.trx);
             this.trx.commit();
@@ -509,8 +507,7 @@ describe('Skipping job preview', function () {
         describe('When a job is paused', function () {
           hookTransaction();
           const message = 'The job is generating a preview before auto-pausing';
-          const pausedJob = buildJob({ username: normalUsername, message });
-          pausedJob.status = JobStatus.PAUSED;
+          const pausedJob = buildJob({ username: normalUsername, message, status: JobStatus.PAUSED });
           before(async function () {
             await pausedJob.save(this.trx);
             this.trx.commit();

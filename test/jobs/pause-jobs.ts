@@ -400,15 +400,15 @@ describe('Pausing and resuming a job - user endpoint', function () {
               expect(actualJob.status).to.eql('running');
             });
 
-            it('sets the message to the job is being processed', function () {
+            it('sets the message to the initial RUNNING message', function () {
               const actualJob = JSON.parse(this.res.text);
-              expect(actualJob.message).to.eql('The job is being processed');
+              expect(actualJob.message).to.eql('it is running');
             });
 
             it('does not modify any of the other job fields', function () {
               const actualJob = new Job(JSON.parse(this.res.text));
               const expectedJob: JobRecord = _.cloneDeep(joeJob1);
-              expectedJob.message = 'The job is being processed';
+              expectedJob.message = 'it is running';
               expectedJob.status = JobStatus.RUNNING;
               expect(jobsEqual(expectedJob, actualJob)).to.be.true;
             });
@@ -483,7 +483,7 @@ describe('Pausing and resuming a job - user endpoint', function () {
 
             it('sets the appropriate message', function () {
               const actualJob = JSON.parse(this.res.text);
-              expect(actualJob.message).to.eql('The job is paused and may be resumed using the provided link.');
+              expect(actualJob.message).to.eql('The job is paused and may be resumed using the provided link');
             });
 
             it('provides a link for resuming the job', function () {
@@ -599,14 +599,14 @@ describe('Pausing and resuming a job - admin endpoint', function () {
               const actualJob = JSON.parse(this.res.text);
               expect(actualJob.status).to.eql('running');
             });
-            it('sets the message to the job is being processed', function () {
+            it('sets the message to the initial RUNNING message', function () {
               const actualJob = JSON.parse(this.res.text);
-              expect(actualJob.message).to.eql('The job is being processed');
+              expect(actualJob.message).to.eql('it is running');
             });
             it('does not modify any of the other job fields', function () {
               const actualJob = new Job(JSON.parse(this.res.text));
               const expectedJob: JobRecord = _.cloneDeep(joeJob1);
-              expectedJob.message = 'The job is being processed';
+              expectedJob.message = 'it is running';
               expectedJob.status = JobStatus.RUNNING;
               expect(jobsEqual(expectedJob, actualJob)).to.be.true;
             });
@@ -671,7 +671,7 @@ describe('Pausing and resuming a job - admin endpoint', function () {
             });
             it('sets the appropriate message', function () {
               const actualJob = JSON.parse(this.res.text);
-              expect(actualJob.message).to.eql('The job is paused and may be resumed using the provided link.');
+              expect(actualJob.message).to.eql('The job is paused and may be resumed using the provided link');
             });
             it('provides a link for resuming the job', function () {
               const actualJob = JSON.parse(this.res.text);

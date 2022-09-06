@@ -290,7 +290,7 @@ export default abstract class BaseService<ServiceParamType> {
    * @returns The created job
    * @throws ServerError - if the job cannot be created
    */
-  protected _createJob(
+  _createJob(
     requestUrl: string,
   ): Job {
     const url = new URL(requestUrl);
@@ -316,11 +316,11 @@ export default abstract class BaseService<ServiceParamType> {
       collectionIds: this.operation.collectionIds,
       ignoreErrors: this.operation.ignoreErrors,
     });
-    if (this.operation.message && skipPreview) {
-      job.statesToMessages[JobStatus.SUCCESSFUL] = this.operation.message;
+    if (this.operation.message) {
+      job.setMessageForStatus(JobStatus.SUCCESSFUL,  this.operation.message);
     }
     if (this.operation.message && !skipPreview) {
-      job.statesToMessages[JobStatus.RUNNING] = this.operation.message;
+      job.setMessageForStatus(JobStatus.RUNNING, this.operation.message);
     }
     job.addStagingBucketLink(this.operation.stagingLocation);
     return job;

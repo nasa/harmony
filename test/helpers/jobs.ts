@@ -167,7 +167,7 @@ export function jobsEqual(
  * @returns true if the object is found
  */
 export function containsJob(job: JobRecord, jobList: JobListing): boolean {
-  return !!jobList.jobs.find((j) => jobsEqual(job, j, true));
+  return !!jobList.jobs.find((j) => jobsEqual(job, new SerializedJob(j), true));
 }
 
 /**
