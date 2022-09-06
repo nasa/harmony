@@ -16,7 +16,7 @@ import { CmrCollection, CmrGranule, CmrQuery, filterGranuleLinks, queryGranulesF
  */
 enum GranuleLimitReason {
   Collection, // limited by the collection configuration
-  Service,    // liminted by the service chain configuration
+  Service,    // limited by the service chain configuration
   MaxResults, // limited by the maxResults query parameter
   System,     // limited by the system environment
   None,       // not limited
