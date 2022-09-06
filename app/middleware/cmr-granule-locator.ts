@@ -52,7 +52,7 @@ function getBbox(collection: CmrCollection, granule: CmrGranule): BoundingBox {
  *
  * @param req - The client request, containing an operation
  * @param collection - The id of the collection to which the granules belong
- * @returns a tuple containing the maximum number of granules to return from the CMR and the
+ * @returns an object containing the maximum number of granules to return from the CMR and the
  * reason why it is being limited
  */
 function getMaxGranules(req: HarmonyRequest, collection: string):
