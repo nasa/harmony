@@ -317,10 +317,10 @@ export default abstract class BaseService<ServiceParamType> {
       ignoreErrors: this.operation.ignoreErrors,
     });
     if (this.operation.message) {
-      job.setMessageForStatus(JobStatus.SUCCESSFUL,  this.operation.message);
+      job.setMessage(this.operation.message, JobStatus.SUCCESSFUL);
     }
     if (this.operation.message && !skipPreview) {
-      job.setMessageForStatus(JobStatus.RUNNING, this.operation.message);
+      job.setMessage(this.operation.message, JobStatus.RUNNING);
     }
     job.addStagingBucketLink(this.operation.stagingLocation);
     return job;

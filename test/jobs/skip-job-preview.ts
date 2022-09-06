@@ -1,4 +1,4 @@
-import { JobRecord, JobStatus, Job } from './../../app/models/job';
+import { JobRecord, JobStatus, Job, SerializedJob } from './../../app/models/job';
 import {
   hookSkipPreview,
   buildJob,
@@ -220,9 +220,10 @@ describe('Skipping job preview', function () {
         describe('When a job is previewing', function () {
           let token;
           hookTransaction();
-          const message = 'The job is generating a preview before auto-pausing. CMR query identified 176 granules, but the request has been limited to process only the first 101 granules because you requested 101 maxResults.';
-          job
+          const resultsLimitedMessage = 'CMR query identified 176 granules, but the request has been limited to process only the first 101 granules because you requested 101 maxResults.';
+          const message = `The job is generating a preview before auto-pausing. ${resultsLimitedMessage}`;
           const previewingJob = buildJob({ username: normalUsername, message, status: JobStatus.PREVIEWING });
+          previewingJob.setMessage(resultsLimitedMessage, JobStatus.RUNNING);
           before(async function () {
             await previewingJob.save(this.trx);
             const workflowStep = buildWorkflowStep({ jobID: previewingJob.requestId });
@@ -277,15 +278,15 @@ describe('Skipping job preview', function () {
                   expect(actualJob.status).to.eql('running');
                 });
 
-                it('sets the message to the "CMR query identified 176 granules, but the request has been limited to process only the first 101 granules because you requested 101 maxResults."', function () {
+                it(`sets the message to the "${resultsLimitedMessage}"`, function () {
                   const actualJob = JSON.parse(this.res.text);
-                  expect(actualJob.message).to.eql('CMR query identified 176 granules, but the request has been limited to process only the first 101 granules because you requested 101 maxResults.');
+                  expect(actualJob.message).to.eql(resultsLimitedMessage);
                 });
 
                 it('does not modify any of the other job fields', function () {
-                  const actualJob = new Job(JSON.parse(this.res.text));
+                  const actualJob = new SerializedJob(JSON.parse(this.res.text));
                   const expectedJob: JobRecord = _.cloneDeep(previewingJob);
-                  expectedJob.message = 'CMR query identified 176 granules, but the request has been limited to process only the first 101 granules because you requested 101 maxResults.';
+                  expectedJob.message = resultsLimitedMessage;
                   expectedJob.status = JobStatus.RUNNING;
                   expect(jobsEqual(expectedJob, actualJob)).to.be.true;
                 });
@@ -384,7 +385,7 @@ describe('Skipping job preview', function () {
                 });
 
                 it('does not modify any of the other job fields', function () {
-                  const actualJob = new Job(JSON.parse(this.res.text));
+                  const actualJob = new SerializedJob(JSON.parse(this.res.text));
                   const expectedJob: JobRecord = _.cloneDeep(pausedJob);
                   expectedJob.message = 'The job is being processed';
                   expectedJob.status = JobStatus.RUNNING;
@@ -491,7 +492,7 @@ describe('Skipping job preview', function () {
                 expect(actualJob.message).to.eql('The job is being processed');
               });
               it('does not modify any of the other job fields', function () {
-                const actualJob = new Job(JSON.parse(this.res.text));
+                const actualJob = new SerializedJob(JSON.parse(this.res.text));
                 const expectedJob: JobRecord = _.cloneDeep(previewingJob);
                 expectedJob.message = 'The job is being processed';
                 expectedJob.status = JobStatus.RUNNING;
@@ -566,7 +567,7 @@ describe('Skipping job preview', function () {
                 expect(actualJob.message).to.eql('The job is being processed');
               });
               it('does not modify any of the other job fields', function () {
-                const actualJob = new Job(JSON.parse(this.res.text));
+                const actualJob = new SerializedJob(JSON.parse(this.res.text));
                 const expectedJob: JobRecord = _.cloneDeep(pausedJob);
                 expectedJob.message = 'The job is being processed';
                 expectedJob.status = JobStatus.RUNNING;
