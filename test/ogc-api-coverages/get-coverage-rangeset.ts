@@ -443,7 +443,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
     });
 
-    describe('and maxResults from the a query is set to a value greater than the granule limit for the collection', function () {
+    describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
@@ -461,7 +461,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
     });
 
-    describe('and maxResults from the a query is set to a value less than the granule limit for the collection', function () {
+    describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
@@ -544,7 +544,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
     });
 
-    describe('and maxResults from the a query is set to a value greater than the granule limit for the collection', function () {
+    describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 10;
 
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
@@ -562,7 +562,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
     });
 
-    describe('and maxResults from the a query is set to a value less than the granule limit for the collection', function () {
+    describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
@@ -641,7 +641,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
     });
 
-    describe('and maxResults from the a query is set to a value greater than the granule limit for the collection', function () {
+    describe('and maxResults from the query is set to a value greater than the granule limit for the collection', function () {
       const maxResults = 200;
 
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
@@ -659,7 +659,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
       });
     });
 
-    describe('and maxResults from the a query is set to a value less than the granule limit for the collection', function () {
+    describe('and maxResults from the query is set to a value less than the granule limit for the collection', function () {
       const maxResults = 2;
 
       hookRangesetRequest(version, collection, variableName, { username: 'jdoe1', query: { maxResults } });
