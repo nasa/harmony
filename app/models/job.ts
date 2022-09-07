@@ -589,7 +589,7 @@ export class Job extends DBRecord implements JobRecord {
     super(fields);
     let initialMessage: string;
     try {
-      // newer jobs will have stringified JSON stored in the DB
+      // newer jobs will have stringified JSON stored in the database
       this.statesToMessages = JSON.parse(fields.message);
       initialMessage = this.message;
     } catch (e) {
