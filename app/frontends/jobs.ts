@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { Logger } from 'winston';
-import { Job, JobStatus, JobQuery, SerializedJob } from '../models/job';
+import { Job, JobStatus, JobQuery, SerializedJob, getRelatedLinks } from '../models/job';
 import { keysToLowerCase } from '../util/object';
 import { cancelAndSaveJob, pauseAndSaveJob, resumeAndSaveJob, skipPreviewAndSaveJob, validateJobId } from '../util/job';
 import JobLink from '../models/job-link';
@@ -22,7 +22,7 @@ import _ from 'lodash';
  * @returns true if job contains S3 direct access links and false otherwise
  */
 function containsS3DirectAccessLink(job: SerializedJob): boolean {
-  const dataLinks = job.getRelatedLinks('data');
+  const dataLinks = getRelatedLinks('data', job.links);
   return dataLinks.some((l) => l.href.match(/^s3:\/\/.*$/));
 }
 
@@ -38,7 +38,7 @@ function containsS3DirectAccessLink(job: SerializedJob): boolean {
  */
 function getLinksForDisplay(job: SerializedJob, urlRoot: string, statusLinkRel: string): JobLink[] {
   let { links } = job;
-  const dataLinks = job.getRelatedLinks('data');
+  const dataLinks = getRelatedLinks('data', job.links);
   if (containsS3DirectAccessLink(job)) {
     links.unshift(new JobLink(getCloudAccessJsonLink(urlRoot)));
     links.unshift(new JobLink(getCloudAccessShLink(urlRoot)));
