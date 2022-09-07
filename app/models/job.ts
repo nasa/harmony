@@ -364,9 +364,25 @@ export class Job extends DBRecord implements JobRecord {
   ignoreErrors: boolean;
 
   /**
+   * Get the job message for a this.status.
+   * @returns the message string describing the job
+   */
+  get message(): string {
+    return this.getMessage(this.status);
+  }
+
+  /**
+   * Set the job message (for this.status) in this.statesToMessages.
+   * @param message - a message string describing the job
+   */
+  set message(message: string) {
+    this.setMessage(message, this.status);
+  }
+
+  /**
    * Get the job message for a particular status.
    * @param status - the JobStatus that the message is for (defaults to this.status)
-   * @returns the message string
+   * @returns the message string describing the job
    */
   getMessage(status: JobStatus = this.status): string {
     return this?.statesToMessages?.[status] || statesToDefaultMessages[status];
@@ -374,7 +390,7 @@ export class Job extends DBRecord implements JobRecord {
 
   /**
    * Set the job message in this.statesToMessages using "message".
-   * @param message - a message string or stringified message map string
+   * @param message - a message string describing the job for the status
    * @param status - which status to set the message for (defaults to this.status)
    */
   setMessage(message: string, status: JobStatus = this.status): void {
@@ -584,7 +600,7 @@ export class Job extends DBRecord implements JobRecord {
     try {
       // newer jobs will have stringified JSON stored in the DB
       this.statesToMessages = JSON.parse(fields.message);
-      initialMessage = this.getMessage();
+      initialMessage = this.message;
     } catch (e) {
       // this implies that the message is a plain string, i.e.
       // (a) we're initializing an older job from a databse record or
@@ -773,7 +789,7 @@ export class Job extends DBRecord implements JobRecord {
     this.status = status;
     if (message) {
       // Update the message if a new one was provided
-      this.setMessage(message);
+      this.message = message;
     }
     if (this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.COMPLETE_WITH_ERRORS) {
       this.progress = 100;
@@ -927,7 +943,7 @@ export class Job extends DBRecord implements JobRecord {
     const serializedJob: SerializedJob = {
       username: this.username,
       status: this.status,
-      message: this.getMessage(),
+      message: this.message,
       progress: this.progress,
       createdAt: new Date(this.createdAt),
       updatedAt: new Date(this.updatedAt),

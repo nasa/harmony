@@ -16,7 +16,7 @@ import {
   buildJob,
 } from '../helpers/jobs';
 import { hookRedirect } from '../helpers/hooks';
-import { JobRecord, JobStatus, Job } from '../../app/models/job';
+import { JobStatus, Job, SerializedJob } from '../../app/models/job';
 
 describe('Canceling a job - user endpoint', function () {
   const cancelEndpointHooks = {
@@ -78,9 +78,9 @@ describe('Canceling a job - user endpoint', function () {
           });
 
           it('does not modify any of the other job fields', function () {
-            const actualJob = new Job(JSON.parse(this.res.text));
-            const expectedJob: JobRecord = _.cloneDeep(joeJob1);
-            expectedJob.message = 'foo';
+            const actualJob = new SerializedJob(JSON.parse(this.res.text));
+            const expectedJob = _.cloneDeep(joeJob1);
+            expectedJob.setMessage('foo', JobStatus.CANCELED);
             actualJob.message = 'foo';
             actualJob.status = JobStatus.CANCELED;
             expectedJob.status = JobStatus.CANCELED;
@@ -289,9 +289,9 @@ describe('Canceling a job - admin endpoint', function () {
             expect(actualJob.message).to.eql('Canceled by admin.');
           });
           it('does not modify any of the other job fields', function () {
-            const actualJob = new Job(JSON.parse(this.res.text));
-            const expectedJob: JobRecord = _.cloneDeep(joeJob1);
-            expectedJob.message = 'foo';
+            const actualJob = new SerializedJob(JSON.parse(this.res.text));
+            const expectedJob: Job = _.cloneDeep(joeJob1);
+            expectedJob.setMessage('foo', JobStatus.CANCELED);
             actualJob.message = 'foo';
             actualJob.status = JobStatus.CANCELED;
             expectedJob.status = JobStatus.CANCELED;

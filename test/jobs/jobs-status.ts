@@ -1,4 +1,4 @@
-import { EXPIRATION_DAYS, Job, JobStatus } from './../../app/models/job';
+import { EXPIRATION_DAYS, Job, JobStatus, SerializedJob } from './../../app/models/job';
 import { expect } from 'chai';
 import { stub } from 'sinon';
 import { describe, it, before, after } from 'mocha';
@@ -68,7 +68,7 @@ describe('Individual job status route', function () {
     });
 
     it('returns a single job record in JSON format', function () {
-      const actualJob = new Job(JSON.parse(this.res.text));
+      const actualJob = new SerializedJob(JSON.parse(this.res.text));
       expect(jobsEqual(aJob, actualJob)).to.be.true;
     });
 
