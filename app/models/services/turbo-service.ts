@@ -30,7 +30,7 @@ export default class TurboService extends BaseService<TurboServiceParams> {
  */
 export class TestTurboService extends TurboService {
   /**
-   * Calls this._createJob which creates a job from a service and its operation.
+   * Calls _createJob which creates a job from a service and its operation.
    * @param requestUrl - The URL the end user invoked
    * @returns The created job
    */

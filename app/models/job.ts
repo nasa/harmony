@@ -355,7 +355,7 @@ export class Job extends DBRecord implements JobRecord {
   ignoreErrors: boolean;
 
   /**
-   * Get the job message for a this.status.
+   * Get the job message for the current status.
    * @returns the message string describing the job
    */
   get message(): string {
@@ -363,7 +363,7 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
-   * Set the job message (for this.status) in this.statesToMessages.
+   * Set the job message for the current status.
    * @param message - a message string describing the job
    */
   set message(message: string) {
@@ -380,8 +380,8 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
-   * Set the job message in this.statesToMessages using "message".
-   * @param message - a message string describing the job for the status
+   * Set the job message for a particular status.
+   * @param message - a message string describing the job
    * @param status - which status to set the message for (defaults to this.status)
    */
   setMessage(message: string, status: JobStatus = this.status): void {
