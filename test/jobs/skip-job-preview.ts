@@ -1,4 +1,4 @@
-import { JobRecord, JobStatus, Job, SerializedJob } from './../../app/models/job';
+import { JobRecord, JobStatus, Job } from './../../app/models/job';
 import {
   hookSkipPreview,
   buildJob,

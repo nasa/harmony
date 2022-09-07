@@ -16,7 +16,7 @@ import {
   buildJob,
 } from '../helpers/jobs';
 import { hookRedirect } from '../helpers/hooks';
-import { JobStatus, Job, SerializedJob } from '../../app/models/job';
+import { JobStatus, Job } from '../../app/models/job';
 
 describe('Canceling a job - user endpoint', function () {
   const cancelEndpointHooks = {

@@ -1,4 +1,4 @@
-import { EXPIRATION_DAYS, Job, JobStatus, SerializedJob } from './../../app/models/job';
+import { EXPIRATION_DAYS, Job, JobStatus } from './../../app/models/job';
 import { expect } from 'chai';
 import { stub } from 'sinon';
 import { describe, it, before, after } from 'mocha';
