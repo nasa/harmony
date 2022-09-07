@@ -406,7 +406,7 @@ describe('Pausing and resuming a job - user endpoint', function () {
             });
 
             it('does not modify any of the other job fields', function () {
-              const actualJob = new SerializedJob(JSON.parse(this.res.text));
+              const actualJob = JSON.parse(this.res.text);
               const expectedJob: JobRecord = _.cloneDeep(joeJob1);
               expectedJob.message = 'it is running';
               expectedJob.status = JobStatus.RUNNING;
@@ -492,7 +492,7 @@ describe('Pausing and resuming a job - user endpoint', function () {
             });
 
             it('does not modify any of the other job fields', function () {
-              const actualJob = new SerializedJob(JSON.parse(this.res.text));
+              const actualJob = JSON.parse(this.res.text);
               const expectedJob: JobRecord = _.cloneDeep(joeJob1);
               expectedJob.status = JobStatus.PAUSED;
               expect(jobsEqual(expectedJob, actualJob, false, true)).to.be.true;
@@ -604,7 +604,7 @@ describe('Pausing and resuming a job - admin endpoint', function () {
               expect(actualJob.message).to.eql('it is running');
             });
             it('does not modify any of the other job fields', function () {
-              const actualJob = new SerializedJob(JSON.parse(this.res.text));
+              const actualJob = JSON.parse(this.res.text);
               const expectedJob: JobRecord = _.cloneDeep(joeJob1);
               expectedJob.message = 'it is running';
               expectedJob.status = JobStatus.RUNNING;
@@ -678,7 +678,7 @@ describe('Pausing and resuming a job - admin endpoint', function () {
               expect(actualJob.links.some((link) => link.href.includes('/resume')));
             });
             it('does not modify any of the other job fields', function () {
-              const actualJob = new SerializedJob(JSON.parse(this.res.text));
+              const actualJob = JSON.parse(this.res.text);
               const expectedJob: JobRecord = _.cloneDeep(joeJob1);
               expectedJob.status = JobStatus.PAUSED;
               expect(jobsEqual(expectedJob, actualJob, false, true)).to.be.true;

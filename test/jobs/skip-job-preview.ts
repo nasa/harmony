@@ -284,7 +284,7 @@ describe('Skipping job preview', function () {
                 });
 
                 it('does not modify any of the other job fields', function () {
-                  const actualJob = new SerializedJob(JSON.parse(this.res.text));
+                  const actualJob = JSON.parse(this.res.text);
                   const expectedJob: JobRecord = _.cloneDeep(previewingJob);
                   expectedJob.message = resultsLimitedMessage;
                   expectedJob.status = JobStatus.RUNNING;
@@ -385,7 +385,7 @@ describe('Skipping job preview', function () {
                 });
 
                 it('does not modify any of the other job fields', function () {
-                  const actualJob = new SerializedJob(JSON.parse(this.res.text));
+                  const actualJob = JSON.parse(this.res.text);
                   const expectedJob: JobRecord = _.cloneDeep(pausedJob);
                   expectedJob.message = 'The job is being processed';
                   expectedJob.status = JobStatus.RUNNING;
@@ -492,7 +492,7 @@ describe('Skipping job preview', function () {
                 expect(actualJob.message).to.eql('The job is being processed');
               });
               it('does not modify any of the other job fields', function () {
-                const actualJob = new SerializedJob(JSON.parse(this.res.text));
+                const actualJob = JSON.parse(this.res.text);
                 const expectedJob: JobRecord = _.cloneDeep(previewingJob);
                 expectedJob.message = 'The job is being processed';
                 expectedJob.status = JobStatus.RUNNING;
@@ -567,7 +567,7 @@ describe('Skipping job preview', function () {
                 expect(actualJob.message).to.eql('The job is being processed');
               });
               it('does not modify any of the other job fields', function () {
-                const actualJob = new SerializedJob(JSON.parse(this.res.text));
+                const actualJob = JSON.parse(this.res.text);
                 const expectedJob: JobRecord = _.cloneDeep(pausedJob);
                 expectedJob.message = 'The job is being processed';
                 expectedJob.status = JobStatus.RUNNING;

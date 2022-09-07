@@ -68,7 +68,7 @@ describe('Individual job status route', function () {
     });
 
     it('returns a single job record in JSON format', function () {
-      const actualJob = new SerializedJob(JSON.parse(this.res.text));
+      const actualJob = JSON.parse(this.res.text);
       expect(jobsEqual(aJob, actualJob)).to.be.true;
     });
 

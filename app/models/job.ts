@@ -99,26 +99,6 @@ export class SerializedJob {
 
   errors?: JobError[];
 
-  /**
-   * Returns only the links with a rel that matches the passed in value.
-   *
-   * @param rel - the relation to return links for
-   * @returns the job output links with the given rel
-   */
-  getRelatedLinks(rel: string): JobLink[] {
-    const links = this.links.filter((link) => link.rel === rel);
-    return links.map(removeEmptyProperties) as JobLink[];
-  }
-
-  /**
-   * Constructs a serialized job from an object.
-   * @param fields - the fields to initialize the SerializedJob with.
-   */
-  constructor(fields: SerializedJob) {
-    if (fields) {
-      Object.assign(this, fields);
-    }
-  }
 }
 
 export interface JobQuery {
@@ -305,6 +285,17 @@ export function validateTransition(
   if (!canTransition(currentStatus, desiredStatus, event)) {
     throw new ConflictError(errorMessage);
   }
+}
+
+/**
+ * Returns only the links with a rel that matches the passed in value.
+ *
+ * @param rel - the relation to return links for
+ * @returns the job output links with the given rel
+ */
+export function getRelatedLinks(rel: string, links: JobLink[]): JobLink[] {
+  const relatedLinks = links.filter((link) => link.rel === rel);
+  return relatedLinks.map(removeEmptyProperties) as JobLink[];
 }
 
 /**
@@ -952,7 +943,6 @@ export class Job extends DBRecord implements JobRecord {
       request: this.request,
       numInputGranules: this.numInputGranules,
       jobID: this.jobID,
-      getRelatedLinks: this.getRelatedLinks,
     };
     if (urlRoot && linkType !== 'none') {
       serializedJob.links = serializedJob.links.map((link) => {
@@ -975,10 +965,7 @@ export class Job extends DBRecord implements JobRecord {
    * @param rel - the relation to return links for
    * @returns the job output links with the given rel
    */
-  getRelatedLinks(rel: string): JobLink[] {
-    const links = this.links.filter((link) => link.rel === rel);
-    return links.map(removeEmptyProperties) as JobLink[];
-  }
+  getRelatedLinks = (rel: string): JobLink[] => getRelatedLinks(rel, this.links);
 
   /**
    *  Computes and returns the date the data produced by the job will expire based on `createdAt`

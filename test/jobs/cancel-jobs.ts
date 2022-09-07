@@ -78,7 +78,7 @@ describe('Canceling a job - user endpoint', function () {
           });
 
           it('does not modify any of the other job fields', function () {
-            const actualJob = new SerializedJob(JSON.parse(this.res.text));
+            const actualJob = JSON.parse(this.res.text);
             const expectedJob = _.cloneDeep(joeJob1);
             expectedJob.setMessage('foo', JobStatus.CANCELED);
             actualJob.message = 'foo';
@@ -289,7 +289,7 @@ describe('Canceling a job - admin endpoint', function () {
             expect(actualJob.message).to.eql('Canceled by admin.');
           });
           it('does not modify any of the other job fields', function () {
-            const actualJob = new SerializedJob(JSON.parse(this.res.text));
+            const actualJob = JSON.parse(this.res.text);
             const expectedJob: Job = _.cloneDeep(joeJob1);
             expectedJob.setMessage('foo', JobStatus.CANCELED);
             actualJob.message = 'foo';
