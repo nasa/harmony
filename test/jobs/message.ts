@@ -7,8 +7,11 @@ import { TestTurboService } from '../../app/models/services/turbo-service';
 import DataOperation from '../../app/models/data-operation';
 import env from '../../app/util/env';
 import { v4 as uuid } from 'uuid';
+import { stub } from 'sinon';
 
-
+/**
+ * A service config to use when building the TestTurboServices.
+ */
 const config = {
   name: 'first-service',
   type: { name: 'turbo' },
@@ -19,7 +22,6 @@ const config = {
     },
   },
 };
-const originalPreviewThreshold = env.previewThreshold;
 
 /**
  * Build an operation for the tests.
@@ -48,14 +50,14 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
       let job: Job;
       hookTransaction();
       before(async function () {
-        env.previewThreshold = 100; // ensure initial job state is RUNNING
+        this.previewThresholdStub = stub(env, 'previewThreshold').get(() => 100); // ensure initial job state is RUNNING
         const requestString = 'http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?maxResults=10';
         job = (new TestTurboService(config, buildOperation(undefined))).createJob(requestString);
         assert(job.status === JobStatus.RUNNING);
         await job.save(this.trx);
       });
       after(async function () {
-        env.previewThreshold = originalPreviewThreshold;
+        this.previewThresholdStub.restore();
       });
       it('sets the appropriate message when paused', async function () {
         job.pause();
@@ -75,12 +77,15 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
       let limitedMessage: string;
       hookTransaction();
       before(async function () {
-        env.previewThreshold = 100; // ensure initial job state is RUNNING
+        this.previewThresholdStub = stub(env, 'previewThreshold').get(() => 100); // ensure initial job state is RUNNING
         limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;
         const requestString = 'http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?maxResults=10';
         job = (new TestTurboService(config, buildOperation(limitedMessage))).createJob(requestString);
         assert(job.status === JobStatus.RUNNING);
         await job.save(this.trx);
+      });
+      after(async function () {
+        this.previewThresholdStub.restore();
       });
       it('sets the appropriate message when paused', async function () {
         job.pause();
@@ -102,7 +107,7 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
       let skipJob: Job;
       hookTransaction();
       before(async function () {
-        env.previewThreshold = 5; // ensure initial job state is PREVIEWING
+        this.previewThresholdStub = stub(env, 'previewThreshold').get(() => 5); // ensure initial job state is PREVIEWING
         const requestString = 'http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?maxResults=10';
         job = (new TestTurboService(config, buildOperation(undefined))).createJob(requestString);
         await job.save(this.trx);
@@ -110,6 +115,9 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         skipJob = (new TestTurboService(config, buildOperation(undefined))).createJob(requestString);
         await skipJob.save(this.trx);
         assert(skipJob.status === JobStatus.PREVIEWING);
+      });
+      after(async function () {
+        this.previewThresholdStub.restore();
       });
       describe('which is paused, then resumed', function () {
         it('sets the appropriate message when paused', async function () {
@@ -153,7 +161,7 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
       let limitedMessage: string;
       hookTransaction();
       before(async function () {
-        env.previewThreshold = 5; // ensure initial job state is PREVIEWING
+        this.previewThresholdStub = stub(env, 'previewThreshold').get(() => 5); // ensure initial job state is PREVIEWING
         const requestString = 'http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?maxResults=10';
         limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;        
         job = (new TestTurboService(config, buildOperation(limitedMessage))).createJob(requestString);
@@ -167,7 +175,7 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         assert(completeJob.status === JobStatus.PREVIEWING);
       });
       after(async function () {
-        env.previewThreshold = originalPreviewThreshold;
+        this.previewThresholdStub.restore();
       });
       describe('which is paused, then resumed', function () {
         it('sets the appropriate message when paused', async function () {
