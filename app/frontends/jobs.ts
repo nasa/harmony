@@ -92,6 +92,7 @@ function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?:
   const statusLinkRel = linkType === 'none' ? 'item' : 'self';
   serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel);
   serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
+
   if (errors.length > 0) {
     serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as JobError[];
   }
