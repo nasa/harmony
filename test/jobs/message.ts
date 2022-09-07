@@ -3,7 +3,7 @@ import { Job, JobStatus } from '../../app/models/job';
 import { hookTransaction } from '../helpers/db';
 import { assert, expect } from 'chai';
 import { baseResultsLimitedMessage } from '../../app/middleware/cmr-granule-locator';
-import TurboService from '../../app/models/services/turbo-service';
+import { TestTurboService } from '../../app/models/services/turbo-service';
 import DataOperation from '../../app/models/data-operation';
 import env from '../../app/util/env';
 import { v4 as uuid } from 'uuid';
@@ -50,7 +50,7 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
       before(async function () {
         env.previewThreshold = 100; // ensure initial job state is RUNNING
         const requestString = 'http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?maxResults=10';
-        job = (new TurboService(config, buildOperation(undefined)))._createJob(requestString);
+        job = (new TestTurboService(config, buildOperation(undefined))).createJob(requestString);
         assert(job.status === JobStatus.RUNNING);
         await job.save(this.trx);
       });
@@ -78,7 +78,7 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         env.previewThreshold = 100; // ensure initial job state is RUNNING
         limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;
         const requestString = 'http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?maxResults=10';
-        job = (new TurboService(config, buildOperation(limitedMessage)))._createJob(requestString);
+        job = (new TestTurboService(config, buildOperation(limitedMessage))).createJob(requestString);
         assert(job.status === JobStatus.RUNNING);
         await job.save(this.trx);
       });
@@ -104,10 +104,10 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
       before(async function () {
         env.previewThreshold = 5; // ensure initial job state is PREVIEWING
         const requestString = 'http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?maxResults=10';
-        job = (new TurboService(config, buildOperation(undefined)))._createJob(requestString);
+        job = (new TestTurboService(config, buildOperation(undefined))).createJob(requestString);
         await job.save(this.trx);
         assert(job.status === JobStatus.PREVIEWING);
-        skipJob = (new TurboService(config, buildOperation(undefined)))._createJob(requestString);
+        skipJob = (new TestTurboService(config, buildOperation(undefined))).createJob(requestString);
         await skipJob.save(this.trx);
         assert(skipJob.status === JobStatus.PREVIEWING);
       });
@@ -156,13 +156,13 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         env.previewThreshold = 5; // ensure initial job state is PREVIEWING
         const requestString = 'http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?maxResults=10';
         limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;        
-        job = (new TurboService(config, buildOperation(limitedMessage)))._createJob(requestString);
+        job = (new TestTurboService(config, buildOperation(limitedMessage))).createJob(requestString);
         await job.save(this.trx);
         assert(job.status === JobStatus.PREVIEWING);
-        skipJob = (new TurboService(config, buildOperation(limitedMessage)))._createJob(requestString);
+        skipJob = (new TestTurboService(config, buildOperation(limitedMessage))).createJob(requestString);
         await skipJob.save(this.trx);
         assert(skipJob.status === JobStatus.PREVIEWING);
-        completeJob = (new TurboService(config, buildOperation(limitedMessage)))._createJob(requestString);
+        completeJob = (new TestTurboService(config, buildOperation(limitedMessage))).createJob(requestString);
         await completeJob.save(this.trx);
         assert(completeJob.status === JobStatus.PREVIEWING);
       });

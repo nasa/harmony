@@ -286,11 +286,10 @@ export default abstract class BaseService<ServiceParamType> {
    * Creates a new job object for this service's operation
    *
    * @param requestUrl - The URL the end user invoked
-   * @param stagingLocation - The staging location for this job
    * @returns The created job
    * @throws ServerError - if the job cannot be created
    */
-  _createJob(
+  protected _createJob(
     requestUrl: string,
   ): Job {
     const url = new URL(requestUrl);
