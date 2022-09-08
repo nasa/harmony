@@ -110,7 +110,7 @@ MAX_SYNCHRONOUS_GRANULES=1
 # The maximum allowed granules in any request synchronous or asynchronous. If a service
 # attempts to configure a value greater than this limit for either maximum_async_granules
 # or maximum_async_granules we will override the configuration to limit to this value.
-MAX_GRANULE_LIMIT=2100
+MAX_GRANULE_LIMIT=10000000
 
 # The threshold of the number of granules in a request that will trigger auto-pausing with preview
 PREVIEW_THRESHOLD=100
@@ -316,7 +316,7 @@ GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
 LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
 
 # page size to use with CMR calls
-CMR_MAX_PAGE_SIZE=100
+CMR_MAX_PAGE_SIZE=2000
 
 # Prefix before "harmonyservices/task-name" for built-in tasks like query-cmr, e.g. an ECR location
 # If not blank, it should end in a slash if there is a slash before "harmony"

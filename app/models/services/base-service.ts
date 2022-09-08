@@ -36,7 +36,7 @@ export interface ServiceStep {
 
 export interface ServiceCollection {
   id: string;
-  granuleLimit?: number;
+  granule_limit?: number;
   variables?: string[]
 }
 
@@ -44,6 +44,7 @@ export interface ServiceConfig<ServiceParamType> {
   batch_size?: number;
   name?: string;
   data_operation_version?: string;
+  granule_limit?: number;
   has_granule_limit?: boolean;
   default_sync?: boolean;
   type?: {
