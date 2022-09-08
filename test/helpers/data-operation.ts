@@ -1,5 +1,7 @@
+import DataOperation from '../../app/models/data-operation';
 import * as fs from 'fs';
 import * as path from 'path';
+import { v4 as uuid } from 'uuid';
 
 export const samplesDir = './test/resources/data-operation-samples';
 
@@ -30,4 +32,24 @@ export function parseSchemaFile(
   filename: string = null,
 ): any { // eslint-disable-line @typescript-eslint/no-explicit-any
   return JSON.parse(fs.readFileSync(path.join(samplesDir, filename)).toString());
+}
+
+/**
+ * Build an operation for testing.
+ * @returns DataOperation
+ */
+export function buildOperation(message: string): DataOperation {
+  const operation = new DataOperation();
+  operation.requestId = uuid().toString();
+  operation.user = 'Bo';
+  operation.granuleIds = ['g1'];
+  operation.requireSynchronous = false;
+  operation.maxResults = 10;
+  operation.cmrHits = 100;
+  operation.scrollIDs = [];
+  operation.cmrQueryLocations = [];
+  operation.message = message;
+  operation.requestStartTime = new Date();
+  operation.ignoreErrors = true;
+  return operation;
 }

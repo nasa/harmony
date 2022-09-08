@@ -1,4 +1,4 @@
-import { canTransition, JobEvent, JobStatus, SerializedJob } from '../models/job';
+import { canTransition, JobEvent, JobStatus, JobForDisplay } from '../models/job';
 import JobLink from '../models/job-link';
 import env = require('./env');
 
@@ -129,7 +129,7 @@ function getLinkForJobEvent(
  * @param job - the serialized job to return valid actions (JobEvents) for
  * @returns a set of JobEvent
  */
-export function getLinkRelevantJobEvents(job: SerializedJob): Set<JobEvent> {
+export function getLinkRelevantJobEvents(job: JobForDisplay): Set<JobEvent> {
   const transitions: [JobEvent, JobStatus][] = [
     // [event, resultant status]
     [JobEvent.CANCEL, JobStatus.CANCELED],
@@ -161,7 +161,7 @@ export function getLinkRelevantJobEvents(job: SerializedJob): Set<JobEvent> {
  * @returns JobLink[]
  */
 export function getJobStateChangeLinks(
-  job: SerializedJob,
+  job: JobForDisplay,
   urlRoot: string,
   isAdmin = false,
 ): JobLink[] {
@@ -179,7 +179,7 @@ export function getJobStateChangeLinks(
  * @returns JobLink[]
  */
 export function getAllStateChangeLinks(
-  job: SerializedJob,
+  job: JobForDisplay,
   urlRoot: string,
   isAdmin = false,
 ): JobLink[] {

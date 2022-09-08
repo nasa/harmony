@@ -3,11 +3,10 @@ import { Job, JobStatus } from '../../app/models/job';
 import { hookTransaction } from '../helpers/db';
 import { assert, expect } from 'chai';
 import { baseResultsLimitedMessage } from '../../app/middleware/cmr-granule-locator';
-import { TestTurboService } from '../../app/models/services/turbo-service';
-import DataOperation from '../../app/models/data-operation';
+import { TestTurboService } from '../helpers/turbo-service';
 import env from '../../app/util/env';
-import { v4 as uuid } from 'uuid';
 import { stub } from 'sinon';
+import { buildOperation } from '../helpers/data-operation';
 
 /**
  * A service config to use when building the TestTurboServices.
@@ -22,26 +21,6 @@ const config = {
     },
   },
 };
-
-/**
- * Build an operation for the tests.
- * @returns DataOperation
- */
-function buildOperation(message: string): DataOperation {
-  const operation = new DataOperation();
-  operation.requestId = uuid().toString();
-  operation.user = 'Bo';
-  operation.granuleIds = ['g1'];
-  operation.requireSynchronous = false;
-  operation.maxResults = 10;
-  operation.cmrHits = 100;
-  operation.scrollIDs = [];
-  operation.cmrQueryLocations = [];
-  operation.message = message;
-  operation.requestStartTime = new Date();
-  operation.ignoreErrors = true;
-  return operation;
-}
 
 
 describe('skipPreview, pause, resume, and updateStatus job message handling', async function () {

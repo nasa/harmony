@@ -89,8 +89,16 @@ function getMaxGranules(req: HarmonyRequest, collection: string):
   return { maxGranules: maxResults, reason };
 }
 
-export const baseResultsLimitedMessage = (hits: number, maxGranules: number): string => `CMR query identified ${hits} granules, but the request has been limited `
-+ `to process only the first ${maxGranules} granules`;
+/**
+ * Constructs the base of the results limited message.
+ * @param hits - number of CMR hits
+ * @param maxGranules - limit for granule processing
+ * @returns the base of the results limited message
+ */
+export function baseResultsLimitedMessage(hits: number, maxGranules: number): string {
+  return `CMR query identified ${hits} granules, but the request has been limited `
+    + `to process only the first ${maxGranules} granules`;
+}
 
 /**
  * Create a message indicating that the results have been limited and why - if necessary

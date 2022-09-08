@@ -70,11 +70,9 @@ export interface JobRecord {
 }
 
 /**
- * The format of a Job when returned to an end user. Serialized in
- * the sense of displaying to an end user, not in the sense of serializing
- * to the database.
+ * The format of a Job when returned to an end user.
  */
-export class SerializedJob {
+export class JobForDisplay {
   jobID: string;
 
   username: string;
@@ -930,8 +928,8 @@ export class Job extends DBRecord implements JobRecord {
    * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3 | none)
    * @returns an object with the serialized job fields.
    */
-  serialize(urlRoot?: string, linkType?: string): SerializedJob {
-    const serializedJob: SerializedJob = {
+  serialize(urlRoot?: string, linkType?: string): JobForDisplay {
+    const serializedJob: JobForDisplay = {
       username: this.username,
       status: this.status,
       message: this.message,
