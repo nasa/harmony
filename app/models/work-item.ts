@@ -286,7 +286,7 @@ export async function getWorkItemById(
 
 /**
  * Get the jobID for the given work item
- * 
+ *
  * @param id - the work item id
  * @returns A map with the jobID and workflowStepIndex for the given work item
  */
@@ -386,8 +386,8 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
 }
 
 /**
- * Get all WorkItems (from running jobs) 
- * that haven't been updated for a particular amount of time (minutes), 
+ * Get all WorkItems (from running jobs)
+ * that haven't been updated for a particular amount of time (minutes),
  * that also have a particular status.
  * @param tx - the transaction to use for querying
  * @param lastUpdateOlderThanMinutes - retrieve WorkItems with updatedAt older than lastUpdateOlderThanMinutes
@@ -498,26 +498,28 @@ export async function workItemCountForJobID(
 }
 
 /**
- *  Returns the number of existing work items for a specific service id and given statuses
+ *  Returns the number of work items that can be actively worked for the given service ID
  * @param tx - the transaction to use for querying
- * @param serviceID - the ID of the service
+ * @param jobID - the ID of the job that created this work item
+ * @param stepIndex - the index of the step in the workflow
+ * @param status - a single status or list of statuses. If provided only work items with this status
+ * (or status in the list) will be counted
  */
-export async function workItemCountByServiceIDAndStatus(
-  tx: Transaction,
-  serviceID: string,
-  statuses: WorkItemStatus[],
-): Promise<number> {
+export async function getAvailableWorkItemCountByServiceID(tx: Transaction, serviceID: string)
+  : Promise<number> {
   const count = await tx(WorkItem.table)
+    .join(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
     .select()
-    .count('id')
+    .count(`${WorkItem.table}.id`)
     .where({ serviceID })
-    .whereIn(`${WorkItem.table}.status`, statuses);
+    .whereIn(`${WorkItem.table}.status`, [WorkItemStatus.RUNNING, WorkItemStatus.READY])
+    .whereIn(`${Job.table}.status`, [JobStatus.RUNNING, JobStatus.ACCEPTED, JobStatus.RUNNING_WITH_ERRORS]);
 
   let workItemCount;
   if (db.client.config.client === 'pg') {
     workItemCount = Number(count[0].count);
   } else {
-    workItemCount = Number(count[0]['count(`id`)']);
+    workItemCount = Number(Object.values(count[0])[0]);
   }
   return workItemCount;
 }

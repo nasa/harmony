@@ -1,6 +1,5 @@
 import { Response, Request, NextFunction } from 'express';
-import { workItemCountByServiceIDAndStatus } from '../models/work-item';
-import { WorkItemStatus } from '../models/work-item-interface';
+import { getAvailableWorkItemCountByServiceID } from '../models/work-item';
 import db from '../util/db';
 import { RequestValidationError } from '../util/errors';
 
@@ -12,7 +11,7 @@ import { RequestValidationError } from '../util/errors';
  * @param next - The next function in the call chain
  * @returns Resolves when the request is complete
  */
-export async function getReadyOrRunningWorkItemCountForServiceID(
+export async function getEligibleWorkItemCountForServiceID(
   req: Request, res: Response, next: NextFunction,
 ): Promise<void> {
 
@@ -28,7 +27,7 @@ export async function getReadyOrRunningWorkItemCountForServiceID(
   try {
     let workItemCount;
     await db.transaction(async (tx) => {
-      workItemCount = await workItemCountByServiceIDAndStatus(tx, serviceID, [WorkItemStatus.READY, WorkItemStatus.RUNNING]);
+      workItemCount = await getAvailableWorkItemCountByServiceID(tx, serviceID);
     });
     if (!workItemCount) workItemCount = 0;
     const response = {
