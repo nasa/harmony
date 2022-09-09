@@ -245,7 +245,7 @@ describe('job constructor message handling', function () {
           collectionIds: [] });
       });
       it('uses the default message for that status', function () {
-        expect(job.message).to.eq(statesToDefaultMessages.running);
+        expect(job.getMessage(JobStatus.FAILED)).to.eq(statesToDefaultMessages.running);
         expect(job.message).to.eq(statesToDefaultMessages.running);
       });
     });
