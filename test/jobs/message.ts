@@ -1,5 +1,5 @@
 import { describe, it } from 'mocha';
-import { Job, JobStatus } from '../../app/models/job';
+import { Job, JobStatus, statesToDefaultMessages } from '../../app/models/job';
 import { hookTransaction } from '../helpers/db';
 import { assert, expect } from 'chai';
 import { baseResultsLimitedMessage } from '../../app/middleware/cmr-granule-locator';
@@ -7,6 +7,8 @@ import { TestTurboService } from '../helpers/turbo-service';
 import env from '../../app/util/env';
 import { stub } from 'sinon';
 import { buildOperation } from '../helpers/data-operation';
+import { v4 as uuid } from 'uuid';
+
 
 /**
  * A service config to use when building the TestTurboServices.
@@ -204,6 +206,105 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
           expect(updatedJob.message).to.eq(limitedMessage);
         });
       });
+    });
+  });
+});
+describe('job constructor message handling', function () {
+  describe('when given a JSON message', function () {
+    describe('which contains a message for the current status', function () {
+      let job: Job;
+      before(function () {
+        const jobID = uuid().toString();
+        job = new Job({
+          message: JSON.stringify({ 'failed':'something bad happened..' }),
+          status: JobStatus.FAILED,
+          jobID, 
+          requestId: jobID, 
+          username: 'jay', 
+          request: '', 
+          numInputGranules: 1, 
+          collectionIds: [] });
+      });
+      it('uses the message from the map as the current status', function () {
+        expect(job.getMessage(JobStatus.FAILED)).to.eq('something bad happened..');
+        expect(job.message).to.eq('something bad happened..');
+      });
+    });
+    describe('which has no message for the current status', function () {
+      let job: Job;
+      before(function () {
+        const jobID = uuid().toString();
+        job = new Job({
+          message: JSON.stringify({ 'failed':'something bad happened..' }),
+          status: JobStatus.RUNNING,
+          jobID, 
+          requestId: jobID, 
+          username: 'jay', 
+          request: '', 
+          numInputGranules: 1, 
+          collectionIds: [] });
+      });
+      it('uses the default message for that status', function () {
+        expect(job.message).to.eq(statesToDefaultMessages.running);
+        expect(job.message).to.eq(statesToDefaultMessages.running);
+      });
+    });
+  });
+  describe('when given a string message', function () {
+    let job: Job;
+    before(function () {
+      const jobID = uuid().toString();
+      job = new Job({
+        message: 'something bad happened..',
+        status: JobStatus.FAILED,
+        jobID, 
+        requestId: jobID, 
+        username: 'jay', 
+        request: '', 
+        numInputGranules: 1, 
+        collectionIds: [] });
+    });
+    it('uses that message as the current status', function () {
+      expect(job.getMessage(JobStatus.FAILED)).to.eq('something bad happened..');
+      expect(job.message).to.eq('something bad happened..');
+    });
+  });
+  describe('when given a null message', function () {
+    let job: Job;
+    before(function () {
+      const jobID = uuid().toString();
+      job = new Job({
+        message: null,
+        status: JobStatus.RUNNING,
+        jobID, 
+        requestId: jobID, 
+        username: 'jay', 
+        request: '', 
+        numInputGranules: 1, 
+        collectionIds: [] });
+    });
+    it('uses the default message for the current status', function () {
+      expect(job.getMessage(JobStatus.RUNNING)).to.eq(statesToDefaultMessages.running);
+      expect(job.message).to.eq(statesToDefaultMessages.running);
+    });
+  });
+  describe('when given an undefined message', function () {
+    let job: Job;
+    before(function () {
+      const jobID = uuid().toString();
+      job = new Job({
+        message: undefined,
+        status: JobStatus.RUNNING,
+        jobID, 
+        requestId: jobID, 
+        username: 'jay', 
+        request: '', 
+        numInputGranules: 1, 
+        collectionIds: [] });
+    });
+    it('uses the default message for the current status', function () {
+      expect(job.message).to.eq(statesToDefaultMessages.running);
+      expect(job.getMessage(JobStatus.RUNNING)).to.eq(statesToDefaultMessages.running);
     });
   });
 });

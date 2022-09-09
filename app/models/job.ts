@@ -591,6 +591,9 @@ export class Job extends DBRecord implements JobRecord {
       this.statesToMessages = JSON.parse(fields.message);
       initialMessage = this.message;
     } catch (e) {
+      if (!(e instanceof SyntaxError)) {
+        throw e;
+      }
       // this implies that the message is a plain string, i.e.
       // (a) we're initializing an older job from a databse record or
       // (b) a JobRecord that is not emanating from the database
