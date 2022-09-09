@@ -1,4 +1,4 @@
-import { canTransition, Job, JobEvent, JobStatus } from '../models/job';
+import { canTransition, JobEvent, JobStatus, JobForDisplay } from '../models/job';
 import JobLink from '../models/job-link';
 import env = require('./env');
 
@@ -126,10 +126,10 @@ function getLinkForJobEvent(
  * to a user for a particular job.
  * Note that this only returns actions that users can precipitate via state change links
  * (e.g. JobEvent.FAIL will not be returned).
- * @param job - the job to return valid actions (JobEvents) for
+ * @param job - the serialized job to return valid actions (JobEvents) for
  * @returns a set of JobEvent
  */
-export function getLinkRelevantJobEvents(job: Job): Set<JobEvent> {
+export function getLinkRelevantJobEvents(job: JobForDisplay): Set<JobEvent> {
   const transitions: [JobEvent, JobStatus][] = [
     // [event, resultant status]
     [JobEvent.CANCEL, JobStatus.CANCELED],
@@ -154,14 +154,14 @@ export function getLinkRelevantJobEvents(job: Job): Set<JobEvent> {
 /**
  * Generate links that represent the actions that are available to a user with
  * respect to job status state transitions (cancel, pause, etc.).
- * @param job - the job to generate links for
+ * @param job - the serialized job to generate links for
  * @param urlRoot - the root url for the links being generated 
  * @param isAdmin - boolean representing whether we are generating links for 
  * an admin request
  * @returns JobLink[]
  */
 export function getJobStateChangeLinks(
-  job: Job,
+  job: JobForDisplay,
   urlRoot: string,
   isAdmin = false,
 ): JobLink[] {
@@ -179,7 +179,7 @@ export function getJobStateChangeLinks(
  * @returns JobLink[]
  */
 export function getAllStateChangeLinks(
-  job: Job,
+  job: JobForDisplay,
   urlRoot: string,
   isAdmin = false,
 ): JobLink[] {

@@ -7,7 +7,7 @@ import { removeEmptyProperties } from '../util/object';
 import { ConflictError } from '../util/errors';
 import { createPublicPermalink } from '../frontends/service-results';
 import { truncateString } from '../util/string';
-import Record from './record';
+import DBRecord from './record';
 import { Transaction } from '../util/db';
 import JobLink, { getLinksForJob, JobLinkOrRecord } from './job-link';
 
@@ -17,11 +17,6 @@ export const EXPIRATION_DAYS = 30;
 import env = require('../util/env');
 import JobError from './job-error';
 const { awsDefaultRegion } = env;
-
-const serializedJobFields = [
-  'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'dataExpiration',
-  'links', 'request', 'numInputGranules', 'jobID',
-];
 
 export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
@@ -72,6 +67,36 @@ export interface JobRecord {
   updatedAt?: Date | number;
   numInputGranules: number;
   collectionIds: string[];
+}
+
+/**
+ * The format of a Job when returned to an end user.
+ */
+export class JobForDisplay {
+  jobID: string;
+
+  username: string;
+
+  status: JobStatus;
+
+  message: string;
+
+  progress: number;
+
+  createdAt: Date;
+
+  updatedAt: Date;
+
+  dataExpiration?: Date;
+
+  links: JobLink[];
+
+  request: string;
+
+  numInputGranules: number;
+
+  errors?: JobError[];
+
 }
 
 export interface JobQuery {
@@ -195,7 +220,7 @@ const stateMachine = createMachine(
       paused: {
         id: JobStatus.PAUSED,
         meta: {
-          defaultMessage: 'The job is paused',
+          defaultMessage: 'The job is paused and may be resumed using the provided link',
         },
         on: Object.fromEntries([
           [JobEvent.SKIP_PREVIEW, { target: JobStatus.RUNNING }],
@@ -223,8 +248,6 @@ export const statesToDefaultMessages: any = Object.values(stateMachine.states).r
     return prev;
   },
   {});
-
-const defaultMessages = Object.values(statesToDefaultMessages);
 
 /**
  * Check if a desired transition (for job status) is acceptable according to the state machine.
@@ -263,6 +286,17 @@ export function validateTransition(
 }
 
 /**
+ * Returns only the links with a rel that matches the passed in value.
+ *
+ * @param rel - the relation to return links for
+ * @returns the job output links with the given rel
+ */
+export function getRelatedLinks(rel: string, links: JobLink[]): JobLink[] {
+  const relatedLinks = links.filter((link) => link.rel === rel);
+  return relatedLinks.map(removeEmptyProperties) as JobLink[];
+}
+
+/**
  *
  * Wrapper object for persisted jobs
  *
@@ -281,7 +315,7 @@ export function validateTransition(
  *   - updatedAt: (Date) the date / time at which the job was last updated
  *   - dataExpiration: (Date) the date / time at which the generated data will be deleted
  */
-export class Job extends Record implements JobRecord {
+export class Job extends DBRecord implements JobRecord {
   static table = 'jobs';
 
   static statuses: JobStatus;
@@ -290,7 +324,7 @@ export class Job extends Record implements JobRecord {
 
   errors: JobError[];
 
-  message: string;
+  private statesToMessages: { [key in JobStatus]?: string };
 
   username: string;
 
@@ -318,6 +352,43 @@ export class Job extends Record implements JobRecord {
 
   ignoreErrors: boolean;
 
+  /**
+   * Get the job message for the current status.
+   * @returns the message string describing the job
+   */
+  get message(): string {
+    return this.getMessage(this.status);
+  }
+
+  /**
+   * Set the job message for the current status.
+   * @param message - a message string describing the job
+   */
+  set message(message: string) {
+    this.setMessage(message, this.status);
+  }
+
+  /**
+   * Get the job message for a particular status.
+   * @param status - the JobStatus that the message is for (defaults to this.status)
+   * @returns the message string describing the job
+   */
+  getMessage(status: JobStatus = this.status): string {
+    return this?.statesToMessages?.[status] || statesToDefaultMessages[status];
+  }
+
+  /**
+   * Set the job message for a particular status.
+   * @param message - a message string describing the job
+   * @param status - which status to set the message for (defaults to this.status)
+   */
+  setMessage(message: string, status: JobStatus = this.status): void {
+    if (!message) {
+      return;
+    }
+    this.statesToMessages ??= {};
+    this.statesToMessages[status] = message;
+  }
 
   /**
    * Returns an array of all jobs that match the given constraints
@@ -514,11 +585,25 @@ export class Job extends Record implements JobRecord {
    */
   constructor(fields: JobRecord) {
     super(fields);
-    this.updateStatus(fields.status || JobStatus.ACCEPTED, fields.message);
+    let initialMessage: string;
+    try {
+      // newer jobs will have stringified JSON stored in the database
+      this.statesToMessages = JSON.parse(fields.message);
+      initialMessage = this.message;
+    } catch (e) {
+      if (!(e instanceof SyntaxError)) {
+        throw e;
+      }
+      // this implies that the message is a plain string, i.e.
+      // (a) we're initializing an older job from a databse record or
+      // (b) a JobRecord that is not emanating from the database
+      initialMessage = fields.message;
+    }
+    this.updateStatus(fields.status || JobStatus.ACCEPTED, initialMessage);
     this.progress = fields.progress || 0;
     this.batchesCompleted = fields.batchesCompleted || 0;
     this.links = fields.links ? fields.links.map((l) => new JobLink(l)) : [];
-    // collectionIds is stringified json when returned from db
+    // collectionIds is stringified JSON when returned from database
     this.collectionIds = (typeof fields.collectionIds === 'string'
       ? JSON.parse(fields.collectionIds) : fields.collectionIds)
       || [];
@@ -600,17 +685,15 @@ export class Job extends Record implements JobRecord {
   }
 
   /**
-   * Updates the status to paused providing the optional message or the default
-   * if none is provided.  You should generally provide a message if possible.
+   * Updates the status to paused.
    * Only jobs in the RUNNING state may be paused.
    * You must call `#save` to persist the change.
    *
-   * @param message - a human-readable message to indicate the state of the job
    * @throws An error if the job is not currently in the RUNNING state
    */
-  pause(message = statesToDefaultMessages.paused): void {
+  pause(): void {
     validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
-    this.updateStatus(JobStatus.PAUSED, message);
+    this.updateStatus(JobStatus.PAUSED, this.getMessage(JobStatus.PAUSED));
   }
 
   /**
@@ -621,7 +704,7 @@ export class Job extends Record implements JobRecord {
   resume(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.RESUME,
       `Job status is ${this.status} - only paused jobs can be resumed.`);
-    this.updateStatus(JobStatus.RUNNING);
+    this.updateStatus(JobStatus.RUNNING, this.getMessage(JobStatus.RUNNING));
   }
 
   /**
@@ -632,10 +715,7 @@ export class Job extends Record implements JobRecord {
   skipPreview(): void {
     validateTransition(this.status, JobStatus.RUNNING, JobEvent.SKIP_PREVIEW,
       `Job status is ${this.status} - only previewing jobs can skip preview.`);
-    const defaultMessage = statesToDefaultMessages[JobStatus.PREVIEWING];
-    let message = this.message.replace(defaultMessage, '').replace('. ', '').trim();
-    message ||= statesToDefaultMessages[JobStatus.RUNNING];
-    this.updateStatus(JobStatus.RUNNING, message);
+    this.updateStatus(JobStatus.RUNNING, this.getMessage(JobStatus.RUNNING));
   }
 
   /**
@@ -693,7 +773,8 @@ export class Job extends Record implements JobRecord {
    * will use a default message corresponding to the status.
    * You must call `#save` to persist the change
    *
-   * @param status - The new status, one of successful, failed, running, accepted
+   * @param status - The new status, one of successful, failed, running,
+   * accepted, running_with_errors, complete_with_errors, paused, previewing
    * @param message - (optional) a human-readable status message
    */
   updateStatus(status: JobStatus, message?: string): void {
@@ -701,11 +782,6 @@ export class Job extends Record implements JobRecord {
     if (message) {
       // Update the message if a new one was provided
       this.message = message;
-    }
-    if (!this.message || defaultMessages.includes(this.message)) {
-      // Update the message to a default one if it's currently a default one for a
-      // different status
-      this.message = statesToDefaultMessages[status];
     }
     if (this.status === JobStatus.SUCCESSFUL || this.status === JobStatus.COMPLETE_WITH_ERRORS) {
       this.progress = 100;
@@ -834,12 +910,10 @@ export class Job extends Record implements JobRecord {
     // Need to validate the original status before removing it as part of saving to the database
     // May want to change in the future to have a way to have non-database fields on a record.
     this.validateStatus();
-    this.message = truncateString(this.message, 4096);
     this.request = truncateString(this.request, 4096);
-    // Cannot say Record<string, unknown> because of conflict with imported database Record class
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dbRecord = pick(this, jobRecordFields) as any;
+    const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
     dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
+    dbRecord.message = JSON.stringify(this.statesToMessages || {});
     await super.save(transaction, dbRecord);
     const promises = [];
     for (const link of this.links) {
@@ -857,11 +931,20 @@ export class Job extends Record implements JobRecord {
    * @param linkType - the type to use for data links (http|https =\> https | s3 =\> s3 | none)
    * @returns an object with the serialized job fields.
    */
-  serialize(urlRoot?: string, linkType?: string): Job {
-    this.dataExpiration = this.getDataExpiration();
-    const serializedJob = pick(this, serializedJobFields) as Job;
-    serializedJob.updatedAt = new Date(serializedJob.updatedAt);
-    serializedJob.createdAt = new Date(serializedJob.createdAt);
+  serialize(urlRoot?: string, linkType?: string): JobForDisplay {
+    const serializedJob: JobForDisplay = {
+      username: this.username,
+      status: this.status,
+      message: this.message,
+      progress: this.progress,
+      createdAt: new Date(this.createdAt),
+      updatedAt: new Date(this.updatedAt),
+      dataExpiration: this.getDataExpiration(),
+      links: this.links,
+      request: this.request,
+      numInputGranules: this.numInputGranules,
+      jobID: this.jobID,
+    };
     if (urlRoot && linkType !== 'none') {
       serializedJob.links = serializedJob.links.map((link) => {
         const serializedLink = link.serialize();
@@ -874,14 +957,7 @@ export class Job extends Record implements JobRecord {
         return removeEmptyProperties({ href, title, type, rel, bbox, temporal });
       }) as unknown as JobLink[];
     }
-    const job = new Job(serializedJob as JobRecord); // We need to clean this up
-    delete job.originalStatus;
-    delete job.batchesCompleted;
-    delete job.collectionIds;
-    delete job.isAsync;
-    delete job.ignoreErrors;
-
-    return job;
+    return serializedJob;
   }
 
   /**
@@ -890,10 +966,7 @@ export class Job extends Record implements JobRecord {
    * @param rel - the relation to return links for
    * @returns the job output links with the given rel
    */
-  getRelatedLinks(rel: string): JobLink[] {
-    const links = this.links.filter((link) => link.rel === rel);
-    return links.map(removeEmptyProperties) as JobLink[];
-  }
+  getRelatedLinks = (rel: string): JobLink[] => getRelatedLinks(rel, this.links);
 
   /**
    *  Computes and returns the date the data produced by the job will expire based on `createdAt`
