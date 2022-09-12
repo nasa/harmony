@@ -418,7 +418,7 @@ export async function retry(
       { workItemID: item.id, status: WorkItemStatus.FAILED,
         scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
         errorMessage: 'A user has attempted to trigger a retry via the user interface.' },
-      this.logger);
+      req.context.logger);
     res.status(200).send({ message: 'The item was updated successfully and should be set to "ready" momentarily.' });
   } catch (e) {
     req.context.logger.error(e);

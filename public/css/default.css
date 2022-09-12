@@ -14,4 +14,5 @@ a .badge-dark {
     top:0;
     right: 0;
     z-index: 999;
+    position: fixed;
 }

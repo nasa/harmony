@@ -1,4 +1,5 @@
 import { formatDates } from "../table.js";
+import toasts from "./toasts.js";
 
 /**
  * Query the Harmony backend for an up to date version of 
@@ -30,12 +31,14 @@ function bindRetryButtonClickHandler() {
   var retryButtons = document.querySelectorAll('button.retry-button');
   Array.from(retryButtons).forEach(btn => {
     btn.addEventListener('click', async function (event) {
+      toasts.showUpper('Triggering a retry...');
       const retryUrl = event.currentTarget.getAttribute('data-retry-url');
       const res = await fetch(retryUrl, { method: 'POST' });
-      if (res.message) {
-        alert(message);
+      const json = await res.json();
+      if (json.message) {
+        toasts.showUpper(json.message);
       } else {
-        alert(false);
+        toasts.showUpper('The item could not be retried.');
       }
     });
   });
