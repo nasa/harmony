@@ -18,11 +18,27 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
   if (res.status === 200) {
     const template = await res.text();
     document.getElementById('workflow-items-table-container').innerHTML = template;
+    bindRetryButtonClickHandler();
     formatDates();
     return true;
   } else {
     return false;
   }
+}
+
+function bindRetryButtonClickHandler() {
+  var retryButtons = document.querySelectorAll('button.retry-button');
+  Array.from(retryButtons).forEach(btn => {
+    btn.addEventListener('click', async function (event) {
+      const retryUrl = event.currentTarget.getAttribute('data-retry-url');
+      const res = await fetch(retryUrl, { method: 'POST' });
+      if (res.message) {
+        alert(message);
+      } else {
+        alert(false);
+      }
+    });
+  });
 }
 
 /**
@@ -46,14 +62,14 @@ async function loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, ch
 /**
  * Build the work items filter (for filtering by 'status').
  */
- function initFilter() {
+function initFilter() {
   var filterInput = document.querySelector('input[name="tableFilter"]');
   const allowedList = [
-    { value: 'status: ready', dbValue: 'ready', field: 'status'},
-    { value: 'status: successful', dbValue: 'successful', field: 'status'},
-    { value: 'status: canceled', dbValue: "canceled", field: 'status'},
-    { value: 'status: running', dbValue: "running", field: 'status'},
-    { value: 'status: failed', dbValue: "failed", field: 'status'},
+    { value: 'status: ready', dbValue: 'ready', field: 'status' },
+    { value: 'status: successful', dbValue: 'successful', field: 'status' },
+    { value: 'status: canceled', dbValue: "canceled", field: 'status' },
+    { value: 'status: running', dbValue: "running", field: 'status' },
+    { value: 'status: failed', dbValue: "failed", field: 'status' },
   ];
   const allowedValues = allowedList.map(t => t.value);
   new Tagify(filterInput, {

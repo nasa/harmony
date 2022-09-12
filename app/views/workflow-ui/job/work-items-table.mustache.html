@@ -10,6 +10,7 @@
             <th scope="col">id</th>
             <th scope="col">status</th>
             <th scope="col">logs</th>
+            <th scope="col">retry</th>
             <th scope="col">retryCount</th>
             <th scope="col">createdAt</th>
             <th scope="col">updatedAt</th>
@@ -23,6 +24,7 @@
             <td>{{id}}</td>
             <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
             <td>{{{workflowItemLogsButton}}}</td>
+            <td>{{{workflowItemRetryButton}}}</td>
             <td>{{{retryCount}}}</td>
             <td class="date-td" data-time="{{workflowItemCreatedAt}}"></td>
             <td class="date-td" data-time="{{workflowItemUpdatedAt}}"></td>

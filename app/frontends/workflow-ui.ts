@@ -331,7 +331,7 @@ export async function getWorkItemsTable(
           const isComplete = COMPLETED_WORK_ITEM_STATUSES.indexOf(this.status) > -1;
           if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
           const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
-          return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}" title="view logs"><i class="bi bi-body-text"></i></button>`;
+          return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}" title="view logs"><i class="bi bi-body-text"></i></a>`;
         },
         workflowItemRetryButton() {
           const sharedWithNonAdmin = (!isAdmin && (job.username != req.user));
@@ -339,7 +339,7 @@ export async function getWorkItemsTable(
           const noRetriesLeft = this.retryCount >= env.workItemRetryLimit;
           if (!isRunning || sharedWithNonAdmin || noRetriesLeft) return '';
           const retryUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/retry`;
-          return `<a type="button" target="__blank" class="btn btn-light btn-sm retry-button" href="${retryUrl}" title="retry this item"><i class="bi bi-arrow-clockwise"></i></button>`;
+          return `<button type="button" class="btn btn-light btn-sm retry-button" data-retry-url="${retryUrl}" title="retry this item"><i class="bi bi-arrow-clockwise"></i></button>`;
         },
         links: [
           { ...previousPage, linkTitle: 'previous' },
