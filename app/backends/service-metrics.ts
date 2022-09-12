@@ -1,18 +1,17 @@
 import { Response, Request, NextFunction } from 'express';
-import { workItemCountByServiceIDAndStatus } from '../models/work-item';
-import { WorkItemStatus } from '../models/work-item-interface';
+import { getAvailableWorkItemCountByServiceID } from '../models/work-item';
 import db from '../util/db';
 import { RequestValidationError } from '../util/errors';
 
 /**
- * Express.js handler that returns the number of work items in the 'READY' state for the given serviceID
+ * Express.js handler that returns the number of work items in the 'READY' or 'RUNNING' state for the given serviceID
  *
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
  * @returns Resolves when the request is complete
  */
-export async function getReadyWorkItemCountForServiceID(
+export async function getEligibleWorkItemCountForServiceID(
   req: Request, res: Response, next: NextFunction,
 ): Promise<void> {
 
@@ -28,7 +27,7 @@ export async function getReadyWorkItemCountForServiceID(
   try {
     let workItemCount;
     await db.transaction(async (tx) => {
-      workItemCount = await workItemCountByServiceIDAndStatus(tx, serviceID, [WorkItemStatus.READY]);
+      workItemCount = await getAvailableWorkItemCountByServiceID(tx, serviceID);
     });
     if (!workItemCount) workItemCount = 0;
     const response = {

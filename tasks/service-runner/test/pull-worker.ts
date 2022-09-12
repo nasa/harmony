@@ -9,23 +9,20 @@ import { hookGetWorkRequest } from './helpers/pull-worker';
 import * as pullWorker from '../app/workers/pull-worker';
 import PullWorker from '../app/workers/pull-worker';
 import * as serviceRunner from '../app/service/service-runner';
-import { existsSync, writeFileSync } from 'fs';
+import { existsSync, writeFileSync, mkdirSync } from 'fs';
 
 const {
   _pullWork,
   _doWork,
   _pullAndDoWork,
-  _primeCmrService,
   _primeService,
   axiosUpdateWork } = pullWorker.exportedForTesting;
 
 describe('Pull Worker', async function () {
   describe('on start', async function () {
-    let queryCmrSpy: sinon.SinonSpy;
     let serviceSpy: sinon.SinonSpy;
     const invocArgs = env.invocationArgs;
     beforeEach(function () {
-      queryCmrSpy = sinon.spy(pullWorker.exportedForTesting, '_primeCmrService');
       serviceSpy = sinon.spy(pullWorker.exportedForTesting, '_primeService');
 
       env.invocationArgs = 'abc\n123';
@@ -33,17 +30,7 @@ describe('Pull Worker', async function () {
 
     afterEach(function () {
       env.invocationArgs = invocArgs;
-      queryCmrSpy.restore();
       serviceSpy.restore();
-    });
-
-    describe('when the service is query-cmr', async function () {
-      it('primes the CMR service', async function () {
-        env.harmonyService = 'harmonyservices/query-cmr:latest';
-        const worker = new PullWorker();
-        await worker.start(false);
-        expect(queryCmrSpy.called).to.be.true;
-      });
     });
 
     describe('when the service is not query-cmr', async function () {
@@ -57,23 +44,23 @@ describe('Pull Worker', async function () {
   });
 
   describe('on start with primer errors', async function () {
-    let queryCMRStub: SinonStub;
+    let serviceStub: SinonStub;
     let exitStub: SinonStub;
     const { harmonyService } = env;
 
     beforeEach(async function () {
       exitStub = sinon.stub(process, 'exit');
-      queryCMRStub = sinon.stub(pullWorker.exportedForTesting, '_primeCmrService').callsFake(
+      serviceStub = sinon.stub(pullWorker.exportedForTesting, '_primeService').callsFake(
         async function () {
           throw new Error('primer failed');
         },
       );
-      env.harmonyService = 'harmonyservices/query-cmr:latest';
+      env.harmonyService = 'harmonyservices/service-example:latest';
     });
 
     afterEach(function () {
       exitStub.restore();
-      queryCMRStub.restore();
+      serviceStub.restore();
       env.harmonyService = harmonyService;
     });
 
@@ -81,7 +68,7 @@ describe('Pull Worker', async function () {
       const worker = new PullWorker();
       await worker.start(false);
       expect(exitStub.called).to.be.true;
-      expect(queryCMRStub.callCount).to.equal(2);
+      expect(serviceStub.callCount).to.equal(2);
     });
   });
 
@@ -211,6 +198,37 @@ describe('Pull Worker', async function () {
       });
     });
 
+    describe('when _pullWork runs', async function () {
+      let pullStub: SinonStub;
+      let doWorkStub: SinonStub;
+      const mock = new MockAdapter(axiosUpdateWork);
+      beforeEach(function () {
+        mkdirSync('/tmp/abc123');
+        writeFileSync('/tmp/abc123/work', '1');
+        pullStub = sinon.stub(pullWorker.exportedForTesting, '_pullWork').callsFake(async function () { return {}; });
+        doWorkStub = sinon.stub(pullWorker.exportedForTesting, '_doWork').callsFake(async function (): Promise<WorkItem> {
+          return new WorkItem({});
+        });
+        mock.onPut().reply(200, 'OK');
+      });
+      this.afterEach(function () {
+        pullStub.restore();
+        doWorkStub.restore();
+        mock.restore();
+      });
+
+      it('cleans the /tmp directory', async function () {
+        await _pullAndDoWork(false);
+        expect(existsSync('/tmp/abc123')).to.be.false;
+      });
+
+      it('does not delete /tmp/TERMINATING', async function () {
+        writeFileSync('/tmp/TERMINATING', '1');
+        await _pullAndDoWork(false);
+        expect(existsSync('/tmp/TERMINATING')).to.be.true;
+      });
+    });
+
     describe('when _pullWork throws an exception', async function () {
       let pullStub: SinonStub;
       let doWorkStub: SinonStub;
@@ -288,13 +306,6 @@ describe('Pull Worker', async function () {
       env.invocationArgs = invocArgs;
       queryCmrSpy.restore();
       serviceSpy.restore();
-    });
-
-    describe('When the query-cmr service is primed', async function () {
-      it('calls runQueryCmrFromPull', async function () {
-        await _primeCmrService();
-        expect(queryCmrSpy.called).to.be.true;
-      });
     });
 
     describe('When a service is primed', async function () {

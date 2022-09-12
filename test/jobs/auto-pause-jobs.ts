@@ -90,7 +90,7 @@ function previewingToPauseTest(username: string): void {
       await truncateAll();
     });
 
-    autoPauseCommonTests(username, 'paused', 'The job is paused');
+    autoPauseCommonTests(username, 'paused', 'The job is paused and may be resumed using the provided link');
   });
 }
 

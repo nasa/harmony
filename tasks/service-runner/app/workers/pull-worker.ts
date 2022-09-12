@@ -7,7 +7,7 @@ import { runServiceFromPull, runQueryCmrFromPull } from '../service/service-runn
 import sleep from '../../../../app/util/sleep';
 import createAxiosClientWithRetry from '../util/axios-clients';
 import path from 'path';
-import { promises as fs } from 'fs';
+import { existsSync, rmSync, promises as fs } from 'fs';
 import { exit } from 'process';
 
 // Poll every 500 ms for now. Potentially make this a configuration item.
@@ -30,7 +30,8 @@ let pullCounter = 0;
 // how many pulls to execute before logging - used to keep log message count reasonable
 const pullLogPeriod = 10;
 
-const LOCKFILE_DIR = '/tmp';
+const WORK_DIR = '/tmp';
+const LOCKFILE_DIR = WORK_DIR;
 
 // retry twice for tests and 1200 (2 minutes) for real
 const maxPrimeRetries = process.env.NODE_ENV === 'test' ? 2 : 1_200;
@@ -47,7 +48,7 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
   try {
     const response = await axiosGetWork
       .get(workUrl, {
-        params: { serviceID: env.harmonyService },
+        params: { serviceID: env.harmonyService, podName: env.myPodName },
         responseType: 'json',
         validateStatus(status) {
           return status === 404 || (status >= 200 && status < 400);
@@ -67,6 +68,27 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
     return { status: 500, error: err.message };
   }
 }
+
+/**
+ * Remove files and subdirectories from a directory, optionally skipping certain files
+ * 
+ * @param directory - the path to the directory to be emptied
+ * @param matchingFilter - RegExp matching files/directories that should be deleted
+ * 
+ */
+async function emptyDirectory(directory: string, matchingFilter?: RegExp): Promise<void> {
+  const regex = matchingFilter || /^.*$/;
+
+  if (existsSync(directory)) {
+    const files = await fs.readdir(directory);
+    files.filter(f => regex.test(f))
+      .map(f => rmSync(path.join(directory, f), { recursive: true, force: true }));
+
+  } else {
+    logger.error(`Directory ${directory} not found`);
+  }
+}
+
 
 /**
  * Call a service to perform some work
@@ -108,6 +130,9 @@ async function _doWork(
 async function _pullAndDoWork(repeat = true): Promise<void> {
   const workingFilePath = path.join(LOCKFILE_DIR, 'WORKING');
   try {
+    // remove any previous work items to prevent the pod from running out of disk space
+    const regex = /^(?!WORKING|TERMINATING)(.+)$/;
+    await emptyDirectory(WORK_DIR, regex);
     // write out the WORKING file to prevent pod termination while working
     await fs.writeFile(workingFilePath, '1');
 
@@ -131,6 +156,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
 
     const work = await _pullWork();
     if (!work.error && work.item) {
+      logger.debug(`Performing work for work item with id ${work.item.id} for job id ${work.item.jobID}`);
       const workItem = await _doWork(work.item, work.maxCmrGranules);
       // call back to Harmony to mark the work unit as complete or failed
       logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
@@ -172,26 +198,6 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
 }
 
 /**
- * Call the sidecar query-cmr service once to get around a k8s client bug
- * only exported so we can spy during testing
- */
-async function _primeCmrService(): Promise<void> {
-  const exampleWorkItemProps = {
-    jobID: '1',
-    serviceID: 'harmony-services/query-cmr:latest',
-    status: WorkItemStatus.READY,
-    workflowStepIndex: 0,
-    operation: { requestId: 'abc' },
-    scrollID: '1234',
-  } as WorkItemRecord;
-
-  runQueryCmrFromPull(exampleWorkItemProps).catch((e) => {
-    logger.error('Failed to prime service');
-    throw e;
-  });
-}
-
-/**
  * Call the sidecar service once to get around a k8s client bug
  */
 async function _primeService(): Promise<void> {
@@ -213,7 +219,6 @@ export const exportedForTesting = {
   _pullWork,
   _doWork,
   _pullAndDoWork,
-  _primeCmrService,
   _primeService,
   axiosGetWork,
   axiosUpdateWork,
@@ -226,10 +231,7 @@ export default class PullWorker implements Worker {
     let primeCount = 0;
     while (!isPrimed && primeCount < maxPrimeRetries) {
       try {
-        if (env.harmonyService.includes('harmonyservices/query-cmr')) {
-          // called this way to support sinon spy
-          await exportedForTesting._primeCmrService();
-        } else {
+        if (!env.harmonyService.includes('harmonyservices/query-cmr')) {
           // called this way to support sinon spy
           await exportedForTesting._primeService();
         }

@@ -36,7 +36,7 @@ export interface ServiceStep {
 
 export interface ServiceCollection {
   id: string;
-  granuleLimit?: number;
+  granule_limit?: number;
   variables?: string[]
 }
 
@@ -44,6 +44,7 @@ export interface ServiceConfig<ServiceParamType> {
   batch_size?: number;
   name?: string;
   data_operation_version?: string;
+  granule_limit?: number;
   has_granule_limit?: boolean;
   default_sync?: boolean;
   type?: {
@@ -286,7 +287,6 @@ export default abstract class BaseService<ServiceParamType> {
    * Creates a new job object for this service's operation
    *
    * @param requestUrl - The URL the end user invoked
-   * @param stagingLocation - The staging location for this job
    * @returns The created job
    * @throws ServerError - if the job cannot be created
    */
@@ -316,6 +316,12 @@ export default abstract class BaseService<ServiceParamType> {
       collectionIds: this.operation.collectionIds,
       ignoreErrors: this.operation.ignoreErrors,
     });
+    if (this.operation.message) {
+      job.setMessage(this.operation.message, JobStatus.SUCCESSFUL);
+    }
+    if (this.operation.message && !skipPreview) {
+      job.setMessage(this.operation.message, JobStatus.RUNNING);
+    }
     job.addStagingBucketLink(this.operation.stagingLocation);
     return job;
   }

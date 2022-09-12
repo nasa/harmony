@@ -140,6 +140,7 @@ export async function getNextWorkItem(
       // query to choose the job that should be worked on next based on fair queueing policy
       const jobData = await tx(Job.table)
         .select([`${Job.table}.jobID`])
+        .forUpdate()
         .join(`${WorkItem.table} as w`, `${Job.table}.jobID`, 'w.jobID')
         .where('username', '=', userData.username)
         .whereIn(`${Job.table}.status`, acceptableJobStatuses)
@@ -149,34 +150,38 @@ export async function getNextWorkItem(
         .first();
 
       if (jobData?.jobID) {
-        let workItemDataQuery = tx(`${WorkItem.table} as w`)
-          .forUpdate()
-          .join(`${WorkflowStep.table} as wf`, function () {
-            this.on('w.jobID', '=', 'wf.jobID')
-              .on('w.workflowStepIndex', '=', 'wf.stepIndex');
-          })
-          .select(...tableFields, 'wf.operation')
-          .where('w.jobID', '=', jobData.jobID)
-          .where('w.status', '=', 'ready')
-          .where('w.serviceID', '=', serviceID)
+        const workflowStepData = await tx(WorkflowStep.table)
+          .select(['operation'])
+          .where('jobID', '=', jobData.jobID)
           .first();
+        if (workflowStepData?.operation) {
+          const { operation } = workflowStepData;
+          let workItemDataQuery = tx(`${WorkItem.table} as w`)
+            .forUpdate()
+            .select(tableFields)
+            .where('w.jobID', '=', jobData.jobID)
+            .where('w.status', '=', 'ready')
+            .where('w.serviceID', '=', serviceID)
+            .orderBy('w.id', 'asc')
+            .first();
 
-        if (db.client.config.client === 'pg') {
-          workItemDataQuery = workItemDataQuery.skipLocked();
-        }
+          if (db.client.config.client === 'pg') {
+            workItemDataQuery = workItemDataQuery.skipLocked();
+          }
 
-        workItemData = await workItemDataQuery;
+          workItemData = await workItemDataQuery;
 
-        if (workItemData) {
-          workItemData.operation = JSON.parse(workItemData.operation);
-          await tx(WorkItem.table)
-            .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
-            .where({ id: workItemData.id });
-          // need to update the job otherwise long running jobs won't count against
-          // the user's priority
-          await tx(Job.table)
-            .update({ updatedAt: new Date() })
-            .where({ jobID: workItemData.jobID });
+          if (workItemData) {
+            workItemData.operation = JSON.parse(operation);
+            await tx(WorkItem.table)
+              .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
+              .where({ id: workItemData.id });
+            // need to update the job otherwise long running jobs won't count against
+            // the user's priority
+            await tx(Job.table)
+              .update({ updatedAt: new Date() })
+              .where({ jobID: workItemData.jobID });
+          }
         }
       }
     }
@@ -202,18 +207,17 @@ export async function updateWorkItemStatus(
   status: WorkItemStatus,
   totalGranulesSize: number,
 ): Promise<void> {
-  const workItem = await tx(WorkItem.table)
-    .forUpdate()
-    .select()
-    .where({ id })
-    .first() as WorkItem;
+  logger.debug(`updatedWorkItemStatus: Updating status for work item ${id} to ${status}`);
 
-  if (workItem) {
+  try {
     await tx(WorkItem.table)
       .update({ status, totalGranulesSize, updatedAt: new Date() })
-      .where({ id: workItem.id });
-  } else {
-    throw new Error(`id [${id}] does not exist in table ${WorkItem.table}`);
+      .where({ id });
+    logger.debug(`Status for work item ${id} set to ${status}`);
+  } catch (e) {
+    logger.error(`Failed to update work item ${id} status to ${status}`);
+    logger.error(e);
+    throw e;
   }
 }
 
@@ -257,17 +261,24 @@ export async function updateWorkItemStatusesByJobId(
  * Returns the next work item to process for a service
  * @param tx - the transaction to use for querying
  * @param id - the work item ID
+ * @param lock - if true the work item is selected for update (locked)
  *
  * @returns A promise with the work item or null if none
  */
 export async function getWorkItemById(
   tx: Transaction,
   id: number,
+  lock = false,
+
 ): Promise<WorkItem> {
-  const workItemData = await tx(WorkItem.table)
+  let query = tx(WorkItem.table)
     .select()
     .where({ id })
     .first();
+  if (lock) {
+    query = query.forUpdate();
+  }
+  const workItemData = await query;
 
   const workItem = workItemData && new WorkItem(workItemData);
   return workItem;
@@ -314,6 +325,21 @@ export async function queryAll(
     workItems,
     pagination: items.pagination,
   };
+}
+
+/**
+ * Get the jobID for the given work item
+ *
+ * @param id - the work item id
+ * @returns A map with the jobID and workflowStepIndex for the given work item
+ */
+export async function getJobIdForWorkItem(id: number): Promise<string> {
+  return (
+    await db(WorkItem.table)
+      .select('jobID')
+      .where({ id })
+      .first()
+  ).jobID;
 }
 
 /**
@@ -398,8 +424,8 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
 }
 
 /**
- * Get all WorkItems (from running jobs) 
- * that haven't been updated for a particular amount of time (minutes), 
+ * Get all WorkItems (from running jobs)
+ * that haven't been updated for a particular amount of time (minutes),
  * that also have a particular status.
  * @param tx - the transaction to use for querying
  * @param lastUpdateOlderThanMinutes - retrieve WorkItems with updatedAt older than lastUpdateOlderThanMinutes
@@ -510,26 +536,28 @@ export async function workItemCountForJobID(
 }
 
 /**
- *  Returns the number of existing work items for a specific service id and given statuses
+ *  Returns the number of work items that can be actively worked for the given service ID
  * @param tx - the transaction to use for querying
- * @param serviceID - the ID of the service
+ * @param jobID - the ID of the job that created this work item
+ * @param stepIndex - the index of the step in the workflow
+ * @param status - a single status or list of statuses. If provided only work items with this status
+ * (or status in the list) will be counted
  */
-export async function workItemCountByServiceIDAndStatus(
-  tx: Transaction,
-  serviceID: string,
-  statuses: WorkItemStatus[],
-): Promise<number> {
+export async function getAvailableWorkItemCountByServiceID(tx: Transaction, serviceID: string)
+  : Promise<number> {
   const count = await tx(WorkItem.table)
+    .join(Job.table, `${WorkItem.table}.jobID`, '=', `${Job.table}.jobID`)
     .select()
-    .count('id')
+    .count(`${WorkItem.table}.id`)
     .where({ serviceID })
-    .whereIn(`${WorkItem.table}.status`, statuses);
+    .whereIn(`${WorkItem.table}.status`, [WorkItemStatus.RUNNING, WorkItemStatus.READY])
+    .whereIn(`${Job.table}.status`, [JobStatus.RUNNING, JobStatus.ACCEPTED, JobStatus.RUNNING_WITH_ERRORS]);
 
   let workItemCount;
   if (db.client.config.client === 'pg') {
     workItemCount = Number(count[0].count);
   } else {
-    workItemCount = Number(count[0]['count(`id`)']);
+    workItemCount = Number(Object.values(count[0])[0]);
   }
   return workItemCount;
 }

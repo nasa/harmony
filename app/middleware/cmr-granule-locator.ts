@@ -16,6 +16,7 @@ import { CmrCollection, CmrGranule, CmrQuery, filterGranuleLinks, queryGranulesF
  */
 enum GranuleLimitReason {
   Collection, // limited by the collection configuration
+  Service,    // limited by the service chain configuration
   MaxResults, // limited by the maxResults query parameter
   System,     // limited by the system environment
   None,       // not limited
@@ -48,13 +49,14 @@ function getBbox(collection: CmrCollection, granule: CmrGranule): BoundingBox {
 
 /**
  * Get the maximum number of granules that should be used from the CMR results
- * 
+ *
  * @param req - The client request, containing an operation
  * @param collection - The id of the collection to which the granules belong
- * @returns a tuple containing the maximum number of granules to return from the CMR and the
+ * @returns an object containing the maximum number of granules to return from the CMR and the
  * reason why it is being limited
  */
-function getMaxGranules(req: HarmonyRequest, collection: string): { maxGranules: number; reason: GranuleLimitReason; } {
+function getMaxGranules(req: HarmonyRequest, collection: string):
+{ maxGranules: number; reason: GranuleLimitReason; } {
   let reason = GranuleLimitReason.None;
   let maxResults = Number.MAX_SAFE_INTEGER;
 
@@ -70,11 +72,16 @@ function getMaxGranules(req: HarmonyRequest, collection: string): { maxGranules:
     }
 
     const { serviceConfig } = context;
+    if (serviceConfig.granule_limit && serviceConfig.granule_limit < maxResults) {
+      maxResults = serviceConfig.granule_limit;
+      reason = GranuleLimitReason.Service;
+    }
+
     const serviceCollection = serviceConfig.collections?.find((sc) => sc.id === collection);
     if (serviceCollection &&
-      serviceCollection.granuleLimit &&
-      serviceCollection.granuleLimit < maxResults) {
-      maxResults = serviceCollection.granuleLimit;
+      serviceCollection.granule_limit &&
+      serviceCollection.granule_limit < maxResults) {
+      maxResults = serviceCollection.granule_limit;
       reason = GranuleLimitReason.Collection;
     }
   }
@@ -83,12 +90,23 @@ function getMaxGranules(req: HarmonyRequest, collection: string): { maxGranules:
 }
 
 /**
+ * Constructs the base of the results limited message.
+ * @param hits - number of CMR hits
+ * @param maxGranules - limit for granule processing
+ * @returns the base of the results limited message
+ */
+export function baseResultsLimitedMessage(hits: number, maxGranules: number): string {
+  return `CMR query identified ${hits} granules, but the request has been limited `
+    + `to process only the first ${maxGranules} granules`;
+}
+
+/**
  * Create a message indicating that the results have been limited and why - if necessary
- * 
+ *
  * @param req - The client request, containing an operation
  * @param collection - The id of the collection to which the granules belong
  * @returns a warning message if not all matching granules will be processed, or undefined
- * if not applicable 
+ * if not applicable
  */
 function getResultsLimitedMessage(req: HarmonyRequest, collection: string): string {
   const { operation } = req;
@@ -99,12 +117,15 @@ function getResultsLimitedMessage(req: HarmonyRequest, collection: string): stri
   const { maxGranules, reason } = getMaxGranules(req, collection);
 
   if (operation.cmrHits > maxGranules) {
-    message = `CMR query identified ${operation.cmrHits} granules, but the request has been limited `
-      + `to process only the first ${maxGranules} granules`;
+    message = baseResultsLimitedMessage(operation.cmrHits, maxGranules);
 
     switch (reason) {
       case GranuleLimitReason.MaxResults:
         message += ` because you requested ${operation.maxResults} maxResults.`;
+        break;
+
+      case GranuleLimitReason.Service:
+        message += ` because the service ${req.context.serviceConfig.name} is limited to ${maxGranules}.`;
         break;
 
       case GranuleLimitReason.Collection:
