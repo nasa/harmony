@@ -385,11 +385,11 @@ export async function getWorkItemLogs(
 }
 
 /**
- * 
- * @param req 
- * @param res 
- * @param next 
- * @returns 
+ * Requeues the work item.
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns a JSON object with a message
  */
 export async function retry(
   req: HarmonyRequest, res: Response, next: NextFunction,
