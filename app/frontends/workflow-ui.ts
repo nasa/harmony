@@ -338,7 +338,7 @@ export async function getWorkItemsTable(
           const isRunning = WorkItemStatus.RUNNING === this.status;
           const noRetriesLeft = this.retryCount >= env.workItemRetryLimit;
           if (!isRunning || sharedWithNonAdmin || noRetriesLeft) return '';
-          const retryUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/retry`;
+          const retryUrl = `/workflow-ui/${job.jobID}/${this.id}/retry`;
           return `<button type="button" class="btn btn-light btn-sm retry-button" data-retry-url="${retryUrl}" title="retry this item"><i class="bi bi-arrow-clockwise"></i></button>`;
         },
         links: [

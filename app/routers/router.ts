@@ -13,7 +13,7 @@ import earthdataLoginOauthAuthorizer from '../middleware/earthdata-login-oauth-a
 import admin from '../middleware/admin';
 import wmsFrontend from '../frontends/wms';
 import { getJobsListing, getJobStatus, cancelJob, resumeJob, pauseJob, skipJobPreview } from '../frontends/jobs';
-import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs } from '../frontends/workflow-ui';
+import { getJobs, getJob, getWorkItemsTable, getJobLinks, getWorkItemLogs, retry } from '../frontends/workflow-ui';
 import { getStacCatalog, getStacItem } from '../frontends/stac';
 import { getServiceResult } from '../frontends/service-results';
 import cmrGranuleLocator from '../middleware/cmr-granule-locator';
@@ -232,6 +232,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/workflow-ui/:jobID', asyncHandler(getJob));
   result.get('/workflow-ui/:jobID/work-items', asyncHandler(getWorkItemsTable));
   result.get('/workflow-ui/:jobID/links', asyncHandler(getJobLinks));
+  result.post('/workflow-ui/:jobID/:id/retry', asyncHandler(retry));
   result.get('/admin/workflow-ui', asyncHandler(getJobs));
   result.get('/admin/workflow-ui/:jobID', asyncHandler(getJob));
   result.get('/admin/workflow-ui/:jobID/work-items', asyncHandler(getWorkItemsTable));
