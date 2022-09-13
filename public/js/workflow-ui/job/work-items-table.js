@@ -1,5 +1,5 @@
 import { formatDates } from "../table.js";
-import toasts from "./toasts.js";
+import toasts from "../toasts.js";
 
 /**
  * Query the Harmony backend for an up to date version of 
@@ -27,6 +27,10 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
   }
 }
 
+/**
+ * Bind a click handler to every retry button.
+ * The handler does a POST to the retry url.
+ */
 function bindRetryButtonClickHandler() {
   var retryButtons = document.querySelectorAll('button.retry-button');
   Array.from(retryButtons).forEach(btn => {

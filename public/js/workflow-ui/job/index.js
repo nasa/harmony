@@ -1,5 +1,5 @@
 import workItemsTable from "./work-items-table.js";
-import actionLinks from "./nav-links.js";
+import navLinks from "../nav-links.js";
 import PubSub from "../../pub-sub.js";
 
 // Retrieve the parameters (from the original page request) that will be used to poll for work items
@@ -12,6 +12,6 @@ const tableFilter = workflowContainer.getAttribute('data-table-filter');
 
 const broker = new PubSub();
 
-await actionLinks.init("job-state-links-container", jobId, broker);
+await navLinks.init("job-state-links-container", jobId, broker);
 
 workItemsTable.init(jobId, page, limit, disallowStatus, tableFilter, broker);
