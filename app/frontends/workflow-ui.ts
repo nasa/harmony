@@ -268,6 +268,45 @@ export async function getJobLinks(
 }
 
 /**
+ * Returns an object with all of the functions necessary for rendering
+ * a row of the work items table.
+ * @param job - the job associated with the work item
+ * @param isAdmin - whether the user making the request is an admin
+ * @param requestUser - the user making the request
+ * @returns an object with rendering functions
+ */
+function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: string): object {
+  const badgeClasses = {};
+  badgeClasses[WorkItemStatus.READY] = 'primary';
+  badgeClasses[WorkItemStatus.CANCELED] = 'secondary';
+  badgeClasses[WorkItemStatus.FAILED] = 'danger';
+  badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
+  badgeClasses[WorkItemStatus.RUNNING] = 'info';
+  return {
+    workflowItemBadge(): string { return badgeClasses[this.status]; },
+    workflowItemStep(): string { return sanitizeImage(this.serviceID); },
+    workflowItemCreatedAt(): string { return this.createdAt.getTime(); },
+    workflowItemUpdatedAt(): string { return this.updatedAt.getTime(); },
+    workflowItemLogsButton(): string {
+      const isComplete = COMPLETED_WORK_ITEM_STATUSES.indexOf(this.status) > -1;
+      if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
+      const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
+      return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}"` +
+        ' title="view logs"><i class="bi bi-body-text"></i></a>';
+    },
+    workflowItemRetryButton(): string {
+      const sharedWithNonAdmin = (!isAdmin && (job.username != requestUser));
+      const isRunning = WorkItemStatus.RUNNING === this.status;
+      const noRetriesLeft = this.retryCount >= env.workItemRetryLimit;
+      if (!isRunning || sharedWithNonAdmin || noRetriesLeft) return '';
+      const retryUrl = `/workflow-ui/${job.jobID}/${this.id}/retry`;
+      return `<button type="button" class="btn btn-light btn-sm retry-button" data-retry-url="${retryUrl}"` +
+        `data-work-item-id="${this.id}" title="retry this item"><i class="bi bi-arrow-clockwise"></i></button>`;
+    },
+  };
+}
+
+/**
  * Render the work items table for the workflow UI.
  *
  * @param req - The request sent by the client
@@ -280,12 +319,6 @@ export async function getWorkItemsTable(
 ): Promise<void> {
   const { jobID } = req.params;
   const { checkJobStatus } = req.query;
-  const badgeClasses = {};
-  badgeClasses[WorkItemStatus.READY] = 'primary';
-  badgeClasses[WorkItemStatus.CANCELED] = 'secondary';
-  badgeClasses[WorkItemStatus.FAILED] = 'danger';
-  badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
-  badgeClasses[WorkItemStatus.RUNNING] = 'info';
   try {
     validateJobId(jobID);
     const query: JobQuery = { where: { requestId: jobID } };
@@ -323,26 +356,7 @@ export async function getWorkItemsTable(
         job,
         statusClass: statusClass[job.status],
         workItems,
-        workflowItemBadge() { return badgeClasses[this.status]; },
-        workflowItemStep() { return sanitizeImage(this.serviceID); },
-        workflowItemCreatedAt() { return this.createdAt.getTime(); },
-        workflowItemUpdatedAt() { return this.updatedAt.getTime(); },
-        workflowItemLogsButton() {
-          const isComplete = COMPLETED_WORK_ITEM_STATUSES.indexOf(this.status) > -1;
-          if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
-          const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
-          return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}"` +
-            ' title="view logs"><i class="bi bi-body-text"></i></a>';
-        },
-        workflowItemRetryButton() {
-          const sharedWithNonAdmin = (!isAdmin && (job.username != req.user));
-          const isRunning = WorkItemStatus.RUNNING === this.status;
-          const noRetriesLeft = this.retryCount >= env.workItemRetryLimit;
-          if (!isRunning || sharedWithNonAdmin || noRetriesLeft) return '';
-          const retryUrl = `/workflow-ui/${job.jobID}/${this.id}/retry`;
-          return `<button type="button" class="btn btn-light btn-sm retry-button" data-retry-url="${retryUrl}"` +
-            `data-work-item-id="${this.id}" title="retry this item"><i class="bi bi-arrow-clockwise"></i></button>`;
-        },
+        ...workItemRenderingFunctions(job, isAdmin, req.user),
         links: [
           { ...previousPage, linkTitle: 'previous' },
           { ...nextPage, linkTitle: 'next' },
@@ -353,6 +367,44 @@ export async function getWorkItemsTable(
             .replace('/work-items', '')
             .replace(/(&|\?)checkJobStatus=(true|false)/, '') : '');
         },
+      });
+    } else {
+      throw new NotFoundError(`Unable to find job ${jobID}`);
+    }
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * Render a single row of the work items table for the workflow UI.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The work items table row HTML
+ */
+export async function getWorkItemTableRow(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobID, workItemId } = req.params;
+  try {
+    validateJobId(jobID);
+    const query: JobQuery = { where: { requestId: jobID } };
+    if (!req.context.isAdminAccess) {
+      query.where.username = req.user;
+    }
+    const { job } = await Job.byRequestId(db, jobID, 0, 0);
+    if (job) {
+      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+        throw new NotFoundError();
+      }
+      const workItem = await getWorkItemById(db, parseInt(workItemId));
+      const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+      res.render('workflow-ui/job/work-item-table-row', {
+        ...workItem,
+        ...workItemRenderingFunctions(job, isAdmin, req.user),
       });
     } else {
       throw new NotFoundError(`Unable to find job ${jobID}`);
