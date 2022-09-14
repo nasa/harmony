@@ -1,14 +1,9 @@
 /**
  * Simple publish subscribe broker.
  */
-export default class PubSub {
+export default {
   
-  /**
-   * Instantiate a PubSub.
-   */
-  constructor() {
-    this.handlers = [];
-  }
+  handlers: [],
 
   /**
    * Subscribe to an event with a handler.
@@ -18,7 +13,7 @@ export default class PubSub {
   subscribe(event, handler) {
     this.handlers[event] = this.handlers[event] || [];
     this.handlers[event].push(handler);
-  }
+  },
 
   /**
    * Publish an event.

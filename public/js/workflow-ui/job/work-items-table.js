@@ -1,5 +1,6 @@
 import { formatDates } from "../table.js";
 import toasts from "../toasts.js";
+import PubSub from "../../pub-sub.js";
 
 /**
  * Query the Harmony backend for an up to date version of 
@@ -41,6 +42,7 @@ function bindRetryButtonClickHandler() {
       const json = await res.json();
       if (json.message) {
         toasts.showUpper(json.message);
+        PubSub.publish('job-state-change');
       } else {
         toasts.showUpper('The item could not be retried.');
       }
@@ -57,12 +59,11 @@ function bindRetryButtonClickHandler() {
  * @param {string} disallowStatus - whether to load the table with disallow status "on" or "off"
  * @param {string} tableFilter - a list of filter objects (as a string)
  * @param {boolean} checkJobStatus - set to true if should check whether the job is finished
- * @param {object} broker - pubsub broker
  * @returns Boolean indicating whether the job is still running. 
  */
-async function loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, checkJobStatus, broker) {
+async function loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, checkJobStatus) {
   const stillRunning = await load(jobId, page, limit, disallowStatus, tableFilter, checkJobStatus);
-  broker.publish('work-items-table-loaded');
+  PubSub.publish('work-items-table-loaded');
   return stillRunning;
 }
 
@@ -111,25 +112,24 @@ export default {
    * @param {number} limit - limit on the number of work items in a page
    * @param {string} disallowStatus - whether to load the table with disallow status "on" or "off"
    * @param {string} tableFilter - a list of filter objects (as a string)
-   * @param {object} broker - pubsub broker
    */
-  async init(jobId, page, limit, disallowStatus, tableFilter, broker) {
+  async init(jobId, page, limit, disallowStatus, tableFilter) {
     initFilter();
-    broker.subscribe( // reload when the user changes the job's state
+    PubSub.subscribe( // reload when the user changes the job's state
       'job-state-change',
       async function () {
-        loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false, broker);
+        loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false);
       }
     );
     // do an initial table load immediately
-    let jobIsRunning = await loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false, broker);
+    let jobIsRunning = await loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false);
     // reload the table every 5 seconds until the job is almost done
     const fiveSeconds = 5 * 1000;
     while (jobIsRunning) {
       await new Promise(res => setTimeout(res, fiveSeconds));
-      jobIsRunning = await loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, true, broker);
+      jobIsRunning = await loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, true);
     }
     // reload the table one last time
-    loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false, broker)
+    loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false)
   },
 }
