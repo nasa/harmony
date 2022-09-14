@@ -411,7 +411,7 @@ export class Job extends DBRecord implements JobRecord {
       .select()
       .where(constraints.where)
       .orderBy(
-        constraints?.orderBy?.field ?? 'createdAt', 
+        constraints?.orderBy?.field ?? 'createdAt',
         constraints?.orderBy?.value ?? 'desc')
       .modify((queryBuilder) => {
         if (constraints.whereIn) {
@@ -518,6 +518,23 @@ export class Job extends DBRecord implements JobRecord {
       }
       return job;
     }
+  }
+
+  /**
+  * Returns the number of input granules for the given jobID
+  *
+  * @param tx - the database transaction to use for querying
+  * @param jobID - the jobID for the job that should be retrieved
+  * @param getLinks - if true include the job links when returning the job
+  * @param lock - if true lock the row in the jobs table
+  * @returns the Job with the given JobID or null if not found
+  */
+  static async getNumInputGranules(tx: Transaction, jobID: string): Promise<number> {
+    const results = await tx('jobs')
+      .select('numInputGranules')
+      .where({ jobID });
+
+    return results[0].numInputGranules;
   }
 
   /**
