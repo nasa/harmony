@@ -388,7 +388,7 @@ export async function getWorkItemsTable(
 export async function getWorkItemTableRow(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  const { jobID, workItemId } = req.params;
+  const { jobID, id } = req.params;
   try {
     validateJobId(jobID);
     const query: JobQuery = { where: { requestId: jobID } };
@@ -400,7 +400,7 @@ export async function getWorkItemTableRow(
       if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
         throw new NotFoundError();
       }
-      const workItem = await getWorkItemById(db, parseInt(workItemId));
+      const workItem = await getWorkItemById(db, parseInt(id));
       const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
       res.render('workflow-ui/job/work-item-table-row', {
         ...workItem,

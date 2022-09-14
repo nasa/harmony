@@ -39,9 +39,9 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
   const res = await fetch(tableUrl);
   if (res.status === 200) {
     const template = await res.text();
-    const tmp = document.createElement('span');
+    const tmp = document.createElement('tbody');
     tmp.innerHTML = template;
-    document.getElementById(`tr[id="item-${workItemId}"]`).replaceWith(...tmp.childNodes);
+    document.getElementById(`item-${workItemId}`).replaceWith(...tmp.childNodes);
     bindRetryButtonClickHandler(jobId, `tr[id="item-${workItemId}"] button.retry-button`);
     formatDates(`tr[id="item-${workItemId}"] .date-td`);
   } else {
