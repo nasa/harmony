@@ -210,9 +210,6 @@ export async function getJob(
     const disallowStatus = requestQuery.disallowstatus === 'on';
     const tableFilter = parseFilters(requestQuery, req.context.isAdminAccess, WorkItemStatus);
     res.render('workflow-ui/job/index', {
-      // most of these values will be used to poll (getWorkItemsTable)
-      // for work items or set hidden form values for when
-      // the user makes a request to filter the work items table
       job,
       page,
       limit,
@@ -400,10 +397,24 @@ export async function getWorkItemTableRow(
       if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
         throw new NotFoundError();
       }
-      const workItem = await getWorkItemById(db, parseInt(id));
+      // even though we only want one row/item we should still respect the current user's table filters
+      const requestQuery = keysToLowerCase(req.query);
+      const tableFilter = parseFilters(requestQuery, req.context.isAdminAccess, WorkItemStatus);
+      const itemQuery: WorkItemQuery = { where: { id: parseInt(id) }, whereIn: {} };
+      if (tableFilter.statusValues.length) {
+        itemQuery.whereIn.status = {
+          values: tableFilter.statusValues,
+          in: !(requestQuery.disallowstatus === 'on'),
+        };
+      }
+      const { workItems } = await queryAll(db, itemQuery, 1, 1);
+      if (workItems.length === 0) {
+        res.send('<span></span>');
+        return;
+      }
       const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
       res.render('workflow-ui/job/work-item-table-row', {
-        ...workItem,
+        ...workItems[0],
         ...workItemRenderingFunctions(job, isAdmin, req.user),
       });
     } else {
@@ -471,9 +482,9 @@ export async function retry(
     await handleWorkItemUpdate(
       { workItemID: item.id, status: WorkItemStatus.FAILED,
         scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
-        errorMessage: 'A user has attempted to trigger a retry via the user interface.' },
+        errorMessage: 'A user attempted to trigger a retry via the Workflow UI.' },
       req.context.logger);
-    res.status(200).send({ message: 'The item was updated successfully and should be set to "ready" momentarily.' });
+    res.status(200).send({ message: 'The item was successfully requeued.' });
   } catch (e) {
     req.context.logger.error(e);
     next(e);

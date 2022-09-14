@@ -20,7 +20,7 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
   if (res.status === 200) {
     const template = await res.text();
     document.getElementById('workflow-items-table-container').innerHTML = template;
-    bindRetryButtonClickHandler(jobId, 'tr button.retry-button');
+    bindRetryButtonClickHandler('tr button.retry-button');
     formatDates('.date-td');
     return true;
   } else {
@@ -33,16 +33,19 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
  * a single HTML row of the work items table.
  * @param {string} workItemId - id of the item for the row that needs updating
  * @param {string} jobId - id of the job that the work items are linked to
+ * @param {string} disallowStatus - whether to load the table with disallow status "on" or "off"
+ * @param {string} tableFilter - a list of filter objects (as a string)
  */
- async function loadRow(workItemId, jobId) {
-  const tableUrl = `./${jobId}/work-items/${workItemId}`;
+ async function loadRow(workItemId, jobId, disallowStatus, tableFilter) {
+  let tableUrl = `./${jobId}/work-items/${workItemId}`;
+  tableUrl += `?tableFilter=${encodeURIComponent(tableFilter)}&disallowStatus=${disallowStatus}`;
   const res = await fetch(tableUrl);
   if (res.status === 200) {
     const template = await res.text();
     const tmp = document.createElement('tbody');
     tmp.innerHTML = template;
-    document.getElementById(`item-${workItemId}`).replaceWith(...tmp.childNodes);
-    bindRetryButtonClickHandler(jobId, `tr[id="item-${workItemId}"] button.retry-button`);
+    document.getElementById(`item-${workItemId}`).replaceWith(...tmp.childNodes); // add only the <tr>...</tr>
+    bindRetryButtonClickHandler(`tr[id="item-${workItemId}"] button.retry-button`);
     formatDates(`tr[id="item-${workItemId}"] .date-td`);
   } else {
     console.error(`Could not reload row for work item ${tableUrl}.`);
@@ -52,11 +55,10 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
 /**
  * Bind a click handler to every retry button.
  * The handler does a POST to the retry url.
- * @param {string} jobId - id of the job that the work items are linked to
  * @param {string} selector - the selector to use in querySelectorAll to
  * retrieve the list of buttons that the click handler will be bound to
  */
-function bindRetryButtonClickHandler(jobId, selector) {
+function bindRetryButtonClickHandler(selector) {
   var retryButtons = document.querySelectorAll(selector);
   Array.from(retryButtons).forEach(btn => {
     btn.addEventListener('click', async function (event) {
@@ -67,7 +69,7 @@ function bindRetryButtonClickHandler(jobId, selector) {
       const json = await res.json();
       if (json.message) {
         toasts.showUpper(json.message);
-        PubSub.publish('row-state-change', [workItemIdStr, jobId]);
+        PubSub.publish('row-state-change', [workItemIdStr]);
       } else {
         toasts.showUpper('The item could not be retried.');
       }
@@ -140,12 +142,11 @@ export default {
    */
   async init(jobId, page, limit, disallowStatus, tableFilter) {
     initFilter();
-    PubSub.subscribe('row-state-change', loadRow);
-    PubSub.subscribe( // reload when the user changes the job's state
-      'table-state-change',
-      async function () {
-        loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false);
-      }
+    PubSub.subscribe('row-state-change',
+      async (workItemId) => loadRow(workItemId, jobId, disallowStatus, tableFilter)
+    );
+    PubSub.subscribe( 'table-state-change',
+      async () => loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false)
     );
     // do an initial table load immediately
     let jobIsRunning = await loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false);
