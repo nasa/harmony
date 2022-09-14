@@ -34,7 +34,7 @@ async function handleClick(event) {
   const data = await res.json();
   if (res.status === 200) {
     toasts.showUpper(`The job is now ${data.status}`);
-    PubSub.publish('job-state-change');
+    PubSub.publish('table-state-change');
   } else if (data.description) {
     toasts.showUpper(data.description);
   } else {

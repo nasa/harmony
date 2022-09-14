@@ -3,7 +3,7 @@ import toasts from "../toasts.js";
 import PubSub from "../../pub-sub.js";
 
 /**
- * Query the Harmony backend for an up to date version of 
+ * Query Harmony for an up to date version of 
  * a single HTML page of the work items table.
  * @param {string} jobId - id of the job that the work items are linked to
  * @param {number} page - page number for the work items
@@ -20,7 +20,7 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
   if (res.status === 200) {
     const template = await res.text();
     document.getElementById('workflow-items-table-container').innerHTML = template;
-    bindRetryButtonClickHandler();
+    bindRetryButtonClickHandler(jobId);
     formatDates();
     return true;
   } else {
@@ -29,20 +29,44 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
 }
 
 /**
+ * Query Harmony for an up to date version of 
+ * a single HTML row of the work items table.
+ * @param {string} workItemId - id of the item for the row that needs updating
+ * @param {string} jobId - id of the job that the work items are linked to
+ */
+ async function loadRow(workItemId, jobId) {
+  const tableUrl = `./${jobId}/work-items/${workItemId}`;
+  const res = await fetch(tableUrl);
+  if (res.status === 200) {
+    const template = await res.text();
+    const tmp = document.createElement('span');
+    tmp.innerHTML = template;
+    document.getElementById(`item-${workItemId}`).replaceWith(...tmp.childNodes);
+    // TODO:
+    // bindRetryButtonClickHandler(jobId);
+    // formatDates();
+  } else {
+    console.error(`Could not reload row for work item ${tableUrl}.`);
+  }
+}
+
+/**
  * Bind a click handler to every retry button.
  * The handler does a POST to the retry url.
+ * @param {string} jobId - id of the job that the work items are linked to
  */
-function bindRetryButtonClickHandler() {
+function bindRetryButtonClickHandler(jobId) {
   var retryButtons = document.querySelectorAll('button.retry-button');
   Array.from(retryButtons).forEach(btn => {
     btn.addEventListener('click', async function (event) {
       toasts.showUpper('Triggering a retry...');
       const retryUrl = event.currentTarget.getAttribute('data-retry-url');
+      const workItemIdStr = event.currentTarget.getAttribute('data-work-item-id');
       const res = await fetch(retryUrl, { method: 'POST' });
       const json = await res.json();
       if (json.message) {
         toasts.showUpper(json.message);
-        PubSub.publish('job-state-change');
+        PubSub.publish('row-state-change', [workItemIdStr, jobId]);
       } else {
         toasts.showUpper('The item could not be retried.');
       }
@@ -115,8 +139,9 @@ export default {
    */
   async init(jobId, page, limit, disallowStatus, tableFilter) {
     initFilter();
+    PubSub.subscribe('row-state-change', loadRow);
     PubSub.subscribe( // reload when the user changes the job's state
-      'job-state-change',
+      'table-state-change',
       async function () {
         loadAndNotify(jobId, page, limit, disallowStatus, tableFilter, false);
       }
