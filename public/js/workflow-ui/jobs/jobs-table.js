@@ -55,7 +55,7 @@ export default {
    * @param isAdminRoute - whether the current page is /admin/...
    */
   async init(currentUser, isAdminRoute) {
-    formatDates();
+    formatDates('.date-td');
     initTooltips('[data-bs-toggle="tooltip"]');
     initFilter(currentUser, isAdminRoute);
   }

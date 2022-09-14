@@ -20,8 +20,8 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
   if (res.status === 200) {
     const template = await res.text();
     document.getElementById('workflow-items-table-container').innerHTML = template;
-    bindRetryButtonClickHandler(jobId);
-    formatDates();
+    bindRetryButtonClickHandler(jobId, 'tr button.retry-button');
+    formatDates('.date-td');
     return true;
   } else {
     return false;
@@ -41,10 +41,9 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
     const template = await res.text();
     const tmp = document.createElement('span');
     tmp.innerHTML = template;
-    document.getElementById(`item-${workItemId}`).replaceWith(...tmp.childNodes);
-    // TODO:
-    // bindRetryButtonClickHandler(jobId);
-    // formatDates();
+    document.getElementById(`tr[id="item-${workItemId}"]`).replaceWith(...tmp.childNodes);
+    bindRetryButtonClickHandler(jobId, `tr[id="item-${workItemId}"] button.retry-button`);
+    formatDates(`tr[id="item-${workItemId}"] .date-td`);
   } else {
     console.error(`Could not reload row for work item ${tableUrl}.`);
   }
@@ -54,9 +53,11 @@ async function load(jobId, page, limit, disallowStatus, tableFilter, checkJobSta
  * Bind a click handler to every retry button.
  * The handler does a POST to the retry url.
  * @param {string} jobId - id of the job that the work items are linked to
+ * @param {string} selector - the selector to use in querySelectorAll to
+ * retrieve the list of buttons that the click handler will be bound to
  */
-function bindRetryButtonClickHandler(jobId) {
-  var retryButtons = document.querySelectorAll('button.retry-button');
+function bindRetryButtonClickHandler(jobId, selector) {
+  var retryButtons = document.querySelectorAll(selector);
   Array.from(retryButtons).forEach(btn => {
     btn.addEventListener('click', async function (event) {
       toasts.showUpper('Triggering a retry...');
