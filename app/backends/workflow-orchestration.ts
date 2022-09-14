@@ -1,4 +1,4 @@
-import _, { ceil, range, sum } from 'lodash';
+import _, { ceil, range } from 'lodash';
 import { NextFunction, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
@@ -9,7 +9,7 @@ import { readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink, { getJobDataLinkCount } from '../models/job-link';
-import WorkItem, { getNextWorkItem, updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getJobIdForWorkItem } from '../models/work-item';
+import WorkItem, { updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getJobIdForWorkItem, getNextWorkItem } from '../models/work-item';
 import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 import { objectStoreForProtocol } from '../util/object-store';
 import { resolve } from '../util/url';
@@ -29,31 +29,18 @@ const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
  * @param logger - a Logger instance
  * @returns a number used to limit the query-cmr task or undefined
  */
-async function calculateQueryCmrLimit(
-  workItem: WorkItem,
-  tx,
-  logger: Logger): Promise<number> {
+async function calculateQueryCmrLimit(workItem: WorkItem, logger: Logger, extraItems = 0): Promise<number> {
+  let queryCmrLimit = -1;
   if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) { // only proceed if this is a query-cmr step
-    const { numInputGranules } = await Job.byJobID(tx, workItem.jobID, false, false);
-    let queryCmrItems = (await getWorkItemsByJobIdAndStepIndex(
-      tx, workItem.jobID, workItem.workflowStepIndex, 1, Number.MAX_SAFE_INTEGER))
-      .workItems;
-    queryCmrItems = queryCmrItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL);
-    const s3 = objectStoreForProtocol('s3');
-    const stacCatalogLengths = await Promise.all(queryCmrItems.map(async (item) => {
-      const jsonPath = item.getStacLocation('batch-catalogs.json');
-      try {
-        return (await s3.getObjectJson(jsonPath)).length;
-      } catch (e) {
-        logger.error(`Could not not calculate query cmr limit from ${jsonPath}`);
-        logger.error(e);
-        return 0;
-      }
-    }));
-    const queryCmrLimit = Math.min(env.cmrMaxPageSize, numInputGranules - sum(stacCatalogLengths));
-    logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
-    return queryCmrLimit;
+    await db.transaction(async (tx) => {
+      const numInputGranules = await Job.getNumInputGranules(tx, workItem.jobID);
+      const numSuccessfulQueryCmrItems = await workItemCountForStep(tx, workItem.jobID, 1, WorkItemStatus.SUCCESSFUL) + extraItems;
+      queryCmrLimit = Math.max(0, Math.min(env.cmrMaxPageSize, numInputGranules - (numSuccessfulQueryCmrItems * env.cmrMaxPageSize)));
+      logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
+      return queryCmrLimit;
+    });
   }
+  return queryCmrLimit;
 }
 
 /**
@@ -68,14 +55,21 @@ export async function getWork(
 ): Promise<void> {
   const { logger } = req.context;
   const { serviceID, podName } = req.query;
+
   let workItem: WorkItem, maxCmrGranules: number;
+
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
-    maxCmrGranules = await calculateQueryCmrLimit(workItem, tx, logger);
   });
+
   if (workItem) {
     logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
-    res.send({ workItem, maxCmrGranules });
+    if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
+      maxCmrGranules = await calculateQueryCmrLimit(workItem, logger);
+      res.send({ workItem, maxCmrGranules });
+    } else {
+      res.send({ workItem });
+    }
   } else if (tryCount < MAX_TRY_COUNT) {
     setTimeout(async () => {
       await getWork(req, res, next, tryCount + 1);
@@ -316,14 +310,10 @@ async function createNextWorkItems(
  * @param nextStep - the next step in the workflow
  */
 async function maybeQueueQueryCmrWorkItem(
-  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
+  tx: Transaction, currentWorkItem: WorkItem, logger: Logger,
 ): Promise<void> {
   if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
-    // If the current step is the query-cmr service and the number of work items for the next
-    // step is less than 'workItemCount' for the next step then create a new work item for
-    // the current step
-    const workItemCount = await workItemCountForStep(tx, currentWorkItem.jobID, nextStep.stepIndex);
-    if (workItemCount < nextStep.workItemCount) {
+    if (await calculateQueryCmrLimit(currentWorkItem, logger, 1) > 0) {
       const nextQueryCmrItem = new WorkItem({
         jobID: currentWorkItem.jobID,
         scrollID: currentWorkItem.scrollID,
@@ -493,7 +483,7 @@ async function updateWorkItemCounts(
 
 /**
  * Update job status/progress in response to a service provided work item update
- * 
+ *
  * @param update - information about the work item update
  */
 export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logger): Promise<void> {
@@ -563,7 +553,7 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
         if (results && results.length > 0) {
           // set the scrollID for the next work item to the one we received from the update
           workItem.scrollID = scrollID;
-          await maybeQueueQueryCmrWorkItem(tx, workItem, nextStep);
+          await maybeQueueQueryCmrWorkItem(tx, workItem, logger);
         } else {
           // Failed to create the next work items - fail the job rather than leaving it orphaned
           // in the running state
@@ -595,7 +585,7 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
 
 /**
  * Update a work item from a service response. This function stores the update without further
- * processing and then responds quickly. Processing the update is handled asynchronously 
+ * processing and then responds quickly. Processing the update is handled asynchronously
  * (see `handleWorkItemUpdate`)
  *
  * @param req - The request sent by the client
