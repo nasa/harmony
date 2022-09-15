@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { sanitizeImage } from '../util/string';
-import { validateJobId } from '../util/job';
+import { getJobIfAllowed } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { getWorkItemById, queryAll } from '../models/work-item';
 import { ForbiddenError, NotFoundError, RequestValidationError } from '../util/errors';
@@ -198,15 +198,8 @@ export async function getJob(
 ): Promise<void> {
   const { jobID } = req.params;
   try {
-    validateJobId(jobID);
     const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
-    const job = await Job.byJobID(db, jobID, false);
-    if (!job) {
-      throw new NotFoundError(`Unable to find job ${jobID}`);
-    }
-    if (!(await job.canShareResultsWith(req.user, isAdmin, req.accessToken))) {
-      throw new NotFoundError();
-    }
+    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     const { page, limit } = getPagingParams(req, 1000);
     const requestQuery = keysToLowerCase(req.query);
     const disallowStatus = requestQuery.disallowstatus === 'on';
@@ -241,21 +234,8 @@ export async function getJobLinks(
   const { jobID } = req.params;
   const { all } = req.query;
   try {
-    validateJobId(jobID);
     const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
-    const job = await Job.byJobID(db, jobID, false);
-    if (!job) {
-      throw new NotFoundError(`Unable to find job ${jobID}`);
-    }
-    if (!(await job.canShareResultsWith(req.user, isAdmin, req.accessToken))) {
-      throw new NotFoundError();
-    }
-    if (!isAdmin && (job.username != req.user)) {
-      // if the job is shareable but this non-admin user (req.user) does not own the job,
-      // they won't be able to change the job's state via the state change links
-      res.send([]);
-      return;
-    }
+    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, false);
     const urlRoot = getRequestRoot(req);
     const links = all === 'true' ?
       getAllStateChangeLinks(job, urlRoot, isAdmin) :
@@ -320,57 +300,45 @@ export async function getWorkItemsTable(
   const { jobID } = req.params;
   const { checkJobStatus } = req.query;
   try {
-    validateJobId(jobID);
     const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
-    const query: JobQuery = { where: { requestId: jobID } };
-    if (!isAdmin) {
-      query.where.username = req.user;
+    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
+    if (([JobStatus.SUCCESSFUL, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.COMPLETE_WITH_ERRORS]
+      .indexOf(job.status) > -1) && checkJobStatus === 'true') {
+      // tell the client that the job has finished
+      res.status(204).json({ status: job.status });
+      return;
     }
-    const { job } = await Job.byRequestId(db, jobID, 0, 0);
-    if (job) {
-      if (!(await job.canShareResultsWith(req.user, isAdmin, req.accessToken))) {
-        throw new NotFoundError();
-      }
-      if (([JobStatus.SUCCESSFUL, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.COMPLETE_WITH_ERRORS]
-        .indexOf(job.status) > -1) && checkJobStatus === 'true') {
-        // tell the client that the job has finished
-        res.status(204).json({ status: job.status });
-        return;
-      }
-      const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
-      const requestQuery = keysToLowerCase(req.query);
-      const tableFilter = parseFilters(requestQuery, WorkItemStatus);
-      const itemQuery: WorkItemQuery = { where: { jobID }, whereIn: {}, orderBy: { field: 'id', value: 'asc' } };
-      if (tableFilter.statusValues.length) {
-        itemQuery.whereIn.status = {
-          values: tableFilter.statusValues,
-          in: !(requestQuery.disallowstatus === 'on'),
-        };
-      }
-      const { workItems, pagination } = await queryAll(db, itemQuery, page, limit);
-      const pageLinks = getPagingLinks(req, pagination);
-      const nextPage = pageLinks.find((l) => l.rel === 'next');
-      const previousPage = pageLinks.find((l) => l.rel === 'prev');
-      setPagingHeaders(res, pagination);
-      res.render('workflow-ui/job/work-items-table', {
-        job,
-        statusClass: statusClass[job.status],
-        workItems,
-        ...workItemRenderingFunctions(job, isAdmin, req.user),
-        links: [
-          { ...previousPage, linkTitle: 'previous' },
-          { ...nextPage, linkTitle: 'next' },
-        ],
-        linkDisabled() { return (this.href ? '' : 'disabled'); },
-        linkHref() {
-          return (this.href ? this.href
-            .replace('/work-items', '')
-            .replace(/(&|\?)checkJobStatus=(true|false)/, '') : '');
-        },
-      });
-    } else {
-      throw new NotFoundError(`Unable to find job ${jobID}`);
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
+    const requestQuery = keysToLowerCase(req.query);
+    const tableFilter = parseFilters(requestQuery, WorkItemStatus);
+    const itemQuery: WorkItemQuery = { where: { jobID }, whereIn: {}, orderBy: { field: 'id', value: 'asc' } };
+    if (tableFilter.statusValues.length) {
+      itemQuery.whereIn.status = {
+        values: tableFilter.statusValues,
+        in: !(requestQuery.disallowstatus === 'on'),
+      };
     }
+    const { workItems, pagination } = await queryAll(db, itemQuery, page, limit);
+    const pageLinks = getPagingLinks(req, pagination);
+    const nextPage = pageLinks.find((l) => l.rel === 'next');
+    const previousPage = pageLinks.find((l) => l.rel === 'prev');
+    setPagingHeaders(res, pagination);
+    res.render('workflow-ui/job/work-items-table', {
+      job,
+      statusClass: statusClass[job.status],
+      workItems,
+      ...workItemRenderingFunctions(job, isAdmin, req.user),
+      links: [
+        { ...previousPage, linkTitle: 'previous' },
+        { ...nextPage, linkTitle: 'next' },
+      ],
+      linkDisabled() { return (this.href ? '' : 'disabled'); },
+      linkHref() {
+        return (this.href ? this.href
+          .replace('/work-items', '')
+          .replace(/(&|\?)checkJobStatus=(true|false)/, '') : '');
+      },
+    });
   } catch (e) {
     req.context.logger.error(e);
     next(e);
@@ -390,39 +358,27 @@ export async function getWorkItemTableRow(
 ): Promise<void> {
   const { jobID, id } = req.params;
   try {
-    validateJobId(jobID);
     const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
-    const query: JobQuery = { where: { requestId: jobID } };
-    if (!isAdmin) {
-      query.where.username = req.user;
+    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
+    // even though we only want one row/item we should still respect the current user's table filters
+    const requestQuery = keysToLowerCase(req.query);
+    const tableFilter = parseFilters(requestQuery, WorkItemStatus);
+    const itemQuery: WorkItemQuery = { where: { id: parseInt(id) }, whereIn: {} };
+    if (tableFilter.statusValues.length) {
+      itemQuery.whereIn.status = {
+        values: tableFilter.statusValues,
+        in: !(requestQuery.disallowstatus === 'on'),
+      };
     }
-    const { job } = await Job.byRequestId(db, jobID, 0, 0);
-    if (job) {
-      if (!(await job.canShareResultsWith(req.user, isAdmin, req.accessToken))) {
-        throw new NotFoundError();
-      }
-      // even though we only want one row/item we should still respect the current user's table filters
-      const requestQuery = keysToLowerCase(req.query);
-      const tableFilter = parseFilters(requestQuery, WorkItemStatus);
-      const itemQuery: WorkItemQuery = { where: { id: parseInt(id) }, whereIn: {} };
-      if (tableFilter.statusValues.length) {
-        itemQuery.whereIn.status = {
-          values: tableFilter.statusValues,
-          in: !(requestQuery.disallowstatus === 'on'),
-        };
-      }
-      const { workItems } = await queryAll(db, itemQuery, 1, 1);
-      if (workItems.length === 0) {
-        res.send('<span></span>');
-        return;
-      }
-      res.render('workflow-ui/job/work-item-table-row', {
-        ...workItems[0],
-        ...workItemRenderingFunctions(job, isAdmin, req.user),
-      });
-    } else {
-      throw new NotFoundError(`Unable to find job ${jobID}`);
+    const { workItems } = await queryAll(db, itemQuery, 1, 1);
+    if (workItems.length === 0) {
+      res.send('<span></span>');
+      return;
     }
+    res.render('workflow-ui/job/work-item-table-row', {
+      ...workItems[0],
+      ...workItemRenderingFunctions(job, isAdmin, req.user),
+    });
   } catch (e) {
     req.context.logger.error(e);
     next(e);
@@ -468,23 +424,14 @@ export async function retry(
 ): Promise<void> {
   const { jobID, id } = req.params;
   try {
-    validateJobId(jobID);
     const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
-    const job = await Job.byJobID(db, jobID, false);
+    await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, false); // validate access to the work item's job
     const item = await getWorkItemById(db, parseInt(id));
-    if (!job) {
-      throw new NotFoundError(`Unable to find job ${jobID}`);
-    }
     if (!item) {
       throw new NotFoundError(`Unable to find item ${id}`);
     }
     if (item.retryCount >= env.workItemRetryLimit) {
       res.status(200).send({ message: 'The item does not have any retries left.' });
-    }
-    if (!isAdmin && (job.username != req.user)) {
-      // if a non-admin user (req.user) does not own the job,
-      // they shouldn't be able to trigger a retry
-      throw new ForbiddenError();
     }
     await handleWorkItemUpdate(
       { workItemID: item.id, status: WorkItemStatus.FAILED,

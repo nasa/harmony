@@ -91,7 +91,7 @@ describe('Workflow UI job route', function () {
         hookWorkflowUIJob({ jobID: unknownRequest, username: 'woody' });
         it('returns a 404 HTTP Not Found response', function () {
           expect(this.res.statusCode).to.equal(404);
-          expect(this.res.text).to.include(`Unable to find job ${unknownRequest}`);
+          expect(this.res.text).to.include('The requested resource could not be found');
         });
       });
       describe('requests a job with an invalid ID format', function () {

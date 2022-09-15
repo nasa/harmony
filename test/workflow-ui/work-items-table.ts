@@ -129,8 +129,8 @@ describe('Workflow UI work items table route', function () {
           expect(this.res.statusCode).to.equal(404);
         });
 
-        it('returns a JSON error response', function () {
-          expect(this.res.text).to.include(`Unable to find job ${unknownRequest}`);
+        it('contains a "not found" error message', function () {
+          expect(this.res.text).to.include('The requested resource could not be found');
         });
       });
 
@@ -197,8 +197,8 @@ describe('Workflow UI work items table route', function () {
 
       describe('who requests the work items table for someone else\'s non-shareable job (a non-admin)', function () {
         hookWorkflowUIWorkItems({ username: 'not-bo', jobID: targetJob.jobID });
-        it('returns a 404 HTTP response', async function () {
-          expect(this.res.statusCode).to.equal(404);
+        it('returns a 403 HTTP response', async function () {
+          expect(this.res.statusCode).to.equal(403);
         });
       });
 
