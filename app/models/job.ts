@@ -525,9 +525,7 @@ export class Job extends DBRecord implements JobRecord {
   *
   * @param tx - the database transaction to use for querying
   * @param jobID - the jobID for the job that should be retrieved
-  * @param getLinks - if true include the job links when returning the job
-  * @param lock - if true lock the row in the jobs table
-  * @returns the Job with the given JobID or null if not found
+  * @returns the number of input granules for the job
   */
   static async getNumInputGranules(tx: Transaction, jobID: string): Promise<number> {
     const results = await tx('jobs')
