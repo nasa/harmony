@@ -71,7 +71,7 @@ describe('Workflow UI work items table route', function () {
     });
   });
 
-  describe('for a logged-in user', function () {
+  describe('for logged-in users', function () {
     hookTransaction();
     before(async function () {
       await targetJob.save(this.trx);
@@ -160,6 +160,13 @@ describe('Workflow UI work items table route', function () {
         it('returns links for the other user\'s work item logs', async function () {
           const listing = this.res.text;
           expect((listing.match(/logs-button/g) || []).length).to.equal(2);
+        });
+      });
+
+      describe('who requests the work items table for someone else\'s non-shareable job (a non-admin)', function () {
+        hookWorkflowUIWorkItems({ username: 'not-bo', jobID: targetJob.jobID });
+        it('returns a 404', async function () {
+          expect(this.res.statusCode).to.equal(404);
         });
       });
 
