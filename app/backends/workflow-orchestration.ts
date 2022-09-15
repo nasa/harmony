@@ -24,21 +24,18 @@ const QUERY_CMR_SERVICE_REGEX = /harmonyservices\/query-cmr:.*/;
 
 /**
  * Calculate the granule page limit for the current query-cmr work item.
- * @param workItem - current query-cmr work item
  * @param tx - database transaction to query with
+ * @param workItem - current query-cmr work item
  * @param logger - a Logger instance
  * @returns a number used to limit the query-cmr task or undefined
  */
-async function calculateQueryCmrLimit(workItem: WorkItem, logger: Logger, extraItems = 0): Promise<number> {
+async function calculateQueryCmrLimit(tx: Transaction, workItem: WorkItem, logger: Logger): Promise<number> {
   let queryCmrLimit = -1;
   if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) { // only proceed if this is a query-cmr step
-    await db.transaction(async (tx) => {
-      const numInputGranules = await Job.getNumInputGranules(tx, workItem.jobID);
-      const numSuccessfulQueryCmrItems = await workItemCountForStep(tx, workItem.jobID, 1, WorkItemStatus.SUCCESSFUL) + extraItems;
-      queryCmrLimit = Math.max(0, Math.min(env.cmrMaxPageSize, numInputGranules - (numSuccessfulQueryCmrItems * env.cmrMaxPageSize)));
-      logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
-      return queryCmrLimit;
-    });
+    const numInputGranules = await Job.getNumInputGranules(tx, workItem.jobID);
+    const numSuccessfulQueryCmrItems = await workItemCountForStep(tx, workItem.jobID, 1, WorkItemStatus.SUCCESSFUL);
+    queryCmrLimit = Math.max(0, Math.min(env.cmrMaxPageSize, numInputGranules - (numSuccessfulQueryCmrItems * env.cmrMaxPageSize)));
+    logger.debug(`Limit next query-cmr task to no more than ${queryCmrLimit} granules.`);
   }
   return queryCmrLimit;
 }
@@ -60,23 +57,22 @@ export async function getWork(
 
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
-  });
-
-  if (workItem) {
-    logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
-    if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
-      maxCmrGranules = await calculateQueryCmrLimit(workItem, logger);
-      res.send({ workItem, maxCmrGranules });
+    if (workItem) {
+      logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
+      if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
+        maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
+        res.send({ workItem, maxCmrGranules });
+      } else {
+        res.send({ workItem });
+      }
+    } else if (tryCount < MAX_TRY_COUNT) {
+      setTimeout(async () => {
+        await getWork(req, res, next, tryCount + 1);
+      }, RETRY_DELAY);
     } else {
-      res.send({ workItem });
+      res.status(404).send();
     }
-  } else if (tryCount < MAX_TRY_COUNT) {
-    setTimeout(async () => {
-      await getWork(req, res, next, tryCount + 1);
-    }, RETRY_DELAY);
-  } else {
-    res.status(404).send();
-  }
+  });
 }
 
 /**
@@ -313,7 +309,7 @@ async function maybeQueueQueryCmrWorkItem(
   tx: Transaction, currentWorkItem: WorkItem, logger: Logger,
 ): Promise<void> {
   if (QUERY_CMR_SERVICE_REGEX.test(currentWorkItem.serviceID)) {
-    if (await calculateQueryCmrLimit(currentWorkItem, logger, 1) > 0) {
+    if (await calculateQueryCmrLimit(tx, currentWorkItem, logger) > 0) {
       const nextQueryCmrItem = new WorkItem({
         jobID: currentWorkItem.jobID,
         scrollID: currentWorkItem.scrollID,
