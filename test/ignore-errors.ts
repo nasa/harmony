@@ -532,6 +532,15 @@ describe('when setting ignoreErrors=true', function () {
   });
 
   describe('When a request spans multiple CMR pages', function () {
+    let pageStub;
+    before(function () {
+      pageStub = stub(env, 'cmrMaxPageSize').get(() => 3);
+    });
+    after(function () {
+      if (pageStub.restore) {
+        pageStub.restore();
+      }
+    });
     hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 5 } } });
     hookRedirect('joe');
 
@@ -540,6 +549,7 @@ describe('when setting ignoreErrors=true', function () {
       let workItemJobID;
 
       before(async function () {
+        stub(env, 'cmrMaxPageSize').get(() => 3);
         const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
         const { workItem } = JSON.parse(res.text);
         workItemJobID = workItem.jobID;
