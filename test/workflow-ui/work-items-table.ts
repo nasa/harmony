@@ -54,7 +54,7 @@ describe('Workflow UI work items table route', function () {
     await truncateAll();
   });
 
-  describe('For a user who is not logged in', function () {
+  describe('for a user who is not logged in', function () {
     before(async function () {
       this.res = await workflowUIWorkItems(
         this.frontend, { jobID: targetJob.jobID },
@@ -71,7 +71,7 @@ describe('Workflow UI work items table route', function () {
     });
   });
 
-  describe('For a logged-in (non-admin) user', function () {
+  describe('for a logged-in user', function () {
     hookTransaction();
     before(async function () {
       await targetJob.save(this.trx);
@@ -97,87 +97,97 @@ describe('Workflow UI work items table route', function () {
       this.trx.commit();
     });
 
-    describe('for a non-existent job ID', function () {
-      const unknownRequest = uuid();
-      hookWorkflowUIWorkItems({ jobID: unknownRequest, username: 'bo' });
-      it('returns a 404 HTTP Not found response', function () {
-        expect(this.res.statusCode).to.equal(404);
-      });
+    describe('when accessing the non-admin endpoint', function () {
+      describe('for a non-existent job ID', function () {
+        const unknownRequest = uuid();
+        hookWorkflowUIWorkItems({ jobID: unknownRequest, username: 'bo' });
+        it('returns a 404 HTTP Not found response', function () {
+          expect(this.res.statusCode).to.equal(404);
+        });
 
-      it('returns a JSON error response', function () {
-        expect(this.res.text).to.include(`Unable to find job ${unknownRequest}`);
-      });
-    });
-
-    describe('for an invalid job ID format', function () {
-      hookWorkflowUIWorkItems({ jobID: 'not-a-uuid', username: 'bo' });
-      it('returns a 404 HTTP Not found response', function () {
-        expect(this.res.statusCode).to.equal(400);
-      });
-
-      it('returns a JSON error response', function () {
-        const response = JSON.parse(this.res.text);
-        expect(response).to.eql({
-          code: 'harmony.RequestValidationError',
-          description: 'Error: Invalid format for Job ID \'not-a-uuid\'. Job ID must be a UUID.',
+        it('returns a JSON error response', function () {
+          expect(this.res.text).to.include(`Unable to find job ${unknownRequest}`);
         });
       });
-    });
 
-    describe('who requests the work items table for a job', function () {
-      hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID });
-      it('returns an HTTP success response', function () {
-        expect(this.res.statusCode).to.equal(200);
-      });
-      it('returns an HTML table of all the work items associated with the job', function () {
-        const listing = this.res.text;
-        [item1.workflowStepIndex, item2.workflowStepIndex, item3.workflowStepIndex]
-          .forEach((stepIndex) => expect(listing).to.contain(mustache.render('<th scope="row">{{stepIndex}}</th>', { stepIndex })));
-        [1, 2, 3]
-          .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
-        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
-      });
-      it('return useful but nonsensitive information about docker images', function () {
-        const listing = this.res.text;
-        [step1.serviceID, step2.serviceID]
-          .forEach((workflowItemStep) => expect(listing).to.not.contain(
-            mustache.render('<td>{{workflowItemStep}}</td>', { workflowItemStep }),
-          ));
-        [step1ServiceIdScrubbed, step2ServiceIdScrubbed]
-          .forEach((workflowItemStep) => expect(listing).to.contain(
-            mustache.render('<td>{{workflowItemStep}}</td>', { workflowItemStep }),
-          ));
-      });
-      it('does not return links for the work item logs', async function () {
-        const listing = this.res.text;
-        expect((listing.match(/logs-button/g) || []).length).to.equal(0);
-      });
-    });
+      describe('for an invalid job ID format', function () {
+        hookWorkflowUIWorkItems({ jobID: 'not-a-uuid', username: 'bo' });
+        it('returns a 404 HTTP Not found response', function () {
+          expect(this.res.statusCode).to.equal(400);
+        });
 
-    describe('who requests page 1 of the work items table, with a limit of 1', function () {
-      hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1 } });
-      it('returns a link to the next page', function () {
-        const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=2` }));
+        it('returns a JSON error response', function () {
+          const response = JSON.parse(this.res.text);
+          expect(response).to.eql({
+            code: 'harmony.RequestValidationError',
+            description: 'Error: Invalid format for Job ID \'not-a-uuid\'. Job ID must be a UUID.',
+          });
+        });
       });
-      it('returns only one work item', function () {
-        const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id: 1 }));
-        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
-      });
-    });
 
-    describe('who requests page 2 of the work items table, with a limit of 1', function () {
-      hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, page: 2 } });
-      it('returns a link to the next and previous page', function () {
-        const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=1` }));
-        expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=3` }));
+      describe('who requests the work items table for their job', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID });
+        it('returns an HTTP success response', function () {
+          expect(this.res.statusCode).to.equal(200);
+        });
+        it('returns an HTML table of all the work items associated with the job', function () {
+          const listing = this.res.text;
+          [item1.workflowStepIndex, item2.workflowStepIndex, item3.workflowStepIndex]
+            .forEach((stepIndex) => expect(listing).to.contain(mustache.render('<th scope="row">{{stepIndex}}</th>', { stepIndex })));
+          [1, 2, 3]
+            .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+        });
+        it('return useful but nonsensitive information about docker images', function () {
+          const listing = this.res.text;
+          [step1.serviceID, step2.serviceID]
+            .forEach((workflowItemStep) => expect(listing).to.not.contain(
+              mustache.render('<td>{{workflowItemStep}}</td>', { workflowItemStep }),
+            ));
+          [step1ServiceIdScrubbed, step2ServiceIdScrubbed]
+            .forEach((workflowItemStep) => expect(listing).to.contain(
+              mustache.render('<td>{{workflowItemStep}}</td>', { workflowItemStep }),
+            ));
+        });
+        it('does not return links for the work item logs', async function () {
+          const listing = this.res.text;
+          expect((listing.match(/logs-button/g) || []).length).to.equal(0);
+        });
       });
-      it('returns only one work item', function () {
-        const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id: 2 }));
-        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+
+      describe('who requests the work items table for someone else\'s job (but is an admin)', function () {
+        hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID });
+        it('returns links for the other user\'s work item logs', async function () {
+          const listing = this.res.text;
+          expect((listing.match(/logs-button/g) || []).length).to.equal(2);
+        });
+      });
+
+      describe('who requests page 1 of the work items table, with a limit of 1', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1 } });
+        it('returns a link to the next page', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=2` }));
+        });
+        it('returns only one work item', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id: 1 }));
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+        });
+      });
+
+      describe('who requests page 2 of the work items table, with a limit of 1', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, page: 2 } });
+        it('returns a link to the next and previous page', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=1` }));
+          expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=3` }));
+        });
+        it('returns only one work item', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id: 2 }));
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+        });
       });
     });
 
