@@ -183,7 +183,7 @@ describe('Workflow UI work items table route', function () {
         });
       });
 
-      describe('who requests the work items table for someone else\'s job (but is an admin)', function () {
+      describe('who requests the work items table for someone else\'s non-shareable job (but is an admin)', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID });
         it('returns links for the other user\'s work item logs', async function () {
           const listing = this.res.text;
@@ -210,6 +210,17 @@ describe('Workflow UI work items table route', function () {
         it('does not return retry buttons for the other user\'s RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(0);
+        });
+      });
+
+      describe('who requests the work items table for someone else\'s shareable job (an admin)', function () {
+        hookWorkflowUIWorkItems({ username: 'adam', jobID: shareableJob.jobID });
+        it('returns a 200 HTTP response', async function () {
+          expect(this.res.statusCode).to.equal(200);
+        });
+        it('returns retry buttons for the other user\'s RUNNING work items', async function () {
+          const listing = this.res.text;
+          expect((listing.match(/retry-button/g) || []).length).to.equal(1);
         });
       });
 
