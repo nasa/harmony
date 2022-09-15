@@ -153,7 +153,7 @@ describe('Workflow UI work items table route', function () {
           const listing = this.res.text;
           expect((listing.match(/logs-button/g) || []).length).to.equal(0);
         });
-        it('returns retry buttons for their work items', async function () {
+        it('returns retry buttons for their RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
         });
@@ -165,7 +165,7 @@ describe('Workflow UI work items table route', function () {
           const listing = this.res.text;
           expect((listing.match(/logs-button/g) || []).length).to.equal(2);
         });
-        it('returns retry buttons for the other user\'s work items', async function () {
+        it('returns retry buttons for the other user\'s RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
         });
@@ -224,6 +224,10 @@ describe('Workflow UI work items table route', function () {
         it('returns links for the (completed) work item logs', async function () {
           const listing = this.res.text;
           expect((listing.match(/logs-button/g) || []).length).to.equal(2);
+        });
+        it('returns retry buttons for the RUNNING work items', async function () {
+          const listing = this.res.text;
+          expect((listing.match(/retry-button/g) || []).length).to.equal(1);
         });
       });
 
