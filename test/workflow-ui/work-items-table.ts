@@ -43,6 +43,20 @@ const item3 = buildWorkItem(
   { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.RUNNING },
 );
 
+// use to test functionality related to job sharing
+const collectionWithEULAFalseAndGuestReadTrue = 'C1233800302-EEDTEST';
+const shareableJob = buildJob({
+  username: 'buzz',
+  status: JobStatus.RUNNING_WITH_ERRORS,
+  message: 'it is running',
+  progress: 100,
+  links: [{ href: 'http://example.com/woody1', rel: 'link', type: 'text/plain' }],
+  request: 'http://example.com/harmony?request=buzz1&turbo=true',
+  isAsync: true,
+  numInputGranules: 2,
+  collectionIds: [collectionWithEULAFalseAndGuestReadTrue],
+});
+
 describe('Workflow UI work items table route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
 
@@ -93,6 +107,16 @@ describe('Workflow UI work items table route', function () {
       await otherStep1.save(this.trx);
       const otherStep2 = buildWorkflowStep({ jobID: otherJob.jobID, stepIndex: 2 });
       await otherStep2.save(this.trx);
+
+      await shareableJob.save(this.trx);
+      const shareableItem1 = buildWorkItem({ jobID: shareableJob.jobID, status: WorkItemStatus.RUNNING });
+      await shareableItem1.save(this.trx);
+      const shareableItem2 = buildWorkItem({ jobID: shareableJob.jobID });
+      await shareableItem2.save(this.trx);
+      const shareableStep1 = buildWorkflowStep({ jobID: shareableJob.jobID, stepIndex: 1 });
+      await shareableStep1.save(this.trx);
+      const shareableStep2 = buildWorkflowStep({ jobID: shareableJob.jobID, stepIndex: 2 });
+      await shareableStep2.save(this.trx);
 
       this.trx.commit();
     });
@@ -173,8 +197,19 @@ describe('Workflow UI work items table route', function () {
 
       describe('who requests the work items table for someone else\'s non-shareable job (a non-admin)', function () {
         hookWorkflowUIWorkItems({ username: 'not-bo', jobID: targetJob.jobID });
-        it('returns a 404', async function () {
+        it('returns a 404 HTTP response', async function () {
           expect(this.res.statusCode).to.equal(404);
+        });
+      });
+
+      describe('who requests the work items table for someone else\'s shareable job (a non-admin)', function () {
+        hookWorkflowUIWorkItems({ username: 'not-bo', jobID: shareableJob.jobID });
+        it('returns a 200 HTTP response', async function () {
+          expect(this.res.statusCode).to.equal(200);
+        });
+        it('does not return retry buttons for the other user\'s RUNNING work items', async function () {
+          const listing = this.res.text;
+          expect((listing.match(/retry-button/g) || []).length).to.equal(0);
         });
       });
 
