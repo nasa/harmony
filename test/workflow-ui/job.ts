@@ -101,6 +101,22 @@ describe('Workflow UI job route', function () {
           expect(this.res.text).to.include('Invalid format for Job ID');
         });
       });
+      describe('filters by status IN [failed, successful]', function () {
+        const tableFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
+        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'woody', query: { disallowStatus: '', tableFilter } });
+        it('does not have disallowStatus HTML checked', function () {
+          const listing = this.res.text;
+          expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+        });
+        it('has the appropriate status options selected', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('status: failed');
+          expect(listing).to.contain('status: successful');
+          expect(listing).to.not.contain('status: running');
+          expect(listing).to.not.contain('status: ready');
+          expect(listing).to.not.contain('status: canceled');
+        });
+      });
     });
     describe('when an admin user', function () {
       describe('requests a non-shareable job they do not own', function () {
@@ -122,6 +138,22 @@ describe('Workflow UI job route', function () {
         it('returns a breadcrumb that includes the admin path', async function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('<a href="/admin/workflow-ui">Jobs</a>', {}));
+        });
+      });
+      describe('filters by status NOT IN [running]', function () {
+        const tableFilter = '[{"value":"status: running","dbValue":"running","field":"running"}]';
+        hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'adam', query: { disallowStatus: 'on', tableFilter } });
+        it('does have disallowStatus HTML checked', function () {
+          const listing = this.res.text;
+          expect((listing.match(/<input (?=.*name="disallowStatus")(?=.*checked).*>/g) || []).length).to.equal(1);
+        });
+        it('has the appropriate status options selected', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain('status: running');
+          expect(listing).to.not.contain('status: failed');
+          expect(listing).to.not.contain('status: successful');
+          expect(listing).to.not.contain('status: ready');
+          expect(listing).to.not.contain('status: canceled');
         });
       });
     });
