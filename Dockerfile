@@ -1,6 +1,6 @@
 ARG BASE_IMAGE=node:16-buster
 FROM $BASE_IMAGE
-RUN apt update && apt-get install sqlite3
+RUN apt update && apt-get -y install sqlite3
 RUN mkdir -p /harmony
 COPY package.json package-lock.json lerna.json /harmony/
 RUN chown node -R /harmony
