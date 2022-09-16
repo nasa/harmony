@@ -71,10 +71,10 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
 
 /**
  * Remove files and subdirectories from a directory, optionally skipping certain files
- * 
+ *
  * @param directory - the path to the directory to be emptied
  * @param matchingFilter - RegExp matching files/directories that should be deleted
- * 
+ *
  */
 async function emptyDirectory(directory: string, matchingFilter?: RegExp): Promise<void> {
   const regex = matchingFilter || /^.*$/;
@@ -135,25 +135,32 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     await emptyDirectory(WORK_DIR, regex);
     // write out the WORKING file to prevent pod termination while working
     await fs.writeFile(workingFilePath, '1');
+  } catch (e) {
+    // We'll continue on even if we have issues cleaning up - it just means the pod may end
+    // up being evicted at some point due to running out of ephemeral storage space
+    logger.error(`Error cleaning up working directory ${WORK_DIR} and creating WORKING file`);
+    logger.error(e);
+  }
 
-    // check to see if we are terminating
-    const terminationFilePath = path.join(LOCKFILE_DIR, 'TERMINATING');
-    try {
-      await fs.access(terminationFilePath);
-      // TERMINATING file exists so PreStop handler is requesting termination
-      logger.debug('RECEIVED TERMINATION REQUEST');
-      // removing the WORKING file is done in the `finally` block at the end of this function
-      return;
-    } catch {
-      // expected if file does not exist
-    }
+  // check to see if we are terminating
+  const terminationFilePath = path.join(LOCKFILE_DIR, 'TERMINATING');
+  try {
+    await fs.access(terminationFilePath);
+    // TERMINATING file exists so PreStop handler is requesting termination
+    logger.debug('RECEIVED TERMINATION REQUEST');
+    // removing the WORKING file is done in the `finally` block at the end of this function
+    return;
+  } catch {
+    // expected if file does not exist
+  }
 
-    pullCounter += 1;
-    logger.debug('Polling for work');
-    if (pullCounter === pullLogPeriod) {
-      pullCounter = 0;
-    }
+  pullCounter += 1;
+  logger.debug('Polling for work');
+  if (pullCounter === pullLogPeriod) {
+    pullCounter = 0;
+  }
 
+  try {
     const work = await _pullWork();
     if (!work.error && work.item) {
       logger.debug(`Performing work for work item with id ${work.item.id} for job id ${work.item.jobID}`);
@@ -182,7 +189,7 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       await sleep(3000);
     }
   } catch (e) {
-    logger.error(e.message);
+    logger.error(e);
   } finally {
     // remove the WORKING file
     try {
