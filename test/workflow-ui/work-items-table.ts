@@ -250,6 +250,19 @@ describe('Workflow UI work items table route', function () {
           expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
         });
       });
+
+      describe('who filters by status IN [RUNNING]', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { tableFilter: '[{"value":"status: running","dbValue":"running","field":"status"}]' } });
+        it('returns only running work items', function () {
+          const listing = this.res.text;
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+          expect(listing).to.not.contain(`<span class="badge bg-danger">${WorkItemStatus.FAILED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-primary">${WorkItemStatus.READY.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge bg-info">${WorkItemStatus.RUNNING.valueOf()}</span>`);
+        });
+      });
     });
 
     describe('when accessing the admin endpoint', function () {
@@ -274,6 +287,20 @@ describe('Workflow UI work items table route', function () {
         it('returns retry buttons for the RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+        });
+      });
+
+      describe('when the admin filters by status NOT IN [RUNNING]', function () {
+        hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID, 
+          query: { disallowStatus: 'on', tableFilter: '[{"value":"status: running","dbValue":"running","field":"status"}]' } });
+        it('returns only non-running work items', function () {
+          const listing = this.res.text;
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(2);
+          expect(listing).to.not.contain(`<span class="badge bg-danger">${WorkItemStatus.FAILED.valueOf()}</span>`);
+          expect(listing).to.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-primary">${WorkItemStatus.READY.valueOf()}</span>`);
+          expect(listing).to.not.contain(`<span class="badge bg-info">${WorkItemStatus.RUNNING.valueOf()}</span>`);
         });
       });
 
