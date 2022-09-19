@@ -224,30 +224,41 @@ describe('Workflow UI work items table route', function () {
         });
       });
 
-      describe('who requests page 1 of the work items table, with a limit of 1', function () {
-        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1 } });
+      const successfulFilter = '[{"value":"status: successful","dbValue":"successful","field":"status"}]';
+      
+      describe('who requests page 1 of the work items table, with a limit of 1 and status IN [SUCCESSFUL]', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, tableFilter: successfulFilter } });
         it('returns a link to the next page', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=2` }));
+          ['limit=1', 'page=2', `tableFilter=${encodeURIComponent(successfulFilter)}`].forEach((param) => expect(listing).to.contain(
+            mustache.render('{{param}}', { param })));
         });
         it('returns only one work item', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id: 1 }));
           expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
         });
+        it('returns a SUCCESSFUL work item', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
+        });
       });
 
-      describe('who requests page 2 of the work items table, with a limit of 1', function () {
-        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, page: 2 } });
-        it('returns a link to the next and previous page', function () {
+      describe('who requests page 2 of the work items table, with a limit of 1 and status IN [SUCCESSFUL]', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, page: 2, tableFilter: successfulFilter } });
+        it('returns a link to the previous page', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=1` }));
-          expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: `/workflow-ui/${targetJob.jobID}?limit=1&page=3` }));
+          ['limit=1', 'page=1', `tableFilter=${encodeURIComponent(successfulFilter)}`].forEach((param) => expect(listing).to.contain(
+            mustache.render('{{param}}', { param })));
         });
         it('returns only one work item', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id: 2 }));
           expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+        });
+        it('returns a SUCCESSFUL work item', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
         });
       });
 
