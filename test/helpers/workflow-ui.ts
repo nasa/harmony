@@ -92,6 +92,23 @@ export function adminWorkflowUIWorkItems(
 }
 
 /**
+ * Makes a request to view the workflow UI work items row endpoint
+ *
+ * @param app - The express application (typically this.frontend)
+ * @param options - Mapping object. Includes (optional) query param object (which maps query
+ * param names to values), jobID (to be used as the URL param), and (optional) username.
+ * e.g. \{jobID: job.jobID, id: workItemId, username: 'billy', query: \{...\}\}
+ */
+export function workflowUIWorkItemsRow(
+  app: Express.Application,
+  options: { jobID: string; id: number, username?: string; query?: object },
+): Test {
+  const { jobID, id, query } = options;
+  const actualQuery = query || {};
+  return request(app).get(`/workflow-ui/${jobID}/work-items/${id}`).query(actualQuery);
+}
+
+/**
  * Makes a request to the workflow UI job links endpoint
  *
  * @param app - The express application (typically this.frontend)
@@ -131,5 +148,6 @@ export const hookWorkflowUIJob = hookRequest.bind(this, workflowUIJob);
 export const hookAdminWorkflowUIJob = hookRequest.bind(this, adminWorkflowUIJob);
 export const hookWorkflowUIWorkItems = hookRequest.bind(this, workflowUIWorkItems);
 export const hookAdminWorkflowUIWorkItems = hookRequest.bind(this, adminWorkflowUIWorkItems);
+export const hookWorkflowUIWorkItemsRow = hookRequest.bind(this, workflowUIWorkItemsRow);
 export const hookWorkflowUILinks = hookRequest.bind(this, workflowUILinks);
 export const hookAdminWorkflowUILinks = hookRequest.bind(this, adminWorkflowUILinks);
