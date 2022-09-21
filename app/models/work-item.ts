@@ -7,7 +7,7 @@ import DataOperation from './data-operation';
 import { activeJobStatuses, Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
-import { WorkItemRecord, WorkItemStatus, getStacLocation } from './work-item-interface';
+import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
 // if this changes we will have to revisit this
@@ -285,6 +285,49 @@ export async function getWorkItemById(
 }
 
 /**
+ * Returns an array of all work items that match the given constraints
+ *
+ * @param transaction - the transaction to use for querying
+ * @param constraints - field / value pairs that must be matched for a record to be returned
+ * @param currentPage - the index of the page to show
+ * @param perPage - the number of results per page
+ * @returns an object containing a list of work items and pagination data
+ */
+export async function queryAll(
+  transaction: Transaction,
+  constraints: WorkItemQuery = {},
+  currentPage = 0,
+  perPage = 10,
+): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
+  const items = await transaction(WorkItem.table)
+    .select()
+    .where(constraints.where)
+    .orderBy(
+      constraints?.orderBy?.field ?? 'createdAt', 
+      constraints?.orderBy?.value ?? 'desc')
+    .modify((queryBuilder) => {
+      if (constraints.whereIn) {
+        for (const field in constraints.whereIn) {
+          const constraint = constraints.whereIn[field];
+          if (constraint.in) {
+            void queryBuilder.whereIn(field, constraint.values);
+          } else {
+            void queryBuilder.whereNotIn(field, constraint.values);
+          }
+        }
+      }
+    })
+    .paginate({ currentPage, perPage, isLengthAware: true });
+
+  const workItems = items.data.map((j) => new WorkItem(j));
+
+  return {
+    workItems,
+    pagination: items.pagination,
+  };
+}
+
+/**
  * Get the jobID for the given work item
  *
  * @param id - the work item id
@@ -316,16 +359,11 @@ export async function getWorkItemsByJobId(
   perPage = 10,
   sortOrder: 'asc' | 'desc' = 'asc',
 ): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
-  const result = await tx(WorkItem.table)
-    .select()
-    .where({ jobID })
-    .orderBy('id', sortOrder)
-    .paginate({ currentPage, perPage, isLengthAware: true });
-
-  return {
-    workItems: result.data.map((i) => new WorkItem(i)),
-    pagination: result.pagination,
+  const query: WorkItemQuery = { 
+    where: { jobID }, 
+    orderBy : { field: 'id', value: sortOrder },
   };
+  return queryAll(tx, query, currentPage, perPage);
 }
 
 /**

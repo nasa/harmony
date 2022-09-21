@@ -1,4 +1,5 @@
 import toasts from "./toasts.js";
+import PubSub from "../pub-sub.js";
 
 /**
  * Transform link objects to an HTML string representing the links nav.
@@ -23,9 +24,8 @@ function buildLinksHtml(links) {
  * Responds to a nav link click event
  * (hits relevant Harmony url, shows user the response).
  * @param {Event} event - the click event
- * @param {object} broker - pubsub broker
  */
-async function handleClick(event, broker) {
+async function handleClick(event) {
   event.preventDefault();
   toasts.showUpper('Changing job state...');
   const link = event.target;
@@ -34,7 +34,7 @@ async function handleClick(event, broker) {
   const data = await res.json();
   if (res.status === 200) {
     toasts.showUpper(`The job is now ${data.status}`);
-    broker.publish('job-state-change');
+    PubSub.publish('table-state-change');
   } else if (data.description) {
     toasts.showUpper(data.description);
   } else {
@@ -47,14 +47,13 @@ async function handleClick(event, broker) {
  * Also attaches a click event listener to the link.
  * @param {Object[]} links - link array (of links with title, href, type, rel)
  * @param {string} linksContainerId - id of the container to place the HTML within
- * @param {object} broker - pubsub broker
  */
-function insertLinksHtml(links, linksContainerId, broker) {
+function insertLinksHtml(links, linksContainerId) {
   const html = buildLinksHtml(links);
   document.getElementById(linksContainerId).innerHTML = html;
   document.querySelectorAll('.state-change-link').forEach(function (link) {
     link.addEventListener('click', function (event) {
-      handleClick(event, broker);
+      handleClick(event);
     }, false);
   });
 }
@@ -63,15 +62,14 @@ function insertLinksHtml(links, linksContainerId, broker) {
  * Get job state change links (pause, resume, etc.) from Harmony and insert them in the UI.
  * @param {string} linksContainerId - id of the container to place the HTML within
  * @param {string} jobId - the job id to fetch links for
- * @param {object} broker - pubsub broker
  */
-async function fetchAndInsertLinks(linksContainerId, jobId, broker) {
+async function fetchAndInsertLinks(linksContainerId, jobId) {
   const linksUrl = `./${jobId}/links?all=true`;
   const res = await fetch(linksUrl);
   if (res.status === 200) {
     const links = await res.json();
     if (links.length) {
-      insertLinksHtml(links, linksContainerId, broker);
+      insertLinksHtml(links, linksContainerId);
     }
   }
 }
@@ -106,13 +104,12 @@ export default {
    * Initialize job state change nav links.
    * @param {string} linksContainerId - id of the container to place the links within
    * @param {string} jobId - the job id to fetch links for
-   * @param {object} broker - pubsub broker
    */
-  async init(linksContainerId, jobId, broker) {
-    await fetchAndInsertLinks(linksContainerId, jobId, broker);
+  async init(linksContainerId, jobId) {
+    await fetchAndInsertLinks(linksContainerId, jobId);
     // keep the hidden/visible state of the links in sync with
     // the work items table
-    broker.subscribe(
+    PubSub.subscribe(
       'work-items-table-loaded', 
       () => enableLinks(jobId));
   }

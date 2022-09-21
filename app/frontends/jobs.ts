@@ -172,7 +172,7 @@ export async function getJobStatus(
     if (!job) {
       throw new NotFoundError(`Unable to find job ${jobID}`);
     }
-    if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
+    if (!(await job.canViewJob(req.user, req.context.isAdminAccess, req.accessToken))) {
       throw new NotFoundError();
     }
     const urlRoot = getRequestRoot(req);

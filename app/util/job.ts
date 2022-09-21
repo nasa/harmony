@@ -3,7 +3,7 @@ import db, { Transaction } from './db';
 import { Job, JobStatus, terminalStates } from '../models/job';
 import env from './env';
 import { getTotalWorkItemSizeForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
-import { ConflictError, NotFoundError, RequestValidationError } from './errors';
+import { ConflictError, ForbiddenError, NotFoundError, RequestValidationError } from './errors';
 import isUUID from './uuid';
 import { WorkItemStatus } from '../models/work-item-interface';
 import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
@@ -234,5 +234,35 @@ export async function skipPreviewAndSaveJob(
     job.skipPreview();
     await job.save(tx);
   });
+}
+
+/**
+ * Get a particular job only if it can be seen by the requesting user, (based on
+ * whether they own the job or are an admin, and optionally if the job is shareable).
+ * @param jobID - id of the job to query for 
+ * @param username - the username of the user requesting the job
+ * @param isAdmin - whether to treat the user as an admin
+ * @param accessToken - the user's access token
+ * @param enableShareability - whether to check if the job can be shared with non-owners
+ * @throws ForbiddenError, NotFoundError
+ * @returns the requested job, if allowed
+ */
+export async function getJobIfAllowed(
+  jobID: string, 
+  username: string, 
+  isAdmin: boolean, 
+  accessToken: string, 
+  enableShareability: boolean,
+): Promise<Job> {
+  validateJobId(jobID);
+  const { job } = await Job.byRequestId(db, jobID, 0, 0);
+  if (!job) {
+    throw new NotFoundError();
+  }
+  if (await job.canViewJob(username, isAdmin, accessToken, enableShareability)) {
+    return job;
+  } else {
+    throw new ForbiddenError();
+  }
 }
 
