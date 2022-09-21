@@ -63,6 +63,23 @@ export interface WorkItemRecord {
   createdAt: Date;
 }
 
+export interface WorkItemQuery {
+  where?: {
+    id?: number;
+    jobID?: string;
+    status?: string;
+    createdAt?: number;
+    updatedAt?: number;
+  };
+  whereIn?: {
+    status?: { in: boolean, values: string[] };
+  }
+  orderBy?: {
+    field: string;
+    value: string;
+  }
+}
+
 /**
  * Get the s3 URL to the STAC outputs directory for a work item.
  * Optionally pass in a target URL in which case the URL returned will be the target URL

@@ -196,7 +196,7 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by status IN [failed]', function () {
-      hookWorkflowUIJobs({ username: 'woody', jobsFilter: '[{"value":"status: failed","dbValue":"failed","field":"status"}]' });
+      hookWorkflowUIJobs({ username: 'woody', tableFilter: '[{"value":"status: failed","dbValue":"failed","field":"status"}]' });
       it('returns only failed jobs', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
@@ -217,8 +217,8 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by status IN [failed, successful]', function () {
-      const jobsFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
-      hookWorkflowUIJobs({ username: 'woody', disallowStatus: '', jobsFilter });
+      const tableFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowStatus: '', tableFilter });
       it('returns failed and successful jobs', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(2);
@@ -239,7 +239,7 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by an invalid status (working)', function () {
-      hookWorkflowUIJobs({ username: 'woody', jobsFilter: '[{"value":"status: working","dbValue":"working","field":"status"}, {"value":"status: running","dbValue":"running","field":"status"}]' });
+      hookWorkflowUIJobs({ username: 'woody', tableFilter: '[{"value":"status: working","dbValue":"working","field":"status"}, {"value":"status: running","dbValue":"running","field":"status"}]' });
       it('ignores the invalid status', function () {
         const listing = this.res.text;
         expect(listing).to.not.contain('status: working');
@@ -248,7 +248,7 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by an invalid username (jo)', function () {
-      hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: jo"}, {"value":"user: woody"}]' });
+      hookAdminWorkflowUIJobs({ username: 'adam', tableFilter: '[{"value":"user: jo"}, {"value":"user: woody"}]' });
       it('ignores the invalid username', function () {
         const listing = this.res.text;
         expect(listing).to.not.contain('user: jo');
@@ -257,8 +257,8 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters by status NOT IN [failed, successful]', function () {
-      const jobsFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
-      hookWorkflowUIJobs({ username: 'woody', disallowStatus: 'on', jobsFilter });
+      const tableFilter = '[{"value":"status: failed","dbValue":"failed","field":"status"},{"value":"status: successful","dbValue":"successful","field":"status"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowStatus: 'on', tableFilter });
       it('returns all jobs that are not failed or successful', function () {
         const listing = this.res.text;
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
@@ -296,7 +296,7 @@ describe('Workflow UI jobs route', function () {
       });
 
       describe('when the admin filters the jobs by user IN [woody]', function () {
-        hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: woody"}]' });
+        hookAdminWorkflowUIJobs({ username: 'adam', tableFilter: '[{"value":"user: woody"}]' });
         it('only contains jobs submitted by woody', async function () {
           const listing = this.res.text;
           expect(listing).to.contain('<td>woody</td>');
@@ -305,7 +305,7 @@ describe('Workflow UI jobs route', function () {
       });
 
       describe('when the admin filters the jobs by user NOT IN [woody]', function () {
-        hookAdminWorkflowUIJobs({ username: 'adam', jobsFilter: '[{"value":"user: woody"}]', disallowUser: 'on' });
+        hookAdminWorkflowUIJobs({ username: 'adam', tableFilter: '[{"value":"user: woody"}]', disallowUser: 'on' });
         it('does not contain jobs submitted by woody', async function () {
           const listing = this.res.text;
           expect(listing).to.not.contain('<td>woody</td>');
@@ -314,11 +314,11 @@ describe('Workflow UI jobs route', function () {
       });
 
       describe('when the admin filters by status IN [running_with_errors, complete_with_errors, paused, previewing]', function () {
-        const jobsFilter = '[{"value":"status: running with errors","dbValue":"running_with_errors","field":"status"},' +
+        const tableFilter = '[{"value":"status: running with errors","dbValue":"running_with_errors","field":"status"},' +
         '{"value":"status: complete with errors","dbValue":"complete_with_errors","field":"status"},' +
         '{"value":"status: paused","dbValue":"paused","field":"status"},' +
         '{"value":"status: previewing","dbValue":"previewing","field":"status"}]';
-        hookAdminWorkflowUIJobs({ username: 'adam', disallowStatus: '', jobsFilter });
+        hookAdminWorkflowUIJobs({ username: 'adam', disallowStatus: '', tableFilter });
         it('returns jobs with the aforementioned statuses', function () {
           const listing = this.res.text;
           expect((listing.match(/job-table-row/g) || []).length).to.equal(4);
@@ -346,11 +346,11 @@ describe('Workflow UI jobs route', function () {
       });
 
       describe('when the admin filters by status NOT IN [running_with_errors, complete_with_errors, paused, previewing]', function () {
-        const jobsFilter = '[{"value":"status: running with errors","dbValue":"running_with_errors","field":"status"},' +
+        const tableFilter = '[{"value":"status: running with errors","dbValue":"running_with_errors","field":"status"},' +
         '{"value":"status: complete with errors","dbValue":"complete_with_errors","field":"status"},' +
         '{"value":"status: paused","dbValue":"paused","field":"status"},' +
         '{"value":"status: previewing","dbValue":"previewing","field":"status"}]';
-        hookAdminWorkflowUIJobs({ username: 'adam', disallowStatus: 'on', jobsFilter });
+        hookAdminWorkflowUIJobs({ username: 'adam', disallowStatus: 'on', tableFilter });
         it('returns jobs without the aforementioned statuses', function () {
           const listing = this.res.text;
           expect((listing.match(/job-table-row/g) || []).length).to.equal(4);

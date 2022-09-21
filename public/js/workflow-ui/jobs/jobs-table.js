@@ -6,7 +6,7 @@ import { formatDates, initTooltips } from "../table.js";
  * @param isAdminRoute - whether the current page is /admin/...
  */
 function initFilter(currentUser, isAdminRoute) {
-  var filterInput = document.querySelector('input[name="jobsFilter"]');
+  var filterInput = document.querySelector('input[name="tableFilter"]');
   const allowedList = [
     { value: 'status: successful', dbValue: 'successful', field: 'status'},
     { value: 'status: canceled', dbValue: "canceled", field: 'status'},
@@ -55,7 +55,7 @@ export default {
    * @param isAdminRoute - whether the current page is /admin/...
    */
   async init(currentUser, isAdminRoute) {
-    formatDates();
+    formatDates('.date-td');
     initTooltips('[data-bs-toggle="tooltip"]');
     initFilter(currentUser, isAdminRoute);
   }

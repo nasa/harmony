@@ -3,5 +3,10 @@
     "active": true,
     "notes": "Ignoring issue with lerna dev dependency",
     "expiry": "2022-10-15"
+  },
+  "1084472": {
+    "active": true,
+    "notes": "Ignoring another issue with lerna dev dependency",
+    "expiry": "2022-10-19"
   }
 }

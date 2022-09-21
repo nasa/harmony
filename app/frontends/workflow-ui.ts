@@ -1,20 +1,21 @@
 import { Response, NextFunction } from 'express';
 import { sanitizeImage } from '../util/string';
-import { validateJobId } from '../util/job';
+import { getJobIfAllowed } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
-import { getWorkItemsByJobId } from '../models/work-item';
-import { NotFoundError, RequestValidationError } from '../util/errors';
+import { getWorkItemById, queryAll } from '../models/work-item';
+import { ForbiddenError, NotFoundError, RequestValidationError } from '../util/errors';
 import { getPagingParams, getPagingLinks, setPagingHeaders } from '../util/pagination';
 import HarmonyRequest from '../models/harmony-request';
 import db from '../util/db';
 import version from '../util/version';
 import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
-import { COMPLETED_WORK_ITEM_STATUSES, getItemLogsLocation, WorkItemStatus } from '../models/work-item-interface';
+import { COMPLETED_WORK_ITEM_STATUSES, getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
 import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 import { objectStoreForProtocol } from '../util/object-store';
+import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
 
 /**
  * Maps job status to display class.
@@ -32,31 +33,34 @@ const statusClass = {
 };
 
 /**
- * Return an object that contains key value entries for jobs table filters.
+ * Return an object that contains key value entries for jobs or work items table filters.
  * @param requestQuery - the Record given by keysToLowerCase
- * @param isAdminAccess - is the requesting user an admin
+ * @param isAdminAccess - is the requesting user an admin and requesting from an admin route (determines
+ * whether they should be allowed to filter by username)
+ * @param statusEnum - which status (e.g. JobStatus, WorkItemStatus) to validate accepted form values against
  * @param maxFilters - set a limit on the number of user requested filters
  * @returns object containing filter values
  */
-function parseJobsFilter( /* eslint-disable @typescript-eslint/no-explicit-any */
+function parseFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
   requestQuery: Record<string, any>,
-  isAdminAccess: boolean,
+  statusEnum: any,
+  isAdminAccess = false,
   maxFilters = 30,
 ): {
     statusValues: string[], // need for querying db
     userValues: string[], // need for querying db
     originalValues: string[] // needed for populating filter input
   } {
-  if (!requestQuery.jobsfilter) {
+  if (!requestQuery.tablefilter) {
     return {
       statusValues: [],
       userValues: [],
       originalValues: [],
     };
   }
-  const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.jobsfilter);
+  const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
   const validStatusSelections = selectedOptions
-    .filter(option => option.field === 'status' && Object.values<string>(JobStatus).includes(option.dbValue));
+    .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
   const statusValues = validStatusSelections.map(option => option.dbValue);
   const validUserSelections = selectedOptions
     .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
@@ -100,16 +104,16 @@ export async function getJobs(
     }
     const disallowStatus = requestQuery.disallowstatus === 'on';
     const disallowUser = requestQuery.disallowuser === 'on';
-    const jobsFilter = parseJobsFilter(requestQuery, req.context.isAdminAccess);
-    if (jobsFilter.statusValues.length) {
+    const tableFilter = parseFilters(requestQuery, JobStatus, req.context.isAdminAccess);
+    if (tableFilter.statusValues.length) {
       jobQuery.whereIn.status = {
-        values: jobsFilter.statusValues,
+        values: tableFilter.statusValues,
         in: !disallowStatus,
       };
     }
-    if (jobsFilter.userValues.length) {
+    if (tableFilter.userValues.length) {
       jobQuery.whereIn.username = {
-        values: jobsFilter.userValues,
+        values: tableFilter.userValues,
         in: !disallowUser,
       };
     }
@@ -119,13 +123,11 @@ export async function getJobs(
     const pageLinks = getPagingLinks(req, pagination);
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
-    const currentPage = pageLinks.find((l) => l.rel === 'self');
     res.render('workflow-ui/jobs/index', {
       version,
       page,
       limit,
       currentUser: req.user,
-      currentPage: currentPage.href,
       isAdminRoute: req.context.isAdminAccess,
       // job table row HTML
       jobs,
@@ -168,7 +170,7 @@ export async function getJobs(
       // job table filters HTML
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       disallowUserChecked: disallowUser ? 'checked' : '',
-      selectedFilters: jobsFilter.originalValues,
+      selectedFilters: tableFilter.originalValues,
       // job table paging buttons HTML
       links: [
         { ...previousPage, linkTitle: 'previous' },
@@ -189,26 +191,26 @@ export async function getJobs(
  * @param req - The request sent by the client
  * @param res - The response to send to the client
  * @param next - The next function in the call chain
- * @returns The workflow UI page where the user can visualize the job as it happens
+ * @returns The workflow UI page where the user can visualize the job as it progresses
  */
 export async function getJob(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const { jobID } = req.params;
   try {
-    validateJobId(jobID);
+    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     const { page, limit } = getPagingParams(req, 1000);
-    const job = await Job.byJobID(db, jobID, false);
-    if (!job) {
-      throw new NotFoundError(`Unable to find job ${jobID}`);
-    }
-    if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
-      throw new NotFoundError();
-    }
+    const requestQuery = keysToLowerCase(req.query);
+    const disallowStatus = requestQuery.disallowstatus === 'on';
+    const tableFilter = parseFilters(requestQuery, WorkItemStatus);
     res.render('workflow-ui/job/index', {
       job,
       page,
       limit,
+      disallowStatusChecked: disallowStatus ? 'checked' : '',
+      selectedFilters: tableFilter.originalValues,
+      tableFilter: requestQuery.tablefilter,
       version,
       isAdminRoute: req.context.isAdminAccess,
     });
@@ -232,29 +234,56 @@ export async function getJobLinks(
   const { jobID } = req.params;
   const { all } = req.query;
   try {
-    validateJobId(jobID);
-    const job = await Job.byJobID(db, jobID, false);
-    if (!job) {
-      throw new NotFoundError(`Unable to find job ${jobID}`);
-    }
-    if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
-      throw new NotFoundError();
-    }
-    if (!req.context.isAdminAccess && (job.username != req.user)) {
-      // if the job is shareable but this non-admin user (req.user) does not own the job,
-      // they won't be able to change the job's state via the state change links
-      res.send([]);
-      return;
-    }
+    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, false);
     const urlRoot = getRequestRoot(req);
     const links = all === 'true' ?
-      getAllStateChangeLinks(job, urlRoot, req.context.isAdminAccess) :
-      getJobStateChangeLinks(job, urlRoot, req.context.isAdminAccess);
+      getAllStateChangeLinks(job, urlRoot, isAdmin) :
+      getJobStateChangeLinks(job, urlRoot, isAdmin);
     res.send(links);
   } catch (e) {
     req.context.logger.error(e);
     next(e);
   }
+}
+
+/**
+ * Returns an object with all of the functions necessary for rendering
+ * a row of the work items table.
+ * @param job - the job associated with the work item
+ * @param isAdmin - whether the user making the request is an admin
+ * @param requestUser - the user making the request
+ * @returns an object with rendering functions
+ */
+function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: string): object {
+  const badgeClasses = {};
+  badgeClasses[WorkItemStatus.READY] = 'primary';
+  badgeClasses[WorkItemStatus.CANCELED] = 'secondary';
+  badgeClasses[WorkItemStatus.FAILED] = 'danger';
+  badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
+  badgeClasses[WorkItemStatus.RUNNING] = 'info';
+  return {
+    workflowItemBadge(): string { return badgeClasses[this.status]; },
+    workflowItemStep(): string { return sanitizeImage(this.serviceID); },
+    workflowItemCreatedAt(): string { return this.createdAt.getTime(); },
+    workflowItemUpdatedAt(): string { return this.updatedAt.getTime(); },
+    workflowItemLogsButton(): string {
+      const isComplete = COMPLETED_WORK_ITEM_STATUSES.indexOf(this.status) > -1;
+      if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
+      const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
+      return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}"` +
+        ' title="view logs"><i class="bi bi-body-text"></i></a>';
+    },
+    workflowItemRetryButton(): string {
+      const sharedWithNonAdmin = (!isAdmin && (job.username != requestUser));
+      const isRunning = WorkItemStatus.RUNNING === this.status;
+      const noRetriesLeft = this.retryCount >= env.workItemRetryLimit;
+      if (!isRunning || sharedWithNonAdmin || noRetriesLeft) return '';
+      const retryUrl = `/workflow-ui/${job.jobID}/${this.id}/retry`;
+      return `<button type="button" class="btn btn-light btn-sm retry-button" data-retry-url="${retryUrl}"` +
+        `data-work-item-id="${this.id}" title="retry this item"><i class="bi bi-arrow-clockwise"></i></button>`;
+    },
+  };
 }
 
 /**
@@ -270,64 +299,86 @@ export async function getWorkItemsTable(
 ): Promise<void> {
   const { jobID } = req.params;
   const { checkJobStatus } = req.query;
-  const badgeClasses = {};
-  badgeClasses[WorkItemStatus.READY] = 'primary';
-  badgeClasses[WorkItemStatus.CANCELED] = 'secondary';
-  badgeClasses[WorkItemStatus.FAILED] = 'danger';
-  badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
-  badgeClasses[WorkItemStatus.RUNNING] = 'info';
   try {
-    validateJobId(jobID);
-    const query: JobQuery = { where: { requestId: jobID } };
-    if (!req.context.isAdminAccess) {
-      query.where.username = req.user;
+    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
+    if (([JobStatus.SUCCESSFUL, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.COMPLETE_WITH_ERRORS]
+      .indexOf(job.status) > -1) && checkJobStatus === 'true') {
+      // tell the client that the job has finished
+      res.status(204).json({ status: job.status });
+      return;
     }
-    const { job } = await Job.byRequestId(db, jobID, 0, 0);
-    if (job) {
-      if (!(await job.canShareResultsWith(req.user, req.context.isAdminAccess, req.accessToken))) {
-        throw new NotFoundError();
-      }
-      if (([JobStatus.SUCCESSFUL, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.COMPLETE_WITH_ERRORS]
-        .indexOf(job.status) > -1) && checkJobStatus === 'true') {
-        // tell the client that the job has finished
-        res.status(204).json({ status: job.status });
-        return;
-      }
-      const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
-      const { workItems, pagination } = await getWorkItemsByJobId(db, job.jobID, page, limit, 'asc');
-      const pageLinks = getPagingLinks(req, pagination);
-      const nextPage = pageLinks.find((l) => l.rel === 'next');
-      const previousPage = pageLinks.find((l) => l.rel === 'prev');
-      setPagingHeaders(res, pagination);
-      const isAdmin = await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
-      res.render('workflow-ui/job/work-items-table', {
-        job,
-        statusClass: statusClass[job.status],
-        workItems,
-        workflowItemBadge() { return badgeClasses[this.status]; },
-        workflowItemStep() { return sanitizeImage(this.serviceID); },
-        workflowItemCreatedAt() { return this.createdAt.getTime(); },
-        workflowItemUpdatedAt() { return this.updatedAt.getTime(); },
-        workflowItemLogsButton() {
-          const isComplete = COMPLETED_WORK_ITEM_STATUSES.indexOf(this.status) > -1;
-          if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
-          const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
-          return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}">view</button>`;
-        },
-        links: [
-          { ...previousPage, linkTitle: 'previous' },
-          { ...nextPage, linkTitle: 'next' },
-        ],
-        linkDisabled() { return (this.href ? '' : 'disabled'); },
-        linkHref() {
-          return (this.href ? this.href
-            .replace('/work-items', '')
-            .replace(/(&|\?)checkJobStatus=(true|false)/, '') : '');
-        },
-      });
-    } else {
-      throw new NotFoundError(`Unable to find job ${jobID}`);
+    const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
+    const requestQuery = keysToLowerCase(req.query);
+    const tableFilter = parseFilters(requestQuery, WorkItemStatus);
+    const itemQuery: WorkItemQuery = { where: { jobID }, whereIn: {}, orderBy: { field: 'id', value: 'asc' } };
+    if (tableFilter.statusValues.length) {
+      itemQuery.whereIn.status = {
+        values: tableFilter.statusValues,
+        in: !(requestQuery.disallowstatus === 'on'),
+      };
     }
+    const { workItems, pagination } = await queryAll(db, itemQuery, page, limit);
+    const pageLinks = getPagingLinks(req, pagination);
+    const nextPage = pageLinks.find((l) => l.rel === 'next');
+    const previousPage = pageLinks.find((l) => l.rel === 'prev');
+    setPagingHeaders(res, pagination);
+    res.render('workflow-ui/job/work-items-table', {
+      job,
+      statusClass: statusClass[job.status],
+      workItems,
+      ...workItemRenderingFunctions(job, isAdmin, req.user),
+      links: [
+        { ...previousPage, linkTitle: 'previous' },
+        { ...nextPage, linkTitle: 'next' },
+      ],
+      linkDisabled() { return (this.href ? '' : 'disabled'); },
+      linkHref() {
+        return (this.href ? this.href
+          .replace('/work-items', '')
+          .replace(/(&|\?)checkJobStatus=(true|false)/, '') : '');
+      },
+    });
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * Render a single row of the work items table for the workflow UI.
+ *
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns The work items table row HTML
+ */
+export async function getWorkItemTableRow(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobID, id } = req.params;
+  try {
+    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
+    // even though we only want one row/item we should still respect the current user's table filters
+    const requestQuery = keysToLowerCase(req.query);
+    const tableFilter = parseFilters(requestQuery, WorkItemStatus);
+    const itemQuery: WorkItemQuery = { where: { id: parseInt(id) }, whereIn: {} };
+    if (tableFilter.statusValues.length) {
+      itemQuery.whereIn.status = {
+        values: tableFilter.statusValues,
+        in: !(requestQuery.disallowstatus === 'on'),
+      };
+    }
+    const { workItems } = await queryAll(db, itemQuery, 1, 1);
+    if (workItems.length === 0) {
+      res.send('<span></span>');
+      return;
+    }
+    res.render('workflow-ui/job/work-item-table-row', {
+      ...workItems[0],
+      ...workItemRenderingFunctions(job, isAdmin, req.user),
+    });
   } catch (e) {
     req.context.logger.error(e);
     next(e);
@@ -347,10 +398,47 @@ export async function getWorkItemLogs(
 ): Promise<void> {
   const { id, jobID } = req.params;
   try {
+    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    if (!isAdmin) {
+      throw new ForbiddenError();
+    }
     const logPromise =  await objectStoreForProtocol('s3')
       .getObject(getItemLogsLocation({ id: parseInt(id), jobID })).promise();
     const logs = logPromise.Body.toString('utf-8');
     res.json(JSON.parse(logs));
+  } catch (e) {
+    req.context.logger.error(e);
+    next(e);
+  }
+}
+
+/**
+ * Requeues the work item.
+ * @param req - The request sent by the client
+ * @param res - The response to send to the client
+ * @param next - The next function in the call chain
+ * @returns a JSON object with a message
+ */
+export async function retry(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): Promise<void> {
+  const { jobID, id } = req.params;
+  try {
+    const isAdmin = req.context.isAdminAccess || await belongsToGroup(req.user, env.adminGroupId, req.accessToken);
+    await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, false); // validate access to the work item's job
+    const item = await getWorkItemById(db, parseInt(id));
+    if (!item) {
+      throw new NotFoundError(`Unable to find item ${id}`);
+    }
+    if (item.retryCount >= env.workItemRetryLimit) {
+      res.status(200).send({ message: 'The item does not have any retries left.' });
+    }
+    await handleWorkItemUpdate(
+      { workItemID: item.id, status: WorkItemStatus.FAILED,
+        scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
+        errorMessage: 'A user attempted to trigger a retry via the Workflow UI.' },
+      req.context.logger);
+    res.status(200).send({ message: 'The item was successfully requeued.' });
   } catch (e) {
     req.context.logger.error(e);
     next(e);
