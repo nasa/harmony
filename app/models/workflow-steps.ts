@@ -122,6 +122,29 @@ export async function getWorkflowStepByJobIdStepIndex(
 }
 
 /**
+ * Returns the workflow step for the given Job ID and service ID
+ *
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the Job for the step
+ * @param serviceID - the serviceID of the step within the workflow
+ * @param fields - optional table fields to include in the result - default is all
+ * @returns A promise with the workflow step or null if none
+ */
+export async function getWorkflowStepByJobIdServiceId(
+  tx: Transaction,
+  jobID: string,
+  serviceID: string,
+  fields = tableFields,
+): Promise<WorkflowStep | null> {
+  const workflowStepData = await tx(WorkflowStep.table)
+    .select(...fields)
+    .where({ jobID, serviceID })
+    .first();
+
+  return workflowStepData && new WorkflowStep(workflowStepData);
+}
+
+/**
  * Get all workflow step ids associated with jobs that haven't been updated for a
  * certain amount of minutes and that have a particular JobStatus
  * @param tx - the transaction to use for querying

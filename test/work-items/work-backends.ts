@@ -141,7 +141,8 @@ describe('Work Backends', function () {
       it('returns the correct fields for a work item', function () {
         expect(Object.keys(this.res.body.workItem)).to.eql([
           'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
-          'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'operation',
+          'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'operation', 'duration',
+          'startedAt',
         ]);
       });
 

@@ -525,7 +525,9 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
       }
     }
 
-    await updateWorkItemStatus(tx, workItemID, status as WorkItemStatus, totalGranulesSize);
+    const duration = Date.now() - workItem.startedAt.valueOf();
+
+    await updateWorkItemStatus(tx, workItemID, status as WorkItemStatus, duration, totalGranulesSize);
 
     const completedWorkItemCount = await workItemCountForStep(
       tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,

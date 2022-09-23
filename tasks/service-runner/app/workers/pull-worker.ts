@@ -163,8 +163,15 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
   try {
     const work = await _pullWork();
     if (!work.error && work.item) {
+      const startTime = Date.now();
       logger.debug(`Performing work for work item with id ${work.item.id} for job id ${work.item.jobID}`);
       const workItem = await _doWork(work.item, work.maxCmrGranules);
+      // TODO remove this when done testing
+      if (Math.random() < 0.333) {
+        return;
+      }
+      workItem.duration = Date.now() - startTime;
+
       // call back to Harmony to mark the work unit as complete or failed
       logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
       try {

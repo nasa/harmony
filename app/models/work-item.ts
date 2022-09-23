@@ -1,12 +1,13 @@
 import { subMinutes } from 'date-fns';
 import { ILengthAwarePagination } from 'knex-paginate';
 import _ from 'lodash';
+import { interquartileRange, max, quantile } from 'simple-statistics';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
 import { activeJobStatuses, Job, JobStatus } from './job';
 import Record from './record';
-import WorkflowStep from './workflow-steps';
+import WorkflowStep, { getWorkflowStepByJobIdServiceId } from './workflow-steps';
 import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
@@ -16,7 +17,7 @@ const QUERY_CMR_STEP_INDEX = 1;
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
-  'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex',
+  'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'duration', 'startedAt',
 ];
 
 /**
@@ -59,6 +60,12 @@ export default class WorkItem extends Record implements WorkItemRecord {
 
   // The number of times this work-item has been retried
   retryCount: number;
+
+  // When the work item started processing
+  startedAt?: Date;
+
+  // How long in milliseconds the work item took to process
+  duration: number;
 
   /**
    * Saves the work item to the database using the given transaction.
@@ -173,8 +180,13 @@ export async function getNextWorkItem(
 
           if (workItemData) {
             workItemData.operation = JSON.parse(operation);
+            const startedAt = new Date();
             await tx(WorkItem.table)
-              .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
+              .update({
+                status: WorkItemStatus.RUNNING,
+                updatedAt: startedAt,
+                startedAt,
+              })
               .where({ id: workItemData.id });
             // need to update the job otherwise long running jobs won't count against
             // the user's priority
@@ -195,23 +207,25 @@ export async function getNextWorkItem(
 }
 
 /**
- * Update the status in the database for a WorkItem
+ * Update the status and duration in the database for a WorkItem
  * @param tx - the transaction to use for querying
  * @param id - the id of the WorkItem
  * @param status - the status to set for the WorkItem
+ * @param duration - how long the work item took to process
  * @param totalGranulesSize - the combined sizes of all the input granules for this work item
  */
 export async function updateWorkItemStatus(
   tx: Transaction,
   id: number,
   status: WorkItemStatus,
+  duration: number,
   totalGranulesSize: number,
 ): Promise<void> {
   logger.debug(`updatedWorkItemStatus: Updating status for work item ${id} to ${status}`);
 
   try {
     await tx(WorkItem.table)
-      .update({ status, totalGranulesSize, updatedAt: new Date() })
+      .update({ status, duration, totalGranulesSize, updatedAt: new Date() })
       .where({ id });
     logger.debug(`Status for work item ${id} set to ${status}`);
   } catch (e) {
@@ -431,6 +445,7 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
  * @param lastUpdateOlderThanMinutes - retrieve WorkItems with updatedAt older than lastUpdateOlderThanMinutes
  * @param workItemStatuses - only WorkItems with these statuses will be retrieved
  * @param jobStatuses - only WorkItems associated with jobs with these statuses will be retrieved
+ * @param fields - optional parameter to indicate which fields to retrieve - defaults to all
  * @returns all WorkItems that meet the lastUpdateOlderThanMinutes and status constraints
 */
 export async function getWorkItemsByUpdateAgeAndStatus(
@@ -438,11 +453,12 @@ export async function getWorkItemsByUpdateAgeAndStatus(
   lastUpdateOlderThanMinutes: number,
   workItemStatuses: WorkItemStatus[],
   jobStatuses: JobStatus[],
+  fields = tableFields,
 ): Promise<WorkItem[]> {
   const pastDate = subMinutes(new Date(), lastUpdateOlderThanMinutes);
   const workItems = (await tx(`${WorkItem.table} as w`)
     .innerJoin(Job.table, 'w.jobID', '=', `${Job.table}.jobID`)
-    .select(...tableFields)
+    .select(...fields)
     .whereIn(`${Job.table}.status`, jobStatuses)
     .where('w.updatedAt', '<', pastDate)
     .whereIn('w.status', workItemStatuses))
@@ -602,4 +618,70 @@ export async function getTotalWorkItemSizeForJobID(
   }
 
   return totalSize;
+}
+
+const MIN_WORK_ITEMS_FOR_DURATION = 3;
+const MAX_WORK_ITEMS_FOR_DURATION = 10;
+const PERCENT_WORK_ITEMS_FOR_DURATION = 0.01;
+const MAX_WORK_ITEMS_WINDOW_FOR_DURATION = 100;
+
+/**
+ * Compute the threshold (in milliseconds) to be used to expire work items for a given job/service
+ * 
+ * @param jobID - the ID of the Job for the step
+ * @param serviceID - the serviceID of the step within the workflow
+ */
+export async function computeWorkItemDurationOutlierThresholdForJobService(
+  jobID: string,
+  serviceID: string,
+): Promise<number> {
+  // default to two hours if we don't have enough samples to compute a meaningful value
+  let threshold = 7200000;
+
+  try {
+    const results = await db(WorkItem.table)
+      .select('duration')
+      .where({
+        jobID,
+        serviceID,
+        'status': 'successful',
+      })
+      .limit(MAX_WORK_ITEMS_WINDOW_FOR_DURATION);
+
+    const workflowStep = await getWorkflowStepByJobIdServiceId(db, jobID, serviceID, ['workItemCount']);
+    const { workItemCount } = workflowStep;
+
+    // this is a simple heuristic to determine the minimum number of successful work items
+    // we need in order to compute a meaningful threshold. we always need at least 
+    // MIN_WORK_ITEMS_FOR_DURATION successful,
+    // but for larger jobs we want at least PERCENT_WORK_ITEMS_FOR_DURATION of the number of work 
+    // items in the step or , whichever is smaller
+    const minSuccessful = Math.max(Math.min(PERCENT_WORK_ITEMS_FOR_DURATION * workItemCount,
+      MAX_WORK_ITEMS_FOR_DURATION), MIN_WORK_ITEMS_FOR_DURATION);
+    logger.debug(`Minimum number of successful work items for thresholding is ${minSuccessful}`);
+
+    if (results.length >= minSuccessful) {
+      // compute an upper boundary to identify outliers using the IQR method with the 
+      // durations of the successful work items, but assume that
+      // no successful run can be an outlier. so if the IQR method gives a threshold that is
+      // too low, set the threshold to 1.5 times the duration of the longest running successful
+      // work item
+      const durations = results.map(result => result.duration);
+      threshold = quantile(durations, 0.75)
+        + 1.5 * interquartileRange(durations);
+      const maxSuccessfulDuration = max(durations);
+      if (threshold < 1.5 * maxSuccessfulDuration) {
+        threshold = 1.5 * maxSuccessfulDuration;
+      }
+    } else {
+      logger.debug('Using default threshold');
+    }
+    logger.debug(`Threshold is ${threshold}`);
+
+  } catch (e) {
+    logger.error(`Failed to get work item times for service ${serviceID} of job ${jobID}`);
+  }
+
+  return threshold;
+
 }
