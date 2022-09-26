@@ -64,13 +64,13 @@ function loadServiceConfigs(): void {
  * @param config - The service configuration to validate
  */
 function validateServiceConfig(config: ServiceConfig<unknown>): void {
-  const batchSize = config.batch_size;
+  const batchSize = config.max_batch_inputs;
   if (batchSize !== undefined) {
     if (!_.isInteger(batchSize)) {
-      throw new TypeError(`Invalid batch_size ${batchSize}. Batch size must be an integer greater than or equal to 1.`);
+      throw new TypeError(`Invalid max_batch_inputs ${batchSize}. Max batch inputs must be an integer greater than or equal to 1.`);
     }
     if (batchSize <= 0) {
-      throw new TypeError(`Invalid batch_size ${batchSize}. Batch size must be greater than or equal to 1.`);
+      throw new TypeError(`Invalid max_batch_inputs ${batchSize}. Max batch inputs must be greater than or equal to 1.`);
     }
     if (batchSize > env.maxGranuleLimit) {
       logger.warn(`Service ${config.name} attempting to allow more than the max allowed granules in a batch. `

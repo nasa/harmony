@@ -63,7 +63,7 @@ https://cmr.earthdata.nasa.gov:
 
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.17.0'
-    batch_size: 20
+    max_batch_inputs: 20
     type:
       <<: *default-turbo-config
       params:
@@ -486,7 +486,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: harmony/service-example
     data_operation_version: '0.17.0'
-    batch_size: 10
+    max_batch_inputs: 10
     type:
       <<: *default-turbo-config
       params:
@@ -648,7 +648,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: sds/swot-reproject
     data_operation_version: '0.17.0'
-    batch_size: 1
+    max_batch_inputs: 1
     type:
       <<: *default-turbo-config
       params:
@@ -793,7 +793,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.17.0'
-    batch_size: 20
+    max_batch_inputs: 20
     type:
       <<: *default-turbo-config
       params:
@@ -944,7 +944,7 @@ https://cmr.uat.earthdata.nasa.gov:
   # CHAINED SERVICES BELOW HERE
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
     data_operation_version: '0.17.0'
-    batch_size: 20
+    max_batch_inputs: 20
     type:
       <<: *default-turbo-config
       params:
