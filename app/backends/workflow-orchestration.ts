@@ -525,7 +525,18 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
       }
     }
 
-    const duration = Date.now() - workItem.startedAt.valueOf();
+    // We calculate the duration of the work both in harmony and in the manager of the service pod.
+    // We tend to favor the harmony value as it is normally longer since it accounts for the extra
+    // overhead of communication with the pod. There is a problem with retries however in that 
+    // the startTime gets reset, so if an earlier worker finishes and replies it will look like
+    // the whole thing was quicker (since our startTime has changed). So in that case we want to 
+    // use the time reported by the service pod. Any updates from retries that happen later  will
+    // be ignored since the work item is already in a 'successful' state.
+    const harmonyDuration = Date.now() - workItem.startedAt.valueOf();
+    let duration = harmonyDuration;
+    if (update.duration) {
+      duration = Math.max(duration, update.duration);
+    }
 
     await updateWorkItemStatus(tx, workItemID, status as WorkItemStatus, duration, totalGranulesSize);
 
@@ -592,7 +603,7 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
  */
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status, hits, results, scrollID, errorMessage } = req.body;
+  const { status, hits, results, scrollID, errorMessage, duration } = req.body;
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
 
   const update =
@@ -604,6 +615,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     scrollID,
     errorMessage,
     totalGranulesSize,
+    duration,
   };
 
   // asynchronously handle the update so that the service is not waiting for a response

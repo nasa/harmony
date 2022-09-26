@@ -1,6 +1,7 @@
 import { WorkItemStatus, getStacLocation, WorkItemRecord } from './../../app/models/work-item-interface';
 import { Job, JobRecord, JobStatus, terminalStates } from './../../app/models/job';
 import { describe, it } from 'mocha';
+import MockDate from 'mockdate';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
 import WorkItem, { getWorkItemById } from '../../app/models/work-item';
@@ -10,6 +11,8 @@ import db from '../../app/util/db';
 import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
+
+const oldDate = '1/1/2000'; // "old" work items will get created on this date
 
 describe('Work Backends', function () {
   const requestId = uuid().toString();
@@ -141,8 +144,8 @@ describe('Work Backends', function () {
       it('returns the correct fields for a work item', function () {
         expect(Object.keys(this.res.body.workItem)).to.eql([
           'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
-          'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'operation', 'duration',
-          'startedAt',
+          'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'duration',
+          'startedAt', 'operation',
         ]);
       });
 
@@ -225,16 +228,24 @@ describe('Work Backends', function () {
       });
     });
 
-    describe('and the work item succeeded', async function () {
+    describe('when the work item succeeded', async function () {
       hookJobCreation(jobRecord);
       hookWorkflowStepCreation(workflowStepRecord);
-      hookWorkItemCreation(workItemRecord);
+      const runningWorkItemRecord = {
+        ...workItemRecord,
+        ...{
+          status: WorkItemStatus.RUNNING,
+          startedAt: new Date(),
+        },
+      };
+      hookWorkItemCreation(runningWorkItemRecord);
       const successfulWorkItemRecord = {
         ...workItemRecord,
         ...{
           status: WorkItemStatus.SUCCESSFUL,
           results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
           scrollID: '-1234',
+          duration: 0,
         },
       };
       before(async () => {
@@ -245,6 +256,13 @@ describe('Work Backends', function () {
       it('sets the work item status to successful', async function () {
         const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
         expect(updatedWorkItem.status).to.equal(WorkItemStatus.SUCCESSFUL);
+      });
+
+      describe('and the worker computed duration is less than the harmony computed duration', async function () {
+        it('sets the work item duration to the harmony computed duration', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.duration).to.be.greaterThan(successfulWorkItemRecord.duration);
+        });
       });
 
       describe('and the work item is the last in the chain', async function () {
@@ -268,6 +286,45 @@ describe('Work Backends', function () {
         it('sets the job progress to 100', async function () {
           const updatedJob = await Job.byJobID(db, this.job.jobID);
           expect(updatedJob.progress).to.equal(100);
+        });
+      });
+    });
+
+    describe('when a retried work item succeeds on the original worker before the retry finishes', async function () {
+      hookJobCreation(jobRecord);
+      hookWorkflowStepCreation(workflowStepRecord);
+      const runningWorkItemRecord = {
+        ...workItemRecord,
+        ...{
+          status: WorkItemStatus.RUNNING,
+          startedAt: new Date(),
+        },
+      };
+      hookWorkItemCreation(runningWorkItemRecord);
+      const successfulWorkItemRecord = {
+        ...workItemRecord,
+        ...{
+          status: WorkItemStatus.SUCCESSFUL,
+          results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+          scrollID: '-1234',
+          duration: 100000000,
+        },
+      };
+      before(async () => {
+        await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
+      });
+      hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
+
+      describe('so the worker computed duration is longer than the harmony computed duration', async function () {
+        before(async () => {
+          MockDate.set(oldDate);
+        });
+        after(() => {
+          MockDate.reset();
+        });
+        it('sets the work item duration to the worker computed duration', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.duration).to.equal(successfulWorkItemRecord.duration);
         });
       });
     });

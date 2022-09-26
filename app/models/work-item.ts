@@ -1,13 +1,12 @@
 import { subMinutes } from 'date-fns';
 import { ILengthAwarePagination } from 'knex-paginate';
 import _ from 'lodash';
-import { interquartileRange, max, quantile } from 'simple-statistics';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
 import { activeJobStatuses, Job, JobStatus } from './job';
 import Record from './record';
-import WorkflowStep, { getWorkflowStepByJobIdServiceId } from './workflow-steps';
+import WorkflowStep from './workflow-steps';
 import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
 
 // The step index for the query-cmr task. Right now query-cmr only runs as the first step -
@@ -620,11 +619,6 @@ export async function getTotalWorkItemSizeForJobID(
   return totalSize;
 }
 
-const MIN_WORK_ITEMS_FOR_DURATION = 3;
-const MAX_WORK_ITEMS_FOR_DURATION = 10;
-const PERCENT_WORK_ITEMS_FOR_DURATION = 0.01;
-const MAX_WORK_ITEMS_WINDOW_FOR_DURATION = 100;
-
 /**
  * Compute the threshold (in milliseconds) to be used to expire work items for a given job/service
  * 
@@ -635,51 +629,30 @@ export async function computeWorkItemDurationOutlierThresholdForJobService(
   jobID: string,
   serviceID: string,
 ): Promise<number> {
-  // default to two hours if we don't have enough samples to compute a meaningful value
+  // default to two hours
   let threshold = 7200000;
 
   try {
-    const results = await db(WorkItem.table)
-      .select('duration')
+    // use a simple heuristic of 2 times the longest duration of all the successful work items
+    // for this job/service
+    const result = await db(WorkItem.table)
       .where({
         jobID,
         serviceID,
         'status': 'successful',
       })
-      .limit(MAX_WORK_ITEMS_WINDOW_FOR_DURATION);
+      .max('duration', { as: 'max' })
+      .first();
 
-    const workflowStep = await getWorkflowStepByJobIdServiceId(db, jobID, serviceID, ['workItemCount']);
-    const { workItemCount } = workflowStep;
-
-    // this is a simple heuristic to determine the minimum number of successful work items
-    // we need in order to compute a meaningful threshold. we always need at least 
-    // MIN_WORK_ITEMS_FOR_DURATION successful,
-    // but for larger jobs we want at least PERCENT_WORK_ITEMS_FOR_DURATION of the number of work 
-    // items in the step or , whichever is smaller
-    const minSuccessful = Math.max(Math.min(PERCENT_WORK_ITEMS_FOR_DURATION * workItemCount,
-      MAX_WORK_ITEMS_FOR_DURATION), MIN_WORK_ITEMS_FOR_DURATION);
-    logger.debug(`Minimum number of successful work items for thresholding is ${minSuccessful}`);
-
-    if (results.length >= minSuccessful) {
-      // compute an upper boundary to identify outliers using the IQR method with the 
-      // durations of the successful work items, but assume that
-      // no successful run can be an outlier. so if the IQR method gives a threshold that is
-      // too low, set the threshold to 1.5 times the duration of the longest running successful
-      // work item
-      const durations = results.map(result => result.duration);
-      threshold = quantile(durations, 0.75)
-        + 1.5 * interquartileRange(durations);
-      const maxSuccessfulDuration = max(durations);
-      if (threshold < 1.5 * maxSuccessfulDuration) {
-        threshold = 1.5 * maxSuccessfulDuration;
-      }
+    if (result) {
+      threshold = 2.0 * result.max;
     } else {
       logger.debug('Using default threshold');
     }
     logger.debug(`Threshold is ${threshold}`);
 
   } catch (e) {
-    logger.error(`Failed to get work item times for service ${serviceID} of job ${jobID}`);
+    logger.error(`Failed to get MAX duration for service ${serviceID} of job ${jobID}`);
   }
 
   return threshold;

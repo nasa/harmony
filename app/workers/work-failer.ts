@@ -1,5 +1,5 @@
 import { Logger } from 'winston';
-import WorkItem, { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../models/work-item';
+import { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../models/work-item';
 import env from '../util/env';
 import { Worker } from './worker';
 import db from '../util/db';
@@ -48,9 +48,8 @@ export default class WorkFailer implements Worker {
       jobIds: string[]
     } = { workItemIds: [], jobIds: [] };
     const jobServiceThresholds = {};
-    const testOlderThan = 0;
     const workItems = await getWorkItemsByUpdateAgeAndStatus(
-      db, testOlderThan, [WorkItemStatus.RUNNING],
+      db, lastUpdateOlderThanMinutes, [WorkItemStatus.RUNNING],
       [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
       ['w.id', 'w.jobID', 'serviceID', 'startedAt'],
     );

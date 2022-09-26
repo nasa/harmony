@@ -156,9 +156,9 @@ WORK_REAPER_PERIOD_SEC=360
 REAPABLE_WORK_AGE_MINUTES=1440
 
 # The time (in seconds) between invocations of the work failer service
-WORK_FAILER_PERIOD_SEC=60
+WORK_FAILER_PERIOD_SEC=360
 
-# WorkItems that have not been updated for more than this many minutes are possibly
+# WorkItems that have not been updated for more than this many minutes are
 # updated by the work failer (resulting either in job and work item failure or a retry)
 FAILABLE_WORK_AGE_MINUTES=1
 

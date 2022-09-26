@@ -9,7 +9,7 @@ import { hookGetWorkRequest } from './helpers/pull-worker';
 import * as pullWorker from '../app/workers/pull-worker';
 import PullWorker from '../app/workers/pull-worker';
 import * as serviceRunner from '../app/service/service-runner';
-import { existsSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 
 const {
   _pullWork,
@@ -187,6 +187,7 @@ describe('Pull Worker', async function () {
         writeFileSync('/tmp/TERMINATING', '1');
       });
       afterEach(function () {
+        rmSync('/tmp/TERMINATING');
         pullWorkSpy.restore();
         doWorkSpy.restore();
       });
@@ -226,6 +227,7 @@ describe('Pull Worker', async function () {
         writeFileSync('/tmp/TERMINATING', '1');
         await _pullAndDoWork(false);
         expect(existsSync('/tmp/TERMINATING')).to.be.true;
+        rmSync('/tmp/TERMINATING');
       });
     });
 

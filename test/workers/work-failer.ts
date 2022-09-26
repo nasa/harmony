@@ -49,9 +49,9 @@ describe('WorkFailer', function () {
     // (they will have been running for a while by the time the WorkFailer is triggered)
     await twoOldJob.save(this.trx);
     MockDate.set(oldDate);
-    const twoOldJobItem1 = buildWorkItem({ jobID: twoOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
+    const twoOldJobItem1 = buildWorkItem({ jobID: twoOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0, startedAt: new Date() });
     await twoOldJobItem1.save(this.trx);
-    const twoOldJobItem2 = buildWorkItem({ jobID: twoOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
+    const twoOldJobItem2 = buildWorkItem({ jobID: twoOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0, startedAt: new Date() });
     await twoOldJobItem2.save(this.trx);
     await buildWorkflowStep({ jobID: twoOldJob.jobID, stepIndex: 0 }).save(this.trx);
     MockDate.reset();
@@ -59,10 +59,10 @@ describe('WorkFailer', function () {
     // this job has 1 (out of 2) old work items (both RUNNING), and ignoreErrors: true
     await oneOldJob.save(this.trx);
     MockDate.set(newDate);
-    const oneOldJobItem1 = buildWorkItem({ jobID: oneOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
+    const oneOldJobItem1 = buildWorkItem({ jobID: oneOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0, startedAt: new Date() });
     await oneOldJobItem1.save(this.trx);
     MockDate.set(oldDate);
-    const oneOldJobItem2 = buildWorkItem({ jobID: oneOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
+    const oneOldJobItem2 = buildWorkItem({ jobID: oneOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0, startedAt: new Date() });
     await oneOldJobItem2.save(this.trx);
     await buildWorkflowStep({ jobID: oneOldJobItem2.jobID, stepIndex: 0 }).save(this.trx);
     MockDate.reset();
@@ -71,7 +71,7 @@ describe('WorkFailer', function () {
     noneOldJob = buildJob({ status: JobStatus.RUNNING });
     await noneOldJob.save(this.trx);
     MockDate.set(newDate);
-    const noneOldJobItem1 = buildWorkItem({ jobID: noneOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
+    const noneOldJobItem1 = buildWorkItem({ jobID: noneOldJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0, startedAt: new Date() });
     await noneOldJobItem1.save(this.trx);
     await buildWorkflowStep({ jobID: noneOldJobItem1.jobID, stepIndex: 0 }).save(this.trx);
 
@@ -79,7 +79,7 @@ describe('WorkFailer', function () {
     readyItemJob = buildJob({ status: JobStatus.RUNNING });
     await readyItemJob.save(this.trx);
     MockDate.set(newDate);
-    const readyItemJobItem1 = buildWorkItem({ jobID: readyItemJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0 });
+    const readyItemJobItem1 = buildWorkItem({ jobID: readyItemJob.jobID, status: WorkItemStatus.RUNNING, workflowStepIndex: 0, startedAt: new Date() });
     await readyItemJobItem1.save(this.trx);
     MockDate.set(oldDate);
     readyItemJobItem2 = buildWorkItem({ jobID: readyItemJob.jobID, status: WorkItemStatus.READY, workflowStepIndex: 0 });
