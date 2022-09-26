@@ -13650,7 +13650,6 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: sds/swot-reproject
     data_operation_version: &#39;0.9.0&#39;
-    max_batch_inputs: 1
     type:
       &lt;&lt;: *default-turbo-config
       params:
@@ -13730,7 +13729,6 @@ https://cmr.uat.earthdata.nasa.gov:
   # the frontend callback server.
   - name: harmony/chaining-example
     data_operation_version: &#39;0.9.0&#39;
-    max_batch_inputs: 2000
     type:
       &lt;&lt;: *default-turbo-config
       params:
@@ -13756,7 +13754,6 @@ https://cmr.uat.earthdata.nasa.gov:
    # This is an example service using a result handler
   - name: harmony/result-handler-example
     data_operation_version: &#39;0.9.0&#39;
-    max_batch_inputs: 2
     type:
       &lt;&lt;: *default-turbo-config
       params:
@@ -13832,6 +13829,8 @@ https://cmr.uat.earthdata.nasa.gov:
 
   - name: harmony/netcdf-to-zarr
     data_operation_version: &#39;0.9.0&#39;
+    is_batched: true
+    max_batch_inputs: 100
     type:
       &lt;&lt;: *default-turbo-config
       params:

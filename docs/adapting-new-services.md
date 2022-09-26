@@ -101,7 +101,7 @@ The structure of an entry in the [services.yml](../config/services.yml) file is 
       variables:                  # A list of variables provided by the collection (OPTIONAL)
         - v1
         - v2
-  max_batch_inputs: 1             # The maximum number of granules in each batch operation
+  max_batch_inputs: 10            # The maximum number of granules in each batch operation
   is_batched: true                # Set this if the service should receive a batch of inputs
   maximum_sync_granules: 1        # Optional limit for the maximum number of granules for a request to be handled synchronously. Defaults to 1. Set to 0 to only allow async requests.
   capabilities:                   # Service capabilities
