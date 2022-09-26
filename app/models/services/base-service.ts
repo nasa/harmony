@@ -42,6 +42,7 @@ export interface ServiceCollection {
 
 export interface ServiceConfig<ServiceParamType> {
   batch_size?: number;
+  is_batched?: boolean;
   name?: string;
   data_operation_version?: string;
   granule_limit?: number;
