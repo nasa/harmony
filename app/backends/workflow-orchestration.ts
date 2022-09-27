@@ -538,6 +538,8 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
       duration = Math.max(duration, update.duration);
     }
 
+    logger.debug(`Work item duration (ms): ${duration}`);
+
     await updateWorkItemStatus(tx, workItemID, status as WorkItemStatus, duration, totalGranulesSize);
 
     const completedWorkItemCount = await workItemCountForStep(
