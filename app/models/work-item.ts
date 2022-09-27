@@ -639,12 +639,12 @@ export async function computeWorkItemDurationOutlierThresholdForJobService(
       .where({
         jobID,
         serviceID,
-        'status': 'successful',
+        'status': WorkItemStatus.SUCCESSFUL,
       })
       .max('duration', { as: 'max' })
       .first();
 
-    if (result) {
+    if (result && result.max > 0) {
       threshold = 2.0 * result.max;
     } else {
       logger.debug('Using default threshold');
