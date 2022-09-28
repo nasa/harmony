@@ -16,7 +16,7 @@ const QUERY_CMR_STEP_INDEX = 1;
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
-  'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex',
+  'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'duration', 'startedAt',
 ];
 
 /**
@@ -59,6 +59,12 @@ export default class WorkItem extends Record implements WorkItemRecord {
 
   // The number of times this work-item has been retried
   retryCount: number;
+
+  // When the work item started processing
+  startedAt?: Date;
+
+  // How long in milliseconds the work item took to process
+  duration: number;
 
   /**
    * Saves the work item to the database using the given transaction.
@@ -173,8 +179,13 @@ export async function getNextWorkItem(
 
           if (workItemData) {
             workItemData.operation = JSON.parse(operation);
+            const startedAt = new Date();
             await tx(WorkItem.table)
-              .update({ status: WorkItemStatus.RUNNING, updatedAt: new Date() })
+              .update({
+                status: WorkItemStatus.RUNNING,
+                updatedAt: startedAt,
+                startedAt,
+              })
               .where({ id: workItemData.id });
             // need to update the job otherwise long running jobs won't count against
             // the user's priority
@@ -195,23 +206,25 @@ export async function getNextWorkItem(
 }
 
 /**
- * Update the status in the database for a WorkItem
+ * Update the status and duration in the database for a WorkItem
  * @param tx - the transaction to use for querying
  * @param id - the id of the WorkItem
  * @param status - the status to set for the WorkItem
+ * @param duration - how long the work item took to process
  * @param totalGranulesSize - the combined sizes of all the input granules for this work item
  */
 export async function updateWorkItemStatus(
   tx: Transaction,
   id: number,
   status: WorkItemStatus,
+  duration: number,
   totalGranulesSize: number,
 ): Promise<void> {
   logger.debug(`updatedWorkItemStatus: Updating status for work item ${id} to ${status}`);
 
   try {
     await tx(WorkItem.table)
-      .update({ status, totalGranulesSize, updatedAt: new Date() })
+      .update({ status, duration, totalGranulesSize, updatedAt: new Date() })
       .where({ id });
     logger.debug(`Status for work item ${id} set to ${status}`);
   } catch (e) {
@@ -431,6 +444,7 @@ export async function getWorkItemIdsByJobUpdateAgeAndStatus(
  * @param lastUpdateOlderThanMinutes - retrieve WorkItems with updatedAt older than lastUpdateOlderThanMinutes
  * @param workItemStatuses - only WorkItems with these statuses will be retrieved
  * @param jobStatuses - only WorkItems associated with jobs with these statuses will be retrieved
+ * @param fields - optional parameter to indicate which fields to retrieve - defaults to all
  * @returns all WorkItems that meet the lastUpdateOlderThanMinutes and status constraints
 */
 export async function getWorkItemsByUpdateAgeAndStatus(
@@ -438,11 +452,12 @@ export async function getWorkItemsByUpdateAgeAndStatus(
   lastUpdateOlderThanMinutes: number,
   workItemStatuses: WorkItemStatus[],
   jobStatuses: JobStatus[],
+  fields = tableFields,
 ): Promise<WorkItem[]> {
   const pastDate = subMinutes(new Date(), lastUpdateOlderThanMinutes);
   const workItems = (await tx(`${WorkItem.table} as w`)
     .innerJoin(Job.table, 'w.jobID', '=', `${Job.table}.jobID`)
-    .select(...tableFields)
+    .select(...fields)
     .whereIn(`${Job.table}.status`, jobStatuses)
     .where('w.updatedAt', '<', pastDate)
     .whereIn('w.status', workItemStatuses))
@@ -602,4 +617,44 @@ export async function getTotalWorkItemSizeForJobID(
   }
 
   return totalSize;
+}
+
+/**
+ * Compute the threshold (in milliseconds) to be used to expire work items for a given job/service
+ * 
+ * @param jobID - the ID of the Job for the step
+ * @param serviceID - the serviceID of the step within the workflow
+ */
+export async function computeWorkItemDurationOutlierThresholdForJobService(
+  jobID: string,
+  serviceID: string,
+): Promise<number> {
+  // default to two hours
+  let threshold = 7200000;
+
+  try {
+    // use a simple heuristic of 2 times the longest duration of all the successful work items
+    // for this job/service
+    const result = await db(WorkItem.table)
+      .where({
+        jobID,
+        serviceID,
+        'status': WorkItemStatus.SUCCESSFUL,
+      })
+      .max('duration', { as: 'max' })
+      .first();
+
+    if (result && result.max > 0) {
+      threshold = 2.0 * result.max;
+    } else {
+      logger.debug('Using default threshold');
+    }
+    logger.debug(`Threshold is ${threshold}`);
+
+  } catch (e) {
+    logger.error(`Failed to get MAX duration for service ${serviceID} of job ${jobID}`);
+  }
+
+  return threshold;
+
 }

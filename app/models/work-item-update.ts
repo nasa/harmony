@@ -29,4 +29,7 @@ export default interface WorkItemUpdate {
   // error message if status === FAILED
   errorMessage?: string;
 
+  // how long the work item took to process
+  duration?: number;
+
 }

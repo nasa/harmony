@@ -53,6 +53,8 @@ CREATE TABLE `work_items` (
   `stacCatalogLocation` varchar(255),
   `totalGranulesSize` double precision not null default 0,
   `retryCount` integer not null default 0,
+  `duration` float not null default -1.0,
+  `startedAt` datetime,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
   FOREIGN KEY(jobID) REFERENCES jobs(jobID)
