@@ -1,5 +1,5 @@
 import { Logger } from 'winston';
-import { getWorkItemsByUpdateAgeAndStatus } from '../models/work-item';
+import { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../models/work-item';
 import env from '../util/env';
 import { Worker } from './worker';
 import db from '../util/db';
@@ -10,6 +10,17 @@ import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
 
 export interface WorkFailerConfig {
   logger: Logger;
+}
+
+/**
+ * Construct a message indicating that the given work item has exceeded the given duration
+ * 
+ * @param item - the work item that is being failed
+ * @param duration - the duration threshold that the work item has exceeded
+ * @returns 
+ */
+function failedMessage(itemId: number, duration: number): string {
+  return `Work item ${itemId} has exceeded the ${duration} ms duration threshold.`;
 }
 
 /**
@@ -36,21 +47,46 @@ export default class WorkFailer implements Worker {
       workItemIds: number[],
       jobIds: string[]
     } = { workItemIds: [], jobIds: [] };
+    const jobServiceThresholds = {};
     const workItems = await getWorkItemsByUpdateAgeAndStatus(
       db, lastUpdateOlderThanMinutes, [WorkItemStatus.RUNNING],
       [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
+      ['w.id', 'w.jobID', 'serviceID', 'startedAt'],
     );
     if (workItems?.length > 0) {
-      const workItemIds = workItems.map((item) => item.id);
+      // compute duration thresholds for each job/service
+      for (const workItem of workItems) {
+        const { jobID, serviceID } = workItem;
+        const key = `${jobID}${serviceID}`;
+        if (!jobServiceThresholds[key]) {
+          const outlierThreshold = await computeWorkItemDurationOutlierThresholdForJobService(jobID, serviceID);
+          jobServiceThresholds[key] = outlierThreshold;
+        }
+      }
+      const expiredWorkItems = workItems.filter((item) => {
+        const { jobID, serviceID } = item;
+        const key = `${jobID}${serviceID}`;
+        const threshold = jobServiceThresholds[key];
+        const runningTime = Date.now() - item.startedAt.valueOf();
+        return runningTime > threshold;
+      });
+      const workItemIds = expiredWorkItems.map((item) => item.id);
+      for (const workItem of expiredWorkItems) {
+        this.logger.warn(`expiring work item ${workItem.id}`);
+      }
       const jobIds = new Set(workItems.map((item) => item.jobID));
       for (const jobId of jobIds) {
         try {
-          const itemsForJob = workItems.filter((item) => item.jobID === jobId);
-          await Promise.all(itemsForJob.map((item) => { 
+          const itemsForJob = expiredWorkItems.filter((item) => item.jobID === jobId);
+          await Promise.all(itemsForJob.map((item) => {
+            const key = `${jobId}${item.serviceID}`;
+            const message = failedMessage(item.id, jobServiceThresholds[key]);
+            this.logger.debug(message);
             return handleWorkItemUpdate(
               { workItemID: item.id, status: WorkItemStatus.FAILED,
                 scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
-                errorMessage: `Work item has not been updated for over ${lastUpdateOlderThanMinutes} minutes.` },
+                errorMessage: message,
+              },
               this.logger);
           }));
         } catch (e) {
@@ -63,7 +99,7 @@ export default class WorkFailer implements Worker {
         workItemIds,
       };
       this.logger.info('Work failer processed work item updates for ' +
-        `${jobIds.size} jobs and ${workItems.length} work items.`);
+        `${jobIds.size} jobs and ${workItemIds.length} work items.`);
     }
     return response;
   }

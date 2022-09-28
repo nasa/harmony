@@ -56,6 +56,12 @@ export interface WorkItemRecord {
   // The number of times this work-item has been retried
   retryCount: number;
 
+  // When the work item started processing
+  startedAt?: Date;
+
+  // How long in milliseconds the work item took to process
+  duration: number;
+
   // The last time the record was updated
   updatedAt: Date;
 
