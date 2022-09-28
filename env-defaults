@@ -190,7 +190,7 @@ WORKER_TIMEOUT=14400000
 MAX_DOWNLOAD_RETRIES=10
 
 # Number of times to retry a failed work item
-WORK_ITEM_RETRY_LIMIT=3
+WORK_ITEM_RETRY_LIMIT=5
 
 ###########################################################################
 #                             Service Config                              #
