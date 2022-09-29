@@ -12,6 +12,8 @@ import db from '../../util/db';
 import env from '../../util/env';
 import { WorkItemStatus } from '../work-item-interface';
 import { getRequestMetric } from '../../util/metrics';
+import { getRequestUrl } from '../../util/url';
+import HarmonyRequest from '../harmony-request';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -206,13 +208,11 @@ export default abstract class BaseService<ServiceParamType> {
    *
    * @returns A promise resolving to the result of the callback.
    */
-  async invoke(
-    logger?: Logger, harmonyRoot?: string, requestUrl?: string,
-  ): Promise<InvocationResult> {
+  async invoke(req: HarmonyRequest, logger?: Logger): Promise<InvocationResult> {
     this.logger = logger;
     logger.info('Invoking service for operation', { operation: this.operation });
     // TODO handle the skipPreview parameter here when implementing HARMONY-1129
-    const job = this._createJob(requestUrl);
+    const job = this._createJob(getRequestUrl(req));
     await this._createAndSaveWorkflow(job);
 
     const { isAsync, requestId } = job;
