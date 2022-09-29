@@ -22,7 +22,7 @@ interface BucketParams {
 
 /**
  * Read a stream into a string
- * 
+ *
  * @param readableStream - The stream to read
  * @returns A string containing the contents of the stream
  */
@@ -90,7 +90,7 @@ export class S3ObjectStore {
     }
     const object = {
       Bucket: url.hostname,
-      Key: url.pathname.substr(1), // Nuke leading "/"
+      Key: url.pathname.substr(1).replaceAll('%20', ' '), // Nuke leading "/" and convert %20 to spaces
     };
 
     // Verifies that the object exists, or throws NotFound
@@ -145,7 +145,7 @@ export class S3ObjectStore {
 
   /**
    * List all of the object keys for the given prefix.
-   * 
+   *
    * @param paramsOrUrl - a map of parameters (Bucket, Key) indicating the objects to
    *   be retrieved or the object URL
    * @returns a promise resolving to a list of s3 object keys (strings)
