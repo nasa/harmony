@@ -24,8 +24,6 @@ export interface RequestMetric {
   referrer_request_id?: string; // We do not have this information
   request_id: string;
   user_id: string;
-  // We do not have the user_ip information, but the metrics team needs it set to a blank string
-  // rather than omitting it
   user_ip: string;
   rangeBeginDateTime?: string;
   rangeEndDateTime?: string;
