@@ -3,6 +3,7 @@
 // See https://wiki.earthdata.nasa.gov/display/METS/Data+Schema+Collaboration+Space
 
 import DataOperation from '../models/data-operation';
+import HarmonyRequest from '../models/harmony-request';
 import { Job } from '../models/job';
 import { isFailureStatus } from './job';
 
@@ -24,8 +25,6 @@ export interface RequestMetric {
   referrer_request_id?: string; // We do not have this information
   request_id: string;
   user_id: string;
-  // We do not have the user_ip information, but the metrics team needs it set to a blank string
-  // rather than omitting it
   user_ip: string;
   rangeBeginDateTime?: string;
   rangeEndDateTime?: string;
@@ -97,13 +96,18 @@ function constructBboxFromOperation(operation: DataOperation): BboxMetric {
  *
  * @returns the request metric
  */
-export function getRequestMetric(operation: DataOperation, serviceName: string): RequestMetric {
+export function getRequestMetric(
+  req: HarmonyRequest, operation: DataOperation, serviceName: string,
+): RequestMetric {
   const rangeBeginDateTime = operation.temporal?.start;
   const rangeEndDateTime = operation.temporal?.end;
+  const headers = req?.headers;
+  const forwardedHeader = headers ? headers['x-forwarded-for'] as string : '';
+  const user_ip = forwardedHeader?.split(',')[0];
 
   const metric: RequestMetric = {
     request_id: operation.requestId,
-    user_ip: '',
+    user_ip: user_ip || '',
     user_id: operation.user,
     parameters: { service_name: serviceName },
   };
