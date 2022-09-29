@@ -102,7 +102,7 @@ export function getRequestMetric(
   const rangeBeginDateTime = operation.temporal?.start;
   const rangeEndDateTime = operation.temporal?.end;
   const headers = req?.headers;
-  const forwardedHeader = headers ? headers['x-forwarded-for'] as unknown as string : '';
+  const forwardedHeader = headers ? headers['x-forwarded-for'] as string : '';
   const user_ip = forwardedHeader?.split(',')[0];
 
   const metric: RequestMetric = {
