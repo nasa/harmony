@@ -216,7 +216,7 @@ export default abstract class BaseService<ServiceParamType> {
     await this._createAndSaveWorkflow(job);
 
     const { isAsync, requestId } = job;
-    const requestMetric = getRequestMetric(this.operation, this.config.name);
+    const requestMetric = getRequestMetric(req, this.operation, this.config.name);
     logger.info(`Request metric for request ${requestId}`, { requestMetric: true, ...requestMetric } );
     this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
     return new Promise((resolve, reject) => {
