@@ -560,6 +560,9 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1238570311-POCLOUD
       - id: C1243729749-EEDTEST
       - id: C1243747507-EEDTEST
+      - id: C1254989831-LARC_ASDC
+      - id: C1254989897-LARC_ASDC
+      - id: C1245508858-LARC_ASDC
     capabilities:
       subsetting:
         bbox: true
