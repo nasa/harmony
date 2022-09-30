@@ -363,7 +363,7 @@ https://cmr.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS
+          STAGING_PATH: public/sds/HOSS-geographic
     umm_s:
       - S2164732315-XYZ_PROV
       - S2378172160-ORNL_CLOUD
@@ -396,7 +396,7 @@ https://cmr.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS
+          STAGING_PATH: public/sds/HOSS-projection-gridded
     umm_s:
       - S2300730272-XYZ_PROV
     collections: []
@@ -1006,7 +1006,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS
+          STAGING_PATH: public/sds/HOSS-geographic
     umm_s:
       - S1240682712-EEDTEST
       - S1241070355-GES_DISC # GESDISC_HOSS
@@ -1040,7 +1040,7 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS
+          STAGING_PATH: public/sds/HOSS-projection-gridded
     umm_s:
       - S1245117629-EEDTEST
     collections: []
