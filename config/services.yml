@@ -329,34 +329,6 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['concatenate']
 
-  - name: sds/HOSS
-    # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
-    data_operation_version: '0.17.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS
-    umm_s:
-      - S2164732315-XYZ_PROV
-      - S2378172160-ORNL_CLOUD
-    #   - Add GES-DISC production UMM-S record here.
-    collections: []
-    capabilities:
-      subsetting:
-        bbox: true
-        variable: true
-        dimension: true
-      output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset']
-
   - name: sds/trajectory-subsetter
     data_operation_version: '0.17.0'
     type:
@@ -381,9 +353,9 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
         operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
 
-  - name: sds/HOSS-maskfill
-    # Provides polygon spatial subsetting for collections hosted in OPeNDAP
-    # Also provides variable and temporal subsetting through HOSS.
+  - name: sds/HOSS-geographic
+    # Provides variable, temporal, bounding box spatial and polygon spatial
+    # subsetting for geographically gridded collections hosted in OPeNDAP.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -391,7 +363,40 @@ https://cmr.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS
+          STAGING_PATH: public/sds/HOSS-geographic
+    umm_s:
+      - S2164732315-XYZ_PROV
+      - S2378172160-ORNL_CLOUD
+    collections: []
+    capabilities:
+      subsetting:
+        bbox: true
+        dimension: true
+        shape: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${VAR_SUBSETTER_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
+      - image: !Env ${SDS_MASKFILL_IMAGE}
+        operations: ['shapefileSubset']
+        conditional:
+          exists: ['shapefileSubset']
+
+  - name: sds/HOSS-projection-gridded
+    # Provides variable, temporal, bounding box spatial and polygon spatial
+    # subsetting for projection gridded collections hosted in OPeNDAP.
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/HOSS-projection-gridded
     umm_s:
       - S2300730272-XYZ_PROV
     collections: []
@@ -410,6 +415,8 @@ https://cmr.earthdata.nasa.gov:
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
+        conditional:
+          exists: ['shapefileSubset', 'spatialSubset']
 
   # OPS GDAL
   - name: nasa/harmony-gdal-adapter
@@ -687,6 +694,7 @@ https://cmr.uat.earthdata.nasa.gov:
     capabilities:
       subsetting:
         bbox: false
+        shape: false
         variable: true
       output_formats:
         - application/netcdf # Incorrect mime-type, remove when no longer needed
@@ -695,34 +703,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
         operations: ['variableSubset']
-
-  - name: sds/HOSS
-    # HOSS provides variable and bounding box spatial subsetting (geographically gridded collections)
-    data_operation_version: '0.17.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS
-    umm_s:
-      - S1240682712-EEDTEST
-      - S1241070355-GES_DISC # GESDISC_HOSS
-      - S1246887053-ORNL_CLOUD
-    collections: []
-    capabilities:
-      subsetting:
-        bbox: true
-        variable: true
-        dimension: true
-      output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset']
 
   - name: sds/maskfill
     data_operation_version: '0.17.0'
@@ -1016,9 +996,9 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           format: ['application/x-zarr']
 
-  - name: sds/HOSS-maskfill
-    # Provides polygon spatial subsetting for collections hosted in OPeNDAP
-    # Also provides variable and temporal subsetting through HOSS.
+  - name: sds/HOSS-geographic
+    # Provides variable, temporal, bounding box spatial and polygon spatial
+    # subsetting for geographically gridded collections hosted in OPeNDAP.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -1026,11 +1006,44 @@ https://cmr.uat.earthdata.nasa.gov:
         <<: *default-turbo-params
         env:
           <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS
+          STAGING_PATH: public/sds/HOSS-geographic
+    umm_s:
+      - S1240682712-EEDTEST
+      - S1241070355-GES_DISC # GESDISC_HOSS
+      - S1246887053-ORNL_CLOUD
+    collections: []
+    capabilities:
+      subsetting:
+        bbox: true
+        dimension: true
+        shape: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${VAR_SUBSETTER_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
+      - image: !Env ${SDS_MASKFILL_IMAGE}
+        operations: ['shapefileSubset']
+        conditional:
+          exists: ['shapefileSubset']
+
+  - name: sds/HOSS-projection-gridded
+    # Provides variable, temporal, bounding box spatial and polygon spatial
+    # subsetting for projection gridded collections hosted in OPeNDAP.
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/HOSS-projection-gridded
     umm_s:
       - S1245117629-EEDTEST
-    collections:
-      - id: C1222931739-GHRC_CLOUD
+    collections: []
     capabilities:
       subsetting:
         bbox: true
@@ -1046,3 +1059,5 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
+        conditional:
+          exists: ['shapefileSubset', 'spatialSubset']

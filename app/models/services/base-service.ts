@@ -20,6 +20,7 @@ export interface ServiceCapabilities {
   concatenate_by_default?: boolean;
   subsetting?: {
     bbox?: boolean;
+    shape?: boolean;
     variable?: boolean;
     multiple_variable?: true;
   };
@@ -99,6 +100,7 @@ const conditionToOperationField = {
   reproject: 'crs',
   reformat: 'outputFormat',
   variableSubset: 'shouldVariableSubset',
+  shapefileSubset: 'shouldShapefileSubset',
   spatialSubset: 'shouldSpatialSubset',
   temporalSubset: 'shouldTemporalSubset',
   concatenate: 'shouldConcatenate',
