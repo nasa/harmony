@@ -5,10 +5,12 @@ import StubService from '../helpers/stub-service';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import { getMaxSynchronousGranules } from '../../app/models/services/base-service';
-import DataOperation from '../../app/models/data-operation';
+import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 import { chooseServiceConfig, buildService } from '../../app/models/services';
 import env from '../../app/util/env';
 import TurboService from '../../app/models/services/turbo-service';
+import { buildOperation } from '../helpers/data-operation';
+import _ from 'lodash';
 
 describe('services.chooseServiceConfig and services.buildService', function () {
   describe("when the operation's collection is configured for several services", function () {
@@ -723,7 +725,7 @@ describe('Services by association', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, conversionCollection, 'all', { headers, query: granuleQuery });
       it('uses the backend service from the association', function () {
-        expect(this.service.name).to.equal('harmony/netcdf-to-zarr');
+        expect(this.service.config.name).to.equal('harmony/netcdf-to-zarr');
       });
     });
 
@@ -731,15 +733,103 @@ describe('Services by association', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
       hookRangesetRequest(version, reprojectCollection, 'all', { headers, query: reprojectQuery });
       it('it uses the first matching service', function () {
-        expect(this.service.name).to.equal('harmony/service-example');
+        expect(this.service.config.name).to.equal('harmony/service-example');
       });
     });
   });
 });
 
 describe('createWorkflowSteps', function () {
-  // const serviceConfig = {
 
-  // };
-  // const service = StubService(callbackOptions, operation, serviceConfig.name);
+  const collectionId = 'C123-TEST';
+  const shortName = 'harmony_example';
+  const versionId = '1';
+  const operation = buildOperation('foo');
+  operation.addSource(collectionId, shortName, versionId);
+  const config = {
+    name: 'shapefile-tiff-netcdf-service',
+    data_operation_version: CURRENT_SCHEMA_VERSION,
+    type: { name: 'turbo' },
+    collections: [],
+    capabilities: {
+      output_formats: ['image/tiff', 'application/x-netcdf4'],
+      subsetting: {
+        shape: true,
+        variable: true,
+      },
+    },
+    steps: [{
+      image: 'query cmr',
+    }, {
+      image: 'var and bbox subsetter',
+      operations: ['variableSubset', 'spatialSubset', 'dimensionSubset'],
+      conditional: { exists: ['variableSubset', 'spatialSubset', 'dimensionSubset'] },
+    }, {
+      image: 'shapefile subsetter',
+      operations: ['shapefileSubset'],
+      conditional: { exists: ['shapefileSubset'] },
+    }],
+  };
+
+  describe('when an operation has only shapefile subsetting', function () {
+    const shapefile_operation = _.cloneDeep(operation);
+    shapefile_operation.geojson = 'interesting shape';
+    const service = new StubService(config, {}, shapefile_operation);
+    const steps = service.createWorkflowSteps();
+
+    it('creates two workflow steps', function () {
+      expect(steps.length).to.equal(2);
+    });
+
+    it('creates a first workflow step for query cmr', function () {
+      expect(steps[0].serviceID).to.equal('query cmr');
+    });
+
+    it('creates a second and final workflow step for the shapefile subsetter', function () {
+      expect(steps[1].serviceID).to.equal('shapefile subsetter');
+    });
+  });
+
+  describe('when an operation has only bbox subsetting', function () {
+    const bbox_operation = _.cloneDeep(operation);
+    bbox_operation.boundingRectangle = [1, 2, 3, 4];
+    const service = new StubService(config, {}, bbox_operation);
+    const steps = service.createWorkflowSteps();
+
+    it('creates two workflow steps', function () {
+      expect(steps.length).to.equal(2);
+    });
+
+    it('creates a first workflow step for query cmr', function () {
+      expect(steps[0].serviceID).to.equal('query cmr');
+    });
+
+    it('creates a second and final workflow step for the var and bbox subsetter', function () {
+      expect(steps[1].serviceID).to.equal('var and bbox subsetter');
+    });
+  });
+
+  describe('when an operation has both bbox and shapefile subsetting', function () {
+    const both_operation = _.cloneDeep(operation);
+    both_operation.boundingRectangle = [1, 2, 3, 4];
+    both_operation.geojson = 'interesting shape';
+    const service = new StubService(config, {}, both_operation);
+    const steps = service.createWorkflowSteps();
+
+    it('creates three workflow steps', function () {
+      expect(steps.length).to.equal(3);
+    });
+
+    it('creates a first workflow step for query cmr', function () {
+      expect(steps[0].serviceID).to.equal('query cmr');
+    });
+
+    it('creates a second workflow step for the var and bbox subsetter', function () {
+      expect(steps[1].serviceID).to.equal('var and bbox subsetter');
+    });
+
+    it('creates a third and final workflow step for the shapefile subsetter', function () {
+      expect(steps[2].serviceID).to.equal('shapefile subsetter');
+    });
+  });
 });

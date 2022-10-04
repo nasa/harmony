@@ -8,6 +8,7 @@ import BaseService, { ServiceConfig } from '../../app/models/services/base-servi
 import * as services from '../../app/models/services/index';
 import DataOperation from '../../app/models/data-operation';
 import InvocationResult from '../../app/models/services/invocation-result';
+import WorkflowStep from '../../app/models/workflow-steps';
 
 /**
  * Service implementation used for stubbing invocations for tests
@@ -19,8 +20,6 @@ export default class StubService extends BaseService<unknown> {
   isComplete: boolean;
 
   isRun: boolean;
-
-  name: string;
 
   /**
    * Creates an instance of StubService.
@@ -37,7 +36,6 @@ export default class StubService extends BaseService<unknown> {
     this.callbackOptions = callbackOptions;
     this.isComplete = false;
     this.isRun = false;
-    this.name = this.config.name;
   }
 
   /**
@@ -102,6 +100,13 @@ export default class StubService extends BaseService<unknown> {
       req = req.send(body);
     }
     return req;
+  }
+
+  /**
+   * Calls the protected createWorkflowSteps on the baseService for test purposes
+   */
+  createWorkflowSteps(): WorkflowStep[] {
+    return this._createWorkflowSteps();
   }
 
   /**
