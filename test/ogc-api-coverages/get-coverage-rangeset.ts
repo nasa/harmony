@@ -43,7 +43,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
 
       it('provides a staging location to the backend', function () {
         const location = this.service.operation.stagingLocation;
-        expect(location).to.match(new RegExp('^s3://[^/]+/public/harmony/stub/[^/]+/$'));
+        expect(location).to.match(new RegExp('^s3://[^/]+/public/.*$'));
       });
 
       it('passes the source collection to the backend', function () {
@@ -801,7 +801,7 @@ describe('OGC API Coverages - getCoverageRangeset', function () {
         expect(this.service.operation.outputFormat).to.equal(png);
       });
       it('uses the correct backend service', function () {
-        expect(this.service.name).to.equal('harmony/service-example');
+        expect(this.service.config.name).to.equal('harmony/service-example');
       });
     });
 
