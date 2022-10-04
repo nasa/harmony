@@ -10,8 +10,7 @@ import { S3ObjectStore } from '../../app/util/object-store';
  * Provides a parameterized `describe` blocks that tests expected format of data links.
  *
  * @param s3Uri - the S3 URI
- * @param serviceName - the name of the service used - defaults to noOpService for stubbed out
- * services.
+ * @param serviceName - the name of the service used - defaults to harmony/example
  */
 export function itReturnsUnchangedDataLinksForZarr(
   s3Uri: string,
