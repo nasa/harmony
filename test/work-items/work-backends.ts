@@ -1,6 +1,8 @@
 import { WorkItemStatus, getStacLocation, WorkItemRecord } from './../../app/models/work-item-interface';
 import { Job, JobRecord, JobStatus, terminalStates } from './../../app/models/job';
 import { describe, it } from 'mocha';
+import * as sinon from 'sinon';
+import { SinonStub } from 'sinon';
 import MockDate from 'mockdate';
 import { expect } from 'chai';
 import { v4 as uuid } from 'uuid';
@@ -8,6 +10,7 @@ import WorkItem, { getWorkItemById } from '../../app/models/work-item';
 import { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
+import * as workflowOrchestration from '../../app/backends/workflow-orchestration';
 import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
@@ -225,6 +228,151 @@ describe('Work Backends', function () {
       it('sets the job status to failed', async function () {
         const job = await Job.byJobID(db, this.job.jobID);
         expect(job.status).to.equal(JobStatus.FAILED);
+      });
+    });
+
+    describe('output granules sizes', async function () {
+      let readSTACCatalogStub: SinonStub;
+      let sizeOfObjectStub: SinonStub;
+      describe('when a work item provides all the granule sizes', async function () {
+        hookJobCreation(jobRecord);
+        hookWorkflowStepCreation(workflowStepRecord);
+        const runningWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.RUNNING,
+            startedAt: new Date(),
+          },
+        };
+        hookWorkItemCreation(runningWorkItemRecord);
+        const successfulWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.SUCCESSFUL,
+            results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+            scrollID: '-1234',
+            duration: 0,
+            outputGranuleSizes: [12340000000000, 5678],
+          },
+        };
+        before(async () => {
+          await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
+          readSTACCatalogStub = sinon.stub(workflowOrchestration, 'readSTACCatalog');
+          sizeOfObjectStub = sinon.stub(workflowOrchestration, 'sizeOfObject');
+        });
+        after(async () => {
+          readSTACCatalogStub.restore();
+          sizeOfObjectStub.restore();
+        });
+        hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
+
+        it('does not read the STAC catalog', async function () {
+          expect(readSTACCatalogStub.callCount).to.equal(0);
+        });
+
+        it('does not look up the granule sizes', async function () {
+          expect(sizeOfObjectStub.callCount).to.equal(0);
+        });
+
+        it('uses the granule sizes provided by the service', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.outputGranuleSizes).to.eql(successfulWorkItemRecord.outputGranuleSizes);
+        });
+      });
+
+      describe('when a work item provides some of the granule sizes', async function () {
+        hookJobCreation(jobRecord);
+        hookWorkflowStepCreation(workflowStepRecord);
+        const runningWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.RUNNING,
+            startedAt: new Date(),
+          },
+        };
+        hookWorkItemCreation(runningWorkItemRecord);
+        const successfulWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.SUCCESSFUL,
+            results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+            scrollID: '-1234',
+            duration: 0,
+            outputGranuleSizes: [12340000000000, 0],
+          },
+        };
+        before(async () => {
+          await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
+          readSTACCatalogStub = sinon.stub(workflowOrchestration, 'readSTACCatalog')
+            .callsFake(async (_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
+          sizeOfObjectStub = sinon.stub(workflowOrchestration, 'sizeOfObject')
+            .callsFake(async (_) => 7000000000);
+        });
+        after(async () => {
+          readSTACCatalogStub.restore();
+          sizeOfObjectStub.restore();
+        });
+        hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
+
+        it('reads the STAC catalog', async function () {
+          expect(readSTACCatalogStub.callCount).to.equal(1);
+        });
+
+        it('looks up the missing the granule sizes', async function () {
+          expect(sizeOfObjectStub.callCount).to.equal(1);
+        });
+
+        it('uses the granule sizes provided by the service', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.outputGranuleSizes).to.eql([12340000000000, 7000000000]);
+        });
+      });
+
+      describe('when a work item does not provide granule sizes', async function () {
+        hookJobCreation(jobRecord);
+        hookWorkflowStepCreation(workflowStepRecord);
+        const runningWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.RUNNING,
+            startedAt: new Date(),
+          },
+        };
+        hookWorkItemCreation(runningWorkItemRecord);
+        const successfulWorkItemRecord = {
+          ...workItemRecord,
+          ...{
+            status: WorkItemStatus.SUCCESSFUL,
+            results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+            scrollID: '-1234',
+            duration: 0,
+          },
+        };
+        before(async () => {
+          await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
+          readSTACCatalogStub = sinon.stub(workflowOrchestration, 'readSTACCatalog')
+            .callsFake(async (_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
+          sizeOfObjectStub = sinon.stub(workflowOrchestration, 'sizeOfObject')
+            .callsFake(async (_) => 7000000000);
+        });
+        after(async () => {
+          readSTACCatalogStub.restore();
+          sizeOfObjectStub.restore();
+        });
+        hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
+
+        it('reads the STAC catalog', async function () {
+          expect(readSTACCatalogStub.callCount).to.equal(1);
+        });
+
+        it('looks up the granule sizes', async function () {
+          expect(sizeOfObjectStub.callCount).to.equal(2);
+        });
+
+        it('uses the granule sizes provided by the service', async function () {
+          const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
+          expect(updatedWorkItem.outputGranuleSizes).to.eql([7000000000, 7000000000]);
+        });
       });
     });
 

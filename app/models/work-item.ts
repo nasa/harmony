@@ -57,6 +57,9 @@ export default class WorkItem extends Record implements WorkItemRecord {
   // The sum of the sizes of the granules associated with this work item
   totalGranulesSize?: number;
 
+  // The size (in bytes) of each granule produced by this work item (used for batching)
+  outputGranuleSizes?: number[];
+
   // The number of times this work-item has been retried
   retryCount: number;
 
@@ -212,6 +215,7 @@ export async function getNextWorkItem(
  * @param status - the status to set for the WorkItem
  * @param duration - how long the work item took to process
  * @param totalGranulesSize - the combined sizes of all the input granules for this work item
+ * @param outputGranuleSizes - the separate size of each granule in the output for this work item
  */
 export async function updateWorkItemStatus(
   tx: Transaction,
@@ -219,12 +223,13 @@ export async function updateWorkItemStatus(
   status: WorkItemStatus,
   duration: number,
   totalGranulesSize: number,
+  outputGranuleSizes: number[],
 ): Promise<void> {
   logger.debug(`updatedWorkItemStatus: Updating status for work item ${id} to ${status}`);
-
+  const outputGranuleSizesJson = JSON.stringify(outputGranuleSizes);
   try {
     await tx(WorkItem.table)
-      .update({ status, duration, totalGranulesSize, updatedAt: new Date() })
+      .update({ status, duration, totalGranulesSize, outputGranuleSizesJson, updatedAt: new Date() })
       .where({ id });
     logger.debug(`Status for work item ${id} set to ${status}`);
   } catch (e) {
@@ -294,6 +299,9 @@ export async function getWorkItemById(
   const workItemData = await query;
 
   const workItem = workItemData && new WorkItem(workItemData);
+  if (workItemData.outputGranuleSizesJson) {
+    workItem.outputGranuleSizes = JSON.parse(workItemData.outputGranuleSizesJson);
+  }
   return workItem;
 }
 

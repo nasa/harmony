@@ -18,15 +18,16 @@ export interface DataSource {
  * @param maxCmrGranules - The maximum size of the page to request from CMR
  * @param filePrefix - The prefix to give each granule STAC item placed in the directory
  * @returns a tuple containing
- * the total size of the granules returned by this call, an array of STAC catalogs,
- * a new session/search_after string (formerly scrollID), and the total cmr hits.
+ * the total size of the granules returned by this call, an array of sizes (in bytes) of each granule,
+ * an array of STAC catalogs, a new session/search_after string (formerly scrollID), and the total
+ * cmr hits.
  */
 async function querySearchAfter(
   token: string,
   scrollId: string,
   filePrefix: string,
   maxCmrGranules: number,
-): Promise<[number, StacCatalog[], string, number]> {
+): Promise<[number, number[], StacCatalog[], string, number]> {
   let sessionKey, searchAfter;
   if (scrollId) {
     [sessionKey, searchAfter] = scrollId.split(':', 2);
@@ -42,8 +43,16 @@ async function querySearchAfter(
   const newSearchAfter = cmrResponse.searchAfter;
   logger.info(`CMR Hits: ${hits}, Number of granules returned in this page: ${cmrResponse.granules.length}`);
   let totalGranulesSize = 0;
+  const outputGranuleSizes = [];
   const catalogs = cmrResponse.granules.map((granule) => {
     const granuleSize = granule.granule_size ? parseFloat(granule.granule_size) : 0;
+    let granuleSizeInBytes = granuleSize * 1024 * 1024;
+    // NaN will fail the first check
+    if (granuleSizeInBytes != granuleSizeInBytes || granuleSizeInBytes < 0) {
+      granuleSizeInBytes = 0;
+    }
+    logger.info(`Granule size: ${granuleSizeInBytes}`);
+    outputGranuleSizes.push(granuleSizeInBytes);
     totalGranulesSize += granuleSize;
     const result = new CmrStacCatalog({ description: `CMR collection ${granule.collection_concept_id}, granule ${granule.id}` });
     result.links.push({
@@ -57,7 +66,7 @@ async function querySearchAfter(
 
   const newScrollId = `${sessionKey}:${newSearchAfter}`;
 
-  return [totalGranulesSize, catalogs, newScrollId, hits];
+  return [totalGranulesSize, outputGranuleSizes, catalogs, newScrollId, hits];
 
 }
 
@@ -77,9 +86,10 @@ export async function queryGranules(
   operation: DataOperation,
   scrollId: string,
   maxCmrGranules: number,
-): Promise<[number, StacCatalog[], string, number]> {
+): Promise<[number, number[], StacCatalog[], string, number]> {
   const { unencryptedAccessToken } = operation;
-  const [totalGranulesSize, catalogs, newScrollId, hits] = await querySearchAfter(unencryptedAccessToken, scrollId, './granule', maxCmrGranules);
+  const [totalGranulesSize, outputGranuleSizes, catalogs, newScrollId, hits] =
+    await querySearchAfter(unencryptedAccessToken, scrollId, './granule', maxCmrGranules);
 
-  return [totalGranulesSize, catalogs, newScrollId, hits];
+  return [totalGranulesSize, outputGranuleSizes, catalogs, newScrollId, hits];
 }
