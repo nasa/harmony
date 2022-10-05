@@ -2,6 +2,7 @@ import { Response, Request, NextFunction } from 'express';
 import axios from 'axios';
 import env from '../util/env';
 import { keepAliveAgent } from '../util/axios-clients';
+import logger from '../../../../app/util/log';
 
 /**
  * Get prometheus-compatible metric message from harmony backend
@@ -10,8 +11,7 @@ import { keepAliveAgent } from '../util/axios-clients';
  */
 async function _getHarmonyMetric(serviceID: string): Promise<string> {
 
-  const timeout = 3_000; // Wait up to 3 seconds for the server to start sending
-
+  const timeout = 60_000; // Wait up to one minute for the harmony backend server to respond
   const workUrl = `http://${env.backendHost}:${env.backendPort}/service/metrics`;
   const response = await axios
     .get(workUrl, {
@@ -55,6 +55,7 @@ export async function generateMetricsForPrometheus(
     // Send response
     res.send(metric_message);
   } catch (e) {
+    logger.error('Failed to query harmony backend for service metrics.');
     next(e);
   }
 }
