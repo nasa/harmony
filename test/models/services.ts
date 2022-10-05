@@ -5,10 +5,12 @@ import StubService from '../helpers/stub-service';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import { getMaxSynchronousGranules } from '../../app/models/services/base-service';
-import DataOperation from '../../app/models/data-operation';
+import DataOperation, { CURRENT_SCHEMA_VERSION } from '../../app/models/data-operation';
 import { chooseServiceConfig, buildService } from '../../app/models/services';
 import env from '../../app/util/env';
 import TurboService from '../../app/models/services/turbo-service';
+import { buildOperation } from '../helpers/data-operation';
+import _ from 'lodash';
 
 describe('services.chooseServiceConfig and services.buildService', function () {
   describe("when the operation's collection is configured for several services", function () {
@@ -21,18 +23,15 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       this.operation = operation;
       this.config = [
         {
-          name: 'first-service',
+          name: 'should-never-be-picked',
           type: { name: 'turbo' },
           collections: [{ id: collectionId }],
           capabilities: {
-            output_formats: ['image/tiff', 'application/x-netcdf4'],
-            subsetting: {
-              shape: true,
-            },
+            output_formats: ['none'],
           },
         },
         {
-          name: 'second-service',
+          name: 'tiff-png-bbox-service',
           type: { name: 'http' },
           collections: [{ id: collectionId }],
           capabilities: {
@@ -43,7 +42,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           },
         },
         {
-          name: 'third-service',
+          name: 'tiff-png-reprojection-service',
           type: { name: 'turbo' },
           collections: [{ id: collectionId }],
           capabilities: {
@@ -52,12 +51,23 @@ describe('services.chooseServiceConfig and services.buildService', function () {
           },
         },
         {
-          name: 'fourth-service',
+          name: 'dimension-service',
           type: { name: 'turbo' },
           collections: [{ id: collectionId }],
           capabilities: {
             subsetting: {
               dimension: true,
+            },
+          },
+        },
+        {
+          name: 'shapefile-tiff-netcdf-service',
+          type: { name: 'turbo' },
+          collections: [{ id: collectionId }],
+          capabilities: {
+            output_formats: ['image/tiff', 'application/x-netcdf4'],
+            subsetting: {
+              shape: true,
             },
           },
         },
@@ -69,15 +79,15 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         this.operation.outputFormat = 'image/tiff';
       });
 
-      it('returns the first service for the collection from the service configuration', function () {
+      it('returns the first service with tiff support for the collection', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('first-service');
+        expect(serviceConfig.name).to.equal('tiff-png-bbox-service');
       });
 
       it('uses the correct service class when building the service', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         const service = buildService(serviceConfig, this.operation);
-        expect(service.constructor.name).to.equal('TurboService');
+        expect(service.constructor.name).to.equal('HttpService');
       });
     });
 
@@ -86,9 +96,9 @@ describe('services.chooseServiceConfig and services.buildService', function () {
         this.operation.outputFormat = 'image/png';
       });
 
-      it('returns the second service for the collection from the service configuration', function () {
+      it('returns the first service with png support for the collection', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('second-service');
+        expect(serviceConfig.name).to.equal('tiff-png-bbox-service');
       });
 
       it('uses the correct service class when building the service', function () {
@@ -121,7 +131,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('chooses the service that supports spatial subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('second-service');
+        expect(serviceConfig.name).to.equal('tiff-png-bbox-service');
       });
     });
 
@@ -133,7 +143,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('chooses the service that supports netcdf output, but not spatial subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('first-service');
+        expect(serviceConfig.name).to.equal('shapefile-tiff-netcdf-service');
       });
 
       it('indicates that it could not clip based on the spatial extent', function () {
@@ -149,7 +159,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('chooses the service that supports shapefile subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('first-service');
+        expect(serviceConfig.name).to.equal('shapefile-tiff-netcdf-service');
       });
     });
 
@@ -160,7 +170,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('chooses the service that supports dimension subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('fourth-service');
+        expect(serviceConfig.name).to.equal('dimension-service');
       });
     });
 
@@ -172,7 +182,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('returns the service that supports reprojection, but not shapefile subsetting', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('third-service');
+        expect(serviceConfig.name).to.equal('tiff-png-reprojection-service');
       });
 
       it('indicates that it could not clip based on the spatial extent', function () {
@@ -188,7 +198,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
 
       it('chooses the service that supports reprojection', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
-        expect(serviceConfig.name).to.equal('third-service');
+        expect(serviceConfig.name).to.equal('tiff-png-reprojection-service');
       });
     });
 
@@ -417,6 +427,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       beforeEach(function () {
         this.operation.boundingRectangle = [0, 0, 10, 10];
       });
+
       it('returns the no op service', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         expect(serviceConfig.name).to.equal('noOpService');
@@ -439,6 +450,7 @@ describe('services.chooseServiceConfig and services.buildService', function () {
       beforeEach(function () {
         this.operation.geojson = { pretend: 'geojson' };
       });
+
       it('returns the no op service', function () {
         const serviceConfig = chooseServiceConfig(this.operation, {}, this.config);
         expect(serviceConfig.name).to.equal('noOpService');
@@ -700,8 +712,8 @@ describe('Services by association', function () {
   const tiff = 'image/tiff';
   const zarr = 'application/x-zarr';
   const granuleId = 'G1233800352-EEDTEST';
-  const granulQuery = { granuleId };
-  const reprojQuery = { outputCrs: 'EPSG:4326' };
+  const granuleQuery = { granuleId };
+  const reprojectQuery = { outputCrs: 'EPSG:4326' };
   const version = '1.0.0';
 
   hookServersStartStop();
@@ -711,18 +723,113 @@ describe('Services by association', function () {
 
     describe('when a matching service is provided through a UMM-S association', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, conversionCollection, 'all', { headers, query: granulQuery });
+      hookRangesetRequest(version, conversionCollection, 'all', { headers, query: granuleQuery });
       it('uses the backend service from the association', function () {
-        expect(this.service.name).to.equal('harmony/netcdf-to-zarr');
+        expect(this.service.config.name).to.equal('harmony/netcdf-to-zarr');
       });
     });
 
     describe('when matching services are provided directly and through associations', function () {
       StubService.hook({ params: { redirect: 'http://example.com' } });
-      hookRangesetRequest(version, reprojectCollection, 'all', { headers, query: reprojQuery });
+      hookRangesetRequest(version, reprojectCollection, 'all', { headers, query: reprojectQuery });
       it('it uses the first matching service', function () {
-        expect(this.service.name).to.equal('harmony/service-example');
+        expect(this.service.config.name).to.equal('harmony/service-example');
       });
+    });
+  });
+});
+
+describe('createWorkflowSteps', function () {
+
+  const collectionId = 'C123-TEST';
+  const shortName = 'harmony_example';
+  const versionId = '1';
+  const operation = buildOperation('foo');
+  operation.addSource(collectionId, shortName, versionId);
+  const config = {
+    name: 'shapefile-tiff-netcdf-service',
+    data_operation_version: CURRENT_SCHEMA_VERSION,
+    type: { name: 'turbo' },
+    collections: [],
+    capabilities: {
+      output_formats: ['image/tiff', 'application/x-netcdf4'],
+      subsetting: {
+        shape: true,
+        variable: true,
+      },
+    },
+    steps: [{
+      image: 'query cmr',
+    }, {
+      image: 'var and bbox subsetter',
+      operations: ['variableSubset', 'spatialSubset', 'dimensionSubset'],
+      conditional: { exists: ['variableSubset', 'spatialSubset', 'dimensionSubset'] },
+    }, {
+      image: 'shapefile subsetter',
+      operations: ['shapefileSubset'],
+      conditional: { exists: ['shapefileSubset'] },
+    }],
+  };
+
+  describe('when an operation has only shapefile subsetting', function () {
+    const shapefile_operation = _.cloneDeep(operation);
+    shapefile_operation.geojson = 'interesting shape';
+    const service = new StubService(config, {}, shapefile_operation);
+    const steps = service.createWorkflowSteps();
+
+    it('creates two workflow steps', function () {
+      expect(steps.length).to.equal(2);
+    });
+
+    it('creates a first workflow step for query cmr', function () {
+      expect(steps[0].serviceID).to.equal('query cmr');
+    });
+
+    it('creates a second and final workflow step for the shapefile subsetter', function () {
+      expect(steps[1].serviceID).to.equal('shapefile subsetter');
+    });
+  });
+
+  describe('when an operation has only bbox subsetting', function () {
+    const bbox_operation = _.cloneDeep(operation);
+    bbox_operation.boundingRectangle = [1, 2, 3, 4];
+    const service = new StubService(config, {}, bbox_operation);
+    const steps = service.createWorkflowSteps();
+
+    it('creates two workflow steps', function () {
+      expect(steps.length).to.equal(2);
+    });
+
+    it('creates a first workflow step for query cmr', function () {
+      expect(steps[0].serviceID).to.equal('query cmr');
+    });
+
+    it('creates a second and final workflow step for the var and bbox subsetter', function () {
+      expect(steps[1].serviceID).to.equal('var and bbox subsetter');
+    });
+  });
+
+  describe('when an operation has both bbox and shapefile subsetting', function () {
+    const both_operation = _.cloneDeep(operation);
+    both_operation.boundingRectangle = [1, 2, 3, 4];
+    both_operation.geojson = 'interesting shape';
+    const service = new StubService(config, {}, both_operation);
+    const steps = service.createWorkflowSteps();
+
+    it('creates three workflow steps', function () {
+      expect(steps.length).to.equal(3);
+    });
+
+    it('creates a first workflow step for query cmr', function () {
+      expect(steps[0].serviceID).to.equal('query cmr');
+    });
+
+    it('creates a second workflow step for the var and bbox subsetter', function () {
+      expect(steps[1].serviceID).to.equal('var and bbox subsetter');
+    });
+
+    it('creates a third and final workflow step for the shapefile subsetter', function () {
+      expect(steps[2].serviceID).to.equal('shapefile subsetter');
     });
   });
 });
