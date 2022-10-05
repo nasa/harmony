@@ -36,9 +36,6 @@ spec:
               name: harmony-env
           - secretRef:
               name: harmony-secrets
-          env:
-            - name: TEXT_LOGGER
-              value: "false"
           volumeMounts:
             - mountPath: /tmp
               name: ephemeral-volume
