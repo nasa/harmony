@@ -306,13 +306,11 @@ GIOVANNI_ADAPTER_INVOCATION_ARGS='node tasks/giovanni-adapter/app/cli'
 
 # The services to deploy locally. A comma-separated list of services that the bin/deploy-services
 # script should attempt to deploy. By default only a couple of harmony example services are deployed.
-# When specifying another service to be deployed make sure the name matches the prefix for the
-# sidecar file in tasks/service-runner-config and the name of the service in that file. For example
-# to deploy the SWOT reprojection service which has a sidecar file swot-reproject-sidecar.yaml
-# and service-name of swot-reproject, specify swot-reproject. query-cmr is required for all services,
-# so it will always be deployed, and does not need to be specified. Make sure if the image for the
-# service is not publicly available that you have built the docker image locally, otherwise the
-# service will fail to start.
+# When specifying another service to be deployed make sure the name matches the lower and dash case
+# prefix for the image variable name. For example to deploy the Giovanni adapter image which has
+# a variable name of GIOVANNI_ADAPTER_IMAGE you would specify giovanni-adapter (converting to lowercase
+# and dash case and dropping _IMAGE. Make sure if the image for the service is not publicly available
+# that you have built the docker image locally, otherwise the service will fail to start.
 LOCALLY_DEPLOYED_SERVICES=harmony-service-example,harmony-netcdf-to-zarr
 
 # page size to use with CMR calls
