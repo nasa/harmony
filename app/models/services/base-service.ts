@@ -12,12 +12,15 @@ import db from '../../util/db';
 import env from '../../util/env';
 import { WorkItemStatus } from '../work-item-interface';
 import { getRequestMetric } from '../../util/metrics';
+import { getRequestUrl } from '../../util/url';
+import HarmonyRequest from '../harmony-request';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
   concatenate_by_default?: boolean;
   subsetting?: {
     bbox?: boolean;
+    shape?: boolean;
     variable?: boolean;
     multiple_variable?: true;
   };
@@ -41,9 +44,9 @@ export interface ServiceCollection {
 }
 
 export interface ServiceConfig<ServiceParamType> {
+  name?: string;
   max_batch_inputs?: number;
   is_batched?: boolean;
-  name?: string;
   data_operation_version?: string;
   granule_limit?: number;
   has_granule_limit?: boolean;
@@ -97,6 +100,7 @@ const conditionToOperationField = {
   reproject: 'crs',
   reformat: 'outputFormat',
   variableSubset: 'shouldVariableSubset',
+  shapefileSubset: 'shouldShapefileSubset',
   spatialSubset: 'shouldSpatialSubset',
   temporalSubset: 'shouldTemporalSubset',
   concatenate: 'shouldConcatenate',
@@ -206,17 +210,15 @@ export default abstract class BaseService<ServiceParamType> {
    *
    * @returns A promise resolving to the result of the callback.
    */
-  async invoke(
-    logger?: Logger, harmonyRoot?: string, requestUrl?: string,
-  ): Promise<InvocationResult> {
+  async invoke(req: HarmonyRequest, logger?: Logger): Promise<InvocationResult> {
     this.logger = logger;
     logger.info('Invoking service for operation', { operation: this.operation });
     // TODO handle the skipPreview parameter here when implementing HARMONY-1129
-    const job = this._createJob(requestUrl);
+    const job = this._createJob(getRequestUrl(req));
     await this._createAndSaveWorkflow(job);
 
     const { isAsync, requestId } = job;
-    const requestMetric = getRequestMetric(this.operation, this.config.name);
+    const requestMetric = getRequestMetric(req, this.operation, this.config.name);
     logger.info(`Request metric for request ${requestId}`, { requestMetric: true, ...requestMetric } );
     this.operation.callback = `${env.callbackUrlRoot}/service/${requestId}`;
     return new Promise((resolve, reject) => {

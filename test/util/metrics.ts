@@ -6,13 +6,15 @@ import { parseSchemaFile } from '../helpers/data-operation';
 import { buildJob } from '../helpers/jobs';
 import { getProductMetric, getRequestMetric, getResponseMetric } from '../../app/util/metrics';
 import { JobStatus } from '../../app/models/job';
+import HarmonyRequest from '../../app/models/harmony-request';
 
 const operation = new DataOperation(parseSchemaFile('valid-operation-input.json'));
+const request = { headers: { 'x-forwarded-for': '1.2.3.4, 5.1.2.3' } } as unknown as HarmonyRequest;
 
 describe('Metrics construction', function () {
   describe('Getting the request metric', function () {
     describe('when an operation contains all fields', function () {
-      const metric = getRequestMetric(operation, 'a neat service');
+      const metric = getRequestMetric(request, operation, 'a neat service');
 
       it('includes all of the fields in the metric', function () {
         expect(Object.keys(metric)).to.eql([
@@ -24,8 +26,8 @@ describe('Metrics construction', function () {
         expect(metric.request_id).to.equal(operation.requestId);
       });
 
-      it('sets the user IP to a blank string', function () {
-        expect(metric.user_ip).to.equal('');
+      it('sets the user IP correctly the first forwarded IP address', function () {
+        expect(metric.user_ip).to.equal('1.2.3.4');
       });
 
       it('sets the user ID correctly', function () {
@@ -53,7 +55,7 @@ describe('Metrics construction', function () {
       const operationNoBbox = new DataOperation(parseSchemaFile('valid-operation-input.json'));
       operationNoBbox.boundingRectangle = null;
 
-      const metric = getRequestMetric(operationNoBbox, 'a neat service');
+      const metric = getRequestMetric(request, operationNoBbox, 'a neat service');
 
       it('does not include a bbox in the metric', function () {
         expect(Object.keys(metric)).to.eql([
@@ -66,7 +68,7 @@ describe('Metrics construction', function () {
       const operationNoBeginTime = new DataOperation(parseSchemaFile('valid-operation-input.json'));
       operationNoBeginTime.temporal.start = null;
 
-      const metric = getRequestMetric(operationNoBeginTime, 'a neat service');
+      const metric = getRequestMetric(request, operationNoBeginTime, 'a neat service');
 
       it('does not include a rangeBeginDateTime in the metric', function () {
         expect(Object.keys(metric)).to.eql([
@@ -79,12 +81,23 @@ describe('Metrics construction', function () {
       const operationNoEndTime = new DataOperation(parseSchemaFile('valid-operation-input.json'));
       operationNoEndTime.temporal.end = null;
 
-      const metric = getRequestMetric(operationNoEndTime, 'a neat service');
+      const metric = getRequestMetric(request, operationNoEndTime, 'a neat service');
 
       it('does not include a rangeEndDateTime in the metric', function () {
         expect(Object.keys(metric)).to.eql([
           'request_id', 'user_ip', 'user_id', 'parameters', 'bbox', 'rangeBeginDateTime',
         ]);
+      });
+    });
+
+    describe('when the request does not include an IP address', function () {
+      const operationNoEndTime = new DataOperation(parseSchemaFile('valid-operation-input.json'));
+      operationNoEndTime.temporal.end = null;
+
+      const metric = getRequestMetric({} as HarmonyRequest, operation, 'a neat service');
+
+      it('includes a blank string for the user_ip', function () {
+        expect(metric.user_ip).to.eql('');
       });
     });
   });

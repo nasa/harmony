@@ -51,5 +51,7 @@ export function buildOperation(message: string): DataOperation {
   operation.message = message;
   operation.requestStartTime = new Date();
   operation.ignoreErrors = true;
+  operation.accessToken = 'mytoken';
+  operation.client = 'test';
   return operation;
 }
