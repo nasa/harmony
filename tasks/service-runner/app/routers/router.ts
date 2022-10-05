@@ -2,7 +2,6 @@ import express, { NextFunction } from 'express';
 import { generateMetricsForPrometheus } from '../service/service-metrics';
 import env from '../util/env';
 import axios from 'axios';
-import logger from '../../../../app/util/log';
 
 /**
  *
