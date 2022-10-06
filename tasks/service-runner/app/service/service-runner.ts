@@ -24,22 +24,33 @@ export interface ServiceResponse {
 // how long to let a worker run before giving up
 const { workerTimeout } = env;
 
+/**
+ * A writable stream that is passed to the k8s exec call for the worker container.
+ * Allows us to capture, log and store the logs of the worker container's execution.
+ */
 class LogStream extends stream.Writable {
+  
+  // all of the logs that are written
+  // to this stream (gets uploaded to s3)
   logStrArr = [];
   
-  logStr = (): string => this.logStrArr.join();
+  aggregateLogStr = (): string => this.logStrArr.join();
 
-  shouldLog = true;
-
+  /**
+   * Parse the log chunk (service log), push it to the logs array, and log it.
+   * @param chunk - the chunk to log (could emanate from a string or JSON logger) 
+   */
   _write(chunk, enc: BufferEncoding, next: (error?: Error | null) => void): void {
-    let chunkStr = chunk.toString('utf8');
+    const logStr: string = chunk.toString('utf8');
     try {
-      chunkStr = JSON.parse(chunkStr);
-    } catch (e) { } finally {
-      this.logStrArr.push(chunkStr);
-    }
-    if (this.shouldLog) {
-      logger.debug(chunkStr, { worker: true });
+      const logObj: object = JSON.parse(logStr);
+      this.logStrArr.push(logObj);
+      logger.debug({ ...logObj, worker: true });
+    } catch (e) {
+      if (e instanceof SyntaxError) { // string log
+        this.logStrArr.push(logStr);
+        logger.debug(logStr, { worker: true });
+      }
     }
     next();
   }
@@ -193,7 +204,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(stdOut.logStr(), catalogDir);
+              const logErr = await _getErrorMessage(stdOut.aggregateLogStr(), catalogDir);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }
