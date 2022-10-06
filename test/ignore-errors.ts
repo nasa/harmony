@@ -47,6 +47,7 @@ describe('when setting ignoreErrors=true', function () {
       workItem.results = [
         getStacLocation(workItem, 'catalog0.json'),
       ];
+      workItem.outputGranuleSizes = [1];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
@@ -109,6 +110,7 @@ describe('when setting ignoreErrors=true', function () {
       workItem.results = [
         getStacLocation(workItem, 'catalog0.json'),
       ];
+      workItem.outputGranuleSizes = [1];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
@@ -559,6 +561,7 @@ describe('when setting ignoreErrors=true', function () {
           getStacLocation(workItem, 'catalog1.json'),
           getStacLocation(workItem, 'catalog1.json'),
         ];
+        workItem.outputGranuleSizes = [1, 2, 3];
         await updateWorkItem(this.backend, workItem);
       });
 

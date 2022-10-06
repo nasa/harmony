@@ -704,15 +704,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const op = new DataOperation(operation, encrypter, decrypter);
   const token = op.unencryptedAccessToken;
 
-  req.context.logger.info(JSON.stringify(req.body));
-
-  // Return a success with no body - this is done here before the end of this function because
-  // otherwise the connection would time out when running locally for big queries. This is due to 
-  // the length of time it takes to retrieve all the resulting file sizes for services that produce
-  // more than one granule (like query-cmr). This is not a problem for non-local deployments
-  // which do this processing asynchronously.
-  res.status(204).send();
-
   const update =
   {
     workItemID: parseInt(id),
@@ -726,17 +717,27 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     duration,
   };
 
-  // asynchronously handle the update so that the service is not waiting for a response
-  // during a potentially long update. If the asynchronous update fails the work-item will
-  // eventually be retried by the timeout handler. In any case there is not much the service
-  // can do if the update fails, so it is OK for us to ignore the promise here. The service
-  // can still retry for network or similar failures, but we don't want it to retry for things
-  // like 409 errors.
-  if (db.client.config.client === 'pg') {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    handleWorkItemUpdate(update, token, req.context.logger);
-  } else {
+  if (typeof global.it === 'function') {
     // tests break if we don't await this
     await handleWorkItemUpdate(update, token, req.context.logger);
+    // res.status(204).send();
+  } else {
+    // asynchronously handle the update so that the service is not waiting for a response
+    // during a potentially long update. If the asynchronous update fails the work-item will
+    // eventually be retried by the timeout handler. In any case there is not much the service
+    // can do if the update fails, so it is OK for us to ignore the promise here. The service
+    // can still retry for network or similar failures, but we don't want it to retry for things
+    // like 409 errors.
+
+    // Return a success with no body - this is done here before the end of this function because
+    // otherwise the connection would time out when running locally for big queries. This is due to
+    // the length of time it takes to retrieve all the resulting file sizes for services that produce
+    // more than one granule (like query-cmr). This is not a problem for non-local deployments
+    // which do this processing asynchronously.
+
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    handleWorkItemUpdate(update, token, req.context.logger);
   }
+
+  res.status(204).send();
 }

@@ -18,8 +18,9 @@ describe('util/crypto', function () {
       it('decrypts ciphertext into the correct plaintext', function () {
         const sharedSecretKey = '_THIS_IS_MY_32_CHARS_SECRET_KEY_';
         const encrypter = createEncrypter(sharedSecretKey);
-        const plaintext = 'The secret code is the number 7';
+        const plaintext = 'ABCD1234567890';
         const ciphertext = encrypter(plaintext);
+        console.log(ciphertext);
 
         const decrypter = createDecrypter(sharedSecretKey);
         const decodedPlaintext = decrypter(ciphertext);

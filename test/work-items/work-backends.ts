@@ -208,15 +208,18 @@ describe('Work Backends', function () {
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
           const res = await getWorkForService(this.backend, workItemRecord.serviceID);
-          const tmpWorkItem = JSON.parse(res.text).workItem as WorkItem;
-          tmpWorkItem.status = WorkItemStatus.FAILED;
-          tmpWorkItem.results = [];
+          if (res.text) {
+            const tmpWorkItem = JSON.parse(res.text).workItem as WorkItem;
+            tmpWorkItem.status = WorkItemStatus.FAILED;
+            tmpWorkItem.results = [];
+            tmpWorkItem.outputGranuleSizes = [];
 
-          await updateWorkItem(this.backend, tmpWorkItem);
+            await updateWorkItem(this.backend, tmpWorkItem);
 
-          // check to see if the work-item has failed completely
-          const workItem = await getWorkItemById(db, this.workItem.id);
-          shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+            // check to see if the work-item has failed completely
+            const workItem = await getWorkItemById(db, this.workItem.id);
+            shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
+          }
         }
       });
 
