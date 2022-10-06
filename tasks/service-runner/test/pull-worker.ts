@@ -121,7 +121,7 @@ describe('Pull Worker', async function () {
       it('returns a timeout message (after retrying with exponential backoff)', async function () {
         const work = await _pullWork();
         expect(work.status).to.be.greaterThanOrEqual(400, 'Expected an error status');
-        expect(work.error).to.eql('timeout of 30000ms exceeded');
+        expect(work.error).to.match(/^timeout of \d+ms exceeded$/);
         expect(this.axiosMock.history.get.length).to.equal(3);
       });
     });
