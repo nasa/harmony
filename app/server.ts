@@ -13,7 +13,7 @@ import router, { RouterConfig } from './routers/router';
 import RequestContext from './models/request-context';
 import HarmonyRequest from './models/harmony-request';
 import * as ogcCoveragesApi from './frontends/ogc-coverages';
-import serviceResponseRouter from './routers/service-response-router';
+import serviceResponseRouter from './routers/backend-router';
 import logger from './util/log';
 import * as exampleBackend from '../example/http-backend';
 import WorkReaper from './workers/work-reaper';
