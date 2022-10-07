@@ -217,7 +217,7 @@ describe('Service Runner', function () {
 
         expect(textLogOutput.level.toLowerCase()).to.equal('debug');
         expect(jsonLogOutput.level.toLowerCase()).to.equal('debug');
-        expect(jsonLogOutput.workerLevel.toLowerCase()).to.equal('info');
+        expect(jsonLogOutput.workerLevel.toLowerCase()).to.equal(level.toLocaleLowerCase());
       });
     });
 
