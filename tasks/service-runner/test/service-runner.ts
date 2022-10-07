@@ -187,7 +187,7 @@ describe('Service Runner', function () {
         testLogger.close();
       });
   
-      it('saves the logs to an array, as a string or JSON', function () {
+      it('saves each log to an array in the original format, as a string or JSON', function () {
         expect(logStream.logStrArr.length == 2);
         expect(logStream.logStrArr[0] === JSON.parse(jsonLog));
         expect(logStream.logStrArr[1] === textLog);
@@ -195,7 +195,7 @@ describe('Service Runner', function () {
 
       it('outputs the logs to the log\'s stream', function () {
         const testLogs = getTestLogs();
-        const testLogsArr = testLogs.split('\n')
+        const testLogsArr = testLogs.split('\n');
         const textLogOutput = JSON.parse(testLogsArr[0]);
         const jsonLogOutput = JSON.parse(testLogsArr[1]);
         expect(testLogsArr.length == 2);
@@ -239,7 +239,7 @@ describe('Service Runner', function () {
         testLogger.close();
       });
   
-      it('saves the logs to an array, as a string or JSON', function () {
+      it('saves each log to an array in the original format, as a string or JSON', function () {
         expect(logStream.logStrArr.length == 2);
         expect(logStream.logStrArr[0] === JSON.parse(jsonLog));
         expect(logStream.logStrArr[1] === textLog);
@@ -247,7 +247,7 @@ describe('Service Runner', function () {
 
       it('outputs the logs to the log\'s stream', function () {
         const testLogs = getTestLogs();
-        const jsonLogOutput = `[${requestId}]: mv \'/tmp/tmpkwxpifmr/tmp-result.tif\' \'/tmp/tmpkwxpifmr/result.tif\'`;
+        const jsonLogOutput = `[${requestId}]: ${message}`;
         expect(testLogs.split('\n').length == 2);
         expect(testLogs.includes(textLog));
         expect(testLogs.includes(jsonLogOutput));
