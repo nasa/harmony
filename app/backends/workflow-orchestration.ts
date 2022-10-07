@@ -506,7 +506,7 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
 
         const headers = token ? { authorization: `Bearer ${token}` } : {};
         res = await axios.head(url, { headers: headers });
-        result = res.headers['content-length'];
+        result = parseInt(res.headers['content-length']);
         break;
     }
   } catch (e) {
