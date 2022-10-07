@@ -63,6 +63,13 @@ export class LogStream extends stream.Writable {
     try {
       const logObj: object = JSON.parse(logStr);
       this.logStrArr.push(logObj);
+      for (const propertyName of ['timestamp', 'level']) {
+        if (propertyName in logObj) {
+          const upperCasedPropName = propertyName[0].toUpperCase() + propertyName.substring(1);
+          logObj[`worker${upperCasedPropName}`] = logObj[propertyName];
+          delete logObj[propertyName];
+        }
+      }
       this.streamLogger.debug({ ...logObj, worker: true });
     } catch (e) {
       if (e instanceof SyntaxError) { // string log

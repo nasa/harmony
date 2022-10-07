@@ -162,9 +162,12 @@ describe('Service Runner', function () {
     
     const message = 'mv \'/tmp/tmpkwxpifmr/tmp-result.tif\' \'/tmp/tmpkwxpifmr/result.tif\'';
     const user = 'bo';
+    const timestamp =  '2022-10-06T17:04:21.090726Z';
     const requestId = 'cdea7cb8-4c77-4342-8f00-6285e32c9123';
-    const textLog = `2022-10-06 17:12:28,530 [INFO] [harmony-service.cmd:199] ${message}`;
-    const jsonLog = `{ "message":"${message}", "user":"${user}", "requestId":"${requestId}" }`;
+    const level = 'INFO';
+    
+    const textLog = `${timestamp} [${level}] [harmony-service.cmd:199] ${message}`;
+    const jsonLog = `{ "level":"${level}", "message":"${message}", "user":"${user}", "requestId":"${requestId}", "timestamp":"${timestamp}"}`;
     
     describe('_handleLogString with a JSON logger', function () {
   
@@ -192,19 +195,29 @@ describe('Service Runner', function () {
 
       it('outputs the logs to the log\'s stream', function () {
         const testLogs = getTestLogs();
-        expect(testLogs.split('\n').length == 2);
+        const testLogsArr = testLogs.split('\n')
+        const textLogOutput = JSON.parse(testLogsArr[0]);
+        const jsonLogOutput = JSON.parse(testLogsArr[1]);
+        expect(testLogsArr.length == 2);
 
-        // things we expect in the json log
-        expect((testLogs.match(new RegExp(user, 'gm')) || []).length).to.equal(1);
-        expect((testLogs.match(new RegExp(requestId, 'gm')) || []).length).to.equal(1);
-        expect((testLogs.match(new RegExp('user', 'gm')) || []).length).to.equal(1);
-        expect((testLogs.match(new RegExp('requestId', 'gm')) || []).length).to.equal(1);
+        // things we expect in the jsonLog
+        expect(jsonLogOutput.user).to.equal(user);
+        expect(jsonLogOutput.requestId).to.equal(requestId);
         
         // things we expect from both logs
-        expect((testLogs.match(new RegExp(message, 'gm')) || []).length).to.equal(2);
-        expect((testLogs.match(new RegExp('message', 'gm')) || []).length).to.equal(2);
-        expect((testLogs.match(new RegExp('worker', 'gm')) || []).length).to.equal(2);
-        expect((testLogs.match(new RegExp('true', 'gm')) || []).length).to.equal(2);
+        expect(textLogOutput.message).to.equal(textLog);
+        expect(jsonLogOutput.message).to.equal(message);
+        
+        expect(textLogOutput.timestamp).to.not.equal(timestamp);
+        expect(jsonLogOutput.timestamp).to.not.equal(timestamp);
+        expect(jsonLogOutput.workerTimestamp).to.equal(timestamp);
+        
+        expect(textLogOutput.worker).to.equal(true);
+        expect(jsonLogOutput.worker).to.equal(true);
+
+        expect(textLogOutput.level.toLowerCase()).to.equal('debug');
+        expect(jsonLogOutput.level.toLowerCase()).to.equal('debug');
+        expect(jsonLogOutput.workerLevel.toLowerCase()).to.equal('info');
       });
     });
 
@@ -234,7 +247,7 @@ describe('Service Runner', function () {
 
       it('outputs the logs to the log\'s stream', function () {
         const testLogs = getTestLogs();
-        const jsonLogOutput = '[cdea7cb8-4c77-4342-8f00-6285e32c9123]: mv \'/tmp/tmpkwxpifmr/tmp-result.tif\' \'/tmp/tmpkwxpifmr/result.tif\'';
+        const jsonLogOutput = `[${requestId}]: mv \'/tmp/tmpkwxpifmr/tmp-result.tif\' \'/tmp/tmpkwxpifmr/result.tif\'`;
         expect(testLogs.split('\n').length == 2);
         expect(testLogs.includes(textLog));
         expect(testLogs.includes(jsonLogOutput));
