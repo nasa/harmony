@@ -255,7 +255,7 @@ describe('Work Backends', function () {
             results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
             scrollID: '-1234',
             duration: 0,
-            outputGranuleSizes: [12340000000000, 5678],
+            outputGranuleSizes: [1],
           },
         };
         before(async () => {

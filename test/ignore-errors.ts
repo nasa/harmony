@@ -11,6 +11,7 @@ import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interfa
 import { truncateAll } from './helpers/db';
 import env from '../app/util/env';
 import { jobStatus } from './helpers/jobs';
+import * as workflowOrchestration from '../app/backends/workflow-orchestration';
 
 const reprojectAndZarrQuery = {
   maxResults: 1,
@@ -27,11 +28,15 @@ describe('when setting ignoreErrors=true', function () {
   const collection = 'C1233800302-EEDTEST';
   hookServersStartStop();
 
+  let sizeOfObjectStub;
   before(async function () {
+    sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
+      .callsFake(async (_) => 7000000000);
     await truncateAll();
   });
 
   after(async function () {
+    sizeOfObjectStub.restore();
     await truncateAll();
   });
 
