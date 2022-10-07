@@ -10,6 +10,7 @@ import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
+import * as workflowOrchestration from '../app/backends/workflow-orchestration';
 import { buildJob } from './helpers/jobs';
 import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
@@ -145,11 +146,22 @@ describe('When a workflow contains an aggregating step', async function () {
     savedWorkItem.results = [
       getStacLocation(savedWorkItem, 'catalog.json'),
     ];
+    savedWorkItem.outputGranuleSizes = [1];
     await fakeServiceStacOutput(savedWorkItem.jobID, savedWorkItem.id);
     await updateWorkItem(context.backend, savedWorkItem);
   }
   const aggregateService = 'bar';
   hookServersStartStop();
+
+  let sizeOfObjectStub;
+  before(function () {
+    sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
+      .callsFake(async (_) => 7000000000);
+  });
+
+  after(function () {
+    sizeOfObjectStub.restore();
+  });
 
   beforeEach(async function () {
     const job = buildJob();
@@ -286,12 +298,18 @@ describe('When a workflow contains an aggregating step', async function () {
 
 describe('Workflow chaining for a collection configured for swot reprojection and netcdf-to-zarr', function () {
   let pageStub;
+  let sizeOfObjectStub;
   before(function () {
     pageStub = stub(env, 'cmrMaxPageSize').get(() => 3);
+    sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
+      .callsFake(async (_) => 7000000000);
   });
   after(function () {
     if (pageStub.restore) {
       pageStub.restore();
+    }
+    if (sizeOfObjectStub.restore) {
+      sizeOfObjectStub.restore();
     }
   });
   const collection = 'C1233800302-EEDTEST';
@@ -373,6 +391,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
           getStacLocation(workItem, 'catalog1.json'),
           getStacLocation(workItem, 'catalog2.json'),
         ];
+        workItem.outputGranuleSizes = [1, 2, 3];
         await fakeServiceStacOutput(workItem.jobID, workItem.id);
         await updateWorkItem(this.backend, workItem);
       });
@@ -384,6 +403,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
+          workItem.outputGranuleSizes = [1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
           expect(workItem.serviceID).to.equal('sds/swot-reproject:latest');
@@ -396,6 +416,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
             const { workItem } = JSON.parse(res.text);
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.results = [getStacLocation(workItem, 'catalog.json')];
+            workItem.outputGranuleSizes = [1];
             await fakeServiceStacOutput(workItem.jobID, workItem.id);
             await updateWorkItem(this.backend, workItem);
             expect(workItem.serviceID).to.equal('harmonyservices/netcdf-to-zarr:latest');
@@ -417,6 +438,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
                 const { workItem } = JSON.parse(res.text);
                 workItem.status = WorkItemStatus.SUCCESSFUL;
                 workItem.results = [getStacLocation(workItem, 'catalog.json')];
+                workItem.outputGranuleSizes = [2];
                 await fakeServiceStacOutput(workItem.jobID, workItem.id);
                 await updateWorkItem(this.backend, workItem);
               }
@@ -464,6 +486,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         getStacLocation(workItem, 'catalog1.json'),
         getStacLocation(workItem, 'catalog2.json'),
       ];
+      workItem.outputGranuleSizes = [1, 1, 1];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
       await updateWorkItem(this.backend, workItem);
       // since there were multiple query cmr results,
@@ -551,6 +574,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         getStacLocation(workItem, 'catalog1.json'),
         getStacLocation(workItem, 'catalog2.json'),
       ];
+      workItem.outputGranuleSizes = [1, 1, 1];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
       await updateWorkItem(this.backend, workItem);
       // since there were multiple query cmr results,
@@ -663,12 +687,16 @@ describe('When a request spans multiple CMR pages', function () {
     const collection = 'C1233800302-EEDTEST';
     hookServersStartStop();
     let pageStub;
+    let sizeOfObjectStub;
     before(async function () {
       pageStub = stub(env, 'cmrMaxPageSize').get(() => 3);
+      sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
+        .callsFake(async (_) => 7000000000);
       await truncateAll();
     });
     after(async function () {
       pageStub.restore();
+      sizeOfObjectStub.restore();
       await truncateAll();
     });
 
@@ -698,6 +726,7 @@ describe('When a request spans multiple CMR pages', function () {
             getStacLocation(workItem, 'catalog1.json'),
             getStacLocation(workItem, 'catalog2.json'),
           ];
+          workItem.outputGranuleSizes = [1, 1, 1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
           await updateWorkItem(this.backend, workItem);
           // sanity check that 3 swot-reproject items were generated by the first query-cmr task
@@ -714,6 +743,7 @@ describe('When a request spans multiple CMR pages', function () {
             getStacLocation(workItem, 'catalog0.json'),
             getStacLocation(workItem, 'catalog1.json'),
           ];
+          workItem.outputGranuleSizes = [1, 1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
           await updateWorkItem(this.backend, workItem);
           // sanity check that 2 more swot-reproject items were generated by the second query-cmr task
@@ -787,6 +817,7 @@ describe('When a request spans multiple CMR pages', function () {
           getStacLocation(workItem, 'catalog0.json'),
           getStacLocation(workItem, 'catalog1.json'),
           getStacLocation(workItem, 'catalog2.json')];
+        workItem.outputGranuleSizes = [1, 1, 1];
         await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
         await updateWorkItem(this.backend, workItem);
       });
@@ -804,6 +835,7 @@ describe('When a request spans multiple CMR pages', function () {
         workItem.results = [
           getStacLocation(workItem, 'catalog0.json'),
           getStacLocation(workItem, 'catalog1.json')];
+        workItem.outputGranuleSizes = [1, 1];
         await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
         await updateWorkItem(this.backend, workItem);
       });
@@ -865,6 +897,7 @@ describe('When a request spans multiple CMR pages', function () {
             workItem.scrollID = `${sessionId}:["abc",123,456]`;
             workItem.results = [
               getStacLocation(workItem, 'catalog.json')];
+            workItem.outputGranuleSizes = [1];
             await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
             await updateWorkItem(this.backend, workItem);
           }
@@ -897,6 +930,7 @@ describe('When a request spans multiple CMR pages', function () {
               workItem.status = WorkItemStatus.SUCCESSFUL;
               workItem.results = [
                 getStacLocation(workItem, 'catalog.json')];
+              workItem.outputGranuleSizes = [1];
               await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
               await updateWorkItem(this.backend, workItem);
             }
@@ -906,6 +940,7 @@ describe('When a request spans multiple CMR pages', function () {
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.results = [
               getStacLocation(workItem, 'catalog.json')];
+            workItem.outputGranuleSizes = [1];
             await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
             await updateWorkItem(this.backend, workItem);
 
@@ -932,6 +967,7 @@ describe('When a request spans multiple CMR pages', function () {
             workItem.scrollID = `${sessionId}:["abc",123,456]`;
             workItem.results = [
               getStacLocation(workItem, 'catalog.json')];
+            workItem.outputGranuleSizes = [1];
             await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
             await updateWorkItem(this.backend, workItem);
           }
@@ -970,6 +1006,7 @@ describe('When a request spans multiple CMR pages', function () {
               workItem.status = WorkItemStatus.SUCCESSFUL;
               workItem.results = [
                 getStacLocation(workItem, 'catalog.json')];
+              workItem.outputGranuleSizes = [1];
               await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
               await updateWorkItem(this.backend, workItem);
             }
@@ -979,6 +1016,7 @@ describe('When a request spans multiple CMR pages', function () {
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.results = [
               getStacLocation(workItem, 'catalog.json')];
+            workItem.outputGranuleSizes = [1];
             await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
             await updateWorkItem(this.backend, workItem);
 

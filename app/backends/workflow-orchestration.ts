@@ -533,12 +533,12 @@ export async function readSTACCatalog(s3Url: string, logger: Logger): Promise<st
  * Update job status/progress in response to a service provided work item update
  *
  * @param update - information about the work item update
- * @param token - the access token for the user's request
+ * @param operation - the DataOperation for the user's request
  * @param logger - the Logger for the request
  */
 export async function handleWorkItemUpdate(
   update: WorkItemUpdate,
-  token: string,
+  operation: object,
   logger: Logger): Promise<void> {
   const { workItemID, status, hits, results, scrollID, errorMessage, totalGranulesSize } = update;
   if (status === WorkItemStatus.SUCCESSFUL) {
@@ -557,6 +557,10 @@ export async function handleWorkItemUpdate(
     // eslint-disable-next-line prefer-destructuring
     outputGranuleSizes = update.outputGranuleSizes;
   } else if (update.results) {
+    const encrypter = createEncrypter(env.sharedSecretKey);
+    const decrypter = createDecrypter(env.sharedSecretKey);
+    const op = new DataOperation(operation, encrypter, decrypter);
+    const token = op.unencryptedAccessToken;
     let index = 0;
     for (const catalogUrl of update.results) {
       const links = await exports.readSTACCatalog(catalogUrl, logger);
@@ -699,10 +703,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const { id } = req.params;
   const { status, hits, results, scrollID, errorMessage, duration, operation, outputGranuleSizes } = req.body;
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
-  const encrypter = createEncrypter(env.sharedSecretKey);
-  const decrypter = createDecrypter(env.sharedSecretKey);
-  const op = new DataOperation(operation, encrypter, decrypter);
-  const token = op.unencryptedAccessToken;
 
   const update =
   {
@@ -719,7 +719,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
 
   if (typeof global.it === 'function') {
     // tests break if we don't await this
-    await handleWorkItemUpdate(update, token, req.context.logger);
+    await handleWorkItemUpdate(update, operation, req.context.logger);
     // res.status(204).send();
   } else {
     // asynchronously handle the update so that the service is not waiting for a response
@@ -736,7 +736,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     // which do this processing asynchronously.
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    handleWorkItemUpdate(update, token, req.context.logger);
+    handleWorkItemUpdate(update, operation, req.context.logger);
   }
 
   res.status(204).send();

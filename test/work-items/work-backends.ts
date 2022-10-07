@@ -395,6 +395,7 @@ describe('Work Backends', function () {
         ...{
           status: WorkItemStatus.SUCCESSFUL,
           results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+          outputGranuleSizes: [1],
           scrollID: '-1234',
           duration: 0,
         },
@@ -457,6 +458,7 @@ describe('Work Backends', function () {
         ...{
           status: WorkItemStatus.SUCCESSFUL,
           results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
+          outputGranuleSizes: [1],
           scrollID: '-1234',
           duration: 100000000,
         },

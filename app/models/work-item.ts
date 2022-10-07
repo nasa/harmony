@@ -299,7 +299,7 @@ export async function getWorkItemById(
   const workItemData = await query;
 
   const workItem = workItemData && new WorkItem(workItemData);
-  if (workItemData.outputGranuleSizesJson) {
+  if (workItemData?.outputGranuleSizesJson) {
     workItem.outputGranuleSizes = JSON.parse(workItemData.outputGranuleSizesJson);
   }
   return workItem;

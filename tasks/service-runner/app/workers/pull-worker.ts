@@ -9,8 +9,6 @@ import createAxiosClientWithRetry from '../util/axios-clients';
 import path from 'path';
 import { existsSync, rmSync, promises as fs } from 'fs';
 import { exit } from 'process';
-import { objectStoreForProtocol } from '../../../../app/util/object-store';
-import { readCatalogItems } from '../../../../app/util/stac';
 
 // Poll every 500 ms for now. Potentially make this a configuration item.
 const pollingInterval = 500;
