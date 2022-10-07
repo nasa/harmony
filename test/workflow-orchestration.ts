@@ -220,8 +220,6 @@ describe('When a workflow contains an aggregating step', async function () {
       });
 
       describe('and it is the last work item for the step', async function () {
-        // this test is failing because it depends on the previous work item completion being
-        // synchronous, which it is not
         it('supplies exactly one work item for the next step', async function () {
           await doWorkAndUpdateStatus(this);
 

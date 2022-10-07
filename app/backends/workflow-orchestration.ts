@@ -721,7 +721,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   if (typeof global.it === 'function') {
     // tests break if we don't await this
     await handleWorkItemUpdate(update, operation, req.context.logger);
-    // res.status(204).send();
   } else {
     // asynchronously handle the update so that the service is not waiting for a response
     // during a potentially long update. If the asynchronous update fails the work-item will
@@ -730,15 +729,10 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     // can still retry for network or similar failures, but we don't want it to retry for things
     // like 409 errors.
 
-    // Return a success with no body - this is done here before the end of this function because
-    // otherwise the connection would time out when running locally for big queries. This is due to
-    // the length of time it takes to retrieve all the resulting file sizes for services that produce
-    // more than one granule (like query-cmr). This is not a problem for non-local deployments
-    // which do this processing asynchronously.
-
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     handleWorkItemUpdate(update, operation, req.context.logger);
   }
 
+  // Return a success with no body 
   res.status(204).send();
 }
