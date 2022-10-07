@@ -102,7 +102,7 @@ describe('Auto-pausing jobs', function () {
   before(async function () {
     env.previewThreshold = 3;
     sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
-      .callsFake(async (_) => 7000000000);
+      .callsFake(async (_dummy) => 7000000000);
     await truncateAll();
   });
   after(function () {
