@@ -7,6 +7,7 @@ import { resolve as resolveUrl } from '../../../../app/util/url';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
+import { Logger } from 'winston';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -26,33 +27,49 @@ const { workerTimeout } = env;
 
 /**
  * A writable stream that is passed to the k8s exec call for the worker container.
- * Allows us to capture, log and store the logs of the worker container's execution.
+ * Captures, logs and stores the logs of the worker container's execution.
  */
-class LogStream extends stream.Writable {
+export class LogStream extends stream.Writable {
   
+  // logs each chunk received
+  streamLogger: Logger;
+
   // all of the logs that are written
   // to this stream (gets uploaded to s3)
   logStrArr = [];
   
   aggregateLogStr = (): string => this.logStrArr.join();
 
+  constructor(streamLogger: Logger = logger) {
+    super();
+    this.streamLogger = streamLogger;
+  }
+
   /**
-   * Parse the log chunk (service log), push it to the logs array, and log it.
-   * @param chunk - the chunk to log (could emanate from a string or JSON logger) 
+   * Write a chunk to the log stream.
+   * @param chunk - the chunk recieved by the stream (likely a Buffer)
    */
   _write(chunk, enc: BufferEncoding, next: (error?: Error | null) => void): void {
     const logStr: string = chunk.toString('utf8');
+    this._handleLogString(logStr);
+    next();
+  }
+
+  /**
+   * Parse the log chunk (if JSON), push it to the logs array, and log it.
+   * @param logStr - the string to log (could emanate from a text or JSON logger) 
+   */
+  _handleLogString(logStr: string): void {
     try {
       const logObj: object = JSON.parse(logStr);
       this.logStrArr.push(logObj);
-      logger.debug({ ...logObj, worker: true });
+      this.streamLogger.debug({ ...logObj, worker: true });
     } catch (e) {
       if (e instanceof SyntaxError) { // string log
         this.logStrArr.push(logStr);
-        logger.debug(logStr, { worker: true });
+        this.streamLogger.debug(logStr, { worker: true });
       }
     }
-    next();
   }
 }
 

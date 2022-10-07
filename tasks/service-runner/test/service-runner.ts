@@ -5,6 +5,8 @@ import WorkItem from '../../../app/models/work-item';
 import { objectStoreForProtocol } from '../../../app/util/object-store';
 import * as serviceRunner from '../app/service/service-runner';
 import { resolve } from '../../../app/util/url';
+import { createLoggerForTest } from '../../../test/helpers/log';
+import { Logger } from 'winston';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
@@ -152,6 +154,82 @@ describe('Service Runner', function () {
       it('returns an error message', async function () {
         const result = await serviceRunner.runServiceFromPull(workItem);
         expect(result.error).to.be.not.empty;
+      });
+    });
+  });
+
+  describe('LogStream', function () {
+    
+    const message = `mv '/tmp/tmpkwxpifmr/tmp-result.tif' '/tmp/tmpkwxpifmr/result.tif'`;
+    const user = 'bo';
+    const requestId = 'cdea7cb8-4c77-4342-8f00-6285e32c9123';
+    const textLog = `2022-10-06 17:12:28,530 [INFO] [harmony-service.cmd:199] ${message}`;
+    const jsonLog = `{ "message":"${message}", "user":"${user}", "requestId":"${requestId}" }`;
+    
+    describe('_handleLogString with a JSON logger', function () {
+  
+      let testLogger: Logger, getTestLogs: () => string;
+      let logStream: serviceRunner.LogStream;
+      before(function () {
+        ({ getTestLogs, testLogger } = createLoggerForTest(true));
+        logStream = new serviceRunner.LogStream(testLogger);
+        logStream._handleLogString(textLog);
+        logStream._handleLogString(jsonLog);
+      });
+  
+      after(function () {
+        for (const transport of testLogger.transports) {
+          transport.close;
+        }
+        testLogger.close();
+      });
+  
+      it('saves the logs to an array, as a string or JSON', function () {
+        expect(logStream.logStrArr.length == 2);
+        expect(logStream.logStrArr[0] === JSON.parse(jsonLog));
+        expect(logStream.logStrArr[1] === textLog);
+      });
+
+      it('outputs the logs to the log\'s stream', function () {
+        const testLogs = getTestLogs();
+        expect(testLogs.split('\n').length == 2);
+        [user, requestId, "user", "requestId"]
+          .forEach((attribute) => expect((testLogs.match(new RegExp(attribute, 'gm')) || []).length).to.equal(1));
+        [message, "message"]
+          .forEach((attribute) => expect((testLogs.match(new RegExp(attribute, 'gm')) || []).length).to.equal(2));
+      });
+    });
+
+    describe('_handleLogString with a text logger', function () {
+  
+      let testLogger: Logger, getTestLogs: () => string;
+      let logStream: serviceRunner.LogStream;
+      before(function () {
+        ({ getTestLogs, testLogger } = createLoggerForTest(false));
+        logStream = new serviceRunner.LogStream(testLogger);
+        logStream._handleLogString(textLog);
+        logStream._handleLogString(jsonLog);
+      });
+  
+      after(function () {
+        for (const transport of testLogger.transports) {
+          transport.close;
+        }
+        testLogger.close();
+      });
+  
+      it('saves the logs to an array, as a string or JSON', function () {
+        expect(logStream.logStrArr.length == 2);
+        expect(logStream.logStrArr[0] === JSON.parse(jsonLog));
+        expect(logStream.logStrArr[1] === textLog);
+      });
+
+      it('outputs the logs to the log\'s stream', function () {
+        const testLogs = getTestLogs();
+        const jsonLogOutput = `[cdea7cb8-4c77-4342-8f00-6285e32c9123]: mv '/tmp/tmpkwxpifmr/tmp-result.tif' '/tmp/tmpkwxpifmr/result.tif'`;
+        expect(testLogs.split('\n').length == 2);
+        expect(testLogs.includes(textLog));
+        expect(testLogs.includes(jsonLogOutput));
       });
     });
   });
