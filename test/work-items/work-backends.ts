@@ -235,7 +235,7 @@ describe('Work Backends', function () {
     });
 
     describe('output granules sizes', async function () {
-      let readSTACCatalogStub: SinonStub;
+      let readCatalogLinksStub: SinonStub;
       let sizeOfObjectStub: SinonStub;
       describe('when a work item provides all the granule sizes', async function () {
         hookJobCreation(jobRecord);
@@ -260,17 +260,17 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readSTACCatalogStub = sinon.stub(workflowOrchestration, 'readSTACCatalog');
+          readCatalogLinksStub = sinon.stub(workflowOrchestration, 'readCatalogLinks');
           sizeOfObjectStub = sinon.stub(workflowOrchestration, 'sizeOfObject');
         });
         after(async () => {
-          readSTACCatalogStub.restore();
+          readCatalogLinksStub.restore();
           sizeOfObjectStub.restore();
         });
         hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
 
         it('does not read the STAC catalog', async function () {
-          expect(readSTACCatalogStub.callCount).to.equal(0);
+          expect(readCatalogLinksStub.callCount).to.equal(0);
         });
 
         it('does not look up the granule sizes', async function () {
@@ -306,19 +306,19 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readSTACCatalogStub = sinon.stub(workflowOrchestration, 'readSTACCatalog')
+          readCatalogLinksStub = sinon.stub(workflowOrchestration, 'readCatalogLinks')
             .callsFake(async (_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
           sizeOfObjectStub = sinon.stub(workflowOrchestration, 'sizeOfObject')
             .callsFake(async (_) => 7000000000);
         });
         after(async () => {
-          readSTACCatalogStub.restore();
+          readCatalogLinksStub.restore();
           sizeOfObjectStub.restore();
         });
         hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
 
         it('reads the STAC catalog', async function () {
-          expect(readSTACCatalogStub.callCount).to.equal(1);
+          expect(readCatalogLinksStub.callCount).to.equal(1);
         });
 
         it('looks up the missing the granule sizes', async function () {
@@ -353,19 +353,19 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readSTACCatalogStub = sinon.stub(workflowOrchestration, 'readSTACCatalog')
+          readCatalogLinksStub = sinon.stub(workflowOrchestration, 'readCatalogLinks')
             .callsFake(async (_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
           sizeOfObjectStub = sinon.stub(workflowOrchestration, 'sizeOfObject')
             .callsFake(async (_) => 7000000000);
         });
         after(async () => {
-          readSTACCatalogStub.restore();
+          readCatalogLinksStub.restore();
           sizeOfObjectStub.restore();
         });
         hookWorkItemUpdate((r) => r.send(successfulWorkItemRecord));
 
         it('reads the STAC catalog', async function () {
-          expect(readSTACCatalogStub.callCount).to.equal(1);
+          expect(readCatalogLinksStub.callCount).to.equal(1);
         });
 
         it('looks up the granule sizes', async function () {

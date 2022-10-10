@@ -523,7 +523,7 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
  * 
  * @param s3Url - the s3 url of the catalog
  */
-export async function readSTACCatalog(s3Url: string, logger: Logger): Promise<string[]> {
+export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<string[]> {
   logger.debug(`Reading STAC catalog ${s3Url}`);
   const items = await readCatalogItems(s3Url);
 
@@ -564,7 +564,7 @@ export async function handleWorkItemUpdate(
     const token = op.unencryptedAccessToken;
     let index = 0;
     for (const catalogUrl of update.results) {
-      const links = await exports.readSTACCatalog(catalogUrl, logger);
+      const links = await exports.readCatalogLinks(catalogUrl, logger);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
       const sizes = await Promise.all(links.map(async (link) => {
         const serviceProvidedSize = update.outputGranuleSizes?.[index];

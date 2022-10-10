@@ -51,7 +51,6 @@ async function querySearchAfter(
     if (granuleSizeInBytes != granuleSizeInBytes || granuleSizeInBytes < 0) {
       granuleSizeInBytes = 0;
     }
-    logger.info(`Granule size: ${granuleSizeInBytes}`);
     outputGranuleSizes.push(granuleSizeInBytes);
     totalGranulesSize += granuleSize;
     const result = new CmrStacCatalog({ description: `CMR collection ${granule.collection_concept_id}, granule ${granule.id}` });
