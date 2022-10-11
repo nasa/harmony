@@ -5,9 +5,20 @@ import WorkItem from '../../../app/models/work-item';
 import { objectStoreForProtocol } from '../../../app/util/object-store';
 import * as serviceRunner from '../app/service/service-runner';
 import { resolve } from '../../../app/util/url';
+import { createLoggerForTest } from '../../../test/helpers/log';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
+const errorLogRecord = `
+{
+  "application": "query-cmr",
+  "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
+  "message": "bad stuff",
+  "level": "error",
+  "timestamp": "2021-09-14T15:08:57.346Z",
+  "env_name": "harmony-unknown"
+}
+`;
 const errorLog = `
 {
   "application": "query-cmr",
@@ -17,14 +28,7 @@ const errorLog = `
   "timestamp": "2021-09-13T15:08:57.346Z",
   "env_name": "harmony-unknown"
 }
-{
-  "application": "query-cmr",
-  "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
-  "message": "bad stuff",
-  "level": "error",
-  "timestamp": "2021-09-14T15:08:57.346Z",
-  "env_name": "harmony-unknown"
-}
+${errorLogRecord}
 {
   "application": "query-cmr",
   "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
@@ -152,6 +156,132 @@ describe('Service Runner', function () {
       it('returns an error message', async function () {
         const result = await serviceRunner.runServiceFromPull(workItem);
         expect(result.error).to.be.not.empty;
+      });
+    });
+  });
+
+  describe('LogStream', function () {
+    
+    const message = 'mv \'/tmp/tmpkwxpifmr/tmp-result.tif\' \'/tmp/tmpkwxpifmr/result.tif\'';
+    const user = 'bo';
+    const timestamp =  '2022-10-06T17:04:21.090726Z';
+    const requestId = 'cdea7cb8-4c77-4342-8f00-6285e32c9123';
+    const level = 'INFO';
+    
+    const textLog = `${timestamp} [${level}] [harmony-service.cmd:199] ${message}`;
+    const jsonLog = `{ "level":"${level}", "message":"${message}", "user":"${user}", "requestId":"${requestId}", "timestamp":"${timestamp}"}`;
+    
+    describe('_handleLogString with a JSON logger', function () {
+
+      before(function () {
+        const { getTestLogs, testLogger } = createLoggerForTest(true);
+        this.testLogger = testLogger;
+        this.logStream = new serviceRunner.LogStream(testLogger);
+        this.logStream._handleLogString(textLog);
+        this.logStream._handleLogString(jsonLog);
+        
+        const testLogs = getTestLogs();
+        this.testLogsArr = testLogs.split('\n');
+        this.textLogOutput = JSON.parse(this.testLogsArr[0]);
+        this.jsonLogOutput = JSON.parse(this.testLogsArr[1]);
+      });
+  
+      after(function () {
+        for (const transport of this.testLogger.transports) {
+          transport.close;
+        }
+        this.testLogger.close();
+      });
+  
+      it('saves each log to an array in the original format, as a string or JSON', function () {
+        expect(this.logStream.logStrArr.length == 2);
+        expect(this.logStream.logStrArr[0] === JSON.parse(jsonLog));
+        expect(this.logStream.logStrArr[1] === textLog);
+      });
+
+      it('outputs the proper quantity of logs to the log stream', function () {
+        expect(this.testLogsArr.length == 2);
+      });
+
+      it('sets the appropriate message for each log', function () {
+        expect(this.textLogOutput.message).to.equal(textLog);
+        expect(this.jsonLogOutput.message).to.equal(message);
+      });
+
+      it('sets custom attributes appropriately for each log', function () {
+        expect(this.jsonLogOutput.user).to.equal(user);
+        expect(this.jsonLogOutput.requestId).to.equal(requestId);
+        
+        expect(this.textLogOutput.worker).to.equal(true);
+        expect(this.jsonLogOutput.worker).to.equal(true);
+      });
+
+      it('does not override manager container log attributes with those from the worker container', function () {
+        expect(this.textLogOutput.timestamp).to.not.equal(timestamp);
+        expect(this.jsonLogOutput.timestamp).to.not.equal(timestamp);
+        expect(this.jsonLogOutput.workerTimestamp).to.equal(timestamp);
+
+        expect(this.textLogOutput.level.toLowerCase()).to.equal('debug');
+        expect(this.jsonLogOutput.level.toLowerCase()).to.equal('debug');
+        expect(this.jsonLogOutput.workerLevel.toLowerCase()).to.equal(level.toLowerCase());
+      });
+    });
+
+    describe('_handleLogString with a text logger', function () {
+  
+      before(function () {
+        const { getTestLogs, testLogger } = createLoggerForTest(false);
+        this.testLogger = testLogger;
+        this.logStream = new serviceRunner.LogStream(testLogger);
+        this.logStream._handleLogString(textLog);
+        this.logStream._handleLogString(jsonLog);        
+        this.testLogs = getTestLogs();
+      });
+  
+      after(function () {
+        for (const transport of this.testLogger.transports) {
+          transport.close;
+        }
+        this.testLogger.close();
+      });
+  
+      it('saves each log to an array in the original format, as a string or JSON', function () {
+        expect(this.logStream.logStrArr.length == 2);
+        expect(this.logStream.logStrArr[0] === JSON.parse(jsonLog));
+        expect(this.logStream.logStrArr[1] === textLog);
+      });
+
+      it('outputs the proper quantity of logs to the log stream', function () {
+        expect(this.testLogs.split('\n').length == 2);
+      });
+
+      it('outputs the appropriate text to the log stream', function () {
+        const jsonLogOutput = `[${requestId}]: ${message}`;
+        expect(this.testLogs.includes(textLog));
+        expect(this.testLogs.includes(jsonLogOutput));
+      });
+    });
+
+    describe('aggregateLogStr with a JSON logger', function () {
+  
+      before(function () {
+        const { testLogger } = createLoggerForTest(true);
+        this.testLogger = testLogger;
+        this.logStream = new serviceRunner.LogStream(testLogger);
+        this.logStream._handleLogString(nonErrorLog);
+        this.logStream._handleLogString(errorLogRecord);
+      });
+  
+      after(function () {
+        for (const transport of this.testLogger.transports) {
+          transport.close;
+        }
+        this.testLogger.close();
+      });
+  
+      it('can provide an aggregate log string to _getErrorMessage', async function () {
+        const errorMessage = await _getErrorMessage(this.logStream.aggregateLogStr, workItemWithoutErrorJson);
+        expect(errorMessage).equal('bad stuff');
       });
     });
   });

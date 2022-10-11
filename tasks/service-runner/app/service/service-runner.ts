@@ -7,6 +7,7 @@ import { resolve as resolveUrl } from '../../../../app/util/url';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
+import { Logger } from 'winston';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -25,24 +26,59 @@ export interface ServiceResponse {
 // how long to let a worker run before giving up
 const { workerTimeout } = env;
 
-class LogStream extends stream.Writable {
-  logStrArr = [];
+/**
+ * A writable stream that is passed to the k8s exec call for the worker container.
+ * Captures, logs and stores the logs of the worker container's execution.
+ */
+export class LogStream extends stream.Writable {
   
-  logStr = (): string => this.logStrArr.join();
+  // logs each chunk received
+  streamLogger: Logger;
 
-  shouldLog = true;
+  // all of the logs (JSON or text) that are written
+  // to this stream (gets uploaded to s3)
+  logStrArr: (string | object)[] = [];
+  
+  aggregateLogStr = '';
 
+  constructor(streamLogger: Logger = logger) {
+    super();
+    this.streamLogger = streamLogger;
+  }
+
+  /**
+   * Write a chunk to the log stream.
+   * @param chunk - the chunk recieved by the stream (likely a Buffer)
+   */
   _write(chunk, enc: BufferEncoding, next: (error?: Error | null) => void): void {
-    let chunkStr = chunk.toString('utf8');
-    try {
-      chunkStr = JSON.parse(chunkStr);
-    } catch (e) { } finally {
-      this.logStrArr.push(chunkStr);
-    }
-    if (this.shouldLog) {
-      logger.debug(chunkStr, { worker: true });
-    }
+    const logStr: string = chunk.toString('utf8');
+    this._handleLogString(logStr);
     next();
+  }
+
+  /**
+   * Parse the log chunk (if JSON), push it to the logs array, and log it.
+   * @param logStr - the string to log (could emanate from a text or JSON logger) 
+   */
+  _handleLogString(logStr: string): void {
+    this.aggregateLogStr += logStr;
+    try {
+      const logObj: object = JSON.parse(logStr);
+      this.logStrArr.push(logObj);
+      for (const propertyName of ['timestamp', 'level']) {
+        if (propertyName in logObj) {
+          const upperCasedPropName = propertyName[0].toUpperCase() + propertyName.substring(1);
+          logObj[`worker${upperCasedPropName}`] = logObj[propertyName];
+          delete logObj[propertyName];
+        }
+      }
+      this.streamLogger.debug({ ...logObj, worker: true });
+    } catch (e) {
+      if (e instanceof SyntaxError) { // string log
+        this.logStrArr.push(logStr);
+        this.streamLogger.debug(logStr, { worker: true });
+      }
+    }
   }
 }
 
@@ -194,7 +230,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(stdOut.logStr(), catalogDir);
+              const logErr = await _getErrorMessage(stdOut.aggregateLogStr, catalogDir);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }
