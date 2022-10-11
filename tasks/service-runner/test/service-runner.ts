@@ -170,87 +170,93 @@ describe('Service Runner', function () {
     const jsonLog = `{ "level":"${level}", "message":"${message}", "user":"${user}", "requestId":"${requestId}", "timestamp":"${timestamp}"}`;
     
     describe('_handleLogString with a JSON logger', function () {
-  
-      let testLogger: Logger, getTestLogs: () => string;
-      let logStream: serviceRunner.LogStream;
+
       before(function () {
-        ({ getTestLogs, testLogger } = createLoggerForTest(true));
-        logStream = new serviceRunner.LogStream(testLogger);
-        logStream._handleLogString(textLog);
-        logStream._handleLogString(jsonLog);
+        const { getTestLogs, testLogger } = createLoggerForTest(true);
+        this.testLogger = testLogger;
+        this.logStream = new serviceRunner.LogStream(testLogger);
+        this.logStream._handleLogString(textLog);
+        this.logStream._handleLogString(jsonLog);
+        
+        const testLogs = getTestLogs();
+        this.testLogsArr = testLogs.split('\n');
+        this.textLogOutput = JSON.parse(this.testLogsArr[0]);
+        this.jsonLogOutput = JSON.parse(this.testLogsArr[1]);
       });
   
       after(function () {
-        for (const transport of testLogger.transports) {
+        for (const transport of this.testLogger.transports) {
           transport.close;
         }
-        testLogger.close();
+        this.testLogger.close();
       });
   
       it('saves each log to an array in the original format, as a string or JSON', function () {
-        expect(logStream.logStrArr.length == 2);
-        expect(logStream.logStrArr[0] === JSON.parse(jsonLog));
-        expect(logStream.logStrArr[1] === textLog);
+        expect(this.logStream.logStrArr.length == 2);
+        expect(this.logStream.logStrArr[0] === JSON.parse(jsonLog));
+        expect(this.logStream.logStrArr[1] === textLog);
       });
 
-      it('outputs the logs to the log\'s stream', function () {
-        const testLogs = getTestLogs();
-        const testLogsArr = testLogs.split('\n');
-        const textLogOutput = JSON.parse(testLogsArr[0]);
-        const jsonLogOutput = JSON.parse(testLogsArr[1]);
-        expect(testLogsArr.length == 2);
+      it('outputs the proper quantity of logs to the log stream', function () {
+        expect(this.testLogsArr.length == 2);
+      });
 
-        // things we expect in the jsonLog
-        expect(jsonLogOutput.user).to.equal(user);
-        expect(jsonLogOutput.requestId).to.equal(requestId);
-        
-        // things we expect from both logs
-        expect(textLogOutput.message).to.equal(textLog);
-        expect(jsonLogOutput.message).to.equal(message);
-        
-        expect(textLogOutput.timestamp).to.not.equal(timestamp);
-        expect(jsonLogOutput.timestamp).to.not.equal(timestamp);
-        expect(jsonLogOutput.workerTimestamp).to.equal(timestamp);
-        
-        expect(textLogOutput.worker).to.equal(true);
-        expect(jsonLogOutput.worker).to.equal(true);
+      it('sets the appropriate message for each log', function () {
+        expect(this.textLogOutput.message).to.equal(textLog);
+        expect(this.jsonLogOutput.message).to.equal(message);
+      });
 
-        expect(textLogOutput.level.toLowerCase()).to.equal('debug');
-        expect(jsonLogOutput.level.toLowerCase()).to.equal('debug');
-        expect(jsonLogOutput.workerLevel.toLowerCase()).to.equal(level.toLowerCase());
+      it('sets custom attributes appropriately for each log', function () {
+        expect(this.jsonLogOutput.user).to.equal(user);
+        expect(this.jsonLogOutput.requestId).to.equal(requestId);
+        
+        expect(this.textLogOutput.worker).to.equal(true);
+        expect(this.jsonLogOutput.worker).to.equal(true);
+      });
+
+      it('does not override manager container log attributes with those from the worker container', function () {
+        expect(this.textLogOutput.timestamp).to.not.equal(timestamp);
+        expect(this.jsonLogOutput.timestamp).to.not.equal(timestamp);
+        expect(this.jsonLogOutput.workerTimestamp).to.equal(timestamp);
+
+        expect(this.textLogOutput.level.toLowerCase()).to.equal('debug');
+        expect(this.jsonLogOutput.level.toLowerCase()).to.equal('debug');
+        expect(this.jsonLogOutput.workerLevel.toLowerCase()).to.equal(level.toLowerCase());
       });
     });
 
     describe('_handleLogString with a text logger', function () {
   
-      let testLogger: Logger, getTestLogs: () => string;
-      let logStream: serviceRunner.LogStream;
       before(function () {
-        ({ getTestLogs, testLogger } = createLoggerForTest(false));
-        logStream = new serviceRunner.LogStream(testLogger);
-        logStream._handleLogString(textLog);
-        logStream._handleLogString(jsonLog);
+        const { getTestLogs, testLogger } = createLoggerForTest(false);
+        this.testLogger = testLogger;
+        this.logStream = new serviceRunner.LogStream(testLogger);
+        this.logStream._handleLogString(textLog);
+        this.logStream._handleLogString(jsonLog);        
+        this.testLogs = getTestLogs();
       });
   
       after(function () {
-        for (const transport of testLogger.transports) {
+        for (const transport of this.testLogger.transports) {
           transport.close;
         }
-        testLogger.close();
+        this.testLogger.close();
       });
   
       it('saves each log to an array in the original format, as a string or JSON', function () {
-        expect(logStream.logStrArr.length == 2);
-        expect(logStream.logStrArr[0] === JSON.parse(jsonLog));
-        expect(logStream.logStrArr[1] === textLog);
+        expect(this.logStream.logStrArr.length == 2);
+        expect(this.logStream.logStrArr[0] === JSON.parse(jsonLog));
+        expect(this.logStream.logStrArr[1] === textLog);
       });
 
-      it('outputs the logs to the log\'s stream', function () {
-        const testLogs = getTestLogs();
+      it('outputs the proper quantity of logs to the log stream', function () {
+        expect(this.testLogs.split('\n').length == 2);
+      });
+
+      it('outputs the appropriate text to the log stream', function () {
         const jsonLogOutput = `[${requestId}]: ${message}`;
-        expect(testLogs.split('\n').length == 2);
-        expect(testLogs.includes(textLog));
-        expect(testLogs.includes(jsonLogOutput));
+        expect(this.testLogs.includes(textLog));
+        expect(this.testLogs.includes(jsonLogOutput));
       });
     });
   });
