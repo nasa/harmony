@@ -10,6 +10,16 @@ import { Logger } from 'winston';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
+const errorLogRecord = `
+{
+  "application": "query-cmr",
+  "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
+  "message": "bad stuff",
+  "level": "error",
+  "timestamp": "2021-09-14T15:08:57.346Z",
+  "env_name": "harmony-unknown"
+}
+`;
 const errorLog = `
 {
   "application": "query-cmr",
@@ -19,14 +29,7 @@ const errorLog = `
   "timestamp": "2021-09-13T15:08:57.346Z",
   "env_name": "harmony-unknown"
 }
-{
-  "application": "query-cmr",
-  "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
-  "message": "bad stuff",
-  "level": "error",
-  "timestamp": "2021-09-14T15:08:57.346Z",
-  "env_name": "harmony-unknown"
-}
+${errorLogRecord}
 {
   "application": "query-cmr",
   "requestId": "c76c7a30-84a1-40a1-88a0-34a35e47fe8f",
@@ -257,6 +260,29 @@ describe('Service Runner', function () {
         const jsonLogOutput = `[${requestId}]: ${message}`;
         expect(this.testLogs.includes(textLog));
         expect(this.testLogs.includes(jsonLogOutput));
+      });
+    });
+
+    describe('aggregateLogStr with a JSON logger', function () {
+  
+      before(function () {
+        const { getTestLogs, testLogger } = createLoggerForTest(true);
+        this.testLogger = testLogger;
+        this.logStream = new serviceRunner.LogStream(testLogger);
+        this.logStream._handleLogString(nonErrorLog);
+        this.logStream._handleLogString(errorLogRecord);
+      });
+  
+      after(function () {
+        for (const transport of this.testLogger.transports) {
+          transport.close;
+        }
+        this.testLogger.close();
+      });
+  
+      it('can provide an aggregate log string to _getErrorMessage', async function () {
+        const errorMessage = await _getErrorMessage(this.logStream.aggregateLogStr, workItemWithoutErrorJson);
+        expect(errorMessage).equal('bad stuff');
       });
     });
   });

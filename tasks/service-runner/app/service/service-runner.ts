@@ -34,11 +34,11 @@ export class LogStream extends stream.Writable {
   // logs each chunk received
   streamLogger: Logger;
 
-  // all of the logs that are written
+  // all of the logs (JSON or text) that are written
   // to this stream (gets uploaded to s3)
-  logStrArr = [];
+  logStrArr: (string | object)[] = [];
   
-  aggregateLogStr = (): string => this.logStrArr.join();
+  aggregateLogStr = '';
 
   constructor(streamLogger: Logger = logger) {
     super();
@@ -60,6 +60,7 @@ export class LogStream extends stream.Writable {
    * @param logStr - the string to log (could emanate from a text or JSON logger) 
    */
   _handleLogString(logStr: string): void {
+    this.aggregateLogStr += logStr;
     try {
       const logObj: object = JSON.parse(logStr);
       this.logStrArr.push(logObj);
@@ -228,7 +229,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(stdOut.aggregateLogStr(), catalogDir);
+              const logErr = await _getErrorMessage(stdOut.aggregateLogStr, catalogDir);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }
