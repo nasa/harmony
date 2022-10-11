@@ -6,7 +6,6 @@ import { objectStoreForProtocol } from '../../../app/util/object-store';
 import * as serviceRunner from '../app/service/service-runner';
 import { resolve } from '../../../app/util/url';
 import { createLoggerForTest } from '../../../test/helpers/log';
-import { Logger } from 'winston';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
@@ -266,7 +265,7 @@ describe('Service Runner', function () {
     describe('aggregateLogStr with a JSON logger', function () {
   
       before(function () {
-        const { getTestLogs, testLogger } = createLoggerForTest(true);
+        const { testLogger } = createLoggerForTest(true);
         this.testLogger = testLogger;
         this.logStream = new serviceRunner.LogStream(testLogger);
         this.logStream._handleLogString(nonErrorLog);
