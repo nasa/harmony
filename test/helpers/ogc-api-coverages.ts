@@ -234,7 +234,7 @@ export function hookPostRangesetRequest(
 
       if (redirectHeader) {
         const redirect = cookieValue(redirectHeader, 'redirect');
-        // HARMONY-290 Should be query parmams, not a string
+        // HARMONY-290 Should be query params, not a string
         const query = redirect.split('?')[1];
 
         this.res = await rangesetRequest(

@@ -87,6 +87,7 @@ export default class WorkFailer implements Worker {
                 scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
                 errorMessage: message,
               },
+              null,
               this.logger);
           }));
         } catch (e) {

@@ -437,6 +437,7 @@ export async function retry(
       { workItemID: item.id, status: WorkItemStatus.FAILED,
         scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
         errorMessage: 'A user attempted to trigger a retry via the Workflow UI.' },
+      null,
       req.context.logger);
     res.status(200).send({ message: 'The item was successfully requeued.' });
   } catch (e) {

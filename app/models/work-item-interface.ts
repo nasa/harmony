@@ -53,6 +53,9 @@ export interface WorkItemRecord {
   // The sum of the sizes of the granules associated with this work item
   totalGranulesSize?: number;
 
+  // The size (in bytes) of each granule produced by this work item (used for batching)
+  outputGranuleSizes?: number[];
+
   // The number of times this work-item has been retried
   retryCount: number;
 

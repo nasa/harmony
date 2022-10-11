@@ -17,6 +17,7 @@ const exec = new k8s.Exec(kc);
 export interface ServiceResponse {
   batchCatalogs?: string[];
   totalGranulesSize?: number;
+  outputGranuleSizes?: number[];
   error?: string;
   hits?: number;
   scrollID?: string;
@@ -157,10 +158,10 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
 
       if (resp.status < 300) {
         const catalogs = await _getStacCatalogs(catalogDir);
-        const { totalGranulesSize } = resp.data;
+        const { totalGranulesSize, outputGranuleSizes } = resp.data;
         const newScrollID = resp.data.scrollID;
 
-        resolve({ batchCatalogs: catalogs, totalGranulesSize, scrollID: newScrollID });
+        resolve({ batchCatalogs: catalogs, totalGranulesSize, outputGranuleSizes, scrollID: newScrollID });
       } else {
         resolve({ error: resp.statusText });
       }

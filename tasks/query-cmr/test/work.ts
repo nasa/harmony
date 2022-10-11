@@ -17,7 +17,7 @@ describe('doWork', function () {
       };
       hookDoWork(
         workRequest,
-        [totalGranulesSize, [new CmrStacCatalog({ description: 'done' })]],
+        [totalGranulesSize, [1], [new CmrStacCatalog({ description: 'done' })]],
       );
 
       it('outputs the result data to catalog.json in the directory', async function () {

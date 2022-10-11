@@ -114,6 +114,7 @@ async function _doWork(
     newWorkItem.status = WorkItemStatus.SUCCESSFUL;
     newWorkItem.results = serviceResponse.batchCatalogs;
     newWorkItem.totalGranulesSize = serviceResponse.totalGranulesSize;
+    newWorkItem.outputGranuleSizes = serviceResponse.outputGranuleSizes;
   } else {
     logger.error(`Service failed with error: ${serviceResponse.error}`);
     newWorkItem.status = WorkItemStatus.FAILED;
@@ -167,7 +168,8 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
       logger.debug(`Performing work for work item with id ${work.item.id} for job id ${work.item.jobID}`);
       const workItem = await _doWork(work.item, work.maxCmrGranules);
       workItem.duration = Date.now() - startTime;
-
+      logger.debug(JSON.stringify(workItem.outputGranuleSizes));
+      logger.debug(JSON.stringify(workItem));
       // call back to Harmony to mark the work unit as complete or failed
       logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
       try {

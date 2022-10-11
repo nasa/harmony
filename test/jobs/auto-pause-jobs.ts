@@ -1,6 +1,7 @@
 /* eslint-disable no-loop-func */
 import { expect } from 'chai';
 import _ from 'lodash';
+import { stub } from 'sinon';
 import { WorkItemStatus, getStacLocation } from '../../app/models/work-item-interface';
 import env from '../../app/util/env';
 import { truncateAll } from '../helpers/db';
@@ -8,6 +9,7 @@ import { hookRedirect } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import { getWorkForService, updateWorkItem, fakeServiceStacOutput } from '../helpers/work-items';
+import * as workflowOrchestration from '../../app/backends/workflow-orchestration';
 
 const originalPreviewThreshold = env.previewThreshold;
 
@@ -96,12 +98,16 @@ function previewingToPauseTest(username: string): void {
 
 describe('Auto-pausing jobs', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
+  let sizeOfObjectStub;
   before(async function () {
     env.previewThreshold = 3;
+    sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
+      .callsFake(async (_dummy) => 7000000000);
     await truncateAll();
   });
   after(function () {
     env.previewThreshold = originalPreviewThreshold;
+    sizeOfObjectStub.restore();
   });
   describe('When a request is made', function () {
     const collection = 'C1233800302-EEDTEST';

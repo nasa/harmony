@@ -17,6 +17,9 @@ import { ServiceError } from '../util/errors';
 import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
 import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
+import axios from 'axios';
+import { createDecrypter, createEncrypter } from '../util/crypto';
+import DataOperation from '../models/data-operation';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -478,17 +481,105 @@ async function updateWorkItemCounts(
 }
 
 /**
+ * Get the size in bytes of the object at the given url
+ * 
+ * @param url - the url of the object
+ * @param token - the access token for the user's request
+ * @param logger - a Logger instance
+ * @returns the size of the object in bytes
+ */
+export async function sizeOfObject(url: string, token: string, logger: Logger): Promise<number> {
+  logger.debug(`Reading size of data at ${url}`);
+  const parsed = new URL(url);
+  const protocol = parsed.protocol.toLowerCase().replace(/:$/, '');
+  let result;
+  try {
+    let res;
+    switch (protocol) {
+      case 's3':
+        const s3 = objectStoreForProtocol('s3');
+        res = await s3.headObject(url);
+        result = res.ContentLength;
+        break;
+
+      default:
+
+        const headers = token ? { authorization: `Bearer ${token}` } : {};
+        res = await axios.head(url, { headers: headers });
+        result = parseInt(res.headers['content-length']);
+        break;
+    }
+  } catch (e) {
+    logger.error(e);
+    result = 0;
+  }
+
+  logger.debug(`ContentLength: ${result}`);
+  return result;
+}
+
+/**
+ * Read and parse a STAC catalog and return the links to the data items
+ * 
+ * @param s3Url - the s3 url of the catalog
+ */
+export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<string[]> {
+  logger.debug(`Reading STAC catalog ${s3Url}`);
+  const items = await readCatalogItems(s3Url);
+
+  return items.map((item) => item.assets.data.href);
+}
+
+/**
  * Update job status/progress in response to a service provided work item update
  *
  * @param update - information about the work item update
+ * @param operation - the DataOperation for the user's request
+ * @param logger - the Logger for the request
  */
-export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logger): Promise<void> {
+export async function handleWorkItemUpdate(
+  update: WorkItemUpdate,
+  operation: object,
+  logger: Logger): Promise<void> {
   const { workItemID, status, hits, results, scrollID, errorMessage, totalGranulesSize } = update;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
   // get the jobID for the work item
   const jobID = await getJobIdForWorkItem(workItemID);
+
+  // Get the sizes of all the granules returned for the WorkItem.
+  // This needs to be done outside the transaction as it can be slow if there are many granules.
+  let outputGranuleSizes = [];
+  if (update.outputGranuleSizes?.every(s => s > 0)) {
+    // if all the granules sizes were provided by the service then just use them, otherwise
+    // get the ones that were not provided
+
+    // eslint-disable-next-line prefer-destructuring
+    outputGranuleSizes = update.outputGranuleSizes;
+  } else if (update.results) {
+    const encrypter = createEncrypter(env.sharedSecretKey);
+    const decrypter = createDecrypter(env.sharedSecretKey);
+    const op = new DataOperation(operation, encrypter, decrypter);
+    const token = op.unencryptedAccessToken;
+    let index = 0;
+    for (const catalogUrl of update.results) {
+      const links = await exports.readCatalogLinks(catalogUrl, logger);
+      // eslint-disable-next-line @typescript-eslint/no-loop-func
+      const sizes = await Promise.all(links.map(async (link) => {
+        const serviceProvidedSize = update.outputGranuleSizes?.[index];
+        index += 1;
+        // use the value provided by the service if available
+        if (serviceProvidedSize && serviceProvidedSize > 0) {
+          return serviceProvidedSize;
+        }
+
+        // try to get the size using a HEAD request
+        return exports.sizeOfObject(link, token, logger);
+      }));
+      outputGranuleSizes = outputGranuleSizes.concat(sizes);
+    }
+  }
 
   await db.transaction(async (tx) => {
     const job = await Job.byJobID(tx, jobID, false, true);
@@ -540,7 +631,13 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
 
     logger.debug(`Work item duration (ms): ${duration}`);
 
-    await updateWorkItemStatus(tx, workItemID, status as WorkItemStatus, duration, totalGranulesSize);
+    await updateWorkItemStatus(
+      tx,
+      workItemID,
+      status as WorkItemStatus,
+      duration,
+      totalGranulesSize,
+      outputGranuleSizes);
 
     const completedWorkItemCount = await workItemCountForStep(
       tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
@@ -605,7 +702,7 @@ export async function handleWorkItemUpdate(update: WorkItemUpdate, logger: Logge
  */
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status, hits, results, scrollID, errorMessage, duration } = req.body;
+  const { status, hits, results, scrollID, errorMessage, duration, operation, outputGranuleSizes } = req.body;
   const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
 
   const update =
@@ -617,23 +714,25 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     scrollID,
     errorMessage,
     totalGranulesSize,
+    outputGranuleSizes,
     duration,
   };
 
-  // asynchronously handle the update so that the service is not waiting for a response
-  // during a potentially long update. If the asynchronous update fails the work-item will
-  // eventually be retried by the timeout handler. In any case there is not much the service
-  // can do if the update fails, so it is OK for us to ignore the promise here. The service
-  // can still retry for network or similar failures, but we don't want it to retry for things
-  // like 409 errors.
-  if (db.client.config.client === 'pg') {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    handleWorkItemUpdate(update, req.context.logger);
-  } else {
+  if (typeof global.it === 'function') {
     // tests break if we don't await this
-    await handleWorkItemUpdate(update, req.context.logger);
+    await handleWorkItemUpdate(update, operation, req.context.logger);
+  } else {
+    // asynchronously handle the update so that the service is not waiting for a response
+    // during a potentially long update. If the asynchronous update fails the work-item will
+    // eventually be retried by the timeout handler. In any case there is not much the service
+    // can do if the update fails, so it is OK for us to ignore the promise here. The service
+    // can still retry for network or similar failures, but we don't want it to retry for things
+    // like 409 errors.
+
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    handleWorkItemUpdate(update, operation, req.context.logger);
   }
 
-  // Return a success with no body
+  // Return a success with no body 
   res.status(204).send();
 }
