@@ -5,7 +5,7 @@ import { Logger } from 'winston';
 import db, { batchSize, Transaction } from '../util/db';
 import { completeJob } from '../util/job';
 import env from '../util/env';
-import { readCatalogItems, StacItemLink } from '../util/stac';
+import { getCatalogItemUrls, readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink, { getJobDataLinkCount } from '../models/job-link';
@@ -20,6 +20,7 @@ import WorkItemUpdate from '../models/work-item-update';
 import axios from 'axios';
 import { createDecrypter, createEncrypter } from '../util/crypto';
 import DataOperation from '../models/data-operation';
+import BatchItem from '../models/batch-item';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -261,10 +262,11 @@ async function createAggregatingWorkItem(
 }
 
 /**
- * Creates the next work items for the workflow based on the results of the current step
+ * Creates the next work items for the workflow based on the results of the current step and handle
+ * any needed batching
  * @param tx - The database transaction
- * @param currentWorkItem - The current work item
- * @param nextStep - the next step in the workflow
+ * @param workItem - The current work item
+ * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
  * @param results - an array of paths to STAC catalogs
  */
 async function createNextWorkItems(
@@ -279,6 +281,9 @@ async function createNextWorkItems(
       // if we have completed all the work items for this step or if the next step does not
       // aggregate then create a work item for the next step
       if (nextStep.hasAggregatedOutput) {
+        if (nextStep.isBatched) {
+
+        }
         if (allWorkItemsForStepComplete) {
           await createAggregatingWorkItem(tx, workItem, nextStep);
         }
@@ -531,6 +536,31 @@ export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<s
 }
 
 /**
+ * Generate batches for results returned by a service to be used by a subsequent aggregating step.
+ *
+ * @param tx - The database transaction
+ * @param workflowStep - The step in the workflow that needs batching
+ * @param stacItemUrls - An array of paths to STAC items
+ */
+export async function handleBatching(tx: Transaction, workflowStep: WorkflowStep, stacItemUrls: string[], itemSizes: number[])
+  : Promise<void> {
+  const { jobID, serviceID } = workflowStep;
+  // const itemLinks = await Promise.all(results.map(getItemLinksFromCatalog));
+  // const urls = itemLinks.flat().map(itemLink => itemLink.href);
+  let index = 0;
+  for (const url of stacItemUrls) {
+    const batchItem = new BatchItem({
+      jobID,
+      serviceID,
+      itemURl: url,
+      itemSize: itemSizes[index],
+    });
+    index += 1;
+    await batchItem.save(tx);
+  }
+}
+
+/**
  * Update job status/progress in response to a service provided work item update
  *
  * @param update - information about the work item update
@@ -541,22 +571,28 @@ export async function handleWorkItemUpdate(
   update: WorkItemUpdate,
   operation: object,
   logger: Logger): Promise<void> {
-  const { workItemID, status, hits, results, scrollID, errorMessage, totalGranulesSize } = update;
+  const { workItemID, status, hits, results, scrollID, errorMessage, totalItemsSize: totalItemsSize } = update;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
   // get the jobID for the work item
   const jobID = await getJobIdForWorkItem(workItemID);
 
-  // Get the sizes of all the granules returned for the WorkItem.
+  // Get the sizes of all the data items/granules returned for the WorkItem.
   // This needs to be done outside the transaction as it can be slow if there are many granules.
-  let outputGranuleSizes = [];
-  if (update.outputGranuleSizes?.every(s => s > 0)) {
+  let outputItemSizes = [];
+  // const outputStacItemUrls = [];
+  if (update.outputItemSizes?.every(s => s > 0)) {
     // if all the granules sizes were provided by the service then just use them, otherwise
     // get the ones that were not provided
 
     // eslint-disable-next-line prefer-destructuring
-    outputGranuleSizes = update.outputGranuleSizes;
+    outputItemSizes = update.outputItemSizes;
+    // TODO figure out how to only do this if we need batching
+    // for (const catalogUrl of update.results) {
+    //   const stacItemUrls = await getCatalogItemUrls(catalogUrl);
+    //   outputStacItemUrls = outputStacItemUrls.concat(stacItemUrls);
+    // }
   } else if (update.results) {
     const encrypter = createEncrypter(env.sharedSecretKey);
     const decrypter = createDecrypter(env.sharedSecretKey);
@@ -567,7 +603,7 @@ export async function handleWorkItemUpdate(
       const links = await exports.readCatalogLinks(catalogUrl, logger);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
       const sizes = await Promise.all(links.map(async (link) => {
-        const serviceProvidedSize = update.outputGranuleSizes?.[index];
+        const serviceProvidedSize = update.outputItemSizes?.[index];
         index += 1;
         // use the value provided by the service if available
         if (serviceProvidedSize && serviceProvidedSize > 0) {
@@ -577,7 +613,7 @@ export async function handleWorkItemUpdate(
         // try to get the size using a HEAD request
         return exports.sizeOfObject(link, token, logger);
       }));
-      outputGranuleSizes = outputGranuleSizes.concat(sizes);
+      outputItemSizes = outputItemSizes.concat(sizes);
     }
   }
 
@@ -636,8 +672,8 @@ export async function handleWorkItemUpdate(
       workItemID,
       status as WorkItemStatus,
       duration,
-      totalGranulesSize,
-      outputGranuleSizes);
+      totalItemsSize,
+      outputItemSizes);
 
     const completedWorkItemCount = await workItemCountForStep(
       tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
@@ -702,8 +738,8 @@ export async function handleWorkItemUpdate(
  */
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status, hits, results, scrollID, errorMessage, duration, operation, outputGranuleSizes } = req.body;
-  const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
+  const { status, hits, results, scrollID, errorMessage, duration, operation, outputItemSizes } = req.body;
+  const totalItemsSize = req.body.totalItemsSize ? parseFloat(req.body.totalItemsSize) : 0;
 
   const update =
   {
@@ -713,8 +749,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     results,
     scrollID,
     errorMessage,
-    totalGranulesSize,
-    outputGranuleSizes,
+    totalItemsSize,
+    outputItemSizes,
     duration,
   };
 

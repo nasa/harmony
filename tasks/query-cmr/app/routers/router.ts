@@ -33,7 +33,7 @@ export async function doWork(workReq: QueryCmrRequest): Promise<[number, number,
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing.query-cmr.start');
   const queryCmrStartTime = new Date().getTime();
-  const [totalGranulesSize, outputGranuleSizes, catalogs, newScrollId, hits] = await queryGranules(operation, scrollId, workReq.maxCmrGranules);
+  const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] = await queryGranules(operation, scrollId, workReq.maxCmrGranules);
   const granuleSearchTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.query-granules-search', { durationMs: granuleSearchTime - queryCmrStartTime });
 
@@ -60,7 +60,7 @@ export async function doWork(workReq: QueryCmrRequest): Promise<[number, number,
   timingLogger.info('timing.query-cmr.catalog-summary-write', { durationMs: catalogSummaryTime - catalogWriteTime });
   timingLogger.info('timing.query-cmr.end', { durationMs: catalogSummaryTime - startTime });
 
-  return [hits, totalGranulesSize, outputGranuleSizes, newScrollId];
+  return [hits, totalItemsSize, outputItemSizes, newScrollId];
 }
 
 /**
@@ -74,9 +74,9 @@ async function doWorkHandler(req: Request, res: Response, next: NextFunction): P
   try {
     const workReq: QueryCmrRequest = req.body;
 
-    const [hits, totalGranulesSize, outputGranuleSizes, scrollId] = await doWork(workReq);
+    const [hits, totalItemsSize, outputItemSizes, scrollId] = await doWork(workReq);
     res.status(200);
-    res.send(JSON.stringify({ hits, totalGranulesSize, outputGranuleSizes, scrollID: scrollId }));
+    res.send(JSON.stringify({ hits, totalItemsSize, outputItemSizes, scrollID: scrollId }));
   } catch (e) {
     logger.error(e);
     next(new ServerError('Query CMR doWorkHandler encountered an unexpected error.'));

@@ -435,7 +435,7 @@ export async function retry(
     }
     await handleWorkItemUpdate(
       { workItemID: item.id, status: WorkItemStatus.FAILED,
-        scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
+        scrollID: item.scrollID, hits: null, results: [], totalItemsSize: item.totalItemsSize,
         errorMessage: 'A user attempted to trigger a retry via the Workflow UI.' },
       null,
       req.context.logger);

@@ -8,7 +8,7 @@ import Record from './record';
 const serializedFields = [
   'id', 'jobID', 'serviceID', 'stepIndex',
   'workItemCount', 'operation', 'createdAt', 'updatedAt',
-  'hasAggregatedOutput',
+  'hasAggregatedOutput', 'isBatched', 'maxBatchInputs', 'maxBatchSizeInBytes',
 ];
 
 export interface WorkflowStepRecord {
@@ -30,11 +30,20 @@ export interface WorkflowStepRecord {
 
   // Whether or not this step aggregates the outputs of a previous step
   hasAggregatedOutput: boolean;
+
+  // Whether or no the service should receive a batch of inputs
+  isBatched: boolean;
+
+  // The maximum number of input granules in each invocation of the service
+  maxBatchInputs: number;
+
+  // The upper limit on the combined sizes of all the files in a batch
+  maxBatchSizeInBytes: number;
 }
 
 /**
  *
- * Wrapper object for persisted work items
+ * Wrapper object for persisted workflow steps
  *
  */
 export default class WorkflowStep extends Record implements WorkflowStepRecord {
@@ -58,6 +67,14 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
   // Whether or not this step aggregates the outputs of a previous step
   hasAggregatedOutput: boolean;
 
+  // Whether or no the service should receive a batch of inputs
+  isBatched: boolean;
+
+  // The maximum number of input granules in each invocation of the service
+  maxBatchInputs: number;
+
+  // The upper limit on the combined sizes of all the files in a batch
+  maxBatchSizeInBytes: number;
 }
 
 const tableFields = serializedFields.map((field) => `${WorkflowStep.table}.${field}`);

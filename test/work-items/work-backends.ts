@@ -147,7 +147,7 @@ describe('Work Backends', function () {
       it('returns the correct fields for a work item', function () {
         expect(Object.keys(this.res.body.workItem)).to.eql([
           'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
-          'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'duration',
+          'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration',
           'startedAt', 'operation',
         ]);
       });
@@ -212,7 +212,7 @@ describe('Work Backends', function () {
             const tmpWorkItem = JSON.parse(res.text).workItem as WorkItem;
             tmpWorkItem.status = WorkItemStatus.FAILED;
             tmpWorkItem.results = [];
-            tmpWorkItem.outputGranuleSizes = [];
+            tmpWorkItem.outputItemSizes = [];
 
             await updateWorkItem(this.backend, tmpWorkItem);
 
@@ -255,7 +255,7 @@ describe('Work Backends', function () {
             results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
             scrollID: '-1234',
             duration: 0,
-            outputGranuleSizes: [1],
+            outputItemSizes: [1],
           },
         };
         before(async () => {
@@ -279,7 +279,7 @@ describe('Work Backends', function () {
 
         it('uses the granule sizes provided by the service', async function () {
           const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
-          expect(updatedWorkItem.outputGranuleSizes).to.eql(successfulWorkItemRecord.outputGranuleSizes);
+          expect(updatedWorkItem.outputItemSizes).to.eql(successfulWorkItemRecord.outputItemSizes);
         });
       });
 
@@ -301,7 +301,7 @@ describe('Work Backends', function () {
             results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
             scrollID: '-1234',
             duration: 0,
-            outputGranuleSizes: [12340000000000, 0],
+            outputItemSizes: [12340000000000, 0],
           },
         };
         before(async () => {
@@ -327,7 +327,7 @@ describe('Work Backends', function () {
 
         it('uses the granule sizes provided by the service', async function () {
           const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
-          expect(updatedWorkItem.outputGranuleSizes).to.eql([12340000000000, 7000000000]);
+          expect(updatedWorkItem.outputItemSizes).to.eql([12340000000000, 7000000000]);
         });
       });
 
@@ -374,7 +374,7 @@ describe('Work Backends', function () {
 
         it('uses the granule sizes provided by the service', async function () {
           const updatedWorkItem = await getWorkItemById(db, this.workItem.id);
-          expect(updatedWorkItem.outputGranuleSizes).to.eql([7000000000, 7000000000]);
+          expect(updatedWorkItem.outputItemSizes).to.eql([7000000000, 7000000000]);
         });
       });
     });
@@ -395,7 +395,7 @@ describe('Work Backends', function () {
         ...{
           status: WorkItemStatus.SUCCESSFUL,
           results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
-          outputGranuleSizes: [1],
+          outputItemSizes: [1],
           scrollID: '-1234',
           duration: 0,
         },
@@ -458,7 +458,7 @@ describe('Work Backends', function () {
         ...{
           status: WorkItemStatus.SUCCESSFUL,
           results: [getStacLocation({ id: workItemRecord.id, jobID: workItemRecord.jobID }, 'catalog.json')],
-          outputGranuleSizes: [1],
+          outputItemSizes: [1],
           scrollID: '-1234',
           duration: 100000000,
         },

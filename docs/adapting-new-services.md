@@ -101,8 +101,6 @@ The structure of an entry in the [services.yml](../config/services.yml) file is 
       variables:                  # A list of variables provided by the collection (OPTIONAL)
         - v1
         - v2
-  max_batch_inputs: 10            # The maximum number of input granules in each invocation of the service
-  is_batched: true                # Set this if the service should receive a batch of inputs
   maximum_sync_granules: 1        # Optional limit for the maximum number of granules for a request to be handled synchronously. Defaults to 1. Set to 0 to only allow async requests.
   capabilities:                   # Service capabilities
     subsetting:
@@ -158,6 +156,27 @@ First we have the query-cmr service (this service is the first in every current 
 Services that provide aggregation, e.g., concatenation for CONCISE, require that all inputs are
 available when they are run. Harmony infers this from the `operations` field in the associated step.
 Currently the only supported aggregation operation is `concatenate`.
+
+There are limits to the number of files an aggregating service can process as well as the total number
+of bytes of all combined input files. To support larger aggregations Harmony can partition the output
+files from one service into batches to be passed to multiple invocations of the next (aggregating)
+step. Whether or not a service should have its input batched, the maximum number of input files to include
+in each batch, and total combined file sizes to allow can be set in the aggregating service's step
+definition using the `is_batched`, `max_batch_inputs`, and `max_batch_size_in_bytes` flags.
+
+Note that there is a system imposed upper limit on `max_batch_size_in_bytes`. 
+
+The following `steps` entry is an example one might use for an aggregating service:
+
+```yaml
+steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${EXAMPLE_AGGREGATING_SERVICE_IMAGE}
+        is_batched: true
+        max_batch_inputs: 100
+        max_batch_size_in_bytes: 2_000_000_000
+        operations: ['concatenate']
+```
 
 ## 7. Docker Container Images
 
