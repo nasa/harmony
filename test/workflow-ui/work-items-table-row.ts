@@ -171,6 +171,10 @@ describe('Workflow UI work items table row route', function () {
           const listing = this.res.text;
           expect((listing.match(/logs-button/g) || []).length).to.equal(0);
         });
+        it('does not return a column for the work item logs', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain(mustache.render('<th scope="col">logs</th>', {}));
+        });
         it('returns a retry button for their RUNNING work item', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);

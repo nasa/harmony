@@ -3,7 +3,9 @@
     <td>{{workflowItemStep}}</td>
     <td>{{id}}</td>
     <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
+    {{#isAdmin}}
     <td>{{{workflowItemLogsButton}}}</td>
+    {{/isAdmin}}
     <td>{{{workflowItemRetryButton}}}</td>
     <td>{{{retryCount}}}</td>
     <td class="date-td" data-time="{{workflowItemCreatedAt}}"></td>

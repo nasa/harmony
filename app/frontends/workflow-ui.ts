@@ -324,6 +324,7 @@ export async function getWorkItemsTable(
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     setPagingHeaders(res, pagination);
     res.render('workflow-ui/job/work-items-table', {
+      isAdmin,
       job,
       statusClass: statusClass[job.status],
       workItems,
@@ -376,6 +377,7 @@ export async function getWorkItemTableRow(
       return;
     }
     res.render('workflow-ui/job/work-item-table-row', {
+      isAdmin,
       ...workItems[0],
       ...workItemRenderingFunctions(job, isAdmin, req.user),
     });
