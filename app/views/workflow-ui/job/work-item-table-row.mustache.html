@@ -6,7 +6,9 @@
     {{#isAdmin}}
     <td>{{{workflowItemLogsButton}}}</td>
     {{/isAdmin}}
+    {{#canShowRetryColumn}}
     <td>{{{workflowItemRetryButton}}}</td>
+    {{/canShowRetryColumn}}
     <td>{{{retryCount}}}</td>
     <td class="date-td" data-time="{{workflowItemCreatedAt}}"></td>
     <td class="date-td" data-time="{{workflowItemUpdatedAt}}"></td>

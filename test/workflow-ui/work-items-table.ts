@@ -211,9 +211,17 @@ describe('Workflow UI work items table route', function () {
         it('returns a 200 HTTP response', async function () {
           expect(this.res.statusCode).to.equal(200);
         });
+        it('does not return a column for the work item logs', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain(mustache.render('<th scope="col">logs</th>', {}));
+        });
         it('does not return retry buttons for the other user\'s RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(0);
+        });
+        it('does not return a column for the retry buttons', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain(mustache.render('<th scope="col">retry</th>', {}));
         });
       });
 
