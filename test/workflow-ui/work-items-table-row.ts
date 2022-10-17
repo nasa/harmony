@@ -191,6 +191,10 @@ describe('Workflow UI work items table row route', function () {
           const listing = this.res.text;
           expect((listing.match(/logs-button/g) || []).length).to.equal(1);
         });
+        it('does return a column for the work item logs', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<th scope="col">logs</th>', {}));
+        });
       });
 
       describe('who requests a RUNNING work item row for someone else\'s non-shareable job (but is an admin)', function () {

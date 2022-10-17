@@ -197,6 +197,10 @@ describe('Workflow UI work items table route', function () {
           const listing = this.res.text;
           expect((listing.match(/logs-button/g) || []).length).to.equal(2);
         });
+        it('does return a column for the work item logs', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<th scope="col">logs</th>', {}));
+        });
         it('returns retry buttons for the other user\'s RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
@@ -319,13 +323,17 @@ describe('Workflow UI work items table route', function () {
           const listing = this.res.text;
           expect((listing.match(/logs-button/g) || []).length).to.equal(2);
         });
+        it('does return a column for the work item logs', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<th scope="col">logs</th>', {}));
+        });
         it('returns retry buttons for the RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
         });
         it('returns a column for the retry buttons', async function () {
           const listing = this.res.text;
-          expect(listing).to.not.contain(mustache.render('<th scope="col">retry</th>', {}));
+          expect(listing).to.contain(mustache.render('<th scope="col">retry</th>', {}));
         });
       });
 
