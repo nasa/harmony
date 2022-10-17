@@ -185,6 +185,10 @@ describe('Workflow UI work items table route', function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
         });
+        it('returns a column for the retry buttons', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<th scope="col">retry</th>', {}));
+        });
       });
 
       describe('who requests the work items table for someone else\'s non-shareable job (but is an admin)', function () {
@@ -196,6 +200,10 @@ describe('Workflow UI work items table route', function () {
         it('returns retry buttons for the other user\'s RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+        });
+        it('returns a column for the retry buttons', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<th scope="col">retry</th>', {}));
         });
       });
 
@@ -233,6 +241,10 @@ describe('Workflow UI work items table route', function () {
         it('returns retry buttons for the other user\'s RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+        });
+        it('returns a column for the retry buttons', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<th scope="col">retry</th>', {}));
         });
       });
 
@@ -310,6 +322,10 @@ describe('Workflow UI work items table route', function () {
         it('returns retry buttons for the RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+        });
+        it('returns a column for the retry buttons', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain(mustache.render('<th scope="col">retry</th>', {}));
         });
       });
 

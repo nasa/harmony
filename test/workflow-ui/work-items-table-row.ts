@@ -179,6 +179,10 @@ describe('Workflow UI work items table row route', function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
         });
+        it('returns a column for the retry buttons', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain(mustache.render('<th scope="col">retry</th>', {}));
+        });
       });
 
       describe('who requests a SUCCESSFUL work item row for someone else\'s non-shareable job (but is an admin)', function () {
@@ -194,6 +198,10 @@ describe('Workflow UI work items table row route', function () {
         it('returns a retry button for the other user\'s RUNNING work item', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+        });
+        it('returns a column for the retry buttons', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain(mustache.render('<th scope="col">retry</th>', {}));
         });
       });
 
@@ -243,6 +251,10 @@ describe('Workflow UI work items table row route', function () {
         it('returns a retry button for the other user\'s RUNNING work item', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+        });
+        it('returns a column for the retry buttons', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain(mustache.render('<th scope="col">retry</th>', {}));
         });
       });
 
