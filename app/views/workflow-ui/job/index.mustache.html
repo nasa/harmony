@@ -48,7 +48,7 @@
                 {{/isAdminRoute}}
                 <li class="breadcrumb-item active" aria-current="page">{{job.jobID}}</li>
             </ol>
-            <div id="job-state-links-container">
+            <div id="job-state-links-container" data-is-admin-or-owner="{{isAdminOrOwner}}">
                 <!-- job state change links will go here -->
             </div>
         </div>

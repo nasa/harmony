@@ -9,8 +9,12 @@
             <th scope="col">stepName</th>
             <th scope="col">id</th>
             <th scope="col">status</th>
+            {{#isAdmin}}
             <th scope="col">logs</th>
+            {{/isAdmin}}
+            {{#canShowRetryColumn}}
             <th scope="col">retry</th>
+            {{/canShowRetryColumn}}
             <th scope="col">retryCount</th>
             <th scope="col">createdAt</th>
             <th scope="col">updatedAt</th>
