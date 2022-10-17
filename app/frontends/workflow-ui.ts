@@ -208,6 +208,7 @@ export async function getJob(
       job,
       page,
       limit,
+      isAdminOrOwner: job.belongsToOrIsAdmin(req.user, isAdmin),
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       selectedFilters: tableFilter.originalValues,
       tableFilter: requestQuery.tablefilter,
