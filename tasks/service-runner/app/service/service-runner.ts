@@ -175,6 +175,24 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
 }
 
 /**
+ * Write logs from the work item execution so s3
+ * @param workItem - the work item that  the logs are for
+ * @param stdOut - stdOut from the k8s exec call
+ */
+async function uploadLogs(workItem: WorkItemRecord, stdOut: LogStream): Promise<void> {
+  let fileJson: string;
+  const s3 = objectStoreForProtocol('s3');
+  const logsLocation = getItemLogsLocation(workItem);
+  if (await s3.objectExists(logsLocation)) { // append to existing logs
+    const logsArray = await s3.getObjectJson(logsLocation);
+    fileJson = JSON.stringify(logsArray.concat(stdOut.logStrArr));
+  } else {
+    fileJson = JSON.stringify(stdOut.logStrArr);
+  }
+  await s3.upload(fileJson, logsLocation);
+}
+
+/**
  * Run a service for a work item pulled from Harmony
  * @param operation - The requested operation
  * @param callback - Function to call with result
@@ -221,8 +239,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
         async (status: k8s.V1Status) => {
           logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
           try {
-            await objectStoreForProtocol('s3')
-              .upload(JSON.stringify(stdOut.logStrArr), getItemLogsLocation(workItem));
+            await uploadLogs(workItem, stdOut);
             if (status.status === 'Success') {
               clearTimeout(timeout);
               logger.debug('Getting STAC catalogs');
