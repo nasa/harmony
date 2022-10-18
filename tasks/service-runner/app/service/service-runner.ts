@@ -176,7 +176,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
 }
 
 /**
- * Write logs from the work item execution so s3
+ * Write logs from the work item execution to s3
  * @param workItem - the work item that  the logs are for
  * @param logs - logs array from the k8s exec call
  */
