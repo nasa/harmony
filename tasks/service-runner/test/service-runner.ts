@@ -97,8 +97,10 @@ describe('Service Runner', function () {
   });
 
   describe('uploadLogs', function () {
-    const itemRecord0: any = { id: 0, jobID: '123' };
-    const itemRecord1: any = { id: 1, jobID: '123' };
+    const itemRecord0: WorkItemRecord = { id: 0, jobID: '123', serviceID: '',
+      workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+    const itemRecord1: WorkItemRecord = { id: 1, jobID: '123', serviceID: '',
+      workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
     const s3 = objectStoreForProtocol('s3');
     before(async function () {
       // One of the items will have its log file written to twice
