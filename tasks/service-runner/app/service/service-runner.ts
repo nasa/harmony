@@ -177,7 +177,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
 
 /**
  * Write logs from the work item execution to s3
- * @param workItem - the work item that  the logs are for
+ * @param workItem - the work item that the logs are for
  * @param logs - logs array from the k8s exec call
  */
 export async function uploadLogs(workItem: WorkItemRecord, logs: (string | object)[]): Promise<ManagedUpload.SendData> {
