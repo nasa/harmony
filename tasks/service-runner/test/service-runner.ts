@@ -109,15 +109,15 @@ describe('Service Runner', function () {
     describe('when there is a logs file already associated with the WorkItem', async function () {
       it('appends the new logs to the old ones', async function () {
         const logsLocation0 = getItemLogsLocation(itemRecord0);
-        const logs = s3.getObjectJson(logsLocation0);
-        expect(logs).to.equal(['the old logs', 'the new logs']);
+        const logs = await s3.getObjectJson(logsLocation0);
+        expect(logs).to.deep.equal(['the old logs', 'the new logs']);
       });
     });
     describe('when there is no logs file associated with the WorkItem', async function () {
       it('writes the logs to a new file', async function () {
         const logsLocation1 = getItemLogsLocation(itemRecord1);
-        const logs = s3.getObjectJson(logsLocation1);
-        expect(logs).to.equal(['the new logs']);
+        const logs = await s3.getObjectJson(logsLocation1);
+        expect(logs).to.deep.equal(['the only logs']);
       });
     });
   });
