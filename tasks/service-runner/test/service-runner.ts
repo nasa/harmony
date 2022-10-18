@@ -6,6 +6,8 @@ import { objectStoreForProtocol } from '../../../app/util/object-store';
 import * as serviceRunner from '../app/service/service-runner';
 import { resolve } from '../../../app/util/url';
 import { createLoggerForTest } from '../../../test/helpers/log';
+import { getItemLogsLocation, WorkItemRecord } from '../../../app/models/work-item-interface';
+import { uploadLogs } from '../app/service/service-runner';
 
 const { _getErrorMessage, _getStacCatalogs } = serviceRunner.exportedForTesting;
 
@@ -90,6 +92,32 @@ describe('Service Runner', function () {
       it('returns "unknown error"', async function () {
         const errorMessage = await _getErrorMessage(null, workItemWithoutErrorJson);
         expect(errorMessage).equal('Unknown error');
+      });
+    });
+  });
+
+  describe('uploadLogs', function () {
+    const itemRecord0: any = { id: 0, jobID: '123' };
+    const itemRecord1: any = { id: 1, jobID: '123' };
+    const s3 = objectStoreForProtocol('s3');
+    before(async function () {
+      // One of the items will have its log file written to twice
+      await uploadLogs(itemRecord0, ['the old logs']);
+      await uploadLogs(itemRecord0, ['the new logs']);
+      await uploadLogs(itemRecord1, ['the only logs']);
+    });
+    describe('when there is a logs file already associated with the WorkItem', async function () {
+      it('appends the new logs to the old ones', async function () {
+        const logsLocation0 = getItemLogsLocation(itemRecord0);
+        const logs = s3.getObjectJson(logsLocation0);
+        expect(logs).to.equal(['the old logs', 'the new logs']);
+      });
+    });
+    describe('when there is no logs file associated with the WorkItem', async function () {
+      it('writes the logs to a new file', async function () {
+        const logsLocation1 = getItemLogsLocation(itemRecord1);
+        const logs = s3.getObjectJson(logsLocation1);
+        expect(logs).to.equal(['the new logs']);
       });
     });
   });

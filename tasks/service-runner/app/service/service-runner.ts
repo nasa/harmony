@@ -8,6 +8,7 @@ import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 import { Logger } from 'winston';
+import { ManagedUpload } from 'aws-sdk/clients/s3';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -177,19 +178,19 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
 /**
  * Write logs from the work item execution so s3
  * @param workItem - the work item that  the logs are for
- * @param stdOut - stdOut from the k8s exec call
+ * @param logs - logs array from the k8s exec call
  */
-async function uploadLogs(workItem: WorkItemRecord, stdOut: LogStream): Promise<void> {
+export async function uploadLogs(workItem: WorkItemRecord, logs: (string | object)[]): Promise<ManagedUpload.SendData> {
   let fileJson: string;
   const s3 = objectStoreForProtocol('s3');
   const logsLocation = getItemLogsLocation(workItem);
   if (await s3.objectExists(logsLocation)) { // append to existing logs
     const logsArray = await s3.getObjectJson(logsLocation);
-    fileJson = JSON.stringify(logsArray.concat(stdOut.logStrArr));
+    fileJson = JSON.stringify(logsArray.concat(logs));
   } else {
-    fileJson = JSON.stringify(stdOut.logStrArr);
+    fileJson = JSON.stringify(logs);
   }
-  await s3.upload(fileJson, logsLocation);
+  return s3.upload(fileJson, logsLocation);
 }
 
 /**
@@ -239,7 +240,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
         async (status: k8s.V1Status) => {
           logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
           try {
-            await uploadLogs(workItem, stdOut);
+            await uploadLogs(workItem, stdOut.logStrArr);
             if (status.status === 'Success') {
               clearTimeout(timeout);
               logger.debug('Getting STAC catalogs');
