@@ -37,7 +37,6 @@ export interface ProductDataMetric {
   shortName: string;
   versionId: string;
   organization?: string; // We do not have this information
-  product_size?: number; // This represents the total size of outputs which we do not track yet
   variables?: string[]; // An array of variable names
 }
 
@@ -68,8 +67,8 @@ export interface ResponseMetric {
   http_response_code: number;
   time_completed: string;
   total_time: number; // Agreed to use seconds with decimals
-  original_size: number; // Bytes that would have needed to be downloaded
-  output_size?: number; // Bytes returned after transformation - not tracking yet
+  original_size: number; // (Agreed to use MB) MB that would have needed to be downloaded
+  output_size?: number; // (Agreed to use MB) MB returned after transformation
 }
 
 /**
@@ -197,11 +196,12 @@ export function getProductMetric(operation: DataOperation, job: Job)
  *  @param operation - The data operation
  *  @param job - The job associated with the request
  *  @param originalSize - The sum of the sizes of all input granules for the request
+ *  @param outputSize - The sum of the sizes of all outputs for the request
  *
  * @returns Promise that resolves to the response metric for a request
  */
 export async function getResponseMetric(
-  operation: DataOperation, job: Job, originalSize: number,
+  operation: DataOperation, job: Job, originalSize: number, outputSize: number,
 ): Promise<ResponseMetric> {
   let httpResponseCode = 200;
 
@@ -216,6 +216,7 @@ export async function getResponseMetric(
     time_completed: job.updatedAt.toISOString(),
     total_time: ((job.updatedAt.getTime() - job.createdAt.getTime()) / 1000),
     original_size: originalSize,
+    output_size: outputSize,
   };
 
   return metric;

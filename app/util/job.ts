@@ -2,7 +2,7 @@ import { Logger } from 'winston';
 import db, { Transaction } from './db';
 import { Job, JobStatus, terminalStates } from '../models/job';
 import env from './env';
-import { getTotalWorkItemSizeForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
+import { getTotalWorkItemSizesForJobID, updateWorkItemStatusesByJobId } from '../models/work-item';
 import { ConflictError, ForbiddenError, NotFoundError, RequestValidationError } from './errors';
 import isUUID from './uuid';
 import { WorkItemStatus } from '../models/work-item-interface';
@@ -87,8 +87,8 @@ export async function completeJob(
       // Log information about the job
       const productMetric = getProductMetric(operation, job);
 
-      const originalSize = await getTotalWorkItemSizeForJobID(tx, job.jobID);
-      const responseMetric = await getResponseMetric(operation, job, originalSize);
+      const { originalSize, outputSize } = await getTotalWorkItemSizesForJobID(tx, job.jobID);
+      const responseMetric = await getResponseMetric(operation, job, originalSize, outputSize);
 
       logger.info(`Job ${job.jobID} complete - product metric`, { productMetric: true, ...productMetric });
       logger.info(`Job ${job.jobID} complete - response metric`, { responseMetric: true, ...responseMetric });
@@ -239,7 +239,7 @@ export async function skipPreviewAndSaveJob(
 /**
  * Get a particular job only if it can be seen by the requesting user, (based on
  * whether they own the job or are an admin, and optionally if the job is shareable).
- * @param jobID - id of the job to query for 
+ * @param jobID - id of the job to query for
  * @param username - the username of the user requesting the job
  * @param isAdmin - whether to treat the user as an admin
  * @param accessToken - the user's access token
@@ -248,10 +248,10 @@ export async function skipPreviewAndSaveJob(
  * @returns the requested job, if allowed
  */
 export async function getJobIfAllowed(
-  jobID: string, 
-  username: string, 
-  isAdmin: boolean, 
-  accessToken: string, 
+  jobID: string,
+  username: string,
+  isAdmin: boolean,
+  accessToken: string,
   enableShareability: boolean,
 ): Promise<Job> {
   validateJobId(jobID);

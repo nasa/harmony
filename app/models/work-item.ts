@@ -324,7 +324,7 @@ export async function queryAll(
     .select()
     .where(constraints.where)
     .orderBy(
-      constraints?.orderBy?.field ?? 'createdAt', 
+      constraints?.orderBy?.field ?? 'createdAt',
       constraints?.orderBy?.value ?? 'desc')
     .modify((queryBuilder) => {
       if (constraints.whereIn) {
@@ -380,8 +380,8 @@ export async function getWorkItemsByJobId(
   perPage = 10,
   sortOrder: 'asc' | 'desc' = 'asc',
 ): Promise<{ workItems: WorkItem[]; pagination: ILengthAwarePagination }> {
-  const query: WorkItemQuery = { 
-    where: { jobID }, 
+  const query: WorkItemQuery = {
+    where: { jobID },
     orderBy : { field: 'id', value: sortOrder },
   };
   return queryAll(tx, query, currentPage, perPage);
@@ -607,29 +607,60 @@ export async function getScrollIdForJob(
  * Returns the sum of the work item sizes for all work items for the provided jobID.
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the job
+ *
+ * @returns a promise resolving to an object with two keys containing the originalSize
+ * in MB and the outputSize in MB for all items in the request.
  */
-export async function getTotalWorkItemSizeForJobID(
+export async function getTotalWorkItemSizesForJobID(
   tx: Transaction,
   jobID: string,
-): Promise<number> {
-  const results = await tx(WorkItem.table)
+): Promise<{ originalSize: number, outputSize: number }> {
+  const workflowStepIndexResults = await tx(WorkflowStep.table)
     .select()
-    .sum('totalGranulesSize')
+    .min('stepIndex')
+    .max('stepIndex')
     .where({ jobID });
 
-  let totalSize;
+  let firstIndex, lastIndex;
   if (db.client.config.client === 'pg') {
-    totalSize = Number(results[0].sum);
+    firstIndex = workflowStepIndexResults[0].min;
+    lastIndex = workflowStepIndexResults[0].max;
   } else {
-    totalSize = Number(results[0]['sum(`totalGranulesSize`)']);
+    firstIndex = workflowStepIndexResults[0]['min(`stepIndex`)'];
+    lastIndex = workflowStepIndexResults[0]['max(`stepIndex`)'];
   }
 
-  return totalSize;
+  const originalSizeResults = await tx(WorkItem.table)
+    .select()
+    .sum('totalGranulesSize')
+    .where({ jobID, workflowStepIndex: firstIndex });
+
+  let originalSize;
+  if (db.client.config.client === 'pg') {
+    originalSize = Number(originalSizeResults[0].sum);
+  } else {
+    originalSize = Number(originalSizeResults[0]['sum(`totalGranulesSize`)']);
+  }
+
+  const outputSizeResults = await tx(WorkItem.table)
+    .select()
+    .sum('totalGranulesSize')
+    .where({ jobID, workflowStepIndex: lastIndex });
+
+  let outputSize;
+  if (db.client.config.client === 'pg') {
+    outputSize = Number(outputSizeResults[0].sum);
+  } else {
+    outputSize = Number(outputSizeResults[0]['sum(`totalGranulesSize`)']);
+  }
+
+
+  return { originalSize, outputSize };
 }
 
 /**
  * Compute the threshold (in milliseconds) to be used to expire work items for a given job/service
- * 
+ *
  * @param jobID - the ID of the Job for the step
  * @param serviceID - the serviceID of the step within the workflow
  */
