@@ -94,7 +94,7 @@ CREATE TABLE `batch_items` (
   `id` integer not null primary key autoincrement,
   `jobID` char(36) not null,
   `serviceID` varchar(255) not null,
-  `batchID` integer not null,
+  `batchID` integer,
   `stacItemUrl` char(4096),
   `itemSize` double precision not null default 0,
   `sortIndex` integer not null,

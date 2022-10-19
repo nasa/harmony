@@ -20,6 +20,12 @@ exports.up = async function(knex) {
 
     t.integer('batchID');
 
+    t.timestamp('createdAt')
+      .notNullable();
+
+    t.timestamp('updatedAt')
+      .notNullable();
+
     t.index(['jobID', 'serviceID', 'batchID']);
 
     t.index(['jobID', 'batchID']);
@@ -39,6 +45,7 @@ exports.up = async function(knex) {
     .notNullable();
     
     t.integer('batchID');
+
 
     t.string('granuleUrl', 4096);
 

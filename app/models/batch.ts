@@ -37,5 +37,33 @@ export class Batch extends Record implements BatchRecord {
   batchID: number;
 }
 
-const tableFields = serializedFields.map((field) => `${Batch.table}.${field}`);
+/**
+ * Get the Batch with the hightest batchID for the given job/service
+ *
+ * @param tx - The dB transaction to use
+ * @param jobID - The ID of the associated job
+ * @param serviceID - The ID of the associated service
+ */
+export async function withHighestBatchIDForJobService(
+  tx: Transaction,
+  jobID: string,
+  serviceID: string,
+): Promise<Batch> {
+  let result;
+  try {
+    result = await tx(Batch.table)
+      .select()
+      .where({
+        jobID,
+        serviceID,
+      })
+      .orderBy('batchID', 'desc')
+      .first();
+  } catch (e) {
+    console.log(e);
+  }
+
+  const batch = result && new Batch(result);
+  return batch;
+}
 

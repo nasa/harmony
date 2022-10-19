@@ -272,7 +272,7 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         is_batched: true
         max_batch_inputs: 10
-        max_batch_size_in_bytes: 2_000_000_000 s
+        max_batch_size_in_bytes: 2_000_000_000
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
@@ -613,6 +613,9 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
+        max_batch_inputs: 3
+        max_batch_size_in_bytes: 2_000_000_000
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise

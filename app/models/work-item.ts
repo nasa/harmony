@@ -17,6 +17,7 @@ const QUERY_CMR_STEP_INDEX = 1;
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration', 'startedAt',
+  'sortIndex',
 ];
 
 /**
@@ -57,7 +58,7 @@ export default class WorkItem extends Record implements WorkItemRecord {
   // The sum of the sizes of the granules associated with this work item
   totalItemsSize?: number;
 
-  // The size (in bytes) of each granule produced by this work item (used for batching)
+  // The size (in bytes) of each STAC item produced by this work item (used for batching)
   outputItemSizes?: number[];
 
   // The number of times this work-item has been retried
@@ -68,6 +69,9 @@ export default class WorkItem extends Record implements WorkItemRecord {
 
   // How long in milliseconds the work item took to process
   duration: number;
+
+  // The position of the work item output in any following aggregation
+  sortIndex: number;
 
   /**
    * Saves the work item to the database using the given transaction.
@@ -229,7 +233,7 @@ export async function updateWorkItemStatus(
   const outputItemSizesJson = JSON.stringify(outputItemSizes);
   try {
     await tx(WorkItem.table)
-      .update({ status, duration, totalItemsSize, outputItemSizesJson, updatedAt: new Date() })
+      .update({ status, duration, totalItemsSize, outputItemSizesJson: outputItemSizesJson, updatedAt: new Date() })
       .where({ id });
     logger.debug(`Status for work item ${id} set to ${status}`);
   } catch (e) {
@@ -488,6 +492,32 @@ export async function deleteWorkItemsById(
     .whereIn('id', ids)
     .del();
   return numDeleted;
+}
+
+/**
+ * Compute the max sort index (used for batching) for the given job/service. This depends
+ * on the previous service executing one at a time, such as query-cmr, otherwise table locking
+ * or some other solution must be employed to ensure that simultaneous calls to this function 
+ * don't return the same sort index.
+ * 
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the job that created the work item
+ * @param serviceID - the serviceID of the step within the workflow
+ * @returns a promise containing the max stepIndex value or -1 if there are no matching rows
+ */
+export async function maxSortIndexForJobService(
+  tx: Transaction,
+  jobID: string,
+  serviceID: string,
+): Promise<number> {
+  const result = await tx(WorkItem.table)
+    .where({
+      jobID,
+      serviceID,
+    })
+    .max('sortIndex', { as: 'max' })
+    .first();
+  return result?.max || -1;
 }
 
 /**

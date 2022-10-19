@@ -85,6 +85,8 @@ interface HarmonyEnv {
   logLevel: string;
   maxGranuleLimit: number;
   maxPageSize: number;
+  maxBatchInputs: number;
+  maxBatchSizeInBytes: number;
   maxPostFields: number;
   maxPostFileParts: number;
   maxPostFileSize: number;

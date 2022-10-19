@@ -4,13 +4,7 @@ exports.up = function(knex) {
     t.float('duration').defaultTo(-1.0);
     t.timestamp('startedAt');
     t.index(['jobID', 'serviceID', 'status', 'duration']);
-  })
-  .then(() => {
-    return knex.schema
-      .alterTable('jobs', (t) => {
-        t.string('request', 4096).default('unknown').notNullable();
-      });
-  })
+  });
 };
 
 exports.down = function(knex) {

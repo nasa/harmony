@@ -53,7 +53,7 @@ export interface WorkItemRecord {
   // The sum of the sizes of the granules associated with this work item
   totalItemsSize?: number;
 
-  // The size (in bytes) of each granule produced by this work item (used for batching)
+  // The size (in bytes) of each data item produced by this work item (used for batching)
   outputItemSizes?: number[];
 
   // The number of times this work-item has been retried
@@ -70,6 +70,9 @@ export interface WorkItemRecord {
 
   // When the item was created
   createdAt: Date;
+
+  // The position of the work item output in any following aggregation
+  sortIndex: number;
 }
 
 export interface WorkItemQuery {

@@ -1,9 +1,8 @@
-import { Transaction } from '../util/db';
+import { Transaction } from './../util/db';
 import Record from './record';
-import { Batch } from './batch';
 
 // The fields to save to the database
-const serializedFields = ['id', 'jobID', 'serviceID', 'batchID', 'granuleUrl', 'granuleSize',
+const serializedFields = ['id', 'jobID', 'serviceID', 'batchID', 'stacItemUrl', 'itemSize',
   'sortIndex', 'createdAt', 'updatedAt'];
 
 export interface BatchItemRecord {
@@ -19,10 +18,13 @@ export interface BatchItemRecord {
   batchID: number;
 
   // the download url (s3/http) of the data
-  itemUrl: string;
+  stacItemUrl: string;
 
   // the size (in bytes) of the data
   itemSize: number;
+
+  // The position of the batch item in the following aggregation
+  sortIndex: number;
 }
 
 /**
@@ -44,11 +46,108 @@ export default class BatchItem extends Record implements BatchItemRecord {
   batchID: number;
 
   // the download url (s3/http) of the data
-  itemUrl: string;
+  stacItemUrl: string;
 
   // the size (in bytes) of the data
   itemSize: number;
+
+  // The position of the batch item in the following aggregation
+  sortIndex: number;
 }
 
 const tableFields = serializedFields.map((field) => `${BatchItem.table}.${field}`);
+
+/**
+ * Get the maximum sort index for the given job, service, and batch.
+ * 
+ * @param tx - The database transaction
+ * @param jobID - The ID of the job
+ * @param serviceID - The ID of the service
+ * @param batchID - The ID of the batch
+ * @returns The maximum sort index
+ */
+export async function getMaxSortIndexForJobServiceBatch(
+  tx: Transaction,
+  jobID: string,
+  serviceID: string,
+  batchID: number): Promise<number> {
+  const result = await tx(BatchItem.table)
+    .where({
+      jobID,
+      serviceID,
+      batchID,
+    })
+    .max('sortIndex', { as: 'max' })
+    .first();
+
+  return result?.max;
+}
+
+/**
+ * Get all the batch items for a given job/service and (possibly unassigned) batch 
+ * 
+ * @param tx - The database transaction
+ * @param jobID - The ID of the job
+ * @param serviceID - The ID of the service
+ * @param batchID - The ID of the batch - null for unassigned batch items
+ * @param lock - Boolean flag to indicate whether or not to select for update
+ * @param order - knex clause to set order of results, defaults to `['sortIndex', 'asc']`
+ * @returns a promise containing an array of BatchItems
+ */
+export async function getByJobServiceBatch(
+  tx: Transaction,
+  jobID: string,
+  serviceID: string,
+  batchID?: number,
+  lock = false,
+  order = ['sortIndex', 'asc'],
+): Promise<BatchItem[]> {
+  let result;
+  try {
+    let query = tx(BatchItem.table)
+      .select()
+      .where({
+        jobID,
+        serviceID,
+        batchID,
+      });
+    if (lock) {
+      query = query.forUpdate();
+    }
+    query = query.orderBy(order[0], order[1]);
+    result = await query;
+  } catch (e) {
+    console.log(e);
+  }
+
+  const rval = result.map(data => new BatchItem(data));
+  return rval;
+}
+
+/**
+ * 
+ * @param tx - The database transaction
+ * @param jobID - The ID of the job
+ * @param serviceID - The ID of the service
+ * @param batchID - The ID of the batch - null for unassigned batch items
+ * @returns a promise containing a map with the sum of the sizes (in bytes) of all the data items
+ * and the number of data items in the batch
+ */
+export async function getCurrentBatchSizeAndCount(
+  tx: Transaction,
+  jobID: string,
+  serviceID: string,
+  batchID: number): Promise<{ sum: number, count: number }> {
+  const result = await tx(BatchItem.table)
+    .select(['itemSize'])
+    .where({
+      jobID,
+      serviceID,
+      batchID,
+    });
+
+  const count = result.length;
+  const sum: number = result.reduce((s, data) => s + data.itemSize) || 0;
+  return { sum, count };
+}
 
