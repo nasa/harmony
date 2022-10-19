@@ -181,14 +181,15 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
  * @param logs - logs array from the k8s exec call
  */
 export async function uploadLogs(workItem: WorkItemRecord, logs: (string | object)[]): Promise<ManagedUpload.SendData> {
-  let fileContent: (string | object)[] = logs;
+  const retryMessage = `Start of service execution (retryCount=${workItem.retryCount}, id=${workItem.id})`;
+  let newFileContent = [retryMessage, ...logs];
   const s3 = objectStoreForProtocol('s3');
   const logsLocation = getItemLogsLocation(workItem);
   if (await s3.objectExists(logsLocation)) { // append to existing logs
-    const logsArray = await s3.getObjectJson(logsLocation);
-    fileContent = logsArray.concat(fileContent);
+    const oldFileContent = await s3.getObjectJson(logsLocation);
+    newFileContent = [...oldFileContent, ...newFileContent];
   }
-  return s3.upload(JSON.stringify(fileContent), logsLocation);
+  return s3.upload(JSON.stringify(newFileContent), logsLocation);
 }
 
 /**

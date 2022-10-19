@@ -105,21 +105,31 @@ describe('Service Runner', function () {
     before(async function () {
       // One of the items will have its log file written to twice
       await uploadLogs(itemRecord0, ['the old logs']);
+      itemRecord0.retryCount = 1; // simulate a retry
       await uploadLogs(itemRecord0, ['the new logs']);
+      
       await uploadLogs(itemRecord1, ['the only logs']);
     });
     describe('when there is a logs file already associated with the WorkItem', async function () {
       it('appends the new logs to the old ones', async function () {
         const logsLocation0 = getItemLogsLocation(itemRecord0);
         const logs = await s3.getObjectJson(logsLocation0);
-        expect(logs).to.deep.equal(['the old logs', 'the new logs']);
+        expect(logs).to.deep.equal([
+          'Start of service execution (retryCount=0, id=0)',
+          'the old logs',
+          'Start of service execution (retryCount=1, id=0)',
+          'the new logs',
+        ]);
       });
     });
     describe('when there is no logs file associated with the WorkItem', async function () {
       it('writes the logs to a new file', async function () {
         const logsLocation1 = getItemLogsLocation(itemRecord1);
         const logs = await s3.getObjectJson(logsLocation1);
-        expect(logs).to.deep.equal(['the only logs']);
+        expect(logs).to.deep.equal([
+          'Start of service execution (retryCount=0, id=1)',
+          'the only logs',
+        ]);
       });
     });
   });
