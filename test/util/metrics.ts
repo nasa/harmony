@@ -225,12 +225,12 @@ describe('Metrics construction', function () {
         job.status = JobStatus.SUCCESSFUL;
         await job.save(db);
         this.job = job;
-        this.metric = await getResponseMetric(operation, job, 123.45);
+        this.metric = await getResponseMetric(operation, job, 123.45, 0.13);
       });
 
       it('includes all of the fields', function () {
         expect(Object.keys(this.metric)).to.eql([
-          'request_id', 'job_ids', 'http_response_code', 'time_completed', 'total_time', 'original_size',
+          'request_id', 'job_ids', 'http_response_code', 'time_completed', 'total_time', 'original_size', 'output_size',
         ]);
       });
 
@@ -257,6 +257,10 @@ describe('Metrics construction', function () {
       it('sets the original size correctly', function () {
         expect(this.metric.original_size).to.equal(123.45);
       });
+
+      it('sets the output size correctly', function () {
+        expect(this.metric.output_size).to.equal(0.13);
+      });
     });
 
     describe('when the job failed', function () {
@@ -265,7 +269,7 @@ describe('Metrics construction', function () {
         job.status = JobStatus.FAILED;
         await job.save(db);
         this.job = job;
-        this.metric = await getResponseMetric(operation, job, 123.45);
+        this.metric = await getResponseMetric(operation, job, 123.45, 0.13);
       });
 
       it('sets the http response code to 500', function () {

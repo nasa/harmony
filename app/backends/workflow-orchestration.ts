@@ -1,4 +1,4 @@
-import _, { ceil, range } from 'lodash';
+import _, { ceil, range, sum } from 'lodash';
 import { NextFunction, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
@@ -482,7 +482,7 @@ async function updateWorkItemCounts(
 
 /**
  * Get the size in bytes of the object at the given url
- * 
+ *
  * @param url - the url of the object
  * @param token - the access token for the user's request
  * @param logger - a Logger instance
@@ -520,7 +520,7 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
 
 /**
  * Read and parse a STAC catalog and return the links to the data items
- * 
+ *
  * @param s3Url - the s3 url of the catalog
  */
 export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<string[]> {
@@ -541,7 +541,7 @@ export async function handleWorkItemUpdate(
   update: WorkItemUpdate,
   operation: object,
   logger: Logger): Promise<void> {
-  const { workItemID, status, hits, results, scrollID, errorMessage, totalGranulesSize } = update;
+  const { workItemID, status, hits, results, scrollID, errorMessage } = update;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
@@ -618,9 +618,9 @@ export async function handleWorkItemUpdate(
 
     // We calculate the duration of the work both in harmony and in the manager of the service pod.
     // We tend to favor the harmony value as it is normally longer since it accounts for the extra
-    // overhead of communication with the pod. There is a problem with retries however in that 
+    // overhead of communication with the pod. There is a problem with retries however in that
     // the startTime gets reset, so if an earlier worker finishes and replies it will look like
-    // the whole thing was quicker (since our startTime has changed). So in that case we want to 
+    // the whole thing was quicker (since our startTime has changed). So in that case we want to
     // use the time reported by the service pod. Any updates from retries that happen later  will
     // be ignored since the work item is already in a 'successful' state.
     const harmonyDuration = Date.now() - workItem.startedAt.valueOf();
@@ -630,6 +630,12 @@ export async function handleWorkItemUpdate(
     }
 
     logger.debug(`Work item duration (ms): ${duration}`);
+
+    let { totalGranulesSize } = update;
+
+    if (!totalGranulesSize && outputGranuleSizes?.length > 0) {
+      totalGranulesSize = sum(outputGranuleSizes) / 1024 / 1024;
+    }
 
     await updateWorkItemStatus(
       tx,
@@ -733,6 +739,6 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     handleWorkItemUpdate(update, operation, req.context.logger);
   }
 
-  // Return a success with no body 
+  // Return a success with no body
   res.status(204).send();
 }
