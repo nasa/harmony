@@ -8,6 +8,7 @@ import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../../app/models/work-item-interface';
 import axios from 'axios';
 import { Logger } from 'winston';
+import { ManagedUpload } from 'aws-sdk/clients/s3';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -175,6 +176,28 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
 }
 
 /**
+ * Write logs from the work item execution to s3
+ * @param workItem - the work item that the logs are for
+ * @param logs - logs array from the k8s exec call
+ */
+export async function uploadLogs(workItem: WorkItemRecord, logs: (string | object)[]): Promise<ManagedUpload.SendData> {
+  let newFileContent;
+  const retryMessage = `Start of service execution (retryCount=${workItem.retryCount}, id=${workItem.id})`;
+  if (logs.length > 0 && (typeof logs[0] === 'string' || logs[0] instanceof String)) {
+    newFileContent = [retryMessage, ...logs];
+  } else {
+    newFileContent = [{ message: retryMessage }, ...logs];
+  }
+  const s3 = objectStoreForProtocol('s3');
+  const logsLocation = getItemLogsLocation(workItem);
+  if (await s3.objectExists(logsLocation)) { // append to existing logs
+    const oldFileContent = await s3.getObjectJson(logsLocation);
+    newFileContent = [...oldFileContent, ...newFileContent];
+  }
+  return s3.upload(JSON.stringify(newFileContent), logsLocation);
+}
+
+/**
  * Run a service for a work item pulled from Harmony
  * @param operation - The requested operation
  * @param callback - Function to call with result
@@ -221,8 +244,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
         async (status: k8s.V1Status) => {
           logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
           try {
-            await objectStoreForProtocol('s3')
-              .upload(JSON.stringify(stdOut.logStrArr), getItemLogsLocation(workItem));
+            await uploadLogs(workItem, stdOut.logStrArr);
             if (status.status === 'Success') {
               clearTimeout(timeout);
               logger.debug('Getting STAC catalogs');

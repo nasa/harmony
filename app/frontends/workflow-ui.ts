@@ -10,7 +10,7 @@ import db from '../util/db';
 import version from '../util/version';
 import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
-import { COMPLETED_WORK_ITEM_STATUSES, getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
+import { getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
 import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
@@ -269,7 +269,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
     workflowItemCreatedAt(): string { return this.createdAt.getTime(); },
     workflowItemUpdatedAt(): string { return this.updatedAt.getTime(); },
     workflowItemLogsButton(): string {
-      const isComplete = COMPLETED_WORK_ITEM_STATUSES.indexOf(this.status) > -1;
+      const isComplete = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL].indexOf(this.status) > -1;
       if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
       const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
       return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}"` +
