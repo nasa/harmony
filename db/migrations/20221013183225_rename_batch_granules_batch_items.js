@@ -13,6 +13,16 @@ exports.up = function(knex) {
       t.renameColumn('totalGranulesSize', 'totalItemsSize');
       t.renameColumn('outputGranuleSizesJson', 'outputItemSizesJson');
     });
+  })
+  .then(() => {
+    return knex.schema
+    .alterTable('batches', (t) => {
+      t.timestamp('createdAt')
+      .notNullable();
+
+    t.timestamp('updatedAt')
+      .notNullable();
+    });
   });
 };
 
@@ -21,14 +31,21 @@ exports.down = function(knex) {
         t.renameColumn('stacItemUrl', 'granuleUrl');
         t.renameColumn('itemSize', 'granuleSize');
       })
-      .then( () => {
-        return knex.schema.renameTable('batch_items', 'batch_granules');
-      })
-      .then(() => {
-        return knex.schema
-        .alterTable('work_items', (t) => {
-          t.renameColumn('totalItemsSize', 'totalGranulesSize');
-          t.renameColumn('outputItemSizesJson', 'outputGranuleSizesJson');
-        });
-      });
+  .then( () => {
+    return knex.schema.renameTable('batch_items', 'batch_granules');
+  })
+  .then(() => {
+    return knex.schema
+    .alterTable('work_items', (t) => {
+      t.renameColumn('totalItemsSize', 'totalGranulesSize');
+      t.renameColumn('outputItemSizesJson', 'outputGranuleSizesJson');
+    });
+  })
+  .then(() => {
+    return knex.schema
+    .alterTable('batches', (t) => {
+      t.dropColumn('createdAt');
+      t.dropColumn('updatedAt');
+    })
+  });
 };

@@ -20,12 +20,6 @@ exports.up = async function(knex) {
 
     t.integer('batchID');
 
-    t.timestamp('createdAt')
-      .notNullable();
-
-    t.timestamp('updatedAt')
-      .notNullable();
-
     t.index(['jobID', 'serviceID', 'batchID']);
 
     t.index(['jobID', 'batchID']);
