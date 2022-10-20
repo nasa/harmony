@@ -120,7 +120,14 @@ export async function getByJobServiceBatch(
     console.log(e);
   }
 
-  const rval = result.map(data => new BatchItem(data));
+  const rval = result.map(data => {
+    // knex returns a string for a pg bigint, so we need to parse the itemSize
+    // technically this only works for ints up to 53 bits, but that should be big enough
+    // for any sizes we could have
+    let { itemSize } = data;
+    itemSize = itemSize ? parseInt(itemSize) : 0;
+    return new BatchItem({ ...data, itemSize });
+  });
   return rval;
 }
 
@@ -147,7 +154,13 @@ export async function getCurrentBatchSizeAndCount(
     });
 
   const count = result.length;
-  const sum: number = result.reduce((s, data) => s + data.itemSize) || 0;
+  let sum = 0;
+  if (count > 0) {
+    // knex returns a string for a pg bigint, so we need to parse the itemSize
+    // technically this only works for ints up to 53 bits, but that should be big enough
+    // for any sizes we could have
+    sum = result.reduce((s, data) => s + parseInt(data.itemSize), 0);
+  }
   return { sum, count };
 }
 

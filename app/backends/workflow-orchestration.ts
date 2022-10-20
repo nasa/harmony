@@ -342,8 +342,12 @@ export async function handleBatching(
       jobID,
       serviceID,
       null,
-    )
-      + 1;
+    );
+    if (startIndex === null) {
+      startIndex = 0;
+    } else {
+      startIndex += 1;
+    }
   }
 
   for (const url of stacItemUrls) {
@@ -377,7 +381,12 @@ export async function handleBatching(
         jobID,
         serviceID,
         currentBatch.batchID);
-      nextSortIndex = maxSortIndex ? maxSortIndex + 1 : 0;
+      if (maxSortIndex === null) {
+        nextSortIndex = 0;
+      } else {
+        nextSortIndex = maxSortIndex + 1;
+      }
+
 
       if (batchItem.sortIndex === nextSortIndex) {
         const { sum, count } = await getCurrentBatchSizeAndCount(tx, jobID, serviceID, currentBatch.batchID);
@@ -412,10 +421,13 @@ export async function handleBatching(
           });
           try {
             await newBatch.save(tx);
-            return;
+            await newBatch.save(tx);
+            batchItem.batchID = newBatch.batchID;
+            await batchItem.save(tx);
           } catch (e) {
             console.log(e);
           }
+          index += 1;
         }
       } else {
         break;
