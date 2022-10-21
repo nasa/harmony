@@ -442,8 +442,6 @@ export async function handleBatching(
       });
       try {
         await newBatch.save(tx);
-        // await (tx as Knex.Transaction).commit();
-        // return;
       } catch (e) {
         console.log(e);
       }
