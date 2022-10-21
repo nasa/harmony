@@ -1,5 +1,5 @@
 # Harmony
-Test Change
+
 Services. Together.
 
 Harmony has two fundamental goals in life:
