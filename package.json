@@ -16,7 +16,7 @@
     "postinstall": "if test \"$NODE_ENV\" != \"production\" ; then lerna exec -- npm install; fi",
     "build": "docker build -t harmonyservices/harmony:${VERSION:-latest} .",
     "build-notebooks-image": "docker build -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
-    "run-notebooks-image": "docker run -p 8888:8888 harmony/notebooks:${VERSION:-latest}",
+    "run-notebooks-image": "docker run -p 8888:8888 harmonyservices/notebooks:${VERSION:-latest}",
     "publish": "docker push harmonyservices/harmony:${VERSION:-latest}"
   },
   "keywords": [
