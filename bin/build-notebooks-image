@@ -1,0 +1,87 @@
+#!/bin/bash
+
+set -e
+
+SELF=$(basename $0)
+
+function usage
+{
+  echo "Usage: $SELF [-p|--parallel -h] [service_name ...]"
+  echo "Builds the images for all listed service names that have matching sub-directories in the 'services' directory."
+  echo "Builds all images if none are listed."
+  echo ""
+  echo "-p - run builds in parallel"
+  echo "-h - print this message"
+}
+
+function wait_for_pids {
+  pids=$1
+  for pid in "${pids[@]}"; do
+    wait "$pid"
+  done
+}
+
+PARALLEL=0
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+  -p|--parallel)
+  PARALLEL=1
+  shift
+  ;;
+  -h|--help)
+  usage
+  exit 0
+  ;;
+  *)
+  break
+  ;;
+esac
+done
+
+# build all the image in the 'services' directory
+function build_all {
+  parallel=$1
+  pids=()
+  for dir in services/*; do
+    pushd "$dir"
+    if [[ $parallel -eq 1 ]]; then
+      ./bin/build-image &
+      pids+=($!)
+    else
+      ./bin/build-image
+    fi
+    popd
+  done
+
+  if [[ $parallel -eq 1 ]]; then
+    wait_for_pids $pids
+  fi
+}
+
+if [[ "$#" -eq 0 ]]; then
+  build_all $PARALLEL
+else
+  pids=()
+  for f in "$@"; do
+    pushd "services/${f}"
+    if [[ $PARALLEL -eq 1 ]]; then
+      echo "BUILDING ${f} IN PARALLEL"
+      ./bin/build-image &
+      pids+=($!)
+    else
+      echo "BUILDING ${f} IN SERIES"
+      ./bin/build-image
+    fi
+    popd
+  done
+
+  if [[ $PARALLEL -eq 1 ]]; then
+    wait_for_pids $pids
+  fi
+fi
+
+
