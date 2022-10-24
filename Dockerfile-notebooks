@@ -1,9 +1,6 @@
 FROM osgeo/gdal
 RUN apt-get update
 RUN apt-get -y install python3-pip
-#RUN useradd -ms /bin/bash jupyter
-#USER jupyter
-#WORKDIR /home/jupyter
 RUN pip install jupyter
 RUN pip install rasterio OWSLib GDAL matplotlib netCDF4 numpy
 RUN mkdir -p notebooks
@@ -11,4 +8,4 @@ RUN mkdir -p notebooks/tmp
 WORKDIR /notebooks
 COPY ./docs .
 COPY ./config /config
-ENTRYPOINT ["jupyter", "notebook", "--port", "8888", "--ip", "0.0.0.0", "--no-browser", "--allow-root"] 
+ENTRYPOINT ["jupyter", "notebook", "--port", "8888", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
