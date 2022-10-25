@@ -9,7 +9,7 @@ import { hookRedirect } from '../helpers/hooks';
 import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
 import hookServersStartStop from '../helpers/servers';
 import { getWorkForService, updateWorkItem, fakeServiceStacOutput } from '../helpers/work-items';
-import * as workflowOrchestration from '../../app/backends/workflow-orchestration';
+import * as aggregationBatch from '../../app/util/aggregation-batch';
 
 const originalPreviewThreshold = env.previewThreshold;
 
@@ -17,7 +17,7 @@ const originalPreviewThreshold = env.previewThreshold;
 
 /**
  * Define common tests to be run for auto-pause
- * 
+ *
  * @param username - user to use when calling Harmony
  * @param status - expected job status
  * @param message - expected job status message
@@ -101,7 +101,7 @@ describe('Auto-pausing jobs', function () {
   let sizeOfObjectStub;
   before(async function () {
     env.previewThreshold = 3;
-    sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
+    sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
       .callsFake(async (_dummy) => 7000000000);
     await truncateAll();
   });

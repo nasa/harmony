@@ -10,7 +10,7 @@ import WorkItem, { getWorkItemById } from '../../app/models/work-item';
 import { WorkflowStepRecord } from '../../app/models/workflow-steps';
 import hookServersStartStop from '../helpers/servers';
 import db from '../../app/util/db';
-import * as workflowOrchestration from '../../app/backends/workflow-orchestration';
+import * as aggregationBatch from '../../app/util/aggregation-batch';
 import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
@@ -260,8 +260,8 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readCatalogLinksStub = sinon.stub(workflowOrchestration, 'readCatalogLinks');
-          sizeOfObjectStub = sinon.stub(workflowOrchestration, 'sizeOfObject');
+          readCatalogLinksStub = sinon.stub(aggregationBatch, 'readCatalogLinks');
+          sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject');
         });
         after(async () => {
           readCatalogLinksStub.restore();
@@ -306,9 +306,9 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readCatalogLinksStub = sinon.stub(workflowOrchestration, 'readCatalogLinks')
+          readCatalogLinksStub = sinon.stub(aggregationBatch, 'readCatalogLinks')
             .callsFake(async (_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
-          sizeOfObjectStub = sinon.stub(workflowOrchestration, 'sizeOfObject')
+          sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject')
             .callsFake(async (_) => 7000000000);
         });
         after(async () => {
@@ -353,9 +353,9 @@ describe('Work Backends', function () {
         };
         before(async () => {
           await fakeServiceStacOutput(successfulWorkItemRecord.jobID, successfulWorkItemRecord.id);
-          readCatalogLinksStub = sinon.stub(workflowOrchestration, 'readCatalogLinks')
+          readCatalogLinksStub = sinon.stub(aggregationBatch, 'readCatalogLinks')
             .callsFake(async (_) => ['s3://abc/foo.nc', 'http://abc/bar.nc']);
-          sizeOfObjectStub = sinon.stub(workflowOrchestration, 'sizeOfObject')
+          sizeOfObjectStub = sinon.stub(aggregationBatch, 'sizeOfObject')
             .callsFake(async (_) => 7000000000);
         });
         after(async () => {

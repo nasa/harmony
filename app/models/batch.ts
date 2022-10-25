@@ -1,9 +1,5 @@
 import { Transaction } from '../util/db';
 import Record from './record';
-import { WorkflowStep } from './workflow-steps';
-
-// The fields to save to the database
-const serializedFields = ['id', 'jobID', 'serviceID', 'batchID', 'createdAt', 'updatedAt'];
 
 export interface BatchRecord {
 
@@ -19,9 +15,9 @@ export interface BatchRecord {
 }
 
 /**
- * 
+ *
  * Wrapper object for persisted batches of granule for aggregation steps
- * 
+ *
  */
 export class Batch extends Record implements BatchRecord {
   static table = 'batches';

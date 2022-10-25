@@ -10,7 +10,7 @@ import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import { buildWorkItem, getWorkForService, hookGetWorkForService, updateWorkItem, fakeServiceStacOutput } from './helpers/work-items';
 import { buildWorkflowStep } from './helpers/workflow-steps';
-import * as workflowOrchestration from '../app/backends/workflow-orchestration';
+import * as aggregationBatch from '../app/util/aggregation-batch';
 import { buildJob } from './helpers/jobs';
 import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/work-item-interface';
 import { truncateAll } from './helpers/db';
@@ -155,7 +155,7 @@ describe('When a workflow contains an aggregating step', async function () {
 
   let sizeOfObjectStub;
   before(function () {
-    sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
+    sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
       .callsFake(async (_) => 7000000000);
   });
 
@@ -299,7 +299,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
   let sizeOfObjectStub;
   before(function () {
     pageStub = stub(env, 'cmrMaxPageSize').get(() => 3);
-    sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
+    sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
       .callsFake(async (_) => 7000000000);
   });
   after(function () {
@@ -688,7 +688,7 @@ describe('When a request spans multiple CMR pages', function () {
     let sizeOfObjectStub;
     before(async function () {
       pageStub = stub(env, 'cmrMaxPageSize').get(() => 3);
-      sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
+      sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
         .callsFake(async (_) => 7000000000);
       await truncateAll();
     });
