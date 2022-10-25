@@ -865,6 +865,17 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
+   * Returns true if a particular user either owns the job in question
+   * or belongs to the admin group.
+   * @param requestUser - The user name of the user making the request
+   * @param isAdmin - Whether the requesting user is an admin.
+   * @returns boolean
+   */
+  belongsToOrIsAdmin(requestUser: string, isAdmin: boolean): boolean {
+    return isAdmin || (this.username === requestUser);
+  }
+
+  /**
    * Return whether a user can access this job and its results.
    * (Called whenever a request is made to frontend jobs or STAC endpoints)
    * @param requestingUserName - the person we're checking permissions for
@@ -880,9 +891,9 @@ export class Job extends DBRecord implements JobRecord {
     accessToken: string,
     enableShareability = true,
   ): Promise<boolean> {
-    const isJobOwnerOrAdmin = isAdminAccess || (this.username === requestingUserName);
-    if (isJobOwnerOrAdmin || !enableShareability) {
-      return isJobOwnerOrAdmin;
+    const isAdminOrOwner = this.belongsToOrIsAdmin(requestingUserName, isAdminAccess);
+    if (isAdminOrOwner || !enableShareability) {
+      return isAdminOrOwner;
     }
     // if we get to here, the user is not an admin, nor the owner of the job,
     // but we should still check if the job can be viewed since enableShareability=true

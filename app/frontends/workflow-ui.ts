@@ -10,7 +10,7 @@ import db from '../util/db';
 import version from '../util/version';
 import env = require('../util/env');
 import { keysToLowerCase } from '../util/object';
-import { COMPLETED_WORK_ITEM_STATUSES, getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
+import { getItemLogsLocation, WorkItemQuery, WorkItemStatus } from '../models/work-item-interface';
 import { getRequestRoot } from '../util/url';
 import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
@@ -208,6 +208,7 @@ export async function getJob(
       job,
       page,
       limit,
+      isAdminOrOwner: job.belongsToOrIsAdmin(req.user, isAdmin),
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       selectedFilters: tableFilter.originalValues,
       tableFilter: requestQuery.tablefilter,
@@ -268,17 +269,16 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
     workflowItemCreatedAt(): string { return this.createdAt.getTime(); },
     workflowItemUpdatedAt(): string { return this.updatedAt.getTime(); },
     workflowItemLogsButton(): string {
-      const isComplete = COMPLETED_WORK_ITEM_STATUSES.indexOf(this.status) > -1;
+      const isComplete = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL].indexOf(this.status) > -1;
       if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
       const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
       return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}"` +
         ' title="view logs"><i class="bi bi-body-text"></i></a>';
     },
     workflowItemRetryButton(): string {
-      const sharedWithNonAdmin = (!isAdmin && (job.username != requestUser));
       const isRunning = WorkItemStatus.RUNNING === this.status;
       const noRetriesLeft = this.retryCount >= env.workItemRetryLimit;
-      if (!isRunning || sharedWithNonAdmin || noRetriesLeft) return '';
+      if (!isRunning || !job.belongsToOrIsAdmin(requestUser, isAdmin) || noRetriesLeft) return '';
       const retryUrl = `/workflow-ui/${job.jobID}/${this.id}/retry`;
       return `<button type="button" class="btn btn-light btn-sm retry-button" data-retry-url="${retryUrl}"` +
         `data-work-item-id="${this.id}" title="retry this item"><i class="bi bi-arrow-clockwise"></i></button>`;
@@ -324,6 +324,8 @@ export async function getWorkItemsTable(
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     setPagingHeaders(res, pagination);
     res.render('workflow-ui/job/work-items-table', {
+      isAdmin,
+      canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
       job,
       statusClass: statusClass[job.status],
       workItems,
@@ -376,6 +378,8 @@ export async function getWorkItemTableRow(
       return;
     }
     res.render('workflow-ui/job/work-item-table-row', {
+      isAdmin,
+      canShowRetryColumn: job.belongsToOrIsAdmin(req.user, isAdmin),
       ...workItems[0],
       ...workItemRenderingFunctions(job, isAdmin, req.user),
     });

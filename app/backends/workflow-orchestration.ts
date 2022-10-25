@@ -1,5 +1,5 @@
 import db, { Transaction, batchSize } from './../util/db';
-import _, { ceil, range } from 'lodash';
+import _, { ceil, range, sum } from 'lodash';
 import { NextFunction, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
@@ -512,7 +512,7 @@ export async function handleWorkItemUpdate(
   update: WorkItemUpdate,
   operation: object,
   logger: Logger): Promise<void> {
-  const { workItemID, status, hits, results, scrollID, errorMessage, totalItemsSize: totalItemsSize } = update;
+  const { workItemID, status, hits, results, scrollID, errorMessage } = update;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
@@ -572,6 +572,12 @@ export async function handleWorkItemUpdate(
     }
 
     logger.debug(`Work item duration (ms): ${duration}`);
+
+    let { totalItemsSize } = update;
+
+    if (!totalItemsSize && outputItemSizes?.length > 0) {
+      totalItemsSize = sum(outputItemSizes) / 1024 / 1024;
+    }
 
     await updateWorkItemStatus(
       tx,

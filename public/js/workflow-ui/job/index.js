@@ -9,6 +9,11 @@ const jobId = workflowContainer.getAttribute('data-job-id');
 const disallowStatus = workflowContainer.getAttribute('data-disallow-status-checked') === 'checked' ? 'on' : '';
 const tableFilter = workflowContainer.getAttribute('data-table-filter');
 
-await navLinks.init("job-state-links-container", jobId);
+// kick off job state change links logic if this user is allowed to change the job state
+const navLinksContainer = document.getElementById('job-state-links-container');
+const isAdminOrOwner = navLinksContainer.getAttribute('data-is-admin-or-owner') === 'true';
+if (isAdminOrOwner) {
+  await navLinks.init('job-state-links-container', jobId);
+}
 
 workItemsTable.init(jobId, page, limit, disallowStatus, tableFilter);
