@@ -68,9 +68,9 @@ export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<s
  * Get the sizes of all the data items/granules returned for the WorkItem as well as urls to
  * the associated STAC item files.
  *
- * @param update
- * @param operation
- * @param logger
+ * @param update - TODO
+ * @param operation - TODO
+ * @param logger - TODO
  * @returns
  */
 export async function resultItemSizes(update: WorkItemUpdate, operation: object, logger: Logger):

@@ -2,8 +2,8 @@ import { Transaction } from './../util/db';
 import Record from './record';
 
 // The fields to save to the database
-const serializedFields = ['id', 'jobID', 'serviceID', 'batchID', 'stacItemUrl', 'itemSize',
-  'sortIndex', 'createdAt', 'updatedAt'];
+// const serializedFields = ['id', 'jobID', 'serviceID', 'batchID', 'stacItemUrl', 'itemSize',
+//   'sortIndex', 'createdAt', 'updatedAt'];
 
 export interface BatchItemRecord {
 
@@ -28,9 +28,9 @@ export interface BatchItemRecord {
 }
 
 /**
- * 
+ *
  * Wrapper object for persisted batches of granule for aggregation steps
- * 
+ *
  */
 export default class BatchItem extends Record implements BatchItemRecord {
   static table = 'batch_items';
@@ -55,11 +55,11 @@ export default class BatchItem extends Record implements BatchItemRecord {
   sortIndex: number;
 }
 
-const tableFields = serializedFields.map((field) => `${BatchItem.table}.${field}`);
+// const tableFields = serializedFields.map((field) => `${BatchItem.table}.${field}`);
 
 /**
  * Get the maximum sort index for the given job, service, and batch.
- * 
+ *
  * @param tx - The database transaction
  * @param jobID - The ID of the job
  * @param serviceID - The ID of the service
@@ -84,8 +84,8 @@ export async function getMaxSortIndexForJobServiceBatch(
 }
 
 /**
- * Get all the batch items for a given job/service and (possibly unassigned) batch 
- * 
+ * Get all the batch items for a given job/service and (possibly unassigned) batch
+ *
  * @param tx - The database transaction
  * @param jobID - The ID of the job
  * @param serviceID - The ID of the service
@@ -132,7 +132,7 @@ export async function getByJobServiceBatch(
 }
 
 /**
- * 
+ *
  * @param tx - The database transaction
  * @param jobID - The ID of the job
  * @param serviceID - The ID of the service
