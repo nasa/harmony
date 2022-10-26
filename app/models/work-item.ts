@@ -662,26 +662,26 @@ export async function getTotalWorkItemSizesForJobID(
 
   const originalSizeResults = await tx(WorkItem.table)
     .select()
-    .sum('totalItemsSize')
+    .sum('totalGranulesSize')
     .where({ jobID, workflowStepIndex: firstIndex });
 
   let originalSize;
   if (db.client.config.client === 'pg') {
     originalSize = Number(originalSizeResults[0].sum);
   } else {
-    originalSize = Number(originalSizeResults[0]['sum(`totalItemsSize`)']);
+    originalSize = Number(originalSizeResults[0]['sum(`totalGranulesSize`)']);
   }
 
   const outputSizeResults = await tx(WorkItem.table)
     .select()
-    .sum('totalItemsSize')
+    .sum('totalGranulesSize')
     .where({ jobID, workflowStepIndex: lastIndex });
 
   let outputSize;
   if (db.client.config.client === 'pg') {
     outputSize = Number(outputSizeResults[0].sum);
   } else {
-    outputSize = Number(outputSizeResults[0]['sum(`totalItemsSize`)']);
+    outputSize = Number(outputSizeResults[0]['sum(`totalGranulesSize`)']);
   }
 
 
