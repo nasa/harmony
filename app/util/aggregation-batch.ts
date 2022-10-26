@@ -65,28 +65,37 @@ export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<s
 }
 
 /**
- * Get the sizes of all the data items/granules returned for the WorkItem as well as urls to
- * the associated STAC item files.
+ * Get the urls of the STAC items contained in the STAC catalogs returned in a work item update
+ * @param results - the url(s) of the STAC catalog(s) returned in the work item update
+ * @returns
+ */
+export async function outputStacItemUrls(results: string[]):
+Promise<string[]> {
+  let urls: string[] = [];
+  for (const catalogUrl of results) {
+    const stacItemUrls = await getCatalogItemUrls(catalogUrl);
+    urls = urls.concat(stacItemUrls);
+  }
+  return urls;
+}
+
+/**
+ * Get the sizes of all the data items/granules returned for the WorkItem.
  *
- * @param update - TODO
+ * @param update - information about the work item update
  * @param operation - TODO
  * @param logger - TODO
  * @returns
  */
 export async function resultItemSizes(update: WorkItemUpdate, operation: object, logger: Logger):
-Promise<{ outputItemSizes: number[], outputStacItemUrls: string[] }> {
+Promise<number[]> {
   let outputItemSizes = [];
-  let outputStacItemUrls = [];
   if (update.outputItemSizes?.every(s => s > 0)) {
     // if all the granules sizes were provided by the service then just use them, otherwise
     // get the ones that were not provided
     // eslint-disable-next-line prefer-destructuring
     outputItemSizes = update.outputItemSizes;
-    // TODO figure out how to only do this if we need batching
-    for (const catalogUrl of update.results) {
-      const stacItemUrls = await getCatalogItemUrls(catalogUrl);
-      outputStacItemUrls = outputStacItemUrls.concat(stacItemUrls);
-    }
+
   } else if (update.results) {
     const encrypter = createEncrypter(env.sharedSecretKey);
     const decrypter = createDecrypter(env.sharedSecretKey);
@@ -110,7 +119,7 @@ Promise<{ outputItemSizes: number[], outputStacItemUrls: string[] }> {
       outputItemSizes = outputItemSizes.concat(sizes);
     }
   }
-  return { outputItemSizes, outputStacItemUrls };
+  return outputItemSizes;
 }
 
 /**

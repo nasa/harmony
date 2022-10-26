@@ -17,7 +17,7 @@ import { ServiceError } from '../util/errors';
 import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
 import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
-import { handleBatching, resultItemSizes } from '../util/aggregation-batch';
+import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -274,7 +274,6 @@ async function createNextWorkItems(
   allWorkItemsForStepComplete: boolean,
   results: string[],
   outputItemSizes: number[],
-  outputStacItemUrls: string[],
 ): Promise<WorkflowStep> {
   const nextStep = await getWorkflowStepByJobIdStepIndex(
     tx, workItem.jobID, workItem.workflowStepIndex + 1,
@@ -286,7 +285,8 @@ async function createNextWorkItems(
       // aggregate then create a work item for the next step
       if (nextStep.hasAggregatedOutput) {
         if (nextStep.isBatched) {
-          await handleBatching(tx, nextStep, outputStacItemUrls, outputItemSizes, workItem.sortIndex);
+          const outputItemUrls = await outputStacItemUrls(results);
+          await handleBatching(tx, nextStep, outputItemUrls, outputItemSizes, workItem.sortIndex);
         } else if (allWorkItemsForStepComplete) {
           await createAggregatingWorkItem(tx, workItem, nextStep);
         }
@@ -519,9 +519,10 @@ export async function handleWorkItemUpdate(
   // get the jobID for the work item
   const jobID = await getJobIdForWorkItem(workItemID);
 
-  // Get the sizes of all the data items/granules returned for the WorkItem.
+  // Get the sizes of all the data items/granules returned for the WorkItem and STAC item links
+  // when batching.
   // This needs to be done outside the transaction as it can be slow if there are many granules.
-  const { outputItemSizes, outputStacItemUrls } = await resultItemSizes(update, operation, logger);
+  const outputItemSizes = await resultItemSizes(update, operation, logger);
 
   await db.transaction(async (tx) => {
     const job = await Job.byJobID(tx, jobID, false, true);
@@ -602,7 +603,7 @@ export async function handleWorkItemUpdate(
     if (continueProcessing) {
       let nextStep = null;
       if (status != WorkItemStatus.FAILED) {
-        nextStep = await createNextWorkItems(tx, workItem, allWorkItemsForStepComplete, results, outputItemSizes, outputStacItemUrls);
+        nextStep = await createNextWorkItems(tx, workItem, allWorkItemsForStepComplete, results, outputItemSizes);
       }
 
       if (nextStep) {

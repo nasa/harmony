@@ -45,9 +45,9 @@ export function linksWithStacData(links: Array<JobLink>): Array<JobLink> {
 
 /**
  * Reads the STAC catalog and returns the urls of its STAC items
- * 
+ *
  * @param catalogUrl - The catalog s3 url
- * @returns 
+ * @returns
  */
 export async function getCatalogItemUrls(catalogUrl: string): Promise<string[]> {
   const s3 = objectStoreForProtocol('s3');
