@@ -1,8 +1,9 @@
 // functions used for creating batches of inputs to aggregation steps
 
 import { Logger } from 'winston';
+import { v4 as uuid } from 'uuid';
 import { Transaction } from '../util/db';
-import BatchItem, { getByJobServiceBatch, getCurrentBatchSizeAndCount, getMaxSortIndexForJobServiceBatch } from '../models/batch-item';
+import BatchItem, { getByJobServiceBatch, getCurrentBatchSizeAndCount, getItemUrlsForJobServiceBatch, getMaxSortIndexForJobServiceBatch } from '../models/batch-item';
 import { Batch, withHighestBatchIDForJobService } from '../models/batch';
 import { createDecrypter, createEncrypter } from './crypto';
 import env from './env';
@@ -12,7 +13,7 @@ import axios from 'axios';
 import { getCatalogItemUrls, readCatalogItems } from './stac';
 import WorkItemUpdate from '../models/work-item-update';
 import WorkflowStep from '../models/workflow-steps';
-
+import { WorkItemStatus } from 'app/models/work-item-interface';
 
 /**
  * Get the size in bytes of the object at the given url
@@ -83,8 +84,8 @@ Promise<string[]> {
  * Get the sizes of all the data items/granules returned for the WorkItem.
  *
  * @param update - information about the work item update
- * @param operation - TODO
- * @param logger - TODO
+ * @param operation - the DataOperation for the user's request
+ * @param logger - the Logger for the request
  * @returns
  */
 export async function resultItemSizes(update: WorkItemUpdate, operation: object, logger: Logger):
@@ -123,18 +124,102 @@ Promise<number[]> {
 }
 
 /**
+ *
+ * @param jobID - the UUID associated with the job
+ * @param stepIndex - the index of the step in the workflow
+ * @param batchID - The ID of the batch to use when creating the catalog
+ * @param sourceCollection - The CMR collection concept ID
+ * @param stacItemUrls - links to the STAC item files for the catalog
+ * @returns the URL to resulting STAC catalog
+ */
+async function createStacCatalogForBatch(
+  jobID: string,
+  stepIndex: number,
+  batchID: number,
+  sourceCollection: string,
+  stacItemUrls):
+  Promise<string> {
+  const catalogUrl =
+    `s3://${env.artifactBucket}/${jobID}/batches/${stepIndex}/${batchID}/catalog.json`;
+
+  const sourceUrl = `${process.env.CMR_ENDPOINT}/search/concepts/${sourceCollection}`;
+
+  const sourceLink = {
+    'rel': 'harmony_source',
+    'href': sourceUrl,
+  };
+
+  const itemLinks = stacItemUrls.map((url) => {
+    return {
+      'rel': 'item',
+      'href': url,
+      'type': 'application/json',
+      'title': 'data item',
+    };
+  });
+
+  const links = [sourceLink, ...itemLinks];
+
+  const catalog = {
+    'stac_version': '1.0.0-beta.2',
+    'stac_extensions': [],
+    'id': uuid(),
+    'links': links,
+    'description': `CMR collection ${sourceCollection} granules`,
+  };
+
+  const s3 = objectStoreForProtocol('s3');
+  await s3.upload(JSON.stringify(catalog, null, 2), catalogUrl, null, 'application/json');
+
+  return catalogUrl;
+}
+
+/**
+ * Create a STAC catalog for a batch then create an aggregating work item to process it
+ *
+ * @param tx - the database transaction
+ * @param workflowStep- the step in the workflow that needs batching
+ * @param batch - the Batch to process
+ */
+async function createCatalogAndWorkItemForBatch(tx: Transaction, workflowStep: WorkflowStep, batch: Batch): Promise<void> {
+  const { jobID, serviceID, stepIndex } = workflowStep;
+  const batchItemUrls = await getItemUrlsForJobServiceBatch(tx, jobID, serviceID, batch.batchID);
+  // create STAC catalog for the batch
+  const catalogUrl = await createStacCatalogForBatch(
+    jobID,
+    stepIndex,
+    batch.batchID,
+    workflowStep.collectionsForOperation()[0],
+    batchItemUrls);
+
+  // create a work item for the batch
+
+  // const newWorkItem = WorkItem.new({
+  //   jobID,
+  //   serviceID,
+  //   status: WorkItemStatus.READY,
+  //   workflowStepIndex: workflowStep.stepIndex,
+
+  // });
+}
+
+/**
  * Generate batches for results returned by a service to be used by a subsequent aggregating step.
  *
  * @param tx - The database transaction
  * @param workflowStep - The step in the workflow that needs batching
  * @param stacItemUrls - An array of paths to STAC items
+ * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
+ * @param logger - The logger for the request
  */
 export async function handleBatching(
   tx: Transaction,
   workflowStep: WorkflowStep,
   stacItemUrls: string[],
   itemSizes: number[],
-  workItemSortIndex: number)
+  workItemSortIndex: number,
+  allWorkItemsForStepComplete: boolean,
+  logger: Logger)
   : Promise<void> {
   const { jobID, serviceID } = workflowStep;
   let { maxBatchInputs, maxBatchSizeInBytes } = workflowStep;
@@ -159,6 +244,7 @@ export async function handleBatching(
     }
   }
 
+  // create new batch items for the STAC items in the results
   for (const url of stacItemUrls) {
     const sortIndex = workItemSortIndex || (startIndex + index);
     const batchItem = new BatchItem({
@@ -172,17 +258,16 @@ export async function handleBatching(
     try {
       await batchItem.save(tx);
     } catch (e) {
-      console.log(e);
+      logger.error(e);
     }
   }
 
   // assign the new batch items to batches
   const batchItems = await getByJobServiceBatch(tx, jobID, serviceID, null, true);
   index = 0;
-  // let currentBatch: Batch;
   let nextSortIndex: number;
+  let currentBatch = await withHighestBatchIDForJobService(tx, jobID, serviceID);
   while (index < batchItems.length) {
-    const currentBatch = await withHighestBatchIDForJobService(tx, jobID, serviceID);
     if (currentBatch) {
       const batchItem = batchItems[index];
       const maxSortIndex = await getMaxSortIndexForJobServiceBatch(
@@ -196,7 +281,6 @@ export async function handleBatching(
         nextSortIndex = maxSortIndex + 1;
       }
 
-
       if (batchItem.sortIndex === nextSortIndex) {
         const { sum, count } = await getCurrentBatchSizeAndCount(tx, jobID, serviceID, currentBatch.batchID);
         const currentBatchSize = sum;
@@ -208,19 +292,12 @@ export async function handleBatching(
           try {
             await batchItem.save(tx);
           } catch (e) {
-            console.log(e);
+            logger.error(e);
           }
           index += 1;
         } else {
-          // create a work item for the current batch
-          // TODO create aggregation work item
-          // const newWorkItem = WorkItem.new({
-          //   jobID,
-          //   serviceID,
-          //   status: WorkItemStatus.READY,
-          //   workflowStepIndex: workflowStep.stepIndex,
-
-          // });
+          // create STAC catalog and next work item for the current batch
+          await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
 
           // create a new batch
           const newBatch = new Batch({
@@ -230,18 +307,17 @@ export async function handleBatching(
           });
           try {
             await newBatch.save(tx);
-            await newBatch.save(tx);
             batchItem.batchID = newBatch.batchID;
             await batchItem.save(tx);
           } catch (e) {
-            console.log(e);
+            logger.error(e);
           }
+          currentBatch = newBatch;
           index += 1;
         }
       } else {
         break;
       }
-
     } else {
       // no current batch so create a new one
       const newBatch = new Batch({
@@ -252,10 +328,15 @@ export async function handleBatching(
       try {
         await newBatch.save(tx);
       } catch (e) {
-        console.log(e);
+        logger.error(e);
       }
+      currentBatch = newBatch;
       nextSortIndex = 0;
     }
   }
-
+  // if this is the last work item for the step, save the catalog
+  // and create a new aggregating work item since this is the last batch
+  if (allWorkItemsForStepComplete) {
+    await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
+  }
 }

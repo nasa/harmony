@@ -54,7 +54,7 @@ export async function getCatalogItemUrls(catalogUrl: string): Promise<string[]> 
   const catalog = await s3.getObjectJson(catalogUrl);
   return catalog.links
     .filter((l) => l.rel === 'item')
-    .map((l) => l.href);
+    .map((l) => new URL(l.href, catalogUrl).href);
 }
 
 /**

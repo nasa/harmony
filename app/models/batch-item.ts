@@ -84,6 +84,35 @@ export async function getMaxSortIndexForJobServiceBatch(
 }
 
 /**
+ * Get the STAC item links for the given job/service/batch
+ *
+ * @param tx - The database transaction
+ * @param jobID - The ID of the job
+ * @param serviceID - The ID of the service
+ * @param batchID - The ID of the batch - null for unassigned batch items
+ * @returns a promise containing the STAC item links for the given job/service/batch
+ */
+export async function getItemUrlsForJobServiceBatch(
+  tx: Transaction,
+  jobID: string,
+  serviceID: string,
+  batchID?: number,
+): Promise<string[]> {
+  const query = tx(BatchItem.table)
+    .select(['stacItemUrl'])
+    .where({
+      jobID,
+      serviceID,
+      batchID,
+    })
+    .orderBy('sortIndex', 'asc');
+
+  const result = await query;
+
+  return result.map(data => data.stacItemUrl);
+}
+
+/**
  * Get all the batch items for a given job/service and (possibly unassigned) batch
  *
  * @param tx - The database transaction
@@ -102,23 +131,18 @@ export async function getByJobServiceBatch(
   lock = false,
   order = ['sortIndex', 'asc'],
 ): Promise<BatchItem[]> {
-  let result;
-  try {
-    let query = tx(BatchItem.table)
-      .select()
-      .where({
-        jobID,
-        serviceID,
-        batchID,
-      });
-    if (lock) {
-      query = query.forUpdate();
-    }
-    query = query.orderBy(order[0], order[1]);
-    result = await query;
-  } catch (e) {
-    console.log(e);
+  let query = tx(BatchItem.table)
+    .select()
+    .where({
+      jobID,
+      serviceID,
+      batchID,
+    });
+  if (lock) {
+    query = query.forUpdate();
   }
+  query = query.orderBy(order[0], order[1]);
+  const result = await query;
 
   const rval = result.map(data => {
     // knex returns a string for a pg bigint, so we need to parse the itemSize
@@ -144,7 +168,7 @@ export async function getCurrentBatchSizeAndCount(
   tx: Transaction,
   jobID: string,
   serviceID: string,
-  batchID: number): Promise<{ sum: number, count: number }> {
+  batchID: number): Promise<{ sum: number, count: number; }> {
   const result = await tx(BatchItem.table)
     .select(['itemSize'])
     .where({

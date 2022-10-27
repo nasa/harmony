@@ -75,6 +75,16 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
 
   // The upper limit on the combined sizes of all the files in a batch
   maxBatchSizeInBytes: number;
+
+  /**
+ * Get the collections that are the sources for the given operation
+ *
+ * @returns an array of strings containing the collections for the operation
+ */
+  collectionsForOperation(): string[] {
+    const op = JSON.parse(this.operation);
+    return op.sources.map(source => source.collection);
+  }
 }
 
 const tableFields = serializedFields.map((field) => `${WorkflowStep.table}.${field}`);
