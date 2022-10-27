@@ -23,6 +23,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
     - [Software Requirements](#software-requirements)
   - [Running Harmony (Not From Quick Start)](#running-harmony-not-from-quick-start)
     - [Set up Environment](#set-up-environment)
+      - [*** NOTE FOR M1 MACS ***](#-note-for-m1-macs-)
     - [Set Up Environment Variables](#set-up-environment-variables)
       - [Advanced Configuration](#advanced-configuration)
     - [Run Tests](#run-tests)
@@ -207,8 +208,28 @@ If you have not yet cloned the Harmony repository, run
 ```
 $ git clone https://github.com/nasa/harmony.git
 ```
+Ensure `envsubst` is installed on your system.
 
-Ensure envsubst is installed on system.
+For Mac, run
+```
+brew install envsubst
+```
+
+if you are using `homebrew`. The version installed by `pip` is NOT compatible.
+
+#### *** NOTE FOR M1 MACS ***
+If you are running on an M1 Mac, you will have to run Harmony on Rosetta 2 due to some issues
+with GDAL Node packages. To do this, run this command before following the rest of these instructions.
+
+```
+arch -x86_64 zsh
+```
+
+or
+
+```
+arch -x86_64 bash
+```
 
 Ensure node is available and is the correct version, 16.x.y.
 
