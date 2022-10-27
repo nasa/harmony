@@ -14,6 +14,7 @@ import { getCatalogItemUrls, readCatalogItems } from './stac';
 import WorkItemUpdate from '../models/work-item-update';
 import WorkflowStep from '../models/workflow-steps';
 import { WorkItemStatus } from 'app/models/work-item-interface';
+import WorkItem from 'app/models/work-item';
 
 /**
  * Get the size in bytes of the object at the given url
@@ -193,14 +194,15 @@ async function createCatalogAndWorkItemForBatch(tx: Transaction, workflowStep: W
     batchItemUrls);
 
   // create a work item for the batch
+  const newWorkItem = new WorkItem({
+    jobID,
+    serviceID,
+    status: WorkItemStatus.READY,
+    stacCatalogLocation: catalogUrl,
+    workflowStepIndex: workflowStep.stepIndex,
+  });
 
-  // const newWorkItem = WorkItem.new({
-  //   jobID,
-  //   serviceID,
-  //   status: WorkItemStatus.READY,
-  //   workflowStepIndex: workflowStep.stepIndex,
-
-  // });
+  await newWorkItem.save(tx);
 }
 
 /**
