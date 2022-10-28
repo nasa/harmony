@@ -210,9 +210,9 @@ $ git clone https://github.com/nasa/harmony.git
 ```
 Ensure `envsubst` is installed on your system.
 
-For Mac, run
+For Mac, `envsubst` is part of the `homebrew` `gettext` package. Run
 ```
-brew install envsubst
+brew install gettext
 ```
 
 if you are using `homebrew`. The version installed by `pip` is NOT compatible.
