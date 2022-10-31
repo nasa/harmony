@@ -229,3 +229,16 @@ export async function decrementFutureWorkItemCount(tx: Transaction, jobID, stepI
     .andWhere('hasAggregatedOutput', false)
     .decrement('workItemCount');
 }
+
+/**
+ * Increment the number of expected work items for the step. Used when during batching.
+ *
+ * @param tx - the database transaction
+ * @param jobID - the job ID
+ * @param stepIndex - the current step index
+ */
+export async function incrementWorkItemCount(tx: Transaction, jobID, stepIndex): Promise<void> {
+  await tx(WorkflowStep.table)
+    .where({ jobID, stepIndex })
+    .increment('workItemCount');
+}

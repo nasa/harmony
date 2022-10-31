@@ -12,9 +12,9 @@ import { objectStoreForProtocol } from './object-store';
 import axios from 'axios';
 import { getCatalogItemUrls, readCatalogItems } from './stac';
 import WorkItemUpdate from '../models/work-item-update';
-import WorkflowStep from '../models/workflow-steps';
-import { WorkItemStatus } from 'app/models/work-item-interface';
-import WorkItem from 'app/models/work-item';
+import WorkflowStep, { incrementWorkItemCount } from '../models/workflow-steps';
+import { WorkItemStatus } from '../models/work-item-interface';
+import WorkItem from '../models/work-item';
 
 /**
  * Get the size in bytes of the object at the given url
@@ -223,7 +223,7 @@ export async function handleBatching(
   allWorkItemsForStepComplete: boolean,
   logger: Logger)
   : Promise<void> {
-  const { jobID, serviceID } = workflowStep;
+  const { jobID, serviceID, stepIndex } = workflowStep;
   let { maxBatchInputs, maxBatchSizeInBytes } = workflowStep;
   maxBatchInputs = maxBatchInputs || env.maxBatchInputs;
   maxBatchSizeInBytes = maxBatchSizeInBytes || env.maxBatchSizeInBytes;
@@ -315,6 +315,7 @@ export async function handleBatching(
             logger.error(e);
           }
           currentBatch = newBatch;
+          await incrementWorkItemCount(tx, jobID, stepIndex);
           index += 1;
         }
       } else {
@@ -336,8 +337,9 @@ export async function handleBatching(
       nextSortIndex = 0;
     }
   }
-  // if this is the last work item for the step, save the catalog
-  // and create a new aggregating work item since this is the last batch
+  // if this is the last work item for step just before aggregation, save the catalog
+  // and create a new aggregating work item since this is the last batch, but the logic
+  // above will not have marked it as completed because it is not 'full'
   if (allWorkItemsForStepComplete) {
     await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
   }
