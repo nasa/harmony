@@ -408,19 +408,38 @@ describe('Workflow chaining for a collection configured for swot reprojection an
         });
 
         describe('when checking to see if netcdf-to-zarr work is queued', function () {
-          it('finds a netcdf-to-zarr service work item and can complete it', async function () {
-            const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          let res;
+          let workItem;
+          before(async function () {
+            res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+            // eslint-disable-next-line prefer-destructuring
+            workItem = JSON.parse(res.text).workItem;
+          });
+          it('finds a netcdf-to-zarr service work item', async function () {
             expect(res.status).to.equal(200);
-            const { workItem } = JSON.parse(res.text);
+            expect(workItem.serviceID).to.equal('harmonyservices/netcdf-to-zarr:latest');
+          });
+          it('limits the operation on the work-item to reformating', function () {
             const { operation } = workItem;
-            // only 'concatenate' and 'reformat' operations allowed for netcdf-to-zarr
+            // only 'concatenate' and 'reformat' operations allowed for netcdf-to-zarr, and
+            // 'concatenate' was set to 'false' in the request
             expect(operation.subset).to.be.undefined;
+            expect(operation.concatenate).to.be.false;
+            expect(operation.format).to.eql({
+              'mime': 'application/x-zarr',
+              'scaleSize': {
+                'x': 1.1,
+                'y': 2,
+              },
+            });
+          });
+          it('can complete the work item', async function () {
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.results = [getStacLocation(workItem, 'catalog.json')];
             workItem.outputGranuleSizes = [1];
             await fakeServiceStacOutput(workItem.jobID, workItem.id);
-            await updateWorkItem(this.backend, workItem);
-            expect(workItem.serviceID).to.equal('harmonyservices/netcdf-to-zarr:latest');
+            res = await updateWorkItem(this.backend, workItem);
+            expect(res.status).to.equal(204);
           });
 
           describe('when checking the jobs listing', function () {
@@ -435,8 +454,9 @@ describe('Workflow chaining for a collection configured for swot reprojection an
           describe('when completing all steps for the second granule', function () {
             it('wish I could do this in the describe', async function () {
               for await (const service of ['sds/swot-reproject:latest', 'harmonyservices/netcdf-to-zarr:latest']) {
-                const res = await getWorkForService(this.backend, service);
-                const { workItem } = JSON.parse(res.text);
+                res = await getWorkForService(this.backend, service);
+                // eslint-disable-next-line prefer-destructuring
+                workItem = JSON.parse(res.text).workItem;
                 workItem.status = WorkItemStatus.SUCCESSFUL;
                 workItem.results = [getStacLocation(workItem, 'catalog.json')];
                 workItem.outputGranuleSizes = [2];
