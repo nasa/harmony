@@ -412,6 +412,9 @@ describe('Workflow chaining for a collection configured for swot reprojection an
             const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
             expect(res.status).to.equal(200);
             const { workItem } = JSON.parse(res.text);
+            const { operation } = workItem;
+            // only 'concatenate' and 'reformat' operations allowed for netcdf-to-zarr
+            expect(operation.subset).to.be.undefined;
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.results = [getStacLocation(workItem, 'catalog.json')];
             workItem.outputGranuleSizes = [1];
