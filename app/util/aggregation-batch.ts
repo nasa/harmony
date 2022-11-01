@@ -257,11 +257,7 @@ export async function handleBatching(
       sortIndex,
     });
     index += 1;
-    try {
-      await batchItem.save(tx);
-    } catch (e) {
-      logger.error(e);
-    }
+    await batchItem.save(tx);
   }
 
   // assign the new batch items to batches
@@ -291,11 +287,7 @@ export async function handleBatching(
           && currentBatchCount + 1 <= maxBatchInputs) {
           // add the batch item to the batch
           batchItem.batchID = currentBatch.batchID;
-          try {
-            await batchItem.save(tx);
-          } catch (e) {
-            logger.error(e);
-          }
+          await batchItem.save(tx);
           index += 1;
         } else {
           // create STAC catalog and next work item for the current batch
@@ -307,13 +299,9 @@ export async function handleBatching(
             serviceID,
             batchID: currentBatch.batchID + 1,
           });
-          try {
-            await newBatch.save(tx);
-            batchItem.batchID = newBatch.batchID;
-            await batchItem.save(tx);
-          } catch (e) {
-            logger.error(e);
-          }
+          await newBatch.save(tx);
+          batchItem.batchID = newBatch.batchID;
+          await batchItem.save(tx);
           currentBatch = newBatch;
           await incrementWorkItemCount(tx, jobID, stepIndex);
           index += 1;
@@ -328,11 +316,7 @@ export async function handleBatching(
         serviceID,
         batchID: 0,
       });
-      try {
-        await newBatch.save(tx);
-      } catch (e) {
-        logger.error(e);
-      }
+      await newBatch.save(tx);
       currentBatch = newBatch;
       nextSortIndex = 0;
     }
