@@ -212,7 +212,6 @@ async function createCatalogAndWorkItemForBatch(tx: Transaction, workflowStep: W
  * @param workflowStep - The step in the workflow that needs batching
  * @param stacItemUrls - An array of paths to STAC items
  * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
- * @param logger - The logger for the request
  */
 export async function handleBatching(
   tx: Transaction,
@@ -220,8 +219,7 @@ export async function handleBatching(
   stacItemUrls: string[],
   itemSizes: number[],
   workItemSortIndex: number,
-  allWorkItemsForStepComplete: boolean,
-  logger: Logger)
+  allWorkItemsForStepComplete: boolean)
   : Promise<void> {
   const { jobID, serviceID, stepIndex } = workflowStep;
   let { maxBatchInputs, maxBatchSizeInBytes } = workflowStep;

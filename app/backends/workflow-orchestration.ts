@@ -267,7 +267,6 @@ async function createAggregatingWorkItem(
  * @param results - an array of paths to STAC catalogs
  * @param outputItemSizes - an array of sizes (in bytes) of the output items for the current step
  * @param outputStacItemUrls - an array of urls to the output STAC items for the current step
- * @param logger - The logger for the request
  */
 async function createNextWorkItems(
   tx: Transaction,
@@ -275,7 +274,6 @@ async function createNextWorkItems(
   allWorkItemsForStepComplete: boolean,
   results: string[],
   outputItemSizes: number[],
-  logger: Logger,
 ): Promise<WorkflowStep> {
   const nextStep = await getWorkflowStepByJobIdStepIndex(
     tx, workItem.jobID, workItem.workflowStepIndex + 1,
@@ -294,8 +292,7 @@ async function createNextWorkItems(
             outputItemUrls,
             outputItemSizes,
             workItem.sortIndex,
-            allWorkItemsForStepComplete,
-            logger);
+            allWorkItemsForStepComplete);
         } else if (allWorkItemsForStepComplete) {
           await createAggregatingWorkItem(tx, workItem, nextStep);
         }
@@ -617,8 +614,7 @@ export async function handleWorkItemUpdate(
           workItem,
           allWorkItemsForStepComplete,
           results,
-          outputItemSizes,
-          logger);
+          outputItemSizes);
       }
 
       if (nextStep) {
