@@ -45,19 +45,14 @@ export async function withHighestBatchIDForJobService(
   jobID: string,
   serviceID: string,
 ): Promise<Batch> {
-  let result;
-  try {
-    result = await tx(Batch.table)
-      .select()
-      .where({
-        jobID,
-        serviceID,
-      })
-      .orderBy('batchID', 'desc')
-      .first();
-  } catch (e) {
-    console.log(e);
-  }
+  const result = await tx(Batch.table)
+    .select()
+    .where({
+      jobID,
+      serviceID,
+    })
+    .orderBy('batchID', 'desc')
+    .first();
 
   const batch = result && new Batch(result);
   return batch;

@@ -226,8 +226,6 @@ export async function handleBatching(
   maxBatchInputs = maxBatchInputs || env.maxBatchInputs;
   maxBatchSizeInBytes = maxBatchSizeInBytes || env.maxBatchSizeInBytes;
 
-  // TODO figure out locking needed
-
   let index = 0;
   let startIndex = 0;
   if (!workItemSortIndex) {
@@ -258,7 +256,9 @@ export async function handleBatching(
     await batchItem.save(tx);
   }
 
-  // assign the new batch items to batches
+  // assign batch items to batches
+  // we lock the rows that we select here from `batch_items` to prevent multiple threads from
+  // attempting to create new rows in the `batches` table for the same batch
   const batchItems = await getByJobServiceBatch(tx, jobID, serviceID, null, true);
   index = 0;
   let nextSortIndex: number;

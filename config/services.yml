@@ -174,6 +174,7 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
 
   - name: harmony/service-example
@@ -328,6 +329,7 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
@@ -614,8 +616,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         is_batched: true
-        max_batch_inputs: 3
-        max_batch_size_in_bytes: 2_000_000_000
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
@@ -656,6 +656,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
@@ -853,6 +854,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
 
   # UAT GDAL
@@ -961,6 +963,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
         conditional:
           format: ['application/x-zarr']
@@ -998,6 +1001,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['reproject']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
         conditional:
           format: ['application/x-zarr']

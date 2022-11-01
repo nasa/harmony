@@ -399,7 +399,7 @@ export default abstract class BaseService<ServiceParamType> {
               step.operations || [],
             ),
             hasAggregatedOutput: stepHasAggregatedOutput(step, this.operation),
-            isBatched: !!step.is_batched,
+            isBatched: !!step.is_batched && this.operation.shouldConcatenate,
             maxBatchInputs: step.max_batch_inputs,
             maxBatchSizeInBytes: step.max_batch_size_in_bytes,
           }));

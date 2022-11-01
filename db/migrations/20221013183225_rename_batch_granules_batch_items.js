@@ -17,11 +17,9 @@ exports.up = function(knex) {
   .then(() => {
     return knex.schema
     .alterTable('batches', (t) => {
-      t.timestamp('createdAt')
-      .notNullable();
-
-    t.timestamp('updatedAt')
-      .notNullable();
+      t.timestamp('createdAt').notNullable();
+      t.timestamp('updatedAt').notNullable();
+      t.unique(['jobID', 'serviceID', 'batchID']);
     });
   });
 };
@@ -46,6 +44,7 @@ exports.down = function(knex) {
     .alterTable('batches', (t) => {
       t.dropColumn('createdAt');
       t.dropColumn('updatedAt');
+      t.dropUnique(['jobID', 'serviceID', 'batchID'])
     })
   });
 };
