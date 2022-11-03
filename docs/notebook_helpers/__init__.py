@@ -135,22 +135,38 @@ def show(response, varList=[], color_index=None, immediate=True):
     # Show NetCDF4
     data = H5File(BytesIO(response.content), 'r')
 
-    #If user didn't provide any specific vars to plot, pull all of them into varList
+    # If user didn't provide any specific vars to plot check if the nc4 file has rgba vars to plot,
+    # otherwise pull all vars into varList
+    is_default_rgba = False
     if (len(varList) == 0):
-      varList = data.keys()
-      print(varList)
-
+      rgba_var_list = []
+      # don't look for an exact match (e.g. == 'red_var') 
+      # so that we can find subsetted rgba vars as well, which have longer var names
+      for rgba_key in ['red', 'green', 'blue', 'alpha']:
+        var_iterator = (data_key for data_key in data.keys() if rgba_key in data_key)
+        rgba_var_list.append(next(var_iterator, None))
+      if None in varList:
+        varList = data.keys()
+      else:
+        is_default_rgba = True
+        varList = rgba_var_list
+    
     #Plot the variables requested
     for var in varList:
       if var in data and len(data[var].shape) > 0:
-          if (len(data[var].shape) < 3):
+          if (len(data[var].shape) < 3) and not is_default_rgba:
             #Simple plot for 1D or 2D
             plt.plot(data[var])
             plt.show()
           else:
             #Setup for 3D display
             ds = data[var]
-            values = np.flip(ds[0,:], 0)
+            sliced_ds = None
+            if len(ds.shape) > 2:
+              sliced_ds = ds[0,:]
+            else:
+              sliced_ds = ds[:,:]
+            values = np.flip(sliced_ds, 0)
             where = (values != ds.attrs.get('_FillValue', None))
             scale = ds.attrs.get('scale_factor', [1])[0]
             offset = ds.attrs.get('add_offset', [0])[0]
