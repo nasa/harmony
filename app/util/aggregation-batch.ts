@@ -303,6 +303,24 @@ export async function handleBatching(
           currentBatchSize += batchItem.itemSize;
           currentBatchCount += 1;
           index += 1;
+          if (currentBatchCount === maxBatchInputs || currentBatchSize === maxBatchSizeInBytes) {
+            // create STAC catalog and next work item for the current batch
+            await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
+            // create a new batch
+            const newBatch = new Batch({
+              jobID,
+              serviceID,
+              batchID: currentBatch.batchID + 1,
+            });
+            await newBatch.save(tx);
+            batchItem.batchID = newBatch.batchID;
+            await batchItem.save(tx);
+            // make the new batch the current batch
+            currentBatch = newBatch;
+            currentBatchCount = 0;
+            currentBatchSize = 0;
+            await incrementWorkItemCount(tx, jobID, stepIndex);
+          }
         } else {
           if (currentBatchSize + batchItem.itemSize > maxBatchSizeInBytes) {
             logger.info(`Batch is complete because next item exceeded batch file size limits: ${currentBatchSize + batchItem.itemSize} is greater than ${maxBatchSizeInBytes}`);
@@ -323,6 +341,7 @@ export async function handleBatching(
           await newBatch.save(tx);
           batchItem.batchID = newBatch.batchID;
           await batchItem.save(tx);
+          // make the new batch the current batch
           currentBatch = newBatch;
           currentBatchCount = 1;
           currentBatchSize = batchItem.itemSize;
@@ -346,10 +365,14 @@ export async function handleBatching(
       nextSortIndex = 0;
     }
   }
-  // if this is the last work item for step just before aggregation, save the catalog
+
+  // if this is the last work item for the step just before aggregation, save the catalog
   // and create a new aggregating work item since this is the last batch, but the logic
   // above will not have marked it as completed because it is not 'full'
-  if (allWorkItemsForStepComplete) {
+  const isBatchFull = currentBatchSize === maxBatchSizeInBytes
+  || currentBatchCount === maxBatchInputs;
+
+  if (allWorkItemsForStepComplete && !isBatchFull) {
     await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
   }
 }

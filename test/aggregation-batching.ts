@@ -72,7 +72,7 @@ describe('when testing a batched aggregation service', function () {
             getStacLocation(workItem, 'catalog1.json'),
           ];
           workItem.outputItemSizes = [1, 2];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
           await updateWorkItem(this.backend, workItem);
         });
 
@@ -166,7 +166,7 @@ describe('when testing a batched aggregation service', function () {
             getStacLocation(workItem, 'catalog1.json'),
           ];
           workItem.outputItemSizes = [1, 2];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
           await updateWorkItem(this.backend, workItem);
         });
       });
@@ -192,7 +192,7 @@ describe('when testing a batched aggregation service', function () {
             getStacLocation(workItem, 'catalog1.json'),
           ];
           workItem.outputItemSizes = [1, 2];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
           await updateWorkItem(this.backend, workItem);
         });
       });
@@ -205,7 +205,7 @@ describe('when testing a batched aggregation service', function () {
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
           workItem.outputItemSizes = [1];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id);
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
           await updateWorkItem(this.backend, workItem);
           expect(workItem.serviceID).to.equal('ghcr.io/podaac/concise:sit');
         });
@@ -218,12 +218,13 @@ describe('when testing a batched aggregation service', function () {
         });
 
         describe('when checking the jobs listing', function () {
-          xit('lists the job as running and progress of 43 with 1 link to the first aggregated output', async function () {
+          it('lists the job as running and progress of 43 with 1 link to the first aggregated output', async function () {
             const jobs = await Job.forUser(db, 'joe');
             const job = jobs.data[0];
             expect(job.status).to.equal('running');
-            expect(job.progress).to.equal(43);
-            expect(job.links.length).to.equal(1);
+            expect(job.progress).to.equal(50);
+            const dataLinks = job.links.filter(link => link.rel === 'data');
+            expect(dataLinks.length).to.equal(1);
           });
         });
       });
@@ -241,7 +242,7 @@ describe('when testing a batched aggregation service', function () {
             getStacLocation(workItem, 'catalog1.json'),
           ];
           workItem.outputItemSizes = [1, 2];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2, 1);
           await updateWorkItem(this.backend, workItem);
         });
 
@@ -253,7 +254,7 @@ describe('when testing a batched aggregation service', function () {
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.results = [getStacLocation(workItem, 'catalog.json')];
             workItem.outputItemSizes = [1];
-            await fakeServiceStacOutput(workItem.jobID, workItem.id);
+            await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
             await updateWorkItem(this.backend, workItem);
             expect(workItem.serviceID).to.equal('ghcr.io/podaac/concise:sit');
           });
@@ -270,8 +271,9 @@ describe('when testing a batched aggregation service', function () {
               const jobs = await Job.forUser(db, 'joe');
               const job = jobs.data[0];
               expect(job.status).to.equal('running');
-              expect(job.progress).to.equal(86);
-              expect(job.links.length).to.equal(2);
+              expect(job.progress).to.equal(66);
+              const dataLinks = job.links.filter(link => link.rel === 'data');
+              expect(dataLinks.length).to.equal(2);
             });
           });
         });
@@ -289,7 +291,7 @@ describe('when testing a batched aggregation service', function () {
             getStacLocation(workItem, 'catalog.json'),
           ];
           workItem.outputItemSizes = [1];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id);
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
           await updateWorkItem(this.backend, workItem);
         });
 
@@ -308,7 +310,7 @@ describe('when testing a batched aggregation service', function () {
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.results = [getStacLocation(workItem, 'catalog.json')];
             workItem.outputItemSizes = [1];
-            await fakeServiceStacOutput(workItem.jobID, workItem.id);
+            await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
             await updateWorkItem(this.backend, workItem);
             expect(workItem.serviceID).to.equal('ghcr.io/podaac/concise:sit');
           });
@@ -326,7 +328,8 @@ describe('when testing a batched aggregation service', function () {
               const job = jobs.data[0];
               expect(job.status).to.equal('successful');
               expect(job.progress).to.equal(100);
-              expect(job.links.length).to.equal(5);
+              const dataLinks = job.links.filter(link => link.rel === 'data');
+              expect(dataLinks.length).to.equal(3);
             });
           });
         });
