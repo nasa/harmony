@@ -76,6 +76,7 @@ Promise<string[]> {
   let urls: string[] = [];
   for (const catalogUrl of results) {
     const stacItemUrls = await getCatalogItemUrls(catalogUrl);
+
     urls = urls.concat(stacItemUrls);
   }
   return urls;
@@ -229,14 +230,19 @@ export async function handleBatching(
   maxBatchInputs = maxBatchInputs || env.maxBatchInputs;
   maxBatchSizeInBytes = maxBatchSizeInBytes || env.maxBatchSizeInBytes;
 
+  // If there is only one result we want to use the parent work item sort index for the batch_item,
+  // otherwise we will assign sort indices starting with the highest existing index. This depends
+  // on the parent service executing sequentially in order to preserve consistency (as query-cmr
+  // does).
+  const commonSortIndex = stacItemUrls.length == 1 ? workItemSortIndex : false;
+
   let index = 0;
   let startIndex = 0;
-  if (!workItemSortIndex) {
+  if (!commonSortIndex) {
     startIndex = await getMaxSortIndexForJobServiceBatch(
       tx,
       jobID,
       serviceID,
-      null,
     );
     if (startIndex === null) {
       startIndex = 0;
@@ -247,7 +253,7 @@ export async function handleBatching(
 
   // create new batch items for the STAC items in the results
   for (const url of stacItemUrls) {
-    const sortIndex = workItemSortIndex || (startIndex + index);
+    const sortIndex = commonSortIndex || (startIndex + index);
     const batchItem = new BatchItem({
       jobID,
       serviceID,

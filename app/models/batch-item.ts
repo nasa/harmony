@@ -70,16 +70,18 @@ export async function getMaxSortIndexForJobServiceBatch(
   tx: Transaction,
   jobID: string,
   serviceID: string,
-  batchID: number): Promise<number> {
-  const result = await tx(BatchItem.table)
+  batchID?: number): Promise<number> {
+  let query = tx(BatchItem.table)
     .where({
       jobID,
       serviceID,
-      batchID,
-    })
-    .max('sortIndex', { as: 'max' })
-    .first();
+    });
+  if (!(batchID === undefined)) {
+    query = query.andWhere({ batchID });
+  }
+  query = query.max('sortIndex', { as: 'max' });
 
+  const result = await query.first();
   return result?.max;
 }
 

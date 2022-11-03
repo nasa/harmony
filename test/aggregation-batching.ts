@@ -72,30 +72,31 @@ describe('when testing a batched aggregation service', function () {
             getStacLocation(workItem, 'catalog1.json'),
           ];
           workItem.outputItemSizes = [1, 2];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id);
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
           await updateWorkItem(this.backend, workItem);
         });
 
         describe('when checking to see if a concise work item is queued', function () {
-          xit('finds a concise work item and can complete it', async function () {
+          it('finds a concise work item and can complete it', async function () {
             const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
             expect(res.status).to.equal(200);
             const { workItem } = JSON.parse(res.text);
             workItem.status = WorkItemStatus.SUCCESSFUL;
             workItem.results = [getStacLocation(workItem, 'catalog.json')];
             workItem.outputItemSizes = [1];
-            await fakeServiceStacOutput(workItem.jobID, workItem.id);
+            await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
             await updateWorkItem(this.backend, workItem);
             expect(workItem.serviceID).to.equal('ghcr.io/podaac/concise:sit');
           });
 
           describe('when checking the jobs listing', function () {
-            xit('marks the job as successful and progress of 100 with 1 link to the aggregated output', async function () {
+            it('marks the job as successful and progress of 100 with 1 link to the aggregated output', async function () {
               const jobs = await Job.forUser(db, 'joe');
               const job = jobs.data[0];
               expect(job.status).to.equal('successful');
               expect(job.progress).to.equal(100);
-              expect(job.links.length).to.equal(1);
+              const dataLinks = job.links.filter(link => link.rel === 'data');
+              expect(dataLinks.length).to.equal(1);
             });
           });
         });
@@ -165,7 +166,7 @@ describe('when testing a batched aggregation service', function () {
             getStacLocation(workItem, 'catalog1.json'),
           ];
           workItem.outputItemSizes = [1, 2];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id);
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
           await updateWorkItem(this.backend, workItem);
         });
       });
@@ -179,7 +180,7 @@ describe('when testing a batched aggregation service', function () {
       });
 
       describe('when checking for a query-cmr work item for the second time', function () {
-        xit('finds the second item and can complete it', async function () {
+        it('finds the second item and can complete it', async function () {
           const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
@@ -191,13 +192,13 @@ describe('when testing a batched aggregation service', function () {
             getStacLocation(workItem, 'catalog1.json'),
           ];
           workItem.outputItemSizes = [1, 2];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id);
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
           await updateWorkItem(this.backend, workItem);
         });
       });
 
       describe('when checking to see if a concise work item is queued now that four inputs have been generated from query-cmr', function () {
-        xit('finds the first concise work item and can complete it', async function () {
+        it('finds the first concise work item and can complete it', async function () {
           const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
           expect(res.status).to.equal(200);
           const { workItem } = JSON.parse(res.text);
@@ -228,7 +229,7 @@ describe('when testing a batched aggregation service', function () {
       });
 
       describe('when checking for a query-cmr work item for the third time', function () {
-        xit('finds the third item and can complete it', async function () {
+        it('finds the third item and can complete it', async function () {
           const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
@@ -240,12 +241,12 @@ describe('when testing a batched aggregation service', function () {
             getStacLocation(workItem, 'catalog1.json'),
           ];
           workItem.outputItemSizes = [1, 2];
-          await fakeServiceStacOutput(workItem.jobID, workItem.id);
+          await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
           await updateWorkItem(this.backend, workItem);
         });
 
         describe('when checking to see if a second concise work item is queued now that 6 inputs from query-cmr items have completed', function () {
-          xit('finds the second concise work item and can complete it', async function () {
+          it('finds the second concise work item and can complete it', async function () {
             const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
             expect(res.status).to.equal(200);
             const { workItem } = JSON.parse(res.text);
@@ -265,7 +266,7 @@ describe('when testing a batched aggregation service', function () {
           });
 
           describe('when checking the jobs listing', function () {
-            xit('marks the job as running and progress of 86 with 2 links to the first two aggregated outputs', async function () {
+            it('marks the job as running and progress of 86 with 2 links to the first two aggregated outputs', async function () {
               const jobs = await Job.forUser(db, 'joe');
               const job = jobs.data[0];
               expect(job.status).to.equal('running');
@@ -277,7 +278,7 @@ describe('when testing a batched aggregation service', function () {
       });
 
       describe('when checking for a query-cmr work item for the fourth time', function () {
-        xit('finds the fourth item and can complete it', async function () {
+        it('finds the fourth item and can complete it', async function () {
           const res = await getWorkForService(this.backend, 'harmonyservices/query-cmr:latest');
           expect(res.status).to.equal(200);
           const { workItem, maxCmrGranules } = JSON.parse(res.text);
@@ -285,7 +286,7 @@ describe('when testing a batched aggregation service', function () {
           expect(workItem.serviceID).to.equal('harmonyservices/query-cmr:latest');
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [
-            getStacLocation(workItem, 'catalog0.json'),
+            getStacLocation(workItem, 'catalog.json'),
           ];
           workItem.outputItemSizes = [1];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
@@ -300,7 +301,7 @@ describe('when testing a batched aggregation service', function () {
         });
 
         describe('when checking to see if a third concise work item is queued now that all 7 inputs from query-cmr items have completed', function () {
-          xit('finds the third concise work item and can complete it', async function () {
+          it('finds the third concise work item and can complete it', async function () {
             const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
             expect(res.status).to.equal(200);
             const { workItem } = JSON.parse(res.text);
@@ -320,12 +321,12 @@ describe('when testing a batched aggregation service', function () {
           });
 
           describe('when checking the jobs listing', function () {
-            xit('marks the job as successful and progress of 100 with 3 links to the three aggregated outputs', async function () {
+            it('marks the job as successful and progress of 100 with 3 links to the three aggregated outputs', async function () {
               const jobs = await Job.forUser(db, 'joe');
               const job = jobs.data[0];
               expect(job.status).to.equal('successful');
               expect(job.progress).to.equal(100);
-              expect(job.links.length).to.equal(3);
+              expect(job.links.length).to.equal(5);
             });
           });
         });

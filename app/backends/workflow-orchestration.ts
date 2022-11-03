@@ -266,7 +266,6 @@ async function createAggregatingWorkItem(
  * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
  * @param results - an array of paths to STAC catalogs
  * @param outputItemSizes - an array of sizes (in bytes) of the output items for the current step
- * @param outputStacItemUrls - an array of urls to the output STAC items for the current step
  */
 async function createNextWorkItems(
   tx: Transaction,
@@ -286,6 +285,7 @@ async function createNextWorkItems(
       // aggregate then create a work item for the next step
       if (nextStep.hasAggregatedOutput) {
         if (nextStep.isBatched) {
+          console.log('BATCHING ====================');
           const outputItemUrls = await outputStacItemUrls(results);
           await handleBatching(
             tx,
@@ -523,6 +523,7 @@ export async function handleWorkItemUpdate(
   const { workItemID, status, hits, results, scrollID, errorMessage } = update;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
+    console.log('UPDATING WORK ITEM TO SUCCESSFUL');
   }
   // get the jobID for the work item
   const jobID = await getJobIdForWorkItem(workItemID);
@@ -664,6 +665,7 @@ export async function handleWorkItemUpdate(
  * @returns Resolves when the request is complete
  */
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
+  console.log('UPDATING WORK ITEM =====================');
   const { id } = req.params;
   const { status, hits, results, scrollID, errorMessage, duration, operation, outputItemSizes } = req.body;
   const totalItemsSize = req.body.totalItemsSize ? parseFloat(req.body.totalItemsSize) : 0;

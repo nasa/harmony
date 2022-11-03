@@ -231,7 +231,7 @@ export async function decrementFutureWorkItemCount(tx: Transaction, jobID, stepI
 }
 
 /**
- * Increment the number of expected work items for the step. Used when during batching.
+ * Increment the number of expected work items for the step. Used during batching.
  *
  * @param tx - the database transaction
  * @param jobID - the job ID
