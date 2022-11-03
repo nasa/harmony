@@ -259,7 +259,6 @@ https://cmr.earthdata.nasa.gov:
     umm_s:
       - S2153799015-POCLOUD
     collections: []
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -313,7 +312,6 @@ https://cmr.earthdata.nasa.gov:
       - id: C1968979561-POCLOUD
       - id: C1968980609-POCLOUD
       - id: C1996881752-POCLOUD
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -603,7 +601,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1234208437-POCLOUD
       - id: C1234208438-POCLOUD
       - id: C1243729749-EEDTEST
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -640,7 +637,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1238658052-POCLOUD
       - id: C1243729749-EEDTEST
       - id: C1243747507-EEDTEST
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:

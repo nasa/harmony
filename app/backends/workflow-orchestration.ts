@@ -270,6 +270,7 @@ async function createAggregatingWorkItem(
  */
 async function createNextWorkItems(
   tx: Transaction,
+  logger: Logger,
   workItem: WorkItem,
   allWorkItemsForStepComplete: boolean,
   results: string[],
@@ -288,6 +289,7 @@ async function createNextWorkItems(
           const outputItemUrls = await outputStacItemUrls(results);
           await handleBatching(
             tx,
+            logger,
             nextStep,
             outputItemUrls,
             outputItemSizes,
@@ -611,6 +613,7 @@ export async function handleWorkItemUpdate(
       if (status != WorkItemStatus.FAILED) {
         nextStep = await createNextWorkItems(
           tx,
+          logger,
           workItem,
           allWorkItemsForStepComplete,
           results,

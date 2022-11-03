@@ -186,6 +186,9 @@ export async function getNextWorkItem(
 
           if (workItemData) {
             workItemData.operation = JSON.parse(operation);
+            // Make sure that the staging location is unique for every work item in a job
+            // in case a service for the same job produces an output with the same file name
+            workItemData.operation.stagingLocation += `${workItemData.id}/`;
             const startedAt = new Date();
             await tx(WorkItem.table)
               .update({

@@ -157,7 +157,10 @@ describe('Work Backends', function () {
       });
 
       it('returns the expected operation', function () {
-        expect(this.res.body.workItem.operation).to.eql(JSON.parse(validOperation));
+        const expectedOperation = JSON.parse(validOperation);
+        // The staging location will include a prefix with the work item id
+        expectedOperation.stagingLocation += '1/';
+        expect(this.res.body.workItem.operation).to.eql(expectedOperation);
       });
 
       it('returns the expected jobID', function () {

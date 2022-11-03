@@ -209,12 +209,15 @@ async function createCatalogAndWorkItemForBatch(tx: Transaction, workflowStep: W
  * Generate batches for results returned by a service to be used by a subsequent aggregating step.
  *
  * @param tx - The database transaction
+ * @param logger - a Logger instance
  * @param workflowStep - The step in the workflow that needs batching
  * @param stacItemUrls - An array of paths to STAC items
+ * @param itemSizes - An array of item sizes
  * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
  */
 export async function handleBatching(
   tx: Transaction,
+  logger: Logger,
   workflowStep: WorkflowStep,
   stacItemUrls: string[],
   itemSizes: number[],
@@ -288,6 +291,13 @@ export async function handleBatching(
           await batchItem.save(tx);
           index += 1;
         } else {
+          if (currentBatchSize + batchItem.itemSize > maxBatchSizeInBytes) {
+            logger.info(`Batch is complete because next item exceeded batch file size limits: ${currentBatchSize + batchItem.itemSize} is greater than ${maxBatchSizeInBytes}`);
+          } else if (currentBatchCount + 1 > maxBatchInputs) {
+            logger.info(`Batch is complete because we cannot add another input item - max items is ${maxBatchInputs} and currentBatchCount is ${currentBatchCount}`);
+          } else {
+            logger.error(`Batch construction is broken: current batch size: ${currentBatchSize}, item size: ${batchItem.itemSize}, max size: ${maxBatchSizeInBytes}, current batch count: ${currentBatchCount}, max inputs: ${maxBatchInputs}`);
+          }
           // create STAC catalog and next work item for the current batch
           await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
 
