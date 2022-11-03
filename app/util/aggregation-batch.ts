@@ -272,6 +272,14 @@ export async function handleBatching(
   index = 0;
   let nextSortIndex: number;
   let currentBatch = await withHighestBatchIDForJobService(tx, jobID, serviceID);
+  let currentBatchSize = 0;
+  let currentBatchCount = 0;
+  if (currentBatch) {
+    const { sum, count } = await getCurrentBatchSizeAndCount(tx, jobID, serviceID, currentBatch.batchID);
+    currentBatchSize = sum;
+    currentBatchCount = count;
+  }
+
   while (index < batchItems.length) {
     if (currentBatch) {
       const batchItem = batchItems[index];
@@ -287,14 +295,13 @@ export async function handleBatching(
       }
 
       if (batchItem.sortIndex === nextSortIndex) {
-        const { sum, count } = await getCurrentBatchSizeAndCount(tx, jobID, serviceID, currentBatch.batchID);
-        const currentBatchSize = sum;
-        const currentBatchCount = count;
         if (currentBatchSize + batchItem.itemSize <= maxBatchSizeInBytes
           && currentBatchCount + 1 <= maxBatchInputs) {
           // add the batch item to the batch
           batchItem.batchID = currentBatch.batchID;
           await batchItem.save(tx);
+          currentBatchSize += batchItem.itemSize;
+          currentBatchCount += 1;
           index += 1;
         } else {
           if (currentBatchSize + batchItem.itemSize > maxBatchSizeInBytes) {
@@ -317,6 +324,8 @@ export async function handleBatching(
           batchItem.batchID = newBatch.batchID;
           await batchItem.save(tx);
           currentBatch = newBatch;
+          currentBatchCount = 1;
+          currentBatchSize = batchItem.itemSize;
           await incrementWorkItemCount(tx, jobID, stepIndex);
           index += 1;
         }
@@ -332,6 +341,8 @@ export async function handleBatching(
       });
       await newBatch.save(tx);
       currentBatch = newBatch;
+      currentBatchCount = 0;
+      currentBatchSize = 0;
       nextSortIndex = 0;
     }
   }
