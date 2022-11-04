@@ -286,13 +286,15 @@ async function createNextWorkItems(
       if (nextStep.hasAggregatedOutput) {
         if (nextStep.isBatched) {
           const outputItemUrls = await outputStacItemUrls(results);
+          // TODO add other services that can produce more than one output and so should have their batching sortIndex propagated to child work items to provide consistent batching
+          const sortIndex = !QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID) && workItem.sortIndex;
           await handleBatching(
             tx,
             logger,
             nextStep,
             outputItemUrls,
             outputItemSizes,
-            workItem.sortIndex,
+            sortIndex,
             allWorkItemsForStepComplete);
         } else if (allWorkItemsForStepComplete) {
           await createAggregatingWorkItem(tx, workItem, nextStep);

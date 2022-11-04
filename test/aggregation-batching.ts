@@ -555,6 +555,20 @@ describe('when testing a batched aggregation service', function () {
           });
 
           describe('when checking for another concise work item', function () {
+            it('finds the final concise work item and can complete it', async function () {
+              const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
+              expect(res.status).to.equal(200);
+              const { workItem } = JSON.parse(res.text);
+              workItem.status = WorkItemStatus.SUCCESSFUL;
+              workItem.results = [getStacLocation(workItem, 'catalog.json')];
+              workItem.outputItemSizes = [1];
+              await fakeServiceStacOutput(workItem.jobID, workItem.id, 1, 1);
+              await updateWorkItem(this.backend, workItem);
+              expect(workItem.serviceID).to.equal('ghcr.io/podaac/concise:sit');
+            });
+          });
+
+          describe('when checking for another concise work item', function () {
             hookGetWorkForService('ghcr.io/podaac/concise:sit');
             it('does not find a work item because all items have been processed', async function () {
               expect(this.res.status).to.equal(404);
@@ -562,13 +576,13 @@ describe('when testing a batched aggregation service', function () {
           });
 
           describe('when checking the jobs listing', function () {
-            it('marks the job as successful and progress of 100 with 3 links to the three aggregated outputs', async function () {
+            it('marks the job as successful and progress of 100 with 4 links to the three aggregated outputs', async function () {
               const jobs = await Job.forUser(db, 'joe');
               const job = jobs.data[0];
               expect(job.status).to.equal('successful');
               expect(job.progress).to.equal(100);
               const dataLinks = job.links.filter(link => link.rel === 'data');
-              expect(dataLinks.length).to.equal(3);
+              expect(dataLinks.length).to.equal(4);
             });
           });
         });

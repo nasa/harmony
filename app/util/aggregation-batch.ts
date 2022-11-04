@@ -230,14 +230,8 @@ export async function handleBatching(
   maxBatchInputs = maxBatchInputs || env.maxBatchInputs;
   maxBatchSizeInBytes = maxBatchSizeInBytes || env.maxBatchSizeInBytes;
 
-  // If there is only one result we want to use the parent work item sort index for the batch_item,
-  // otherwise we will assign sort indices starting with the highest existing index. This depends
-  // on the parent service executing sequentially in order to preserve consistency (as query-cmr
-  // does).
-  const commonSortIndex = stacItemUrls.length == 1 ? workItemSortIndex : false;
-
   let startIndex = 0;
-  if (!commonSortIndex) {
+  if (!workItemSortIndex) {
     startIndex = await getMaxSortIndexForJobServiceBatch(
       tx,
       jobID,
@@ -253,7 +247,7 @@ export async function handleBatching(
   let index = 0;
   // create new batch items for the STAC items in the results
   for (const url of stacItemUrls) {
-    const sortIndex = commonSortIndex || (startIndex + index);
+    const sortIndex = workItemSortIndex || (startIndex + index);
     const batchItem = new BatchItem({
       jobID,
       serviceID,
@@ -308,6 +302,7 @@ export async function handleBatching(
           if (currentBatchCount === maxBatchInputs || currentBatchSize === maxBatchSizeInBytes) {
             // create STAC catalog and next work item for the current batch
             await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
+            currentBatch.isProcessed = true;
             // create a new batch
             const newBatch = new Batch({
               jobID,
@@ -330,12 +325,9 @@ export async function handleBatching(
           } else {
             logger.error(`Batch construction is broken: current batch size: ${currentBatchSize}, item size: ${batchItem.itemSize}, max size: ${maxBatchSizeInBytes}, current batch count: ${currentBatchCount}, max inputs: ${maxBatchInputs}`);
           }
-          // create STAC catalog and next work item for the current batch if we haven't already
-          const isBatchFull = currentBatchSize === maxBatchSizeInBytes
-          || currentBatchCount === maxBatchInputs;
-          if (!isBatchFull) {
-            await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
-          }
+          // create STAC catalog and next work item for the current batch
+          await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
+          currentBatch.isProcessed = true;
 
           // create a new batch
           const newBatch = new Batch({
@@ -372,12 +364,9 @@ export async function handleBatching(
   }
 
   // if this is the last work item for the step just before aggregation, save the catalog
-  // and create a new aggregating work item since this is the last batch, but the logic
-  // above will not have marked it as completed because it is not 'full'
-  const isBatchFull = currentBatchSize === maxBatchSizeInBytes
-  || currentBatchCount === maxBatchInputs;
-
-  if (allWorkItemsForStepComplete && !isBatchFull) {
+  // and create a new aggregating work item unless we already did above due to the batch
+  // being full
+  if (allWorkItemsForStepComplete && !currentBatch.isProcessed) {
     await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
   }
 }
