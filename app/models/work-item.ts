@@ -166,6 +166,7 @@ export async function getNextWorkItem(
         const workflowStepData = await tx(WorkflowStep.table)
           .select(['operation'])
           .where('jobID', '=', jobData.jobID)
+          .andWhere({ serviceID })
           .first();
         if (workflowStepData?.operation) {
           const { operation } = workflowStepData;
