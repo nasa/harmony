@@ -262,6 +262,7 @@ async function createAggregatingWorkItem(
  * Creates the next work items for the workflow based on the results of the current step and handle
  * any needed batching
  * @param tx - The database transaction
+ * @param logger - a Logger instance
  * @param workItem - The current work item
  * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
  * @param results - an array of paths to STAC catalogs

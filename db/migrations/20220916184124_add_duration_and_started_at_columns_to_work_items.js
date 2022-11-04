@@ -12,5 +12,5 @@ exports.down = function(knex) {
     t.dropIndex(['jobID', 'serviceID', 'status', 'duration']);
     t.dropColumn('startedAt');
     t.dropColumn('duration');
-  })
+  });
 };

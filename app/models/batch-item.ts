@@ -1,10 +1,5 @@
 import { Transaction } from './../util/db';
 import Record from './record';
-
-// The fields to save to the database
-// const serializedFields = ['id', 'jobID', 'serviceID', 'batchID', 'stacItemUrl', 'itemSize',
-//   'sortIndex', 'createdAt', 'updatedAt'];
-
 export interface BatchItemRecord {
 
   // The ID of the job that created this work item
@@ -54,8 +49,6 @@ export default class BatchItem extends Record implements BatchItemRecord {
   // The position of the batch item in the following aggregation
   sortIndex: number;
 }
-
-// const tableFields = serializedFields.map((field) => `${BatchItem.table}.${field}`);
 
 /**
  * Get the maximum sort index for the given job, service, and batch.

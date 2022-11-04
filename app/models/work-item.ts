@@ -521,7 +521,7 @@ export async function maxSortIndexForJobService(
     })
     .max('sortIndex', { as: 'max' })
     .first();
-  return result?.max || -1;
+  return result?.max == null ? -1 : result.max;
 }
 
 /**

@@ -164,7 +164,7 @@ step. Whether or not a service should have its input batched, the maximum number
 in each batch, and total combined file sizes to allow can be set in the aggregating service's step
 definition using the `is_batched`, `max_batch_inputs`, and `max_batch_size_in_bytes` flags.
 
-Note that there is a system imposed upper limit on `max_batch_size_in_bytes`. 
+Note that there is a system imposed upper limit on `max_batch_size_in_bytes`.
 
 The following `steps` entry is an example one might use for an aggregating service:
 
@@ -174,7 +174,7 @@ steps:
       - image: !Env ${EXAMPLE_AGGREGATING_SERVICE_IMAGE}
         is_batched: true
         max_batch_inputs: 100
-        max_batch_size_in_bytes: 2_000_000_000
+        max_batch_size_in_bytes: 2000000000
         operations: ['concatenate']
 ```
 

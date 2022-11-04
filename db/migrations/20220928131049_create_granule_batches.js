@@ -23,7 +23,7 @@ exports.up = async function(knex) {
     t.index(['jobID', 'serviceID', 'batchID']);
 
     t.index(['jobID', 'batchID']);
-    
+
   })
   .createTable('batch_granules', (t) => {
     t.increments('id')
@@ -37,9 +37,8 @@ exports.up = async function(knex) {
 
     t.string('serviceID', 255)
     .notNullable();
-    
-    t.integer('batchID');
 
+    t.integer('batchID');
 
     t.string('granuleUrl', 4096);
 
