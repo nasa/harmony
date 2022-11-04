@@ -102,7 +102,7 @@ def show_shape(filename, basemap=True):
   if basemap:
     ctx.add_basemap(plot)
 
-def show(response, varList=[], color_index=None, immediate=True):
+def show(response, varList=[], color_index=None, immediate=True, flip=True):
   """Shows a variety of responses possible from Harmony for its example data
 
   Handles NetCDF files with red_var, green_var, blue_var, and alpha_var bands, compositing output
@@ -116,6 +116,7 @@ def show(response, varList=[], color_index=None, immediate=True):
   Keyword Arguments:
       color_index {number} -- Set for monochromatic images to put the output in a color band (0=red, 1=green, 2=blue) (default: {None})
       immediate {bool} -- True if the data should be shown immediately in the notebook (default: {True})
+      flip {bool} -- Whether to flip the numpy arrays for stacked plots
 
   """
 
@@ -166,7 +167,9 @@ def show(response, varList=[], color_index=None, immediate=True):
               sliced_ds = ds[0,:]
             else:
               sliced_ds = ds[:,:]
-            values = np.flip(sliced_ds, 0)
+            values = sliced_ds
+            if flip:
+              values = np.flip(sliced_ds, 0)
             where = (values != ds.attrs.get('_FillValue', None))
             scale = ds.attrs.get('scale_factor', [1])[0]
             offset = ds.attrs.get('add_offset', [0])[0]
