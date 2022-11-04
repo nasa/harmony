@@ -236,7 +236,6 @@ export async function handleBatching(
   // does).
   const commonSortIndex = stacItemUrls.length == 1 ? workItemSortIndex : false;
 
-  let index = 0;
   let startIndex = 0;
   if (!commonSortIndex) {
     startIndex = await getMaxSortIndexForJobServiceBatch(
@@ -251,6 +250,7 @@ export async function handleBatching(
     }
   }
 
+  let index = 0;
   // create new batch items for the STAC items in the results
   for (const url of stacItemUrls) {
     const sortIndex = commonSortIndex || (startIndex + index);
@@ -289,7 +289,8 @@ export async function handleBatching(
         serviceID,
         currentBatch.batchID);
       if (maxSortIndex === null) {
-        nextSortIndex = 0;
+        // the batch has no items in it, so this item should be the first one
+        nextSortIndex = batchItem.sortIndex;
       } else {
         nextSortIndex = maxSortIndex + 1;
       }
@@ -303,6 +304,7 @@ export async function handleBatching(
           currentBatchSize += batchItem.itemSize;
           currentBatchCount += 1;
           index += 1;
+          // check to see if the batch is full
           if (currentBatchCount === maxBatchInputs || currentBatchSize === maxBatchSizeInBytes) {
             // create STAC catalog and next work item for the current batch
             await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
@@ -313,8 +315,7 @@ export async function handleBatching(
               batchID: currentBatch.batchID + 1,
             });
             await newBatch.save(tx);
-            batchItem.batchID = newBatch.batchID;
-            await batchItem.save(tx);
+
             // make the new batch the current batch
             currentBatch = newBatch;
             currentBatchCount = 0;
@@ -329,8 +330,12 @@ export async function handleBatching(
           } else {
             logger.error(`Batch construction is broken: current batch size: ${currentBatchSize}, item size: ${batchItem.itemSize}, max size: ${maxBatchSizeInBytes}, current batch count: ${currentBatchCount}, max inputs: ${maxBatchInputs}`);
           }
-          // create STAC catalog and next work item for the current batch
-          await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
+          // create STAC catalog and next work item for the current batch if we haven't already
+          const isBatchFull = currentBatchSize === maxBatchSizeInBytes
+          || currentBatchCount === maxBatchInputs;
+          if (!isBatchFull) {
+            await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
+          }
 
           // create a new batch
           const newBatch = new Batch({
