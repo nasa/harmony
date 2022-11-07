@@ -31,12 +31,12 @@ describe('Versions endpoint', function () {
           'sds/variable-subsetter',
           'sds/maskfill',
           'sds/trajectory-subsetter',
-          'harmony/netcdf-to-zarr',
           'nasa/harmony-gdal-adapter',
-          'harmony/podaac-l2-subsetter-netcdf-to-zarr',
-          'harmony/swot-repr-netcdf-to-zarr',
           'sds/HOSS-geographic',
           'sds/HOSS-projection-gridded',
+          'harmony/netcdf-to-zarr',
+          'harmony/podaac-l2-subsetter-netcdf-to-zarr',
+          'harmony/swot-repr-netcdf-to-zarr',
         ]);
       });
 
