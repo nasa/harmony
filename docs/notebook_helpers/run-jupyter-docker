@@ -1,13 +1,8 @@
 #!/bin/bash
 # run jupyter notebook for the notebooks docker image after creating .netrc
 
-if [[ -z "$NB_EDL_USERNAME" ]]; then
-    echo "Must provide NB_EDL_USERNAME in .env"
-    exit 1
-fi
-
-if [[ -z "$NB_EDL_PASSWORD" ]]; then
-    echo "Must provide NB_EDL_PASSWORD in .env"
+if [[ -z "$NB_EDL_USERNAME" ]] || [[ -z "$NB_EDL_PASSWORD" ]]; then
+    echo "Must provide NB_EDL_USERNAME and NB_EDL_PASSWORD in .env"
     exit 1
 fi
 
