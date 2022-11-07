@@ -1,0 +1,16 @@
+#!/bin/bash
+# run jupyter notebook for the notebooks docker image after creating .netrc
+
+if [[ -z "$NB_EDL_USERNAME" ]]; then
+    echo "Must provide NB_EDL_USERNAME in .env"
+    exit 1
+fi
+
+if [[ -z "$NB_EDL_PASSWORD" ]]; then
+    echo "Must provide NB_EDL_PASSWORD in .env"
+    exit 1
+fi
+
+echo "machine uat.urs.earthdata.nasa.gov login ${NB_EDL_USERNAME} password ${NB_EDL_PASSWORD}" >> ${HOME}/.netrc
+
+jupyter notebook --port 8888 --ip 0.0.0.0 --no-browser --allow-root

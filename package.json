@@ -15,8 +15,8 @@
     "watch-debug": "nodemon --inspect=5858 -e ts,tsx --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
     "postinstall": "if test \"$NODE_ENV\" != \"production\" ; then lerna exec -- npm install; fi",
     "build": "docker build -t harmonyservices/harmony:${VERSION:-latest} .",
-    "build-notebooks-image": "docker build -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
-    "run-notebooks-image": "docker run -p 8888:8888 harmonyservices/notebooks:${VERSION:-latest}",
+    "build-notebooks-image": "docker build --platform linux/amd64 -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
+    "run-notebooks-image": "source .env && docker run -p 8888:8888 --env NB_EDL_USERNAME=${NB_EDL_USERNAME} --env NB_EDL_PASSWORD=${NB_EDL_PASSWORD} harmonyservices/notebooks:${VERSION:-latest}",
     "publish": "docker push harmonyservices/harmony:${VERSION:-latest}"
   },
   "keywords": [
