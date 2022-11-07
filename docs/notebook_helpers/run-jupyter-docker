@@ -12,5 +12,6 @@ if [[ -z "$NB_EDL_PASSWORD" ]]; then
 fi
 
 echo "machine uat.urs.earthdata.nasa.gov login ${NB_EDL_USERNAME} password ${NB_EDL_PASSWORD}" >> ${HOME}/.netrc
+chmod og-rw ${HOME}/.netrc
 
 jupyter notebook --port 8888 --ip 0.0.0.0 --no-browser --allow-root
