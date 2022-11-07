@@ -12,6 +12,7 @@
     "lint": "eslint --ext .ts .",
     "coverage": "nyc mocha --timeout 5000",
     "build": "tsc && docker build --tag harmonyservices/service-runner:${VERSION:-latest} .",
+    "build-m1": "tsc && docker build --platform linux/amd64 --tag harmonyservices/service-runner:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/service-runner:${VERSION:-latest}"
   },
   "engines": {

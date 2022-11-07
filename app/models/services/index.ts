@@ -64,17 +64,20 @@ function loadServiceConfigs(): void {
  * @param config - The service configuration to validate
  */
 function validateServiceConfig(config: ServiceConfig<unknown>): void {
-  const maxBatchInputs = config.max_batch_inputs;
-  if (maxBatchInputs !== undefined) {
-    if (!_.isInteger(maxBatchInputs)) {
-      throw new TypeError(`Invalid max_batch_inputs ${maxBatchInputs}. Max batch inputs must be an integer greater than or equal to 1.`);
-    }
-    if (maxBatchInputs <= 0) {
-      throw new TypeError(`Invalid max_batch_inputs ${maxBatchInputs}. Max batch inputs must be greater than or equal to 1.`);
-    }
-    if (maxBatchInputs > env.maxGranuleLimit) {
-      logger.warn(`Service ${config.name} attempting to allow more than the max allowed granules in a batch. `
+  const steps = config.steps || [];
+  for (const step of steps) {
+    const maxBatchInputs = step.max_batch_inputs;
+    if (maxBatchInputs !== undefined) {
+      if (!_.isInteger(maxBatchInputs)) {
+        throw new TypeError(`Invalid max_batch_inputs ${maxBatchInputs}. Max batch inputs must be an integer greater than or equal to 1.`);
+      }
+      if (maxBatchInputs <= 0) {
+        throw new TypeError(`Invalid max_batch_inputs ${maxBatchInputs}. Max batch inputs must be greater than or equal to 1.`);
+      }
+      if (maxBatchInputs > env.maxGranuleLimit) {
+        logger.warn(`Service ${config.name} attempting to allow more than the max allowed granules in a batch. `
         + `Configured to use ${maxBatchInputs}, but will be limited to ${env.maxGranuleLimit}`);
+      }
     }
   }
 }

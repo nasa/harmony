@@ -9,6 +9,17 @@ process.env.EXAMPLE_SERVICES = 'true';
  * Add before / after hooks to start up and shut down Harmony's servers
  * on ephemeral ports
  *
+ * Important for tests: any tests that make a request and follow a redirect to the job status
+ * page expect that the job can be shared with any user. If a job cannot be shared (collection
+ * is not public or has a EULA), you must set skipEarthdataLogin: false, supply a username
+ * when making the request, and supply the same username when following the redirect to the
+ * job status.
+ *
+ * Example:
+ * `hookServersStartStop({ skipEarthdataLogin: false });`
+ * `hookRangesetRequest('1.0.0', collection, 'all', { query, username: 'joe' });`
+ * `hookRedirect('joe');`
+ *
  * @param opts - Options to pass to the server start method
  */
 export default function hookServersStartStop(opts = { skipEarthdataLogin: true }): void {

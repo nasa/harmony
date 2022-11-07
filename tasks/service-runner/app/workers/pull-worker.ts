@@ -113,8 +113,8 @@ async function _doWork(
   if (serviceResponse.batchCatalogs) {
     newWorkItem.status = WorkItemStatus.SUCCESSFUL;
     newWorkItem.results = serviceResponse.batchCatalogs;
-    newWorkItem.totalGranulesSize = serviceResponse.totalGranulesSize;
-    newWorkItem.outputGranuleSizes = serviceResponse.outputGranuleSizes;
+    newWorkItem.totalItemsSize = serviceResponse.totalItemsSize;
+    newWorkItem.outputItemSizes = serviceResponse.outputItemSizes;
   } else {
     logger.error(`Service failed with error: ${serviceResponse.error}`);
     newWorkItem.status = WorkItemStatus.FAILED;

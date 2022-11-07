@@ -1,15 +1,15 @@
+import db, { Transaction, batchSize } from './../util/db';
 import _, { ceil, range, sum } from 'lodash';
 import { NextFunction, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Logger } from 'winston';
-import db, { batchSize, Transaction } from '../util/db';
 import { completeJob } from '../util/job';
 import env from '../util/env';
 import { readCatalogItems, StacItemLink } from '../util/stac';
 import HarmonyRequest from '../models/harmony-request';
 import { Job, JobStatus } from '../models/job';
 import JobLink, { getJobDataLinkCount } from '../models/job-link';
-import WorkItem, { updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getJobIdForWorkItem, getNextWorkItem } from '../models/work-item';
+import WorkItem, { updateWorkItemStatus, getWorkItemById, workItemCountForStep, getWorkItemsByJobIdAndStepIndex, getJobIdForWorkItem, getNextWorkItem, maxSortIndexForJobService } from '../models/work-item';
 import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../models/workflow-steps';
 import { objectStoreForProtocol } from '../util/object-store';
 import { resolve } from '../util/url';
@@ -17,9 +17,7 @@ import { ServiceError } from '../util/errors';
 import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
 import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
-import axios from 'axios';
-import { createDecrypter, createEncrypter } from '../util/crypto';
-import DataOperation from '../models/data-operation';
+import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -261,14 +259,22 @@ async function createAggregatingWorkItem(
 }
 
 /**
- * Creates the next work items for the workflow based on the results of the current step
+ * Creates the next work items for the workflow based on the results of the current step and handle
+ * any needed batching
  * @param tx - The database transaction
- * @param currentWorkItem - The current work item
- * @param nextStep - the next step in the workflow
+ * @param logger - a Logger instance
+ * @param workItem - The current work item
+ * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
  * @param results - an array of paths to STAC catalogs
+ * @param outputItemSizes - an array of sizes (in bytes) of the output items for the current step
  */
 async function createNextWorkItems(
-  tx: Transaction, workItem: WorkItem, allWorkItemsForStepComplete: boolean, results: string[],
+  tx: Transaction,
+  logger: Logger,
+  workItem: WorkItem,
+  allWorkItemsForStepComplete: boolean,
+  results: string[],
+  outputItemSizes: number[],
 ): Promise<WorkflowStep> {
   const nextStep = await getWorkflowStepByJobIdStepIndex(
     tx, workItem.jobID, workItem.workflowStepIndex + 1,
@@ -279,20 +285,44 @@ async function createNextWorkItems(
       // if we have completed all the work items for this step or if the next step does not
       // aggregate then create a work item for the next step
       if (nextStep.hasAggregatedOutput) {
-        if (allWorkItemsForStepComplete) {
+        if (nextStep.isBatched) {
+          const outputItemUrls = await outputStacItemUrls(results);
+          // TODO add other services that can produce more than one output and so should have their batching sortIndex propagated to child work items to provide consistent batching
+          const sortIndex = !QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID) && workItem.sortIndex;
+          await handleBatching(
+            tx,
+            logger,
+            nextStep,
+            outputItemUrls,
+            outputItemSizes,
+            sortIndex,
+            allWorkItemsForStepComplete);
+        } else if (allWorkItemsForStepComplete) {
           await createAggregatingWorkItem(tx, workItem, nextStep);
         }
       } else {
         // Create a new work item for each result using the next step
-        const newItems = results.map(result =>
-          new WorkItem({
+
+        // use the sort index from the previous step's work item unless we have more than one
+        // result, in which case we start from the previous highest sort index for this step
+        // NOTE: This is only valid if the work-items for this multi-output step are worked
+        // sequentially, as with query-cmr. If they are worked in parallel then we need a
+        // different approach.
+        let { sortIndex } = workItem;
+        if (results.length > 1) {
+          sortIndex = await maxSortIndexForJobService(tx, nextStep.jobID, nextStep.serviceID);
+        }
+        const newItems = results.map(result => {
+          sortIndex += 1;
+          return new WorkItem({
             jobID: workItem.jobID,
             serviceID: nextStep.serviceID,
             status: WorkItemStatus.READY,
             stacCatalogLocation: result,
             workflowStepIndex: nextStep.stepIndex,
-          }),
-        );
+            sortIndex,
+          });
+        });
         for (const batch of _.chunk(newItems, batchSize)) {
           await WorkItem.insertBatch(tx, batch);
         }
@@ -320,6 +350,7 @@ async function maybeQueueQueryCmrWorkItem(
         status: WorkItemStatus.READY,
         stacCatalogLocation: currentWorkItem.stacCatalogLocation,
         workflowStepIndex: currentWorkItem.workflowStepIndex,
+        sortIndex: currentWorkItem.sortIndex + 1,
       });
 
       await nextQueryCmrItem.save(tx);
@@ -481,56 +512,6 @@ async function updateWorkItemCounts(
 }
 
 /**
- * Get the size in bytes of the object at the given url
- *
- * @param url - the url of the object
- * @param token - the access token for the user's request
- * @param logger - a Logger instance
- * @returns the size of the object in bytes
- */
-export async function sizeOfObject(url: string, token: string, logger: Logger): Promise<number> {
-  logger.debug(`Reading size of data at ${url}`);
-  const parsed = new URL(url);
-  const protocol = parsed.protocol.toLowerCase().replace(/:$/, '');
-  let result;
-  try {
-    let res;
-    switch (protocol) {
-      case 's3':
-        const s3 = objectStoreForProtocol('s3');
-        res = await s3.headObject(url);
-        result = res.ContentLength;
-        break;
-
-      default:
-
-        const headers = token ? { authorization: `Bearer ${token}` } : {};
-        res = await axios.head(url, { headers: headers });
-        result = parseInt(res.headers['content-length']);
-        break;
-    }
-  } catch (e) {
-    logger.error(e);
-    result = 0;
-  }
-
-  logger.debug(`ContentLength: ${result}`);
-  return result;
-}
-
-/**
- * Read and parse a STAC catalog and return the links to the data items
- *
- * @param s3Url - the s3 url of the catalog
- */
-export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<string[]> {
-  logger.debug(`Reading STAC catalog ${s3Url}`);
-  const items = await readCatalogItems(s3Url);
-
-  return items.map((item) => item.assets.data.href);
-}
-
-/**
  * Update job status/progress in response to a service provided work item update
  *
  * @param update - information about the work item update
@@ -548,38 +529,10 @@ export async function handleWorkItemUpdate(
   // get the jobID for the work item
   const jobID = await getJobIdForWorkItem(workItemID);
 
-  // Get the sizes of all the granules returned for the WorkItem.
+  // Get the sizes of all the data items/granules returned for the WorkItem and STAC item links
+  // when batching.
   // This needs to be done outside the transaction as it can be slow if there are many granules.
-  let outputGranuleSizes = [];
-  if (update.outputGranuleSizes?.every(s => s > 0)) {
-    // if all the granules sizes were provided by the service then just use them, otherwise
-    // get the ones that were not provided
-
-    // eslint-disable-next-line prefer-destructuring
-    outputGranuleSizes = update.outputGranuleSizes;
-  } else if (update.results) {
-    const encrypter = createEncrypter(env.sharedSecretKey);
-    const decrypter = createDecrypter(env.sharedSecretKey);
-    const op = new DataOperation(operation, encrypter, decrypter);
-    const token = op.unencryptedAccessToken;
-    let index = 0;
-    for (const catalogUrl of update.results) {
-      const links = await exports.readCatalogLinks(catalogUrl, logger);
-      // eslint-disable-next-line @typescript-eslint/no-loop-func
-      const sizes = await Promise.all(links.map(async (link) => {
-        const serviceProvidedSize = update.outputGranuleSizes?.[index];
-        index += 1;
-        // use the value provided by the service if available
-        if (serviceProvidedSize && serviceProvidedSize > 0) {
-          return serviceProvidedSize;
-        }
-
-        // try to get the size using a HEAD request
-        return exports.sizeOfObject(link, token, logger);
-      }));
-      outputGranuleSizes = outputGranuleSizes.concat(sizes);
-    }
-  }
+  const outputItemSizes = await resultItemSizes(update, operation, logger);
 
   await db.transaction(async (tx) => {
     const job = await Job.byJobID(tx, jobID, false, true);
@@ -631,10 +584,10 @@ export async function handleWorkItemUpdate(
 
     logger.debug(`Work item duration (ms): ${duration}`);
 
-    let { totalGranulesSize } = update;
+    let { totalItemsSize } = update;
 
-    if (!totalGranulesSize && outputGranuleSizes?.length > 0) {
-      totalGranulesSize = sum(outputGranuleSizes) / 1024 / 1024;
+    if (!totalItemsSize && outputItemSizes?.length > 0) {
+      totalItemsSize = sum(outputItemSizes) / 1024 / 1024;
     }
 
     await updateWorkItemStatus(
@@ -642,8 +595,8 @@ export async function handleWorkItemUpdate(
       workItemID,
       status as WorkItemStatus,
       duration,
-      totalGranulesSize,
-      outputGranuleSizes);
+      totalItemsSize,
+      outputItemSizes);
 
     const completedWorkItemCount = await workItemCountForStep(
       tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
@@ -660,7 +613,13 @@ export async function handleWorkItemUpdate(
     if (continueProcessing) {
       let nextStep = null;
       if (status != WorkItemStatus.FAILED) {
-        nextStep = await createNextWorkItems(tx, workItem, allWorkItemsForStepComplete, results);
+        nextStep = await createNextWorkItems(
+          tx,
+          logger,
+          workItem,
+          allWorkItemsForStepComplete,
+          results,
+          outputItemSizes);
       }
 
       if (nextStep) {
@@ -708,8 +667,8 @@ export async function handleWorkItemUpdate(
  */
 export async function updateWorkItem(req: HarmonyRequest, res: Response): Promise<void> {
   const { id } = req.params;
-  const { status, hits, results, scrollID, errorMessage, duration, operation, outputGranuleSizes } = req.body;
-  const totalGranulesSize = req.body.totalGranulesSize ? parseFloat(req.body.totalGranulesSize) : 0;
+  const { status, hits, results, scrollID, errorMessage, duration, operation, outputItemSizes } = req.body;
+  const totalItemsSize = req.body.totalItemsSize ? parseFloat(req.body.totalItemsSize) : 0;
 
   const update =
   {
@@ -719,8 +678,8 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     results,
     scrollID,
     errorMessage,
-    totalGranulesSize,
-    outputGranuleSizes,
+    totalItemsSize,
+    outputItemSizes,
     duration,
   };
 

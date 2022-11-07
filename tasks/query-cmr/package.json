@@ -13,6 +13,7 @@
     "coverage": "nyc mocha",
     "docker-example": "docker run --rm -it --env SHARED_SECRET_KEY=foo --env CMR_ENDPOINT='https://cmr.uat.earthdata.nasa.gov' -v $(pwd)/example:/app/example -v $(pwd)/temp:/app/temp harmonyservices/query-cmr:${VERSION:-latest}",
     "build": "tsc && docker build -t harmonyservices/query-cmr:${VERSION:-latest} .",
+    "build-m1": "tsc && docker build --platform linux/amd64 -t harmonyservices/query-cmr:${VERSION:-latest} .",
     "publish": "docker push harmonyservices/query-cmr:${VERSION:-latest}"
   },
   "keywords": [

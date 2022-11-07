@@ -84,7 +84,7 @@ export default class WorkFailer implements Worker {
             this.logger.debug(message);
             return handleWorkItemUpdate(
               { workItemID: item.id, status: WorkItemStatus.FAILED,
-                scrollID: item.scrollID, hits: null, results: [], totalGranulesSize: item.totalGranulesSize,
+                scrollID: item.scrollID, hits: null, results: [], totalItemsSize: item.totalItemsSize,
                 errorMessage: message,
               },
               null,

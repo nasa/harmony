@@ -174,6 +174,7 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
 
   - name: harmony/service-example
@@ -258,7 +259,6 @@ https://cmr.earthdata.nasa.gov:
     umm_s:
       - S2153799015-POCLOUD
     collections: []
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -270,6 +270,7 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
@@ -309,7 +310,6 @@ https://cmr.earthdata.nasa.gov:
       - id: C1968979561-POCLOUD
       - id: C1968980609-POCLOUD
       - id: C1996881752-POCLOUD
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -325,6 +325,7 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
@@ -598,7 +599,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1234208437-POCLOUD
       - id: C1234208438-POCLOUD
       - id: C1243729749-EEDTEST
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -610,6 +610,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
@@ -634,7 +635,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1238658052-POCLOUD
       - id: C1243729749-EEDTEST
       - id: C1243747507-EEDTEST
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -650,6 +650,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
@@ -847,6 +848,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
 
   # UAT GDAL
@@ -955,6 +957,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
         conditional:
           format: ['application/x-zarr']
@@ -992,6 +995,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['reproject']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
         conditional:
           format: ['application/x-zarr']

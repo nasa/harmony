@@ -16,7 +16,8 @@ const QUERY_CMR_STEP_INDEX = 1;
 // The fields to save to the database
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
-  'stacCatalogLocation', 'totalGranulesSize', 'workflowStepIndex', 'duration', 'startedAt',
+  'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration', 'startedAt',
+  'sortIndex',
 ];
 
 /**
@@ -55,10 +56,10 @@ export default class WorkItem extends Record implements WorkItemRecord {
   results?: string[];
 
   // The sum of the sizes of the granules associated with this work item
-  totalGranulesSize?: number;
+  totalItemsSize?: number;
 
-  // The size (in bytes) of each granule produced by this work item (used for batching)
-  outputGranuleSizes?: number[];
+  // The size (in bytes) of each STAC item produced by this work item (used for batching)
+  outputItemSizes?: number[];
 
   // The number of times this work-item has been retried
   retryCount: number;
@@ -68,6 +69,9 @@ export default class WorkItem extends Record implements WorkItemRecord {
 
   // How long in milliseconds the work item took to process
   duration: number;
+
+  // The position of the work item output in any following aggregation
+  sortIndex: number;
 
   /**
    * Saves the work item to the database using the given transaction.
@@ -96,7 +100,7 @@ export default class WorkItem extends Record implements WorkItemRecord {
    * resolved relative to the STAC outputs directory.
    * e.g. s3://artifacts/abc/123/outputs/ with a targetUrl of ./catalog0.json or catalog0.json would resolve to
    * s3://artifacts/abc/123/outputs/catalog0.json
-   * @param targetUrl - URL to resolve against the base outptuts directory
+   * @param targetUrl - URL to resolve against the base outputs directory
    * @param isAggregate - include the word aggregate in the URL
    * @returns - the path to the STAC outputs directory (e.g. s3://artifacts/abc/123/outputs/) or the full path to the target URL
    */
@@ -183,6 +187,9 @@ export async function getNextWorkItem(
 
           if (workItemData) {
             workItemData.operation = JSON.parse(operation);
+            // Make sure that the staging location is unique for every work item in a job
+            // in case a service for the same job produces an output with the same file name
+            workItemData.operation.stagingLocation += `${workItemData.id}/`;
             const startedAt = new Date();
             await tx(WorkItem.table)
               .update({
@@ -215,22 +222,22 @@ export async function getNextWorkItem(
  * @param id - the id of the WorkItem
  * @param status - the status to set for the WorkItem
  * @param duration - how long the work item took to process
- * @param totalGranulesSize - the combined sizes of all the input granules for this work item
- * @param outputGranuleSizes - the separate size of each granule in the output for this work item
+ * @param totalItemsSize - the combined sizes of all the input granules for this work item
+ * @param outputItemSizes - the separate size of each granule in the output for this work item
  */
 export async function updateWorkItemStatus(
   tx: Transaction,
   id: number,
   status: WorkItemStatus,
   duration: number,
-  totalGranulesSize: number,
-  outputGranuleSizes: number[],
+  totalItemsSize: number,
+  outputItemSizes: number[],
 ): Promise<void> {
   logger.debug(`updatedWorkItemStatus: Updating status for work item ${id} to ${status}`);
-  const outputGranuleSizesJson = JSON.stringify(outputGranuleSizes);
+  const outputItemSizesJson = JSON.stringify(outputItemSizes);
   try {
     await tx(WorkItem.table)
-      .update({ status, duration, totalGranulesSize, outputGranuleSizesJson, updatedAt: new Date() })
+      .update({ status, duration, totalItemsSize, outputItemSizesJson: outputItemSizesJson, updatedAt: new Date() })
       .where({ id });
     logger.debug(`Status for work item ${id} set to ${status}`);
   } catch (e) {
@@ -300,8 +307,8 @@ export async function getWorkItemById(
   const workItemData = await query;
 
   const workItem = workItemData && new WorkItem(workItemData);
-  if (workItemData?.outputGranuleSizesJson) {
-    workItem.outputGranuleSizes = JSON.parse(workItemData.outputGranuleSizesJson);
+  if (workItemData?.outputItemSizesJson) {
+    workItem.outputItemSizes = JSON.parse(workItemData.outputItemSizesJson);
   }
   return workItem;
 }
@@ -492,6 +499,32 @@ export async function deleteWorkItemsById(
 }
 
 /**
+ * Compute the max sort index (used for batching) for the given job/service. This depends
+ * on the previous service executing one at a time, such as query-cmr, otherwise table locking
+ * or some other solution must be employed to ensure that simultaneous calls to this function
+ * don't return the same sort index.
+ *
+ * @param tx - the transaction to use for querying
+ * @param jobID - the ID of the job that created the work item
+ * @param serviceID - the serviceID of the step within the workflow
+ * @returns a promise containing the max stepIndex value or -1 if there are no matching rows
+ */
+export async function maxSortIndexForJobService(
+  tx: Transaction,
+  jobID: string,
+  serviceID: string,
+): Promise<number> {
+  const result = await tx(WorkItem.table)
+    .where({
+      jobID,
+      serviceID,
+    })
+    .max('sortIndex', { as: 'max' })
+    .first();
+  return result?.max == null ? -1 : result.max;
+}
+
+/**
  *  Returns the number of existing work items for a specific workflow step
  * @param tx - the transaction to use for querying
  * @param jobID - the ID of the job that created this work item
@@ -633,26 +666,26 @@ export async function getTotalWorkItemSizesForJobID(
 
   const originalSizeResults = await tx(WorkItem.table)
     .select()
-    .sum('totalGranulesSize')
+    .sum('totalItemsSize')
     .where({ jobID, workflowStepIndex: firstIndex });
 
   let originalSize;
   if (db.client.config.client === 'pg') {
     originalSize = Number(originalSizeResults[0].sum);
   } else {
-    originalSize = Number(originalSizeResults[0]['sum(`totalGranulesSize`)']);
+    originalSize = Number(originalSizeResults[0]['sum(`totalItemsSize`)']);
   }
 
   const outputSizeResults = await tx(WorkItem.table)
     .select()
-    .sum('totalGranulesSize')
+    .sum('totalItemsSize')
     .where({ jobID, workflowStepIndex: lastIndex });
 
   let outputSize;
   if (db.client.config.client === 'pg') {
     outputSize = Number(outputSizeResults[0].sum);
   } else {
-    outputSize = Number(outputSizeResults[0]['sum(`totalGranulesSize`)']);
+    outputSize = Number(outputSizeResults[0]['sum(`totalItemsSize`)']);
   }
 
 

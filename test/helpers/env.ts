@@ -18,6 +18,10 @@ process.env.PREVIEW_THRESHOLD = '500';
 // prevent tests from using a different page size and creating many fixtures
 process.env.CMR_MAX_PAGE_SIZE = '100';
 
+// use reasonable aggregation batch sizes for tests
+process.env.MAX_BATCH_INPUTS = '3';
+process.env.MAX_BATCH_SIZE_IN_BYTES = '10000';
+
 // eslint-disable-next-line import/first
 import env from '../../app/util/env'; // Must set required env before loading the env file
 

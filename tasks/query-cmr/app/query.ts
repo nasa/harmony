@@ -42,8 +42,8 @@ async function querySearchAfter(
   const { hits } = cmrResponse;
   const newSearchAfter = cmrResponse.searchAfter;
   logger.info(`CMR Hits: ${hits}, Number of granules returned in this page: ${cmrResponse.granules.length}`);
-  let totalGranulesSize = 0;
-  const outputGranuleSizes = [];
+  let totalItemsSize = 0;
+  const outputItemSizes = [];
   const catalogs = cmrResponse.granules.map((granule) => {
     const granuleSize = granule.granule_size ? parseFloat(granule.granule_size) : 0;
     let granuleSizeInBytes = granuleSize * 1024 * 1024;
@@ -51,8 +51,8 @@ async function querySearchAfter(
     if (granuleSizeInBytes != granuleSizeInBytes || granuleSizeInBytes < 0) {
       granuleSizeInBytes = 0;
     }
-    outputGranuleSizes.push(granuleSizeInBytes);
-    totalGranulesSize += granuleSize;
+    outputItemSizes.push(granuleSizeInBytes);
+    totalItemsSize += granuleSize;
     const result = new CmrStacCatalog({ description: `CMR collection ${granule.collection_concept_id}, granule ${granule.id}` });
     result.links.push({
       rel: 'harmony_source',
@@ -65,7 +65,7 @@ async function querySearchAfter(
 
   const newScrollId = `${sessionKey}:${newSearchAfter}`;
 
-  return [totalGranulesSize, outputGranuleSizes, catalogs, newScrollId, hits];
+  return [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits];
 
 }
 
@@ -87,8 +87,8 @@ export async function queryGranules(
   maxCmrGranules: number,
 ): Promise<[number, number[], StacCatalog[], string, number]> {
   const { unencryptedAccessToken } = operation;
-  const [totalGranulesSize, outputGranuleSizes, catalogs, newScrollId, hits] =
+  const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] =
     await querySearchAfter(unencryptedAccessToken, scrollId, './granule', maxCmrGranules);
 
-  return [totalGranulesSize, outputGranuleSizes, catalogs, newScrollId, hits];
+  return [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits];
 }

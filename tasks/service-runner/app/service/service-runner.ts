@@ -17,8 +17,8 @@ const exec = new k8s.Exec(kc);
 
 export interface ServiceResponse {
   batchCatalogs?: string[];
-  totalGranulesSize?: number;
-  outputGranuleSizes?: number[];
+  totalItemsSize?: number;
+  outputItemSizes?: number[];
   error?: string;
   hits?: number;
   scrollID?: string;
@@ -49,7 +49,7 @@ export class LogStream extends stream.Writable {
 
   /**
    * Write a chunk to the log stream.
-   * @param chunk - the chunk recieved by the stream (likely a Buffer)
+   * @param chunk - the chunk received by the stream (likely a Buffer)
    */
   _write(chunk, enc: BufferEncoding, next: (error?: Error | null) => void): void {
     const logStr: string = chunk.toString('utf8');
@@ -159,10 +159,10 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
 
       if (resp.status < 300) {
         const catalogs = await _getStacCatalogs(catalogDir);
-        const { totalGranulesSize, outputGranuleSizes } = resp.data;
+        const { totalItemsSize, outputItemSizes } = resp.data;
         const newScrollID = resp.data.scrollID;
 
-        resolve({ batchCatalogs: catalogs, totalGranulesSize, outputGranuleSizes, scrollID: newScrollID });
+        resolve({ batchCatalogs: catalogs, totalItemsSize, outputItemSizes, scrollID: newScrollID });
       } else {
         resolve({ error: resp.statusText });
       }

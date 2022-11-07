@@ -72,7 +72,7 @@ describe('Work item failure retries', function () {
 
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog0.json')];
-          workItem.outputGranuleSizes = [1];
+          workItem.outputItemSizes = [1];
 
           await updateWorkItem(this.backend, workItem);
 
@@ -132,7 +132,7 @@ describe('Work item failure retries', function () {
 
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog0.json')];
-          workItem.outputGranuleSizes = [1];
+          workItem.outputItemSizes = [1];
 
           await updateWorkItem(this.backend, workItem);
 

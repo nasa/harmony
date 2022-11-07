@@ -11,7 +11,7 @@ import { getStacLocation, WorkItemStatus } from '../app/models/work-item-interfa
 import { truncateAll } from './helpers/db';
 import env from '../app/util/env';
 import { jobStatus } from './helpers/jobs';
-import * as workflowOrchestration from '../app/backends/workflow-orchestration';
+import * as aggregationBatch from '../app/util/aggregation-batch';
 
 const reprojectAndZarrQuery = {
   maxResults: 1,
@@ -30,7 +30,7 @@ describe('when setting ignoreErrors=true', function () {
 
   let sizeOfObjectStub;
   before(async function () {
-    sizeOfObjectStub = stub(workflowOrchestration, 'sizeOfObject')
+    sizeOfObjectStub = stub(aggregationBatch, 'sizeOfObject')
       .callsFake(async (_) => 7000000000);
     await truncateAll();
   });
@@ -52,7 +52,7 @@ describe('when setting ignoreErrors=true', function () {
       workItem.results = [
         getStacLocation(workItem, 'catalog0.json'),
       ];
-      workItem.outputGranuleSizes = [1];
+      workItem.outputItemSizes = [1];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
@@ -71,7 +71,7 @@ describe('when setting ignoreErrors=true', function () {
         firstSwotItem.results = [
           getStacLocation(firstSwotItem, 'catalog.json'),
         ];
-        firstSwotItem.outputGranuleSizes = [1];
+        firstSwotItem.outputItemSizes = [1];
         await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
         await updateWorkItem(this.backend, firstSwotItem);
 
@@ -116,7 +116,7 @@ describe('when setting ignoreErrors=true', function () {
       workItem.results = [
         getStacLocation(workItem, 'catalog0.json'),
       ];
-      workItem.outputGranuleSizes = [1];
+      workItem.outputItemSizes = [1];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 1);
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
@@ -184,7 +184,7 @@ describe('when setting ignoreErrors=true', function () {
         getStacLocation(workItem, 'catalog0.json'),
         getStacLocation(workItem, 'catalog1.json'),
       ];
-      workItem.outputGranuleSizes = [1, 1];
+      workItem.outputItemSizes = [1, 1];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 2);
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
@@ -279,7 +279,7 @@ describe('when setting ignoreErrors=true', function () {
         getStacLocation(workItem, 'catalog1.json'),
         getStacLocation(workItem, 'catalog2.json'),
       ];
-      workItem.outputGranuleSizes = [1, 1, 1];
+      workItem.outputItemSizes = [1, 1, 1];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 3);
       await updateWorkItem(this.backend, workItem);
       const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
@@ -384,7 +384,7 @@ describe('when setting ignoreErrors=true', function () {
         getStacLocation(workItem, 'catalog2.json'),
         getStacLocation(workItem, 'catalog3.json'),
       ];
-      workItem.outputGranuleSizes = [1, 2, 3, 4];
+      workItem.outputItemSizes = [1, 2, 3, 4];
       await fakeServiceStacOutput(workItem.jobID, workItem.id, 4);
       await updateWorkItem(this.backend, workItem);
 
@@ -570,7 +570,7 @@ describe('when setting ignoreErrors=true', function () {
           getStacLocation(workItem, 'catalog1.json'),
           getStacLocation(workItem, 'catalog1.json'),
         ];
-        workItem.outputGranuleSizes = [1, 2, 3];
+        workItem.outputItemSizes = [1, 2, 3];
         await updateWorkItem(this.backend, workItem);
       });
 

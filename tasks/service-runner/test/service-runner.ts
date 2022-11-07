@@ -98,9 +98,9 @@ describe('Service Runner', function () {
 
   describe('uploadLogs', function () {
     describe('with text logs', function () {
-      const itemRecord0: WorkItemRecord = { id: 0, jobID: '123', serviceID: '',
+      const itemRecord0: WorkItemRecord = { id: 0, jobID: '123', serviceID: '', sortIndex: 0,
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
-      const itemRecord1: WorkItemRecord = { id: 1, jobID: '123', serviceID: '',
+      const itemRecord1: WorkItemRecord = { id: 1, jobID: '123', serviceID: '', sortIndex: 0,
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
       const s3 = objectStoreForProtocol('s3');
       before(async function () {
@@ -108,7 +108,7 @@ describe('Service Runner', function () {
         await uploadLogs(itemRecord0, ['the old logs']);
         itemRecord0.retryCount = 1; // simulate a retry
         await uploadLogs(itemRecord0, ['the new logs']);
-        
+
         await uploadLogs(itemRecord1, ['the only logs']);
       });
       describe('when there is a logs file already associated with the WorkItem', async function () {
@@ -135,9 +135,9 @@ describe('Service Runner', function () {
       });
     });
     describe('with JSON logs', function () {
-      const itemRecord0: WorkItemRecord = { id: 2, jobID: '123', serviceID: '',
+      const itemRecord0: WorkItemRecord = { id: 2, jobID: '123', serviceID: '', sortIndex: 0,
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
-      const itemRecord1: WorkItemRecord = { id: 3, jobID: '123', serviceID: '',
+      const itemRecord1: WorkItemRecord = { id: 3, jobID: '123', serviceID: '', sortIndex: 0,
         workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
       const s3 = objectStoreForProtocol('s3');
       before(async function () {
@@ -145,7 +145,7 @@ describe('Service Runner', function () {
         await uploadLogs(itemRecord0, [{ message: 'the old logs' }]);
         itemRecord0.retryCount = 1; // simulate a retry
         await uploadLogs(itemRecord0, [{ message: 'the new logs' }]);
-        
+
         await uploadLogs(itemRecord1, [{ message: 'the only logs' }]);
       });
       describe('when there is a logs file already associated with the WorkItem', async function () {
@@ -240,16 +240,16 @@ describe('Service Runner', function () {
   });
 
   describe('LogStream', function () {
-    
+
     const message = 'mv \'/tmp/tmpkwxpifmr/tmp-result.tif\' \'/tmp/tmpkwxpifmr/result.tif\'';
     const user = 'bo';
     const timestamp =  '2022-10-06T17:04:21.090726Z';
     const requestId = 'cdea7cb8-4c77-4342-8f00-6285e32c9123';
     const level = 'INFO';
-    
+
     const textLog = `${timestamp} [${level}] [harmony-service.cmd:199] ${message}`;
     const jsonLog = `{ "level":"${level}", "message":"${message}", "user":"${user}", "requestId":"${requestId}", "timestamp":"${timestamp}"}`;
-    
+
     describe('_handleLogString with a JSON logger', function () {
 
       before(function () {
@@ -258,20 +258,20 @@ describe('Service Runner', function () {
         this.logStream = new serviceRunner.LogStream(testLogger);
         this.logStream._handleLogString(textLog);
         this.logStream._handleLogString(jsonLog);
-        
+
         const testLogs = getTestLogs();
         this.testLogsArr = testLogs.split('\n');
         this.textLogOutput = JSON.parse(this.testLogsArr[0]);
         this.jsonLogOutput = JSON.parse(this.testLogsArr[1]);
       });
-  
+
       after(function () {
         for (const transport of this.testLogger.transports) {
           transport.close;
         }
         this.testLogger.close();
       });
-  
+
       it('saves each log to an array in the original format, as a string or JSON', function () {
         expect(this.logStream.logStrArr.length == 2);
         expect(this.logStream.logStrArr[0] === JSON.parse(jsonLog));
@@ -290,7 +290,7 @@ describe('Service Runner', function () {
       it('sets custom attributes appropriately for each log', function () {
         expect(this.jsonLogOutput.user).to.equal(user);
         expect(this.jsonLogOutput.requestId).to.equal(requestId);
-        
+
         expect(this.textLogOutput.worker).to.equal(true);
         expect(this.jsonLogOutput.worker).to.equal(true);
       });
@@ -307,23 +307,23 @@ describe('Service Runner', function () {
     });
 
     describe('_handleLogString with a text logger', function () {
-  
+
       before(function () {
         const { getTestLogs, testLogger } = createLoggerForTest(false);
         this.testLogger = testLogger;
         this.logStream = new serviceRunner.LogStream(testLogger);
         this.logStream._handleLogString(textLog);
-        this.logStream._handleLogString(jsonLog);        
+        this.logStream._handleLogString(jsonLog);
         this.testLogs = getTestLogs();
       });
-  
+
       after(function () {
         for (const transport of this.testLogger.transports) {
           transport.close;
         }
         this.testLogger.close();
       });
-  
+
       it('saves each log to an array in the original format, as a string or JSON', function () {
         expect(this.logStream.logStrArr.length == 2);
         expect(this.logStream.logStrArr[0] === JSON.parse(jsonLog));
@@ -342,7 +342,7 @@ describe('Service Runner', function () {
     });
 
     describe('aggregateLogStr with a JSON logger', function () {
-  
+
       before(function () {
         const { testLogger } = createLoggerForTest(true);
         this.testLogger = testLogger;
@@ -350,14 +350,14 @@ describe('Service Runner', function () {
         this.logStream._handleLogString(nonErrorLog);
         this.logStream._handleLogString(errorLogRecord);
       });
-  
+
       after(function () {
         for (const transport of this.testLogger.transports) {
           transport.close;
         }
         this.testLogger.close();
       });
-  
+
       it('can provide an aggregate log string to _getErrorMessage', async function () {
         const errorMessage = await _getErrorMessage(this.logStream.aggregateLogStr, workItemWithoutErrorJson);
         expect(errorMessage).equal('bad stuff');

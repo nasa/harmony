@@ -31,6 +31,9 @@ export interface ServiceCapabilities {
 export interface ServiceStep {
   image?: string;
   operations?: string[];
+  max_batch_inputs?: number;
+  max_batch_size_in_bytes?: number;
+  is_batched?: boolean;
   conditional?: {
     exists?: string[];
     format?: string[];
@@ -45,8 +48,6 @@ export interface ServiceCollection {
 
 export interface ServiceConfig<ServiceParamType> {
   name?: string;
-  max_batch_inputs?: number;
-  is_batched?: boolean;
   data_operation_version?: string;
   granule_limit?: number;
   has_granule_limit?: boolean;
@@ -398,6 +399,9 @@ export default abstract class BaseService<ServiceParamType> {
               step.operations || [],
             ),
             hasAggregatedOutput: stepHasAggregatedOutput(step, this.operation),
+            isBatched: !!step.is_batched && this.operation.shouldConcatenate,
+            maxBatchInputs: step.max_batch_inputs,
+            maxBatchSizeInBytes: step.max_batch_size_in_bytes,
           }));
         }
       }));

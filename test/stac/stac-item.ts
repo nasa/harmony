@@ -49,8 +49,8 @@ const completedJob = buildJob({
     rel: 'data',
     bbox: [-10, -10, 10, 10],
     temporal: {
-      start: new Date('2021-01-01T00:00:00.000Z'),
-      end: new Date('2021-01-01T01:00:00.000Z'),
+      start: new Date('2020-01-01T00:00:00.000Z'),
+      end: new Date('2020-01-01T01:00:00.000Z'),
     },
   }],
   request: 'http://example.com/harmony?job=completedJob',
@@ -240,9 +240,9 @@ describe('STAC item route', function () {
           properties: {
             // `created` and `expires` properties added later
             license: 'various',
-            start_datetime: '2021-01-01T00:00:00.000Z',
-            end_datetime: '2021-01-01T01:00:00.000Z',
-            datetime: '2021-01-01T00:00:00.000Z',
+            start_datetime: '2020-01-01T00:00:00.000Z',
+            end_datetime: '2020-01-01T01:00:00.000Z',
+            datetime: '2020-01-01T00:00:00.000Z',
           },
         };
 
