@@ -11,6 +11,10 @@ else
 		# sent to backend services
 		SHARED_SECRET_KEY=$(hexdump -n 16 -e '"%08x"' /dev/random)
 
+		# Earthdata Login UAT credentials, used to create a .netrc for notebooks Dockerfile
+		NB_EDL_USERNAME=
+		NB_EDL_PASSWORD=
+
 EOF
     cat <<-PROMPT_EDL
 		Running Harmony requires creating an Earthdata Login (EDL) application. If you need instructions for this or do not understand what this means, please contact the Harmony team for help. Once you have your EDL application created, please enter the credentials as prompted.
@@ -31,7 +35,7 @@ PROMPT_EDL
 		OAUTH_PASSWORD=$OAUTH_PASSWORD
 EOF
     
-    echo "\n# Env vars used for turbo mode" >> .env
+    echo -e "\n# Env vars used for turbo mode" >> .env
     
     # prompt for LOCALLY_DEPLOYED_SERVICES
     echo "Enter services to deploy (comma separated list):"
@@ -39,13 +43,13 @@ EOF
     
     # Add locally LOCALLY_DEPLOYED_SERVICES if it is defined (not zero length)
     if [ ! -z "${LOCALLY_DEPLOYED_SERVICES}" ]; then
-        echo "LOCALLY_DEPLOYED_SERVICES=${LOCALLY_DEPLOYED_SERVICES}\n" >> .env
+        echo -e "LOCALLY_DEPLOYED_SERVICES=${LOCALLY_DEPLOYED_SERVICES}\n" >> .env
     fi
     
     
     OS=`uname`
     if [ "Linux" = "$OS" ]; then
-        echo "\n# Detected running on Linux so setting Linux specific env" >> .env
+        echo -e "\n# Detected running on Linux so setting Linux specific env" >> .env
         echo "CALLBACK_URL_ROOT=http://localhost:3001" >> .env
         echo "BACKEND_HOST=localhost" >> .env
         echo "KUBE_CONTEXT=minikube" >> .env
