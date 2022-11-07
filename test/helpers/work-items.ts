@@ -194,8 +194,13 @@ export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForSer
  *
  * @param jobID - the job ID to which the STAC items belong
  * @param workItemID - the ID of the work item that generated the STAC items
+ *  @param dataLinkCount - the number of data links to put in the STAC item
  */
-export async function fakeServiceStacOutput(jobID: string, workItemID: number, granuleCount = 1): Promise<void> {
+export async function fakeServiceStacOutput(
+  jobID: string,
+  workItemID: number,
+  granuleCount = 1,
+  dataLinkCount = 2): Promise<void> {
   const s3 = objectStoreForProtocol('s3');
   const workItem = {
     id: workItemID, jobID,
@@ -235,6 +240,15 @@ export async function fakeServiceStacOutput(jobID: string, workItemID: number, g
           'data',
         ],
       },
+    },
+    properties: {
+      start_datetime: '2007-12-31T00:52:14.361Z',
+      end_datetime: '2007-12-31T01:48:26.552Z',
+    },
+  };
+
+  if (dataLinkCount === 2) {
+    exampleItem.assets = { ...exampleItem.assets, ...{
       'data1': {
         'href': 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/tiff/001_00_7f00ff_global.tif',
         'title': '001_00_7f00ff_global.tif',
@@ -243,12 +257,8 @@ export async function fakeServiceStacOutput(jobID: string, workItemID: number, g
           'data',
         ],
       },
-    },
-    properties: {
-      start_datetime: '2007-12-31T00:52:14.361Z',
-      end_datetime: '2007-12-31T01:48:26.552Z',
-    },
-  };
+    } };
+  }
 
   if (granuleCount > 1) {
     const catalogOfCatalogs = [];

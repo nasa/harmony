@@ -4,7 +4,7 @@ exports.up = function(knex) {
     t.float('duration').defaultTo(-1.0);
     t.timestamp('startedAt');
     t.index(['jobID', 'serviceID', 'status', 'duration']);
-  });  
+  });
 };
 
 exports.down = function(knex) {

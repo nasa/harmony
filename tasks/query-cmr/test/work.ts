@@ -10,14 +10,14 @@ describe('doWork', function () {
   describe('main', function () {
 
     describe('when the output directory exists', function () {
-      const totalGranulesSize = 1.0;
+      const totalItemsSize = 1.0;
       const workRequest: QueryCmrRequest = {
         outputDir: 's3://stac/abc/123/outputs/',
 
       };
       hookDoWork(
         workRequest,
-        [totalGranulesSize, [1], [new CmrStacCatalog({ description: 'done' })]],
+        [totalItemsSize, [1], [new CmrStacCatalog({ description: 'done' })]],
       );
 
       it('outputs the result data to catalog.json in the directory', async function () {

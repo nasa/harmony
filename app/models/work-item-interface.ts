@@ -51,10 +51,10 @@ export interface WorkItemRecord {
   results?: string[];
 
   // The sum of the sizes of the granules associated with this work item
-  totalGranulesSize?: number;
+  totalItemsSize?: number;
 
-  // The size (in bytes) of each granule produced by this work item (used for batching)
-  outputGranuleSizes?: number[];
+  // The size (in bytes) of each data item produced by this work item (used for batching)
+  outputItemSizes?: number[];
 
   // The number of times this work-item has been retried
   retryCount: number;
@@ -70,6 +70,9 @@ export interface WorkItemRecord {
 
   // When the item was created
   createdAt: Date;
+
+  // The position of the work item output in any following aggregation
+  sortIndex: number;
 }
 
 export interface WorkItemQuery {
@@ -96,7 +99,7 @@ export interface WorkItemQuery {
  * e.g. s3://artifacts/abc/123/outputs/ with a targetUrl of ./catalog0.json or catalog0.json would resolve to
  * s3://artifacts/abc/123/outputs/catalog0.json
  * @param item - the returned URL will provide the path to the outputs for this work item
- * @param targetUrl - URL to resolve against the base outptuts directory 
+ * @param targetUrl - URL to resolve against the base outputs directory 
  * @param isAggregate - include the word aggregate in the URL
  * @returns - the path to the STAC outputs directory (e.g. s3://artifacts/abc/123/outputs/) or the full path to the target URL
  */

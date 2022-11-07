@@ -44,15 +44,26 @@ export function linksWithStacData(links: Array<JobLink>): Array<JobLink> {
 }
 
 /**
+ * Reads the STAC catalog and returns the urls of its STAC items
+ *
+ * @param catalogUrl - The catalog s3 url
+ * @returns
+ */
+export async function getCatalogItemUrls(catalogUrl: string): Promise<string[]> {
+  const s3 = objectStoreForProtocol('s3');
+  const catalog = await s3.getObjectJson(catalogUrl);
+  return catalog.links
+    .filter((l) => l.rel === 'item')
+    .map((l) => new URL(l.href, catalogUrl).href);
+}
+
+/**
  * Reads the content of the catalog and returns the catalog items
  * @param catalogUrl - the catalog s3 url
  */
 export async function readCatalogItems(catalogUrl: string): Promise<StacItem[]> {
   const s3 = objectStoreForProtocol('s3');
-  const catalog = await s3.getObjectJson(catalogUrl);
-  const childLinks = catalog.links
-    .filter((l) => l.rel === 'item')
-    .map((l) => l.href);
+  const childLinks = await getCatalogItemUrls(catalogUrl);
 
   const items: StacItem[] = [];
   for (const link of childLinks) {

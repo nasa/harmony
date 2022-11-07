@@ -61,121 +61,6 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
         operations: ['concatenate', 'variableSubset']
 
-  - name: harmony/netcdf-to-zarr
-    data_operation_version: '0.17.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/harmony/netcdf-to-zarr
-    umm_s:
-      - S2009180097-POCLOUD
-    collections:
-      - id: C1996881146-POCLOUD
-      - id: C2006849995-POCLOUD
-      - id: C2006849866-POCLOUD
-      - id: C2006849650-POCLOUD
-      - id: C2006849794-POCLOUD
-      - id: C2006849345-POCLOUD
-      - id: C2006849488-POCLOUD
-      - id: C2006849571-POCLOUD
-      - id: C2006849257-POCLOUD
-      - id: C2006849087-POCLOUD
-      - id: C2006849706-POCLOUD
-      - id: C1940468263-POCLOUD
-      - id: C1938032626-POCLOUD
-      - id: C1940473819-POCLOUD
-      - id: C1940473819-POCLOUD
-      - id: C1990404801-POCLOUD
-      - id: C1990404814-POCLOUD
-      - id: C1991543823-POCLOUD
-      - id: C1991543805-POCLOUD
-      - id: C1990404807-POCLOUD
-      - id: C1990404805-POCLOUD
-      - id: C1991543824-POCLOUD
-      - id: C1991543745-POCLOUD
-      - id: C1990404793-POCLOUD
-      - id: C1990404798-POCLOUD
-      - id: C1991543727-POCLOUD
-      - id: C1991543735-POCLOUD
-      - id: C1990404818-POCLOUD
-      - id: C1990404792-POCLOUD
-      - id: C1991543820-POCLOUD
-      - id: C1991543803-POCLOUD
-      - id: C1991543729-POCLOUD
-      - id: C1991543819-POCLOUD
-      - id: C1991543742-POCLOUD
-      - id: C1990404788-POCLOUD
-      - id: C1990404812-POCLOUD
-      - id: C1991543712-POCLOUD
-      - id: C1991543811-POCLOUD
-      - id: C1990404810-POCLOUD
-      - id: C1990404819-POCLOUD
-      - id: C1991543734-POCLOUD
-      - id: C1991543741-POCLOUD
-      - id: C1990404797-POCLOUD
-      - id: C1990404791-POCLOUD
-      - id: C1991543737-POCLOUD
-      - id: C1991543806-POCLOUD
-      - id: C1991543804-POCLOUD
-      - id: C1991543726-POCLOUD
-      - id: C1991543702-POCLOUD
-      - id: C1991543814-POCLOUD
-      - id: C1991543752-POCLOUD
-      - id: C1991543812-POCLOUD
-      - id: C1991543740-POCLOUD
-      - id: C1991543699-POCLOUD
-      - id: C1991543739-POCLOUD
-      - id: C1991543818-POCLOUD
-      - id: C1991543733-POCLOUD
-      - id: C1990404811-POCLOUD
-      - id: C1990404823-POCLOUD
-      - id: C1991543808-POCLOUD
-      - id: C1991543732-POCLOUD
-      - id: C1991543766-POCLOUD
-      - id: C1990404815-POCLOUD
-      - id: C1990404820-POCLOUD
-      - id: C1991543763-POCLOUD
-      - id: C1991543764-POCLOUD
-      - id: C1991543821-POCLOUD
-      - id: C1991543731-POCLOUD
-      - id: C1991543724-POCLOUD
-      - id: C1991543807-POCLOUD
-      - id: C1991543730-POCLOUD
-      - id: C1990404817-POCLOUD
-      - id: C1990404790-POCLOUD
-      - id: C1991543765-POCLOUD
-      - id: C1991543700-POCLOUD
-      - id: C1991543768-POCLOUD
-      - id: C1990404813-POCLOUD
-      - id: C1990404799-POCLOUD
-      - id: C1991543744-POCLOUD
-      - id: C1991543813-POCLOUD
-      - id: C1991543817-POCLOUD
-      - id: C1990404808-POCLOUD
-      - id: C1990404796-POCLOUD
-      - id: C1991543704-POCLOUD
-      - id: C1991543760-POCLOUD
-      - id: C1990404821-POCLOUD
-      - id: C1990404795-POCLOUD
-      - id: C1991543736-POCLOUD
-      - id: C1991543728-POCLOUD
-      - id: C1991543757-POCLOUD
-    maximum_sync_granules: 0
-    capabilities:
-      concatenation: true
-      concatenate_by_default: false
-      subsetting:
-        variable: false
-      output_formats:
-        - application/x-zarr
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        operations: ['reformat', 'concatenate']
-
   - name: harmony/service-example
     data_operation_version: '0.17.0'
     type:
@@ -258,7 +143,6 @@ https://cmr.earthdata.nasa.gov:
     umm_s:
       - S2153799015-POCLOUD
     collections: []
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -270,6 +154,7 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
@@ -309,7 +194,6 @@ https://cmr.earthdata.nasa.gov:
       - id: C1968979561-POCLOUD
       - id: C1968980609-POCLOUD
       - id: C1996881752-POCLOUD
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -325,6 +209,7 @@ https://cmr.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
@@ -450,6 +335,122 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
+
+  - name: harmony/netcdf-to-zarr
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/harmony/netcdf-to-zarr
+    umm_s:
+      - S2009180097-POCLOUD
+    collections:
+      - id: C1996881146-POCLOUD
+      - id: C2006849995-POCLOUD
+      - id: C2006849866-POCLOUD
+      - id: C2006849650-POCLOUD
+      - id: C2006849794-POCLOUD
+      - id: C2006849345-POCLOUD
+      - id: C2006849488-POCLOUD
+      - id: C2006849571-POCLOUD
+      - id: C2006849257-POCLOUD
+      - id: C2006849087-POCLOUD
+      - id: C2006849706-POCLOUD
+      - id: C1940468263-POCLOUD
+      - id: C1938032626-POCLOUD
+      - id: C1940473819-POCLOUD
+      - id: C1940473819-POCLOUD
+      - id: C1990404801-POCLOUD
+      - id: C1990404814-POCLOUD
+      - id: C1991543823-POCLOUD
+      - id: C1991543805-POCLOUD
+      - id: C1990404807-POCLOUD
+      - id: C1990404805-POCLOUD
+      - id: C1991543824-POCLOUD
+      - id: C1991543745-POCLOUD
+      - id: C1990404793-POCLOUD
+      - id: C1990404798-POCLOUD
+      - id: C1991543727-POCLOUD
+      - id: C1991543735-POCLOUD
+      - id: C1990404818-POCLOUD
+      - id: C1990404792-POCLOUD
+      - id: C1991543820-POCLOUD
+      - id: C1991543803-POCLOUD
+      - id: C1991543729-POCLOUD
+      - id: C1991543819-POCLOUD
+      - id: C1991543742-POCLOUD
+      - id: C1990404788-POCLOUD
+      - id: C1990404812-POCLOUD
+      - id: C1991543712-POCLOUD
+      - id: C1991543811-POCLOUD
+      - id: C1990404810-POCLOUD
+      - id: C1990404819-POCLOUD
+      - id: C1991543734-POCLOUD
+      - id: C1991543741-POCLOUD
+      - id: C1990404797-POCLOUD
+      - id: C1990404791-POCLOUD
+      - id: C1991543737-POCLOUD
+      - id: C1991543806-POCLOUD
+      - id: C1991543804-POCLOUD
+      - id: C1991543726-POCLOUD
+      - id: C1991543702-POCLOUD
+      - id: C1991543814-POCLOUD
+      - id: C1991543752-POCLOUD
+      - id: C1991543812-POCLOUD
+      - id: C1991543740-POCLOUD
+      - id: C1991543699-POCLOUD
+      - id: C1991543739-POCLOUD
+      - id: C1991543818-POCLOUD
+      - id: C1991543733-POCLOUD
+      - id: C1990404811-POCLOUD
+      - id: C1990404823-POCLOUD
+      - id: C1991543808-POCLOUD
+      - id: C1991543732-POCLOUD
+      - id: C1991543766-POCLOUD
+      - id: C1990404815-POCLOUD
+      - id: C1990404820-POCLOUD
+      - id: C1991543763-POCLOUD
+      - id: C1991543764-POCLOUD
+      - id: C1991543821-POCLOUD
+      - id: C1991543731-POCLOUD
+      - id: C1991543724-POCLOUD
+      - id: C1991543807-POCLOUD
+      - id: C1991543730-POCLOUD
+      - id: C1990404817-POCLOUD
+      - id: C1990404790-POCLOUD
+      - id: C1991543765-POCLOUD
+      - id: C1991543700-POCLOUD
+      - id: C1991543768-POCLOUD
+      - id: C1990404813-POCLOUD
+      - id: C1990404799-POCLOUD
+      - id: C1991543744-POCLOUD
+      - id: C1991543813-POCLOUD
+      - id: C1991543817-POCLOUD
+      - id: C1990404808-POCLOUD
+      - id: C1990404796-POCLOUD
+      - id: C1991543704-POCLOUD
+      - id: C1991543760-POCLOUD
+      - id: C1990404821-POCLOUD
+      - id: C1990404795-POCLOUD
+      - id: C1991543736-POCLOUD
+      - id: C1991543728-POCLOUD
+      - id: C1991543757-POCLOUD
+    maximum_sync_granules: 0
+    capabilities:
+      concatenation: true
+      concatenate_by_default: false
+      subsetting:
+        variable: false
+      output_formats:
+        - application/x-zarr
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
+        operations: ['reformat', 'concatenate']
 
 https://cmr.uat.earthdata.nasa.gov:
 
@@ -598,7 +599,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1234208437-POCLOUD
       - id: C1234208438-POCLOUD
       - id: C1243729749-EEDTEST
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -610,6 +610,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
@@ -634,7 +635,6 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1238658052-POCLOUD
       - id: C1243729749-EEDTEST
       - id: C1243747507-EEDTEST
-    granule_limit: 350 # Cannot support more granules for concatenation services yet
     capabilities:
       concatenation: true
       subsetting:
@@ -650,6 +650,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
+        is_batched: true
         operations: ['concatenate']
         conditional:
           exists: ['concatenate']
@@ -771,6 +772,144 @@ https://cmr.uat.earthdata.nasa.gov:
         - image/tiff
       reprojection: true
 
+  # UAT GDAL
+  - name: nasa/harmony-gdal-adapter
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/nasa/harmony-gdal-adapter
+    umm_s:
+      - S1245787332-EEDTEST
+      - S1255775104-ORNL_CLOUD
+    collections:
+      - id: C1225776654-ASF
+      - id: C1207038647-ASF
+      - id: C1233629671-ASF
+      - id: C1207181535-ASF
+      - id: C1208013295-ASF
+      - id: C1239927797-ASF
+      - id: C1215664073-GES_DISC
+      - id: C1215664076-GES_DISC
+      - id: C1215802948-GES_DISC
+      - id: C1225808241-GES_DISC
+      - id: C1221131370-GES_DISC
+      - id: C1225808237-GES_DISC
+      - id: C1216382991-GES_DISC
+      - id: C1224264723-GES_DISC
+      - id: C1236380582-GES_DISC
+      - id: C1215726323-GES_DISC
+      - id: C1215802935-GES_DISC
+      - id: C1215802938-GES_DISC
+      - id: C1225808243-GES_DISC
+      - id: C1233603862-GES_DISC
+      - id: C1215802911-GES_DISC
+      - id: C1215802943-GES_DISC
+      - id: C1215802918-GES_DISC
+      - id: C1215720780-GES_DISC
+      - id: C1225808239-GES_DISC
+      - id: C1215802915-GES_DISC
+      - id: C1225808242-GES_DISC
+      - id: C1225808240-GES_DISC
+      - id: C1215802921-GES_DISC
+      - id: C1215802970-GES_DISC
+      - id: C1215802941-GES_DISC
+      - id: C1236380583-GES_DISC
+      - id: C1215802914-GES_DISC
+      - id: C1215802973-GES_DISC
+      - id: C1215802956-GES_DISC
+      - id: C1215802920-GES_DISC
+      - id: C1215139640-GES_DISC
+      - id: C1215802932-GES_DISC
+      - id: C1221312185-GES_DISC
+      - id: C1239379702-POCLOUD
+      - id: C1238621141-POCLOUD
+    capabilities:
+      subsetting:
+        shape: true
+        bbox: true
+        variable: true
+        multiple_variable: true
+      output_formats:
+        - application/x-netcdf4
+        - image/tiff
+        - image/png
+        - image/gif
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
+
+  # CHAINED SERVICES BELOW HERE
+  - name: sds/HOSS-geographic
+    # Provides variable, temporal, bounding box spatial and polygon spatial
+    # subsetting for geographically gridded collections hosted in OPeNDAP.
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/HOSS-geographic
+    umm_s:
+      - S1240682712-EEDTEST
+      - S1241070355-GES_DISC # GESDISC_HOSS
+      - S1246887053-ORNL_CLOUD
+    collections: []
+    capabilities:
+      subsetting:
+        bbox: true
+        dimension: true
+        shape: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${VAR_SUBSETTER_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
+      - image: !Env ${SDS_MASKFILL_IMAGE}
+        operations: ['shapefileSubset']
+        conditional:
+          exists: ['shapefileSubset']
+
+  - name: sds/HOSS-projection-gridded
+    # Provides variable, temporal, bounding box spatial and polygon spatial
+    # subsetting for projection gridded collections hosted in OPeNDAP.
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/HOSS-projection-gridded
+    umm_s:
+      - S1245117629-EEDTEST
+    collections: []
+    capabilities:
+      subsetting:
+        bbox: true
+        dimension: true
+        shape: true
+        variable: true
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${VAR_SUBSETTER_IMAGE}
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
+      - image: !Env ${SDS_MASKFILL_IMAGE}
+        operations: ['shapefileSubset', 'spatialSubset']
+        conditional:
+          exists: ['shapefileSubset', 'spatialSubset']
+
   - name: harmony/netcdf-to-zarr
     data_operation_version: '0.17.0'
     type:
@@ -847,80 +986,9 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
 
-  # UAT GDAL
-  - name: nasa/harmony-gdal-adapter
-    data_operation_version: '0.17.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/nasa/harmony-gdal-adapter
-    umm_s:
-      - S1245787332-EEDTEST
-      - S1255775104-ORNL_CLOUD
-    collections:
-      - id: C1225776654-ASF
-      - id: C1207038647-ASF
-      - id: C1233629671-ASF
-      - id: C1207181535-ASF
-      - id: C1208013295-ASF
-      - id: C1239927797-ASF
-      - id: C1215664073-GES_DISC
-      - id: C1215664076-GES_DISC
-      - id: C1215802948-GES_DISC
-      - id: C1225808241-GES_DISC
-      - id: C1221131370-GES_DISC
-      - id: C1225808237-GES_DISC
-      - id: C1216382991-GES_DISC
-      - id: C1224264723-GES_DISC
-      - id: C1236380582-GES_DISC
-      - id: C1215726323-GES_DISC
-      - id: C1215802935-GES_DISC
-      - id: C1215802938-GES_DISC
-      - id: C1225808243-GES_DISC
-      - id: C1233603862-GES_DISC
-      - id: C1215802911-GES_DISC
-      - id: C1215802943-GES_DISC
-      - id: C1215802918-GES_DISC
-      - id: C1215720780-GES_DISC
-      - id: C1225808239-GES_DISC
-      - id: C1215802915-GES_DISC
-      - id: C1225808242-GES_DISC
-      - id: C1225808240-GES_DISC
-      - id: C1215802921-GES_DISC
-      - id: C1215802970-GES_DISC
-      - id: C1215802941-GES_DISC
-      - id: C1236380583-GES_DISC
-      - id: C1215802914-GES_DISC
-      - id: C1215802973-GES_DISC
-      - id: C1215802956-GES_DISC
-      - id: C1215802920-GES_DISC
-      - id: C1215139640-GES_DISC
-      - id: C1215802932-GES_DISC
-      - id: C1221312185-GES_DISC
-      - id: C1239379702-POCLOUD
-      - id: C1238621141-POCLOUD
-    capabilities:
-      subsetting:
-        shape: true
-        bbox: true
-        variable: true
-        multiple_variable: true
-      output_formats:
-        - application/x-netcdf4
-        - image/tiff
-        - image/png
-        - image/gif
-      reprojection: true
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
-
-  # CHAINED SERVICES BELOW HERE
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
     data_operation_version: '0.17.0'
     type:
@@ -955,6 +1023,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
         conditional:
           format: ['application/x-zarr']
@@ -992,72 +1061,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['reproject']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
+        is_batched: true
         operations: ['reformat', 'concatenate']
         conditional:
           format: ['application/x-zarr']
-
-  - name: sds/HOSS-geographic
-    # Provides variable, temporal, bounding box spatial and polygon spatial
-    # subsetting for geographically gridded collections hosted in OPeNDAP.
-    data_operation_version: '0.17.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS-geographic
-    umm_s:
-      - S1240682712-EEDTEST
-      - S1241070355-GES_DISC # GESDISC_HOSS
-      - S1246887053-ORNL_CLOUD
-    collections: []
-    capabilities:
-      subsetting:
-        bbox: true
-        dimension: true
-        shape: true
-        variable: true
-      output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
-      - image: !Env ${SDS_MASKFILL_IMAGE}
-        operations: ['shapefileSubset']
-        conditional:
-          exists: ['shapefileSubset']
-
-  - name: sds/HOSS-projection-gridded
-    # Provides variable, temporal, bounding box spatial and polygon spatial
-    # subsetting for projection gridded collections hosted in OPeNDAP.
-    data_operation_version: '0.17.0'
-    type:
-      <<: *default-turbo-config
-      params:
-        <<: *default-turbo-params
-        env:
-          <<: *default-turbo-env
-          STAGING_PATH: public/sds/HOSS-projection-gridded
-    umm_s:
-      - S1245117629-EEDTEST
-    collections: []
-    capabilities:
-      subsetting:
-        bbox: true
-        dimension: true
-        shape: true
-        variable: true
-      output_formats:
-        - application/netcdf # Incorrect mime-type, remove when no longer needed
-        - application/x-netcdf4
-    steps:
-      - image: !Env ${QUERY_CMR_IMAGE}
-      - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
-      - image: !Env ${SDS_MASKFILL_IMAGE}
-        operations: ['shapefileSubset', 'spatialSubset']
-        conditional:
-          exists: ['shapefileSubset', 'spatialSubset']

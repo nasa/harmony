@@ -8,7 +8,7 @@ import Record from './record';
 const serializedFields = [
   'id', 'jobID', 'serviceID', 'stepIndex',
   'workItemCount', 'operation', 'createdAt', 'updatedAt',
-  'hasAggregatedOutput',
+  'hasAggregatedOutput', 'isBatched', 'maxBatchInputs', 'maxBatchSizeInBytes',
 ];
 
 export interface WorkflowStepRecord {
@@ -30,11 +30,20 @@ export interface WorkflowStepRecord {
 
   // Whether or not this step aggregates the outputs of a previous step
   hasAggregatedOutput: boolean;
+
+  // Whether or no the service should receive a batch of inputs
+  isBatched: boolean;
+
+  // The maximum number of input granules in each invocation of the service
+  maxBatchInputs: number;
+
+  // The upper limit on the combined sizes of all the files in a batch
+  maxBatchSizeInBytes: number;
 }
 
 /**
  *
- * Wrapper object for persisted work items
+ * Wrapper object for persisted workflow steps
  *
  */
 export default class WorkflowStep extends Record implements WorkflowStepRecord {
@@ -58,6 +67,24 @@ export default class WorkflowStep extends Record implements WorkflowStepRecord {
   // Whether or not this step aggregates the outputs of a previous step
   hasAggregatedOutput: boolean;
 
+  // Whether or no the service should receive a batch of inputs
+  isBatched: boolean;
+
+  // The maximum number of input granules in each invocation of the service
+  maxBatchInputs: number;
+
+  // The upper limit on the combined sizes of all the files in a batch
+  maxBatchSizeInBytes: number;
+
+  /**
+ * Get the collections that are the sources for the given operation
+ *
+ * @returns an array of strings containing the collections for the operation
+ */
+  collectionsForOperation(): string[] {
+    const op = JSON.parse(this.operation);
+    return op.sources.map(source => source.collection);
+  }
 }
 
 const tableFields = serializedFields.map((field) => `${WorkflowStep.table}.${field}`);
@@ -201,4 +228,17 @@ export async function decrementFutureWorkItemCount(tx: Transaction, jobID, stepI
     .andWhere('stepIndex', '>', stepIndex)
     .andWhere('hasAggregatedOutput', false)
     .decrement('workItemCount');
+}
+
+/**
+ * Increment the number of expected work items for the step. Used during batching.
+ *
+ * @param tx - the database transaction
+ * @param jobID - the job ID
+ * @param stepIndex - the current step index
+ */
+export async function incrementWorkItemCount(tx: Transaction, jobID, stepIndex): Promise<void> {
+  await tx(WorkflowStep.table)
+    .where({ jobID, stepIndex })
+    .increment('workItemCount');
 }

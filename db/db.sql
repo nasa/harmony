@@ -51,8 +51,8 @@ CREATE TABLE `work_items` (
   `serviceID` varchar(255) not null,
   `status` text check (`status` in ('ready', 'running', 'successful', 'failed', 'canceled')) not null,
   `stacCatalogLocation` varchar(255),
-  `totalGranulesSize` double precision not null default 0,
-  `outputGranuleSizesJson` text,
+  `totalItemsSize` double precision not null default 0,
+  `outputItemSizesJson` text,
   `retryCount` integer not null default 0,
   `duration` float not null default -1.0,
   `sortIndex` integer not null default 0,
@@ -70,6 +70,9 @@ CREATE TABLE `workflow_steps` (
   `stepIndex` integer not null,
   `workItemCount` integer not null,
   `hasAggregatedOutput` boolean not null default false,
+  `isBatched` boolean not null default false,
+  `maxBatchInputs` integer,
+  `maxBatchSizeInBytes` integer,
   `operation` text not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
@@ -87,13 +90,13 @@ CREATE TABLE `batches` (
   FOREIGN KEY(jobID, serviceID) REFERENCES workflow_steps(jobID, serviceID)
 );
 
-CREATE TABLE `batch_granules` (
+CREATE TABLE `batch_items` (
   `id` integer not null primary key autoincrement,
   `jobID` char(36) not null,
   `serviceID` varchar(255) not null,
-  `batchID` integer not null,
-  `granuleUrl` char(4096),
-  `granuleSize` double precision not null default 0,
+  `batchID` integer,
+  `stacItemUrl` char(4096),
+  `itemSize` double precision not null default 0,
   `sortIndex` integer not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
@@ -112,5 +115,5 @@ CREATE INDEX workflow_steps_jobID_idx ON workflow_steps(jobID);
 CREATE INDEX workflow_steps_jobID_StepIndex_idx ON workflow_steps(jobID, stepIndex);
 CREATE INDEX workflow_steps_serviceID_idx ON workflow_steps(serviceID);
 CREATE INDEX batch_jobID_service_ID_batchID ON batches(jobID, serviceID, batchID);
-CREATE INDEX batch_granules_jobID_service_ID_batchID ON batch_granules(jobID, serviceID, batchID);
+CREATE INDEX batch_items_jobID_service_ID_batchID ON batch_items(jobID, serviceID, batchID);
 
