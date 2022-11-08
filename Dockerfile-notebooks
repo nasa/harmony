@@ -14,5 +14,4 @@ COPY ./config /config
 
 RUN pip install -r notebook_helpers/requirements.txt
 
-RUN ["chmod", "+x", "notebook_helpers/run-jupyter-docker"]
 ENTRYPOINT notebook_helpers/run-jupyter-docker
