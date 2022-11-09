@@ -231,8 +231,9 @@ export async function handleBatching(
   maxBatchInputs = maxBatchInputs || env.maxBatchInputs;
   maxBatchSizeInBytes = maxBatchSizeInBytes || env.maxBatchSizeInBytes;
 
+  // compute the starting sortIndex to assign to the first new batch item
   let startIndex = workItemSortIndex;
-  if (!workItemSortIndex && (workItemSortIndex != 0)) {
+  if (!startIndex && (startIndex != 0)) {
     startIndex = await getMaxSortIndexForJobServiceBatch(
       tx,
       jobID,
@@ -245,19 +246,19 @@ export async function handleBatching(
     }
   }
 
-  let index = 0;
+  let indexIncrement = 0;
   // create new batch items for the STAC items in the results. This looping is only useful for
   // query-cmr (currently)
   for (const url of stacItemUrls) {
-    const sortIndex = startIndex + index;
+    const sortIndex = startIndex + indexIncrement;
     const batchItem = new BatchItem({
       jobID,
       serviceID,
       stacItemUrl: url,
-      itemSize: itemSizes[index],
+      itemSize: itemSizes[indexIncrement],
       sortIndex,
     });
-    index += 1;
+    indexIncrement += 1;
     await batchItem.save(tx);
   }
 
@@ -265,7 +266,7 @@ export async function handleBatching(
   // we lock the rows that we select here from `batch_items` to prevent multiple threads from
   // attempting to create new rows in the `batches` table for the same batch
   const batchItems = await getByJobServiceBatch(tx, jobID, serviceID, null, true);
-  index = 0;
+  let index = 0;
   let nextSortIndex: number;
   let currentBatch = await withHighestBatchIDForJobService(tx, jobID, serviceID);
   let currentBatchSize = 0;

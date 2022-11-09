@@ -51,7 +51,7 @@ export default class BatchItem extends Record implements BatchItemRecord {
 }
 
 /**
- * Get the maximum sort index for the given job, service, and batch.
+ * Get the maximum batch item sort index for the given job, service, and batch.
  *
  * @param tx - The database transaction
  * @param jobID - The ID of the job
