@@ -214,6 +214,7 @@ async function createCatalogAndWorkItemForBatch(tx: Transaction, workflowStep: W
  * @param workflowStep - The step in the workflow that needs batching
  * @param stacItemUrls - An array of paths to STAC items
  * @param itemSizes - An array of item sizes
+ * @param workItemSortIndex - The sort index of the parent work item (if set)
  * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
  */
 export async function handleBatching(
@@ -230,14 +231,14 @@ export async function handleBatching(
   maxBatchInputs = maxBatchInputs || env.maxBatchInputs;
   maxBatchSizeInBytes = maxBatchSizeInBytes || env.maxBatchSizeInBytes;
 
-  let startIndex = 0;
-  if (!workItemSortIndex) {
+  let startIndex = workItemSortIndex;
+  if (!workItemSortIndex && (workItemSortIndex != 0)) {
     startIndex = await getMaxSortIndexForJobServiceBatch(
       tx,
       jobID,
       serviceID,
     );
-    if (startIndex === null) {
+    if (startIndex == null) {
       startIndex = 0;
     } else {
       startIndex += 1;
@@ -245,9 +246,10 @@ export async function handleBatching(
   }
 
   let index = 0;
-  // create new batch items for the STAC items in the results
+  // create new batch items for the STAC items in the results. This looping is only useful for
+  // query-cmr (currently)
   for (const url of stacItemUrls) {
-    const sortIndex = workItemSortIndex || (startIndex + index);
+    const sortIndex = startIndex + index;
     const batchItem = new BatchItem({
       jobID,
       serviceID,
@@ -276,15 +278,36 @@ export async function handleBatching(
 
   while (index < batchItems.length) {
     if (currentBatch) {
+      // figure out what the next sort index in the batch should be
+      nextSortIndex = 0;
       const batchItem = batchItems[index];
+      // if there are already items in this batch use (highest sort index in the batch) + 1
       const maxSortIndex = await getMaxSortIndexForJobServiceBatch(
         tx,
         jobID,
         serviceID,
         currentBatch.batchID);
-      if (maxSortIndex === null) {
-        // the batch has no items in it, so this item should be the first one
-        nextSortIndex = batchItem.sortIndex;
+      if (maxSortIndex == null) {
+        // the batch has no items in it, try to get the max sort index from the previous batch
+        // (if there was one)
+        if (currentBatch.batchID > 0) {
+          const prevMaxSortIndex = await getMaxSortIndexForJobServiceBatch(
+            tx,
+            jobID,
+            serviceID,
+            currentBatch.batchID - 1,
+          );
+          if (prevMaxSortIndex == null) {
+            const errMsg = `Could not find next sort index for batch ${currentBatch.batchID}`;
+            logger.error(errMsg);
+            throw new Error(errMsg);
+          } else {
+            nextSortIndex = prevMaxSortIndex + 1;
+          }
+        } else {
+          // this is the first batch and it is empty so the next sort index should be 0
+          nextSortIndex = 0;
+        }
       } else {
         nextSortIndex = maxSortIndex + 1;
       }
