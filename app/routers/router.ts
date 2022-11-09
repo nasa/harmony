@@ -191,6 +191,14 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.use(logged(postServiceConcatenationHandler));
   result.use(logged(cmrGranuleLocator));
   result.use(logged(addRequestContextToOperation));
+  result.use(function (req, res, next) {
+    if (req.path.endsWith('workflow-ui/')) {
+      const query = req.url.slice(req.path.length);
+      res.redirect(301, req.path.slice(0, -1) + query);
+    } else {
+      next();
+    }
+  });
 
   result.get('/', asyncHandler(landingPage));
   result.get('/versions', asyncHandler(getVersions));
