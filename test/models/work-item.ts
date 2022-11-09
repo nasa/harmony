@@ -19,23 +19,19 @@ describe('WorkItem computeWorkItemDurationOutlierThresholdForJobService', functi
   before(async function () {
     await jobWithTwoComplete.save(this.trx);
     await buildWorkItem({ jobID: jobWithTwoComplete.jobID, status: WorkItemStatus.SUCCESSFUL,
-      workflowStepIndex: 0, startedAt: new Date(), duration: 100 }).save(this.trx);
+      workflowStepIndex: 0, startedAt: new Date(), serviceID: 'subsetter', duration: 100 }).save(this.trx);
     await buildWorkItem({ jobID: jobWithTwoComplete.jobID, status: WorkItemStatus.SUCCESSFUL,
-      workflowStepIndex: 0, startedAt: new Date(), duration: 200 }).save(this.trx);
+      workflowStepIndex: 0, startedAt: new Date(), serviceID: 'subsetter', duration: 200 }).save(this.trx);
     await buildWorkflowStep({ jobID: jobWithTwoComplete.jobID, stepIndex: 0, serviceID: 'subsetter' }).save(this.trx);
 
     await jobWithOneComplete.save(this.trx);
     await buildWorkItem({ jobID: jobWithOneComplete.jobID, status: WorkItemStatus.SUCCESSFUL,
-      workflowStepIndex: 0, startedAt: new Date() }).save(this.trx);
+      workflowStepIndex: 0, startedAt: new Date(), serviceID: 'subsetter' }).save(this.trx);
     await buildWorkItem({ jobID: jobWithOneComplete.jobID, status: WorkItemStatus.RUNNING,
-      workflowStepIndex: 0, startedAt: new Date() }).save(this.trx);
+      workflowStepIndex: 0, startedAt: new Date(), serviceID: 'subsetter' }).save(this.trx);
     await buildWorkflowStep({ jobID: jobWithOneComplete.jobID, stepIndex: 0, serviceID: 'subsetter' }).save(this.trx);
 
     await this.trx.commit();
-  });
-
-  after(async function () {
-    await truncateAll();
   });
 
   it('returns the default threshold when less than 2 items are successful', async function () {
