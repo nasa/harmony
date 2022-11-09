@@ -36,3 +36,5 @@ workload/.python-version
 # notebook outputs
 docs/harmony_dimension_subset_results/
 docs/outputs
+
+.netrc
