@@ -697,10 +697,12 @@ export async function getTotalWorkItemSizesForJobID(
  *
  * @param jobID - the ID of the Job for the step
  * @param serviceID - the serviceID of the step within the workflow
+ * @param workflowStepIndex - index of the step within the workflow
  */
 export async function computeWorkItemDurationOutlierThresholdForJobService(
   jobID: string,
   serviceID: string,
+  workflowStepIndex: number,
 ): Promise<number> {
   // default to two hours
   let threshold = 7200000;
@@ -708,19 +710,22 @@ export async function computeWorkItemDurationOutlierThresholdForJobService(
   try {
     // use a simple heuristic of 2 times the longest duration of all the successful work items
     // for this job/service
-    const result = await db(WorkItem.table)
-      .where({
-        jobID,
-        serviceID,
-        'status': WorkItemStatus.SUCCESSFUL,
-      })
-      .max('duration', { as: 'max' })
-      .first();
+    const completedWorkItemCount = await workItemCountForStep(db, jobID, workflowStepIndex, WorkItemStatus.SUCCESSFUL);
+    if (completedWorkItemCount >= 2) {
+      const result = await db(WorkItem.table)
+        .where({
+          jobID,
+          serviceID,
+          'status': WorkItemStatus.SUCCESSFUL,
+        })
+        .max('duration', { as: 'max' })
+        .first();
 
-    if (result && result.max > 0) {
-      threshold = 2.0 * result.max;
-    } else {
-      logger.debug('Using default threshold');
+      if (result && result.max > 0) {
+        threshold = 2.0 * result.max;
+      } else {
+        logger.debug('Using default threshold');
+      }
     }
     logger.debug(`Threshold is ${threshold}`);
 

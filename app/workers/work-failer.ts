@@ -51,15 +51,15 @@ export default class WorkFailer implements Worker {
     const workItems = await getWorkItemsByUpdateAgeAndStatus(
       db, lastUpdateOlderThanMinutes, [WorkItemStatus.RUNNING],
       [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
-      ['w.id', 'w.jobID', 'serviceID', 'startedAt'],
+      ['w.id', 'w.jobID', 'serviceID', 'startedAt', 'workflowStepIndex'],
     );
     if (workItems?.length > 0) {
       // compute duration thresholds for each job/service
       for (const workItem of workItems) {
-        const { jobID, serviceID } = workItem;
+        const { jobID, serviceID, workflowStepIndex } = workItem;
         const key = `${jobID}${serviceID}`;
         if (!jobServiceThresholds[key]) {
-          const outlierThreshold = await computeWorkItemDurationOutlierThresholdForJobService(jobID, serviceID);
+          const outlierThreshold = await computeWorkItemDurationOutlierThresholdForJobService(jobID, serviceID, workflowStepIndex);
           jobServiceThresholds[key] = outlierThreshold;
         }
       }
