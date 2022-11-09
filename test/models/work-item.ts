@@ -2,7 +2,7 @@ import { describe } from 'mocha';
 import { buildJob } from '../helpers/jobs';
 import { JobStatus } from '../../app/models/job';
 import { computeWorkItemDurationOutlierThresholdForJobService } from '../../app/models/work-item';
-import { hookTransaction, truncateAll } from '../helpers/db';
+import { hookTransaction } from '../helpers/db';
 import { buildWorkItem } from '../helpers/work-items';
 import { expect } from 'chai';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
