@@ -60,9 +60,17 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
  * @param s3Url - the s3 url of the catalog
  */
 export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<string[]> {
+//   logger.debug(`Reading STAC catalog ${s3Url}`);
+//   try {
+//     const items = await readCatalogItems(s3Url);
+//     return items.map((item) => item.assets.data.href);
+//   } catch (e) {
+//     logger.error(e);
+//   }
+//   return [];
+// }
   logger.debug(`Reading STAC catalog ${s3Url}`);
   const items = await readCatalogItems(s3Url);
-
   return items.map((item) => item.assets.data.href);
 }
 
@@ -105,6 +113,7 @@ Promise<number[]> {
     const op = new DataOperation(operation, encrypter, decrypter);
     const token = op.unencryptedAccessToken;
     let index = 0;
+    // try {
     for (const catalogUrl of update.results) {
       const links = await exports.readCatalogLinks(catalogUrl, logger);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
@@ -121,6 +130,10 @@ Promise<number[]> {
       }));
       outputItemSizes = outputItemSizes.concat(sizes);
     }
+    // } catch (e){
+    //   logger.error(e);
+    //   throw (e);
+    // }
   }
   return outputItemSizes;
 }
@@ -215,6 +228,7 @@ async function createCatalogAndWorkItemForBatch(tx: Transaction, workflowStep: W
  * @param stacItemUrls - An array of paths to STAC items
  * @param itemSizes - An array of item sizes
  * @param workItemSortIndex - The sort index of the parent work item (if set)
+ * @param workItemStatus - The status update for the work item
  * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
  */
 export async function handleBatching(
@@ -224,6 +238,7 @@ export async function handleBatching(
   stacItemUrls: string[],
   itemSizes: number[],
   workItemSortIndex: number,
+  workItemStatus: WorkItemStatus,
   allWorkItemsForStepComplete: boolean)
   : Promise<void> {
   const { jobID, serviceID, stepIndex } = workflowStep;
@@ -246,20 +261,35 @@ export async function handleBatching(
     }
   }
 
-  let indexIncrement = 0;
-  // create new batch items for the STAC items in the results. This looping is only useful for
-  // query-cmr (currently)
-  for (const url of stacItemUrls) {
-    const sortIndex = startIndex + indexIncrement;
+  // Create new batch items for the STAC items in the results. This looping only works for
+  // query-cmr (currently) because query-cmr items do not have sort indices and so we can
+  // just increment the sort index by 1 for each item returned. If an intermediate step has
+  // a sort index and can produce multiple outputs from a single work item we'll need to
+  // change this logic.
+  if (stacItemUrls.length === 0 || workItemStatus === WorkItemStatus.FAILED) {
+    logger.error(`Work item status is ${workItemStatus} and stacItemUrls is ${stacItemUrls}, so creating a dummy batch item`);
+    // Add a dummy item
     const batchItem = new BatchItem({
       jobID,
       serviceID,
-      stacItemUrl: url,
-      itemSize: itemSizes[indexIncrement],
-      sortIndex,
+      itemSize: 0,
+      sortIndex: startIndex,
     });
-    indexIncrement += 1;
     await batchItem.save(tx);
+  } else {
+    let indexIncrement = 0;
+    for (const url of stacItemUrls) {
+      const sortIndex = startIndex + indexIncrement;
+      const batchItem = new BatchItem({
+        jobID,
+        serviceID,
+        stacItemUrl: url,
+        itemSize: itemSizes[indexIncrement],
+        sortIndex,
+      });
+      indexIncrement += 1;
+      await batchItem.save(tx);
+    }
   }
 
   // assign batch items to batches
@@ -320,7 +350,9 @@ export async function handleBatching(
           batchItem.batchID = currentBatch.batchID;
           await batchItem.save(tx);
           currentBatchSize += batchItem.itemSize;
-          currentBatchCount += 1;
+          if (batchItem.stacItemUrl) { // only count successful work items being added to the batch
+            currentBatchCount += 1;
+          }
           index += 1;
           // check to see if the batch is full
           if (currentBatchCount === maxBatchInputs || currentBatchSize === maxBatchSizeInBytes) {
