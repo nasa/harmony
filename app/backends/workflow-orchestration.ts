@@ -288,7 +288,11 @@ async function createNextWorkItems(
         if (nextStep.isBatched) {
           const outputItemUrls = await outputStacItemUrls(results);
           // TODO add other services that can produce more than one output and so should have their batching sortIndex propagated to child work items to provide consistent batching
-          const sortIndex = !QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID) && workItem.sortIndex;
+          let sortIndex;
+          if (!QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)) {
+            // eslint-disable-next-line prefer-destructuring
+            sortIndex = workItem.sortIndex;
+          }
           await handleBatching(
             tx,
             logger,
