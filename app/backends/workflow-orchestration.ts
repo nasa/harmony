@@ -636,7 +636,7 @@ export async function handleWorkItemUpdate(
         const nextWorkflowStep = await getWorkflowStepByJobIdStepIndex(
           tx, workItem.jobID, workItem.workflowStepIndex + 1,
         );
-        if (nextWorkflowStep && (status != WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
+        if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
           await createNextWorkItems(
             tx,
             nextWorkflowStep,
@@ -648,14 +648,14 @@ export async function handleWorkItemUpdate(
             outputItemSizes);
         }
 
-        if (nextWorkflowStep) {
+        if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
           if (results && results.length > 0) {
             // set the scrollID for the next work item to the one we received from the update
             workItem.scrollID = scrollID;
             await maybeQueueQueryCmrWorkItem(tx, workItem, logger);
           } else {
-            // Failed to create the next work items - fail the job rather than leaving it orphaned
-            // in the running state
+            // Failed to create the next work items when there should be work items.
+            // Fail the job rather than leaving it orphaned in the running state
             logger.error('The work item update should have contained results to queue a next work item, but it did not.');
             const message = 'Harmony internal failure: could not create the next work items for the request.';
             await completeJob(tx, job, JobStatus.FAILED, logger, message);
