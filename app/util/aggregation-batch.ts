@@ -60,15 +60,6 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
  * @param s3Url - the s3 url of the catalog
  */
 export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<string[]> {
-//   logger.debug(`Reading STAC catalog ${s3Url}`);
-//   try {
-//     const items = await readCatalogItems(s3Url);
-//     return items.map((item) => item.assets.data.href);
-//   } catch (e) {
-//     logger.error(e);
-//   }
-//   return [];
-// }
   logger.debug(`Reading STAC catalog ${s3Url}`);
   const items = await readCatalogItems(s3Url);
   return items.map((item) => item.assets.data.href);
@@ -113,7 +104,6 @@ Promise<number[]> {
     const op = new DataOperation(operation, encrypter, decrypter);
     const token = op.unencryptedAccessToken;
     let index = 0;
-    // try {
     for (const catalogUrl of update.results) {
       const links = await exports.readCatalogLinks(catalogUrl, logger);
       // eslint-disable-next-line @typescript-eslint/no-loop-func
@@ -130,10 +120,6 @@ Promise<number[]> {
       }));
       outputItemSizes = outputItemSizes.concat(sizes);
     }
-    // } catch (e){
-    //   logger.error(e);
-    //   throw (e);
-    // }
   }
   return outputItemSizes;
 }

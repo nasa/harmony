@@ -294,7 +294,6 @@ async function createNextWorkItems(
         if (workItem.status !== WorkItemStatus.FAILED) {
           outputItemUrls = await outputStacItemUrls(results);
         }
-        logger.error(`CDD: workItem is ${JSON.stringify(workItem)} and workItemStatus is ${workItem.status}`);
         // TODO add other services that can produce more than one output and so should have their
         // batching sortIndex propagated to child work items to provide consistent batching
         await handleBatching(
@@ -547,12 +546,10 @@ export async function handleWorkItemUpdate(
   try {
     outputItemSizes = await resultItemSizes(update, operation, logger);
   } catch (e) {
-    // TODO change this to not trap the error, just testing with concise
-    // logger.error('Could not determine result item sizes, assuming 0.');
+    logger.error('Could not get result item file size, failing the work item update');
     logger.error(e);
     status = WorkItemStatus.FAILED;
-    errorMessage = 'STAC catalog returned from service could not be parsed';
-    // outputItemSizes = results.map((_i) => 0);
+    errorMessage = 'Could not get result item file size, failing the work item update';
   }
 
   try {
@@ -681,7 +678,7 @@ export async function handleWorkItemUpdate(
       }
     });
   } catch (e) {
-    logger.error('CDD: Blew up');
+    logger.error(`Work item update failed for work item ${workItemID} and status ${status}`);
     logger.error(e);
   }
 }
@@ -700,36 +697,31 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
   const { status, hits, results, scrollID, errorMessage, duration, operation, outputItemSizes } = req.body;
   const totalItemsSize = req.body.totalItemsSize ? parseFloat(req.body.totalItemsSize) : 0;
 
-  try {
-    const update = {
-      workItemID: parseInt(id),
-      status,
-      hits,
-      results,
-      scrollID,
-      errorMessage,
-      totalItemsSize,
-      outputItemSizes,
-      duration,
-    };
+  const update = {
+    workItemID: parseInt(id),
+    status,
+    hits,
+    results,
+    scrollID,
+    errorMessage,
+    totalItemsSize,
+    outputItemSizes,
+    duration,
+  };
 
-    if (typeof global.it === 'function') {
-      // tests break if we don't await this
-      await handleWorkItemUpdate(update, operation, req.context.logger);
-    } else {
-      // asynchronously handle the update so that the service is not waiting for a response
-      // during a potentially long update. If the asynchronous update fails the work-item will
-      // eventually be retried by the timeout handler. In any case there is not much the service
-      // can do if the update fails, so it is OK for us to ignore the promise here. The service
-      // can still retry for network or similar failures, but we don't want it to retry for things
-      // like 409 errors.
+  if (typeof global.it === 'function') {
+    // tests break if we don't await this
+    await handleWorkItemUpdate(update, operation, req.context.logger);
+  } else {
+    // asynchronously handle the update so that the service is not waiting for a response
+    // during a potentially long update. If the asynchronous update fails the work-item will
+    // eventually be retried by the timeout handler. In any case there is not much the service
+    // can do if the update fails, so it is OK for us to ignore the promise here. The service
+    // can still retry for network or similar failures, but we don't want it to retry for things
+    // like 409 errors.
 
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      handleWorkItemUpdate(update, operation, req.context.logger);
-    }
-  } catch (e) {
-    req.context.logger.error(`Failed to update work item ${id}`);
-    req.context.logger.error(e);
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    handleWorkItemUpdate(update, operation, req.context.logger);
   }
 
   // Return a success with no body
