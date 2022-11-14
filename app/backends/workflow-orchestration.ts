@@ -642,7 +642,8 @@ export async function handleWorkItemUpdate(
             status,
             allWorkItemsForStepComplete,
             results,
-            outputItemSizes);
+            outputItemSizes,
+          );
         }
 
         if (nextWorkflowStep && status === WorkItemStatus.SUCCESSFUL) {
@@ -657,7 +658,7 @@ export async function handleWorkItemUpdate(
             const message = 'Harmony internal failure: could not create the next work items for the request.';
             await completeJob(tx, job, JobStatus.FAILED, logger, message);
           }
-        } else {
+        } else if (!nextWorkflowStep || allWorkItemsForStepComplete) {
           // Finished with the chain for this granule
           if (status != WorkItemStatus.FAILED) {
             await addJobLinksForFinishedWorkItem(tx, job, results, logger);
@@ -674,6 +675,8 @@ export async function handleWorkItemUpdate(
             }
             await job.save(tx);
           }
+        } else { // Currently only reach this condition for batched aggregation requests
+          await job.save(tx);
         }
       }
     });
