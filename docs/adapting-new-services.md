@@ -178,7 +178,7 @@ steps:
 ```
 
 There are default limits set by the environment variables `MAX_BATCH_INPUTS` and
-`MAX_BATCH_SIZE_IN_BYTES`. Providers should consult the `env-defaults.ts` file to obtain the
+`MAX_BATCH_SIZE_IN_BYTES`. Providers should consult the [env-defaults.ts](../env-defaults) file to obtain the
 current values of these variables.
 
 The settings in `services.yml` take precedence over these environment variables. If a provider
