@@ -269,6 +269,8 @@ async function createAggregatingWorkItem(
  * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
  * @param results - an array of paths to STAC catalogs
  * @param outputItemSizes - an array of sizes (in bytes) of the output items for the current step
+ *
+ * @returns true if it created a work item
  */
 async function createNextWorkItems(
   tx: Transaction,
@@ -279,8 +281,10 @@ async function createNextWorkItems(
   allWorkItemsForStepComplete: boolean,
   results: string[],
   outputItemSizes: number[],
-): Promise<void> {
-  if (results && results.length > 0) {
+): Promise<boolean> {
+  let createdWorkItem = false;
+  if (results && results.length > 0 || nextWorkflowStep.isBatched) {
+    createdWorkItem = true;
     // if we have completed all the work items for this step or if the next step does not
     // aggregate then create a work item for the next step
     if (nextWorkflowStep.hasAggregatedOutput) {
@@ -296,7 +300,7 @@ async function createNextWorkItems(
         }
         // TODO add other services that can produce more than one output and so should have their
         // batching sortIndex propagated to child work items to provide consistent batching
-        await handleBatching(
+        createdWorkItem = await handleBatching(
           tx,
           logger,
           nextWorkflowStep,
@@ -336,6 +340,7 @@ async function createNextWorkItems(
       }
     }
   }
+  return createdWorkItem;
 }
 
 /**
@@ -475,6 +480,7 @@ async function handleFailedWorkItems(
         const errorCount =  await getErrorCountForJob(tx, job.jobID);
         if (errorCount > env.maxErrorsForJob) {
           jobMessage = `Maximum allowed errors ${env.maxErrorsForJob} exceeded`;
+          logger.warn(jobMessage);
           continueProcessing = false;
         }
       }
@@ -533,9 +539,14 @@ export async function handleWorkItemUpdate(
   logger: Logger): Promise<void> {
   const { workItemID, hits, results, scrollID } = update;
   let { errorMessage, status } = update;
+  let createdWorkItem = false;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
+
+  // if (workItemID == 5) {
+  //   console.log('CDD - this is it');
+  // }
   // get the jobID for the work item
   const jobID = await getJobIdForWorkItem(workItemID);
 
@@ -554,6 +565,9 @@ export async function handleWorkItemUpdate(
 
   try {
     await db.transaction(async (tx) => {
+      if (workItemID == 5) {
+        console.log('CDD - this is it');
+      }
       const job = await Job.byJobID(tx, jobID, false, true);
       // lock the work item to we can update it - need to do this after locking jobs table above
       // to avoid deadlocks
@@ -634,7 +648,7 @@ export async function handleWorkItemUpdate(
           tx, workItem.jobID, workItem.workflowStepIndex + 1,
         );
         if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
-          await createNextWorkItems(
+          createdWorkItem = await createNextWorkItems(
             tx,
             nextWorkflowStep,
             logger,
@@ -665,10 +679,15 @@ export async function handleWorkItemUpdate(
           }
           // If all granules are finished mark the job as finished
           job.completeBatch(thisStep.workItemCount);
-          if (allWorkItemsForStepComplete) {
+          // if (allWorkItemsForStepComplete) {
+          console.log(`CDD: Created work item is ${createdWorkItem}`);
+          if (allWorkItemsForStepComplete && !createdWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
+          // if (allWorkItemsForStepComplete && !createdWorkItem && !nextWorkflowStep) {
             const finalStatus = await getFinalStatusForJob(tx, job);
             await completeJob(tx, job, finalStatus, logger);
           } else {
+            console.log('CDD unexpected 1');
+            // Either previewing or next step is a batched step and this item failed
             // Special case to pause the job as soon as any single granule completes when in the previewing state
             if (job.status === JobStatus.PREVIEWING) {
               job.pause();
@@ -676,6 +695,7 @@ export async function handleWorkItemUpdate(
             await job.save(tx);
           }
         } else { // Currently only reach this condition for batched aggregation requests
+          console.log('CDD unexpected 2');
           await job.save(tx);
         }
       }

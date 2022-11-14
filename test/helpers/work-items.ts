@@ -194,7 +194,7 @@ export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForSer
  *
  * @param jobID - the job ID to which the STAC items belong
  * @param workItemID - the ID of the work item that generated the STAC items
- *  @param dataLinkCount - the number of data links to put in the STAC item
+ * @param dataLinkCount - the number of data links to put in the STAC item
  */
 export async function fakeServiceStacOutput(
   jobID: string,
