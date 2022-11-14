@@ -160,11 +160,10 @@ Currently the only supported aggregation operation is `concatenate`.
 There are limits to the number of files an aggregating service can process as well as the total number
 of bytes of all combined input files. To support larger aggregations Harmony can partition the output
 files from one service into batches to be passed to multiple invocations of the next (aggregating)
-step. Whether or not a service should have its input batched, the maximum number of input files to include
-in each batch, and total combined file sizes to allow can be set in the aggregating service's step
-definition using the `is_batched`, `max_batch_inputs`, and `max_batch_size_in_bytes` flags.
-
-Note that there is a system imposed upper limit on `max_batch_size_in_bytes`.
+step. Whether or not a service should have its input batched, the maximum number of input files
+to include in each batch, and total combined file sizes to allow can be set in the aggregating
+service's step definition using the `is_batched`, `max_batch_inputs`, and
+`max_batch_size_in_bytes` fields.
 
 The following `steps` entry is an example one might use for an aggregating service:
 
@@ -178,8 +177,17 @@ steps:
         operations: ['concatenate']
 ```
 
-## 7. Docker Container Images
+There are default limits set by the environment variables `MAX_BATCH_INPUTS` and
+`MAX_BATCH_SIZE_IN_BYTES`. Providers should consult the [env-defaults.ts](../env-defaults) file to obtain the
+current values of these variables.
 
+The settings in `services.yml` take precedence over these environment variables. If a provider
+wishes to use larger values (particularly for `max_batch_size_in_bytes`) that provider should
+contact the Harmony team first to make sure that the underlying Kubernetes pods have enough
+resources allocated (disk space, memory).
+
+
+## 7. Docker Container Images
 The service and all necessary code and dependencies to allow it to run should be packaged in a Docker container image. Docker images can be staged anywhere Harmony can reach them, e.g. ghcr.io, Dockerhub or AWS ECR. If the image cannot be made publicly available, contact the harmony team to determine how to provide access to the image.
 
 Harmony will run the Docker image, passing the following command-line parameters:

@@ -2,6 +2,11 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2022-11-04
+### Added
+- MAX_BATCH_INPUTS - Upper limit on the number of files that can go into an aggregation batch
+- MAX_BATCH_SIZE_IN_BYTES - Upper limit on the total number of bytes in all the files going into an aggregation batch
+
 ## 2022-06-03
 ### Added
 - MAX_PUT_WORK_RETRIES - how many times a manager should retry a retryable PUT /work request
