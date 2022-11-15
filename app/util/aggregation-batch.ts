@@ -211,7 +211,7 @@ async function createCatalogAndWorkItemForBatch(
     await newWorkItem.save(tx);
     return true;
   } else {
-    logger.warn('Attempt to construct a work item for a batch, but there were no valid items in the batch. Decrementing the expected number of work items.');
+    logger.warn('Attempted to construct a work item for a batch, but there were no valid items in the batch. Decrementing the expected number of work items.');
     await decrementWorkItemCount(tx, jobID, stepIndex);
   }
   return false;
@@ -360,21 +360,19 @@ export async function handleBatching(
             // create STAC catalog and next work item for the current batch
             createdWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || createdWorkItem;
             currentBatch.isProcessed = true;
-            if (!allWorkItemsForStepComplete) {
-              // create a new batch
-              const newBatch = new Batch({
-                jobID,
-                serviceID,
-                batchID: currentBatch.batchID + 1,
-              });
-              await newBatch.save(tx);
+            // create a new batch
+            const newBatch = new Batch({
+              jobID,
+              serviceID,
+              batchID: currentBatch.batchID + 1,
+            });
+            await newBatch.save(tx);
 
-              // make the new batch the current batch
-              currentBatch = newBatch;
-              currentBatchCount = 0;
-              currentBatchSize = 0;
-              await incrementWorkItemCount(tx, jobID, stepIndex);
-            }
+            // make the new batch the current batch
+            currentBatch = newBatch;
+            currentBatchCount = 0;
+            currentBatchSize = 0;
+            await incrementWorkItemCount(tx, jobID, stepIndex);
           }
         } else {
           if (currentBatchSize + batchItem.itemSize > maxBatchSizeInBytes) {
