@@ -544,9 +544,6 @@ export async function handleWorkItemUpdate(
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
 
-  // if (workItemID == 5) {
-  //   console.log('CDD - this is it');
-  // }
   // get the jobID for the work item
   const jobID = await getJobIdForWorkItem(workItemID);
 
@@ -565,9 +562,6 @@ export async function handleWorkItemUpdate(
 
   try {
     await db.transaction(async (tx) => {
-      if (workItemID == 5) {
-        console.log('CDD - this is it');
-      }
       const job = await Job.byJobID(tx, jobID, false, true);
       // lock the work item to we can update it - need to do this after locking jobs table above
       // to avoid deadlocks
@@ -679,23 +673,18 @@ export async function handleWorkItemUpdate(
           }
           // If all granules are finished mark the job as finished
           job.completeBatch(thisStep.workItemCount);
-          // if (allWorkItemsForStepComplete) {
-          console.log(`CDD: Created work item is ${createdWorkItem}`);
           if (allWorkItemsForStepComplete && !createdWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
-          // if (allWorkItemsForStepComplete && !createdWorkItem && !nextWorkflowStep) {
             const finalStatus = await getFinalStatusForJob(tx, job);
             await completeJob(tx, job, finalStatus, logger);
           } else {
-            console.log('CDD unexpected 1');
             // Either previewing or next step is a batched step and this item failed
-            // Special case to pause the job as soon as any single granule completes when in the previewing state
             if (job.status === JobStatus.PREVIEWING) {
+              // Special case to pause the job as soon as any single granule completes when in the previewing state
               job.pause();
             }
             await job.save(tx);
           }
         } else { // Currently only reach this condition for batched aggregation requests
-          console.log('CDD unexpected 2');
           await job.save(tx);
         }
       }

@@ -921,7 +921,7 @@ describe('when setting ignoreErrors=true', function () {
       });
     });
 
-    describe('CDD when making a request for 3 granules with 2 batches and the last one of the first chain fails', function () {
+    describe('when making a request for 3 granules with 2 batches and the last one of the first chain fails', function () {
       hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3, concatenate: true } } });
       hookRedirect('joe');
 
