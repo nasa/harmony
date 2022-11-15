@@ -424,7 +424,6 @@ export async function handleBatching(
   // and create a new aggregating work item unless we already did above due to the batch
   // being full
   if (allWorkItemsForStepComplete && !currentBatch.isProcessed) {
-    console.log(`CDD - allWorkItemsForStepComplete ${allWorkItemsForStepComplete}, currentBatch.isProcessed ${currentBatch.isProcessed}, initial createdWorkItem ${createdWorkItem}`);
     createdWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || createdWorkItem;
   }
   return createdWorkItem;
