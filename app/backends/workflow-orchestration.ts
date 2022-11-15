@@ -265,7 +265,6 @@ async function createAggregatingWorkItem(
  * @param nextWorkflowStep - the next workflow step in the chain after the current workItem
  * @param logger - a Logger instance
  * @param workItem - The current work item
- * @param status - The status returned for the work item update
  * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
  * @param results - an array of paths to STAC catalogs
  * @param outputItemSizes - an array of sizes (in bytes) of the output items for the current step
@@ -277,14 +276,13 @@ async function createNextWorkItems(
   nextWorkflowStep: WorkflowStep,
   logger: Logger,
   workItem: WorkItem,
-  status: WorkItemStatus,
   allWorkItemsForStepComplete: boolean,
   results: string[],
   outputItemSizes: number[],
 ): Promise<boolean> {
-  let createdWorkItem = false;
+  let didCreateWorkItem = false;
   if (results && results.length > 0 || nextWorkflowStep.isBatched) {
-    createdWorkItem = true;
+    didCreateWorkItem = true;
     // if we have completed all the work items for this step or if the next step does not
     // aggregate then create a work item for the next step
     if (nextWorkflowStep.hasAggregatedOutput) {
@@ -300,14 +298,14 @@ async function createNextWorkItems(
         }
         // TODO add other services that can produce more than one output and so should have their
         // batching sortIndex propagated to child work items to provide consistent batching
-        createdWorkItem = await handleBatching(
+        didCreateWorkItem = await handleBatching(
           tx,
           logger,
           nextWorkflowStep,
           outputItemUrls,
           outputItemSizes,
           sortIndex,
-          status,
+          workItem.status,
           allWorkItemsForStepComplete);
       } else if (allWorkItemsForStepComplete) {
         await createAggregatingWorkItem(tx, workItem, nextWorkflowStep);
@@ -340,7 +338,7 @@ async function createNextWorkItems(
       }
     }
   }
-  return createdWorkItem;
+  return didCreateWorkItem;
 }
 
 /**
@@ -539,7 +537,7 @@ export async function handleWorkItemUpdate(
   logger: Logger): Promise<void> {
   const { workItemID, hits, results, scrollID } = update;
   let { errorMessage, status } = update;
-  let createdWorkItem = false;
+  let didCreateWorkItem = false;
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
@@ -568,8 +566,6 @@ export async function handleWorkItemUpdate(
       const workItem = await getWorkItemById(tx, workItemID, true);
       const thisStep = await getWorkflowStepByJobIdStepIndex(tx, workItem.jobID, workItem.workflowStepIndex);
 
-      // If the job was already in a terminal state then send 409 response
-      // unless we are just canceling the work item
       if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
         logger.warn(`Job was already ${job.status}.`);
         // Note work item will stay in the running state, but the reaper will clean it up
@@ -630,6 +626,9 @@ export async function handleWorkItemUpdate(
       );
       const allWorkItemsForStepComplete = (completedWorkItemCount == thisStep.workItemCount);
 
+      // The number of 'hits' returned by a query-cmr could be less than when CMR was first queried
+      // queried by harmony due to metadata deletions from CMR, so we update the job to reflect
+      // that there are fewer items and to know when no more query-cmr jobs should be created.
       if (hits && job.numInputGranules > hits) {
         job.numInputGranules = hits;
         await job.save(tx);
@@ -642,12 +641,11 @@ export async function handleWorkItemUpdate(
           tx, workItem.jobID, workItem.workflowStepIndex + 1,
         );
         if (nextWorkflowStep && (status !== WorkItemStatus.FAILED || nextWorkflowStep?.isBatched)) {
-          createdWorkItem = await createNextWorkItems(
+          didCreateWorkItem = await createNextWorkItems(
             tx,
             nextWorkflowStep,
             logger,
             workItem,
-            status,
             allWorkItemsForStepComplete,
             results,
             outputItemSizes,
@@ -671,9 +669,9 @@ export async function handleWorkItemUpdate(
           if (status != WorkItemStatus.FAILED) {
             await addJobLinksForFinishedWorkItem(tx, job, results, logger);
           }
-          // If all granules are finished mark the job as finished
           job.completeBatch(thisStep.workItemCount);
-          if (allWorkItemsForStepComplete && !createdWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
+          if (allWorkItemsForStepComplete && !didCreateWorkItem && (!nextWorkflowStep || nextWorkflowStep.workItemCount === 0)) {
+            // If all granules are finished mark the job as finished
             const finalStatus = await getFinalStatusForJob(tx, job);
             await completeJob(tx, job, finalStatus, logger);
           } else {

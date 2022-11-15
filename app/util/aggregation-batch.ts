@@ -243,7 +243,7 @@ export async function handleBatching(
   : Promise<boolean> {
   const { jobID, serviceID, stepIndex } = workflowStep;
   let { maxBatchInputs, maxBatchSizeInBytes } = workflowStep;
-  let createdWorkItem = false;
+  let didCreateWorkItem = false;
   maxBatchInputs = maxBatchInputs || env.maxBatchInputs;
   maxBatchSizeInBytes = maxBatchSizeInBytes || env.maxBatchSizeInBytes;
 
@@ -358,7 +358,7 @@ export async function handleBatching(
           // check to see if the batch is full
           if (currentBatchCount === maxBatchInputs || currentBatchSize === maxBatchSizeInBytes) {
             // create STAC catalog and next work item for the current batch
-            createdWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || createdWorkItem;
+            didCreateWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || didCreateWorkItem;
             currentBatch.isProcessed = true;
             // create a new batch
             const newBatch = new Batch({
@@ -383,7 +383,7 @@ export async function handleBatching(
             logger.error(`Batch construction is broken: current batch size: ${currentBatchSize}, item size: ${batchItem.itemSize}, max size: ${maxBatchSizeInBytes}, current batch count: ${currentBatchCount}, max inputs: ${maxBatchInputs}`);
           }
           // create STAC catalog and next work item for the current batch
-          createdWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || createdWorkItem;
+          didCreateWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || didCreateWorkItem;
           currentBatch.isProcessed = true;
 
           // create a new batch
@@ -424,7 +424,7 @@ export async function handleBatching(
   // and create a new aggregating work item unless we already did above due to the batch
   // being full
   if (allWorkItemsForStepComplete && !currentBatch.isProcessed) {
-    createdWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || createdWorkItem;
+    didCreateWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || didCreateWorkItem;
   }
-  return createdWorkItem;
+  return didCreateWorkItem;
 }
