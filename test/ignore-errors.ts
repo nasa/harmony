@@ -135,7 +135,6 @@ describe('when setting ignoreErrors=true', function () {
           firstSwotItem = JSON.parse(res.text).workItem;
           firstSwotItem.status = WorkItemStatus.FAILED;
           firstSwotItem.results = [];
-          firstSwotItem.results = [];
 
           await updateWorkItem(this.backend, firstSwotItem);
 
