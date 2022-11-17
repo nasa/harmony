@@ -100,6 +100,7 @@ export async function getItemUrlsForJobServiceBatch(
       serviceID,
       batchID,
     })
+    .whereNotNull('stacItemUrl')
     .orderBy('sortIndex', 'asc');
 
   const result = await query;

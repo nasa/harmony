@@ -12,7 +12,7 @@ import { objectStoreForProtocol } from './object-store';
 import axios from 'axios';
 import { getCatalogItemUrls, readCatalogItems } from './stac';
 import WorkItemUpdate from '../models/work-item-update';
-import WorkflowStep, { incrementWorkItemCount } from '../models/workflow-steps';
+import WorkflowStep, { decrementWorkItemCount, incrementWorkItemCount } from '../models/workflow-steps';
 import { WorkItemStatus } from '../models/work-item-interface';
 import WorkItem from '../models/work-item';
 
@@ -62,7 +62,6 @@ export async function sizeOfObject(url: string, token: string, logger: Logger): 
 export async function readCatalogLinks(s3Url: string, logger: Logger): Promise<string[]> {
   logger.debug(`Reading STAC catalog ${s3Url}`);
   const items = await readCatalogItems(s3Url);
-
   return items.map((item) => item.assets.data.href);
 }
 
@@ -182,28 +181,40 @@ async function createStacCatalogForBatch(
  * @param tx - the database transaction
  * @param workflowStep- the step in the workflow that needs batching
  * @param batch - the Batch to process
+ * @param logger - the Logger for the request
+ *
+ * @returns true if a new work item was created
  */
-async function createCatalogAndWorkItemForBatch(tx: Transaction, workflowStep: WorkflowStep, batch: Batch): Promise<void> {
+async function createCatalogAndWorkItemForBatch(
+  tx: Transaction, workflowStep: WorkflowStep, batch: Batch, logger: Logger,
+): Promise<boolean> {
   const { jobID, serviceID, stepIndex } = workflowStep;
   const batchItemUrls = await getItemUrlsForJobServiceBatch(tx, jobID, serviceID, batch.batchID);
-  // create STAC catalog for the batch
-  const catalogUrl = await createStacCatalogForBatch(
-    jobID,
-    stepIndex,
-    batch.batchID,
-    workflowStep.collectionsForOperation()[0],
-    batchItemUrls);
+  if (batchItemUrls && batchItemUrls.length > 0) {
+    // create STAC catalog for the batch
+    const catalogUrl = await createStacCatalogForBatch(
+      jobID,
+      stepIndex,
+      batch.batchID,
+      workflowStep.collectionsForOperation()[0],
+      batchItemUrls);
 
-  // create a work item for the batch
-  const newWorkItem = new WorkItem({
-    jobID,
-    serviceID,
-    status: WorkItemStatus.READY,
-    stacCatalogLocation: catalogUrl,
-    workflowStepIndex: workflowStep.stepIndex,
-  });
+    // create a work item for the batch
+    const newWorkItem = new WorkItem({
+      jobID,
+      serviceID,
+      status: WorkItemStatus.READY,
+      stacCatalogLocation: catalogUrl,
+      workflowStepIndex: workflowStep.stepIndex,
+    });
 
-  await newWorkItem.save(tx);
+    await newWorkItem.save(tx);
+    return true;
+  } else {
+    logger.warn('Attempted to construct a work item for a batch, but there were no valid items in the batch. Decrementing the expected number of work items.');
+    await decrementWorkItemCount(tx, jobID, stepIndex);
+  }
+  return false;
 }
 
 /**
@@ -215,7 +226,10 @@ async function createCatalogAndWorkItemForBatch(tx: Transaction, workflowStep: W
  * @param stacItemUrls - An array of paths to STAC items
  * @param itemSizes - An array of item sizes
  * @param workItemSortIndex - The sort index of the parent work item (if set)
+ * @param workItemStatus - The status update for the work item
  * @param allWorkItemsForStepComplete - true if all the work items for the current step are complete
+ *
+ * @returns true if it created a new work item
  */
 export async function handleBatching(
   tx: Transaction,
@@ -224,10 +238,12 @@ export async function handleBatching(
   stacItemUrls: string[],
   itemSizes: number[],
   workItemSortIndex: number,
+  workItemStatus: WorkItemStatus,
   allWorkItemsForStepComplete: boolean)
-  : Promise<void> {
+  : Promise<boolean> {
   const { jobID, serviceID, stepIndex } = workflowStep;
   let { maxBatchInputs, maxBatchSizeInBytes } = workflowStep;
+  let didCreateWorkItem = false;
   maxBatchInputs = maxBatchInputs || env.maxBatchInputs;
   maxBatchSizeInBytes = maxBatchSizeInBytes || env.maxBatchSizeInBytes;
 
@@ -246,20 +262,35 @@ export async function handleBatching(
     }
   }
 
-  let indexIncrement = 0;
-  // create new batch items for the STAC items in the results. This looping is only useful for
-  // query-cmr (currently)
-  for (const url of stacItemUrls) {
-    const sortIndex = startIndex + indexIncrement;
+  // Create new batch items for the STAC items in the results. This looping only works for
+  // query-cmr (currently) because query-cmr items do not have sort indices and so we can
+  // just increment the sort index by 1 for each item returned. If an intermediate step has
+  // a sort index and can produce multiple outputs from a single work item we'll need to
+  // change this logic.
+  if (stacItemUrls.length === 0 || workItemStatus === WorkItemStatus.FAILED) {
+    logger.error(`Work item status is ${workItemStatus} and stacItemUrls is ${stacItemUrls}, so creating a dummy batch item`);
+    // Add a dummy item
     const batchItem = new BatchItem({
       jobID,
       serviceID,
-      stacItemUrl: url,
-      itemSize: itemSizes[indexIncrement],
-      sortIndex,
+      itemSize: 0,
+      sortIndex: startIndex,
     });
-    indexIncrement += 1;
     await batchItem.save(tx);
+  } else {
+    let indexIncrement = 0;
+    for (const url of stacItemUrls) {
+      const sortIndex = startIndex + indexIncrement;
+      const batchItem = new BatchItem({
+        jobID,
+        serviceID,
+        stacItemUrl: url,
+        itemSize: itemSizes[indexIncrement],
+        sortIndex,
+      });
+      indexIncrement += 1;
+      await batchItem.save(tx);
+    }
   }
 
   // assign batch items to batches
@@ -320,12 +351,14 @@ export async function handleBatching(
           batchItem.batchID = currentBatch.batchID;
           await batchItem.save(tx);
           currentBatchSize += batchItem.itemSize;
-          currentBatchCount += 1;
+          if (batchItem.stacItemUrl) { // only count successful work items being added to the batch
+            currentBatchCount += 1;
+          }
           index += 1;
           // check to see if the batch is full
           if (currentBatchCount === maxBatchInputs || currentBatchSize === maxBatchSizeInBytes) {
             // create STAC catalog and next work item for the current batch
-            await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
+            didCreateWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || didCreateWorkItem;
             currentBatch.isProcessed = true;
             // create a new batch
             const newBatch = new Batch({
@@ -350,7 +383,7 @@ export async function handleBatching(
             logger.error(`Batch construction is broken: current batch size: ${currentBatchSize}, item size: ${batchItem.itemSize}, max size: ${maxBatchSizeInBytes}, current batch count: ${currentBatchCount}, max inputs: ${maxBatchInputs}`);
           }
           // create STAC catalog and next work item for the current batch
-          await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
+          didCreateWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || didCreateWorkItem;
           currentBatch.isProcessed = true;
 
           // create a new batch
@@ -391,6 +424,7 @@ export async function handleBatching(
   // and create a new aggregating work item unless we already did above due to the batch
   // being full
   if (allWorkItemsForStepComplete && !currentBatch.isProcessed) {
-    await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch);
+    didCreateWorkItem = await createCatalogAndWorkItemForBatch(tx, workflowStep, currentBatch, logger) || didCreateWorkItem;
   }
+  return didCreateWorkItem;
 }
