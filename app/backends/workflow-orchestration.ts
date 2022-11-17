@@ -621,6 +621,8 @@ export async function handleWorkItemUpdate(
         totalItemsSize,
         outputItemSizes);
 
+      workItem.status = status;
+
       const completedWorkItemCount = await workItemCountForStep(
         tx, workItem.jobID, workItem.workflowStepIndex, COMPLETED_WORK_ITEM_STATUSES,
       );
