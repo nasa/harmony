@@ -449,3 +449,23 @@ export async function retry(
     next(e);
   }
 }
+
+/**
+ * Middleware to redirect any requests to /workflow-ui/ or /admin/workflow-ui/ to the same endpoint
+ * with the trailing slash removed.
+ *
+ * @param req - The client request
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
+ *
+ */
+export function redirectWithoutTrailingSlash(
+  req: HarmonyRequest, res: Response, next: NextFunction,
+): void {
+  if (req.path.endsWith('workflow-ui/')) {
+    const url = req.url.slice(req.path.length);
+    res.redirect(301, req.path.slice(0, -1) + url);
+  } else {
+    next();
+  }
+}
