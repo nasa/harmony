@@ -1,9 +1,6 @@
 # package directories
 node_modules
 
-# Serverless directories
-.serverless
-
 # Temp and log files
 *.log
 tmp
