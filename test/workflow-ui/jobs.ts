@@ -1,5 +1,6 @@
 import * as mustache from 'mustache';
 import { expect } from 'chai';
+import request from 'supertest';
 import { describe, it, before } from 'mocha';
 import { JobStatus } from '../../app/models/job';
 import hookServersStartStop from '../helpers/servers';
@@ -7,6 +8,7 @@ import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { workflowUIJobs, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../helpers/workflow-ui';
 import env from '../../app/util/env';
+import { auth } from '../helpers/auth';
 
 // Example jobs to use in tests
 const woodyJob1 = buildJob({
@@ -112,6 +114,17 @@ describe('Workflow UI jobs route', function () {
       await sidJob3.save(this.trx);
       await sidJob4.save(this.trx);
       this.trx.commit();
+    });
+
+    describe('When including a trailing slash on the user route /workflow-ui/', function () {
+      before(async function () {
+        this.res = await request(this.frontend).get('/workflow-ui/').use(auth({ username: 'andy' })).redirects(0);
+      });
+
+      it('redirects to the /workflow-ui page without a trailing slash', function () {
+        expect(this.res.statusCode).to.equal(301);
+        expect(this.res.headers.location).to.match(/.*\/workflow-ui$/);
+      });
     });
 
     describe('who has no jobs', function () {
@@ -280,6 +293,17 @@ describe('Workflow UI jobs route', function () {
 
     describe('when accessing the admin endpoint', function () {
       describe('when the user is part of the admin group', function () {
+        describe('When including a trailing slash on the admin route admin/workflow-ui/', function () {
+          before(async function () {
+            this.res = await request(this.frontend).get('/admin/workflow-ui/').use(auth({ username: 'adam' })).redirects(0);
+          });
+
+          it('redirects to the /admin/workflow-ui page without a trailing slash', function () {
+            expect(this.res.statusCode).to.equal(301);
+            expect(this.res.headers.location).to.match(/.*\/admin\/workflow-ui$/);
+          });
+        });
+
         hookAdminWorkflowUIJobs({ username: 'adam', limit: 100 });
         it('returns jobs for all users', async function () {
           const listing = this.res.text;
