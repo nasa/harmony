@@ -52,7 +52,7 @@ export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
   const { logger } = req.context;
-  const { serviceID, podName } = req.query;
+  const { serviceID, podName, podId } = req.query;
 
   let workItem: WorkItem, maxCmrGranules: number;
 
@@ -60,6 +60,8 @@ export async function getWork(
     workItem = await getNextWorkItem(tx, serviceID as string);
     if (workItem) {
       logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
+      workItem.runnerIds.push(podId as string);
+      await workItem.save(tx);
       if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
         maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
         res.send({ workItem, maxCmrGranules });
