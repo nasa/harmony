@@ -46,6 +46,7 @@ logger.debug(`INVOCATION_ARGS: ${env.invocationArgs}`);
  */
 async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; error?: string, maxCmrGranules?: number }> {
   try {
+    console.log(env.myPodUid);
     const response = await axiosGetWork
       .get(workUrl, {
         params: { serviceID: env.harmonyService, podName: env.myPodName },

@@ -66,6 +66,7 @@ interface HarmonyEnv {
   awsDefaultRegion: string;
   useLocalstack: boolean;
   localstackHost: string;
+  myPodUid: string;
 }
 
 // special cases
