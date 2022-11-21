@@ -270,7 +270,8 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
     workflowItemUpdatedAt(): string { return this.updatedAt.getTime(); },
     workflowItemLogsButton(): string {
       const isComplete = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL].indexOf(this.status) > -1;
-      if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
+      const logsAvailable = isComplete || this.retryCount > 0;
+      if (!logsAvailable || !isAdmin || this.serviceID.includes('query-cmr')) return '';
       const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
       return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}"` +
         ' title="view logs"><i class="bi bi-body-text"></i></a>';
