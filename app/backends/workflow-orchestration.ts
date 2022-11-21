@@ -60,8 +60,10 @@ export async function getWork(
     workItem = await getNextWorkItem(tx, serviceID as string);
     if (workItem) {
       logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
-      workItem.runnerIds.push(podId as string);
-      await workItem.save(tx);
+      if (podId) {
+        workItem.runnerIds.push(podId as string);
+        await workItem.save(tx);
+      }
       if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
         maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
         res.send({ workItem, maxCmrGranules });

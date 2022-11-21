@@ -264,6 +264,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
   badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
   return {
+    workflowItemRunnerIds(): string { return (this.runnerIds.join(', ')); },
     workflowItemBadge(): string { return badgeClasses[this.status]; },
     workflowItemStep(): string { return sanitizeImage(this.serviceID); },
     workflowItemCreatedAt(): string { return this.createdAt.getTime(); },

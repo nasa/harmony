@@ -99,9 +99,9 @@ describe('Service Runner', function () {
   describe('uploadLogs', function () {
     describe('with text logs', function () {
       const itemRecord0: WorkItemRecord = { id: 0, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(), runnerIds: [] };
       const itemRecord1: WorkItemRecord = { id: 1, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(), runnerIds: [] };
       const s3 = objectStoreForProtocol('s3');
       before(async function () {
         // One of the items will have its log file written to twice
@@ -136,9 +136,9 @@ describe('Service Runner', function () {
     });
     describe('with JSON logs', function () {
       const itemRecord0: WorkItemRecord = { id: 2, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(), runnerIds: [] };
       const itemRecord1: WorkItemRecord = { id: 3, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(), runnerIds: [] };
       const s3 = objectStoreForProtocol('s3');
       before(async function () {
         // One of the items will have its log file written to twice
@@ -203,8 +203,7 @@ describe('Service Runner', function () {
         jobID: '123',
         serviceID: 'abc',
         workflowStepIndex: 0,
-        scrollID: 1234,
-        operation: { requestID: 'foo' },
+        scrollID: '1234',
         id: 1,
       });
       it('returns an error message', async function () {
@@ -221,7 +220,6 @@ describe('Service Runner', function () {
         jobID: '123',
         serviceID: 'abc',
         workflowStepIndex: 1,
-        operation: { requestID: 'foo' },
         id: 1,
       });
       beforeEach(function () {

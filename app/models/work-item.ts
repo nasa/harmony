@@ -17,7 +17,7 @@ const QUERY_CMR_STEP_INDEX = 1;
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration', 'startedAt',
-  'sortIndex',
+  'sortIndex', 'runnerIds',
 ];
 
 /**
@@ -77,13 +77,24 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
   runnerIds: string[];
 
   /**
+   * Prepare a record for saving.
+   * (Can be useful if the record needs massaging before saving,
+   * e.g. for fields that need to be converted between stringified JSON text and object.)
+   * @param record - the work item record to mutate
+   * @returns the work item record, ready to be saved
+   */
+  prepareForSave(record: Record<string, unknown>): Record<string, unknown>  {
+    record.runnerIds = JSON.stringify(this.runnerIds || []);
+    return record;
+  }
+
+  /**
    * Saves the work item to the database using the given transaction.
    *
    * @param transaction - The transaction to use for saving the job link
    */
   async save(transaction: Transaction): Promise<void> {
-    const record: Record<string, unknown> = _.pick(this, serializedFields);
-    record.runnerIds = JSON.stringify(this.runnerIds || []);
+    const record: Record<string, unknown> = this.prepareForSave(_.pick(this, serializedFields));
     await super.save(transaction, record);
   }
 
@@ -92,7 +103,7 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
    *
    * @param fields - Object containing fields to set on the record
    */
-  constructor(fields: WorkItemRecord) {
+  constructor(fields: Partial<WorkItemRecord>) {
     super(fields);
     this.runnerIds = (typeof fields.runnerIds === 'string'
       ? JSON.parse(fields.runnerIds) : fields.runnerIds)
@@ -106,7 +117,7 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
    * @param workItems - The work items to save
    */
   static async insertBatch(transaction: Transaction, workItems: WorkItem[]): Promise<void> {
-    const fieldsList = workItems.map(item => _.pick(item, serializedFields));
+    const fieldsList = workItems.map(item => item.prepareForSave(_.pick(item, serializedFields)));
     await super.insertBatch(transaction, workItems, fieldsList);
   }
 

@@ -2,6 +2,9 @@
     <th scope="row">{{workflowStepIndex}}</th>
     <td>{{workflowItemStep}}</td>
     <td>{{id}}</td>
+    {{#isAdmin}}
+    <td>{{workflowItemRunnerIds}}</td>
+    {{/isAdmin}}
     <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
     {{#isAdmin}}
     <td>{{{workflowItemLogsButton}}}</td>

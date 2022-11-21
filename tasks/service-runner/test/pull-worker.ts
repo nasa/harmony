@@ -150,8 +150,7 @@ describe('Pull Worker', async function () {
           jobID: '123',
           serviceID: 'abc',
           workflowStepIndex: 0,
-          scrollID: 1234,
-          operation: { requestID: 'foo' },
+          scrollID: '1234',
           id: 1,
         });
         it('calls runQueryCmrFromPull', async function () {
@@ -165,7 +164,6 @@ describe('Pull Worker', async function () {
           jobID: '123',
           serviceID: 'abc',
           workflowStepIndex: 1,
-          operation: { requestID: 'foo' },
           id: 1,
         });
         it('calls runServiceFromPull', async function () {
