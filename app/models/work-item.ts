@@ -5,7 +5,7 @@ import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
 import { activeJobStatuses, Job, JobStatus } from './job';
-import Record from './record';
+import DBRecord from './record';
 import WorkflowStep from './workflow-steps';
 import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
 
@@ -25,7 +25,7 @@ const serializedFields = [
  * Wrapper object for persisted work items
  *
  */
-export default class WorkItem extends Record implements WorkItemRecord {
+export default class WorkItem extends DBRecord implements WorkItemRecord {
   static table = 'work_items';
 
   // The ID of the job that created this work item
@@ -82,8 +82,21 @@ export default class WorkItem extends Record implements WorkItemRecord {
    * @param transaction - The transaction to use for saving the job link
    */
   async save(transaction: Transaction): Promise<void> {
-    const record = _.pick(this, serializedFields);
+    const record: Record<string, unknown> = _.pick(this, serializedFields);
+    record.runnerIds = JSON.stringify(this.runnerIds || []);
     await super.save(transaction, record);
+  }
+
+  /**
+   * Creates a WorkItem instance.
+   *
+   * @param fields - Object containing fields to set on the record
+   */
+  constructor(fields: WorkItemRecord) {
+    super(fields);
+    this.runnerIds = (typeof fields.runnerIds === 'string'
+      ? JSON.parse(fields.runnerIds) : fields.runnerIds)
+      || [];
   }
 
   /**
@@ -541,10 +554,7 @@ export async function workItemCountForStep(
   stepIndex: number,
   status?: WorkItemStatus | WorkItemStatus[],
 ): Promise<number> {
-  // Record<string, unknown> clashes with imported database Record class
-  // so we use '{}' causing a linter error
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  const whereClause: {} = {
+  const whereClause: Record<string, unknown> = {
     jobID, workflowStepIndex: stepIndex,
   };
   const statusArray = Array.isArray(status) ? status : [status];
