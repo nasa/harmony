@@ -118,11 +118,11 @@ export function getRequestMetric(
   }
 
   if (rangeBeginDateTime) {
-    metric.rangeBeginDateTime = rangeBeginDateTime as string;
+    metric.rangeBeginDateTime = rangeBeginDateTime;
   }
 
   if (rangeEndDateTime) {
-    metric.rangeEndDateTime = rangeEndDateTime as string;
+    metric.rangeEndDateTime = rangeEndDateTime;
   }
 
   return metric;
