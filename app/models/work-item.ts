@@ -143,6 +143,7 @@ const tableFields = serializedFields.map((field) => `w.${field}`);
  * Returns the next work item to process for a service
  * @param tx - the transaction to use for querying
  * @param serviceID - the service ID looking for the next item to work
+ * @param podId - the id of the pod that is looking for a work item to process
  *
  * @returns A promise with the work item to process or null if none
  */
