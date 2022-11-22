@@ -149,8 +149,10 @@ const tableFields = serializedFields.map((field) => `w.${field}`);
 export async function getNextWorkItem(
   tx: Transaction,
   serviceID: string,
+  podId: string,
 ): Promise<WorkItem> {
   let workItemData;
+  let workItem;
   const acceptableJobStatuses = _.cloneDeep(activeJobStatuses);
   // TODO: Now that we use search-after instead of scrolling we could allow pausing of query-cmr
   // work items and start them back up when the job is resumed because there is no session
@@ -218,11 +220,14 @@ export async function getNextWorkItem(
             // in case a service for the same job produces an output with the same file name
             workItemData.operation.stagingLocation += `${workItemData.id}/`;
             const startedAt = new Date();
+            workItem = new WorkItem(workItemData);
+            workItem.runnerIds.push(podId);
             await tx(WorkItem.table)
               .update({
                 status: WorkItemStatus.RUNNING,
                 updatedAt: startedAt,
                 startedAt,
+                runnerIds: workItem.runnerIds,
               })
               .where({ id: workItemData.id });
             // need to update the job otherwise long running jobs won't count against
@@ -240,7 +245,7 @@ export async function getNextWorkItem(
     throw e;
   }
 
-  return workItemData && new WorkItem(workItemData);
+  return workItem;
 }
 
 /**
