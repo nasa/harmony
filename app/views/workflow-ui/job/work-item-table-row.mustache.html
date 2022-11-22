@@ -1,18 +1,26 @@
 <tr id="item-{{id}}" class="work-item-table-row">
-    <th scope="row">{{workflowStepIndex}}</th>
-    <td>{{workflowItemStep}}</td>
-    <td>{{id}}</td>
-    {{#isAdmin}}
-    <td>{{workflowItemRunnerIds}}</td>
-    {{/isAdmin}}
-    <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
-    {{#isAdmin}}
-    <td>{{{workflowItemLogsButton}}}</td>
-    {{/isAdmin}}
-    {{#canShowRetryColumn}}
-    <td>{{{workflowItemRetryButton}}}</td>
-    {{/canShowRetryColumn}}
-    <td>{{{retryCount}}}</td>
-    <td class="date-td" data-time="{{workflowItemCreatedAt}}"></td>
-    <td class="date-td" data-time="{{workflowItemUpdatedAt}}"></td>
+  <th scope="row">{{workflowStepIndex}}</th>
+  <td>{{workflowItemStep}}</td>
+  <td>{{id}}</td>
+  <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
+  {{#isAdmin}}
+  <td>{{{workflowItemLogsButton}}}</td>
+  {{/isAdmin}}
+  {{#isAdmin}}
+  <td>
+    <div class="dropdown">
+      <button id="dropdownMenuLink" class="btn btn-light btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+      </button>
+      <ul class="dropdown-menu">
+        {{{workflowItemRunnerIds}}}
+      </ul>
+    </div>
+  </td>
+  {{/isAdmin}}
+  {{#canShowRetryColumn}}
+  <td>{{{workflowItemRetryButton}}}</td>
+  {{/canShowRetryColumn}}
+  <td>{{{retryCount}}}</td>
+  <td class="date-td" data-time="{{workflowItemCreatedAt}}"></td>
+  <td class="date-td" data-time="{{workflowItemUpdatedAt}}"></td>
 </tr>

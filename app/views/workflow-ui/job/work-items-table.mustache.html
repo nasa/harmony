@@ -8,12 +8,12 @@
             <th scope="col">stepIndex</th>
             <th scope="col">stepName</th>
             <th scope="col">id</th>
-            {{#isAdmin}}
-            <th scope="col">runnerIds</th>
-            {{/isAdmin}}
             <th scope="col">status</th>
             {{#isAdmin}}
-            <th scope="col">logs</th>
+            <th scope="col">s3logs <i class="bi bi-info-circle" title="An aggregate view of the worker container logs for all invocations of the service, stored in s3."></i></th>
+            {{/isAdmin}}
+            {{#isAdmin}}
+            <th scope="col">podLogs</th>
             {{/isAdmin}}
             {{#canShowRetryColumn}}
             <th scope="col">retry</th>
