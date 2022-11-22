@@ -1,4 +1,4 @@
-import { TemporalRange } from '../../../models/data-operation';
+import { TemporalStringRange } from '../../../models/data-operation';
 import { ParameterParseError } from '../../../util/parameter-parsing';
 
 const rangeSeparator = ':';
@@ -281,15 +281,15 @@ export function subsetParamsToBbox(
  */
 export function subsetParamsToTemporal(
   values: { lat?: Range<number>; lon?: Range<number>; time?: Range<Date> },
-): TemporalRange {
+): TemporalStringRange {
   const { time } = values;
-  const temporal: TemporalRange = {};
+  const temporal: TemporalStringRange = {};
   if (time) {
     if (time.min) {
-      temporal.start = time.min;
+      temporal.start = time.min.toISOString();
     }
     if (time.max) {
-      temporal.end = time.max;
+      temporal.end = time.max.toISOString();
     }
   }
   return temporal;
