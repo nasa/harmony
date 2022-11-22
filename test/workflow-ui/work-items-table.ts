@@ -169,7 +169,7 @@ describe('Workflow UI work items table route', function () {
             .forEach((stepIndex) => expect(listing).to.contain(mustache.render('<th scope="row">{{stepIndex}}</th>', { stepIndex })));
           [1, 2, 3]
             .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
-          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(4);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(5);
         });
         it('return useful but nonsensitive information about docker images', function () {
           const listing = this.res.text;
@@ -204,7 +204,7 @@ describe('Workflow UI work items table route', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID });
         it('returns links for the other user\'s work item logs for retrying and completed work items', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-button/g) || []).length).to.equal(3);
+          expect((listing.match(/logs-button/g) || []).length).to.equal(4);
         });
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
@@ -354,11 +354,11 @@ describe('Workflow UI work items table route', function () {
             ));
           [1, 2, 3]
             .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
-          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(4);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(5);
         });
         it('returns links for the (completed) and currently running work item logs', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-button/g) || []).length).to.equal(3);
+          expect((listing.match(/logs-button/g) || []).length).to.equal(4);
         });
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
