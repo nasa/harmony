@@ -228,7 +228,7 @@ export async function getNextWorkItem(
                 status: WorkItemStatus.RUNNING,
                 updatedAt: startedAt,
                 startedAt,
-                runnerIds: workItem.runnerIds,
+                runnerIds: JSON.stringify(workItem.runnerIds),
               })
               .where({ id: workItemData.id });
             // need to update the job otherwise long running jobs won't count against
