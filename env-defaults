@@ -60,6 +60,10 @@ CALLBACK_URL_ROOT=http://harmony:3001
 # The CMR Endpoint to use (e.g. URL for local, SIT, UAT, or production)
 CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
 
+# The Metrics Endpoint to use (e.g. URL for SIT, UAT, or production)
+# Should contain placeholders like {{podId}}, {{from}}, and {{to}}, which are replaced at runtime.
+METRICS_ENDPOINT=http://localhost:3000?podId={{podId}}&from={{from}}&to={{to}}
+
 # For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
 USE_LOCALSTACK=true
 

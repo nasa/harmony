@@ -73,6 +73,7 @@ interface HarmonyEnv {
   builtInTaskVersion: string;
   callbackUrlRoot: string;
   cmrEndpoint: string;
+  metricsEndpoint: string;
   cmrMaxPageSize: number;
   defaultPodGracePeriodSecs: number;
   defaultJobListPageSize: number;
