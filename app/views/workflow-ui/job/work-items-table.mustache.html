@@ -10,7 +10,7 @@
             <th scope="col">id</th>
             <th scope="col">status</th>
             {{#isAdmin}}
-            <th scope="col">logs <i class="bi bi-info-circle" title="An aggregate view of the worker container logs for all invocations of the service, stored in s3."></i></th>
+            <th scope="col">logs <i class="bi bi-info-circle" title="An aggregate JSON list of worker container logs for all invocations of the service."></i></th>
             {{/isAdmin}}
             {{#isAdmin}}
             <th scope="col">podLogs <i class="bi bi-info-circle" title="Link(s) to the logs dashboard for each pod that has worked on this item."></i></th>
