@@ -53,13 +53,12 @@ export function buildWorkItem(fields: Partial<WorkItemRecord> = {}): WorkItem {
 export async function rawSaveWorkItem(tx: Transaction, fields: Partial<WorkItemRecord> = {}): Promise<WorkItem> {
   const workItem = buildWorkItem(fields);
   let stmt = tx((workItem.constructor as RecordConstructor).table)
-    .insert(workItem);
+    .insert({ ...workItem, runners: '[]' });
   if (db.client.config.client === 'pg') {
     stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
   }
 
   [workItem.id] = await stmt;
-
   return workItem;
 }
 
@@ -184,7 +183,7 @@ export function hookWorkItemUpdateEach(
  * @returns The response
  */
 export function getWorkForService(app: Application, serviceID: string): Test {
-  return request(app).get('/service/work').query({ serviceID });
+  return request(app).get('/service/work').query({ serviceID, podName: 'a-service', podId: 'pod-x-y-z' });
 }
 
 export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForService);
