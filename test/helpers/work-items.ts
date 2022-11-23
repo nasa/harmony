@@ -59,6 +59,7 @@ export async function rawSaveWorkItem(tx: Transaction, fields: Partial<WorkItemR
   }
 
   [workItem.id] = await stmt;
+
   return workItem;
 }
 
