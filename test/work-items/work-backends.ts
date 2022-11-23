@@ -148,7 +148,7 @@ describe('Work Backends', function () {
         expect(Object.keys(this.res.body.workItem)).to.eql([
           'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
           'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration',
-          'startedAt', 'sortIndex', 'operation',
+          'startedAt', 'sortIndex', 'runners', 'operation',
         ]);
       });
 
