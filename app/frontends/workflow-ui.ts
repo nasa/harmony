@@ -266,7 +266,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
   return {
     workflowItemRunners(): string { 
       return this.runners.map((runner: { id: string, startedAt: number }) => {
-        return `<li><a class="dropdown-item" href="#">${runner.id} ${runner.startedAt}</a></li>`;
+        return `<li><a class="dropdown-item" href="#">${runner.id} ${(new Date(runner.startedAt)).toISOString()}</a></li>`;
       }).join(''); 
     },
     workflowItemBadge(): string { return badgeClasses[this.status]; },
