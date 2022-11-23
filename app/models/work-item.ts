@@ -17,7 +17,7 @@ const QUERY_CMR_STEP_INDEX = 1;
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration', 'startedAt',
-  'sortIndex', 'runnerIds',
+  'sortIndex', 'runners',
 ];
 
 /**
@@ -73,8 +73,9 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
   // The position of the work item output in any following aggregation
   sortIndex: number;
 
-  // Ids of any runners (pods) that have worked on this item
-  runnerIds: string[];
+  // Any runners (pods) that have worked on this item
+  // includes the id of the runner and the start time in milliseconds since epoch
+  runners: { id: string, startedAt: number }[];
 
   /**
    * Prepare a record for saving.
@@ -84,7 +85,7 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
    * @returns the work item record, ready to be saved
    */
   prepareForSave(record: Record<string, unknown>): Record<string, unknown>  {
-    record.runnerIds = JSON.stringify(this.runnerIds || []);
+    record.runners = JSON.stringify(this.runners || []);
     return record;
   }
 
@@ -105,8 +106,8 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
    */
   constructor(fields: Partial<WorkItemRecord>) {
     super(fields);
-    this.runnerIds = (typeof fields.runnerIds === 'string'
-      ? JSON.parse(fields.runnerIds) : fields.runnerIds)
+    this.runners = (typeof fields.runners === 'string'
+      ? JSON.parse(fields.runners) : fields.runners)
       || [];
   }
 
@@ -222,13 +223,13 @@ export async function getNextWorkItem(
             workItemData.operation.stagingLocation += `${workItemData.id}/`;
             const startedAt = new Date();
             workItem = new WorkItem(workItemData);
-            workItem.runnerIds.push(podId);
+            workItem.runners.push({ id: podId, startedAt: startedAt.getTime() });
             await tx(WorkItem.table)
               .update({
                 status: WorkItemStatus.RUNNING,
                 updatedAt: startedAt,
                 startedAt,
-                runnerIds: JSON.stringify(workItem.runnerIds),
+                runners: JSON.stringify(workItem.runners),
               })
               .where({ id: workItemData.id });
             // need to update the job otherwise long running jobs won't count against

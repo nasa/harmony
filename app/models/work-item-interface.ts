@@ -74,8 +74,9 @@ export interface WorkItemRecord {
   // The position of the work item output in any following aggregation
   sortIndex: number;
 
-  // Ids of any runners (pods) that have worked on this item
-  runnerIds: string[];
+  // Any runners (pods) that have worked on this item
+  // includes the id of the runner and the start time in milliseconds since epoch
+  runners: { id: string, startedAt: number }[];
 }
 
 export interface WorkItemQuery {

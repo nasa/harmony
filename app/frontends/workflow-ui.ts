@@ -264,9 +264,9 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
   badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
   return {
-    workflowItemRunnerIds(): string { 
-      return this.runnerIds.map((runnerId: string) => {
-        return `<li><a class="dropdown-item" href="#">${runnerId}</a></li>`;
+    workflowItemRunners(): string { 
+      return this.runners.map((runner: { id: string, startedAt: number }) => {
+        return `<li><a class="dropdown-item" href="#">${runner.id} ${runner.startedAt}</a></li>`;
       }).join(''); 
     },
     workflowItemBadge(): string { return badgeClasses[this.status]; },
