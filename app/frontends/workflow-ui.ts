@@ -272,6 +272,8 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
         const url = env.metricsEndpoint
           .replace('{{from}}', (new Date(runner.startedAt)).toISOString())  
           .replace('{{to}}', to)
+          // TODO - generalize query parameter construction so that it works for app logs as well (requestId=...)
+          // searchKey, searchValue
           .replaceAll('{{podId}}', runner.id);
         return `
         <div class="dropdown">
