@@ -183,6 +183,10 @@ describe('Workflow UI work items table route', function () {
           const listing = this.res.text;
           expect(listing).to.not.contain(mustache.render(logsTableHeader, {}));
         });
+        it('does not return a column for the pod logs', async function () {
+          const listing = this.res.text;
+          expect(listing).to.not.contain(mustache.render('>podLogs</th>', {}));
+        });
         it('returns retry buttons for their RUNNING work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
@@ -328,6 +332,10 @@ describe('Workflow UI work items table route', function () {
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render(logsTableHeader, {}));
+        });
+        it('does return a column for the pod logs', async function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('>podLogs</th>', {}));
         });
         it('returns retry buttons for the RUNNING work items', async function () {
           const listing = this.res.text;
