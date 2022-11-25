@@ -11,8 +11,6 @@
             <th scope="col">status</th>
             {{#isAdmin}}
             <th class="helpful-th" scope="col" title="An aggregate JSON list of worker container logs for all invocations of the service.">logs</th>
-            {{/isAdmin}}
-            {{#isAdmin}}
             <th class="helpful-th" scope="col" title="Link(s) to the logs dashboard for each pod that has worked on this item.">podLogs</th>
             {{/isAdmin}}
             {{#canShowRetryColumn}}

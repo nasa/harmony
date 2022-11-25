@@ -5,11 +5,7 @@
   <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
   {{#isAdmin}}
   <td>{{{workflowItemLogsButton}}}</td>
-  {{/isAdmin}}
-  {{#isAdmin}}
-  <td>
-    {{{workflowItemPodLogs}}}
-  </td>
+  <td>{{{workflowItemPodLogs}}}</td>
   {{/isAdmin}}
   {{#canShowRetryColumn}}
   <td>{{{workflowItemRetryButton}}}</td>
