@@ -272,9 +272,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
         const url = env.metricsEndpoint
           .replace('{{from}}', (new Date(runner.startedAt)).toISOString())  
           .replace('{{to}}', to)
-          // TODO - generalize query parameter construction so that it works for app logs as well (requestId=...)
-          // searchKey, searchValue
-          .replaceAll('{{podId}}', runner.id);
+          .replace('{{query}}', encodeURIComponent(`kubernetes.pod_id: "${runner.id}"`));
         return `
         <div class="dropdown">
           <button id="dropdownMenuLink" class="btn btn-light btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
