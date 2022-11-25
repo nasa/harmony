@@ -40,8 +40,15 @@ const item2 = buildWorkItem(
   { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId, status: WorkItemStatus.SUCCESSFUL },
 );
 const item3 = buildWorkItem(
+  { jobID: targetJob.jobID, workflowStepIndex: 1, serviceID: step1ServiceId, status: WorkItemStatus.SUCCESSFUL },
+);
+const item4 = buildWorkItem(
   { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.RUNNING },
 );
+const retryingWorkItem = buildWorkItem(
+  { jobID: targetJob.jobID, workflowStepIndex: 2, serviceID: step2ServiceId, status: WorkItemStatus.RUNNING, retryCount: 1 },
+);
+
 
 // use to test functionality related to job sharing
 const collectionWithEULAFalseAndGuestReadTrue = 'C1233800302-EEDTEST';
@@ -97,6 +104,8 @@ describe('Workflow UI work items table route', function () {
       await item1.save(this.trx);
       await item2.save(this.trx);
       await item3.save(this.trx);
+      await item4.save(this.trx);
+      await retryingWorkItem.save(this.trx);
       await step1.save(this.trx);
       await step2.save(this.trx);
 
@@ -170,7 +179,7 @@ describe('Workflow UI work items table route', function () {
             .forEach((stepIndex) => expect(listing).to.contain(mustache.render('<th scope="row">{{stepIndex}}</th>', { stepIndex })));
           [1, 2, 3]
             .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
-          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(5);
         });
         it('return useful but nonsensitive information about docker images', function () {
           const listing = this.res.text;
@@ -197,7 +206,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('returns retry buttons for their RUNNING work items', async function () {
           const listing = this.res.text;
-          expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+          expect((listing.match(/retry-button/g) || []).length).to.equal(2);
         });
         it('returns a column for the retry buttons', async function () {
           const listing = this.res.text;
@@ -207,9 +216,9 @@ describe('Workflow UI work items table route', function () {
 
       describe('who requests the work items table for someone else\'s non-shareable job (but is an admin)', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID });
-        it('returns links for the other user\'s work item logs', async function () {
+        it('returns links for the other user\'s work item logs for retrying and completed work items', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-button/g) || []).length).to.equal(2);
+          expect((listing.match(/logs-button/g) || []).length).to.equal(4);
         });
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
@@ -217,7 +226,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('returns retry buttons for the other user\'s RUNNING work items', async function () {
           const listing = this.res.text;
-          expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+          expect((listing.match(/retry-button/g) || []).length).to.equal(2);
         });
         it('returns a column for the retry buttons', async function () {
           const listing = this.res.text;
@@ -267,12 +276,17 @@ describe('Workflow UI work items table route', function () {
       });
 
       const successfulFilter = '[{"value":"status: successful","dbValue":"successful","field":"status"}]';
-      
+
       describe('who requests page 1 of the work items table, with a limit of 1 and status IN [SUCCESSFUL]', function () {
         hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, tableFilter: successfulFilter } });
         it('returns a link to the next page', function () {
           const listing = this.res.text;
           ['limit=1', 'page=2', `tableFilter=${encodeURIComponent(successfulFilter)}`].forEach((param) => expect(listing).to.contain(
+            mustache.render('{{param}}', { param })));
+        });
+        it('returns a link to the last page', function () {
+          const listing = this.res.text;
+          ['limit=1', 'page=3', `tableFilter=${encodeURIComponent(successfulFilter)}`].forEach((param) => expect(listing).to.contain(
             mustache.render('{{param}}', { param })));
         });
         it('returns only one work item', function () {
@@ -304,11 +318,34 @@ describe('Workflow UI work items table route', function () {
         });
       });
 
+      describe('who requests page 3 of the work items table, with a limit of 1 and status IN [SUCCESSFUL]', function () {
+        hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { limit: 1, page: 3, tableFilter: successfulFilter } });
+        it('returns a link to the previous page', function () {
+          const listing = this.res.text;
+          ['limit=1', 'page=2', `tableFilter=${encodeURIComponent(successfulFilter)}`].forEach((param) => expect(listing).to.contain(
+            mustache.render('{{param}}', { param })));
+        });
+        it('returns a link to the first page', function () {
+          const listing = this.res.text;
+          ['limit=1', 'page=1', `tableFilter=${encodeURIComponent(successfulFilter)}`].forEach((param) => expect(listing).to.contain(
+            mustache.render('{{param}}', { param })));
+        });
+        it('returns only one work item', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id: 3 }));
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+        });
+        it('returns a SUCCESSFUL work item', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
+        });
+      });
+
       describe('who filters by status IN [RUNNING]', function () {
         hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { tableFilter: '[{"value":"status: running","dbValue":"running","field":"status"}]' } });
         it('returns only running work items', function () {
           const listing = this.res.text;
-          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(2);
           expect(listing).to.not.contain(`<span class="badge bg-danger">${WorkItemStatus.FAILED.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);
@@ -331,11 +368,11 @@ describe('Workflow UI work items table route', function () {
             ));
           [1, 2, 3]
             .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
-          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(5);
         });
-        it('returns links for the (completed) work item logs', async function () {
+        it('returns links for the (completed) and currently running work item logs', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-button/g) || []).length).to.equal(2);
+          expect((listing.match(/logs-button/g) || []).length).to.equal(4);
         });
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
@@ -347,7 +384,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('returns retry buttons for the RUNNING work items', async function () {
           const listing = this.res.text;
-          expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+          expect((listing.match(/retry-button/g) || []).length).to.equal(2);
         });
         it('returns a column for the retry buttons', async function () {
           const listing = this.res.text;
@@ -356,11 +393,11 @@ describe('Workflow UI work items table route', function () {
       });
 
       describe('when the admin filters by status NOT IN [RUNNING]', function () {
-        hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID, 
+        hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID,
           query: { disallowStatus: 'on', tableFilter: '[{"value":"status: running","dbValue":"running","field":"status"}]' } });
         it('returns only non-running work items', function () {
           const listing = this.res.text;
-          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(2);
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
           expect(listing).to.not.contain(`<span class="badge bg-danger">${WorkItemStatus.FAILED.valueOf()}</span>`);
           expect(listing).to.contain(`<span class="badge bg-success">${WorkItemStatus.SUCCESSFUL.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);

@@ -9,6 +9,7 @@ import { buildJob } from '../helpers/jobs';
 import { workflowUIJobs, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../helpers/workflow-ui';
 import env from '../../app/util/env';
 import { auth } from '../helpers/auth';
+import { renderNavLink } from './helpers';
 
 // Example jobs to use in tests
 const woodyJob1 = buildJob({
@@ -161,7 +162,18 @@ describe('Workflow UI jobs route', function () {
       hookWorkflowUIJobs({ username: 'woody', limit: 1 });
       it('returns a link to the next page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: '/workflow-ui?limit=1&page=2' }));
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=2', 'next'));
+      });
+      it('returns a disabled link to the previous page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'previous', false));
+      });
+      it('returns a disabled link to the first page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'first', false));
+      });it('returns a link to the last page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=3', 'last'));
       });
       it('returns only one job', function () {
         const listing = this.res.text;
@@ -199,8 +211,39 @@ describe('Workflow UI jobs route', function () {
       hookWorkflowUIJobs({ username: 'woody', limit: 1, page: 2 });
       it('returns a link to the next and previous page', function () {
         const listing = this.res.text;
-        expect(listing).to.contain(mustache.render('{{nextLink}}', { nextLink: '/workflow-ui?limit=1&page=1' }));
-        expect(listing).to.contain(mustache.render('{{prevLink}}', { prevLink: '/workflow-ui?limit=1&page=3' }));
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=1', 'previous'));
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=3', 'next'));
+      });
+      it('returns a disabled link to the first page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'first', false));
+      });it('returns a disabled link to the last page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'last', false));
+      });
+      it('returns only one job', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who has 3 jobs and asks for page 3, with a limit of 1', function () {
+      hookWorkflowUIJobs({ username: 'woody', limit: 1, page: 3 });
+      it('returns a disabled link to the next page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'next', false));
+      });
+      it('returns a link to the previous page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=2', 'previous'));
+      });
+      it('returns a link to the first page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('/workflow-ui?limit=1&page=1', 'first'));
+      });
+      it('returns a disabled link to the last page', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(renderNavLink('', 'last', false));
       });
       it('returns only one job', function () {
         const listing = this.res.text;
