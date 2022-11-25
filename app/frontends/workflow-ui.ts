@@ -265,11 +265,9 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
   return {
     workflowItemPodLogs(): string {
-      if (this.status === WorkItemStatus.READY) return '';
       if (!this.runners || this.runners.length < 1) return '';
-      const isDone = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL, WorkItemStatus.CANCELED].indexOf(this.status) > -1;
       return this.runners.map((runner: { id: string, startedAt: number }, i: number) => {
-        const to = isDone ? this.updatedAt.toISOString() : 'now';
+        const to = this.status === WorkItemStatus.RUNNING ? 'now' : this.updatedAt.toISOString();
         const url = env.metricsEndpoint
           .replace('{{from}}', (new Date(runner.startedAt)).toISOString())  
           .replace('{{to}}', to)

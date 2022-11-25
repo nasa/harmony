@@ -369,16 +369,7 @@ describe('Workflow UI work items table route', function () {
         });
       });
 
-      describe('when the admin filters by status IN [READY]', function () {
-        hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID, 
-          query: { tableFilter: '[{"value":"status: ready","dbValue":"ready","field":"status"}]' } });
-        it('returns no pod logs links', function () {
-          const listing = this.res.text;
-          expect((listing.match(/pod-logs-link/g) || []).length).to.equal(0);
-        });
-      });
-
-      describe('when the admin filters by status NOT IN [READY]', function () {
+      describe('when the admin retrieves work items with a total of four runs', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID, 
           query: { disallowStatus: 'on', tableFilter: '[{"value":"status: ready","dbValue":"ready","field":"status"}]' } });
         it('returns pod logs links for each runner (pod) of each work item', function () {
