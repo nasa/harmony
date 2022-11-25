@@ -81,10 +81,10 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
    * Prepare a record for saving.
    * (Can be useful if the record needs massaging before saving,
    * e.g. for fields that need to be converted between stringified JSON text and object.)
-   * @param record - the work item record to mutate
    * @returns the work item record, ready to be saved
    */
-  serializeForSave(record: Record<string, unknown>): Record<string, unknown>  {
+  serializeForSave(): Record<string, unknown>  {
+    const record: Record<string, unknown> = _.pick(this, serializedFields);
     record.runners = JSON.stringify(this.runners || []);
     return record;
   }
@@ -95,7 +95,7 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
    * @param transaction - The transaction to use for saving the job link
    */
   async save(transaction: Transaction): Promise<void> {
-    const record: Record<string, unknown> = this.serializeForSave(_.pick(this, serializedFields));
+    const record: Record<string, unknown> = this.serializeForSave();
     await super.save(transaction, record);
   }
 
@@ -118,7 +118,7 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
    * @param workItems - The work items to save
    */
   static async insertBatch(transaction: Transaction, workItems: WorkItem[]): Promise<void> {
-    const fieldsList = workItems.map(item => item.serializeForSave(_.pick(item, serializedFields)));
+    const fieldsList = workItems.map(item => item.serializeForSave());
     await super.insertBatch(transaction, workItems, fieldsList);
   }
 
