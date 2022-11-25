@@ -272,19 +272,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
           .replace('{{from}}', (new Date(runner.startedAt)).toISOString())  
           .replace('{{to}}', to)
           .replace('{{query}}', encodeURIComponent(`kubernetes.pod_id: "${runner.id}"`));
-        return `
-        <div class="dropdown">
-          <button id="dropdownMenuLink" class="btn btn-light btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
-          </button>
-          <ul class="dropdown-menu">
-            <li>
-              <a class="dropdown-item pod-logs-link" href="${url}" target="__blank">
-                <span class="badge bg-dark">try number</span> ${i}&nbsp;&nbsp;
-                <span class="badge bg-dark">pod</span> ${runner.id}
-              </a>
-            </li>
-          </ul>
-        </div>`;
+        return `<a class="pod-logs-link" href="${url}" target="__blank" title="logs for run/try number ${i}">${i}</a>&nbsp;`;
       }).join(''); 
     },
     workflowItemBadge(): string { return badgeClasses[this.status]; },
