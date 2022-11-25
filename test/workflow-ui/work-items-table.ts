@@ -57,6 +57,9 @@ const shareableJob = buildJob({
   collectionIds: [collectionWithEULAFalseAndGuestReadTrue],
 });
 
+// another job to make the scenario more realistic
+const otherJob = buildJob({ status: JobStatus.CANCELED, username: 'not-bo' });
+
 const logsTableHeader = '>logs</th>';
 
 describe('Workflow UI work items table route', function () {
@@ -97,14 +100,19 @@ describe('Workflow UI work items table route', function () {
       await step1.save(this.trx);
       await step2.save(this.trx);
 
-      // not really using these in the tests but saving them anyway
-      // to make the scenario more realistic
-      const otherJob = buildJob({ status: JobStatus.CANCELED, username: 'not-bo' });
       await otherJob.save(this.trx);
-      const otherItem1 = buildWorkItem({ jobID: otherJob.jobID });
+      const otherItem1 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.CANCELED,
+        runners: [{ id: 'runner1', startedAt: 0 }] });
       await otherItem1.save(this.trx);
-      const otherItem2 = buildWorkItem({ jobID: otherJob.jobID });
+      const otherItem2 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.FAILED,
+        runners: [{ id: 'runner1', startedAt: 10 }] });
       await otherItem2.save(this.trx);
+      const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.SUCCESSFUL,
+        runners: [{ id: 'runner1', startedAt: 20 }, { id: 'runner2', startedAt: 50 }] });
+      await otherItem3.save(this.trx);
+      const otherItem4 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.READY,
+        runners: [] });
+      await otherItem4.save(this.trx);
       const otherStep1 = buildWorkflowStep({ jobID: otherJob.jobID, stepIndex: 1 });
       await otherStep1.save(this.trx);
       const otherStep2 = buildWorkflowStep({ jobID: otherJob.jobID, stepIndex: 2 });
@@ -358,6 +366,24 @@ describe('Workflow UI work items table route', function () {
           expect(listing).to.not.contain(`<span class="badge bg-secondary">${WorkItemStatus.CANCELED.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge bg-primary">${WorkItemStatus.READY.valueOf()}</span>`);
           expect(listing).to.not.contain(`<span class="badge bg-info">${WorkItemStatus.RUNNING.valueOf()}</span>`);
+        });
+      });
+
+      describe('when the admin filters by status IN [READY]', function () {
+        hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID, 
+          query: { tableFilter: '[{"value":"status: ready","dbValue":"ready","field":"status"}]' } });
+        it('returns no pod logs links', function () {
+          const listing = this.res.text;
+          expect((listing.match(/pod-logs-link/g) || []).length).to.equal(0);
+        });
+      });
+
+      describe('when the admin filters by status NOT IN [READY]', function () {
+        hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID, 
+          query: { disallowStatus: 'on', tableFilter: '[{"value":"status: ready","dbValue":"ready","field":"status"}]' } });
+        it('returns pod logs links for each runner (pod) of each work item', function () {
+          const listing = this.res.text;
+          expect((listing.match(/pod-logs-link/g) || []).length).to.equal(4);
         });
       });
 

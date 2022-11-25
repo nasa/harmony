@@ -264,22 +264,23 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
   badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
   return {
-    workflowItemRunners(): string { 
+    workflowItemPodLogs(): string {
+      if (this.status === WorkItemStatus.READY) return '';
+      if (!this.runners || this.runners.length < 1) return '';
+      const isDone = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL, WorkItemStatus.CANCELED].indexOf(this.status) > -1;
       return this.runners.map((runner: { id: string, startedAt: number }, i: number) => {
-        const isComplete = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL].indexOf(this.status) > -1;
-        if (!isComplete && (this.status != WorkItemStatus.RUNNING)) return '';
-        const to = isComplete ? this.updatedAt.toISOString() : 'now';
+        const to = isDone ? this.updatedAt.toISOString() : 'now';
         const url = env.metricsEndpoint
           .replace('{{from}}', (new Date(runner.startedAt)).toISOString())  
           .replace('{{to}}', to)
           .replace('{{query}}', encodeURIComponent(`kubernetes.pod_id: "${runner.id}"`));
         return `
         <div class="dropdown">
-          <button id="dropdownMenuLink" class="btn btn-light btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+          <button id="dropdownMenuLink" class="btn btn-light btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
           </button>
           <ul class="dropdown-menu">
             <li>
-              <a class="dropdown-item" href="${url}" target="__blank">
+              <a class="dropdown-item pod-logs-link" href="${url}" target="__blank">
                 <span class="badge bg-dark">try number</span> ${i}&nbsp;&nbsp;
                 <span class="badge bg-dark">pod</span> ${runner.id}
               </a>
