@@ -57,6 +57,8 @@ const shareableJob = buildJob({
   collectionIds: [collectionWithEULAFalseAndGuestReadTrue],
 });
 
+const logsTableHeader = '>logs</th>';
+
 describe('Workflow UI work items table route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
 
@@ -179,7 +181,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('does not return a column for the work item logs', async function () {
           const listing = this.res.text;
-          expect(listing).to.not.contain(mustache.render('<th scope="col">logs</th>', {}));
+          expect(listing).to.not.contain(mustache.render(logsTableHeader, {}));
         });
         it('returns retry buttons for their RUNNING work items', async function () {
           const listing = this.res.text;
@@ -199,7 +201,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('<th scope="col">logs</th>', {}));
+          expect(listing).to.contain(mustache.render(logsTableHeader, {}));
         });
         it('returns retry buttons for the other user\'s RUNNING work items', async function () {
           const listing = this.res.text;
@@ -225,7 +227,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('does not return a column for the work item logs', async function () {
           const listing = this.res.text;
-          expect(listing).to.not.contain(mustache.render('<th scope="col">logs</th>', {}));
+          expect(listing).to.not.contain(mustache.render(logsTableHeader, {}));
         });
         it('does not return retry buttons for the other user\'s RUNNING work items', async function () {
           const listing = this.res.text;
@@ -325,7 +327,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('<th scope="col">logs</th>', {}));
+          expect(listing).to.contain(mustache.render(logsTableHeader, {}));
         });
         it('returns retry buttons for the RUNNING work items', async function () {
           const listing = this.res.text;

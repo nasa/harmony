@@ -1,3 +1,7 @@
 .table-filter {
     --tag-inset-shadow-size: 2em;
 }
+
+.helpful-th {
+    cursor: help;
+}

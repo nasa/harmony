@@ -10,10 +10,10 @@
             <th scope="col">id</th>
             <th scope="col">status</th>
             {{#isAdmin}}
-            <th scope="col">logs <i class="bi bi-info-circle" title="An aggregate JSON list of worker container logs for all invocations of the service."></i></th>
+            <th class="helpful-th" scope="col" title="An aggregate JSON list of worker container logs for all invocations of the service.">logs</th>
             {{/isAdmin}}
             {{#isAdmin}}
-            <th scope="col">podLogs <i class="bi bi-info-circle" title="Link(s) to the logs dashboard for each pod that has worked on this item."></i></th>
+            <th class="helpful-th" scope="col" title="Link(s) to the logs dashboard for each pod that has worked on this item.">podLogs</th>
             {{/isAdmin}}
             {{#canShowRetryColumn}}
             <th scope="col">retry</th>
