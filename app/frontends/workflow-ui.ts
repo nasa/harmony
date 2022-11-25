@@ -121,6 +121,8 @@ export async function getJobs(
     const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, false, page, limit);
     setPagingHeaders(res, pagination);
     const pageLinks = getPagingLinks(req, pagination);
+    const firstPage = pageLinks.find((l) => l.rel === 'first');
+    const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     res.render('workflow-ui/jobs/index', {
@@ -173,8 +175,10 @@ export async function getJobs(
       selectedFilters: tableFilter.originalValues,
       // job table paging buttons HTML
       links: [
+        { ...firstPage, linkTitle: 'first' },
         { ...previousPage, linkTitle: 'previous' },
         { ...nextPage, linkTitle: 'next' },
+        { ...lastPage, linkTitle: 'last' },
       ],
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() { return (this.href || ''); },
@@ -281,7 +285,8 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
     workflowItemUpdatedAt(): string { return this.updatedAt.getTime(); },
     workflowItemLogsButton(): string {
       const isComplete = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL].indexOf(this.status) > -1;
-      if (!isComplete || !isAdmin || this.serviceID.includes('query-cmr')) return '';
+      const isLogAvailable = isComplete || this.retryCount > 0;
+      if (!isLogAvailable || !isAdmin || this.serviceID.includes('query-cmr')) return '';
       const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
       return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}"` +
         ' title="view logs"><i class="bi bi-body-text"></i></a>';
@@ -331,6 +336,8 @@ export async function getWorkItemsTable(
     }
     const { workItems, pagination } = await queryAll(db, itemQuery, page, limit);
     const pageLinks = getPagingLinks(req, pagination);
+    const firstPage = pageLinks.find((l) => l.rel === 'first');
+    const lastPage = pageLinks.find((l) => l.rel === 'last');
     const nextPage = pageLinks.find((l) => l.rel === 'next');
     const previousPage = pageLinks.find((l) => l.rel === 'prev');
     setPagingHeaders(res, pagination);
@@ -342,8 +349,10 @@ export async function getWorkItemsTable(
       workItems,
       ...workItemRenderingFunctions(job, isAdmin, req.user),
       links: [
+        { ...firstPage, linkTitle: 'first' },
         { ...previousPage, linkTitle: 'previous' },
         { ...nextPage, linkTitle: 'next' },
+        { ...lastPage, linkTitle: 'last' },
       ],
       linkDisabled() { return (this.href ? '' : 'disabled'); },
       linkHref() {
