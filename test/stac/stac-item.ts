@@ -163,7 +163,7 @@ describe('STAC item route', function () {
 
         const expectedItemWithoutAssetsOrLinks = {
           id: `${completedJob.requestId}_0`,
-          stac_version: '0.9.0',
+          stac_version: '1.0.0',
           title: `Harmony output #0 in job ${completedJob.requestId}`,
           description: 'Harmony out for http://example.com/harmony?job=completedJob',
           type: 'Feature',
@@ -227,7 +227,7 @@ describe('STAC item route', function () {
         const completedJobId = completedJob.requestId;
         const expectedItemWithoutAssetsOrLinks = {
           id: `${completedJob.requestId}_1`,
-          stac_version: '0.9.0',
+          stac_version: '1.0.0',
           title: `Harmony output #1 in job ${completedJob.requestId}`,
           description: 'Harmony out for http://example.com/harmony?job=completedJob',
           type: 'Feature',

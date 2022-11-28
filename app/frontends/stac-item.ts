@@ -54,7 +54,7 @@ export class HarmonyItem {
    */
   constructor(id: string = uuid(), title = '', description = '', index: number) {
     this.id = `${id}_${index}`;
-    this.stac_version = '0.9.0';
+    this.stac_version = '1.0.0';
     this.title = title;
     this.description = description;
     this.type = 'Feature';
@@ -93,14 +93,15 @@ export class HarmonyItem {
     if (west > east) {
       // Case of bounding box crossing anti-meridian
       geometry.type = 'MultiPolygon';
-      geometry.coordinates.push([
+      geometry.coordinates.push([]);
+      geometry.coordinates[0].push([
         [-180, south],
         [-180, north],
         [east, north],
         [east, south],
         [-180, south],
       ]);
-      geometry.coordinates.push([
+      geometry.coordinates[0].push([
         [west, south],
         [west, north],
         [180, north],
@@ -157,7 +158,7 @@ export class HarmonyItem {
 
   /**
    *  Adds expires property for a STAC item
-   * 
+   *
    * @param expires - Data expiration
    */
   addExpires(expires?: Date): void {
