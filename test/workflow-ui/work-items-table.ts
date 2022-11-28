@@ -116,8 +116,8 @@ describe('Workflow UI work items table route', function () {
       const otherItem2 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.FAILED,
         runners: [{ id: 'runner1', startedAt: 10 }] });
       await otherItem2.save(this.trx);
-      const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.SUCCESSFUL,
-        runners: [{ id: 'runner1', startedAt: 20 }, { id: 'runner2', startedAt: 50 }] });
+      const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.RUNNING,
+        runners: [{ id: 'runner1', startedAt: 20 }, { id: 'runner2', startedAt: 1669655221941 }] });
       await otherItem3.save(this.trx);
       const otherItem4 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.READY,
         runners: [] });
@@ -411,6 +411,14 @@ describe('Workflow UI work items table route', function () {
         it('returns pod logs links for each runner (pod) of each work item', function () {
           const listing = this.res.text;
           expect((listing.match(/pod-logs-link/g) || []).length).to.equal(4);
+        });
+      });
+
+      describe('when the admin filters otherJob\'s items by status IN [RUNNING]', function () {
+        hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID,
+          query: { tableFilter: '[{"value":"status: running","dbValue":"running","field":"status"}]' } });
+        it('sets the appropriate time range query parameter for the metrics url', function () {
+          expect(this.res.text).to.contain("from:'2022-11-28T17:07:01.941Z',to:'now'");
         });
       });
 
