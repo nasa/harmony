@@ -272,11 +272,12 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
       if (!this.runners || this.runners.length < 1) return '';
       return this.runners.map((runner: { id: string, startedAt: number }, i: number) => {
         const to = this.status === WorkItemStatus.RUNNING ? 'now' : this.updatedAt.toISOString();
-        const url = env.metricsEndpoint
-          .replace('{{from}}', (new Date(runner.startedAt)).toISOString())  
-          .replace('{{to}}', to)
-          .replace('{{query}}', encodeURIComponent(`kubernetes.pod_id: "${runner.id}"`));
-        return `<a class="pod-logs-link" href="${url}" target="__blank" title="logs for run/try number ${i}">${i}</a>&nbsp;`;
+        const url = `${env.metricsEndpoint}?_g=(filters:!(),refreshInterval:(pause:!t,value:0),` +
+          `time:(from:'${(new Date(runner.startedAt)).toISOString()}',to:'${to}'))` +
+          `&_a=(columns:!(),filters:!(),index:${env.metricsIndex},interval:auto,` +
+          `query:(language:kuery,query:'${encodeURIComponent(`kubernetes.pod_id: "${runner.id}"`)}'),` +
+          "sort:!(!('@timestamp',desc)))";
+        return `<a class="pod-logs-link" href="${url}" target="__blank" title="logs for run number ${i + 1}">${i + 1}</a>&nbsp;`;
       }).join(''); 
     },
     workflowItemBadge(): string { return badgeClasses[this.status]; },

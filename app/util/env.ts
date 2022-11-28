@@ -74,6 +74,7 @@ interface HarmonyEnv {
   callbackUrlRoot: string;
   cmrEndpoint: string;
   metricsEndpoint: string;
+  metricsIndex: string;
   cmrMaxPageSize: number;
   defaultPodGracePeriodSecs: number;
   defaultJobListPageSize: number;
