@@ -268,18 +268,16 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
   badgeClasses[WorkItemStatus.SUCCESSFUL] = 'success';
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
   return {
-    workflowItemPodLogs(): string {
-      if (!this.runners || this.runners.length < 1) return '';
-      return this.runners.map((runner: { id: string, startedAt: number }, i: number) => {
-        const from = (new Date(runner.startedAt)).toISOString();
-        const to = this.status === WorkItemStatus.RUNNING ? 'now' : this.updatedAt.toISOString();
-        const url = `${env.metricsEndpoint}?_g=(filters:!(),refreshInterval:(pause:!t,value:0),` +
-          `time:(from:'${from}',to:'${to}'))` +
-          `&_a=(columns:!(),filters:!(),index:${env.metricsIndex},interval:auto,` +
-          `query:(language:kuery,query:'${encodeURIComponent(`kubernetes.pod_id: "${runner.id}"`)}'),` +
-          "sort:!(!('@timestamp',desc)))";
-        return `<a class="pod-logs-link" href="${url}" target="__blank" title="logs for run number ${i + 1}">${i + 1}</a>&nbsp;`;
-      }).join(''); 
+    workflowItemLogsLink(): string {
+      const from = (new Date(this.createdAt)).toISOString();
+      const to = this.status === WorkItemStatus.RUNNING ? 'now' : this.updatedAt.toISOString();
+      const url = `${env.metricsEndpoint}?_g=(filters:!(),refreshInterval:(pause:!t,value:0),` +
+        `time:(from:'${from}',to:'${to}'))` +
+        `&_a=(columns:!(),filters:!(),index:${env.metricsIndex},interval:auto,` +
+        `query:(language:kuery,query:'${encodeURIComponent(`workItemId: "${this.id}"`)}'),` +
+        "sort:!(!('@timestamp',desc)))";
+      return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-link" href="${url}"` +
+      ` title="view logs for work item ${this.id}"><i class="bi bi-body-text"></i></a>`;
     },
     workflowItemBadge(): string { return badgeClasses[this.status]; },
     workflowItemStep(): string { return sanitizeImage(this.serviceID); },
@@ -291,7 +289,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
       if (!isLogAvailable || !isAdmin || this.serviceID.includes('query-cmr')) return '';
       const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
       return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}"` +
-        ' title="view logs"><i class="bi bi-body-text"></i></a>';
+        ' title="view all service log output in aggregate"><i class="bi bi-body-text"></i></a>';
     },
     workflowItemRetryButton(): string {
       const isRunning = WorkItemStatus.RUNNING === this.status;
@@ -459,12 +457,13 @@ export async function retry(
     if (item.retryCount >= env.workItemRetryLimit) {
       res.status(200).send({ message: 'The item does not have any retries left.' });
     }
+    const workItemLogger = req.context.logger.child({ workItemId: item.id });
     await handleWorkItemUpdate(
       { workItemID: item.id, status: WorkItemStatus.FAILED,
         scrollID: item.scrollID, hits: null, results: [], totalItemsSize: item.totalItemsSize,
         errorMessage: 'A user attempted to trigger a retry via the Workflow UI.' },
       null,
-      req.context.logger);
+      workItemLogger);
     res.status(200).send({ message: 'The item was successfully requeued.' });
   } catch (e) {
     req.context.logger.error(e);

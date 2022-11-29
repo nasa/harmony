@@ -4,7 +4,8 @@ import StacCatalog from './catalog';
 import StacItem from './item';
 import { CmrGranule } from '../../../../app/util/cmr';
 import { computeMbr } from '../../../../app/util/spatial/mbr';
-import logger from '../../../../app/util/log';
+import defaultLogger from '../../../../app/util/log';
+import { Logger } from 'winston';
 
 /**
  * Creates a GeoJSON geometry given a GeoJSON BBox, accounting for antimeridian
@@ -56,8 +57,9 @@ export default class CmrStacCatalog extends StacCatalog {
    * @param granules - the atom granules to add
    * @param pathPrefix - the prefix to use for href values on the link.  The link href will be
    *   the path prefix followed by the padded index of the granule plus .json
+   * @param logger - The logger to use for logging messages
    */
-  addCmrGranules(granules: CmrGranule[], pathPrefix: string): void {
+  addCmrGranules(granules: CmrGranule[], pathPrefix: string, logger: Logger = defaultLogger): void {
     for (let i = 0; i < granules.length; i++) {
       const granule = granules[i];
       const bbox = computeMbr(granule) || [-180, -90, 180, 90];

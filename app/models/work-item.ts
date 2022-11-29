@@ -5,7 +5,7 @@ import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
 import { activeJobStatuses, Job, JobStatus } from './job';
-import DBRecord from './record';
+import Record from './record';
 import WorkflowStep from './workflow-steps';
 import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
 
@@ -17,7 +17,7 @@ const QUERY_CMR_STEP_INDEX = 1;
 const serializedFields = [
   'id', 'jobID', 'createdAt', 'retryCount', 'updatedAt', 'scrollID', 'serviceID', 'status',
   'stacCatalogLocation', 'totalItemsSize', 'workflowStepIndex', 'duration', 'startedAt',
-  'sortIndex', 'runners',
+  'sortIndex',
 ];
 
 /**
@@ -25,7 +25,7 @@ const serializedFields = [
  * Wrapper object for persisted work items
  *
  */
-export default class WorkItem extends DBRecord implements WorkItemRecord {
+export default class WorkItem extends Record implements WorkItemRecord {
   static table = 'work_items';
 
   // The ID of the job that created this work item
@@ -73,42 +73,14 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
   // The position of the work item output in any following aggregation
   sortIndex: number;
 
-  // Any runners (pods) that have worked on this item
-  // includes the id of the runner and the start time in milliseconds since epoch
-  runners: { id: string, startedAt: number }[];
-
-  /**
-   * Prepare a record for saving.
-   * (Can be useful if the record needs massaging before saving,
-   * e.g. for fields that need to be converted between stringified JSON text and object.)
-   * @returns the work item record, ready to be saved
-   */
-  serializeForSave(): Record<string, unknown>  {
-    const record: Record<string, unknown> = _.pick(this, serializedFields);
-    record.runners = JSON.stringify(this.runners || []);
-    return record;
-  }
-
   /**
    * Saves the work item to the database using the given transaction.
    *
    * @param transaction - The transaction to use for saving the job link
    */
   async save(transaction: Transaction): Promise<void> {
-    const record: Record<string, unknown> = this.serializeForSave();
+    const record = _.pick(this, serializedFields);
     await super.save(transaction, record);
-  }
-
-  /**
-   * Creates a WorkItem instance.
-   *
-   * @param fields - Object containing fields to set on the record
-   */
-  constructor(fields: Partial<WorkItemRecord>) {
-    super(fields);
-    this.runners = (typeof fields.runners === 'string'
-      ? JSON.parse(fields.runners) : fields.runners)
-      || [];
   }
 
   /**
@@ -118,7 +90,7 @@ export default class WorkItem extends DBRecord implements WorkItemRecord {
    * @param workItems - The work items to save
    */
   static async insertBatch(transaction: Transaction, workItems: WorkItem[]): Promise<void> {
-    const fieldsList = workItems.map(item => item.serializeForSave());
+    const fieldsList = workItems.map(item => _.pick(item, serializedFields));
     await super.insertBatch(transaction, workItems, fieldsList);
   }
 
@@ -144,17 +116,14 @@ const tableFields = serializedFields.map((field) => `w.${field}`);
  * Returns the next work item to process for a service
  * @param tx - the transaction to use for querying
  * @param serviceID - the service ID looking for the next item to work
- * @param podId - the id of the pod that is looking for a work item to process
  *
  * @returns A promise with the work item to process or null if none
  */
 export async function getNextWorkItem(
   tx: Transaction,
   serviceID: string,
-  podId: string,
 ): Promise<WorkItem> {
   let workItemData;
-  let workItem;
   const acceptableJobStatuses = _.cloneDeep(activeJobStatuses);
   // TODO: Now that we use search-after instead of scrolling we could allow pausing of query-cmr
   // work items and start them back up when the job is resumed because there is no session
@@ -222,14 +191,11 @@ export async function getNextWorkItem(
             // in case a service for the same job produces an output with the same file name
             workItemData.operation.stagingLocation += `${workItemData.id}/`;
             const startedAt = new Date();
-            workItem = new WorkItem(workItemData);
-            workItem.runners.push({ id: podId, startedAt: startedAt.getTime() });
             await tx(WorkItem.table)
               .update({
                 status: WorkItemStatus.RUNNING,
                 updatedAt: startedAt,
                 startedAt,
-                runners: JSON.stringify(workItem.runners),
               })
               .where({ id: workItemData.id });
             // need to update the job otherwise long running jobs won't count against
@@ -247,7 +213,7 @@ export async function getNextWorkItem(
     throw e;
   }
 
-  return workItem;
+  return workItemData && new WorkItem(workItemData);
 }
 
 /**
@@ -572,7 +538,10 @@ export async function workItemCountForStep(
   stepIndex: number,
   status?: WorkItemStatus | WorkItemStatus[],
 ): Promise<number> {
-  const whereClause: Record<string, unknown> = {
+  // Record<string, unknown> clashes with imported database Record class
+  // so we use '{}' causing a linter error
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  const whereClause: {} = {
     jobID, workflowStepIndex: stepIndex,
   };
   const statusArray = Array.isArray(status) ? status : [status];

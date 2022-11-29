@@ -2,7 +2,7 @@ import * as k8s from '@kubernetes/client-node';
 import stream from 'stream';
 import { sanitizeImage } from '../../../../app/util/string';
 import env from '../util/env';
-import logger from '../../../../app/util/log';
+import defaultLogger from '../../../../app/util/log';
 import { resolve as resolveUrl } from '../../../../app/util/url';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { WorkItemRecord, getStacLocation, getItemLogsLocation } from '../../../../app/models/work-item-interface';
@@ -42,7 +42,13 @@ export class LogStream extends stream.Writable {
   
   aggregateLogStr = '';
 
-  constructor(streamLogger: Logger = logger) {
+  workItemId;
+
+  /**
+   * Build a LogStream instance.
+   * @param streamLogger - the logger to log messages with
+   */
+  constructor(streamLogger = defaultLogger) {
     super();
     this.streamLogger = streamLogger;
   }
@@ -104,9 +110,10 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
  * @param logStr - A string that contains error logging
  * @param catalogDir - A string path for the outputs directory of the WorkItem 
  * (e.g. s3://artifacts/requestId/workItemId/outputs/).
+ * @param logger - Logger for logging messages
  * @returns An error message parsed from the log
  */
-async function _getErrorMessage(logStr: string, catalogDir: string): Promise<string> {
+async function _getErrorMessage(logStr: string, catalogDir: string, logger: Logger): Promise<string> {
   // expect JSON logs entries
   try {
     const s3 = objectStoreForProtocol('s3');
@@ -140,6 +147,7 @@ async function _getErrorMessage(logStr: string, catalogDir: string): Promise<str
 export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranules?: number): Promise<ServiceResponse> {
   const { operation, scrollID } = workItem;
   const catalogDir = getStacLocation(workItem);
+  const logger = defaultLogger.child({ workItemId: workItem.id });
   return new Promise<ServiceResponse>(async (resolve) => {
     logger.debug('CALLING WORKER');
     logger.debug(`maxCmrGranules = ${maxCmrGranules}`);
@@ -151,6 +159,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
           harmonyInput: operation,
           scrollId: scrollID,
           maxCmrGranules,
+          workItemId: workItem.id,
         },
         {
           timeout: workerTimeout,
@@ -205,6 +214,7 @@ export async function uploadLogs(workItem: WorkItemRecord, logs: (string | objec
 export async function runServiceFromPull(workItem: WorkItemRecord): Promise<ServiceResponse> {
   try {
     const { operation, stacCatalogLocation } = workItem;
+    const logger = defaultLogger.child({ workItemId: workItem.id });
     // support invocation args specified with newline separator or space separator
     let commandLine = env.invocationArgs.split('\n');
     if (commandLine.length == 1) {
@@ -216,7 +226,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
       logger.debug(`CALLING WORKER for pod ${env.myPodName}`);
       // create a writable stream to capture stdout from the exec call
       // using stdout instead of stderr because the service library seems to log ERROR to stdout
-      const stdOut = new LogStream();
+      const stdOut = new LogStream(logger);
       // timeout if things take too long
       const timeout = setTimeout(async () => {
         resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
@@ -252,7 +262,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(stdOut.aggregateLogStr, catalogDir);
+              const logErr = await _getErrorMessage(stdOut.aggregateLogStr, catalogDir, logger);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }

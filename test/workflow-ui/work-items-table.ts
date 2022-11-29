@@ -410,7 +410,7 @@ describe('Workflow UI work items table route', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID });
         it('returns pod logs links for each runner (pod) of each work item', function () {
           const listing = this.res.text;
-          expect((listing.match(/pod-logs-link/g) || []).length).to.equal(4);
+          expect((listing.match(/logs-link/g) || []).length).to.equal(4);
         });
       });
 
