@@ -16,7 +16,6 @@ export interface QueryCmrRequest {
   harmonyInput?: object;
   scrollId?: string;
   maxCmrGranules?: number;
-  workItemId: number;
 }
 
 /**
