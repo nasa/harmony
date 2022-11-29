@@ -10,8 +10,8 @@
             <th scope="col">id</th>
             <th scope="col">status</th>
             {{#isAdmin}}
-            <th class="helpful-th" scope="col" title="An aggregate JSON list of worker container logs for all invocations of the service.">logs</th>
-            <th class="helpful-th" scope="col" title="Link(s) to the logs dashboard for this work item.">metricsLogs</th>
+            <th class="helpful-th" scope="col" title="Links to worker container logs (including all retries) for each work item.">serviceLogs</th>
+            <th class="helpful-th" scope="col" title="Links to the EarthData Metrics logs dashboard for each work item.">itemLogs</th>
             {{/isAdmin}}
             {{#canShowRetryColumn}}
             <th scope="col">retry</th>

@@ -70,7 +70,7 @@ const shareableJob = buildJob({
 const otherJob = buildJob({ status: JobStatus.CANCELED, username: 'not-bo' });
 const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.RUNNING });
 
-const logsTableHeader = '>logs</th>';
+const logsTableHeader = '>serviceLogs</th>';
 
 describe('Workflow UI work items table route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -198,9 +198,9 @@ describe('Workflow UI work items table route', function () {
           const listing = this.res.text;
           expect(listing).to.not.contain(mustache.render(logsTableHeader, {}));
         });
-        it('does not return a column for metricsLogs', async function () {
+        it('does not return a column for itemLogs', async function () {
           const listing = this.res.text;
-          expect(listing).to.not.contain(mustache.render('>metricsLogs</th>', {}));
+          expect(listing).to.not.contain(mustache.render('>itemLogs</th>', {}));
         });
         it('returns retry buttons for their RUNNING work items', async function () {
           const listing = this.res.text;
@@ -376,9 +376,9 @@ describe('Workflow UI work items table route', function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render(logsTableHeader, {}));
         });
-        it('does return a column for metricsLogs', async function () {
+        it('does return a column for itemLogs', async function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('>metricsLogs</th>', {}));
+          expect(listing).to.contain(mustache.render('>itemLogs</th>', {}));
         });
         it('returns retry buttons for the RUNNING work items', async function () {
           const listing = this.res.text;
