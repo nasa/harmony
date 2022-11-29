@@ -184,7 +184,7 @@ export function hookWorkItemUpdateEach(
  * @returns The response
  */
 export function getWorkForService(app: Application, serviceID: string): Test {
-  return request(app).get('/service/work').query({ serviceID, podName: 'a-service', podId: 'pod-x-y-z' });
+  return request(app).get('/service/work').query({ serviceID });
 }
 
 export const hookGetWorkForService = hookBackendRequest.bind(this, getWorkForService);

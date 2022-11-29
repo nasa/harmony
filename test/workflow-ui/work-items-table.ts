@@ -114,7 +114,7 @@ describe('Workflow UI work items table route', function () {
       await otherItem1.save(this.trx);
       const otherItem2 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.FAILED });
       await otherItem2.save(this.trx);
-      const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.RUNNING, createdAt: new Date(1669655221941) });
+      const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.RUNNING, createdAt: new Date(1669655221941), id: 222 });
       await otherItem3.save(this.trx);
       const otherItem4 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.READY });
       await otherItem4.save(this.trx);
