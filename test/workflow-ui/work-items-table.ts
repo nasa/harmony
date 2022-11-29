@@ -404,7 +404,7 @@ describe('Workflow UI work items table route', function () {
         });
       });
 
-      describe('when the admin retrieves work items with a total of four runs', function () {
+      describe('when the admin retrieves otherJob\'s work items', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID });
         it('returns metrics logs links for each each work item', function () {
           const listing = this.res.text;
