@@ -12,8 +12,8 @@ describe('doWork', function () {
     describe('when the output directory exists', function () {
       const totalItemsSize = 1.0;
       const workRequest: QueryCmrRequest = {
+        workItemId: 0,
         outputDir: 's3://stac/abc/123/outputs/',
-
       };
       hookDoWork(
         workRequest,
