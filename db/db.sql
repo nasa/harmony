@@ -56,7 +56,6 @@ CREATE TABLE `work_items` (
   `retryCount` integer not null default 0,
   `duration` float not null default -1.0,
   `sortIndex` integer not null default 0,
-  `runners` text not null,
   `startedAt` datetime,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
