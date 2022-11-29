@@ -423,7 +423,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
             const { operation } = workItem;
             // only 'concatenate' and 'reformat' operations allowed for netcdf-to-zarr, and
             // 'concatenate' was set to 'false' in the request
-            expect(operation.subset).to.be.undefined;
+            expect(operation.subset).to.eql({});
             expect(operation.concatenate).to.be.false;
             expect(operation.format).to.eql({
               'mime': 'application/x-zarr',
