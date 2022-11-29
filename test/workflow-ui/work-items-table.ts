@@ -10,6 +10,8 @@ import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { hookWorkflowUIWorkItems, hookAdminWorkflowUIWorkItems, workflowUIWorkItems } from '../helpers/workflow-ui';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
+import { getWorkItemById } from '../../app/models/work-item';
+import db from '../../app/util/db';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
@@ -66,6 +68,7 @@ const shareableJob = buildJob({
 
 // another job to make the scenario more realistic
 const otherJob = buildJob({ status: JobStatus.CANCELED, username: 'not-bo' });
+const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.RUNNING });
 
 const logsTableHeader = '>logs</th>';
 
@@ -114,7 +117,6 @@ describe('Workflow UI work items table route', function () {
       await otherItem1.save(this.trx);
       const otherItem2 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.FAILED });
       await otherItem2.save(this.trx);
-      const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.RUNNING, createdAt: new Date(1669655221941), id: 222 });
       await otherItem3.save(this.trx);
       const otherItem4 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.READY });
       await otherItem4.save(this.trx);
@@ -198,7 +200,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('does not return a column for the pod logs', async function () {
           const listing = this.res.text;
-          expect(listing).to.not.contain(mustache.render('>podLogs</th>', {}));
+          expect(listing).to.not.contain(mustache.render('>metricsLogs</th>', {}));
         });
         it('returns retry buttons for their RUNNING work items', async function () {
           const listing = this.res.text;
@@ -376,7 +378,7 @@ describe('Workflow UI work items table route', function () {
         });
         it('does return a column for the pod logs', async function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('>podLogs</th>', {}));
+          expect(listing).to.contain(mustache.render('>metricsLogs</th>', {}));
         });
         it('returns retry buttons for the RUNNING work items', async function () {
           const listing = this.res.text;
@@ -413,8 +415,9 @@ describe('Workflow UI work items table route', function () {
       describe('when the admin filters otherJob\'s items by status IN [RUNNING]', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID,
           query: { tableFilter: '[{"value":"status: running","dbValue":"running","field":"status"}]' } });
-        it('sets the appropriate time range query parameter for the metrics url', function () {
-          expect(this.res.text).to.contain("from:'2022-11-28T17:07:01.941Z',to:'now'");
+        it('sets the appropriate time range query parameter for the metrics url', async function () {
+          const dateString = (await getWorkItemById(db, otherItem3.id)).createdAt.toISOString();
+          expect(this.res.text).to.contain(`from:'${dateString}',to:'now'`);
         });
       });
 
