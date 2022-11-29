@@ -110,17 +110,13 @@ describe('Workflow UI work items table route', function () {
       await step2.save(this.trx);
 
       await otherJob.save(this.trx);
-      const otherItem1 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.CANCELED,
-        runners: [{ id: 'runner1', startedAt: 0 }] });
+      const otherItem1 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.CANCELED });
       await otherItem1.save(this.trx);
-      const otherItem2 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.FAILED,
-        runners: [{ id: 'runner1', startedAt: 10 }] });
+      const otherItem2 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.FAILED });
       await otherItem2.save(this.trx);
-      const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.RUNNING,
-        runners: [{ id: 'runner1', startedAt: 20 }, { id: 'runner2', startedAt: 1669655221941 }] });
+      const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.RUNNING, createdAt: new Date(1669655221941) });
       await otherItem3.save(this.trx);
-      const otherItem4 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.READY,
-        runners: [] });
+      const otherItem4 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.READY });
       await otherItem4.save(this.trx);
       const otherStep1 = buildWorkflowStep({ jobID: otherJob.jobID, stepIndex: 1 });
       await otherStep1.save(this.trx);
@@ -408,7 +404,7 @@ describe('Workflow UI work items table route', function () {
 
       describe('when the admin retrieves work items with a total of four runs', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID });
-        it('returns pod logs links for each runner (pod) of each work item', function () {
+        it('returns metrics logs links for each each work item', function () {
           const listing = this.res.text;
           expect((listing.match(/logs-link/g) || []).length).to.equal(4);
         });

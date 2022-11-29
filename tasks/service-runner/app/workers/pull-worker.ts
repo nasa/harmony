@@ -48,7 +48,7 @@ async function _pullWork(): Promise<{ item?: WorkItemRecord; status?: number; er
   try {
     const response = await axiosGetWork
       .get(workUrl, {
-        params: { serviceID: env.harmonyService, podName: env.myPodName, podId: env.myPodUid },
+        params: { serviceID: env.harmonyService, podName: env.myPodName },
         responseType: 'json',
         validateStatus(status) {
           return status === 404 || (status >= 200 && status < 400);

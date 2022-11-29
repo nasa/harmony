@@ -51,12 +51,12 @@ async function calculateQueryCmrLimit(tx: Transaction, workItem: WorkItem, logge
 export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
-  const { serviceID, podName, podId } = req.query;
+  const { serviceID, podName } = req.query;
 
   let workItem: WorkItem, maxCmrGranules: number;
 
   await db.transaction(async (tx) => {
-    workItem = await getNextWorkItem(tx, serviceID as string, podId as string);
+    workItem = await getNextWorkItem(tx, serviceID as string);
     const logger = req.context.logger.child({ workItemId: workItem.id });
     if (workItem) {
       logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
