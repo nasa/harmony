@@ -278,7 +278,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
           `&_a=(columns:!(),filters:!(),index:${env.metricsIndex},interval:auto,` +
           `query:(language:kuery,query:'${encodeURIComponent(`kubernetes.pod_id: "${runner.id}"`)}'),` +
           "sort:!(!('@timestamp',desc)))";
-        return `<a class="pod-logs-link" href="${url}" target="__blank" title="logs for run number ${i + 1}">${i + 1}</a>&nbsp;`;
+        return `<a class="pod-logs-link" href="${url}" target="__blank" title="pod ${runner.id} logs for run number ${i + 1}">${i + 1}</a>&nbsp;`;
       }).join(''); 
     },
     workflowItemBadge(): string { return badgeClasses[this.status]; },
