@@ -113,7 +113,7 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
  * @param logger - Logger for logging messages
  * @returns An error message parsed from the log
  */
-async function _getErrorMessage(logStr: string, catalogDir: string, logger: Logger): Promise<string> {
+async function _getErrorMessage(logStr: string, catalogDir: string, logger: Logger = defaultLogger): Promise<string> {
   // expect JSON logs entries
   try {
     const s3 = objectStoreForProtocol('s3');

@@ -269,7 +269,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
   badgeClasses[WorkItemStatus.RUNNING] = 'info';
   return {
     workflowItemLogsLink(): string {
-      const from = (new Date(this.createdAt)).toISOString();
+      const from = this.createdAt.toISOString();
       const to = this.status === WorkItemStatus.RUNNING ? 'now' : this.updatedAt.toISOString();
       const url = `${env.metricsEndpoint}?_g=(filters:!(),refreshInterval:(pause:!t,value:0),` +
         `time:(from:'${from}',to:'${to}'))` +
@@ -277,7 +277,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
         `query:(language:kuery,query:'${encodeURIComponent(`workItemId: "${this.id}"`)}'),` +
         "sort:!(!('@timestamp',desc)))";
       return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-link" href="${url}"` +
-      ` title="view logs for work item ${this.id}"><i class="bi bi-body-text"></i></a>`;
+      ` title="view all logs for work item ${this.id} in the metrics logs dashboard"><i class="bi bi-body-text"></i></a>`;
     },
     workflowItemBadge(): string { return badgeClasses[this.status]; },
     workflowItemStep(): string { return sanitizeImage(this.serviceID); },
@@ -289,7 +289,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
       if (!isLogAvailable || !isAdmin || this.serviceID.includes('query-cmr')) return '';
       const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
       return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}"` +
-        ' title="view all service log output in aggregate"><i class="bi bi-body-text"></i></a>';
+        ` title="view all service log output for work item ${this.id} in aggregate"><i class="bi bi-body-text"></i></a>`;
     },
     workflowItemRetryButton(): string {
       const isRunning = WorkItemStatus.RUNNING === this.status;

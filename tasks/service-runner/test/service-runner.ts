@@ -99,9 +99,9 @@ describe('Service Runner', function () {
   describe('uploadLogs', function () {
     describe('with text logs', function () {
       const itemRecord0: WorkItemRecord = { id: 0, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(), runners: [] };
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
       const itemRecord1: WorkItemRecord = { id: 1, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(), runners: [] };
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
       const s3 = objectStoreForProtocol('s3');
       before(async function () {
         // One of the items will have its log file written to twice
@@ -136,9 +136,9 @@ describe('Service Runner', function () {
     });
     describe('with JSON logs', function () {
       const itemRecord0: WorkItemRecord = { id: 2, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(), runners: [] };
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
       const itemRecord1: WorkItemRecord = { id: 3, jobID: '123', serviceID: '', sortIndex: 0,
-        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date(), runners: [] };
+        workflowStepIndex: 0, retryCount: 0, duration: 0, updatedAt: new Date(), createdAt: new Date() };
       const s3 = objectStoreForProtocol('s3');
       before(async function () {
         // One of the items will have its log file written to twice

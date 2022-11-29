@@ -57,8 +57,8 @@ export async function getWork(
 
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
-    const logger = req.context.logger.child({ workItemId: workItem.id });
     if (workItem) {
+      const logger = req.context.logger.child({ workItemId: workItem.id });
       logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
       if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
         maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);

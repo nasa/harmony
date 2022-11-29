@@ -53,7 +53,7 @@ export function buildWorkItem(fields: Partial<WorkItemRecord> = {}): WorkItem {
 export async function rawSaveWorkItem(tx: Transaction, fields: Partial<WorkItemRecord> = {}): Promise<WorkItem> {
   const workItem = buildWorkItem(fields);
   let stmt = tx((workItem.constructor as RecordConstructor).table)
-    .insert({ ...workItem, runners: '[]' });
+    .insert(workItem);
   if (db.client.config.client === 'pg') {
     stmt = stmt.returning('id'); // Postgres requires this to return the id of the inserted record
   }
