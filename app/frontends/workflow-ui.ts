@@ -298,7 +298,7 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
       const noRetriesLeft = this.retryCount >= env.workItemRetryLimit;
       if (!isRunning || !job.belongsToOrIsAdmin(requestUser, isAdmin) || noRetriesLeft) return '';
       const retryUrl = `/workflow-ui/${job.jobID}/${this.id}/retry`;
-      return `<button type="button" class="btn btn-light retry-button" data-retry-url="${retryUrl}"` +
+      return `<button type="button" class="btn btn-light btn-sm retry-button" data-retry-url="${retryUrl}"` +
         `data-work-item-id="${this.id}" title="retry this item"><i class="bi bi-arrow-clockwise"></i></button>`;
     },
   };
