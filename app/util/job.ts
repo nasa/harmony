@@ -161,19 +161,20 @@ export async function pauseAndSaveJob(
 }
 
 /**
- * Updates the user access token in the database and applies the appropriate
- * job function - either resume or skipPreview.
+ * Updates the user access token in the database and applies the appropriate job status function
+ * to change the state of the job.
  *
  * @param jobID - the id of job (requestId in the db)
  * @param username - the name of the user requesting the resume - null if the admin
  * @param token - the access token for the user
- * @param jobFnName - a string representation of the function to call on the job object.
+ * @param jobStatusFn - a function that takes a job and calls the appropriate method on the job
+ * in order to change the status field.
  * @throws {@link ConflictError} if the job is already in a terminal state.
  * @throws {@link NotFoundError} if the job does not exist or the job does not
  * belong to the user.
 */
 async function updateTokenAndChangeState(
-  jobID: string, username: string, token: string, jobFnName: string,
+  jobID: string, username: string, token: string, jobStatusFn: CallableFunction,
 ): Promise <void> {
   const encrypter = createEncrypter(env.sharedSecretKey);
   const decrypter = createDecrypter(env.sharedSecretKey);
@@ -191,11 +192,7 @@ async function updateTokenAndChangeState(
         await workflowStep.save(tx);
       }
     }
-    if (jobFnName === 'resume') {
-      job.resume();
-    } else if (jobFnName === 'skipPreview') {
-      job.skipPreview();
-    }
+    jobStatusFn(job);
     await job.save(tx);
   });
 }
@@ -218,7 +215,7 @@ export async function resumeAndSaveJob(
   token?: string,
 
 ): Promise<void> {
-  await updateTokenAndChangeState(jobID, username, token, 'resume');
+  await updateTokenAndChangeState(jobID, username, token, ((job) => job.resume()));
 }
 
 /**
@@ -237,7 +234,7 @@ export async function skipPreviewAndSaveJob(
   token?: string,
 
 ): Promise<void> {
-  await updateTokenAndChangeState(jobID, username, token, 'skipPreview');
+  await updateTokenAndChangeState(jobID, username, token, ((job) => job.skipPreview()));
 }
 
 /**
