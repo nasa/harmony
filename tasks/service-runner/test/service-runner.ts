@@ -204,6 +204,7 @@ describe('Service Runner', function () {
         serviceID: 'abc',
         workflowStepIndex: 0,
         scrollID: '1234',
+        operation: { requestID: 'foo' },
         id: 1,
       });
       it('returns an error message', async function () {
@@ -220,6 +221,7 @@ describe('Service Runner', function () {
         jobID: '123',
         serviceID: 'abc',
         workflowStepIndex: 1,
+        operation: { requestID: 'foo' },
         id: 1,
       });
       beforeEach(function () {
