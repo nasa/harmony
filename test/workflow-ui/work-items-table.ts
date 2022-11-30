@@ -211,7 +211,7 @@ describe('Workflow UI work items table route', function () {
 
       describe('who requests the work items table for someone else\'s non-shareable job (but is an admin)', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID });
-        it('returns s3 links for the other user\'s work item logs for retrying and completed work items', async function () {
+        it('returns links for the other user\'s work item logs (stored in s3) for retrying and completed work items', async function () {
           const listing = this.res.text;
           expect((listing.match(/logs-s3/g) || []).length).to.equal(4);
         });
@@ -369,7 +369,7 @@ describe('Workflow UI work items table route', function () {
             .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
           expect((listing.match(/work-item-table-row/g) || []).length).to.equal(5);
         });
-        it('returns s3 links for the (completed) and currently running work item logs', async function () {
+        it('returns links for the (completed) and currently running work item logs (stored in s3)', async function () {
           const listing = this.res.text;
           expect((listing.match(/logs-s3/g) || []).length).to.equal(4);
         });
