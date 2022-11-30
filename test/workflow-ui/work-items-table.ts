@@ -70,7 +70,7 @@ const shareableJob = buildJob({
 const otherJob = buildJob({ status: JobStatus.CANCELED, username: 'not-bo' });
 const otherItem3 = buildWorkItem({ jobID: otherJob.jobID, status: WorkItemStatus.RUNNING });
 
-const logsTableHeader = '>serviceLogs</th>';
+const logsTableHeader = '>logs</th>';
 
 describe('Workflow UI work items table route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
@@ -192,15 +192,12 @@ describe('Workflow UI work items table route', function () {
         });
         it('does not return links for the work item logs', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-button/g) || []).length).to.equal(0);
+          expect((listing.match(/logs-s3/g) || []).length).to.equal(0);
+          expect((listing.match(/logs-metrics/g) || []).length).to.equal(0);
         });
         it('does not return a column for the work item logs', async function () {
           const listing = this.res.text;
           expect(listing).to.not.contain(mustache.render(logsTableHeader, {}));
-        });
-        it('does not return a column for itemLogs', async function () {
-          const listing = this.res.text;
-          expect(listing).to.not.contain(mustache.render('>itemLogs</th>', {}));
         });
         it('returns retry buttons for their RUNNING work items', async function () {
           const listing = this.res.text;
@@ -214,9 +211,13 @@ describe('Workflow UI work items table route', function () {
 
       describe('who requests the work items table for someone else\'s non-shareable job (but is an admin)', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: targetJob.jobID });
-        it('returns links for the other user\'s work item logs for retrying and completed work items', async function () {
+        it('returns s3 links for the other user\'s work item logs for retrying and completed work items', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-button/g) || []).length).to.equal(4);
+          expect((listing.match(/logs-s3/g) || []).length).to.equal(4);
+        });
+        it('returns metrics links for the other user\'s work item logs for every work item', async function () {
+          const listing = this.res.text;
+          expect((listing.match(/logs-metrics/g) || []).length).to.equal(5);
         });
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
@@ -368,17 +369,17 @@ describe('Workflow UI work items table route', function () {
             .forEach((id) => expect(listing).to.contain(mustache.render('<td>{{id}}</td>', { id })));
           expect((listing.match(/work-item-table-row/g) || []).length).to.equal(5);
         });
-        it('returns links for the (completed) and currently running work item logs', async function () {
+        it('returns s3 links for the (completed) and currently running work item logs', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-button/g) || []).length).to.equal(4);
+          expect((listing.match(/logs-s3/g) || []).length).to.equal(4);
+        });
+        it('returns metrics logs links for all work items', async function () {
+          const listing = this.res.text;
+          expect((listing.match(/logs-metrics/g) || []).length).to.equal(5);
         });
         it('does return a column for the work item logs', async function () {
           const listing = this.res.text;
           expect(listing).to.contain(mustache.render(logsTableHeader, {}));
-        });
-        it('does return a column for itemLogs', async function () {
-          const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('>itemLogs</th>', {}));
         });
         it('returns retry buttons for the RUNNING work items', async function () {
           const listing = this.res.text;
@@ -408,7 +409,7 @@ describe('Workflow UI work items table route', function () {
         hookWorkflowUIWorkItems({ username: 'adam', jobID: otherJob.jobID });
         it('returns metrics logs links for each each work item', function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-link/g) || []).length).to.equal(4);
+          expect((listing.match(/logs-metrics/g) || []).length).to.equal(4);
         });
       });
 
