@@ -161,6 +161,43 @@ export async function pauseAndSaveJob(
 }
 
 /**
+ * Updates the user access token in the database and applies the appropriate job status function
+ * to change the state of the job.
+ *
+ * @param jobID - the id of job (requestId in the db)
+ * @param username - the name of the user requesting the resume - null if the admin
+ * @param token - the access token for the user
+ * @param jobStatusFn - a function that takes a job and calls the appropriate method on the job
+ * in order to change the status field.
+ * @throws {@link ConflictError} if the job is already in a terminal state.
+ * @throws {@link NotFoundError} if the job does not exist or the job does not
+ * belong to the user.
+*/
+async function updateTokenAndChangeState(
+  jobID: string, username: string, token: string, jobStatusFn: CallableFunction,
+): Promise <void> {
+  const encrypter = createEncrypter(env.sharedSecretKey);
+  const decrypter = createDecrypter(env.sharedSecretKey);
+  await db.transaction(async (tx) => {
+    const job = await lookupJob(tx, jobID, username);
+    if (username && token) {
+      // update access token
+      const workflowSteps = await getWorkflowStepsByJobId(tx, jobID);
+      for (const workflowStep of workflowSteps) {
+        const { operation } = workflowStep;
+        const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
+        op.accessToken = token;
+        const serialOp = op.serialize(CURRENT_SCHEMA_VERSION);
+        workflowStep.operation = serialOp;
+        await workflowStep.save(tx);
+      }
+    }
+    jobStatusFn(job);
+    await job.save(tx);
+  });
+}
+
+/**
  * Resume a paused job then save it.
  *
  * @param jobID - the id of job (requestId in the db)
@@ -178,25 +215,7 @@ export async function resumeAndSaveJob(
   token?: string,
 
 ): Promise<void> {
-  const encrypter = createEncrypter(env.sharedSecretKey);
-  const decrypter = createDecrypter(env.sharedSecretKey);
-  await db.transaction(async (tx) => {
-    const job = await lookupJob(tx, jobID, username);
-    if (username && token) {
-      // update access token
-      const workflowSteps = await getWorkflowStepsByJobId(tx, jobID);
-      for (const workflowStep of workflowSteps) {
-        const { operation } = workflowStep;
-        const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
-        op.accessToken = token;
-        const serialOp = op.serialize(CURRENT_SCHEMA_VERSION);
-        workflowStep.operation = serialOp;
-        await workflowStep.save(tx);
-      }
-    }
-    job.resume();
-    await job.save(tx);
-  });
+  await updateTokenAndChangeState(jobID, username, token, ((job) => job.resume()));
 }
 
 /**
@@ -215,25 +234,7 @@ export async function skipPreviewAndSaveJob(
   token?: string,
 
 ): Promise<void> {
-  const encrypter = createEncrypter(env.sharedSecretKey);
-  const decrypter = createDecrypter(env.sharedSecretKey);
-  await db.transaction(async (tx) => {
-    const job = await lookupJob(tx, jobID, username);
-    if (username && token) {
-      // update access token
-      const workflowSteps = await getWorkflowStepsByJobId(tx, jobID);
-      for (const workflowStep of workflowSteps) {
-        const { operation } = workflowStep;
-        const op = new DataOperation(JSON.parse(operation), encrypter, decrypter);
-        op.accessToken = token;
-        const serialOp = op.serialize(CURRENT_SCHEMA_VERSION);
-        workflowStep.operation = serialOp;
-        await workflowStep.save(tx);
-      }
-    }
-    job.skipPreview();
-    await job.save(tx);
-  });
+  await updateTokenAndChangeState(jobID, username, token, ((job) => job.skipPreview()));
 }
 
 /**

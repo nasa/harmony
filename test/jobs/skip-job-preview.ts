@@ -7,6 +7,8 @@ import {
   adminUsername,
   hookAdminSkipPreviewWithGET,
   hookAdminSkipPreview,
+  skipPreview,
+  jobStatus,
 } from './../helpers/jobs';
 
 import { expect } from 'chai';
@@ -21,6 +23,8 @@ import { createDecrypter, createEncrypter } from '../../app/util/crypto';
 import env from '../../app/util/env';
 import DataOperation from '../../app/models/data-operation';
 import { buildWorkflowStep } from '../helpers/workflow-steps';
+import { hookRangesetRequest } from '../helpers/ogc-api-coverages';
+import { auth } from '../helpers/auth';
 
 const normalUsername = 'joe';
 
@@ -216,8 +220,32 @@ describe('Skipping job preview', function () {
 
     for (const [httpMethod, skipPreviewEndpointHook] of Object.entries(skipPreviewEndpointHooks)) {
       describe(`Skipping preview using ${httpMethod}`, function () {
+        describe('When an end user request results in a job in the previewing state', function () {
+          hookRangesetRequest('1.0.0', 'C1245618475-EEDTEST', 'all', { query: { maxResults: 500, format: 'application/x-zarr' }, username: 'joe' });
+          hookRedirect('joe');
 
-        describe('When a job is previewing', function () {
+          it('puts the job in the previewing state', function () {
+            const job = JSON.parse(this.res.text);
+            expect(job.status).to.eql('previewing');
+          });
+
+          describe('when skipping the preview it sets the job to the running status', async function () {
+            before(async function  () {
+              const job = JSON.parse(this.res.text);
+              await skipPreview(this.frontend, { jobID: job.jobID, username: 'joe' } as Job).use(auth({ username: 'joe' }));
+              const jobStatusResponse = await jobStatus(this.frontend, { jobID: job.jobID, username: 'joe' } as Job).use(auth({ username: 'joe' }));
+              const jobLater = JSON.parse(jobStatusResponse.text);
+
+              expect(jobLater.status).to.eql('running');
+            });
+
+            it('workaround to make sure expectations in the before function are called', function () {
+              expect(1).to.equal(1);
+            });
+          });
+        });
+
+        describe('When a simulated job is previewing', function () {
           let token;
           hookTransaction();
           const resultsLimitedMessage = 'CMR query identified 176 granules, but the request has been limited to process only the first 101 granules because you requested 101 maxResults.';

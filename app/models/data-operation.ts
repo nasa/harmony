@@ -924,10 +924,6 @@ export default class DataOperation {
       if (!fieldsToInclude.includes('dimensionSubset')) {
         delete toWrite.subset.dimensions;
       }
-
-      if (Object.keys(toWrite.subset).length === 0) {
-        delete toWrite.subset;
-      }
     }
 
     return JSON.stringify(toWrite);
