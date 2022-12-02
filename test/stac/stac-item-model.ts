@@ -1,3 +1,7 @@
+import Ajv, { ValidateFunction } from 'ajv';
+import addFormats from 'ajv-formats';
+import apply from 'ajv-formats-draft2019';
+import axios from 'axios';
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import create, { HarmonyItem } from '../../app/frontends/stac-item';
@@ -67,7 +71,38 @@ const jobProps = {
 
 const job = buildJob(jobProps as unknown);
 
-describe('stac-item', function () {
+/**
+ * Load a JSON schema file from a url
+ *
+ * @param url - The location of the schema file
+ * @returns a promise containing an object for the JSON schema
+ */
+async function loadSchema(url: string): Promise<Object>  {
+  const res = await axios.get(url);
+  if (res.status >= 400) throw new Error('Error loading JSON schema: ' + res.status);
+  return res.data;
+}
+
+import * as schema from '../resources/stac-schema/1.0.0/item.json';
+
+/**
+ *  Create a validator for STAC schema files
+ * @returns A STAC item schema validation function
+ */
+async function getValidator(): Promise<ValidateFunction<unknown>> {
+  const ajv = new Ajv({ loadSchema: loadSchema, strictTypes: false });
+  addFormats(ajv);
+  apply(ajv);
+  await ajv.compileAsync(schema);
+
+  return ajv.getSchema('https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#');
+}
+
+describe('stac-item', async function () {
+  let validate;
+  before(async function () {
+    validate = await getValidator();
+  });
   describe('STAC Item creation with a Harmony Job object: case of anti-meridian crossing', function () {
     const jsonObj = create(job.jobID, job.request, job.links[0], 0, null, job.createdAt);
     it('Item has correct ID', function () {
@@ -76,7 +111,6 @@ describe('stac-item', function () {
     it('has a bounding box that crosses anti-meridian', function () {
       expect(jsonObj.geometry.type).to.equal('MultiPolygon');
     });
-    // TODO: [HARMONY-294] validate GeoJSON geometry
     it('has the creation time', function () {
       expect(jsonObj.properties.created).to.equal('2020-02-02T00:00:00.000Z');
     });
@@ -88,6 +122,10 @@ describe('stac-item', function () {
     });
     it('has roles for the asset', function () {
       expect(jsonObj.assets['file_1.nc'].roles[0]).to.equal('data');
+    });
+    it('validates against the STAC schema', function () {
+      const res = validate(jsonObj);
+      expect(res).to.be.true;
     });
   });
 
@@ -101,19 +139,31 @@ describe('stac-item', function () {
     it('has roles for the asset', function () {
       expect(jsonObj.assets['file_2.png'].roles[0]).to.equal('overview');
     });
+    it('validates against the STAC schema', function () {
+      const res = validate(jsonObj);
+      expect(res).to.be.true;
+    });
   });
 
   describe('STAC Item creation with a Harmony Job object: case of metadata assets', function () {
+    const jsonObj = create(job.jobID, job.request, job.links[2], 2, null, job.createdAt);
     it('has an asset with metadata role', function () {
-      const jsonObj = create(job.jobID, job.request, job.links[2], 2, null, job.createdAt);
       expect(jsonObj.assets['file_3.json'].roles[0]).to.equal('metadata');
+    });
+    it('validates against the STAC schema', function () {
+      const res = validate(jsonObj);
+      expect(res).to.be.true;
     });
   });
 
   describe('STAC Item creation with a Harmony Job object: case of textual data', function () {
+    const jsonObj = create(job.jobID, job.request, job.links[3], 3, null, job.createdAt);
     it('has an text asset with data role', function () {
-      const jsonObj = create(job.jobID, job.request, job.links[3], 3, null, job.createdAt);
       expect(jsonObj.assets['file_4.csv'].roles[0]).to.equal('data');
+    });
+    it('validates against the STAC schema', function () {
+      const res = validate(jsonObj);
+      expect(res).to.be.true;
     });
   });
 });

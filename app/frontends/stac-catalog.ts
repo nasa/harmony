@@ -48,7 +48,7 @@ class HarmonyCatalog implements SerializableCatalog {
    */
   constructor(id: string, title = '', description = '') {
     this.id = id;
-    this.stac_version = '0.9.0';
+    this.stac_version = '1.0.0';
     this.title = title;
     this.description = description;
     this.links = [];
