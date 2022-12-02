@@ -95,17 +95,20 @@ async function emptyDirectory(directory: string, matchingFilter?: RegExp): Promi
  *
  * @param workItem - the work to be done
  * @param maxCmrGranules - limits the page of granules in the query-cmr task
+ * @param workItemLogger - the logger to use
  */
 async function _doWork(
   workItem: WorkItemRecord,
   maxCmrGranules: number,
+  workItemLogger = logger,
 ): Promise<WorkItemRecord> {
   const newWorkItem = workItem;
+  workItemLogger.debug('Calling work function');
   // work items with a scrollID are only for the query-cmr service
-  const workFunc = newWorkItem.scrollID ? runQueryCmrFromPull : runServiceFromPull;
-  logger.debug('Calling work function');
-  const serviceResponse = await workFunc(newWorkItem, maxCmrGranules);
-  logger.debug('Finished work');
+  const serviceResponse = newWorkItem.scrollID ? 
+    await runQueryCmrFromPull(newWorkItem, maxCmrGranules, workItemLogger) :
+    await runServiceFromPull(newWorkItem, workItemLogger);
+  workItemLogger.debug('Finished work');
   if (serviceResponse.scrollID) {
     newWorkItem.scrollID = serviceResponse.scrollID;
     newWorkItem.hits = serviceResponse.hits;
@@ -116,7 +119,7 @@ async function _doWork(
     newWorkItem.totalItemsSize = serviceResponse.totalItemsSize;
     newWorkItem.outputItemSizes = serviceResponse.outputItemSizes;
   } else {
-    logger.error(`Service failed with error: ${serviceResponse.error}`);
+    workItemLogger.error(`Service failed with error: ${serviceResponse.error}`);
     newWorkItem.status = WorkItemStatus.FAILED;
     newWorkItem.errorMessage = `${serviceResponse.error}`;
   }
@@ -165,24 +168,25 @@ async function _pullAndDoWork(repeat = true): Promise<void> {
     const work = await _pullWork();
     if (!work.error && work.item) {
       const startTime = Date.now();
-      logger.debug(`Performing work for work item with id ${work.item.id} for job id ${work.item.jobID}`);
-      const workItem = await _doWork(work.item, work.maxCmrGranules);
+      const workItemLogger = logger.child({ workItemId: work.item.id });
+      workItemLogger.debug(`Performing work for work item with id ${work.item.id} for job id ${work.item.jobID}`);
+      const workItem = await _doWork(work.item, work.maxCmrGranules, workItemLogger);
       workItem.duration = Date.now() - startTime;
       // call back to Harmony to mark the work unit as complete or failed
-      logger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
+      workItemLogger.debug(`Sending response to Harmony for results of work item with id ${workItem.id} for job id ${workItem.jobID}`);
       try {
         await axiosUpdateWork.put(`${workUrl}/${workItem.id}`, workItem);
       } catch (e) {
         const status = e.response?.status;
         if (status) {
           if (status === 409) {
-            logger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
+            workItemLogger.warn(`Harmony callback failed with ${e.response.status}: ${e.response.data}`);
           } else if (status >= 400) {
-            logger.error(`Error: received status [${status}] with message [${e.response.data}] when updating WorkItem ${workItem.id}`);
-            logger.error(`Error: ${e.response.statusText}`);
+            workItemLogger.error(`Error: received status [${status}] with message [${e.response.data}] when updating WorkItem ${workItem.id}`);
+            workItemLogger.error(`Error: ${e.response.statusText}`);
           }
         } else {
-          logger.error(e);
+          workItemLogger.error(e);
         }
       }
     } else if (work.status !== 404) {
