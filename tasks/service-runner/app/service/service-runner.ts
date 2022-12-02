@@ -42,8 +42,6 @@ export class LogStream extends stream.Writable {
   
   aggregateLogStr = '';
 
-  workItemId;
-
   /**
    * Build a LogStream instance.
    * @param streamLogger - the logger to log messages with
