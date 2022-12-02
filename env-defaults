@@ -149,12 +149,6 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 # The CMR concept ID for the group whose users can access the admin interface
 ADMIN_GROUP_ID=AG1222736883-EEDTEST
 
-# The time (in seconds) between invocations of the job reaper service
-JOB_REAPER_PERIOD_SEC=360
-
-# Jobs older than this many minutes that are running are checked by the job reaper
-REAPABLE_JOB_AGE_MINUTES=60
-
 # The time (in seconds) between invocations of the work reaper service
 WORK_REAPER_PERIOD_SEC=360
 
