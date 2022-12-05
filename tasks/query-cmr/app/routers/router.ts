@@ -82,7 +82,11 @@ async function doWorkHandler(req: Request, res: Response, next: NextFunction): P
     res.status(200);
     res.send(JSON.stringify({ hits, totalItemsSize, outputItemSizes, scrollID: scrollId }));
   } catch (e) {
-    workLogger.error(e);
+    if (workLogger) {
+      workLogger.error(e);
+    } else {
+      logger.error(e);
+    }
     next(new ServerError('Query CMR doWorkHandler encountered an unexpected error.'));
   }
 }
