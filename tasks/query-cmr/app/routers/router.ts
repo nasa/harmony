@@ -78,7 +78,7 @@ async function doWorkHandler(req: Request, res: Response, next: NextFunction): P
   try {
     const workReq: QueryCmrRequest = req.body;
     workLogger = logger.child({ workItemId: workReq.workItemId });
-    const [hits, totalItemsSize, outputItemSizes, scrollId] = await doWork(workReq, logger);
+    const [hits, totalItemsSize, outputItemSizes, scrollId] = await doWork(workReq, workLogger);
     res.status(200);
     res.send(JSON.stringify({ hits, totalItemsSize, outputItemSizes, scrollID: scrollId }));
   } catch (e) {
