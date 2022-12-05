@@ -150,7 +150,7 @@ describe('Pull Worker', async function () {
           jobID: '123',
           serviceID: 'abc',
           workflowStepIndex: 0,
-          scrollID: 1234,
+          scrollID: '1234',
           operation: { requestID: 'foo' },
           id: 1,
         });

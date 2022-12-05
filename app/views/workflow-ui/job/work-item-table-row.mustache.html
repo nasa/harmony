@@ -1,15 +1,15 @@
 <tr id="item-{{id}}" class="work-item-table-row">
-    <th scope="row">{{workflowStepIndex}}</th>
-    <td>{{workflowItemStep}}</td>
-    <td>{{id}}</td>
-    <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
-    {{#isAdmin}}
-    <td>{{{workflowItemLogsButton}}}</td>
-    {{/isAdmin}}
-    {{#canShowRetryColumn}}
-    <td>{{{workflowItemRetryButton}}}</td>
-    {{/canShowRetryColumn}}
-    <td>{{{retryCount}}}</td>
-    <td class="date-td" data-time="{{workflowItemCreatedAt}}"></td>
-    <td class="date-td" data-time="{{workflowItemUpdatedAt}}"></td>
+  <th scope="row">{{workflowStepIndex}}</th>
+  <td>{{workflowItemStep}}</td>
+  <td>{{id}}</td>
+  <td><span class="badge bg-{{workflowItemBadge}}">{{status}}</span></td>
+  {{#isAdmin}}
+  <td>{{{workflowItemLogsButton}}}</td>
+  {{/isAdmin}}
+  {{#canShowRetryColumn}}
+  <td>{{{workflowItemRetryButton}}}</td>
+  {{/canShowRetryColumn}}
+  <td>{{{retryCount}}}</td>
+  <td class="date-td" data-time="{{workflowItemCreatedAt}}"></td>
+  <td class="date-td" data-time="{{workflowItemUpdatedAt}}"></td>
 </tr>

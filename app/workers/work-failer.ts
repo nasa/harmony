@@ -72,23 +72,24 @@ export default class WorkFailer implements Worker {
       });
       const workItemIds = expiredWorkItems.map((item) => item.id);
       for (const workItem of expiredWorkItems) {
-        this.logger.warn(`expiring work item ${workItem.id}`);
+        this.logger.warn(`expiring work item ${workItem.id}`, { workItemId: workItem.id });
       }
       const jobIds = new Set(workItems.map((item) => item.jobID));
       for (const jobId of jobIds) {
         try {
           const itemsForJob = expiredWorkItems.filter((item) => item.jobID === jobId);
           await Promise.all(itemsForJob.map((item) => {
+            const workItemLogger = this.logger.child({ workItemId: item.id });
             const key = `${jobId}${item.serviceID}`;
             const message = failedMessage(item.id, jobServiceThresholds[key]);
-            this.logger.debug(message);
+            workItemLogger.debug(message);
             return handleWorkItemUpdate(
               { workItemID: item.id, status: WorkItemStatus.FAILED,
                 scrollID: item.scrollID, hits: null, results: [], totalItemsSize: item.totalItemsSize,
                 errorMessage: message,
               },
               null,
-              this.logger);
+              workItemLogger);
           }));
         } catch (e) {
           this.logger.error(`Error attempting to process work item updates for job ${jobId}.`);

@@ -42,7 +42,11 @@ export class LogStream extends stream.Writable {
   
   aggregateLogStr = '';
 
-  constructor(streamLogger: Logger = logger) {
+  /**
+   * Build a LogStream instance.
+   * @param streamLogger - the logger to log messages with
+   */
+  constructor(streamLogger = logger) {
     super();
     this.streamLogger = streamLogger;
   }
@@ -104,9 +108,10 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
  * @param logStr - A string that contains error logging
  * @param catalogDir - A string path for the outputs directory of the WorkItem 
  * (e.g. s3://artifacts/requestId/workItemId/outputs/).
+ * @param workItemLogger - Logger for logging messages
  * @returns An error message parsed from the log
  */
-async function _getErrorMessage(logStr: string, catalogDir: string): Promise<string> {
+async function _getErrorMessage(logStr: string, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
   // expect JSON logs entries
   try {
     const s3 = objectStoreForProtocol('s3');
@@ -126,7 +131,7 @@ async function _getErrorMessage(logStr: string, catalogDir: string): Promise<str
     }
     return 'Unknown error';
   } catch (e) {
-    logger.error(e.message);
+    workItemLogger.error(e.message);
     return e.message;
   }
 }
@@ -136,13 +141,18 @@ async function _getErrorMessage(logStr: string, catalogDir: string): Promise<str
   * @param operation - The requested operation
   * @param callback - Function to call with result
   * @param maxCmrGranules - Limits the page of granules in the query-cmr task
+  * @param workItemLogger - The logger to use
   */
-export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranules?: number): Promise<ServiceResponse> {
+export async function runQueryCmrFromPull(
+  workItem: WorkItemRecord, 
+  maxCmrGranules?: number,
+  workItemLogger = logger,
+): Promise<ServiceResponse> {
   const { operation, scrollID } = workItem;
   const catalogDir = getStacLocation(workItem);
   return new Promise<ServiceResponse>(async (resolve) => {
-    logger.debug('CALLING WORKER');
-    logger.debug(`maxCmrGranules = ${maxCmrGranules}`);
+    workItemLogger.debug('CALLING WORKER');
+    workItemLogger.debug(`maxCmrGranules = ${maxCmrGranules}`);
 
     try {
       const resp = await axios.post(`http://localhost:${env.workerPort}/work`,
@@ -151,6 +161,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
           harmonyInput: operation,
           scrollId: scrollID,
           maxCmrGranules,
+          workItemId: workItem.id,
         },
         {
           timeout: workerTimeout,
@@ -167,7 +178,7 @@ export async function runQueryCmrFromPull(workItem: WorkItemRecord, maxCmrGranul
         resolve({ error: resp.statusText });
       }
     } catch (e) {
-      logger.error(e);
+      workItemLogger.error(e);
       const message = e.response?.data ? e.response.data.description : e.message;
       resolve({ error: message });
     }
@@ -199,10 +210,10 @@ export async function uploadLogs(workItem: WorkItemRecord, logs: (string | objec
 
 /**
  * Run a service for a work item pulled from Harmony
- * @param operation - The requested operation
- * @param callback - Function to call with result
+ * @param workItem - The item to be worked on in the service
+ * @param workItemLogger - The logger to use
  */
-export async function runServiceFromPull(workItem: WorkItemRecord): Promise<ServiceResponse> {
+export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogger = logger): Promise<ServiceResponse> {
   try {
     const { operation, stacCatalogLocation } = workItem;
     // support invocation args specified with newline separator or space separator
@@ -213,10 +224,10 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
 
     const catalogDir = getStacLocation(workItem);
     return await new Promise<ServiceResponse>((resolve) => {
-      logger.debug(`CALLING WORKER for pod ${env.myPodName}`);
+      workItemLogger.debug(`CALLING WORKER for pod ${env.myPodName}`);
       // create a writable stream to capture stdout from the exec call
       // using stdout instead of stderr because the service library seems to log ERROR to stdout
-      const stdOut = new LogStream();
+      const stdOut = new LogStream(workItemLogger);
       // timeout if things take too long
       const timeout = setTimeout(async () => {
         resolve({ error: `Worker timed out after ${workerTimeout / 1000.0} seconds` });
@@ -242,17 +253,17 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
         process.stdin as stream.Readable,
         true,
         async (status: k8s.V1Status) => {
-          logger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
+          workItemLogger.debug(`SIDECAR STATUS: ${JSON.stringify(status, null, 2)}`);
           try {
             await uploadLogs(workItem, stdOut.logStrArr);
             if (status.status === 'Success') {
               clearTimeout(timeout);
-              logger.debug('Getting STAC catalogs');
+              workItemLogger.debug('Getting STAC catalogs');
               const catalogs = await _getStacCatalogs(catalogDir);
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(stdOut.aggregateLogStr, catalogDir);
+              const logErr = await _getErrorMessage(stdOut.aggregateLogStr, catalogDir, workItemLogger);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }
@@ -262,7 +273,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord): Promise<Serv
         },
       ).catch((e) => {
         clearTimeout(timeout);
-        logger.error(e.message);
+        workItemLogger.error(e.message);
         resolve({ error: e.message });
       });
     });

@@ -73,6 +73,8 @@ interface HarmonyEnv {
   builtInTaskVersion: string;
   callbackUrlRoot: string;
   cmrEndpoint: string;
+  metricsEndpoint: string;
+  metricsIndex: string;
   cmrMaxPageSize: number;
   defaultPodGracePeriodSecs: number;
   defaultJobListPageSize: number;
@@ -80,7 +82,6 @@ interface HarmonyEnv {
   defaultResultPageSize: number;
   failableWorkAgeMinutes: number;
   harmonyClientId: string;
-  jobReaperPeriodSec: number;
   localstackHost: string;
   logLevel: string;
   maxGranuleLimit: number;
@@ -96,7 +97,6 @@ interface HarmonyEnv {
   oauthUid: string;
   objectStoreType: string;
   previewThreshold: number;
-  reapableJobAgeMinutes: number;
   reapableWorkAgeMinutes: number;
   sameRegionAccessRole: string;
   servicesYml: string;

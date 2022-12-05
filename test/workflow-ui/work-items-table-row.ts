@@ -169,7 +169,8 @@ describe('Workflow UI work items table row route', function () {
         });
         it('does not return links for the work item logs', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-button/g) || []).length).to.equal(0);
+          expect((listing.match(/logs-metrics/g) || []).length).to.equal(0);
+          expect((listing.match(/logs-s3/g) || []).length).to.equal(0);
         });
         it('returns a retry button for their RUNNING work item', async function () {
           const listing = this.res.text;
@@ -181,7 +182,8 @@ describe('Workflow UI work items table row route', function () {
         hookWorkflowUIWorkItemsRow({ username: 'adam', jobID: targetJob.jobID, id: item2.id });
         it('returns a link for the other user\'s work item logs', async function () {
           const listing = this.res.text;
-          expect((listing.match(/logs-button/g) || []).length).to.equal(1);
+          expect((listing.match(/logs-s3/g) || []).length).to.equal(1);
+          expect((listing.match(/logs-metrics/g) || []).length).to.equal(1);
         });
       });
 

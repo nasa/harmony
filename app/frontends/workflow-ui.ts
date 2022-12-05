@@ -273,12 +273,25 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
     workflowItemCreatedAt(): string { return this.createdAt.getTime(); },
     workflowItemUpdatedAt(): string { return this.updatedAt.getTime(); },
     workflowItemLogsButton(): string {
+      if (!isAdmin) return '';
+      let logsLinks = '';
       const isComplete = [WorkItemStatus.FAILED, WorkItemStatus.SUCCESSFUL].indexOf(this.status) > -1;
-      const isLogAvailable = isComplete || this.retryCount > 0;
-      if (!isLogAvailable || !isAdmin || this.serviceID.includes('query-cmr')) return '';
-      const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
-      return `<a type="button" target="__blank" class="btn btn-light btn-sm logs-button" href="${logsUrl}"` +
-        ' title="view logs"><i class="bi bi-body-text"></i></a>';
+      const isLogAvailable = (isComplete || this.retryCount > 0) && !this.serviceID.includes('query-cmr');
+      if (isLogAvailable) {
+        const logsUrl = `/admin/workflow-ui/${job.jobID}/${this.id}/logs`;
+        logsLinks += `<a type="button" target="__blank" class="btn btn-sm btn-outline-primary logs-s3" href="${logsUrl}"` +
+          ` title="View all service log output for work item ${this.id} in aggregate."><i class="bi bi-body-text"></i></a>&nbsp;`;
+      }
+      const from = this.createdAt.toISOString();
+      const to = this.status === WorkItemStatus.RUNNING ? 'now' : this.updatedAt.toISOString();
+      const metricsUrl = `${env.metricsEndpoint}?_g=(filters:!(),refreshInterval:(pause:!t,value:0),` +
+        `time:(from:'${from}',to:'${to}'))` +
+        `&_a=(columns:!(),filters:!(),index:${env.metricsIndex},interval:auto,` +
+        `query:(language:kuery,query:'${encodeURIComponent(`workItemId: ${this.id}`)}'),` +
+        "sort:!(!('@timestamp',desc)))";
+      logsLinks += `<a type="button" target="__blank" class="btn btn-sm btn-outline-dark logs-metrics" href="${metricsUrl}"` +
+      ` title="View all logs for work item ${this.id} in the Earthdata Metrics logs dashboard."><i class="bi bi-window"></i></a>`;
+      return logsLinks;
     },
     workflowItemRetryButton(): string {
       const isRunning = WorkItemStatus.RUNNING === this.status;
@@ -446,12 +459,13 @@ export async function retry(
     if (item.retryCount >= env.workItemRetryLimit) {
       res.status(200).send({ message: 'The item does not have any retries left.' });
     }
+    const workItemLogger = req.context.logger.child({ workItemId: item.id });
     await handleWorkItemUpdate(
       { workItemID: item.id, status: WorkItemStatus.FAILED,
         scrollID: item.scrollID, hits: null, results: [], totalItemsSize: item.totalItemsSize,
         errorMessage: 'A user attempted to trigger a retry via the Workflow UI.' },
       null,
-      req.context.logger);
+      workItemLogger);
     res.status(200).send({ message: 'The item was successfully requeued.' });
   } catch (e) {
     req.context.logger.error(e);

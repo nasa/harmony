@@ -60,6 +60,12 @@ CALLBACK_URL_ROOT=http://harmony:3001
 # The CMR Endpoint to use (e.g. URL for local, SIT, UAT, or production)
 CMR_ENDPOINT=https://cmr.uat.earthdata.nasa.gov
 
+# The Metrics Endpoint (Kibana) to use (linked to from the Workflow UI)
+METRICS_ENDPOINT=
+
+# The Metrics index to query (via the METRICS_ENDPOINT)
+METRICS_INDEX=
+
 # For testing: Whether to use Localstack instead of AWS S3.  Options are "true" or "false".
 USE_LOCALSTACK=true
 
@@ -142,12 +148,6 @@ SAME_REGION_ACCESS_ROLE=same-region-access-role
 
 # The CMR concept ID for the group whose users can access the admin interface
 ADMIN_GROUP_ID=AG1222736883-EEDTEST
-
-# The time (in seconds) between invocations of the job reaper service
-JOB_REAPER_PERIOD_SEC=360
-
-# Jobs older than this many minutes that are running are checked by the job reaper
-REAPABLE_JOB_AGE_MINUTES=60
 
 # The time (in seconds) between invocations of the work reaper service
 WORK_REAPER_PERIOD_SEC=360

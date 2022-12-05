@@ -51,7 +51,7 @@ async function calculateQueryCmrLimit(tx: Transaction, workItem: WorkItem, logge
 export async function getWork(
   req: HarmonyRequest, res: Response, next: NextFunction, tryCount = 1,
 ): Promise<void> {
-  const { logger } = req.context;
+  const reqLogger = req.context.logger;
   const { serviceID, podName } = req.query;
 
   let workItem: WorkItem, maxCmrGranules: number;
@@ -59,6 +59,7 @@ export async function getWork(
   await db.transaction(async (tx) => {
     workItem = await getNextWorkItem(tx, serviceID as string);
     if (workItem) {
+      const logger = reqLogger.child({ workItemId: workItem.id });
       logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
       if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
         maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
@@ -720,10 +721,10 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     outputItemSizes,
     duration,
   };
-
+  const workItemLogger = req.context.logger.child({ workItemId: update.workItemID });
   if (typeof global.it === 'function') {
     // tests break if we don't await this
-    await handleWorkItemUpdate(update, operation, req.context.logger);
+    await handleWorkItemUpdate(update, operation, workItemLogger);
   } else {
     // asynchronously handle the update so that the service is not waiting for a response
     // during a potentially long update. If the asynchronous update fails the work-item will
@@ -733,7 +734,7 @@ export async function updateWorkItem(req: HarmonyRequest, res: Response): Promis
     // like 409 errors.
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    handleWorkItemUpdate(update, operation, req.context.logger);
+    handleWorkItemUpdate(update, operation, workItemLogger);
   }
 
   // Return a success with no body

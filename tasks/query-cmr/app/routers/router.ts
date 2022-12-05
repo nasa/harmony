@@ -6,6 +6,7 @@ import { createEncrypter, createDecrypter } from '../../../../app/util/crypto';
 import { queryGranules } from '../query';
 import { objectStoreForProtocol } from '../../../../app/util/object-store';
 import { ServerError } from '../../../../app/util/errors';
+import { Logger } from 'winston';
 
 const encrypter = createEncrypter(process.env.SHARED_SECRET_KEY);
 const decrypter = createDecrypter(process.env.SHARED_SECRET_KEY);
@@ -15,25 +16,27 @@ export interface QueryCmrRequest {
   harmonyInput?: object;
   scrollId?: string;
   maxCmrGranules?: number;
+  workItemId: number;
 }
 
 /**
  * Query the CMR as requested and create one or more STAC catalogs for the granule(s)
  *
  * @param workReq - The request to be made to the CMR
+ * @param workLogger - The logger to use for logging messages
  * @returns a promise containing a tuple with thie total cmr hits, the combined totals of the
  * sizes of the granules in this result, and the combined sizes of all the granules included in 
  * the catalogs
  */
-export async function doWork(workReq: QueryCmrRequest): Promise<[number, number, number[], string]> {
+export async function doWork(workReq: QueryCmrRequest, workLogger: Logger = logger): Promise<[number, number, number[], string]> {
   const startTime = new Date().getTime();
   const operation = new DataOperation(workReq.harmonyInput, encrypter, decrypter);
   const { outputDir, scrollId } = workReq;
-  const appLogger = logger.child({ application: 'query-cmr' });
+  const appLogger = workLogger.child({ application: 'query-cmr' });
   const timingLogger = appLogger.child({ requestId: operation.requestId });
   timingLogger.info('timing.query-cmr.start');
   const queryCmrStartTime = new Date().getTime();
-  const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] = await queryGranules(operation, scrollId, workReq.maxCmrGranules);
+  const [totalItemsSize, outputItemSizes, catalogs, newScrollId, hits] = await queryGranules(operation, scrollId, workReq.maxCmrGranules, workLogger);
   const granuleSearchTime = new Date().getTime();
   timingLogger.info('timing.query-cmr.query-granules-search', { durationMs: granuleSearchTime - queryCmrStartTime });
 
@@ -71,14 +74,19 @@ export async function doWork(workReq: QueryCmrRequest): Promise<[number, number,
  * @returns Resolves when the request is complete
  */
 async function doWorkHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  let workLogger;
   try {
     const workReq: QueryCmrRequest = req.body;
-
-    const [hits, totalItemsSize, outputItemSizes, scrollId] = await doWork(workReq);
+    workLogger = logger.child({ workItemId: workReq.workItemId });
+    const [hits, totalItemsSize, outputItemSizes, scrollId] = await doWork(workReq, workLogger);
     res.status(200);
     res.send(JSON.stringify({ hits, totalItemsSize, outputItemSizes, scrollID: scrollId }));
   } catch (e) {
-    logger.error(e);
+    if (workLogger) {
+      workLogger.error(e);
+    } else {
+      logger.error(e);
+    }
     next(new ServerError('Query CMR doWorkHandler encountered an unexpected error.'));
   }
 }
