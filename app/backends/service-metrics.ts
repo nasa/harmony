@@ -14,7 +14,7 @@ import { RequestValidationError } from '../util/errors';
 export async function getEligibleWorkItemCountForServiceID(
   req: Request, res: Response, next: NextFunction,
 ): Promise<void> {
-
+  console.log('get harmony metric ' + (new Date()).toISOString());
   const serviceID = req.query.serviceID as string;
 
   // Return 400 if serviceID not provided in query
