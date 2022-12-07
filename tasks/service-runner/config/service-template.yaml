@@ -99,8 +99,7 @@ kind: Service
 metadata:
   name: $SERVICE_NAME
   labels:
-    runner: "true"
-    name: $SERVICE_NAME
+    should_scrape: "true"
   annotations:
     prometheus.io/port: "5000"
     prometheus.io/scrape: "true"
