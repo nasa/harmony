@@ -96,6 +96,7 @@ metadata:
   name: query-cmr
   labels:
     should_scrape: "true"
+    name: query-cmr
   annotations:
     prometheus.io/port: "5000"
     prometheus.io/scrape: "true"
