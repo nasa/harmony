@@ -172,7 +172,7 @@
     "replay": "^2.4.0",
     "sinon": "^12.0.1",
     "strict-npm-engines": "^0.0.1",
-    "superagent": "^6.1.0",
+    "superagent": "^8.0.6",
     "supertest": "^6.1.3",
     "ts-node-dev": "^1.0.0-pre.50"
   },
