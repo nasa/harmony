@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { CookieOptions, Response } from 'express';
 import { mergeParameters } from './parameter-parsing';
 import * as urlUtil from './url';
 import HarmonyRequest from '../models/harmony-request';
@@ -16,7 +16,7 @@ interface FileParams {
  * containing the cookie name, value, and options.
  */
 
-export const cookieOptions = { signed: true, sameSite: 'Lax' };
+export const cookieOptions: CookieOptions = { signed: true, sameSite: 'lax' };
 
 /**
  * Recipe for a cookie to support handling shapefiles
