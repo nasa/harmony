@@ -101,8 +101,6 @@
     "p-queue": "^7.1.0",
     "pg": "^8.7.3",
     "pg-native": "^3.0.1",
-    "request": "^2.88.2",
-    "request-promise": "^4.2.5",
     "serve-favicon": "^2.5.0",
     "shpjs": "^4.0.2",
     "simple-oauth2": "git+https://github.com/bilts/simple-oauth2.git#fix-encoding",

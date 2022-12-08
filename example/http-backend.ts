@@ -21,11 +21,11 @@
  * for `handleHarmonyMessage` below for details.
  */
 
+import axios from 'axios';
 import express from 'express';
-import { promisify } from 'util';
-import * as winston from 'winston';
-import * as request from 'request-promise';
 import * as http from 'http';
+import * as winston from 'winston';
+import { promisify } from 'util';
 
 interface BackendRequest extends express.Request {
   rawBody?: string;
@@ -117,8 +117,12 @@ async function sendAsyncHarmonyStatus(req: express.Request, res: express.Respons
     res.status(400).send(`no callback found for id="${id}"`);
     return;
   }
-  const result = await request.post({ url: `${callback}/response`, qs: req.query });
-  res.json({ status: result.status, text: result.body });
+  // const result = await request.post({ url: `${callback}/response`, qs: req.query });
+  //const qs = stringify(req.query as ParsedUrlQueryInput);
+  const result = await axios.post(`${callback}/response`, null, {
+    params: req.query,
+    validateStatus: () => true });
+  res.json({ status: result.status, text: result.data });
 }
 
 /**
