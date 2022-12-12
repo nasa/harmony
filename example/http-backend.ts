@@ -121,7 +121,7 @@ async function sendAsyncHarmonyStatus(req: express.Request, res: express.Respons
   //const qs = stringify(req.query as ParsedUrlQueryInput);
   const result = await axios.post(`${callback}/response`, null, {
     params: req.query,
-    validateStatus: () => true
+    validateStatus: () => true,
   });
   res.json({ status: result.status, text: result.data });
 }
@@ -139,7 +139,7 @@ export function router(): express.Router {
   result.use(express.json({
     verify: (req: BackendRequest, res, buf) => {
       req.rawBody = buf.toString();
-    }
+    },
   }));
 
   // Endpoint to give to Harmony.  Note that other endpoints could be set up for general use
