@@ -10,6 +10,7 @@ import { hookTransaction, truncateAll } from '../helpers/db';
 import { buildJob } from '../helpers/jobs';
 import { hookWorkflowUIWorkItemsRow, workflowUIWorkItemsRow } from '../helpers/workflow-ui';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
+import env from '../../app/util/env';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
@@ -60,12 +61,16 @@ const shareableItem1 = buildWorkItem({ jobID: shareableJob.jobID, status: WorkIt
 
 describe('Workflow UI work items table row route', function () {
   hookServersStartStop({ skipEarthdataLogin: false });
-
+  
+  let retryLimit;
   before(async function () {
+    retryLimit = env.workItemRetryLimit;
+    env.workItemRetryLimit = 3;
     await truncateAll();
   });
 
   after(async function () {
+    env.workItemRetryLimit = retryLimit;
     await truncateAll();
   });
 
