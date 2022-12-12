@@ -46,6 +46,12 @@ spec:
             preStop:
               exec:
                 command: ["/bin/sh","-c","touch /tmp/TERMINATING; while [ -f /tmp/WORKING ]; do sleep 1; done; kill -TERM 1"]
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 3
           resources:
             limits:
               memory: $SERVICE_RUNNER_LIMITS_MEMORY

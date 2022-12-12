@@ -25,7 +25,7 @@ export interface QueryCmrRequest {
  * @param workReq - The request to be made to the CMR
  * @param workLogger - The logger to use for logging messages
  * @returns a promise containing a tuple with thie total cmr hits, the combined totals of the
- * sizes of the granules in this result, and the combined sizes of all the granules included in 
+ * sizes of the granules in this result, and the combined sizes of all the granules included in
  * the catalogs
  */
 export async function doWork(workReq: QueryCmrRequest, workLogger: Logger = logger): Promise<[number, number, number[], string]> {
