@@ -6,11 +6,11 @@ prometheus:
 # Rules for custom metrics
 rules:
   custom:
-  - seriesQuery: 'num_ready_work_items{kubernetes_namespace!="",kubernetes_pod_name!=""}'
+  - seriesQuery: 'num_ready_work_items{kubernetes_namespace!=""}'
     resources:
       overrides:
         kubernetes_namespace: {resource: "namespace"}
-        kubernetes_pod_name: {resource: "pod"}
+        kubernetes_service_name: {resource: "service"}
         name: {group: "apps", resource: "deployment"}
     name:
       matches: "num_ready_work_items"

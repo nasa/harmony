@@ -425,7 +425,8 @@ HPA_MIN_REPLICAS=1
 HPA_MAX_REPLICAS=10
 
 # See https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/#Quantity
-# for an explanation of the "m" suffix (e.g. 1.5 will be serialized as "1500m")
+# for an explanation of the "m" suffix (e.g. 10 will be serialized as "10000m").
+# With this value, the HPAs (when deployed) will try to ensure a pod exists for every 10 queued work items.
 HPA_TARGET_VALUE=10000m
 
 #############################################################################
