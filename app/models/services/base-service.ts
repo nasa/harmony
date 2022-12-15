@@ -10,7 +10,7 @@ import { defaultObjectStore } from '../../util/object-store';
 import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
-import { WorkItemStatus } from '../work-item-interface';
+import { WorkItemMeta, WorkItemStatus } from '../work-item-interface';
 import { getRequestMetric } from '../../util/metrics';
 import { getRequestUrl } from '../../util/url';
 import HarmonyRequest from '../harmony-request';
@@ -354,7 +354,8 @@ export default abstract class BaseService<ServiceParamType> {
         status: WorkItemStatus.READY,
       }));
     }
-
+    const itemMeta: WorkItemMeta = { serviceID: workflowStep.serviceID, event: 'queue', amount: workItems.length };
+    this.logger.debug('Queued first step work items.', itemMeta);
     return workItems;
   }
 

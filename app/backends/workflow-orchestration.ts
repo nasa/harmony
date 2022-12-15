@@ -370,8 +370,8 @@ async function maybeQueueQueryCmrWorkItem(
       });
 
       await nextQueryCmrItem.save(tx);
-      const itemMeta: WorkItemMeta = { serviceID: nextQueryCmrItem.serviceID, event: 'queue' };
-      logger.debug('Queued new work item.', itemMeta);
+      const itemMeta: WorkItemMeta = { serviceID: nextQueryCmrItem.serviceID, event: 'queue', amount: 1 };
+      logger.debug('Queued new query-cmr work item.', itemMeta);
     }
   }
 }
