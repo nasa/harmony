@@ -61,7 +61,7 @@ export async function getWork(
     if (workItem) {
       const logger = reqLogger.child({ workItemId: workItem.id });
       const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
-      const itemMeta: WorkItemMeta = { event: 'dequeue', amount: waitSeconds, serviceID: workItem.serviceID  };
+      const itemMeta: WorkItemMeta = { workItemEvent: 'dequeue', amount: waitSeconds, serviceID: workItem.serviceID  };
       logger.debug(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
       if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
         maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
@@ -259,7 +259,7 @@ async function createAggregatingWorkItem(
     workflowStepIndex: nextStep.stepIndex,
   });
   await newWorkItem.save(tx);
-  const itemMeta: WorkItemMeta = { serviceID: newWorkItem.serviceID, event: 'queue', amount: 1 };
+  const itemMeta: WorkItemMeta = { serviceID: newWorkItem.serviceID, workItemEvent: 'queue', amount: 1 };
   logger.debug('Queued new aggregating work item.', itemMeta);
 }
 
@@ -340,7 +340,7 @@ async function createNextWorkItems(
       });
       for (const batch of _.chunk(newItems, batchSize)) {
         await WorkItem.insertBatch(tx, batch);
-        const itemMeta: WorkItemMeta = { serviceID: nextWorkflowStep.serviceID, event: 'queue', amount: batch.length };
+        const itemMeta: WorkItemMeta = { serviceID: nextWorkflowStep.serviceID, workItemEvent: 'queue', amount: batch.length };
         logger.debug('Queued new batch of work items.', itemMeta);
       }
     }
@@ -370,7 +370,7 @@ async function maybeQueueQueryCmrWorkItem(
       });
 
       await nextQueryCmrItem.save(tx);
-      const itemMeta: WorkItemMeta = { serviceID: nextQueryCmrItem.serviceID, event: 'queue', amount: 1 };
+      const itemMeta: WorkItemMeta = { serviceID: nextQueryCmrItem.serviceID, workItemEvent: 'queue', amount: 1 };
       logger.debug('Queued new query-cmr work item.', itemMeta);
     }
   }
@@ -590,7 +590,7 @@ export async function handleWorkItemUpdate(
       // retry failed work-items up to a limit
       if (status === WorkItemStatus.FAILED) {
         if (workItem.retryCount < env.workItemRetryLimit) {
-          const itemMeta: WorkItemMeta = { serviceID: workItem.serviceID, event: 'retry' };
+          const itemMeta: WorkItemMeta = { serviceID: workItem.serviceID, workItemEvent: 'retry' };
           logger.warn(`Retrying failed work-item ${workItemID}`, itemMeta);
           workItem.retryCount += 1;
           workItem.status = WorkItemStatus.READY;
@@ -614,7 +614,7 @@ export async function handleWorkItemUpdate(
       if (update.duration) {
         duration = Math.max(duration, update.duration);
       }
-      const itemMeta: WorkItemMeta = { serviceID: workItem.serviceID, amount: (duration / 1000), status, event: 'update' };
+      const itemMeta: WorkItemMeta = { serviceID: workItem.serviceID, amount: (duration / 1000), status, workItemEvent: 'update' };
       logger.debug(`Work item duration (ms): ${duration}`, itemMeta);
 
       let { totalItemsSize } = update;

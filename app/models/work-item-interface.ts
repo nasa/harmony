@@ -34,7 +34,7 @@ export interface WorkItemMeta {
   status?: WorkItemStatus;
   // WorkItemMeta objects can optionally have an associated event if
   // the context in which the logging call was made has some special significance
-  event?: 
+  workItemEvent?: 
   // item status has been updated by the update handler/callback function
   // item status should be specified for this event type
   'update' |
