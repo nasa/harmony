@@ -354,6 +354,7 @@ export default abstract class BaseService<ServiceParamType> {
         status: WorkItemStatus.READY,
       }));
     }
+
     return workItems;
   }
 

@@ -38,14 +38,14 @@ export interface WorkItemMeta {
   // WorkItemMeta objects can optionally have an associated event if
   // the context in which the logging call was made has some special significance
   workItemEvent?: 
-  // item status has been updated by the update handler/callback function
-  // item status should be specified for this event type
-  'update' |
-  // item retry count has been incremented
+  // Signfies that item status(es) have been updated by the update handler/callback function.
+  // Item status should be specified for this event type.
+  'handlerUpdate' |
+  // Signfies that the retry count has been incremented.
   'retry' |
-  // item has been put on the qeueue (ready)
+  // Signfies that item(s) have been put on the qeueue (ready).
   'queue' |
-  // item has been picked up from the queue (running)
+  // Signfies that item(s) have been picked up from the queue (running).
   'dequeue';
 }
 

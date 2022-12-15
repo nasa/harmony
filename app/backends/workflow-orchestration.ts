@@ -617,7 +617,7 @@ export async function handleWorkItemUpdate(
         duration = Math.max(duration, update.duration);
       }
       const itemMeta: WorkItemMeta = { serviceID: workItem.serviceID, 
-        workItemDuration: (duration / 1000), workItemStatus: status, workItemEvent: 'update', workItemAmount: 1 };
+        workItemDuration: (duration / 1000), workItemStatus: status, workItemEvent: 'handlerUpdate', workItemAmount: 1 };
       logger.debug(`Work item duration (ms): ${duration}`, itemMeta);
 
       let { totalItemsSize } = update;
