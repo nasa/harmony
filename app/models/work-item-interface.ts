@@ -16,6 +16,36 @@ export const COMPLETED_WORK_ITEM_STATUSES = [
   WorkItemStatus.CANCELED,
 ];
 
+/**
+ * Standardized metadata that can be passed to logging calls alongside a message.
+ * Helpful for making sense of JSON log data / metrics in downstream apps.
+ */
+export interface WorkItemMeta {
+  // workItemId may already be included by default in some child loggers
+  // e.g. logger.child({ workItemId: update.workItemID })
+  workItemId?: number;
+  // How long some process took (in seconds).
+  // (e.g. how long it took for the worker to finish or
+  // how long the item waited before being picked up)
+  duration?: number;
+  // See WorkItemRecord serviceID
+  serviceID?: string;
+  // See WorkItemRecord status
+  status?: WorkItemStatus;
+  // WorkItemMeta objects can optionally have an associated event if
+  // the context in which the logging call was made has some special significance
+  event?: 
+  // item status has been updated by the update handler/callback function
+  // item status should be specified for this event type
+  'update' |
+  // item retry count has been incremented
+  'retry' |
+  // item has been put on the qeueue (ready)
+  'queue' |
+  // item has been picked up from the queue (running)
+  'dequeue';
+}
+
 export interface WorkItemRecord {
   // The database ID for the record
   id: number;
