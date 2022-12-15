@@ -24,10 +24,10 @@ export interface WorkItemMeta {
   // workItemId may already be included by default in some child loggers
   // e.g. logger.child({ workItemId: update.workItemID })
   workItemId?: number;
-  // How long some process took (in seconds).
+  // A quantity (could be a duration or simple count).
   // (e.g. how long it took for the worker to finish or
   // how long the item waited before being picked up)
-  duration?: number;
+  amount?: number;
   // See WorkItemRecord serviceID
   serviceID?: string;
   // See WorkItemRecord status

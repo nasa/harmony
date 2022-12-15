@@ -61,7 +61,7 @@ export async function getWork(
     if (workItem) {
       const logger = reqLogger.child({ workItemId: workItem.id });
       const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
-      const itemMeta: WorkItemMeta = { event: 'dequeue', duration: waitSeconds, serviceID: workItem.serviceID  };
+      const itemMeta: WorkItemMeta = { event: 'dequeue', amount: waitSeconds, serviceID: workItem.serviceID  };
       logger.debug(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
       if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
         maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
@@ -258,9 +258,9 @@ async function createAggregatingWorkItem(
     stacCatalogLocation: podCatalogPath,
     workflowStepIndex: nextStep.stepIndex,
   });
-  const itemMeta: WorkItemMeta = { serviceID: newWorkItem.serviceID, event: 'queue' };
-  logger.debug(`Saving batch work item ${newWorkItem.id}.`, itemMeta);
   await newWorkItem.save(tx);
+  const itemMeta: WorkItemMeta = { serviceID: newWorkItem.serviceID, event: 'queue', amount: 1 };
+  logger.debug('Queued new aggregating work item.', itemMeta);
 }
 
 /**
@@ -340,10 +340,8 @@ async function createNextWorkItems(
       });
       for (const batch of _.chunk(newItems, batchSize)) {
         await WorkItem.insertBatch(tx, batch);
-        for (const item of batch) {
-          const itemMeta: WorkItemMeta = { serviceID: item.serviceID, event: 'queue' };
-          logger.debug(`Queued new work item ${item.id}.`, itemMeta);
-        }
+        const itemMeta: WorkItemMeta = { serviceID: nextWorkflowStep.serviceID, event: 'queue', amount: batch.length };
+        logger.debug('Queued new batch of work items.', itemMeta);
       }
     }
   }
@@ -373,7 +371,7 @@ async function maybeQueueQueryCmrWorkItem(
 
       await nextQueryCmrItem.save(tx);
       const itemMeta: WorkItemMeta = { serviceID: nextQueryCmrItem.serviceID, event: 'queue' };
-      logger.debug(`Queued new query cmr work item ${nextQueryCmrItem.id}.`, itemMeta);
+      logger.debug('Queued new work item.', itemMeta);
     }
   }
 }
@@ -616,7 +614,7 @@ export async function handleWorkItemUpdate(
       if (update.duration) {
         duration = Math.max(duration, update.duration);
       }
-      const itemMeta: WorkItemMeta = { serviceID: workItem.serviceID, duration: (duration / 1000), status, event: 'update' };
+      const itemMeta: WorkItemMeta = { serviceID: workItem.serviceID, amount: (duration / 1000), status, event: 'update' };
       logger.debug(`Work item duration (ms): ${duration}`, itemMeta);
 
       let { totalItemsSize } = update;
