@@ -61,8 +61,8 @@ export async function getWork(
     if (workItem) {
       const logger = reqLogger.child({ workItemId: workItem.id });
       const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
-      const itemMeta: WorkItemMeta = { workItemEvent: 'dequeue', workItemDuration: waitSeconds,
-        serviceID: workItem.serviceID, workItemAmount: 1  };
+      const itemMeta: WorkItemMeta = { workItemEvent: 'statusUpdate', workItemDuration: waitSeconds,
+        serviceID: workItem.serviceID, workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING  };
       logger.debug(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
       if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
         maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
@@ -260,7 +260,8 @@ async function createAggregatingWorkItem(
     workflowStepIndex: nextStep.stepIndex,
   });
   await newWorkItem.save(tx);
-  const itemMeta: WorkItemMeta = { serviceID: newWorkItem.serviceID, workItemEvent: 'queue', workItemAmount: 1 };
+  const itemMeta: WorkItemMeta = { serviceID: newWorkItem.serviceID,
+    workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
   logger.debug('Queued new aggregating work item.', itemMeta);
 }
 
@@ -342,7 +343,7 @@ async function createNextWorkItems(
       for (const batch of _.chunk(newItems, batchSize)) {
         await WorkItem.insertBatch(tx, batch);
         const itemMeta: WorkItemMeta = { serviceID: nextWorkflowStep.serviceID,
-          workItemEvent: 'queue', workItemAmount: batch.length };
+          workItemEvent: 'statusUpdate', workItemAmount: batch.length, workItemStatus: WorkItemStatus.READY };
         logger.debug('Queued new batch of work items.', itemMeta);
       }
     }
@@ -372,7 +373,8 @@ async function maybeQueueQueryCmrWorkItem(
       });
 
       await nextQueryCmrItem.save(tx);
-      const itemMeta: WorkItemMeta = { serviceID: nextQueryCmrItem.serviceID, workItemEvent: 'queue', workItemAmount: 1 };
+      const itemMeta: WorkItemMeta = { serviceID: nextQueryCmrItem.serviceID,
+        workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
       logger.debug('Queued new query-cmr work item.', itemMeta);
     }
   }
@@ -617,7 +619,7 @@ export async function handleWorkItemUpdate(
         duration = Math.max(duration, update.duration);
       }
       const itemMeta: WorkItemMeta = { serviceID: workItem.serviceID, 
-        workItemDuration: (duration / 1000), workItemStatus: status, workItemEvent: 'handlerUpdate', workItemAmount: 1 };
+        workItemDuration: (duration / 1000), workItemStatus: status, workItemEvent: 'statusUpdate', workItemAmount: 1 };
       logger.debug(`Work item duration (ms): ${duration}`, itemMeta);
 
       let { totalItemsSize } = update;
