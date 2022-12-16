@@ -31,7 +31,7 @@ export interface WorkItemMeta {
   // how long the item waited before being picked up)
   workItemDuration?: number;
   // See WorkItemRecord serviceID
-  serviceID?: string;
+  workItemService?: string;
   // See WorkItemRecord status
   workItemStatus?: WorkItemStatus;
   // WorkItemMeta objects can optionally have an associated event if
