@@ -455,7 +455,7 @@ export default abstract class BaseService<ServiceParamType> {
           }
           const itemMeta: WorkItemMeta = { serviceID: workflowSteps[0].serviceID, workItemEvent: 'statusUpdate',
             workItemAmount: firstStepWorkItems.length, workItemStatus: WorkItemStatus.READY };
-          this.logger.debug('Queued first step work items.', itemMeta);
+          this.logger.info('Queued first step work items.', itemMeta);
         }
       });
 
