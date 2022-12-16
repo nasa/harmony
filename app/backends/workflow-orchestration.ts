@@ -254,7 +254,7 @@ async function createAggregatingWorkItem(
 
   const newWorkItem = new WorkItem({
     jobID: currentWorkItem.jobID,
-    workItemService: nextStep.serviceID,
+    serviceID: nextStep.serviceID,
     status: WorkItemStatus.READY,
     stacCatalogLocation: podCatalogPath,
     workflowStepIndex: nextStep.stepIndex,
@@ -333,7 +333,7 @@ async function createNextWorkItems(
         sortIndex += 1;
         return new WorkItem({
           jobID: workItem.jobID,
-          workItemService: nextWorkflowStep.serviceID,
+          serviceID: nextWorkflowStep.serviceID,
           status: WorkItemStatus.READY,
           stacCatalogLocation: result,
           workflowStepIndex: nextWorkflowStep.stepIndex,
@@ -365,7 +365,7 @@ async function maybeQueueQueryCmrWorkItem(
       const nextQueryCmrItem = new WorkItem({
         jobID: currentWorkItem.jobID,
         scrollID: currentWorkItem.scrollID,
-        workItemService: currentWorkItem.serviceID,
+        serviceID: currentWorkItem.serviceID,
         status: WorkItemStatus.READY,
         stacCatalogLocation: currentWorkItem.stacCatalogLocation,
         workflowStepIndex: currentWorkItem.workflowStepIndex,
