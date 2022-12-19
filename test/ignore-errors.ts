@@ -75,7 +75,7 @@ describe('when setting ignoreErrors=true', function () {
         await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
         await updateWorkItem(this.backend, firstSwotItem);
 
-        const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+        const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
         zarrItem = JSON.parse(res2.text).workItem;
         zarrItem.status = WorkItemStatus.SUCCESSFUL;
         zarrItem.results = [
@@ -93,7 +93,7 @@ describe('when setting ignoreErrors=true', function () {
         expect(currentWorkItems.length).to.equal(3);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
       });
 
       it('does not find any further swot-reproject work', async function () {
@@ -239,7 +239,7 @@ describe('when setting ignoreErrors=true', function () {
         let shouldLoop = true;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
         while (shouldLoop) {
-          const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           zarrItem = JSON.parse(res2.text).workItem;
           zarrItem.status = WorkItemStatus.FAILED;
           zarrItem.results = [];
@@ -260,7 +260,7 @@ describe('when setting ignoreErrors=true', function () {
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
       });
     });
   });
@@ -336,8 +336,8 @@ describe('when setting ignoreErrors=true', function () {
         await fakeServiceStacOutput(workItem2.jobID, workItem2.id);
         await updateWorkItem(this.backend, workItem2);
 
-        const res3 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
-        const res4 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+        const res3 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+        const res4 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
 
         const workItem3 = JSON.parse(res3.text).workItem;
         const workItem4 = JSON.parse(res4.text).workItem;
@@ -410,7 +410,7 @@ describe('when setting ignoreErrors=true', function () {
         await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
         await updateWorkItem(this.backend, firstSwotItem);
 
-        const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+        const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
         const zarrItem = JSON.parse(res2.text).workItem;
         zarrItem.status = WorkItemStatus.SUCCESSFUL;
         zarrItem.results = [getStacLocation(zarrItem, 'catalog.json')];
@@ -456,7 +456,7 @@ describe('when setting ignoreErrors=true', function () {
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
 
       });
     });
@@ -506,7 +506,7 @@ describe('when setting ignoreErrors=true', function () {
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
       });
     });
   });
@@ -603,7 +603,7 @@ describe('when setting ignoreErrors=true', function () {
           await fakeServiceStacOutput(firstSwotItem.jobID, firstSwotItem.id);
           await updateWorkItem(this.backend, firstSwotItem);
 
-          const res2 = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          const res2 = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           const zarrItem = JSON.parse(res2.text).workItem;
           zarrItem.status = WorkItemStatus.SUCCESSFUL;
           zarrItem.results = [getStacLocation(zarrItem, 'catalog.json')];
@@ -675,7 +675,7 @@ describe('when setting ignoreErrors=true', function () {
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
       });
     });
   });
@@ -762,13 +762,13 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         });
 
         it('sets the status to COMPLETE_WITH_ERRORS when the netcdf-to-zarr request completes', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -830,7 +830,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         });
@@ -864,7 +864,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, secondSwotItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
@@ -881,13 +881,13 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, secondSwotItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         });
 
         it('leaves the status as RUNNING_WITH_ERRORS when the first netcdf-to-zarr request completes', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -900,7 +900,7 @@ describe('when setting ignoreErrors=true', function () {
         });
 
         it('sets the status to COMPLETE_WITH_ERRORS when the second netcdf-to-zarr request completes', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -962,7 +962,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         });
@@ -979,7 +979,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
         });
@@ -1013,13 +1013,13 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, lastSwotItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         });
 
         it('leaves the status as RUNNING_WITH_ERRORS when the first netcdf-to-zarr request completes', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -1031,7 +1031,7 @@ describe('when setting ignoreErrors=true', function () {
         });
 
         it('sets the status to COMPLETE_WITH_ERRORS when the second netcdf-to-zarr request completes', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -1092,7 +1092,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         });
@@ -1109,7 +1109,7 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
         });
@@ -1143,13 +1143,13 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, lastSwotItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'harmonyservices/netcdf-to-zarr:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
         });
 
         it('leaves the status as RUNNING_WITH_ERRORS when the first netcdf-to-zarr request completes successfully', async function () {
-          const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -1165,7 +1165,7 @@ describe('when setting ignoreErrors=true', function () {
             let shouldLoop = true;
             // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
             while (shouldLoop) {
-              const res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+              const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
               const lastZarrItem = JSON.parse(res.text).workItem;
               lastZarrItem.status = WorkItemStatus.FAILED;
               lastZarrItem.results = [];
