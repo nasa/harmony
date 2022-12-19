@@ -14,7 +14,7 @@ import WorkflowStep, { decrementFutureWorkItemCount, getWorkflowStepByJobIdStepI
 import { objectStoreForProtocol } from '../util/object-store';
 import { resolve } from '../util/url';
 import { ServiceError } from '../util/errors';
-import { COMPLETED_WORK_ITEM_STATUSES, WorkItemStatus } from '../models/work-item-interface';
+import { COMPLETED_WORK_ITEM_STATUSES, WorkItemMeta, WorkItemStatus } from '../models/work-item-interface';
 import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
 import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
@@ -60,7 +60,10 @@ export async function getWork(
     workItem = await getNextWorkItem(tx, serviceID as string);
     if (workItem) {
       const logger = reqLogger.child({ workItemId: workItem.id });
-      logger.debug(`Sending work item ${workItem.id} to pod ${podName}`);
+      const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
+      const itemMeta: WorkItemMeta = { workItemEvent: 'statusUpdate', workItemDuration: waitSeconds,
+        workItemService: workItem.serviceID, workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING  };
+      logger.info(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
       if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
         maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
         res.send({ workItem, maxCmrGranules });
@@ -153,9 +156,10 @@ async function getItemLinksFromCatalog(catalogPath: string): Promise<StacItemLin
  * @param currentWorkItem - The current work item
  * @param nextStep - the next step in the workflow
  * @param results - an array of paths to STAC catalogs from the last worked item
+ * @param logger - the logger to use
  */
 async function createAggregatingWorkItem(
-  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep,
+  tx: Transaction, currentWorkItem: WorkItem, nextStep: WorkflowStep, logger: Logger,
 ): Promise<void> {
   const itemLinks: StacItemLink[] = [];
   const s3 = objectStoreForProtocol('s3');
@@ -255,8 +259,10 @@ async function createAggregatingWorkItem(
     stacCatalogLocation: podCatalogPath,
     workflowStepIndex: nextStep.stepIndex,
   });
-
   await newWorkItem.save(tx);
+  const itemMeta: WorkItemMeta = { workItemService: newWorkItem.serviceID,
+    workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
+  logger.info('Queued new aggregating work item.', itemMeta);
 }
 
 /**
@@ -309,7 +315,7 @@ async function createNextWorkItems(
           workItem.status,
           allWorkItemsForStepComplete);
       } else if (allWorkItemsForStepComplete) {
-        await createAggregatingWorkItem(tx, workItem, nextWorkflowStep);
+        await createAggregatingWorkItem(tx, workItem, nextWorkflowStep, logger);
       }
     } else {
       // Create a new work item for each result using the next step
@@ -336,6 +342,9 @@ async function createNextWorkItems(
       });
       for (const batch of _.chunk(newItems, batchSize)) {
         await WorkItem.insertBatch(tx, batch);
+        const itemMeta: WorkItemMeta = { workItemService: nextWorkflowStep.serviceID,
+          workItemEvent: 'statusUpdate', workItemAmount: batch.length, workItemStatus: WorkItemStatus.READY };
+        logger.info('Queued new batch of work items.', itemMeta);
       }
     }
   }
@@ -364,6 +373,9 @@ async function maybeQueueQueryCmrWorkItem(
       });
 
       await nextQueryCmrItem.save(tx);
+      const itemMeta: WorkItemMeta = { workItemService: nextQueryCmrItem.serviceID,
+        workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
+      logger.info('Queued new query-cmr work item.', itemMeta);
     }
   }
 }
@@ -582,7 +594,8 @@ export async function handleWorkItemUpdate(
       // retry failed work-items up to a limit
       if (status === WorkItemStatus.FAILED) {
         if (workItem.retryCount < env.workItemRetryLimit) {
-          logger.warn(`Retrying failed work-item ${workItemID}`);
+          const itemMeta: WorkItemMeta = { workItemService: workItem.serviceID, workItemEvent: 'retry', workItemAmount: 1 };
+          logger.info(`Retrying failed work-item ${workItemID}`, itemMeta);
           workItem.retryCount += 1;
           workItem.status = WorkItemStatus.READY;
           await workItem.save(tx);
@@ -606,8 +619,6 @@ export async function handleWorkItemUpdate(
         duration = Math.max(duration, update.duration);
       }
 
-      logger.debug(`Work item duration (ms): ${duration}`);
-
       let { totalItemsSize } = update;
 
       if (!totalItemsSize && outputItemSizes?.length > 0) {
@@ -617,10 +628,14 @@ export async function handleWorkItemUpdate(
       await updateWorkItemStatus(
         tx,
         workItemID,
-        status as WorkItemStatus,
+        status,
         duration,
         totalItemsSize,
         outputItemSizes);
+
+      const itemMeta: WorkItemMeta = { workItemService: workItem.serviceID, 
+        workItemDuration: (duration / 1000), workItemStatus: status, workItemEvent: 'statusUpdate', workItemAmount: 1 };
+      logger.info(`Updated work item. Duration (ms) was: ${duration}`, itemMeta);
 
       workItem.status = status;
 
