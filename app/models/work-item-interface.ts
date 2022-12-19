@@ -41,7 +41,9 @@ export interface WorkItemMeta {
   // Item status should be specified for this event type.
   'statusUpdate' |
   // Signfies that the retry count has been incremented.
-  'retry';
+  'retry' |
+  // A metric was calculated
+  'readyMetric';
 }
 
 export interface WorkItemRecord {
