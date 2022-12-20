@@ -10,6 +10,7 @@ import { getWorkflowStepByJobIdStepIndex, getWorkflowStepsByJobId } from '../mod
 import DataOperation, { CURRENT_SCHEMA_VERSION } from '../models/data-operation';
 import { createDecrypter, createEncrypter } from './crypto';
 import { getProductMetric, getResponseMetric } from './metrics';
+import { deleteUserWorkForJob, recalculateReadyCount, setReadyCountToZero } from '../models/user-work';
 
 /**
  * Helper function to pull back the provided job ID (optionally by username).
@@ -72,6 +73,7 @@ export async function completeJob(
     const failed = isFailureStatus(finalStatus);
     job.updateStatus(finalStatus, message);
     await job.save(tx);
+    await deleteUserWorkForJob(tx, job.jobID);
     if (failed) {
       const numUpdated = await updateWorkItemStatusesByJobId(
         tx, job.jobID, [WorkItemStatus.READY, WorkItemStatus.RUNNING], WorkItemStatus.CANCELED,
@@ -151,7 +153,7 @@ export function validateJobId(jobID: string): void {
  */
 export async function pauseAndSaveJob(
   jobID: string,
-  _logger: Logger,
+  _logger?: Logger,
   username?: string,
   _token?: string,
 ): Promise<void> {
@@ -159,6 +161,7 @@ export async function pauseAndSaveJob(
     const job = await lookupJob(tx, jobID, username);
     job.pause();
     await job.save(tx);
+    await setReadyCountToZero(tx, jobID);
   });
 }
 
@@ -196,6 +199,7 @@ async function updateTokenAndChangeState(
     }
     jobStatusFn(job);
     await job.save(tx);
+    await recalculateReadyCount(tx, jobID);
   });
 }
 

@@ -4,7 +4,7 @@ import _ from 'lodash';
 import logger from '../util/log';
 import db, { Transaction } from '../util/db';
 import DataOperation from './data-operation';
-import { activeJobStatuses, Job, JobStatus } from './job';
+import { Job, JobStatus } from './job';
 import Record from './record';
 import WorkflowStep from './workflow-steps';
 import { WorkItemRecord, WorkItemStatus, getStacLocation, WorkItemQuery } from './work-item-interface';
@@ -113,102 +113,64 @@ export default class WorkItem extends Record implements WorkItemRecord {
 const tableFields = serializedFields.map((field) => `w.${field}`);
 
 /**
- * Returns the next work item to process for a service
+ * Returns the next work item to process for a service and job ID
  * @param tx - the transaction to use for querying
  * @param serviceID - the service ID looking for the next item to work
+ * @param jobID - - the jobID for the next item to work
  *
  * @returns A promise with the work item to process or null if none
  */
 export async function getNextWorkItem(
   tx: Transaction,
   serviceID: string,
+  jobID: string,
 ): Promise<WorkItem> {
   let workItemData;
-  const acceptableJobStatuses = _.cloneDeep(activeJobStatuses);
-  // TODO: Now that we use search-after instead of scrolling we could allow pausing of query-cmr
-  // work items and start them back up when the job is resumed because there is no session
-  if (serviceID.includes('query-cmr')) {
-    acceptableJobStatuses.push(JobStatus.PAUSED);
-  }
-
   try {
-    // Find users with work items queued for the service
-    const subQueryForUsersRequestingService =
-      tx(Job.table)
-        .select('username')
-        .join(`${WorkItem.table} as w`, `${Job.table}.jobID`, 'w.jobID')
-        .whereIn(`${Job.table}.status`, acceptableJobStatuses)
-        .where({ 'w.status': 'ready', serviceID });
-
-    const userData = await tx(Job.table)
-      .join(WorkItem.table, `${Job.table}.jobID`, '=', `${WorkItem.table}.jobID`)
-      .select(['username'])
-      .max(`${Job.table}.updatedAt`, { as: 'm' })
-      .whereIn('username', subQueryForUsersRequestingService)
-      .groupBy('username')
-      .orderBy('m', 'asc')
+    const workflowStepData = await tx(WorkflowStep.table)
+      .select(['operation'])
+      .where('jobID', '=', jobID)
+      .andWhere({ serviceID })
       .first();
-
-    if (userData?.username) {
-      // query to choose the job that should be worked on next based on fair queueing policy
-      const jobData = await tx(Job.table)
-        .select([`${Job.table}.jobID`])
+    if (workflowStepData?.operation) {
+      const { operation } = workflowStepData;
+      let workItemDataQuery = tx(`${WorkItem.table} as w`)
         .forUpdate()
-        .join(`${WorkItem.table} as w`, `${Job.table}.jobID`, 'w.jobID')
-        .where('username', '=', userData.username)
-        .whereIn(`${Job.table}.status`, acceptableJobStatuses)
-        .where({ 'w.status': 'ready', serviceID })
-        .orderBy('isAsync', 'asc')
-        .orderBy(`${Job.table}.updatedAt`, 'asc')
+        .select(tableFields)
+        .where('w.jobID', '=', jobID)
+        .where('w.status', '=', 'ready')
+        .where('w.serviceID', '=', serviceID)
+        .orderBy('w.id', 'asc')
         .first();
 
-      if (jobData?.jobID) {
-        const workflowStepData = await tx(WorkflowStep.table)
-          .select(['operation'])
-          .where('jobID', '=', jobData.jobID)
-          .andWhere({ serviceID })
-          .first();
-        if (workflowStepData?.operation) {
-          const { operation } = workflowStepData;
-          let workItemDataQuery = tx(`${WorkItem.table} as w`)
-            .forUpdate()
-            .select(tableFields)
-            .where('w.jobID', '=', jobData.jobID)
-            .where('w.status', '=', 'ready')
-            .where('w.serviceID', '=', serviceID)
-            .orderBy('w.id', 'asc')
-            .first();
+      if (db.client.config.client === 'pg') {
+        workItemDataQuery = workItemDataQuery.skipLocked();
+      }
 
-          if (db.client.config.client === 'pg') {
-            workItemDataQuery = workItemDataQuery.skipLocked();
-          }
+      workItemData = await workItemDataQuery;
 
-          workItemData = await workItemDataQuery;
-
-          if (workItemData) {
-            workItemData.operation = JSON.parse(operation);
-            // Make sure that the staging location is unique for every work item in a job
-            // in case a service for the same job produces an output with the same file name
-            workItemData.operation.stagingLocation += `${workItemData.id}/`;
-            const startedAt = new Date();
-            await tx(WorkItem.table)
-              .update({
-                status: WorkItemStatus.RUNNING,
-                updatedAt: startedAt,
-                startedAt,
-              })
-              .where({ id: workItemData.id });
-            // need to update the job otherwise long running jobs won't count against
-            // the user's priority
-            await tx(Job.table)
-              .update({ updatedAt: new Date() })
-              .where({ jobID: workItemData.jobID });
-          }
-        }
+      if (workItemData) {
+        workItemData.operation = JSON.parse(operation);
+        // Make sure that the staging location is unique for every work item in a job
+        // in case a service for the same job produces an output with the same file name
+        workItemData.operation.stagingLocation += `${workItemData.id}/`;
+        const startedAt = new Date();
+        await tx(WorkItem.table)
+          .update({
+            status: WorkItemStatus.RUNNING,
+            updatedAt: startedAt,
+            startedAt,
+          })
+          .where({ id: workItemData.id });
+        // need to update the job otherwise long running jobs won't count against
+        // the user's priority
+        await tx(Job.table)
+          .update({ updatedAt: new Date() })
+          .where({ jobID: workItemData.jobID });
       }
     }
   } catch (e) {
-    logger.error(`Error getting next work item for service [${serviceID}]`);
+    logger.error(`Error getting next work item for service [${serviceID}] and job [${jobID}]`);
     logger.error(e);
     throw e;
   }

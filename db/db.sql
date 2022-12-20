@@ -103,6 +103,19 @@ CREATE TABLE `batch_items` (
   FOREIGN KEY(jobID, serviceID) REFERENCES workflow_steps(jobID, serviceID)
 );
 
+CREATE TABLE `user_work` (
+  `id` integer not null primary key autoincrement,
+  `username` varchar(255) not null,
+  `service_id` varchar(255) not null,
+  `ready_count` integer not null default 0,
+  `running_count` integer not null default 0,
+  `job_id` char(36) not null,
+  `last_worked` datetime not null,
+  `createdAt` datetime not null,
+  `updatedAt` datetime not null,
+  FOREIGN KEY(job_id) REFERENCES jobs(jobID)
+);
+
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);
 CREATE INDEX jobs_updatedAt_id ON jobs(updatedAt);
 CREATE INDEX jobs_username_idx ON jobs(username);
@@ -116,4 +129,5 @@ CREATE INDEX workflow_steps_jobID_StepIndex_idx ON workflow_steps(jobID, stepInd
 CREATE INDEX workflow_steps_serviceID_idx ON workflow_steps(serviceID);
 CREATE INDEX batch_jobID_service_ID_batchID ON batches(jobID, serviceID, batchID);
 CREATE INDEX batch_items_jobID_service_ID_batchID ON batch_items(jobID, serviceID, batchID);
+CREATE INDEX user_work_service_id_job_id ON user_work(service_id, job_id);
 

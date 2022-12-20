@@ -18,6 +18,7 @@ import { COMPLETED_WORK_ITEM_STATUSES, WorkItemMeta, WorkItemStatus } from '../m
 import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
 import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
+import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount, incrementRunningAndDecrementReadyCounts } from '../models/user-work';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -54,21 +55,30 @@ export async function getWork(
   const reqLogger = req.context.logger;
   const { serviceID, podName } = req.query;
 
-  let workItem: WorkItem, maxCmrGranules: number;
+
 
   await db.transaction(async (tx) => {
-    workItem = await getNextWorkItem(tx, serviceID as string);
-    if (workItem) {
-      const logger = reqLogger.child({ workItemId: workItem.id });
-      const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
-      const itemMeta: WorkItemMeta = { workItemEvent: 'statusUpdate', workItemDuration: waitSeconds,
-        workItemService: workItem.serviceID, workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING  };
-      logger.info(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
-      if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
-        maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
-        res.send({ workItem, maxCmrGranules });
-      } else {
-        res.send({ workItem });
+    const username = await getNextUsernameForWork(tx, serviceID as string);
+    if (username) {
+      const jobID = await getNextJobIdForUsernameAndService(tx, serviceID as string, username);
+      if (jobID) {
+        const workItem = await getNextWorkItem(tx, serviceID as string, jobID);
+        if (workItem) {
+          await incrementRunningAndDecrementReadyCounts(tx, jobID, serviceID as string);
+          const logger = reqLogger.child({ workItemId: workItem.id });
+          const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
+          const itemMeta: WorkItemMeta = { workItemEvent: 'statusUpdate', workItemDuration: waitSeconds,
+            workItemService: workItem.serviceID, workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING  };
+          logger.debug(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
+          if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
+            const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
+            res.send({ workItem, maxCmrGranules });
+          } else {
+            res.send({ workItem });
+          }
+        } else {
+          reqLogger.warn(`user_work is out of sync for user ${username} and job ${jobID}, could not find ready work item`);
+        }
       }
     } else if (tryCount < MAX_TRY_COUNT) {
       setTimeout(async () => {
@@ -259,6 +269,8 @@ async function createAggregatingWorkItem(
     stacCatalogLocation: podCatalogPath,
     workflowStepIndex: nextStep.stepIndex,
   });
+
+  await incrementReadyCount(tx, currentWorkItem.jobID, nextStep.serviceID);
   await newWorkItem.save(tx);
   const itemMeta: WorkItemMeta = { workItemService: newWorkItem.serviceID,
     workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
@@ -340,6 +352,8 @@ async function createNextWorkItems(
           sortIndex,
         });
       });
+
+      await incrementReadyCount(tx, workItem.jobID, nextWorkflowStep.serviceID, newItems.length);
       for (const batch of _.chunk(newItems, batchSize)) {
         await WorkItem.insertBatch(tx, batch);
         const itemMeta: WorkItemMeta = { workItemService: nextWorkflowStep.serviceID,
@@ -372,6 +386,7 @@ async function maybeQueueQueryCmrWorkItem(
         sortIndex: currentWorkItem.sortIndex + 1,
       });
 
+      await incrementReadyCount(tx, currentWorkItem.jobID, currentWorkItem.serviceID);
       await nextQueryCmrItem.save(tx);
       const itemMeta: WorkItemMeta = { workItemService: nextQueryCmrItem.serviceID,
         workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
@@ -581,12 +596,15 @@ export async function handleWorkItemUpdate(
 
       if (job.isComplete() && status !== WorkItemStatus.CANCELED) {
         logger.warn(`Job was already ${job.status}.`);
+        const numRowsDeleted = await deleteUserWorkForJob(tx, jobID);
+        logger.warn(`Removed ${numRowsDeleted} from user_work table for job ${jobID}.`);
         // Note work item will stay in the running state, but the reaper will clean it up
         return;
       }
 
       // Don't allow updates to work items that are already in a terminal state
       if (COMPLETED_WORK_ITEM_STATUSES.includes(workItem.status)) {
+        // Unclear what to do with user_work entries, so do nothing for now.
         logger.warn(`WorkItem ${workItemID} was already ${workItem.status}`);
         return;
       }
@@ -599,6 +617,7 @@ export async function handleWorkItemUpdate(
           workItem.retryCount += 1;
           workItem.status = WorkItemStatus.READY;
           await workItem.save(tx);
+          await incrementReadyAndDecrementRunningCounts(tx, jobID, workItem.serviceID);
           return;
         } else {
           logger.warn(`Retry limit of ${env.workItemRetryLimit} exceeded`);
@@ -632,8 +651,9 @@ export async function handleWorkItemUpdate(
         duration,
         totalItemsSize,
         outputItemSizes);
+      await decrementRunningCount(tx, jobID, workItem.serviceID);
 
-      const itemMeta: WorkItemMeta = { workItemService: workItem.serviceID, 
+      const itemMeta: WorkItemMeta = { workItemService: workItem.serviceID,
         workItemDuration: (duration / 1000), workItemStatus: status, workItemEvent: 'statusUpdate', workItemAmount: 1 };
       logger.info(`Updated work item. Duration (ms) was: ${duration}`, itemMeta);
 
@@ -696,9 +716,10 @@ export async function handleWorkItemUpdate(
             // Either previewing or next step is a batched step and this item failed
             if (job.status === JobStatus.PREVIEWING) {
               // Special case to pause the job as soon as any single granule completes when in the previewing state
-              job.pause();
+              await job.pauseAndSave(tx);
+            } else {
+              await job.save(tx);
             }
-            await job.save(tx);
           }
         } else { // Currently only reach this condition for batched aggregation requests
           await job.save(tx);

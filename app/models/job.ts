@@ -16,6 +16,7 @@ export const EXPIRATION_DAYS = 30;
 
 import env = require('../util/env');
 import JobError from './job-error';
+import { setReadyCountToZero } from './user-work';
 const { awsDefaultRegion } = env;
 
 export const jobRecordFields = [
@@ -709,6 +710,19 @@ export class Job extends DBRecord implements JobRecord {
   pause(): void {
     validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
     this.updateStatus(JobStatus.PAUSED, this.getMessage(JobStatus.PAUSED));
+  }
+
+  /**
+   * Sets the status to paused, and sets the ready count for the user_work for the job to 0.
+   *
+   * @param tx - the database transaction to use for querying
+   * @throws An error if the job is not currently in the RUNNING state
+   */
+  async pauseAndSave(tx): Promise<void> {
+    validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
+    this.updateStatus(JobStatus.PAUSED, this.getMessage(JobStatus.PAUSED));
+    await this.save(tx);
+    await setReadyCountToZero(tx, this.jobID);
   }
 
   /**
