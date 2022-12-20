@@ -56,10 +56,18 @@
     <div class="container-fluid">
         <div class="row pb-4">
             <div class="col-2">
-                <form id="work-items-query-form" action="./{{job.jobID}}" method="get">
+                <form id="work-items-query-form" action="./{{job.jobID}}" method="get" class="sticky-top pt-2">
                     <input type="hidden" name="page" value="{{page}}" />
                     <input type="hidden" name="limit" value="{{limit}}" />
-                    <input name="tableFilter" class="table-filter mb-2" placeholder="add a filter"
+                    <div class="input-group mb-2">
+                        <span class="input-group-text" id="basic-addon1">from</span>
+                        <input type="datetime-local" class="form-control">
+                    </div>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text" id="basic-addon1">to</span>
+                        <input type="datetime-local" class="form-control">
+                    </div>
+                    <input name="tableFilter" class="form-control table-filter mb-2" placeholder="add a filter"
                         value="{{selectedFilters}}" data-is-admin-route="{{isAdminRoute}}">
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" name="disallowStatus" {{disallowStatusChecked}}>
