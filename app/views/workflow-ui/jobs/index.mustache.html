@@ -47,6 +47,7 @@
                 <form id="jobs-query-form" action="./workflow-ui" method="get" class="sticky-top pt-2">
                     <input type="hidden" name="page" value="{{page}}" />
                     <input type="hidden" name="limit" value="{{limit}}" />
+                    {{> workflow-ui/date-time-picker}}
                     <input id="sort-granules" type="hidden" name="sortGranules" value="{{sortGranules}}" />
                     <input name="tableFilter" class="table-filter mb-2" placeholder="add a filter"
                         value="{{selectedFilters}}" data-current-user="{{currentUser}}"

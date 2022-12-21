@@ -1,0 +1,22 @@
+<input type="hidden" name="tzOffsetMinutes" />
+<script type="text/javascript">
+    document.getElementsByName('tzOffsetMinutes')[0].setAttribute('value', (new Date()).getTimezoneOffset());
+</script>
+<div class="input-group mb-2">
+    <span class="input-group-text helpful-span"
+        title="Filter by start datetime (in your browser's timezone). Time of day is required.">from</span>
+    <input type="datetime-local" class="form-control" name="fromDateTime" value="{{fromDateTime}}">
+</div>
+<div class="input-group mb-2">
+    <span class="input-group-text helpful-span"
+        title="Filter by end datetime (in your browser's timezone). Time of day is required.">to</span>
+    <input type="datetime-local" class="form-control" name="toDateTime" value="{{toDateTime}}">
+</div>
+<div class="form-check form-check-inline">
+    <input {{createdAtChecked}} class="form-check-input" type="radio" name="dateKind" value="createdAt" id="dateKindCreated">
+    <label class="form-check-label" for="dateKindCreated">createdAt</label>
+</div>
+<div class="form-check form-check-inline mb-3">
+    <input {{updatedAtChecked}} class="form-check-input" type="radio" name="dateKind" value="updatedAt" id="dateKindUpdated">
+    <label class="form-check-label" for="dateKindUpdated">updatedAt</label>
+</div>

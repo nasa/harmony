@@ -2,6 +2,6 @@
     --tag-inset-shadow-size: 2em;
 }
 
-.helpful-th {
+.helpful-th, .helpful-span {
     cursor: help;
 }

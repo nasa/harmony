@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { sanitizeImage } from '../util/string';
+import { sanitizeImage, isInteger } from '../util/string';
 import { getJobIfAllowed } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { getWorkItemById, queryAll } from '../models/work-item';
@@ -50,32 +50,47 @@ function parseFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
     statusValues: string[], // need for querying db
     userValues: string[], // need for querying db
     originalValues: string[] // needed for populating filter input
+    from: Date,
+    to: Date,
   } {
-  if (!requestQuery.tablefilter) {
-    return {
-      statusValues: [],
-      userValues: [],
-      originalValues: [],
-    };
-  }
-  const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
-  const validStatusSelections = selectedOptions
-    .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
-  const statusValues = validStatusSelections.map(option => option.dbValue);
-  const validUserSelections = selectedOptions
-    .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
-  const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
-  if ((statusValues.length + userValues.length) > maxFilters) {
-    throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
-  }
-  const originalValues = validStatusSelections
-    .concat(validUserSelections)
-    .map(option => option.value);
-  return {
-    statusValues,
-    userValues,
-    originalValues,
+  const parsedFilters = {
+    statusValues: [],
+    userValues: [],
+    originalValues: [],
+    from: undefined,
+    to: undefined,
   };
+  if (requestQuery.tablefilter) {
+    const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
+    const validStatusSelections = selectedOptions
+      .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
+    const statusValues = validStatusSelections.map(option => option.dbValue);
+    const validUserSelections = selectedOptions
+      .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
+    const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
+    if ((statusValues.length + userValues.length) > maxFilters) {
+      throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
+    }
+    const originalValues = validStatusSelections
+      .concat(validUserSelections)
+      .map(option => option.value);
+    parsedFilters.statusValues = statusValues;
+    parsedFilters.userValues = userValues;
+    parsedFilters.originalValues = originalValues;
+  }
+  // everything in the Workflow UI uses the browser timezone, so we need a timezone offset
+  const offSetMs = parseInt(requestQuery.tzoffsetminutes) * 60 * 1000;
+  const utcDateTime = (yearMonthDayHoursMinutes: string): string => `${yearMonthDayHoursMinutes}:00.000Z`;
+  if (requestQuery.fromdatetime) {
+    const dateTimeMs = Date.parse(utcDateTime(requestQuery.fromdatetime));
+    parsedFilters.from = new Date(dateTimeMs + offSetMs);
+  }
+  if (requestQuery.todatetime) {
+    const dateTimeMs = Date.parse(utcDateTime(requestQuery.todatetime));
+    parsedFilters.to = new Date(dateTimeMs + offSetMs);
+  }
+  console.log(parsedFilters);
+  return parsedFilters;
 }
 
 /**
@@ -92,6 +107,7 @@ export async function getJobs(
 ): Promise<void> {
   try {
     const requestQuery = keysToLowerCase(req.query);
+    const dateKind = requestQuery.datekind;
     const jobQuery: JobQuery = { where: {}, whereIn: {} };
     if (requestQuery.sortgranules) {
       jobQuery.orderBy = {
@@ -172,6 +188,8 @@ export async function getJobs(
       // job table filters HTML
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       disallowUserChecked: disallowUser ? 'checked' : '',
+      updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
+      createdAtChecked: dateKind == 'createdAt' ? 'checked' : '',
       selectedFilters: tableFilter.originalValues,
       // job table paging buttons HTML
       links: [
@@ -206,14 +224,21 @@ export async function getJob(
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     const { page, limit } = getPagingParams(req, 1000);
     const requestQuery = keysToLowerCase(req.query);
+    const fromDateTime = requestQuery.fromdatetime;
+    const toDateTime = requestQuery.todatetime;
+    const dateKind = requestQuery.datekind;
     const disallowStatus = requestQuery.disallowstatus === 'on';
     const tableFilter = parseFilters(requestQuery, WorkItemStatus);
     res.render('workflow-ui/job/index', {
       job,
       page,
       limit,
+      toDateTime,
+      fromDateTime,
       isAdminOrOwner: job.belongsToOrIsAdmin(req.user, isAdmin),
       disallowStatusChecked: disallowStatus ? 'checked' : '',
+      updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
+      createdAtChecked: dateKind == 'createdAt' ? 'checked' : '',
       selectedFilters: tableFilter.originalValues,
       tableFilter: requestQuery.tablefilter,
       version,
