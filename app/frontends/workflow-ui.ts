@@ -363,12 +363,18 @@ export async function getWorkItemsTable(
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const requestQuery = keysToLowerCase(req.query);
     const tableFilter = parseFilters(requestQuery, WorkItemStatus);
+    const dateKind = requestQuery.datekind || 'createdAt';
     const itemQuery: WorkItemQuery = { where: { jobID }, whereIn: {}, orderBy: { field: 'id', value: 'asc' } };
     if (tableFilter.statusValues.length) {
       itemQuery.whereIn.status = {
         values: tableFilter.statusValues,
         in: !(requestQuery.disallowstatus === 'on'),
       };
+    }
+    if (tableFilter.from || tableFilter.to) {
+      itemQuery.dates = { field: dateKind };
+      itemQuery.dates.from = tableFilter.from;
+      itemQuery.dates.to = tableFilter.to;
     }
     const { workItems, pagination } = await queryAll(db, itemQuery, page, limit);
     const pageLinks = getPagingLinks(req, pagination);
