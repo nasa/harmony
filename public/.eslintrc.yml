@@ -1,0 +1,32 @@
+plugins:
+  - import
+  - jsdoc
+root: true
+extends:
+  - plugin:import/errors
+  - plugin:import/warnings
+  - airbnb-base
+settings:
+  import/resolver:
+    node:
+      extensions: [".js"]
+parserOptions:
+  sourceType: "module"
+  ecmaVersion: 2020
+env:
+  browser: true
+  es6: true
+rules:
+  indent: ["off"]
+  no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]
+  class-methods-use-this: "off"
+  no-underscore-dangle: "off"
+  require-jsdoc: ["warn"]
+  no-await-in-loop: ["off"]
+  object-curly-newline: ["off"]
+  no-plusplus: ["off"]
+  prefer-destructuring:
+    - error
+    - array: false
+      object: true
+    - enforceForRenamedProperties: false
