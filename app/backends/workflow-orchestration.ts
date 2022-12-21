@@ -55,8 +55,6 @@ export async function getWork(
   const reqLogger = req.context.logger;
   const { serviceID, podName } = req.query;
 
-
-
   await db.transaction(async (tx) => {
     const username = await getNextUsernameForWork(tx, serviceID as string);
     if (username) {

@@ -113,7 +113,8 @@ CREATE TABLE `user_work` (
   `last_worked` datetime not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
-  FOREIGN KEY(job_id) REFERENCES jobs(jobID)
+  FOREIGN KEY(job_id) REFERENCES jobs(jobID),
+  UNIQUE(job_id, service_id)
 );
 
 CREATE INDEX jobs_jobID_idx ON jobs(jobID);

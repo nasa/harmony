@@ -179,8 +179,6 @@ export async function setReadyCountToZero(tx: Transaction, jobID: string): Promi
  * @param jobID - The job ID
  */
 export async function recalculateReadyCount(tx: Transaction, jobID: string): Promise<void> {
-  // First get the rows for each service for that jobID
-  // TODO
   const rows = await tx(UserWork.table)
     .select(['id', 'service_id'])
     .where({ job_id: jobID });
@@ -190,7 +188,6 @@ export async function recalculateReadyCount(tx: Transaction, jobID: string): Pro
       .count()
       .where({ jobID, serviceID: row.service_id, status: 'ready' })
       .first();
-    // Then set the ready count for each of those rows
     await tx(UserWork.table)
       .where({ id: row.id })
       .update('ready_count', readyCountRow.count);
@@ -210,7 +207,8 @@ export async function incrementRunningAndDecrementReadyCounts(
   await tx(UserWork.table)
     .where({ job_id: jobID, service_id: serviceID })
     .increment('running_count')
-    .decrement('ready_count');
+    .decrement('ready_count')
+    .update({ 'last_worked': new Date() });
 }
 
 /**

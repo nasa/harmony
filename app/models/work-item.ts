@@ -162,11 +162,6 @@ export async function getNextWorkItem(
             startedAt,
           })
           .where({ id: workItemData.id });
-        // need to update the job otherwise long running jobs won't count against
-        // the user's priority
-        await tx(Job.table)
-          .update({ updatedAt: new Date() })
-          .where({ jobID: workItemData.jobID });
       }
     }
   } catch (e) {

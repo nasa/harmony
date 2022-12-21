@@ -21,6 +21,7 @@ exports.up = function(knex) {
       t.timestamp('last_worked').notNullable();
       t.timestamp('createdAt').notNullable();
       t.timestamp('updatedAt').notNullable();
+      t.unique(['job_id', 'service_id']);
     })
     .raw(populate_sql)
 };
