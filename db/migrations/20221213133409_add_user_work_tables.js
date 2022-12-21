@@ -4,7 +4,7 @@ const populate_sql = 'INSERT INTO user_work(ready_count, running_count, last_wor
   + 'count(1) filter (WHERE i.status = \'running\') as running_count, '
   + '"j"."updatedAt", i."serviceID", "i"."jobID", j.username, now(), now() '
   + 'FROM work_items i, jobs j WHERE "i"."jobID" = "j"."jobID" '
-  + 'AND j.status not in (\'paused\', \'previewing\') '
+  + 'AND j.status in (\'running\', \'running_with_errors\', \'accepted\') '
   + 'AND "i"."status" in (\'ready\', \'running\') '
   + 'GROUP BY "j"."updatedAt", "i"."serviceID", "i"."jobID", j.username '
   + 'ORDER BY "j"."updatedAt" asc';

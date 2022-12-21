@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { JobStatus } from '../app/models/job';
+import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { WorkItemStatus } from '../app/models/work-item-interface';
 import db from '../app/util/db';
 import { truncateAll } from './helpers/db';
@@ -50,6 +51,8 @@ async function createJobAndWorkItems(serviceID: string, jobStatus: JobStatus): P
     status: WorkItemStatus.FAILED,
     workflowStepIndex: 1,
   }).save(db);
+
+  await populateUserWorkFromWorkItems(db);
 }
 
 describe('Backend service metrics endpoint', function () {

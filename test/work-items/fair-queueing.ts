@@ -8,6 +8,7 @@ import { getWorkForService, makePartialWorkItemRecord, rawSaveWorkItem } from '.
 import { makePartialJobRecord, rawSaveJob } from '../helpers/jobs';
 import { makePartialWorkflowStepRecord, rawSaveWorkflowStep } from '../helpers/workflow-steps';
 import { truncateAll } from '../helpers/db';
+import { populateUserWorkFromWorkItems } from '../../app/models/user-work';
 
 const jobData = [
   // jobID, username, status, isAsync, updatedAt
@@ -84,6 +85,8 @@ describe('Fair Queueing', function () {
       await Promise.all(workItemRecords.map(async (rec: WorkItemRecord) => {
         await rawSaveWorkItem(db, rec);
       }));
+
+      await populateUserWorkFromWorkItems(db);
 
       // ask for work for the 'foo' service six times
       for (let count = 0; count < 6; count++) {

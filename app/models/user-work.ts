@@ -73,7 +73,6 @@ export async function getNextUsernameForWork(tx: Transaction, serviceID: string)
     .where('service_id', '=', serviceID)
     .where('ready_count',  '>',  0);
 
-  // GROUP BY username order by s, max(last_worked) asc LIMIT 1;
   const results = await tx(UserWork.table)
     .select('username')
     .max('last_worked as lw')
@@ -214,9 +213,14 @@ export async function recalculateReadyCount(tx: Transaction, jobID: string): Pro
         .count()
         .where({ jobID, serviceID: row.service_id, status: 'ready' })
         .first();
+
+      let key = 'count(*)';
+      if (db.client.config.client === 'pg') {
+        key = 'count';
+      }
       await tx(UserWork.table)
         .where({ id: row.id })
-        .update('ready_count', readyCountRow.count);
+        .update('ready_count', readyCountRow[key]);
     }
   }
 }
@@ -295,7 +299,7 @@ export async function populateUserWorkFromWorkItems(tx: Transaction): Promise<vo
     + 'count(1) filter (WHERE i.status = \'running\') as running_count, '
     + `"j"."updatedAt", i."serviceID", "i"."jobID", j.username, ${now}, ${now} `
     + 'FROM work_items i, jobs j WHERE "i"."jobID" = "j"."jobID" '
-    + 'AND j.status not in (\'paused\', \'previewing\') '
+    + 'AND j.status in (\'running\', \'running_with_errors\', \'accepted\') '
     + 'AND "i"."status" in (\'ready\', \'running\') '
     + 'GROUP BY "j"."updatedAt", "i"."serviceID", "i"."jobID", j.username '
     + 'ORDER BY "j"."updatedAt" asc';

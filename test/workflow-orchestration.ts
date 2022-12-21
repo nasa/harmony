@@ -16,6 +16,7 @@ import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/w
 import { truncateAll } from './helpers/db';
 import { getObjectText } from './helpers/object-store';
 import { stub } from 'sinon';
+import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 
 /**
  * Create a job and some work times to be used by tests
@@ -65,6 +66,7 @@ async function createJobAndWorkItems(
     workflowStepIndex: 1,
   }).save(db);
 
+  await populateUserWorkFromWorkItems(db);
   return job.jobID;
 }
 
@@ -817,6 +819,8 @@ describe('When a request spans multiple CMR pages', function () {
         workflowStepIndex: 1,
         scrollID: '123abc',
       }).save(db);
+
+      await populateUserWorkFromWorkItems(db);
     });
 
     after(async function () {
