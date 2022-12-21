@@ -64,6 +64,7 @@ export async function getWork(
       if (jobID) {
         const workItem = await getNextWorkItem(tx, serviceID as string, jobID);
         if (workItem) {
+          // await getQueuedAndRunningCountForService(tx, serviceID as string);
           await incrementRunningAndDecrementReadyCounts(tx, jobID, serviceID as string);
           const logger = reqLogger.child({ workItemId: workItem.id });
           const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;

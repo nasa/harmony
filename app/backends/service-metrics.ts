@@ -17,6 +17,7 @@ export async function getEligibleWorkItemCountForServiceID(
   req: Request, res: Response, next: NextFunction,
 ): Promise<void> {
   const serviceID = req.query.serviceID as string;
+  console.log(`CDD: Calling backend to get work item counts for ${serviceID}`);
 
   // Return 400 if serviceID not provided in query
   if (!serviceID) {

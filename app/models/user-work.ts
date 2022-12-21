@@ -44,14 +44,16 @@ export default class UserWork extends Record {
 export async function getQueuedAndRunningCountForService(tx: Transaction, serviceID: string)
   : Promise<number> {
   const results = await tx(UserWork.table)
-    .sum('ready_count').as('ready')
-    .sum('running_count').as('running') // : 'running_count as running' })
+    .sum({ readyCount: 'ready_count', runningCount: 'running_count' })
+    // .sum('ready_count').as('ready')
+    // .sum('running_count').as('running') // : 'running_count as running' })
     .where({ service_id: serviceID });
 
-  let count = 0;
-  count = Number(results[0].ready) + Number(results[0].running);
+  console.log(`CDD: results are ${JSON.stringify(results)} for service ${serviceID}`);
+  const totalItems = Number(results[0].readyCount) + Number(results[0].runningCount);
+  console.log(`CDD: count is ${totalItems} for service ${serviceID}`);
 
-  return count;
+  return totalItems;
 }
 
 /**
@@ -180,18 +182,18 @@ export async function recalculateReadyCount(tx: Transaction, jobID: string): Pro
   // First get the rows for each service for that jobID
   // TODO
   const rows = await tx(UserWork.table)
-    .select(['id', 'serviceID'])
+    .select(['id', 'service_id'])
     .where({ job_id: jobID });
 
   for (const row of rows) {
-    const readyCount = await tx(WorkItem.table)
+    const readyCountRow = await tx(WorkItem.table)
       .count()
-      .where({ jobID, serviceID: row.serviceID })
+      .where({ jobID, serviceID: row.service_id, status: 'ready' })
       .first();
     // Then set the ready count for each of those rows
     await tx(UserWork.table)
       .where({ id: row.id })
-      .update('ready_count', readyCount);
+      .update('ready_count', readyCountRow.count);
   }
 }
 
