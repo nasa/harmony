@@ -14,12 +14,14 @@ import * as aggregationBatch from '../../app/util/aggregation-batch';
 import { hookJobCreation } from '../helpers/jobs';
 import { hookGetWorkForService, hookWorkItemCreation, hookWorkItemUpdate, hookWorkflowStepAndItemCreation, getWorkForService, fakeServiceStacOutput, updateWorkItem } from '../helpers/work-items';
 import { hookWorkflowStepCreation, validOperation } from '../helpers/workflow-steps';
+import { hookPopulateUserWorkFromWorkItems } from '../helpers/user-work';
+import { resumeAndSaveJob } from '../../app/util/job';
 
 const oldDate = '1/1/2000'; // "old" work items will get created on this date
 
 describe('Work Backends', function () {
-  const requestId = uuid().toString();
-  const jobRecord = { jobID: requestId, requestId } as Partial<JobRecord>;
+  const exampleRequestId = uuid().toString();
+  const jobRecord = { jobID: exampleRequestId, requestId: exampleRequestId } as Partial<JobRecord>;
   const service = 'harmonyservices/query-cmr';
   const expectedLink = 'https://harmony.uat.earthdata.nasa.gov/service-results/harmony-uat-staging/public/harmony_example/nc/001_00_8f00ff_global.nc';
 
@@ -42,7 +44,7 @@ describe('Work Backends', function () {
   describe('when getting a work item', function () {
     const runningJob = new Job({
       jobID: 'ABCD',
-      requestId,
+      requestId: uuid().toString(),
       status: JobStatus.RUNNING,
       username: 'anonymous',
       request: 'http://example.com/harmony?foo=bar',
@@ -52,7 +54,7 @@ describe('Work Backends', function () {
 
     const pausedJob = new Job({
       jobID: 'PAUSED',
-      requestId,
+      requestId: uuid().toString(),
       status: JobStatus.PAUSED,
       username: 'anonymous',
       request: 'http://example.com/harmony?foo=bar',
@@ -101,6 +103,7 @@ describe('Work Backends', function () {
     hookWorkflowStepAndItemCreation(runningWorkItem);
     hookWorkflowStepAndItemCreation(pausedJobWorkItem);
     hookWorkflowStepAndItemCreation(pausedJobQueryCmrWorkItem);
+    hookPopulateUserWorkFromWorkItems();
 
     describe('when no work item is available for the service', function () {
       hookGetWorkForService('noWorkService');
@@ -118,19 +121,17 @@ describe('Work Backends', function () {
       });
     });
 
-    // CMR work items are returned even when a job is paused to avoid a scroll session timeout
     describe('when work items are available for query-cmr, but their job is paused', function () {
       hookGetWorkForService('query-cmr');
 
-      it('returns a 200', function () {
-        expect(this.res.status).to.equal(200);
+      it('returns a 404', function () {
+        expect(this.res.status).to.equal(404);
       });
     });
 
     describe('when work items are available for a paused job that is resumed', async function () {
       it('returns a 200', async function () {
-        pausedJob.updateStatus(JobStatus.RUNNING);
-        await pausedJob.save(db);
+        await resumeAndSaveJob(pausedJob.jobID, null);
         const result = await getWorkForService(this.backend, 'thePausedJobService');
         expect(result.status).to.equal(200);
       });
@@ -206,6 +207,7 @@ describe('Work Backends', function () {
       hookJobCreation(jobRecord);
       hookWorkflowStepCreation(workflowStepRecord);
       hookWorkItemCreation(workItemRecord);
+      hookPopulateUserWorkFromWorkItems();
       before(async function () {
         let shouldLoop = true;
         // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed

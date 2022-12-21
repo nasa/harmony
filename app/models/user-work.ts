@@ -1,4 +1,4 @@
-import { Transaction } from './../util/db';
+import db, { Transaction } from './../util/db';
 import Record from './record';
 import WorkItem from './work-item';
 
@@ -172,7 +172,29 @@ export async function setReadyCountToZero(tx: Transaction, jobID: string): Promi
 }
 
 /**
- * TODO
+ * Populates the user_work table for the given jobID from the work_items table.
+ * @param tx - The database transaction
+ * @param jobID - The job ID
+ */
+export async function populateUserWorkForJobId(tx: Transaction, jobID: string): Promise<void> {
+  let now = 'datetime(\'now\')';
+  if (db.client.config.client === 'pg') {
+    now = 'now()';
+  }
+  const sql = 'INSERT INTO user_work(ready_count, running_count, last_worked, service_id, '
+    + 'job_id, username, "createdAt", "updatedAt") '
+    + 'SELECT count(1) filter (WHERE i.status = \'ready\') as ready_count, '
+    + 'count(1) filter (WHERE i.status = \'running\') as running_count, '
+    + `"j"."updatedAt", i."serviceID", "i"."jobID", j.username, ${now}, ${now} `
+    + 'FROM work_items i, jobs j WHERE "i"."jobID" = "j"."jobID" '
+    + `AND "j"."jobID" = '${jobID}' `
+    + 'AND "i"."status" in (\'ready\', \'running\') '
+    + 'GROUP BY "j"."updatedAt", "i"."serviceID", "i"."jobID", j.username '
+    + 'ORDER BY "j"."updatedAt" asc';
+  await tx.raw(sql);
+}
+
+/**
  * Sets the ready_count to the appropriate value for each row in the user_work table for the
  * provided jobID.
  * @param tx - The database transaction
@@ -183,14 +205,19 @@ export async function recalculateReadyCount(tx: Transaction, jobID: string): Pro
     .select(['id', 'service_id'])
     .where({ job_id: jobID });
 
-  for (const row of rows) {
-    const readyCountRow = await tx(WorkItem.table)
-      .count()
-      .where({ jobID, serviceID: row.service_id, status: 'ready' })
-      .first();
-    await tx(UserWork.table)
-      .where({ id: row.id })
-      .update('ready_count', readyCountRow.count);
+  // Job was paused at initial transition and populating of user_work table
+  if (rows.length === 0) {
+    await populateUserWorkForJobId(tx, jobID);
+  } else {
+    for (const row of rows) {
+      const readyCountRow = await tx(WorkItem.table)
+        .count()
+        .where({ jobID, serviceID: row.service_id, status: 'ready' })
+        .first();
+      await tx(UserWork.table)
+        .where({ id: row.id })
+        .update('ready_count', readyCountRow.count);
+    }
   }
 }
 
@@ -257,12 +284,16 @@ export async function deleteOrphanedRows(tx: Transaction): Promise<number> {
  * Populates the user_work table from scratch using the work_items table.
  * @param tx - The database transaction
  */
-export async function popuateUserWorkFromWorkItems(tx: Transaction): Promise<void> {
+export async function populateUserWorkFromWorkItems(tx: Transaction): Promise<void> {
+  let now = 'datetime(\'now\')';
+  if (db.client.config.client === 'pg') {
+    now = 'now()';
+  }
   const sql = 'INSERT INTO user_work(ready_count, running_count, last_worked, service_id, '
     + 'job_id, username, "createdAt", "updatedAt") '
     + 'SELECT count(1) filter (WHERE i.status = \'ready\') as ready_count, '
     + 'count(1) filter (WHERE i.status = \'running\') as running_count, '
-    + '"j"."updatedAt", i."serviceID", "i"."jobID", j.username, now(), now() '
+    + `"j"."updatedAt", i."serviceID", "i"."jobID", j.username, ${now}, ${now} `
     + 'FROM work_items i, jobs j WHERE "i"."jobID" = "j"."jobID" '
     + 'AND j.status not in (\'paused\', \'previewing\') '
     + 'AND "i"."status" in (\'ready\', \'running\') '

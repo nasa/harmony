@@ -24,9 +24,9 @@ import { deleteUserWorkForJob, recalculateReadyCount, setReadyCountToZero } from
 async function lookupJob(tx: Transaction, jobID: string, username: string): Promise<Job>  {
   let job;
   if (username) {
-    ({ job } = await Job.byUsernameAndRequestId(tx, username, jobID));
+    ({ job } = await Job.byUsernameAndJobId(tx, username, jobID));
   } else {
-    ({ job } = await Job.byRequestId(tx, jobID));
+    job = await Job.byJobID(tx, jobID);
   }
 
   if (!job) {

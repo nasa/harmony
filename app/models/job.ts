@@ -569,6 +569,38 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
+   * Returns the job matching the given username and request ID, or null if
+   * no such job exists.
+   *
+   * @param transaction - the transaction to use for querying
+   * @param username - the username associated with the job
+   * @param jobID - the jobID
+   * @param includeLinks - if true, load all JobLinks into job.links
+   * @param currentPage - the index of the page of links to show
+   * @param perPage - the number of link results per page
+   * @returns the matching job, or null if none exists, along with pagination information
+   * for the job links
+   */
+  static async byUsernameAndJobId(
+    transaction,
+    username,
+    jobID,
+    includeLinks = true,
+    currentPage = 0,
+    perPage = env.defaultResultPageSize,
+  ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
+    const result = await transaction('jobs').select().where({ username, jobID }).forUpdate();
+    const job = result.length === 0 ? null : new Job(result[0]);
+    let paginationInfo;
+    if (job && includeLinks) {
+      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      job.links = linkData.data;
+      paginationInfo = linkData.pagination;
+    }
+    return { job, pagination: paginationInfo };
+  }
+
+  /**
    * Returns the job matching the given request ID, or null if no such job exists
    *
    * @param transaction - the transaction to use for querying
