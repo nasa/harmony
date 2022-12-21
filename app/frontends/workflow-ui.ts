@@ -107,7 +107,9 @@ export async function getJobs(
 ): Promise<void> {
   try {
     const requestQuery = keysToLowerCase(req.query);
-    const dateKind = requestQuery.datekind;
+    const fromDateTime = requestQuery.fromdatetime;
+    const toDateTime = requestQuery.todatetime;
+    const dateKind = requestQuery.datekind || 'createdAt';
     const jobQuery: JobQuery = { where: {}, whereIn: {} };
     if (requestQuery.sortgranules) {
       jobQuery.orderBy = {
@@ -132,6 +134,11 @@ export async function getJobs(
         values: tableFilter.userValues,
         in: !disallowUser,
       };
+    }
+    if (tableFilter.from || tableFilter.to) {
+      jobQuery.dates = { field: dateKind };
+      jobQuery.dates.from = tableFilter.from;
+      jobQuery.dates.to = tableFilter.to;
     }
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
     const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, false, page, limit);
@@ -188,6 +195,8 @@ export async function getJobs(
       // job table filters HTML
       disallowStatusChecked: disallowStatus ? 'checked' : '',
       disallowUserChecked: disallowUser ? 'checked' : '',
+      toDateTime,
+      fromDateTime,
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
       createdAtChecked: dateKind == 'createdAt' ? 'checked' : '',
       selectedFilters: tableFilter.originalValues,
@@ -233,10 +242,10 @@ export async function getJob(
       job,
       page,
       limit,
-      toDateTime,
-      fromDateTime,
       isAdminOrOwner: job.belongsToOrIsAdmin(req.user, isAdmin),
       disallowStatusChecked: disallowStatus ? 'checked' : '',
+      toDateTime,
+      fromDateTime,
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
       createdAtChecked: dateKind == 'createdAt' ? 'checked' : '',
       selectedFilters: tableFilter.originalValues,

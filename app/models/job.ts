@@ -112,9 +112,12 @@ export interface JobQuery {
     request?: string;
     isAsync?: boolean;
     ignoreErrors?: boolean;
-    createdAt?: number;
-    updatedAt?: number;
   };
+  dates?: {
+    from?: Date;
+    to?: Date;
+    field: 'createdAt' | 'updatedAt';
+  }
   whereIn?: {
     status?: { in: boolean, values: string[] };
     username?: { in: boolean, values: string[] };
@@ -422,6 +425,14 @@ export class Job extends DBRecord implements JobRecord {
             } else {
               void queryBuilder.whereNotIn(jobField, constraint.values);
             }
+          }
+        }
+        if (constraints.dates) {
+          if (constraints.dates.from) {
+            void queryBuilder.where(constraints.dates.field, '>=', constraints.dates.from);
+          }
+          if (constraints.dates.to) {
+            void queryBuilder.where(constraints.dates.field, '<=', constraints.dates.to);
           }
         }
       })
