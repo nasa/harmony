@@ -136,7 +136,7 @@ describe('when a work item callback request does not return the results to const
   });
 });
 
-describe('When a workflow contains an aggregating step', async function () {
+describe('CDD - When a workflow contains an aggregating step', async function () {
 /**
  * Do some fake work and update the work item
  * @param context - 'this' from test
@@ -195,6 +195,8 @@ describe('When a workflow contains an aggregating step', async function () {
       serviceID: 'foo',
       workflowStepIndex: 1,
     }).save(db);
+
+    await populateUserWorkFromWorkItems(db);
     const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
     const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
     savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
@@ -207,7 +209,7 @@ describe('When a workflow contains an aggregating step', async function () {
   });
 
   this.afterEach(async function () {
-    await db.table('work_items').del();
+    await truncateAll();
   });
 
   describe('and it has fewer granules than the paging threshold', async function () {
@@ -701,7 +703,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
   });
 });
 
-describe('When a request spans multiple CMR pages', function () {
+describe('CDD - When a request spans multiple CMR pages', function () {
   describe('and contains no aggregating steps', function () {
     const collection = 'C1233800302-EEDTEST';
     hookServersStartStop();
@@ -873,6 +875,7 @@ describe('When a request spans multiple CMR pages', function () {
 
       it('does not define maxCmrGranules for non-query-cmr items', async function () {
         const res = await getWorkForService(this.backend, aggregateService);
+        expect(res.statusCode).to.equal(200);
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).equals(undefined);
         expect(workItem).to.not.equal(undefined);

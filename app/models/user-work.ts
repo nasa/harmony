@@ -295,13 +295,13 @@ export async function populateUserWorkFromWorkItems(tx: Transaction): Promise<vo
   }
   const sql = 'INSERT INTO user_work(ready_count, running_count, last_worked, service_id, '
     + 'job_id, username, "createdAt", "updatedAt") '
-    + 'SELECT count(1) filter (WHERE i.status = \'ready\') as ready_count, '
-    + 'count(1) filter (WHERE i.status = \'running\') as running_count, '
-    + `"j"."updatedAt", i."serviceID", "i"."jobID", j.username, ${now}, ${now} `
-    + 'FROM work_items i, jobs j WHERE "i"."jobID" = "j"."jobID" '
-    + 'AND j.status in (\'running\', \'running_with_errors\', \'accepted\') '
-    + 'AND "i"."status" in (\'ready\', \'running\') '
-    + 'GROUP BY "j"."updatedAt", "i"."serviceID", "i"."jobID", j.username '
+    + 'SELECT count(1) filter (WHERE i.status = \'ready\' AND "i"."serviceID" = "ws"."serviceID" AND j.status in (\'running\', \'running_with_errors\', \'accepted\')) as ready_count, '
+    + 'count(1) filter (WHERE i.status = \'running\' AND j.status in (\'running\', \'running_with_errors\', \'accepted\')) as running_count, '
+    + `"j"."updatedAt", ws."serviceID", "ws"."jobID", j.username, ${now}, ${now} `
+    + 'FROM workflow_steps ws '
+    + 'JOIN jobs j on "ws"."jobID" = "j"."jobID" '
+    + 'LEFT JOIN work_items i on "ws"."jobID" = "i"."jobID" AND "i"."jobID" = "j"."jobID" '
+    + 'GROUP BY "j"."updatedAt", "ws"."serviceID", "ws"."jobID", j.username '
     + 'ORDER BY "j"."updatedAt" asc';
   await tx.raw(sql);
 }
