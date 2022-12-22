@@ -110,6 +110,7 @@ CREATE TABLE `user_work` (
   `ready_count` integer not null default 0,
   `running_count` integer not null default 0,
   `job_id` char(36) not null,
+  `is_async` boolean,
   `last_worked` datetime not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,
@@ -130,5 +131,3 @@ CREATE INDEX workflow_steps_jobID_StepIndex_idx ON workflow_steps(jobID, stepInd
 CREATE INDEX workflow_steps_serviceID_idx ON workflow_steps(serviceID);
 CREATE INDEX batch_jobID_service_ID_batchID ON batches(jobID, serviceID, batchID);
 CREATE INDEX batch_items_jobID_service_ID_batchID ON batch_items(jobID, serviceID, batchID);
-CREATE INDEX user_work_service_id_job_id ON user_work(service_id, job_id);
-

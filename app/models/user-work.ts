@@ -11,22 +11,25 @@ export default class UserWork extends Record {
   static table = 'user_work';
 
   // The ID of the job
-  jobID: string;
+  job_id: string;
 
   // unique identifier for the service - this should be the docker image tag (with version)
-  serviceID: string;
+  service_id: string;
 
   // The username associated with the job
   username: string;
 
   // the number of work items in the ready state for this job and service
-  readyCount: number;
+  ready_count: number;
 
   // the number of work items in the running state for this job and service
-  runningCount: number;
+  running_count: number;
+
+  // true if the requested job is asynchronous
+  is_async: boolean;
 
   // the time the job was last worked
-  lastWorked: Date;
+  last_worked: Date;
 }
 
 /**
@@ -100,6 +103,7 @@ export async function getNextJobIdForUsernameAndService(tx: Transaction, service
     .select('job_id')
     .where({ username, service_id: serviceID })
     .where('ready_count', '>', 0)
+    .orderBy('is_async', 'asc')
     .orderBy('last_worked', 'asc')
     .first();
 
@@ -180,16 +184,19 @@ export async function populateUserWorkForJobId(tx: Transaction, jobID: string): 
   if (db.client.config.client === 'pg') {
     now = 'now()';
   }
+
   const sql = 'INSERT INTO user_work(ready_count, running_count, last_worked, service_id, '
-    + 'job_id, username, "createdAt", "updatedAt") '
-    + 'SELECT count(1) filter (WHERE i.status = \'ready\') as ready_count, '
-    + 'count(1) filter (WHERE i.status = \'running\') as running_count, '
-    + `"j"."updatedAt", i."serviceID", "i"."jobID", j.username, ${now}, ${now} `
-    + 'FROM work_items i, jobs j WHERE "i"."jobID" = "j"."jobID" '
-    + `AND "j"."jobID" = '${jobID}' `
-    + 'AND "i"."status" in (\'ready\', \'running\') '
-    + 'GROUP BY "j"."updatedAt", "i"."serviceID", "i"."jobID", j.username '
-    + 'ORDER BY "j"."updatedAt" asc';
+  + 'job_id, username, is_async, "createdAt", "updatedAt") '
+  + 'SELECT count(1) filter (WHERE i.status = \'ready\' AND "i"."serviceID" = "ws"."serviceID" AND j.status in (\'running\', \'running_with_errors\', \'accepted\')) as ready_count, '
+  + 'count(1) filter (WHERE i.status = \'running\' AND j.status in (\'running\', \'running_with_errors\', \'accepted\')) as running_count, '
+  + `"j"."updatedAt", ws."serviceID", "ws"."jobID", j.username, "j"."isAsync", ${now}, ${now} `
+  + 'FROM workflow_steps ws '
+  + 'JOIN jobs j on "ws"."jobID" = "j"."jobID" '
+  + 'LEFT JOIN work_items i on "ws"."jobID" = "i"."jobID" AND "i"."jobID" = "j"."jobID" '
+  + 'WHERE j.status not in (\'successful\', \'complete_with_errors\', \'failed\', \'canceled\') '
+  + `AND "j"."jobID" = '${jobID}' `
+  + 'GROUP BY "j"."updatedAt", "ws"."serviceID", "ws"."jobID", j.username, "j"."isAsync" '
+  + 'ORDER BY "j"."updatedAt" asc';
   await tx.raw(sql);
 }
 
@@ -294,14 +301,15 @@ export async function populateUserWorkFromWorkItems(tx: Transaction): Promise<vo
     now = 'now()';
   }
   const sql = 'INSERT INTO user_work(ready_count, running_count, last_worked, service_id, '
-    + 'job_id, username, "createdAt", "updatedAt") '
+    + 'job_id, username, is_async, "createdAt", "updatedAt") '
     + 'SELECT count(1) filter (WHERE i.status = \'ready\' AND "i"."serviceID" = "ws"."serviceID" AND j.status in (\'running\', \'running_with_errors\', \'accepted\')) as ready_count, '
     + 'count(1) filter (WHERE i.status = \'running\' AND j.status in (\'running\', \'running_with_errors\', \'accepted\')) as running_count, '
-    + `"j"."updatedAt", ws."serviceID", "ws"."jobID", j.username, ${now}, ${now} `
+    + `"j"."updatedAt", ws."serviceID", "ws"."jobID", j.username, "j"."isAsync", ${now}, ${now} `
     + 'FROM workflow_steps ws '
     + 'JOIN jobs j on "ws"."jobID" = "j"."jobID" '
     + 'LEFT JOIN work_items i on "ws"."jobID" = "i"."jobID" AND "i"."jobID" = "j"."jobID" '
-    + 'GROUP BY "j"."updatedAt", "ws"."serviceID", "ws"."jobID", j.username '
+    + 'WHERE j.status not in (\'successful\', \'complete_with_errors\', \'failed\', \'canceled\') '
+    + 'GROUP BY "j"."updatedAt", "ws"."serviceID", "ws"."jobID", j.username, "j"."isAsync" '
     + 'ORDER BY "j"."updatedAt" asc';
   await tx.raw(sql);
 }

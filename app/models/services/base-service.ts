@@ -429,6 +429,7 @@ export default abstract class BaseService<ServiceParamType> {
             username: this.operation.user,
             ready_count: 0,
             running_count: 0,
+            is_async: !this.isSynchronous,
             last_worked: new Date(),
           }));
         }
