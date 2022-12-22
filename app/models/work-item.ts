@@ -275,12 +275,13 @@ export async function updateWorkItemStatusesByJobId(
   jobID: string,
   oldStatuses: WorkItemStatus[],
   newStatus: WorkItemStatus,
-): Promise<void> {
+): Promise<number> {
   const updatedAt = new Date();
-  await tx(WorkItem.table)
+  const numUpdated = await tx(WorkItem.table)
     .where({ jobID })
     .whereIn('status', oldStatuses)
     .update({ status: newStatus, updatedAt });
+  return numUpdated;
 }
 
 /**
