@@ -1,5 +1,5 @@
-import toasts from './toasts';
-import PubSub from '../pub-sub';
+import toasts from './toasts.js';
+import PubSub from '../pub-sub.js';
 
 /**
  * Transform link objects to an HTML string representing the links nav.

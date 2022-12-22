@@ -1,6 +1,6 @@
-import { formatDates } from '../table';
-import toasts from '../toasts';
-import PubSub from '../../pub-sub';
+import { formatDates } from '../table.js';
+import toasts from '../toasts.js';
+import PubSub from '../../pub-sub.js';
 
 /**
  * Bind a click handler to every retry button.

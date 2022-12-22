@@ -10,6 +10,9 @@ globals:
   Tagify: readonly
   bootstrap: readonly
 settings:
+  "import/extensions": [{
+    "js" | "always"
+  }]
   import/resolver:
     node:
       extensions: [".js"]

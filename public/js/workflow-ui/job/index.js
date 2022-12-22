@@ -1,5 +1,5 @@
-import workItemsTable from './work-items-table';
-import navLinks from '../nav-links';
+import workItemsTable from './work-items-table.js';
+import navLinks from '../nav-links.js';
 
 /**
  * Initialize the job page (which displays work items, job status, etc).
@@ -11,6 +11,7 @@ async function init() {
   ['page', 'limit', 'jobID', 'tableFilter'].forEach((name) => {
     params[name] = document.getElementsByName(name)[0].value;
   });
+  console.log(params);
   params.disallowStatus = document.getElementsByName('disallowStatus')[0].checked ? 'on' : '';
 
   // kick off job state change links logic if this user is allowed to change the job state
