@@ -49,14 +49,14 @@ function parseFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
 ): {
     statusValues: string[], // need for querying db
     userValues: string[], // need for querying db
-    originalValues: string[] // needed for populating filter input
+    originalValues: string // needed for populating filter input
     from: Date,
     to: Date,
   } {
   const parsedFilters = {
     statusValues: [],
     userValues: [],
-    originalValues: [],
+    originalValues: '[]',
     from: undefined,
     to: undefined,
   };
@@ -71,9 +71,8 @@ function parseFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
     if ((statusValues.length + userValues.length) > maxFilters) {
       throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
     }
-    const originalValues = validStatusSelections
-      .concat(validUserSelections)
-      .map(option => option.value);
+    const originalValues = JSON.stringify(validStatusSelections
+      .concat(validUserSelections));
     parsedFilters.statusValues = statusValues;
     parsedFilters.userValues = userValues;
     parsedFilters.originalValues = originalValues;

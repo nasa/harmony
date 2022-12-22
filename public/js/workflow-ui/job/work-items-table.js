@@ -35,7 +35,7 @@ import PubSub from '../../pub-sub.js';
  * @returns Boolean indicating whether the job is still running
  */
 async function load(params, checkJobStatus) {
-  let tableUrl = `./${params.jobId}/work-items?page=${params.page}&limit=${params.limit}&checkJobStatus=${checkJobStatus}`;
+  let tableUrl = `./${params.jobID}/work-items?page=${params.page}&limit=${params.limit}&checkJobStatus=${checkJobStatus}`;
   tableUrl += `&tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
   const res = await fetch(tableUrl);
   if (res.status === 200) {
@@ -55,7 +55,7 @@ async function load(params, checkJobStatus) {
  * @param {object} params - parameters that define what will appear in the table row
  */
  async function loadRow(workItemId, params) {
-  let tableUrl = `./${params.jobId}/work-items/${workItemId}`;
+  let tableUrl = `./${params.jobID}/work-items/${workItemId}`;
   tableUrl += `?tableFilter=${encodeURIComponent(params.tableFilter)}&disallowStatus=${params.disallowStatus}`;
   const res = await fetch(tableUrl);
   if (res.status === 200) {

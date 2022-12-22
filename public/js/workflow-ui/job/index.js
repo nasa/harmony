@@ -18,7 +18,7 @@ async function init() {
   const navLinksContainer = document.getElementById('job-state-links-container');
   const isAdminOrOwner = navLinksContainer.getAttribute('data-is-admin-or-owner') === 'true';
   if (isAdminOrOwner) {
-    await navLinks.init('job-state-links-container', params.jobId);
+    await navLinks.init('job-state-links-container', params.jobID);
   }
 
   workItemsTable.init(params);
