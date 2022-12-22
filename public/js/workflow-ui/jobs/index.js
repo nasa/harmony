@@ -1,4 +1,4 @@
-import jobsTable from './jobs-table';
+import jobsTable from './jobs-table.js';
 
 const tableFilter = document.querySelector('input[name="tableFilter"]')
 const currentUser = tableFilter.getAttribute('data-current-user');

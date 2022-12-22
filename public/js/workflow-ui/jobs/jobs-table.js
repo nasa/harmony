@@ -1,4 +1,4 @@
-import { formatDates, initTooltips } from '../table';
+import { formatDates, initTooltips } from '../table.js';
 
 /**
  * Build the jobs filter with filter facets like 'status' and 'user'.
