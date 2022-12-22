@@ -57,6 +57,7 @@
         <div class="row pb-4">
             <div class="col-2">
                 <form id="work-items-query-form" action="./{{job.jobID}}" method="get" class="sticky-top pt-2">
+                    <input type="hidden" name="jobID" value="{{job.jobID}}" />
                     <input type="hidden" name="page" value="{{page}}" />
                     <input type="hidden" name="limit" value="{{limit}}" />
                     {{> workflow-ui/date-time-picker}}
@@ -72,9 +73,7 @@
                         apply</button>
                 </form>
             </div>
-            <div class="col-10" id="workflow-items-table-container" data-page="{{page}}" data-limit="{{limit}}"
-                data-job-id="{{job.jobID}}" data-disallow-status-checked="{{disallowStatusChecked}}"
-                data-table-filter='{{tableFilter}}'>
+            <div class="col-10" id="workflow-items-table-container">
 
             </div>
         </div>

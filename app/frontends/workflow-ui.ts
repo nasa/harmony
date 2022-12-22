@@ -236,22 +236,20 @@ export async function getJob(
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
     const dateKind = requestQuery.datekind;
-    const disallowStatus = requestQuery.disallowstatus === 'on';
     const tableFilter = parseFilters(requestQuery, WorkItemStatus);
     res.render('workflow-ui/job/index', {
       job,
       page,
       limit,
-      isAdminOrOwner: job.belongsToOrIsAdmin(req.user, isAdmin),
-      disallowStatusChecked: disallowStatus ? 'checked' : '',
       toDateTime,
       fromDateTime,
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
       createdAtChecked: dateKind == 'createdAt' ? 'checked' : '',
+      disallowStatusChecked: requestQuery.disallowstatus === 'on' ? 'checked' : '',
       selectedFilters: tableFilter.originalValues,
-      tableFilter: requestQuery.tablefilter,
       version,
       isAdminRoute: req.context.isAdminAccess,
+      isAdminOrOwner: job.belongsToOrIsAdmin(req.user, isAdmin),
     });
   } catch (e) {
     req.context.logger.error(e);
