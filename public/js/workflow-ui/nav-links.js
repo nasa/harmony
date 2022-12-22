@@ -1,5 +1,5 @@
-import toasts from "./toasts.js";
-import PubSub from "../pub-sub.js";
+import toasts from './toasts';
+import PubSub from '../pub-sub';
 
 /**
  * Transform link objects to an HTML string representing the links nav.
@@ -7,8 +7,7 @@ import PubSub from "../pub-sub.js";
  * @returns HTML as a string
  */
 function buildLinksHtml(links) {
-  const linkToLi = (link) =>
-    `<li>
+  const linkToLi = (link) => `<li>
       <a href="${link.href}" rel="${link.rel}" title="${link.title}" class="state-change-link nav-link py-0 px-2 d-none">
         ${link.href.split('/').pop()}
       </a>
@@ -51,8 +50,8 @@ async function handleClick(event) {
 function insertLinksHtml(links, linksContainerId) {
   const html = buildLinksHtml(links);
   document.getElementById(linksContainerId).innerHTML = html;
-  document.querySelectorAll('.state-change-link').forEach(function (link) {
-    link.addEventListener('click', function (event) {
+  document.querySelectorAll('.state-change-link').forEach((link) => {
+    link.addEventListener('click', (event) => {
       handleClick(event);
     }, false);
   });
@@ -83,9 +82,9 @@ async function enableLinks(jobId) {
   const res = await fetch(linksUrl);
   if (res.status === 200) {
     const validLinks = await res.json();
-    document.querySelectorAll('.state-change-link').forEach(el => {
+    document.querySelectorAll('.state-change-link').forEach((el) => {
       const rel = el.getAttribute('rel');
-      if (validLinks.find(l => l.rel === rel)) {
+      if (validLinks.find((l) => l.rel === rel)) {
         el.classList.remove('d-none');
       } else {
         el.classList.add('d-none');
@@ -110,7 +109,8 @@ export default {
     // keep the hidden/visible state of the links in sync with
     // the work items table
     PubSub.subscribe(
-      'work-items-table-loaded', 
-      () => enableLinks(jobId));
-  }
-}
+      'work-items-table-loaded',
+      () => enableLinks(jobId),
+    );
+  },
+};

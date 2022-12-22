@@ -38,7 +38,7 @@ export default {
 
   /**
    * Set the text of the upper toast and show it.
-   * @param {string} text 
+   * @param {string} text - the text for the toast
    */
   showUpper(text) {
     setToastText(upperToastId, text);
@@ -47,10 +47,10 @@ export default {
 
   /**
    * Set the text of the lower toast and show it.
-   * @param {string} text 
+   * @param {string} text - the text for the toast
    */
   showLower(text) {
     setToastText(lowerToastId, text);
     toastObj[lowerToastId].show();
-  }
-}
+  },
+};

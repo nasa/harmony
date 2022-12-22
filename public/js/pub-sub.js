@@ -2,7 +2,7 @@
  * Simple publish subscribe broker.
  */
 export default {
-  
+
   handlers: [],
 
   /**
@@ -27,5 +27,5 @@ export default {
         handler.apply({}, eventData);
       }
     }
-  }
-}
+  },
+};

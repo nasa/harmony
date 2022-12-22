@@ -6,6 +6,9 @@ extends:
   - plugin:import/errors
   - plugin:import/warnings
   - airbnb-base
+globals:
+  Tagify: readonly
+  bootstrap: readonly
 settings:
   import/resolver:
     node:
