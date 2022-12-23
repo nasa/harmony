@@ -83,8 +83,9 @@ async function loadAndNotify(params, checkJobStatus) {
 
 /**
  * Build the work items filter (for filtering by 'status').
+ * @param {object[]} tableFilter - initial tags that will populate the input
  */
-function initFilter() {
+function initFilter(tableFilter) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
   const allowedList = [
     { value: 'status: ready', dbValue: 'ready', field: 'status' },
@@ -94,7 +95,8 @@ function initFilter() {
     { value: 'status: failed', dbValue: 'failed', field: 'status' },
   ];
   const allowedValues = allowedList.map((t) => t.value);
-  return new Tagify(filterInput, {
+  // eslint-disable-next-line no-new
+  const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
     validate(tag) {
       if (allowedValues.includes(tag.value)) {
@@ -110,6 +112,8 @@ function initFilter() {
       closeOnSelect: true,
     },
   });
+  const initialTags = JSON.parse(tableFilter);
+  tagInput.addTags(initialTags);
 }
 
 /**
@@ -130,7 +134,7 @@ export default {
    * tableFilter - a list of filter objects (as a string).
    */
   async init(params) {
-    initFilter();
+    initFilter(params.tableFilter);
     PubSub.subscribe(
       'row-state-change',
       async (workItemId) => loadRow(workItemId, params),

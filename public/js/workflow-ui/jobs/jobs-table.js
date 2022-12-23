@@ -4,8 +4,9 @@ import { formatDates, initTooltips } from '../table.js';
  * Build the jobs filter with filter facets like 'status' and 'user'.
  * @param currentUser - the current Harmony user
  * @param isAdminRoute - whether the current page is /admin/...
+ * @param tableFilter - initial tags that will populate the input
  */
-function initFilter(currentUser, isAdminRoute) {
+function initFilter(currentUser, isAdminRoute, tableFilter) {
   const filterInput = document.querySelector('input[name="tableFilter"]');
   const allowedList = [
     { value: 'status: successful', dbValue: 'successful', field: 'status' },
@@ -22,7 +23,7 @@ function initFilter(currentUser, isAdminRoute) {
     allowedList.push({ value: `user: ${currentUser}`, dbValue: currentUser, field: 'user' });
   }
   const allowedValues = allowedList.map((t) => t.value);
-  return new Tagify(filterInput, {
+  const tagInput = new Tagify(filterInput, {
     whitelist: allowedList,
     validate(tag) {
       if (allowedValues.includes(tag.value)) {
@@ -42,6 +43,8 @@ function initFilter(currentUser, isAdminRoute) {
       closeOnSelect: true,
     },
   });
+  const initialTags = JSON.parse(tableFilter);
+  tagInput.addTags(initialTags);
 }
 
 /**
@@ -53,10 +56,11 @@ export default {
    * Initialize the jobs table.
    * @param currentUser - the current Harmony user
    * @param isAdminRoute - whether the current page is /admin/...
+   * @param tableFilter - initial tags that will populate the input
    */
-  async init(currentUser, isAdminRoute) {
+  async init(currentUser, isAdminRoute, tableFilter) {
     formatDates('.date-td');
     initTooltips('[data-bs-toggle="tooltip"]');
-    initFilter(currentUser, isAdminRoute);
+    initFilter(currentUser, isAdminRoute, tableFilter);
   },
 };

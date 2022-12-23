@@ -346,6 +346,14 @@ export async function queryAll(
           }
         }
       }
+      if (constraints.dates) {
+        if (constraints.dates.from) {
+          void queryBuilder.where(constraints.dates.field, '>=', constraints.dates.from);
+        }
+        if (constraints.dates.to) {
+          void queryBuilder.where(constraints.dates.field, '<=', constraints.dates.to);
+        }
+      }
     })
     .paginate({ currentPage, perPage, isLengthAware: true });
 

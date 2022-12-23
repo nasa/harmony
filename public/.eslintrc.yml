@@ -11,7 +11,7 @@ globals:
   bootstrap: readonly
 settings:
   "import/extensions": [{
-    "js" | "always"
+    "js": "always"
   }]
   import/resolver:
     node:

@@ -8,11 +8,13 @@ async function init() {
   // Retrieve the parameters (from the original page request)
   // that will be used to poll for work items
   const params = {};
-  ['page', 'limit', 'jobID', 'tableFilter'].forEach((name) => {
+  ['page', 'limit', 'jobID', 'fromDateTime', 'toDateTime', 'tzOffsetMinutes'].forEach((name) => {
     params[name] = document.getElementsByName(name)[0].value;
   });
-  console.log(params);
+  params.tableFilter = document.getElementsByName('tableFilter')[0].getAttribute('data-value');
   params.disallowStatus = document.getElementsByName('disallowStatus')[0].checked ? 'on' : '';
+  params.dateKind = document.getElementById('dateKindUpdated').checked ? 'updatedAt' : 'createdAt';
+  console.log(params);
 
   // kick off job state change links logic if this user is allowed to change the job state
   const navLinksContainer = document.getElementById('job-state-links-container');
