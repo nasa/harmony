@@ -1,21 +1,11 @@
 plugins:
-  - import
   - jsdoc
 root: true
 extends:
-  - plugin:import/errors
-  - plugin:import/warnings
   - airbnb-base
 globals:
   Tagify: readonly
   bootstrap: readonly
-settings:
-  "import/extensions": [{
-    "js": "always"
-  }]
-  import/resolver:
-    node:
-      extensions: [".js"]
 parserOptions:
   sourceType: "module"
   ecmaVersion: 2020
@@ -23,6 +13,9 @@ env:
   browser: true
   es6: true
 rules:
+  "import/extensions": [2, {
+    "js": "always"
+  }]
   indent: ["off"]
   no-restricted-syntax: ["error", "LabeledStatement", "WithStatement"]
   class-methods-use-this: "off"

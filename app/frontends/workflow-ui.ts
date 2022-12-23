@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { sanitizeImage, isInteger } from '../util/string';
+import { sanitizeImage } from '../util/string';
 import { getJobIfAllowed } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { getWorkItemById, queryAll } from '../models/work-item';

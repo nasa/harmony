@@ -14,7 +14,6 @@ async function init() {
   params.tableFilter = document.getElementsByName('tableFilter')[0].getAttribute('data-value');
   params.disallowStatus = document.getElementsByName('disallowStatus')[0].checked ? 'on' : '';
   params.dateKind = document.getElementById('dateKindUpdated').checked ? 'updatedAt' : 'createdAt';
-  console.log(params);
 
   // kick off job state change links logic if this user is allowed to change the job state
   const navLinksContainer = document.getElementById('job-state-links-container');
