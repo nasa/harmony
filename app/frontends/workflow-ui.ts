@@ -16,6 +16,7 @@ import { belongsToGroup } from '../util/cmr';
 import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 import { objectStoreForProtocol } from '../util/object-store';
 import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
+import { Logger } from 'winston';
 
 /**
  * Maps job status to display class.
@@ -33,6 +34,21 @@ const statusClass = {
 };
 
 /**
+ * Defines values that have been parsed and transformed
+ * from the query string of a GET request for jobs or work item(s). 
+ */
+interface TableQuery {
+  sortGranules: string,
+  statusValues: string[],
+  userValues: string[],
+  from: Date,
+  to: Date,
+  dateKind: 'createdAt' | 'updatedAt',
+  allowStatuses: boolean,
+  allowUsers: boolean,
+}
+
+/**
  * Return an object that contains key value entries for jobs or work items table filters.
  * @param requestQuery - the Record given by keysToLowerCase
  * @param isAdminAccess - is the requesting user an admin and requesting from an admin route (determines
@@ -41,25 +57,28 @@ const statusClass = {
  * @param maxFilters - set a limit on the number of user requested filters
  * @returns object containing filter values
  */
-function parseFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
+function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   requestQuery: Record<string, any>,
   statusEnum: any,
   isAdminAccess = false,
   maxFilters = 30,
-): {
-    statusValues: string[], // need for querying db
-    userValues: string[], // need for querying db
-    originalValues: string // needed for populating filter input
-    from: Date,
-    to: Date,
-  } {
-  const parsedFilters = {
+): { tableQuery: TableQuery, originalValues: string } {
+  const tableQuery: TableQuery = {
+    sortGranules: undefined,
+    // tag input
     statusValues: [],
     userValues: [],
-    originalValues: '[]',
+    allowStatuses: true,
+    allowUsers: true,
+    // date controls
     from: undefined,
     to: undefined,
+    dateKind: 'createdAt',
   };
+  let originalValues = '[]';
+  tableQuery.sortGranules = requestQuery.sortgranules;
+  tableQuery.allowStatuses = !(requestQuery.disallowstatus === 'on');
+  tableQuery.allowUsers = !(requestQuery.disallowuser === 'on');
   if (requestQuery.tablefilter) {
     const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
     const validStatusSelections = selectedOptions
@@ -71,25 +90,111 @@ function parseFilters( /* eslint-disable @typescript-eslint/no-explicit-any */
     if ((statusValues.length + userValues.length) > maxFilters) {
       throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
     }
-    const originalValues = JSON.stringify(validStatusSelections
+    originalValues = JSON.stringify(validStatusSelections
       .concat(validUserSelections));
-    parsedFilters.statusValues = statusValues;
-    parsedFilters.userValues = userValues;
-    parsedFilters.originalValues = originalValues;
+    tableQuery.statusValues = statusValues;
+    tableQuery.userValues = userValues;
   }
+  tableQuery.dateKind = requestQuery.datekind || 'createdAt';
   // everything in the Workflow UI uses the browser timezone, so we need a timezone offset
   const offSetMs = parseInt(requestQuery.tzoffsetminutes) * 60 * 1000;
   const utcDateTime = (yearMonthDayHoursMinutes: string): string => `${yearMonthDayHoursMinutes}:00.000Z`;
   if (requestQuery.fromdatetime) {
     const dateTimeMs = Date.parse(utcDateTime(requestQuery.fromdatetime));
-    parsedFilters.from = new Date(dateTimeMs + offSetMs);
+    tableQuery.from = new Date(dateTimeMs + offSetMs);
   }
   if (requestQuery.todatetime) {
     const dateTimeMs = Date.parse(utcDateTime(requestQuery.todatetime));
-    parsedFilters.to = new Date(dateTimeMs + offSetMs);
+    tableQuery.to = new Date(dateTimeMs + offSetMs);
   }
-  console.log(parsedFilters);
-  return parsedFilters;
+  console.log(tableQuery);
+  return { tableQuery, originalValues };
+}
+
+/**
+ * Returns an object with all of the functions necessary for rendering
+ * a row of the jobs table.
+ * @param logger - the logger to use
+ * @param requestQuery - the query parameters from the request
+ * @returns an object with rendering functions
+ */
+function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>): object {
+  return {
+    jobBadge(): string {
+      return statusClass[this.status];
+    },
+    jobCreatedAt(): number { return this.createdAt.getTime(); },
+    jobUrl(): string {
+      try {
+        const url = new URL(this.request);
+        const path = url.pathname + url.search;
+        return path;
+      } catch (e) {
+        logger.error(`Could not form a valid URL from job.request: ${this.request}`);
+        logger.error(e);
+        return this.request;
+      }
+    },
+    sortGranulesLinks(): string {
+      // return links that lets the user apply or unapply an asc or desc sort
+      const [ asc, desc ] = [ 'asc', 'desc' ].map((sortValue) => {
+        const isSorted = requestQuery.sortgranules === sortValue;
+        const colorClass = isSorted ? 'link-dark' : '';
+        const title = `${isSorted ? 'un' : ''}apply ${sortValue === 'asc' ? 'ascending' : 'descending'} sort`;
+        const sortGranulesValue = !isSorted ? sortValue : '';
+        return { sortGranulesValue, colorClass, title };
+      });
+      // onclick, set a hidden form value that represents the current sort value, then submit the form
+      const setValueStr = "document.getElementById('sort-granules').value";
+      const submitFormStr = "document.getElementById('jobs-query-form').submit()";
+      return `<a href="#" onclick="${setValueStr}='${asc.sortGranulesValue}';${submitFormStr};" class="${asc.colorClass}" style="height:12px;">
+        <i class="bi bi-caret-up-fill" title="${asc.title}"></i>
+      </a>
+      <a href="#" onclick="${setValueStr}='${desc.sortGranulesValue}';${submitFormStr};" class="${desc.colorClass}">
+        <i class="bi bi-caret-down-fill" title="${desc.title}"></i>
+      </a>`;
+    },
+    linkDisabled(): string { return (this.href ? '' : 'disabled'); },
+    linkHref(): string { return (this.href || ''); },
+  };
+}
+
+/**
+ * Transform a TableQuery to a WorkItem db query.
+ * @param tableQuery - the constraints parsed from the query string of the request
+ * @param isAdmin - is the requesting user an admin
+ * @param user - the requesting user's username
+ * @returns JobQuery
+ */
+function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: string): JobQuery {
+  const jobQuery: JobQuery = { where: {}, whereIn: {} };
+  if (tableQuery.sortGranules) {
+    jobQuery.orderBy = {
+      field: 'numInputGranules',
+      value: tableQuery.sortGranules,
+    };
+  }
+  if (!isAdmin) {
+    jobQuery.where.username = user;
+  }
+  if (tableQuery.statusValues.length) {
+    jobQuery.whereIn.status = {
+      values: tableQuery.statusValues,
+      in: tableQuery.allowStatuses,
+    };
+  }
+  if (tableQuery.userValues.length) {
+    jobQuery.whereIn.username = {
+      values: tableQuery.userValues,
+      in: tableQuery.allowUsers,
+    };
+  }
+  if (tableQuery.from || tableQuery.to) {
+    jobQuery.dates = { field: tableQuery.dateKind };
+    jobQuery.dates.from = tableQuery.from;
+    jobQuery.dates.to = tableQuery.to;
+  }
+  return jobQuery;
 }
 
 /**
@@ -105,40 +210,13 @@ export async function getJobs(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   try {
+    const isAdminRoute = req.context.isAdminAccess;
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
     const dateKind = requestQuery.datekind || 'createdAt';
-    const jobQuery: JobQuery = { where: {}, whereIn: {} };
-    if (requestQuery.sortgranules) {
-      jobQuery.orderBy = {
-        field: 'numInputGranules',
-        value: requestQuery.sortgranules,
-      };
-    }
-    if (!req.context.isAdminAccess) {
-      jobQuery.where.username = req.user;
-    }
-    const disallowStatus = requestQuery.disallowstatus === 'on';
-    const disallowUser = requestQuery.disallowuser === 'on';
-    const tableFilter = parseFilters(requestQuery, JobStatus, req.context.isAdminAccess);
-    if (tableFilter.statusValues.length) {
-      jobQuery.whereIn.status = {
-        values: tableFilter.statusValues,
-        in: !disallowStatus,
-      };
-    }
-    if (tableFilter.userValues.length) {
-      jobQuery.whereIn.username = {
-        values: tableFilter.userValues,
-        in: !disallowUser,
-      };
-    }
-    if (tableFilter.from || tableFilter.to) {
-      jobQuery.dates = { field: dateKind };
-      jobQuery.dates.from = tableFilter.from;
-      jobQuery.dates.to = tableFilter.to;
-    }
+    const { tableQuery, originalValues } = parseQuery(requestQuery, JobStatus, isAdminRoute);
+    const jobQuery = tableQueryToJobQuery(tableQuery, isAdminRoute, req.user);
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize, true);
     const { data: jobs, pagination } = await Job.queryAll(db, jobQuery, false, page, limit);
     setPagingHeaders(res, pagination);
@@ -152,62 +230,23 @@ export async function getJobs(
       page,
       limit,
       currentUser: req.user,
-      isAdminRoute: req.context.isAdminAccess,
-      // job table row HTML
+      isAdminRoute,
       jobs,
-      jobBadge() {
-        return statusClass[this.status];
-      },
-      jobCreatedAt() { return this.createdAt.getTime(); },
-      jobUrl() {
-        try {
-          const url = new URL(this.request);
-          const path = url.pathname + url.search;
-          return path;
-        } catch (e) {
-          req.context.logger.error(`Could not form a valid URL from job.request: ${this.request}`);
-          req.context.logger.error(e);
-          return this.request;
-        }
-      },
-      // job table sorting
       sortGranules: requestQuery.sortgranules,
-      sortGranulesLinks() {
-        // return links that lets the user apply or unapply an asc or desc sort
-        const [ asc, desc ] = [ 'asc', 'desc' ].map((sortValue) => {
-          const isSorted = requestQuery.sortgranules === sortValue;
-          const colorClass = isSorted ? 'link-dark' : '';
-          const title = `${isSorted ? 'un' : ''}apply ${sortValue === 'asc' ? 'ascending' : 'descending'} sort`;
-          const sortGranulesValue = !isSorted ? sortValue : '';
-          return { sortGranulesValue, colorClass, title };
-        });
-        // onclick, set a hidden form value that represents the current sort value, then submit the form
-        const setValueStr = "document.getElementById('sort-granules').value";
-        const submitFormStr = "document.getElementById('jobs-query-form').submit()";
-        return `<a href="#" onclick="${setValueStr}='${asc.sortGranulesValue}';${submitFormStr};" class="${asc.colorClass}" style="height:12px;">
-          <i class="bi bi-caret-up-fill" title="${asc.title}"></i>
-        </a>
-        <a href="#" onclick="${setValueStr}='${desc.sortGranulesValue}';${submitFormStr};" class="${desc.colorClass}">
-          <i class="bi bi-caret-down-fill" title="${desc.title}"></i>
-        </a>`;
-      },
-      // job table filters HTML
-      disallowStatusChecked: disallowStatus ? 'checked' : '',
-      disallowUserChecked: disallowUser ? 'checked' : '',
+      disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
+      disallowUserChecked: !tableQuery.allowUsers ? 'checked' : '',
       toDateTime,
       fromDateTime,
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
       createdAtChecked: dateKind == 'createdAt' ? 'checked' : '',
-      selectedFilters: tableFilter.originalValues,
-      // job table paging buttons HTML
+      selectedFilters: originalValues,
       links: [
         { ...firstPage, linkTitle: 'first' },
         { ...previousPage, linkTitle: 'previous' },
         { ...nextPage, linkTitle: 'next' },
         { ...lastPage, linkTitle: 'last' },
       ],
-      linkDisabled() { return (this.href ? '' : 'disabled'); },
-      linkHref() { return (this.href || ''); },
+      ...jobRenderingFunctions(req.context.logger, requestQuery),
     });
   } catch (e) {
     req.context.logger.error(e);
@@ -235,7 +274,7 @@ export async function getJob(
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
     const dateKind = requestQuery.datekind;
-    const tableFilter = parseFilters(requestQuery, WorkItemStatus);
+    const { originalValues } = parseQuery(requestQuery, WorkItemStatus);
     res.render('workflow-ui/job/index', {
       job,
       page,
@@ -245,7 +284,7 @@ export async function getJob(
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
       createdAtChecked: dateKind == 'createdAt' ? 'checked' : '',
       disallowStatusChecked: requestQuery.disallowstatus === 'on' ? 'checked' : '',
-      selectedFilters: tableFilter.originalValues,
+      selectedFilters: originalValues,
       version,
       isAdminRoute: req.context.isAdminAccess,
       isAdminOrOwner: job.belongsToOrIsAdmin(req.user, isAdmin),
@@ -336,6 +375,32 @@ function workItemRenderingFunctions(job: Job, isAdmin: boolean, requestUser: str
 }
 
 /**
+ * Transform a TableQuery to a WorkItem db query.
+ * @param tableFilter - the constraints parsed from the query string of the request
+ * @param jobID - the job that these work items fall under
+ * @param id - the id of a particular work item to fetch (optional)
+ * @returns WorkItemQuery
+ */
+function tableQueryToWorkItemQuery(tableFilter: TableQuery, jobID: string, id?: number): WorkItemQuery {
+  const itemQuery: WorkItemQuery = { where: { jobID }, whereIn: {}, orderBy: { field: 'id', value: 'asc' } };
+  if (id) {
+    itemQuery.where.id = id;
+  }
+  if (tableFilter.statusValues.length) {
+    itemQuery.whereIn.status = {
+      values: tableFilter.statusValues,
+      in: tableFilter.allowStatuses,
+    };
+  }
+  if (tableFilter.from || tableFilter.to) {
+    itemQuery.dates = { field: tableFilter.dateKind };
+    itemQuery.dates.from = tableFilter.from;
+    itemQuery.dates.to = tableFilter.to;
+  }
+  return itemQuery;
+}
+
+/**
  * Render the work items table for the workflow UI.
  *
  * @param req - The request sent by the client
@@ -359,20 +424,8 @@ export async function getWorkItemsTable(
     }
     const { page, limit } = getPagingParams(req, env.defaultJobListPageSize);
     const requestQuery = keysToLowerCase(req.query);
-    const tableFilter = parseFilters(requestQuery, WorkItemStatus);
-    const dateKind = requestQuery.datekind || 'createdAt';
-    const itemQuery: WorkItemQuery = { where: { jobID }, whereIn: {}, orderBy: { field: 'id', value: 'asc' } };
-    if (tableFilter.statusValues.length) {
-      itemQuery.whereIn.status = {
-        values: tableFilter.statusValues,
-        in: !(requestQuery.disallowstatus === 'on'),
-      };
-    }
-    if (tableFilter.from || tableFilter.to) {
-      itemQuery.dates = { field: dateKind };
-      itemQuery.dates.from = tableFilter.from;
-      itemQuery.dates.to = tableFilter.to;
-    }
+    const { tableQuery } = parseQuery(requestQuery, WorkItemStatus);
+    const itemQuery = tableQueryToWorkItemQuery(tableQuery, jobID);
     const { workItems, pagination } = await queryAll(db, itemQuery, page, limit);
     const pageLinks = getPagingLinks(req, pagination);
     const firstPage = pageLinks.find((l) => l.rel === 'first');
@@ -423,14 +476,8 @@ export async function getWorkItemTableRow(
     const job = await getJobIfAllowed(jobID, req.user, isAdmin, req.accessToken, true);
     // even though we only want one row/item we should still respect the current user's table filters
     const requestQuery = keysToLowerCase(req.query);
-    const tableFilter = parseFilters(requestQuery, WorkItemStatus);
-    const itemQuery: WorkItemQuery = { where: { id: parseInt(id) }, whereIn: {} };
-    if (tableFilter.statusValues.length) {
-      itemQuery.whereIn.status = {
-        values: tableFilter.statusValues,
-        in: !(requestQuery.disallowstatus === 'on'),
-      };
-    }
+    const { tableQuery } = parseQuery(requestQuery, WorkItemStatus);
+    const itemQuery = tableQueryToWorkItemQuery(tableQuery, jobID, parseInt(id));
     const { workItems } = await queryAll(db, itemQuery, 1, 1);
     if (workItems.length === 0) {
       res.send('<span></span>');
