@@ -198,6 +198,11 @@ MAX_BATCH_INPUTS=1000000000000
 # The upper limit on the combined sizes of all the files in a batch
 MAX_BATCH_SIZE_IN_BYTES=5000000000
 
+# The fraction of back-end get work requests we want to trace with open telemetry
+GET_WORK_SAMPLE_RATIO=0.01
+# The fraction of back-end put work result requests we want to trace with open telemetry
+PUT_WORK_SAMPLE_RATIO=0.1
+
 ###########################################################################
 #                             Service Config                              #
 #                                                                         #
