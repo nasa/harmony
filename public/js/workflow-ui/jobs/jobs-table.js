@@ -31,7 +31,7 @@ function initFilter(currentUser, isAdminRoute, tableFilter) {
       }
       if (isAdminRoute) {
         // check if the tag loosely resembles a valid EDL username
-        return /^user: [A-Za-z0-9\.\_]{4,30}$/.test(tag.value);
+        return /^user: [A-Za-z0-9._]{4,30}$/.test(tag.value);
       }
       return false;
     },
