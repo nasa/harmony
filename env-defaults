@@ -202,6 +202,8 @@ MAX_BATCH_SIZE_IN_BYTES=5000000000
 GET_WORK_SAMPLE_RATIO=0.01
 # The fraction of back-end put work result requests we want to trace with open telemetry
 PUT_WORK_SAMPLE_RATIO=0.1
+# The url for the open telemetry exporter daemon
+OPEN_TELEMETRY_URL=http://localhost:4318/v1/traces
 
 ###########################################################################
 #                             Service Config                              #
