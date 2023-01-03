@@ -87,28 +87,31 @@ data:
       - job_name: 'pod-manager'
         scrape_interval: $PROMETHEUS_POD_MANAGER_SCRAPE_INTERVAL
         kubernetes_sd_configs:
-        - role: pod
+        - role: service
+          selectors:
+          - role: service
+            label: "should_scrape=true"
         relabel_configs:
-        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
           action: keep
           regex: true
-        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
           action: replace
           target_label: __metrics_path__
           regex: (.+)
-        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
           action: replace
           regex: ([^:]+)(?::\d+)?;(\d+)
           replacement: $1:$2
           target_label: __address__
         - action: labelmap
-          regex: __meta_kubernetes_pod_label_(.+)
+          regex: __meta_kubernetes_service_label_(.+)
         - source_labels: [__meta_kubernetes_namespace]
           action: replace
           target_label: kubernetes_namespace
-        - source_labels: [__meta_kubernetes_pod_name]
+        - source_labels: [__meta_kubernetes_service_name]
           action: replace
-          target_label: kubernetes_pod_name
+          target_label: kubernetes_service_name
       - job_name: 'kube-state-metrics'
         static_configs:
         - targets: ['kube-state-metrics:8080']

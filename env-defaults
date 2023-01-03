@@ -241,7 +241,7 @@ HARMONY_SERVICE_EXAMPLE_LIMITS_CPU=128m
 HARMONY_SERVICE_EXAMPLE_LIMITS_MEMORY=512Mi
 HARMONY_SERVICE_EXAMPLE_INVOCATION_ARGS='python -m harmony_service_example'
 
-HARMONY_NETCDF_TO_ZARR_IMAGE=harmonyservices/netcdf-to-zarr:latest
+HARMONY_NETCDF_TO_ZARR_IMAGE=ghcr.io/nasa/harmony-netcdf-to-zarr:latest
 HARMONY_NETCDF_TO_ZARR_REQUESTS_CPU=128m
 HARMONY_NETCDF_TO_ZARR_REQUESTS_MEMORY=128Mi
 HARMONY_NETCDF_TO_ZARR_LIMITS_CPU=128m
@@ -430,7 +430,8 @@ HPA_MIN_REPLICAS=1
 HPA_MAX_REPLICAS=10
 
 # See https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/#Quantity
-# for an explanation of the "m" suffix (e.g. 1.5 will be serialized as "1500m")
+# for an explanation of the "m" suffix (e.g. 10 will be serialized as "10000m").
+# With this value, the HPAs (when deployed) will try to ensure a pod exists for every 10 queued work items.
 HPA_TARGET_VALUE=10000m
 
 #############################################################################

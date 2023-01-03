@@ -1,6 +1,8 @@
 import { Response, Request, NextFunction } from 'express';
 import { getAvailableWorkItemCountByServiceID } from '../models/work-item';
+import { WorkItemMeta } from '../models/work-item-interface';
 import db from '../util/db';
+import logger from '../util/log';
 import { RequestValidationError } from '../util/errors';
 
 /**
@@ -14,7 +16,6 @@ import { RequestValidationError } from '../util/errors';
 export async function getEligibleWorkItemCountForServiceID(
   req: Request, res: Response, next: NextFunction,
 ): Promise<void> {
-
   const serviceID = req.query.serviceID as string;
 
   // Return 400 if serviceID not provided in query
@@ -30,6 +31,8 @@ export async function getEligibleWorkItemCountForServiceID(
       workItemCount = await getAvailableWorkItemCountByServiceID(tx, serviceID);
     });
     if (!workItemCount) workItemCount = 0;
+    const itemMeta: WorkItemMeta = { workItemAmount: workItemCount, workItemService: serviceID, workItemEvent: 'readyMetric' };
+    logger.info('Got num_ready_work_items metric.', itemMeta);
     const response = {
       availableWorkItems: workItemCount,
     };
