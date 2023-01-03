@@ -1,4 +1,3 @@
-// import * as AWSXRay from 'aws-xray-sdk';
 import express, { Response, NextFunction, RequestHandler } from 'express';
 import mustacheExpress from 'mustache-express';
 import { v4 as uuid } from 'uuid';
@@ -20,14 +19,6 @@ import * as exampleBackend from '../example/http-backend';
 import WorkReaper from './workers/work-reaper';
 import WorkFailer from './workers/work-failer';
 import cmrCollectionReader from './middleware/cmr-collection-reader';
-// import { getTracer } from './tracing';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// const tracer = getTracer();ß
-
-// export var segment;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 /**
  * Returns middleware to add a request specific logger
@@ -86,7 +77,6 @@ function buildBackendServer(port: number, hostBinding: string): Server {
   };
 
   const app = express();
-  // app.use(AWSXRay.express.openSegment('HarmonyBackEnd'));
   app.use('/service/:requestId/*', setRequestId);
   app.use(addRequestId(appLogger));
 
@@ -101,7 +91,6 @@ function buildBackendServer(port: number, hostBinding: string): Server {
   app.use(favicon(path.join(__dirname, '..', 'public/assets/images', 'favicon.ico')));
   app.use('/service', serviceResponseRouter());
   app.get('/', ((req, res) => res.send('OK')));
-  // app.use(AWSXRay.express.closeSegment());
   app.use(errorHandler);
 
   return app.listen(port, hostBinding, () => appLogger.info(`Application backend listening on ${hostBinding} on port ${port}`));
@@ -119,7 +108,6 @@ function buildBackendServer(port: number, hostBinding: string): Server {
 function buildFrontendServer(port: number, hostBinding: string, config: RouterConfig): Server {
   const appLogger = logger.child({ application: 'frontend' });
   const app = express();
-  // app.use(AWSXRay.express.openSegment(' '));
   app.use(addRequestId(appLogger));
   app.use(addRequestLogger(appLogger));
 
@@ -137,7 +125,6 @@ function buildFrontendServer(port: number, hostBinding: string, config: RouterCo
     app.use('/example', exampleBackend.router());
   }
   app.use('/', router(config));
-  // app.use(AWSXRay.express.closeSegment());
   // Error handlers that format errors outside of their routes / middleware need to be mounted
   // at the top level, not on a child router, or they get skipped.
   ogcCoveragesApi.handleOpenApiErrors(app);
