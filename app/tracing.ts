@@ -13,6 +13,8 @@ import env from './util/env';
 import { random } from 'lodash';
 import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
 
+
+
 // Register instrumentation libraries for Node.js auto-instrumentation and capturing of
 // outgoing HTTP calls
 registerInstrumentations({
@@ -38,6 +40,36 @@ interface SampleCheckContext {
   attributes?: Attributes,
   links?: Link[],
 }
+
+// maximum number of rejected traces we will track to avoid sending partial traces
+const REJECTED_TRACE_CACHE_LIMIT = 10000;
+
+// class used to track to the traces we have rejected so we don't send subsegments that have no
+// parent (due to the parent being rejected).
+// TODO This should probably be tracked externally in
+// Redis or some other cache so that it works across Harmony instances, but this is better than
+// nothing for now.
+class RejectedTraceMonitor {
+  rejectedTraces: string[];
+
+  constructor() {
+    this.rejectedTraces = [];
+  }
+
+  reject(traceId: string): void {
+    this.rejectedTraces.unshift(traceId);
+    if (this.rejectedTraces.length > REJECTED_TRACE_CACHE_LIMIT) {
+      this.rejectedTraces.pop();
+    }
+  }
+
+  isRejected(traceId: string): boolean {
+    return this.rejectedTraces.includes(traceId);
+  }
+
+}
+
+const rejectedTraces = new RejectedTraceMonitor();
 
 /**
  * Test function that checks a single criteria to see if we want to sample a given trace/span
@@ -101,6 +133,17 @@ function ignoreFileSystemCalls(context: SampleCheckContext): SamplingDecision {
 }
 
 /**
+ * {@inheritDoc SampleCheckFn}
+ */
+function ignoreOrphanSegments(context: SampleCheckContext): SamplingDecision {
+  let decision: SamplingDecision;
+  if (rejectedTraces.isRejected(context.traceId)) {
+    decision = SamplingDecision.NOT_RECORD;
+  }
+  return decision;
+}
+
+/**
  * Given a ton of context decide whether or not to send a given span for a trace to the
  * OpenTelemetry collector
  *
@@ -139,7 +182,8 @@ function shouldSample(
     ignoreFileSystemCalls,
     ignoreHealthCheck,
     ignoreGetMetrics,
-    throttleWorkRequestTraces];
+    throttleWorkRequestTraces,
+    ignoreOrphanSegments];
 
   for (const check of checks) {
     const checkResult = check(combinedContext);
@@ -147,6 +191,18 @@ function shouldSample(
       decision = checkResult;
       break;
     }
+  }
+
+  // store the trace ID for any rejected parent segments so we can reject their subsegments later
+  if (decision === SamplingDecision.NOT_RECORD){
+    if (spanKind === 1) {
+      rejectedTraces.reject(traceId);
+    }
+  }
+
+  if (decision === SamplingDecision.RECORD_AND_SAMPLED) {
+    const cc = JSON.stringify(combinedContext);
+    console.log(cc);
   }
 
   return {
