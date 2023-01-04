@@ -69,6 +69,7 @@ export function isInteger(value: string): boolean {
 export function sanitizeImage(image: string): string {
   return image
     .replace(/.*amazonaws.com\//, '')
+    .replace(/.*ghcr.io\//, '')
     .replace(/.*earthdata.nasa.gov\//, '');
 }
 
