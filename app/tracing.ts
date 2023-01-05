@@ -200,11 +200,6 @@ function shouldSample(
     }
   }
 
-  if (decision === SamplingDecision.RECORD_AND_SAMPLED) {
-    const cc = JSON.stringify(combinedContext);
-    console.log(cc);
-  }
-
   return {
     decision,
   };
