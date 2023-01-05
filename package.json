@@ -17,8 +17,7 @@
     "build": "docker build -t harmonyservices/harmony:${VERSION:-latest} .",
     "build-notebooks-image": "docker build --platform linux/amd64 -t harmonyservices/notebooks:${VERSION:-latest} -f Dockerfile-notebooks .",
     "run-notebooks-image": "source .env && docker run -i -t --platform linux/amd64 --init -p 8888:8888 --env NB_EDL_USERNAME=\"${NB_EDL_USERNAME}\" --env NB_EDL_PASSWORD=\"${NB_EDL_PASSWORD}\" harmonyservices/notebooks:${VERSION:-latest}",
-    "publish": "docker push harmonyservices/harmony:${VERSION:-latest}",
-    "open-cypress": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register cypress/helpers/server.ts"
+    "publish": "docker push harmonyservices/harmony:${VERSION:-latest}"
   },
   "keywords": [
     "NASA",
@@ -165,7 +164,6 @@
     "cookie-signature": "^1.1.0",
     "copyfiles": "^2.3.0",
     "csv-parse": "^5.0.4",
-    "cypress": "^12.2.0",
     "eslint": "^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^15.0.0",
