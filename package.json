@@ -9,7 +9,7 @@
     "coverage": "nyc mocha",
     "start": "ts-node -r tsconfig-paths/register --require './app/tracing.ts' app/server.ts",
     "start-dev": "strict-npm-engines && ts-node-dev --no-notify -r tsconfig-paths/register --watch app/views,public/js --respawn app/server",
-    "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --require './app/tracing.ts' --respawn  --respawn --inspect=127.0.0.1:9229 app/server",
+    "start-dev-fast": "TS_NODE_TRANSPILE_ONLY=true ts-node-dev --no-notify -r tsconfig-paths/register --respawn  --respawn --inspect=127.0.0.1:9229 app/server",
     "update-dev": "npm install && lerna run build && bin/restart-services",
     "copy-files": "copyfiles 'app/schemas/**/*' 'app/templates/**/*' 'app/frontends/templates/**/*' 'config/**/*' 'db/**/*' 'public/**/*' built",
     "watch-debug": "nodemon --inspect=5858 -e ts,tsx --exec node -r tsconfig-paths/register -r ts-node/register app/server.ts",
