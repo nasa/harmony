@@ -34,7 +34,7 @@ The steps to perform fair queueing in harmony can be summarized as follows:
 When a worker requests a work item for a given service
 
 1. Identify all the users actively requesting work to be done on the service
-2. From the list of identified users, determine which user has the least work currently in progress
+2. From the list of identified users, determine which user has the least total work (for all services) currently in progress
 3. If multiple users have the same number of work items in progress choose the user which had work performed (for any service) least recently
 4. From that user's list of jobs (only those invoking the service) sort the rows in the user_work table by the `is_async` column to favor synchronous jobs, then sort by the `last_worked` column to identify the job that has been worked least recently - return a work item for that job for the given service with the work item having the lowest ID
 5. Update the `last_worked` column for that row in the user work table to indicate work being done for that user and job at the current point in time

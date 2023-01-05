@@ -44,7 +44,7 @@ export default class UserWork extends Record {
  * @param serviceID - The ID of the service
  * @returns The sum of ready and running work items for the service
  */
-export async function getQueuedAndRunningCountForService(tx: Transaction, serviceID: string)
+export async function getQueuedOrRunningCountForService(tx: Transaction, serviceID: string)
   : Promise<number> {
   const results = await tx(UserWork.table)
     .sum({ readyCount: 'ready_count', runningCount: 'running_count' })
@@ -121,8 +121,8 @@ export async function deleteUserWorkForJob(tx: Transaction, jobID: string): Prom
 }
 
 /**
- * Deletes all of the rows for the given job from the user_work table.
- * delete from user_work where job_id = $job_id
+ * Deletes all of the rows for the given job and service ID from the user_work table.
+ * delete from user_work where job_id = $job_id and service_id = $service_id
  * @param tx - The database transaction
  * @param jobID - The job ID
  * @param serviceID - The ID of the service
