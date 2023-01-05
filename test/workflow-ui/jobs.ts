@@ -196,7 +196,7 @@ describe('Workflow UI jobs route', function () {
 
     describe('who filters jobs by update date >= and <=', function () {
       hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '0',
-        fromdatetime: '2023-01-05T14:12', todatetime: '2023-01-05T14:12', datekind: 'updatedAt' });
+        fromdatetime: '2023-01-05T14:12', todatetime: '2023-01-05T14:12', datekind: 'createdAt' });
       it('returns the job with an acceptable updatedAt date', function () {
         const listing = this.res.text;
         expect(listing).to.contain((new Date('2023-01-05T14:12:00.000Z')).getTime());
@@ -205,7 +205,7 @@ describe('Workflow UI jobs route', function () {
     });
 
     describe('who filters jobs by update date <=', function () {
-      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '0', todatetime: '2023-01-05T14:12', datekind: 'updatedAt' });
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '0', todatetime: '2023-01-05T14:12', datekind: 'createdAt' });
       it('returns the jobs with acceptable updatedAt date', function () {
         const listing = this.res.text;
         expect(listing).to.contain((new Date('2023-01-05T14:12:00.000Z')).getTime());

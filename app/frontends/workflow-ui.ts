@@ -123,6 +123,7 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
       return statusClass[this.status];
     },
     jobCreatedAt(): number { return this.createdAt.getTime(); },
+    jobUpdatedAt(): number { return this.updatedAt.getTime(); },
     jobUrl(): string {
       try {
         const url = new URL(this.request);
