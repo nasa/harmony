@@ -10,10 +10,16 @@ import { AWSXRayIdGenerator } from '@opentelemetry/id-generator-aws-xray';
 import { Attributes, Context, Link, SpanKind, trace } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import env from './util/env';
+import version from './util/version';
 import { random } from 'lodash';
 import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
 
-
+/**
+ *
+ * This file sets up the automated instrumentation of Harmony code using OpenTelemetry and
+ * AWS X-Ray.
+ *
+ */
 
 // Register instrumentation libraries for Node.js auto-instrumentation and capturing of
 // outgoing HTTP calls
@@ -29,7 +35,7 @@ const resource =
   Resource.default().merge(
     new Resource({
       [SemanticResourceAttributes.SERVICE_NAME]: env.harmonyClientId,
-      [SemanticResourceAttributes.SERVICE_VERSION]: '0.1.0',
+      [SemanticResourceAttributes.SERVICE_VERSION]: version,
     }),
   );
 interface SampleCheckContext {
@@ -80,7 +86,7 @@ type _SampleCheckFn = (context: SampleCheckContext) => SamplingDecision;
 const ELB_HEALTH_CHECK_AGENT = 'ELB-HealthChecker/2.0';
 
 /**
- * {@inheritDoc SampleCheckFn}
+ * {@inheritDoc _SampleCheckFn}
  */
 function ignoreHealthCheck(context: SampleCheckContext): SamplingDecision {
   let decision: SamplingDecision;
@@ -91,18 +97,22 @@ function ignoreHealthCheck(context: SampleCheckContext): SamplingDecision {
 }
 
 /**
- * {@inheritDoc SampleCheckFn}
+ * {@inheritDoc _SampleCheckFn}
  */
-function ignoreGetMetrics(context: SampleCheckContext): SamplingDecision {
+function throttleGetMetricsTraces(context: SampleCheckContext): SamplingDecision {
   let decision: SamplingDecision;
   if (context.attributes['http.target'] === '/service/metrics') {
-    decision = SamplingDecision.NOT_RECORD;
+    if (random(true) > env.getMetricsSampleRatio) {
+      decision =  SamplingDecision.NOT_RECORD;
+    } else {
+      decision = SamplingDecision.RECORD_AND_SAMPLED;
+    }
   }
   return decision;
 }
 
 /**
- * {@inheritDoc SampleCheckFn}
+ * {@inheritDoc _SampleCheckFn}
  */
 function throttleWorkRequestTraces(context: SampleCheckContext): SamplingDecision {
   let decision: SamplingDecision;
@@ -122,7 +132,7 @@ function throttleWorkRequestTraces(context: SampleCheckContext): SamplingDecisio
 }
 
 /**
- * {@inheritDoc SampleCheckFn}
+ * {@inheritDoc _SampleCheckFn}
  */
 function ignoreFileSystemCalls(context: SampleCheckContext): SamplingDecision {
   let decision: SamplingDecision;
@@ -133,7 +143,7 @@ function ignoreFileSystemCalls(context: SampleCheckContext): SamplingDecision {
 }
 
 /**
- * {@inheritDoc SampleCheckFn}
+ * {@inheritDoc _SampleCheckFn}
  */
 function ignoreOrphanSegments(context: SampleCheckContext): SamplingDecision {
   let decision: SamplingDecision;
@@ -181,7 +191,7 @@ function shouldSample(
   const checks = [
     ignoreFileSystemCalls,
     ignoreHealthCheck,
-    ignoreGetMetrics,
+    throttleGetMetricsTraces,
     throttleWorkRequestTraces,
     ignoreOrphanSegments];
 

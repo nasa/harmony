@@ -111,6 +111,7 @@ interface HarmonyEnv {
   workItemRetryLimit: number;
   getWorkSampleRatio: number;
   putWorkSampleRatio: number;
+  getMetricsSampleRatio: number;
   openTelemetryUrl: string;
 }
 
