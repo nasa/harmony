@@ -77,7 +77,6 @@ function buildBackendServer(port: number, hostBinding: string): Server {
   };
 
   const app = express();
-
   app.use('/service/:requestId/*', setRequestId);
   app.use(addRequestId(appLogger));
 
