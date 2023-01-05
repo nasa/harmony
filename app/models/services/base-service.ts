@@ -14,6 +14,7 @@ import { WorkItemMeta, WorkItemStatus } from '../work-item-interface';
 import { getRequestMetric } from '../../util/metrics';
 import { getRequestUrl } from '../../util/url';
 import HarmonyRequest from '../harmony-request';
+import { sanitizeImage } from '../../util/string';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -453,7 +454,7 @@ export default abstract class BaseService<ServiceParamType> {
             workItem.workflowStepIndex = workflowSteps[0].stepIndex;
             await workItem.save(tx);
           }
-          const itemMeta: WorkItemMeta = { workItemService: workflowSteps[0].serviceID, workItemEvent: 'statusUpdate',
+          const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workflowSteps[0].serviceID), workItemEvent: 'statusUpdate',
             workItemAmount: firstStepWorkItems.length, workItemStatus: WorkItemStatus.READY };
           this.logger.info('Queued first step work items.', itemMeta);
         }
