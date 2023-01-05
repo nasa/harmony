@@ -136,7 +136,7 @@ describe('when a work item callback request does not return the results to const
   });
 });
 
-describe('CDD - When a workflow contains an aggregating step', async function () {
+describe('When a workflow contains an aggregating step', async function () {
 /**
  * Do some fake work and update the work item
  * @param context - 'this' from test
@@ -703,7 +703,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
   });
 });
 
-describe('CDD - When a request spans multiple CMR pages', function () {
+describe('When a request spans multiple CMR pages', function () {
   describe('and contains no aggregating steps', function () {
     const collection = 'C1233800302-EEDTEST';
     hookServersStartStop();

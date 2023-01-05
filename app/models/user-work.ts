@@ -48,13 +48,9 @@ export async function getQueuedAndRunningCountForService(tx: Transaction, servic
   : Promise<number> {
   const results = await tx(UserWork.table)
     .sum({ readyCount: 'ready_count', runningCount: 'running_count' })
-    // .sum('ready_count').as('ready')
-    // .sum('running_count').as('running') // : 'running_count as running' })
     .where({ service_id: serviceID });
 
-  console.log(`CDD: results are ${JSON.stringify(results)} for service ${serviceID}`);
   const totalItems = Number(results[0].readyCount) + Number(results[0].runningCount);
-  console.log(`CDD: count is ${totalItems} for service ${serviceID}`);
 
   return totalItems;
 }
@@ -62,7 +58,7 @@ export async function getQueuedAndRunningCountForService(tx: Transaction, servic
 /**
  * Gets the next username that should have a work item worked for the given service ID
  * SELECT username, SUM("u"."running_count") as s from user_work u WHERE username in
- * (SELECT DISTINCT username FROM user_work u WHERE "u"."service_id" = 'ghcr.io/podaac/l2ss-py:2.2.0' AND "u"."ready_count" \> 0)
+ * (SELECT DISTINCT username FROM user_work u WHERE "u"."service_id" = 'SERVICE' AND "u"."ready_count" \> 0)
  * GROUP BY username order by s, max(last_worked) asc LIMIT 1;
 
  * @param tx - The database transaction
@@ -109,13 +105,6 @@ export async function getNextJobIdForUsernameAndService(tx: Transaction, service
 
   return results.job_id;
 }
-
-// export async function insertUserWork(tx: Transaction, userWork: Partial<UserWork>)
-//   : Promise<string> {
-//   const results = await tx(UserWork.table).insert(userWork);
-// }
-// 10 more to go
-// Just use the generic save record function for any kind of inserts
 
 /**
  * Deletes all of the rows for the given job from the user_work table.
