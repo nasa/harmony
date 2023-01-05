@@ -107,7 +107,6 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     const dateTimeMs = Date.parse(utcDateTime(requestQuery.todatetime));
     tableQuery.to = new Date(dateTimeMs + offSetMs);
   }
-  console.log(tableQuery);
   return { tableQuery, originalValues };
 }
 

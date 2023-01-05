@@ -11,6 +11,8 @@ import { buildJob } from '../helpers/jobs';
 import { hookWorkflowUIWorkItemsRow, workflowUIWorkItemsRow } from '../helpers/workflow-ui';
 import { WorkItemStatus } from '../../app/models/work-item-interface';
 import env from '../../app/util/env';
+import MockDate from 'mockdate';
+
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
@@ -95,7 +97,9 @@ describe('Workflow UI work items table row route', function () {
     hookTransaction();
     before(async function () {
       await targetJob.save(this.trx);
+      MockDate.set('2023-01-04T14:12:00.000Z');
       await item1.save(this.trx);
+      MockDate.set('2020-01-05T14:12:00.000Z');
       await item2.save(this.trx);
       await item3.save(this.trx);
       await step1.save(this.trx);
@@ -124,6 +128,7 @@ describe('Workflow UI work items table row route', function () {
       await shareableStep2.save(this.trx);
 
       this.trx.commit();
+      MockDate.reset();
     });
 
     describe('when accessing the non-admin endpoint', function () {
@@ -180,6 +185,25 @@ describe('Workflow UI work items table row route', function () {
         it('returns a retry button for their RUNNING work item', async function () {
           const listing = this.res.text;
           expect((listing.match(/retry-button/g) || []).length).to.equal(1);
+        });
+      });
+
+      describe('who requests a work item that falls within the date filter range', function () {
+        hookWorkflowUIWorkItemsRow({ username: 'bo', jobID: targetJob.jobID, id: item1.id,
+          query: { tzoffsetminutes: '0', fromdatetime: '2023-01-04T14:12', datekind: 'updatedAt' } });
+        it('returns an HTML row of the work item', function () {
+          const listing = this.res.text;
+          expect(listing).to.contain((new Date('2023-01-04T14:12:00.000Z')).getTime());
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+        });
+      });
+
+      describe('who requests a work item that falls outside the date filter range', function () {
+        hookWorkflowUIWorkItemsRow({ username: 'bo', jobID: targetJob.jobID, id: item2.id,
+          query: { tzoffsetminutes: '0', fromdatetime: '2023-01-05T14:13', datekind: 'updatedAt' } });
+        it('does not return an HTML row of the work item', function () {
+          const listing = this.res.text;
+          expect((listing.match(/work-item-table-row/g) || []).length).to.equal(0);
         });
       });
 
