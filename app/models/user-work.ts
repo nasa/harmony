@@ -33,11 +33,6 @@ export default class UserWork extends Record {
 }
 
 /**
- * Get user work record for jobID and serviceID
- *
- */
-
-/**
  * Get a count of work items in the ready or running state for the given service ID
  *
  * @param tx - The database transaction

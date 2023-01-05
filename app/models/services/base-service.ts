@@ -414,10 +414,10 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
-   * Creates the workflow steps objects for this request
+   * Creates the user work objects for this request
    *
-   * @returns The created WorkItem for the query CMR job
-   * @throws ServerError - if the work item cannot be created
+   * @returns The created user work entries
+   * @throws ServerError - if the user work entries cannot be created
    */
   protected _createUserWorkEntries(): UserWork[] {
     const userWorkEntries = [];
