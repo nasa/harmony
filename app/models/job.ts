@@ -569,7 +569,7 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
-   * Returns the job matching the given username and request ID, or null if
+   * Returns the job matching the given username and job ID, or null if
    * no such job exists.
    *
    * @param transaction - the transaction to use for querying
