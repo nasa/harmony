@@ -25,18 +25,19 @@ Workers for each service are run as pods in a Kubernetes cluster. These workers
 request a unit of work (a 'work item') from the Harmony backend, process the associated work item, save the results in S3, then send a status update to the Harmony backend.
 
 Fair queueing is the process by which Harmony decides which work item to send to a service
-requesting work. More generally, it answers the question, "of the users needing work 
-performed by a given service, which user should go next?". 
- 
+requesting work. More generally, it answers the question, "of the users needing work
+performed by a given service, which user should go next?".
+
 ## The Algorithm
 The steps to perform fair queueing in harmony can be summarized as follows:
 
 When a worker requests a work item for a given service
 
 1. Identify all the users actively requesting work to be done on the service
-2. From the list of identified users, determine which user had work performed (for any service) least recently
-3. From that user's list of jobs (only those invoking the service) sort the jobs by the `isAsync` column to favor synchronous jobs, then sort by the `updatedAt` column to identify the job that has been worked least recently - return a work item for that job for the given service
-4. Update the work item and job timestamps in the database to indicate work being done at the current point in time
+2. From the list of identified users, determine which user has the least work currently in progress
+3. If multiple users have the same number of work items in progress choose the user which had work performed (for any service) least recently
+4. From that user's list of jobs (only those invoking the service) sort the rows in the user_work table by the `is_async` column to favor synchronous jobs, then sort by the `last_worked` column to identify the job that has been worked least recently - return a work item for that job for the given service with the work item having the lowest ID
+5. Update the `last_worked` column for that row in the user work table to indicate work being done for that user and job at the current point in time
 
 All of the above are done inside a database transaction with locking to prevent a
 work item from being issued more than once.
