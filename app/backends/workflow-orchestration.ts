@@ -19,6 +19,7 @@ import JobError, { getErrorCountForJob } from '../models/job-error';
 import WorkItemUpdate from '../models/work-item-update';
 import { handleBatching, outputStacItemUrls, resultItemSizes } from '../util/aggregation-batch';
 import { decrementRunningCount, deleteUserWorkForJob, getNextJobIdForUsernameAndService, getNextUsernameForWork, incrementReadyAndDecrementRunningCounts, incrementReadyCount, incrementRunningAndDecrementReadyCounts } from '../models/user-work';
+import { sanitizeImage } from '../util/string';
 
 const MAX_TRY_COUNT = 1;
 const RETRY_DELAY = 1000 * 120;
@@ -66,8 +67,8 @@ export async function getWork(
           const logger = reqLogger.child({ workItemId: workItem.id });
           const waitSeconds = (Date.now() - workItem.createdAt.valueOf()) / 1000;
           const itemMeta: WorkItemMeta = { workItemEvent: 'statusUpdate', workItemDuration: waitSeconds,
-            workItemService: workItem.serviceID, workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING  };
-          logger.debug(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
+            workItemService: sanitizeImage(workItem.serviceID), workItemAmount: 1, workItemStatus: WorkItemStatus.RUNNING  };
+          logger.info(`Sending work item ${workItem.id} to pod ${podName}`, itemMeta);
           if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
             const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
             res.send({ workItem, maxCmrGranules });
@@ -270,7 +271,7 @@ async function createAggregatingWorkItem(
 
   await incrementReadyCount(tx, currentWorkItem.jobID, nextStep.serviceID);
   await newWorkItem.save(tx);
-  const itemMeta: WorkItemMeta = { workItemService: newWorkItem.serviceID,
+  const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(newWorkItem.serviceID),
     workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
   logger.info('Queued new aggregating work item.', itemMeta);
 }
@@ -354,7 +355,7 @@ async function createNextWorkItems(
       await incrementReadyCount(tx, workItem.jobID, nextWorkflowStep.serviceID, newItems.length);
       for (const batch of _.chunk(newItems, batchSize)) {
         await WorkItem.insertBatch(tx, batch);
-        const itemMeta: WorkItemMeta = { workItemService: nextWorkflowStep.serviceID,
+        const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(nextWorkflowStep.serviceID),
           workItemEvent: 'statusUpdate', workItemAmount: batch.length, workItemStatus: WorkItemStatus.READY };
         logger.info('Queued new batch of work items.', itemMeta);
       }
@@ -386,7 +387,7 @@ async function maybeQueueQueryCmrWorkItem(
 
       await incrementReadyCount(tx, currentWorkItem.jobID, currentWorkItem.serviceID);
       await nextQueryCmrItem.save(tx);
-      const itemMeta: WorkItemMeta = { workItemService: nextQueryCmrItem.serviceID,
+      const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(nextQueryCmrItem.serviceID),
         workItemEvent: 'statusUpdate', workItemAmount: 1, workItemStatus: WorkItemStatus.READY };
       logger.info('Queued new query-cmr work item.', itemMeta);
     }
@@ -610,7 +611,8 @@ export async function handleWorkItemUpdate(
       // retry failed work-items up to a limit
       if (status === WorkItemStatus.FAILED) {
         if (workItem.retryCount < env.workItemRetryLimit) {
-          const itemMeta: WorkItemMeta = { workItemService: workItem.serviceID, workItemEvent: 'retry', workItemAmount: 1 };
+          const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workItem.serviceID),
+            workItemEvent: 'retry', workItemAmount: 1 };
           logger.info(`Retrying failed work-item ${workItemID}`, itemMeta);
           workItem.retryCount += 1;
           workItem.status = WorkItemStatus.READY;
@@ -651,7 +653,7 @@ export async function handleWorkItemUpdate(
         outputItemSizes);
       await decrementRunningCount(tx, jobID, workItem.serviceID);
 
-      const itemMeta: WorkItemMeta = { workItemService: workItem.serviceID,
+      const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workItem.serviceID),
         workItemDuration: (duration / 1000), workItemStatus: status, workItemEvent: 'statusUpdate', workItemAmount: 1 };
       logger.info(`Updated work item. Duration (ms) was: ${duration}`, itemMeta);
 

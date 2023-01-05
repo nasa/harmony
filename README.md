@@ -48,6 +48,7 @@ For general project information, visit the [Harmony wiki](https://wiki.earthdata
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
 * A running [Kubernetes](https://kubernetes.io/) cluster with the [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
 built-in Kubernetes cluster (including `kubectl`) which can be enabled in preferences.
+* [openssl](https://www.openssl.org/) Read [this installation guide](https://github.com/openssl/openssl/blob/master/NOTES-WINDOWS.md) if you're a Windows user and openssl is not installed on your machine already.
 
 ## Quick Start
 (Mac OS X / Linux)
