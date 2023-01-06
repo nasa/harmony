@@ -1,6 +1,6 @@
 import { Response, Request, NextFunction } from 'express';
-import { getAvailableWorkItemCountByServiceID } from '../models/work-item';
 import { WorkItemMeta } from '../models/work-item-interface';
+import { getQueuedOrRunningCountForService } from '../models/user-work';
 import db from '../util/db';
 import logger from '../util/log';
 import { RequestValidationError } from '../util/errors';
@@ -29,7 +29,7 @@ export async function getEligibleWorkItemCountForServiceID(
   try {
     let workItemCount;
     await db.transaction(async (tx) => {
-      workItemCount = await getAvailableWorkItemCountByServiceID(tx, serviceID);
+      workItemCount = await getQueuedOrRunningCountForService(tx, serviceID);
     });
     if (!workItemCount) workItemCount = 0;
     const itemMeta: WorkItemMeta = { workItemAmount: workItemCount, workItemService: sanitizeImage(serviceID),
