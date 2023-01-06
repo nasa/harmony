@@ -97,7 +97,7 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   }
   tableQuery.dateKind = requestQuery.datekind || 'createdAt';
   // everything in the Workflow UI uses the browser timezone, so we need a timezone offset
-  const offSetMs = parseInt(requestQuery.tzoffsetminutes) * 60 * 1000;
+  const offSetMs = parseInt(requestQuery.tzoffsetminutes || 0) * 60 * 1000;
   const utcDateTime = (yearMonthDayHoursMinutes: string): string => `${yearMonthDayHoursMinutes}:00.000Z`;
   if (requestQuery.fromdatetime) {
     const dateTimeMs = Date.parse(utcDateTime(requestQuery.fromdatetime));
@@ -237,8 +237,8 @@ export async function getJobs(
       disallowUserChecked: !tableQuery.allowUsers ? 'checked' : '',
       toDateTime,
       fromDateTime,
-      dateQuery: `?fromDateTime=${encodeURIComponent(fromDateTime)}&toDateTime=${encodeURIComponent(toDateTime)}` +
-        `&dateKind=${dateKind}`,
+      dateQuery: `?fromDateTime=${encodeURIComponent(fromDateTime || '')}&toDateTime=${encodeURIComponent(toDateTime || '')}` +
+        `&dateKind=${dateKind}&tzOffsetMinutes=${requestQuery.tzoffsetminutes || ''}`,
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
       createdAtChecked: dateKind != 'updatedAt' ? 'checked' : '',
       selectedFilters: originalValues,
