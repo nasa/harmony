@@ -192,6 +192,12 @@ describe('Workflow UI jobs route', function () {
         expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
         expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
       });
+      it('carries over the date filters to the job link url', function () {
+        const listing = this.res.text;
+        const dateQuery = `?fromDateTime=${encodeURIComponent('2023-01-06T15:12')}&toDateTime=` +
+          '&dateKind=updatedAt&tzOffsetMinutes=-60';
+        expect(listing).to.contain(mustache.render('{{dateQuery}}', { dateQuery }));
+      });
     });
 
     describe('who filters jobs by created date >= and <=', function () {
