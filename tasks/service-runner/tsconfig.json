@@ -12,5 +12,5 @@
       "outDir": "built"
   },
   "typeRoots": ["./node_modules/@types"],
-  "include": ["./**/*"]
+  "include": ["./app", "./test"]
 }

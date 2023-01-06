@@ -6,7 +6,7 @@ import { stub } from 'sinon';
 import util from 'util';
 import db from '../../app/util/db';
 
-export const tables = ['jobs', 'work_items', 'workflow_steps', 'job_links'];
+export const tables = ['jobs', 'work_items', 'workflow_steps', 'job_links', 'user_work'];
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const exec = util.promisify(require('child_process').exec);

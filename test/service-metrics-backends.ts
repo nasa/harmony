@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { JobStatus } from '../app/models/job';
+import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 import { WorkItemStatus } from '../app/models/work-item-interface';
 import db from '../app/util/db';
 import { truncateAll } from './helpers/db';
@@ -8,6 +9,7 @@ import { buildJob } from './helpers/jobs';
 import hookServersStartStop from './helpers/servers';
 import { hookServiceMetrics } from './helpers/service-metrics';
 import { buildWorkItem } from './helpers/work-items';
+import { buildWorkflowStep } from './helpers/workflow-steps';
 
 /**
  * Creates a job with the given status and work items for that job
@@ -20,6 +22,13 @@ async function createJobAndWorkItems(serviceID: string, jobStatus: JobStatus): P
   const job = buildJob({ status: jobStatus });
 
   await job.save(db);
+
+  await buildWorkflowStep({
+    jobID: job.jobID,
+    serviceID,
+    stepIndex: 1,
+    workItemCount: 4,
+  }).save(db);
 
   for (let i = 0; i < 2; i++) {
     await buildWorkItem({
@@ -50,6 +59,8 @@ async function createJobAndWorkItems(serviceID: string, jobStatus: JobStatus): P
     status: WorkItemStatus.FAILED,
     workflowStepIndex: 1,
   }).save(db);
+
+  await populateUserWorkFromWorkItems(db);
 }
 
 describe('Backend service metrics endpoint', function () {
