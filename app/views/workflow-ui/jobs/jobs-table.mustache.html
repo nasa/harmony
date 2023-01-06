@@ -21,7 +21,7 @@
     <tbody>
         {{#jobs}}
         <tr clas='job-table-row'>
-            <th scope="row"><a href="workflow-ui/{{jobID}}">{{jobID}}</a></th>
+            <th scope="row"><a href="workflow-ui/{{jobID}}{{dateQuery}}">{{jobID}}</a></th>
             {{#isAdminRoute}}
             <td>{{username}}</td>
             {{/isAdminRoute}}

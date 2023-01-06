@@ -237,8 +237,10 @@ export async function getJobs(
       disallowUserChecked: !tableQuery.allowUsers ? 'checked' : '',
       toDateTime,
       fromDateTime,
+      dateQuery: `?fromDateTime=${encodeURIComponent(fromDateTime)}&toDateTime=${encodeURIComponent(toDateTime)}` +
+        `&dateKind=${dateKind}`,
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
-      createdAtChecked: dateKind == 'createdAt' ? 'checked' : '',
+      createdAtChecked: dateKind != 'updatedAt' ? 'checked' : '',
       selectedFilters: originalValues,
       links: [
         { ...firstPage, linkTitle: 'first' },
@@ -273,7 +275,7 @@ export async function getJob(
     const requestQuery = keysToLowerCase(req.query);
     const fromDateTime = requestQuery.fromdatetime;
     const toDateTime = requestQuery.todatetime;
-    const dateKind = requestQuery.datekind;
+    const dateKind = requestQuery.datekind || 'createdAt';
     const { originalValues } = parseQuery(requestQuery, WorkItemStatus);
     res.render('workflow-ui/job/index', {
       job,
@@ -282,7 +284,7 @@ export async function getJob(
       toDateTime,
       fromDateTime,
       updatedAtChecked: dateKind == 'updatedAt' ? 'checked' : '',
-      createdAtChecked: dateKind == 'createdAt' ? 'checked' : '',
+      createdAtChecked: dateKind != 'updatedAt' ? 'checked' : '',
       disallowStatusChecked: requestQuery.disallowstatus === 'on' ? 'checked' : '',
       selectedFilters: originalValues,
       version,
