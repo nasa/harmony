@@ -103,7 +103,7 @@
     "gdal-async": "^3.5.0",
     "js-yaml": "^4.1.0",
     "json2csv": "^5.0.7",
-    "knex": "^0.95.14",
+    "knex": "^2.4.0",
     "knex-paginate": "^2.3.0",
     "lodash": "^4.17.21",
     "logform": "^2.4.0",
