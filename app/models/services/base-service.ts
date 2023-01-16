@@ -10,10 +10,12 @@ import { defaultObjectStore } from '../../util/object-store';
 import { RequestValidationError, ServerError } from '../../util/errors';
 import db from '../../util/db';
 import env from '../../util/env';
-import { WorkItemStatus } from '../work-item-interface';
+import { WorkItemMeta, WorkItemStatus } from '../work-item-interface';
 import { getRequestMetric } from '../../util/metrics';
 import { getRequestUrl } from '../../util/url';
 import HarmonyRequest from '../harmony-request';
+import UserWork from '../user-work';
+import { sanitizeImage } from '../../util/string';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -412,6 +414,34 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
+   * Creates the user work objects for this request
+   *
+   * @returns The created user work entries
+   * @throws ServerError - if the user work entries cannot be created
+   */
+  protected _createUserWorkEntries(): UserWork[] {
+    const userWorkEntries = [];
+    if (this.config.steps) {
+      this.config.steps.forEach(((step) => {
+        if (stepRequired(step, this.operation)) {
+          userWorkEntries.push(new UserWork({
+            job_id: this.operation.requestId,
+            service_id: serviceImageToId(step.image),
+            username: this.operation.user,
+            ready_count: 0,
+            running_count: 0,
+            is_async: !this.isSynchronous,
+            last_worked: new Date(),
+          }));
+        }
+      }));
+    } else {
+      throw new RequestValidationError(`Service: ${this.config.name} does not yet support Turbo.`);
+    }
+    return userWorkEntries;
+  }
+
+  /**
    *  Check to see if the service is invoked in turbo mode
    *  Default to true and the child class can over write it on demand
    * @returns true if the service is being invoked in turbo mode
@@ -432,12 +462,15 @@ export default abstract class BaseService<ServiceParamType> {
   ): Promise<void> {
     const startTime = new Date().getTime();
     let workflowSteps = [];
+    let userWorkEntries = [];
     let firstStepWorkItems = [];
 
     if (this.isTurbo()) {
-      this.logger.debug('Creating workflow steps');
+      this.logger.debug('Creating workflow steps, user work rows, and initial work items');
       workflowSteps = this._createWorkflowSteps();
+      userWorkEntries = this._createUserWorkEntries();
       firstStepWorkItems = this._createFirstStepWorkItems(workflowSteps[0]);
+      userWorkEntries[0].ready_count += firstStepWorkItems.length;
     }
 
     try {
@@ -448,11 +481,17 @@ export default abstract class BaseService<ServiceParamType> {
           for await (const step of workflowSteps) {
             await step.save(tx);
           }
+          for await (const userWork of userWorkEntries) {
+            await userWork.save(tx);
+          }
           for await (const workItem of firstStepWorkItems) {
             // use first step as the workflow step associated with each work item
             workItem.workflowStepIndex = workflowSteps[0].stepIndex;
             await workItem.save(tx);
           }
+          const itemMeta: WorkItemMeta = { workItemService: sanitizeImage(workflowSteps[0].serviceID), workItemEvent: 'statusUpdate',
+            workItemAmount: firstStepWorkItems.length, workItemStatus: WorkItemStatus.READY };
+          this.logger.info('Queued first step work items.', itemMeta);
         }
       });
 

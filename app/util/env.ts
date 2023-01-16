@@ -109,6 +109,10 @@ interface HarmonyEnv {
   workReaperPeriodSec: number;
   maxErrorsForJob: number;
   workItemRetryLimit: number;
+  getWorkSampleRatio: number;
+  putWorkSampleRatio: number;
+  getMetricsSampleRatio: number;
+  openTelemetryUrl: string;
 }
 
 // special cases

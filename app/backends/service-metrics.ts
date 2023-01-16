@@ -1,7 +1,10 @@
 import { Response, Request, NextFunction } from 'express';
-import { getAvailableWorkItemCountByServiceID } from '../models/work-item';
+import { WorkItemMeta } from '../models/work-item-interface';
+import { getQueuedOrRunningCountForService } from '../models/user-work';
 import db from '../util/db';
+import logger from '../util/log';
 import { RequestValidationError } from '../util/errors';
+import { sanitizeImage } from '../util/string';
 
 /**
  * Express.js handler that returns the number of work items in the 'READY' or 'RUNNING' state for the given serviceID
@@ -26,9 +29,12 @@ export async function getEligibleWorkItemCountForServiceID(
   try {
     let workItemCount;
     await db.transaction(async (tx) => {
-      workItemCount = await getAvailableWorkItemCountByServiceID(tx, serviceID);
+      workItemCount = await getQueuedOrRunningCountForService(tx, serviceID);
     });
     if (!workItemCount) workItemCount = 0;
+    const itemMeta: WorkItemMeta = { workItemAmount: workItemCount, workItemService: sanitizeImage(serviceID),
+      workItemEvent: 'readyMetric' };
+    logger.info('Got num_ready_work_items metric.', itemMeta);
     const response = {
       availableWorkItems: workItemCount,
     };

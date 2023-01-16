@@ -16,6 +16,7 @@ import { getStacLocation, WorkItemRecord, WorkItemStatus } from '../app/models/w
 import { truncateAll } from './helpers/db';
 import { getObjectText } from './helpers/object-store';
 import { stub } from 'sinon';
+import { populateUserWorkFromWorkItems } from '../app/models/user-work';
 
 /**
  * Create a job and some work times to be used by tests
@@ -65,6 +66,7 @@ async function createJobAndWorkItems(
     workflowStepIndex: 1,
   }).save(db);
 
+  await populateUserWorkFromWorkItems(db);
   return job.jobID;
 }
 
@@ -193,6 +195,8 @@ describe('When a workflow contains an aggregating step', async function () {
       serviceID: 'foo',
       workflowStepIndex: 1,
     }).save(db);
+
+    await populateUserWorkFromWorkItems(db);
     const savedWorkItemResp = await getWorkForService(this.backend, 'foo');
     const savedWorkItem = JSON.parse(savedWorkItemResp.text).workItem;
     savedWorkItem.status = WorkItemStatus.SUCCESSFUL;
@@ -205,7 +209,7 @@ describe('When a workflow contains an aggregating step', async function () {
   });
 
   this.afterEach(async function () {
-    await db.table('work_items').del();
+    await truncateAll();
   });
 
   describe('and it has fewer granules than the paging threshold', async function () {
@@ -351,7 +355,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[2].serviceID).to.equal('harmonyservices/netcdf-to-zarr:latest');
+      expect(workflowSteps[2].serviceID).to.equal('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
     });
 
     it('returns a human-readable message field indicating the request has been limited to a subset of the granules', function () {
@@ -369,7 +373,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
     });
 
     describe('when checking for a netcdf-to-zarr work item', function () {
-      hookGetWorkForService('harmonyservices/netcdf-to-zarr:latest');
+      hookGetWorkForService('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
 
       it('does not find a work item', async function () {
         expect(this.res.status).to.equal(404);
@@ -411,13 +415,13 @@ describe('Workflow chaining for a collection configured for swot reprojection an
           let res;
           let workItem;
           before(async function () {
-            res = await getWorkForService(this.backend, 'harmonyservices/netcdf-to-zarr:latest');
+            res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
             // eslint-disable-next-line prefer-destructuring
             workItem = JSON.parse(res.text).workItem;
           });
           it('finds a netcdf-to-zarr service work item', async function () {
             expect(res.status).to.equal(200);
-            expect(workItem.serviceID).to.equal('harmonyservices/netcdf-to-zarr:latest');
+            expect(workItem.serviceID).to.equal('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
           });
           it('limits the operation on the work-item to reformating', function () {
             const { operation } = workItem;
@@ -453,7 +457,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
 
           describe('when completing all steps for the second granule', function () {
             it('wish I could do this in the describe', async function () {
-              for await (const service of ['sds/swot-reproject:latest', 'harmonyservices/netcdf-to-zarr:latest']) {
+              for await (const service of ['sds/swot-reproject:latest', 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest']) {
                 res = await getWorkForService(this.backend, service);
                 // eslint-disable-next-line prefer-destructuring
                 workItem = JSON.parse(res.text).workItem;
@@ -659,7 +663,7 @@ describe('Workflow chaining for a collection configured for swot reprojection an
       const job = JSON.parse(this.res.text);
       const workflowSteps = await getWorkflowStepsByJobId(db, job.jobID);
 
-      expect(workflowSteps[1].serviceID).to.equal('harmonyservices/netcdf-to-zarr:latest');
+      expect(workflowSteps[1].serviceID).to.equal('ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
     });
   });
 
@@ -817,6 +821,8 @@ describe('When a request spans multiple CMR pages', function () {
         workflowStepIndex: 1,
         scrollID: '123abc',
       }).save(db);
+
+      await populateUserWorkFromWorkItems(db);
     });
 
     after(async function () {
@@ -869,6 +875,7 @@ describe('When a request spans multiple CMR pages', function () {
 
       it('does not define maxCmrGranules for non-query-cmr items', async function () {
         const res = await getWorkForService(this.backend, aggregateService);
+        expect(res.statusCode).to.equal(200);
         const { workItem, maxCmrGranules } = JSON.parse(res.text);
         expect(maxCmrGranules).equals(undefined);
         expect(workItem).to.not.equal(undefined);

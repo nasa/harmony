@@ -2,6 +2,9 @@
 Any changes to the environment variables will be documented in this file in chronological
 order with the most recent changes first.
 
+## 2022-12-15
+### Changes
+- HARMONY_NETCDF_TO_ZARR_IMAGE - Update to point to ghcr.io hosted images.
 ## 2022-11-04
 ### Added
 - MAX_BATCH_INPUTS - Upper limit on the number of files that can go into an aggregation batch

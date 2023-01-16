@@ -15,6 +15,7 @@ import WorkItemUpdate from '../models/work-item-update';
 import WorkflowStep, { decrementWorkItemCount, incrementWorkItemCount } from '../models/workflow-steps';
 import { WorkItemStatus } from '../models/work-item-interface';
 import WorkItem from '../models/work-item';
+import { incrementReadyCount } from '../models/user-work';
 
 /**
  * Get the size in bytes of the object at the given url
@@ -208,6 +209,7 @@ async function createCatalogAndWorkItemForBatch(
       workflowStepIndex: workflowStep.stepIndex,
     });
 
+    await incrementReadyCount(tx, jobID, serviceID);
     await newWorkItem.save(tx);
     return true;
   } else {

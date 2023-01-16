@@ -16,6 +16,7 @@ export const EXPIRATION_DAYS = 30;
 
 import env = require('../util/env');
 import JobError from './job-error';
+import { setReadyCountToZero } from './user-work';
 const { awsDefaultRegion } = env;
 
 export const jobRecordFields = [
@@ -568,6 +569,38 @@ export class Job extends DBRecord implements JobRecord {
   }
 
   /**
+   * Returns the job matching the given username and job ID, or null if
+   * no such job exists.
+   *
+   * @param transaction - the transaction to use for querying
+   * @param username - the username associated with the job
+   * @param jobID - the jobID
+   * @param includeLinks - if true, load all JobLinks into job.links
+   * @param currentPage - the index of the page of links to show
+   * @param perPage - the number of link results per page
+   * @returns the matching job, or null if none exists, along with pagination information
+   * for the job links
+   */
+  static async byUsernameAndJobId(
+    transaction,
+    username,
+    jobID,
+    includeLinks = true,
+    currentPage = 0,
+    perPage = env.defaultResultPageSize,
+  ): Promise<{ job: Job; pagination: ILengthAwarePagination }> {
+    const result = await transaction('jobs').select().where({ username, jobID }).forUpdate();
+    const job = result.length === 0 ? null : new Job(result[0]);
+    let paginationInfo;
+    if (job && includeLinks) {
+      const linkData = await getLinksForJob(transaction, job.jobID, currentPage, perPage);
+      job.links = linkData.data;
+      paginationInfo = linkData.pagination;
+    }
+    return { job, pagination: paginationInfo };
+  }
+
+  /**
    * Returns the job matching the given request ID, or null if no such job exists
    *
    * @param transaction - the transaction to use for querying
@@ -709,6 +742,19 @@ export class Job extends DBRecord implements JobRecord {
   pause(): void {
     validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
     this.updateStatus(JobStatus.PAUSED, this.getMessage(JobStatus.PAUSED));
+  }
+
+  /**
+   * Sets the status to paused, and sets the ready count for the user_work for the job to 0.
+   *
+   * @param tx - the database transaction to use for querying
+   * @throws An error if the job is not currently in the RUNNING state
+   */
+  async pauseAndSave(tx): Promise<void> {
+    validateTransition(this.status, JobStatus.PAUSED, JobEvent.PAUSE);
+    this.updateStatus(JobStatus.PAUSED, this.getMessage(JobStatus.PAUSED));
+    await this.save(tx);
+    await setReadyCountToZero(tx, this.jobID);
   }
 
   /**

@@ -5,11 +5,11 @@ if [ -f .env ]; then
 else
     cat <<-EOF > .env
 		# Random string used to sign cookies.
-		COOKIE_SECRET=$(hexdump -n 128 -e '"%08x"' /dev/random)
+		COOKIE_SECRET=$(openssl rand -hex 128)
 
 		# Random string used for encrypting and decrypting Earthdata login tokens
 		# sent to backend services
-		SHARED_SECRET_KEY=$(hexdump -n 16 -e '"%08x"' /dev/random)
+		SHARED_SECRET_KEY=$(openssl rand -hex 16)
 
 		# Earthdata Login UAT credentials, used to create a .netrc for notebooks Dockerfile
 		NB_EDL_USERNAME=
@@ -35,15 +35,13 @@ PROMPT_EDL
 		OAUTH_PASSWORD=$OAUTH_PASSWORD
 EOF
     
-    echo -e "\n# Env vars used for turbo mode" >> .env
-    
     # prompt for LOCALLY_DEPLOYED_SERVICES
     echo "Enter services to deploy (comma separated list):"
     read -p "Hit <Enter> to use the default services: " LOCALLY_DEPLOYED_SERVICES
     
     # Add locally LOCALLY_DEPLOYED_SERVICES if it is defined (not zero length)
     if [ ! -z "${LOCALLY_DEPLOYED_SERVICES}" ]; then
-        echo -e "LOCALLY_DEPLOYED_SERVICES=${LOCALLY_DEPLOYED_SERVICES}\n" >> .env
+        echo -e "\nLOCALLY_DEPLOYED_SERVICES=${LOCALLY_DEPLOYED_SERVICES}\n" >> .env
     fi
     
     
