@@ -449,7 +449,7 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        is_batched: true
+        is_batched: false
         operations: ['reformat', 'concatenate']
 
 https://cmr.uat.earthdata.nasa.gov:
@@ -900,7 +900,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        is_batched: true
+        is_batched: false
         operations: ['reformat', 'concatenate']
 
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
@@ -937,7 +937,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['spatialSubset', 'variableSubset']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        is_batched: true
+        is_batched: false
         operations: ['reformat', 'concatenate']
         conditional:
           format: ['application/x-zarr']
@@ -975,7 +975,7 @@ https://cmr.uat.earthdata.nasa.gov:
         conditional:
           exists: ['reproject']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
-        is_batched: true
+        is_batched: false
         operations: ['reformat', 'concatenate']
         conditional:
           format: ['application/x-zarr']
