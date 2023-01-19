@@ -141,7 +141,7 @@ describe('Workflow UI job route', function () {
         });
       });
       describe('filters by status NOT IN [running]', function () {
-        const tableFilter = '[{"value":"status: running","dbValue":"running","field":"running"}]';
+        const tableFilter = '[{"value":"status: running","dbValue":"running","field":"status"}]';
         hookWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'adam', query: { disallowStatus: 'on', tableFilter } });
         it('does have disallowStatus HTML checked', function () {
           const listing = this.res.text;

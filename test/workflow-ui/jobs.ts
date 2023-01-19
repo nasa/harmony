@@ -10,6 +10,8 @@ import { workflowUIJobs, hookWorkflowUIJobs, hookAdminWorkflowUIJobs } from '../
 import env from '../../app/util/env';
 import { auth } from '../helpers/auth';
 import { renderNavLink } from './helpers';
+import MockDate from 'mockdate';
+
 
 // Example jobs to use in tests
 const woodyJob1 = buildJob({
@@ -106,15 +108,22 @@ describe('Workflow UI jobs route', function () {
     hookTransaction();
     before(async function () {
       // Add all jobs to the database
+      MockDate.set('2023-01-04T14:12:00.000Z');
       await woodyJob1.save(this.trx);
+      MockDate.set('2023-01-05T14:12:00.000Z');
       await woodyJob2.save(this.trx);
+      MockDate.set('2023-01-06T14:12:00.000Z');
       await woodySyncJob.save(this.trx);
+      
       await buzzJob1.save(this.trx);
+      
       await sidJob1.save(this.trx);
       await sidJob2.save(this.trx);
       await sidJob3.save(this.trx);
       await sidJob4.save(this.trx);
+      
       this.trx.commit();
+      MockDate.reset();
     });
 
     describe('When including a trailing slash on the user route /workflow-ui/', function () {
@@ -155,6 +164,59 @@ describe('Workflow UI jobs route', function () {
       it('does not return jobs for other users', function () {
         const listing = this.res.text;
         expect(listing).to.not.contain(mustache.render('{{req}}', { req: buzzJob1.request }));
+      });
+    });
+
+    describe('who filters jobs by update date >=', function () {
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '0', fromdatetime: '2023-01-06T14:12', datekind: 'updatedAt' });
+      it('returns the job with an acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who filters jobs by update date >= with a timezone offset of -1 hour', function () {
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '60', fromdatetime: '2023-01-06T13:12', datekind: 'updatedAt' });
+      it('returns the job with an acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who filters jobs by update date >= with a timezone offset of +1 hour', function () {
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '-60', fromdatetime: '2023-01-06T15:12', datekind: 'updatedAt' });
+      it('returns the job with an acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+      it('carries over the date filters to the job link url', function () {
+        const listing = this.res.text;
+        const dateQuery = `?fromDateTime=${encodeURIComponent('2023-01-06T15:12')}&toDateTime=` +
+          '&dateKind=updatedAt&tzOffsetMinutes=-60';
+        expect(listing).to.contain(mustache.render('{{dateQuery}}', { dateQuery }));
+      });
+    });
+
+    describe('who filters jobs by created date >= and <=', function () {
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '0',
+        fromdatetime: '2023-01-05T14:12', todatetime: '2023-01-05T14:12', datekind: 'createdAt' });
+      it('returns the job with an acceptable createdAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-05T14:12:00.000Z')).getTime());
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who filters jobs by created date <=', function () {
+      hookWorkflowUIJobs({ username: 'woody', tzoffsetminutes: '0', todatetime: '2023-01-05T14:12', datekind: 'createdAt' });
+      it('returns the jobs with acceptable createdAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-05T14:12:00.000Z')).getTime());
+        expect(listing).to.contain((new Date('2023-01-04T14:12:00.000Z')).getTime());
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(2);
       });
     });
 
