@@ -12,6 +12,7 @@ import { hookWorkflowUIWorkItems, hookAdminWorkflowUIWorkItems, workflowUIWorkIt
 import { WorkItemStatus } from '../../app/models/work-item-interface';
 import { getWorkItemById } from '../../app/models/work-item';
 import db from '../../app/util/db';
+import MockDate from 'mockdate';
 
 // main objects used in the tests
 const targetJob = buildJob({ status: JobStatus.FAILED, username: 'bo' });
@@ -104,8 +105,11 @@ describe('Workflow UI work items table route', function () {
     hookTransaction();
     before(async function () {
       await targetJob.save(this.trx);
+      MockDate.set('2021-01-04T14:12:05.000Z');
       await item1.save(this.trx);
+      MockDate.set('2023-01-05T14:13:01.000Z');
       await item2.save(this.trx);
+      MockDate.set('2023-01-06T14:12:00.000Z');
       await item3.save(this.trx);
       await item4.save(this.trx);
       await retryingWorkItem.save(this.trx);
@@ -136,6 +140,7 @@ describe('Workflow UI work items table route', function () {
       await shareableStep2.save(this.trx);
 
       this.trx.commit();
+      MockDate.reset();
     });
 
     describe('when accessing the non-admin endpoint', function () {
@@ -351,6 +356,53 @@ describe('Workflow UI work items table route', function () {
           expect(listing).to.not.contain(`<span class="badge bg-primary">${WorkItemStatus.READY.valueOf()}</span>`);
           expect(listing).to.contain(`<span class="badge bg-info">${WorkItemStatus.RUNNING.valueOf()}</span>`);
         });
+      });
+    });
+
+    describe('who filters items by update date >=', function () {
+      hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { tzoffsetminutes: '0', fromdatetime: '2023-01-06T14:12', datekind: 'updatedAt' } });
+      it('returns the items with an acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
+        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+      });
+    });
+
+    describe('who filters items by update date >= with a timezone offset of -2 hour', function () {
+      hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { tzoffsetminutes: '120', fromdatetime: '2023-01-06T12:12', datekind: 'updatedAt' } });
+      it('returns the items with an acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
+        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+      });
+    });
+
+    describe('who filters items by update date >= with a timezone offset of +1 hour', function () {
+      hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID, query: { tzoffsetminutes: '-60', fromdatetime: '2023-01-06T15:12', datekind: 'updatedAt' } });
+      it('returns the items with an acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-06T14:12:00.000Z')).getTime());
+        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(3);
+      });
+    });
+
+    describe('who filters items by update date >= and <=', function () {
+      hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID,
+        query: { tzoffsetminutes: '0', fromdatetime: '2023-01-05T14:13', todatetime: '2023-01-05T14:14', datekind: 'updatedAt' } });
+      it('returns the item with an acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2023-01-05T14:13:01.000Z')).getTime());
+        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
+      });
+    });
+
+    describe('who filters items by update date <=', function () {
+      hookWorkflowUIWorkItems({ username: 'bo', jobID: targetJob.jobID,
+        query: { tzoffsetminutes: '0', todatetime: '2021-01-04T14:13', datekind: 'updatedAt' } });
+      it('returns the item with acceptable updatedAt date', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain((new Date('2021-01-04T14:12:05.000Z')).getTime());
+        expect((listing.match(/work-item-table-row/g) || []).length).to.equal(1);
       });
     });
 
