@@ -63,6 +63,7 @@ export default class NoOpService extends BaseService<void> {
       links,
       request: getRequestUrl(req),
       numInputGranules: this.operation.cmrHits,
+      destination_url: this.operation.destinationUrl,
     });
     const serializedJob = job.serialize(getRequestRoot(req));
     // No-op service response should look like a job, but doesn't actually create one

@@ -138,6 +138,7 @@ define the environment variables needed to run the service and execute the local
 You can do this with the following steps:
 
 1. Build the image for your service
+
 2. Add entries into the `env-defaults` file for your service. See the `HARMONY_SERVICE_EXAMPLE`
    entries for examples. Be sure to prefix the entries with the name of your service.
    Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run
@@ -150,12 +151,13 @@ You can do this with the following steps:
   ```shell
   MY_SERVICE_INVOCATION_ARGS='python -m my-service'
   ```
+
 3. Add an entry for your service (lowercase) to the `.env` file:
 ```shell
 LOCALLY_DEPLOYED_SERVICES=my-service
 ```
-Note that the name used must be the kebab case version of the environment variable prefix used
-in `env-defaults`.
+Note that the name used must be the kebab case version of the environment variable prefix used in `env-defaults`.
+
 4. Run
 ```bash
 ./bin/deploy-services
@@ -173,7 +175,7 @@ To use Earthdata Login with a locally running Harmony, you must first set up a n
 3. Add the necessary Required Application Group
 4. Update .env with credentials
 
-You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS.  You will also need to add the "eosdis_enterprise" group to the list of required application groups in order for CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update `OAUTH_CLIENT_ID` and `OAUTH_PASSWORD` in .env with the information from your Earthdata Login application. Additional information including other OAUTH values to use when creating the application can be found in the example/dotenv file in this repository.
+You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS. Set the redirect URL to http://localhost:3000/oauth2/redirect for local Harmony. Leave Required User information empty. Redirect Time for Earthdata Login Splash page (in seconds): 3 seconds. Check the checkbox for By checking this box, I confirm that my application is compatible with EDL policy. Leave the other checkbox unchecked. Then create the new application. After the application is created, you can use the "manage" -> "App Groups" tab to add the "EOSDIS Enterprise" group to the application. This "EOSDIS Enterprise" group will allow CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update `OAUTH_CLIENT_ID`, `OAUTH_UID` and `OAUTH_PASSWORD` in .env with the information from your Earthdata Login application. 
 
 
 ### Software Requirements
@@ -202,7 +204,7 @@ Optional:
 * [awscli-local](https://github.com/localstack/awscli-local) - CLI helpers for interacting with localstack
 * [Python](https://www.python.org) version 3.7 - Useful for locally running and testing harmony-docker and other backend services
 
-## Running Harmony (Not From Quick Start)
+## Running Harmony For Local Dev (Not From Quick Start)
 
 ### Set up Environment
 If you have not yet cloned the Harmony repository, run
