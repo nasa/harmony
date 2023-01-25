@@ -330,6 +330,7 @@ paths:
       - $ref: '#/components/parameters/maxResults'
       - $ref: '#/components/parameters/skipPreview'
       - $ref: '#/components/parameters/ignoreErrors'
+      - $ref: '#/components/parameters/destinationUrl'
       responses:
         "200":
           description: A coverage's range set.
@@ -366,6 +367,7 @@ paths:
       - $ref: '#/components/parameters/maxResults'
       - $ref: '#/components/parameters/skipPreview'
       - $ref: '#/components/parameters/ignoreErrors'
+      - $ref: '#/components/parameters/destinationUrl'
       requestBody:
         content:
           multipart/form-data:
@@ -902,3 +904,10 @@ components:
       required: false
       schema:
         type: boolean
+    destinationUrl:
+      name: destinationUrl
+      in: query
+      description: destination url specified by the client, currently only s3 link url is supported
+      required: false
+      schema:
+        type: string

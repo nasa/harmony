@@ -15,7 +15,8 @@ CREATE TABLE `jobs` (
   `isAsync` boolean,
   `numInputGranules` integer not null default 0,
   `collectionIds` text not null,
-  `ignoreErrors` boolean not null
+  `ignoreErrors` boolean not null,
+  `destination_url` varchar(8192)
 );
 
 CREATE TABLE `job_links` (
