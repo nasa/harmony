@@ -175,7 +175,7 @@ To use Earthdata Login with a locally running Harmony, you must first set up a n
 3. Add the necessary Required Application Group
 4. Update .env with credentials
 
-You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS. Set the redirect URL to http://localhost:3000/oauth2/redirect for local Harmony. Leave Required User information empty. Redirect Time for Earthdata Login Splash page (in seconds): 3 seconds. Check the checkbox for By checking this box, I confirm that my application is compatible with EDL policy. Leave the other checkbox unchecked. Then create the new application. After the application is created, you can use the "manage" -> "App Groups" tab to add the "EOSDIS Enterprise" group to the application. This "EOSDIS Enterprise" group will allow CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update `OAUTH_CLIENT_ID`, `OAUTH_UID` and `OAUTH_PASSWORD` in .env with the information from your Earthdata Login application. 
+You must select "401" as the application type for Harmony to work correctly with command line clients and clients like QGIS. Set the redirect URL to http://localhost:3000/oauth2/redirect for local Harmony. Leave `Required User Information` and `Redirect Time for Earthdata Login Splash page` empty. Check the checkbox for `By checking this box, I confirm that my application is compatible with EDL policy`. Leave the other checkbox unchecked. Then create the new application. After the application is created, you can use the "manage" -> "App Groups" tab to add the "EOSDIS Enterprise" group to the application. This "EOSDIS Enterprise" group will allow CMR searches issued by Harmony to be able to use your Earthdata Login tokens.  Update `OAUTH_CLIENT_ID`, `OAUTH_UID` and `OAUTH_PASSWORD` in .env with the information from your Earthdata Login application. 
 
 
 ### Software Requirements
@@ -204,7 +204,7 @@ Optional:
 * [awscli-local](https://github.com/localstack/awscli-local) - CLI helpers for interacting with localstack
 * [Python](https://www.python.org) version 3.7 - Useful for locally running and testing harmony-docker and other backend services
 
-## Running Harmony For Local Dev (Not From Quick Start)
+## Running Harmony For Local Development (Not From Quick Start)
 
 ### Set up Environment
 If you have not yet cloned the Harmony repository, run
