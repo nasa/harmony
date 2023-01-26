@@ -8,7 +8,7 @@ Harmony has two fundamental goals in life:
 
 This README is devoted to the Harmony "Quick Start". If you're looking for something else, you should consult:
 
-* [The guides directory](docs/guides) (advanced guides for developing Harmony and services from scratch, linking collections, etc.)
+* [The guides directory](docs/guides) (advanced guides, covering things like developing Harmony and services from scratch)
 * EOSDIS #harmony, #harmony-service-providers Slack channel
 * [Harmony wiki](https://wiki.earthdata.nasa.gov/display/Harmony) (project-facing information)
 

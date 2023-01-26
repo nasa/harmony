@@ -285,11 +285,10 @@ Request to this repo:
    HARMONY-314).
 3. The PR's 'build' tab should not show errors.
 
-## Additional Devlopment Resources
+## Additional Development Resources
 
-* [Adapting new services to Harmony](docs/adapting-new-services.md)
-* [Harmony message schemas](app/schemas/data-operation)
-* [EOSS protocol OpenAPI Specification](app/schemas/eoss)
+* [Adapting new services to Harmony](adapting-new-services.md)
+* [Harmony message schemas](../../app/schemas/data-operation)
+* [EOSS protocol OpenAPI Specification](../../app/schemas/eoss)
 * [Harmony NetCDF to Zarr service repository](https://github.com/nasa/harmony-netcdf-to-zarr)
 * [Harmony GDAL-based example service repository](https://github.com/nasa/harmony-service-example)
-* [Linux Container-based development with Harmony](docs/dev_container/README.md) (n.b. Windows users)
