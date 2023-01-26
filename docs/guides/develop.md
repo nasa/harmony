@@ -18,7 +18,7 @@ built-in Kubernetes cluster (including `kubectl`) which can be enabled in prefer
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
 * [SQLite3 commandline](https://sqlite.org/index.html) - Used to create the local development and test databases. Install using your OS package manager, or [download precompiled binaries from SQLite](https://www.sqlite.org/download.html)
 * PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
-* [Earthdata Login application in UAT](reference/edl-requirement.md)
+* [Earthdata Login application in UAT](../edl-requirement.md)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
 * [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files.
 * [openssl](https://www.openssl.org/) Read [this installation guide](https://github.com/openssl/openssl/blob/master/NOTES-WINDOWS.md) if you're a Windows user and openssl is not installed on your machine already.
@@ -244,7 +244,7 @@ This may take some time, but ultimately it will produce a local docker image tag
 
 ## Deploy Services
 
-To run service(s) you need to create a k8s deployment for each service. Only services currently listed in `tasks/service-runner/config/*.yaml` can be run. The docker images for each service must be available locally in order for the k8s deployment to succeed. For detailed steps, see [testing services](reference/testing-services.md).
+To run service(s) you need to create a k8s deployment for each service. Only services currently listed in `tasks/service-runner/config/*.yaml` can be run. The docker images for each service must be available locally in order for the k8s deployment to succeed. For detailed steps, see [testing services](../testing-services.md).
 
 ## Connect A Client
 
