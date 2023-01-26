@@ -6,10 +6,11 @@ Harmony has two fundamental goals in life:
 1. **Services** - Increase usage and ease of use of EOSDIS' data, especially focusing on opportunities made possible now that data from multiple DAACs reside in AWS.  Users should be able to work seamlessly across data from different DAACs in ways previously unachievable.
 2. **Together** - Transform how we, as a development community, work together to accomplish goal number 1.  Let's reuse the simple, but necessary components (e.g. EDL, UMM, CMR and Metrics integration) and let's work together on the stuff that's hard (and fun) like chaining, scaling and cloud optimizations.
 
-Most Harmony documentation intentionally lives in this README. For advanced topics (e.g. developing services, linking collections), see the [guides directory](docs/guides). Harmony also has a Slack channel and wiki space:
+This README is devoted to the Harmony "Quick Start". If you're looking for something else, you should consult:
 
+* [The guides directory](docs/guides) (advanced guides for developing Harmony and services from scratch, linking collections, etc.)
 * EOSDIS #harmony, #harmony-service-providers Slack channel
-* [Harmony wiki](https://wiki.earthdata.nasa.gov/display/Harmony)
+* [Harmony wiki](https://wiki.earthdata.nasa.gov/display/Harmony) (project-facing information)
 
 # Quick Start (Mac OS X / Linux)
 
@@ -18,9 +19,9 @@ This is the quickest way to get started with Harmony (by running Harmony in a co
 1. First, ensure you have the minimum system requirements:
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services.
 * A running [Kubernetes](https://kubernetes.io/) cluster with the [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
-built-in Kubernetes cluster (including `kubectl`) which can be enabled in preferences.
+built-in Kubernetes cluster (including `kubectl`) which can be enabled in preferences. Minikube is a popular Linux alternative for running Kubernetes locally.
 * [openssl](https://www.openssl.org/) Read [this installation guide](https://github.com/openssl/openssl/blob/master/NOTES-WINDOWS.md) if you're a Windows user and openssl is not installed on your machine already.
-* [Earthdata Login application in UAT](docs/guides/common-run-requirements.md#earthdata-login-application-requirement)
+* [Earthdata Login application in UAT](docs/guides/reference/edl-requirement.md)
 
 2. Download this repository (or download the zip file from GitHub)
 ```bash
@@ -92,6 +93,6 @@ If you modify the `services.yml` file Harmony will need to be restarted. You can
 ```
 **NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
 
-## Developing Services for Harmony
+## Testing Services with Harmony
 
-See the [developing services](docs/guides/common-run-requirements.md#developing-services-for-harmony) reference.
+See the [testing services](docs/guides/reference/testing-services.md) reference.
