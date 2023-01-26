@@ -6,45 +6,33 @@ Harmony has two fundamental goals in life:
 1. **Services** - Increase usage and ease of use of EOSDIS' data, especially focusing on opportunities made possible now that data from multiple DAACs reside in AWS.  Users should be able to work seamlessly across data from different DAACs in ways previously unachievable.
 2. **Together** - Transform how we, as a development community, work together to accomplish goal number 1.  Let's reuse the simple, but necessary components (e.g. EDL, UMM, CMR and Metrics integration) and let's work together on the stuff that's hard (and fun) like chaining, scaling and cloud optimizations.
 
-Most Harmony documentation intentionally lives in this README and in the [docs directory](docs). For advanced topics (e.g. developing services, linking collections), see the [guides directory](docs/guides). Harmony also has a Slack channel and wiki space:
+Most Harmony documentation intentionally lives in this README. For advanced topics (e.g. developing services, linking collections), see the [guides directory](docs/guides). Harmony also has a Slack channel and wiki space:
 
-* EOSDIS #harmony Slack channel
+* EOSDIS #harmony, #harmony-service-providers Slack channel
 * [Harmony wiki](https://wiki.earthdata.nasa.gov/display/Harmony)
 
-# Quick Start
+# Quick Start (Mac OS X / Linux)
 
-This is the quickest way to get started with Harmony, by running Harmony in a container. This guide will also teach you how to test out a new service.
+This is the quickest way to get started with Harmony (by running Harmony in a container). If you are interested in using a local Harmony instance to develop services, but not interested in developing the Harmony code itself, this mode of running Harmony should suit you well. For more advanced use cases, see the [Develop](docs/guides/develop.md) guide.
 
-## Minimum System Requirements
-
-* A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
+1. First, ensure you have the minimum system requirements:
+* A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services.
 * A running [Kubernetes](https://kubernetes.io/) cluster with the [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
 built-in Kubernetes cluster (including `kubectl`) which can be enabled in preferences.
 * [openssl](https://www.openssl.org/) Read [this installation guide](https://github.com/openssl/openssl/blob/master/NOTES-WINDOWS.md) if you're a Windows user and openssl is not installed on your machine already.
-
-## Quick Start
-(Mac OS X / Linux)
-
-If you are interested in using a local Harmony instance to develop services, but not interested in
-developing the Harmony code itself, the following steps are enough to start a locally running Harmony instance.
-See the [Minimum System Requirement](#minimum-system-requirements) above.
-
-1. Follow the directions for creating an Earth Data Login application and credentials in the [Earthdata Login Application Requirement](#Earthdata-Login-Application-Requirement) section below.
+* [Earthdata Login application in UAT](docs/guides/common-run-requirements.md#earthdata-login-application-requirement)
 
 2. Download this repository (or download the zip file from GitHub)
 ```bash
 git clone https://github.com/nasa/harmony.git
 ```
 
-3. (optional) run the `create-dotenv` script in the `bin` directory and answer the prompts to
+3. Run the `create-dotenv` script in the `bin` directory and answer the prompts to
    create a `.env` file.
   ```bash
   pushd harmony && ./bin/create-dotenv && popd
   ```
-   Edit the `.env` file to add any custom image tags (see the `env-defaults` file).
-
-   This step is only needed if you want to use custom service image tags. You can skip this step
-   if you just want to use the default service tags for now. You can make changes to .env later.
+   If desired, edit the `.env` file to add any custom image tags (see the `env-defaults` file). If you don't know what that means, don't worry for now--just read on.
 
 4. Run the bootstrap script and answer the prompts (if any)
 ```bash
@@ -79,7 +67,7 @@ curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/
 
 We recommend using [harmony-py](https://github.com/nasa/harmony-py) and its example notebook when working with Harmony.
 
-### Updating the Local Harmony Instance
+## Updating the Local Harmony Instance
 
 You can update Harmony by running the `bin/update-harmony` script. This will pull the latest Harmony Docker images from DockerHub and
 restart Harmony.
@@ -95,7 +83,7 @@ You can include the `-s` flag to update service images as well, e.g.,
 ./bin/update-harmony -s
 ```
 
-### Reloading the Services Configuration
+## Reloading the Services Configuration
 
 If you modify the `services.yml` file Harmony will need to be restarted. You can do this with the following command:
 
@@ -104,31 +92,6 @@ If you modify the `services.yml` file Harmony will need to be restarted. You can
 ```
 **NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
 
-### Developing Services for Harmony
-If you are developing a service and wish to test it locally with Harmony then you must
-define the environment variables needed to run the service and execute the local deployment script.
-You can do this with the following steps:
+## Developing Services for Harmony
 
-1. Build the image for your service
-2. Add entries into the `env-defaults` file for your service. See the `HARMONY_SERVICE_EXAMPLE`
-   entries for examples. Be sure to prefix the entries with the name of your service.
-   Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run
-  your service from the command line. For example, if you had a python module named `my-service`
-  in the working directory, then you would run the service using
-  ```bash
-  python -m my-service
-  ```
-  So your entry for `INVOCATION_ARGS` would be
-  ```shell
-  MY_SERVICE_INVOCATION_ARGS='python -m my-service'
-  ```
-3. Add an entry for your service (lowercase) to the `.env` file:
-```shell
-LOCALLY_DEPLOYED_SERVICES=my-service
-```
-Note that the name used must be the kebab case version of the environment variable prefix used
-in `env-defaults`.
-4. Run
-```bash
-./bin/deploy-services
-```
+See the [developing services](docs/guides/common-run-requirements.md#developing-services-for-harmony) reference.
