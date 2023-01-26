@@ -1,10 +1,8 @@
 # Run and Develop Harmony
 
-Use this guide if you plan on contributing to Harmony code in some way or prefer a more advanced setup. (We will cover additional developer oriented information like how to run Harmony tests and submit a pull request.) If you'd like the "quick start" instead, follow the [Quick Start](../../README.md#quick-start-mac-os-x--linux) guide.
+Use this guide if you plan on contributing (developing/testing/debugging) Harmony code, or if you need a setup that isn't well suited to the [Quick Start](../../README.md#quick-start-mac-os-x--linux).
 
-## Windows
-
-For developing Harmony on Windows follow this document as well as the information in [docs/dev_container/README.md](../dev_container/README.md).
+For developing Harmony on _**Windows**_ follow this document as well as the information in [docs/dev_container/README.md](../dev_container/README.md).
 
 ## Software Requirements
 
@@ -15,6 +13,8 @@ Required:
 * [git](https://git-scm.com) - Used to clone this repository
 * A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
 * [Docker compose](https://docs.docker.com/compose/) version 1.20.0 or greater; preferably the latest version, which is v1.26 or greater.
+* A running [Kubernetes](https://kubernetes.io/) cluster with the [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
+built-in Kubernetes cluster (including `kubectl`) which can be enabled in preferences. Minikube is a popular Linux alternative for running Kubernetes locally.
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
 * [SQLite3 commandline](https://sqlite.org/index.html) - Used to create the local development and test databases. Install using your OS package manager, or [download precompiled binaries from SQLite](https://www.sqlite.org/download.html)
 * PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
@@ -165,7 +165,7 @@ $ npx knex --cwd db migrate:latest
 
 ## Set Up and Run Postgres and Localstack
 
-In development Harmony uses Localstack](https://github.com/localstack/localstack) to avoid allocating AWS resources. Postgres is also installed (but not used by default).
+In development Harmony uses [Localstack](https://github.com/localstack/localstack) to avoid allocating AWS resources. Postgres is also installed (but not used by default).
 
 * Mac:
   * Install [Docker Desktop] https://www.docker.com/products/docker-desktop. Docker Desktop comes bundled with Kubernetes and `kubectl`.
@@ -197,7 +197,7 @@ $ kubectl delete namespaces harmony
 `minikube` users can stop Kubernetes by running `minikube stop`.  Docker Desktop users will
 need to close Docker or disable Kubernetes support in the UI.  Note that the latter uninstalls `kubectl`.
 
-### (minikube only) Configuring the callback URL for backend services
+## (minikube only) Configuring the callback URL for backend services
 
 You can skip this step if you are using the default docker driver for minikube and set CALLBACK_URL_ROOT as described in the example dotenv file. If you are using a different driver such as virtualbox you may need to execute the following command to get the IP address minikube has bridged to localhost:
 
