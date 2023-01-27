@@ -120,6 +120,16 @@ BACKEND_HOST=localhost
 CALLBACK_URL_ROOT=http://localhost:3001
 ```
 
+### (minikube only) Configuring the callback URL for backend services
+
+You can skip this step if you are using the default docker driver for minikube and set CALLBACK_URL_ROOT as described in the example dotenv file. If you are using a different driver such as virtualbox you may need to execute the following command to get the IP address minikube has bridged to localhost:
+
+```bash
+minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
+```
+
+This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
+
 ## Run Tests
 
 To run the linter, tests, and coverage checks as the CI environment will, run
@@ -196,16 +206,6 @@ $ kubectl delete namespaces harmony
 
 `minikube` users can stop Kubernetes by running `minikube stop`.  Docker Desktop users will
 need to close Docker or disable Kubernetes support in the UI.  Note that the latter uninstalls `kubectl`.
-
-## (minikube only) Configuring the callback URL for backend services
-
-You can skip this step if you are using the default docker driver for minikube and set CALLBACK_URL_ROOT as described in the example dotenv file. If you are using a different driver such as virtualbox you may need to execute the following command to get the IP address minikube has bridged to localhost:
-
-```bash
-minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
-```
-
-This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
 
 ## Run Harmony
 
