@@ -11,15 +11,18 @@ Required:
 * Node.js version 16.  We strongly recommend installing [NVM](https://github.com/nvm-sh/nvm) to add and manage node versions.
 * Mac OSX, Linux, or similar command line tooling.  Harmony is tested to run on OSX >= 10.14 and Amazon Linux 2.  Command-line instructions and bash helper files under [bin/](bin/) are tested on OSX >= 10.14.
 * [git](https://git-scm.com) - Used to clone this repository
-* A running [Docker Desktop](https://www.docker.com/products/developer-tools) or daemon instance - Used to invoke docker-based services
+* Mac:
+  * Install [Docker Desktop] https://www.docker.com/products/docker-desktop. Docker Desktop comes bundled with Kubernetes and `kubectl`.
+    If you encounter issues running `kubectl` commands, first make sure you are running the version bunedled with Docker Desktop.
+  * Run Kubernetes in Docker Desktop by selecting Preferences -> Kubernetes -> Enable Kubernetes
+* Linux / Generic:
+  * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node Kubernetes cluster useful for local development
+  * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to Kubernetes.
 * [Docker compose](https://docs.docker.com/compose/) version 1.20.0 or greater; preferably the latest version, which is v1.26 or greater.
-* A running [Kubernetes](https://kubernetes.io/) cluster with the [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command. [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac and Windows comes with a
-built-in Kubernetes cluster (including `kubectl`) which can be enabled in preferences. Minikube is a popular Linux alternative for running Kubernetes locally.
 * The [AWS CLI](https://aws.amazon.com/cli/) - Used to interact with both localstack and real AWS accounts
 * [SQLite3 commandline](https://sqlite.org/index.html) - Used to create the local development and test databases. Install using your OS package manager, or [download precompiled binaries from SQLite](https://www.sqlite.org/download.html)
 * PostgreSQL (required by the pg-native library) - `brew install postgresql` on OSX
 * [Earthdata Login application in UAT](../edl-requirement.md)
-* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - A command-line application for interfacing with a Kubenetes API.
 * [envsubst](https://pypi.org/project/envsubst) - Used to substitute environment variable placeholders inside configuration files.
 * [openssl](https://www.openssl.org/) Read [this installation guide](https://github.com/openssl/openssl/blob/master/NOTES-WINDOWS.md) if you're a Windows user and openssl is not installed on your machine already.
 
@@ -177,14 +180,6 @@ $ npx knex --cwd db migrate:latest
 
 In development Harmony uses [Localstack](https://github.com/localstack/localstack) to avoid allocating AWS resources. Postgres is also installed (but not used by default).
 
-* Mac:
-  * Install [Docker Desktop] https://www.docker.com/products/docker-desktop. Docker Desktop comes bundled with Kubernetes and `kubectl`.
-    If you encounter issues running `kubectl` commands, first make sure you are running the version bunedled with Docker Desktop.
-  * Run Kubernetes in Docker Desktop by selecting Preferences -> Kubernetes -> Enable Kubernetes
-* Linux / Generic:
-  * Install [minikube](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a single-node Kubernetes cluster useful for local development
-  * Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), a command line interface to Kubernetes.
-
 ```
 $ ./bin/start-postgres-localstack
 ```
@@ -285,7 +280,7 @@ Request to this repo:
    HARMONY-314).
 3. The PR's 'build' tab should not show errors.
 
-## Additional Development Resources
+## Additional Resources
 
 * [Adapting new services to Harmony](adapting-new-services.md)
 * [Harmony message schemas](../../app/schemas/data-operation)
