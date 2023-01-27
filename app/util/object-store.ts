@@ -327,6 +327,18 @@ export class S3ObjectStore {
   }
 
   /**
+   * Returns the AWS region the given bucket is in
+   *
+   * @param bucketName - name of the s3 bucket
+   * @returns the AWS region
+   */
+  async getBucketRegion(bucketName: string): Promise<string> {
+    const req : aws.S3.GetBucketLocationRequest = { Bucket: bucketName };
+    const result = await this.s3.getBucketLocation(req).promise();
+    return result.LocationConstraint;
+  }  
+
+  /**
    * Returns a URL string for an object with the given bucket and key (prefix)
    *
    * @param bucket - the bucket containing the URL to construct
