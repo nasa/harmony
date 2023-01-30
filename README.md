@@ -33,7 +33,7 @@ git clone https://github.com/nasa/harmony.git
   ```bash
   pushd harmony && ./bin/create-dotenv && popd
   ```
-   If desired, edit the `.env` file to add any custom image tags (see the `env-defaults` file). If you don't know what that means, don't worry for now--just read on.
+   Edit the `.env` file if you want to add any image tags for a custom service (see the `env-defaults` file). You can skip this step for now if you just want to use the default service tags.
 
 4. Run the bootstrap script and answer the prompts (if any)
 ```bash
