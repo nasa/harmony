@@ -4,7 +4,7 @@ Use this guide if you plan on contributing (developing/testing/debugging) Harmon
 
 For developing Harmony on _**Windows**_ follow this document as well as the information in [docs/dev_container/README.md](../dev_container/README.md).
 
-## Software Requirements
+ ## Software Requirements
 
 Required:
 * A local copy of this repository.  Using `git clone` is strongly recommended
@@ -96,7 +96,7 @@ $ npm install
 
 Recommended: Add `./node_modules/.bin` to your `PATH`.  This will allow you to run binaries from installed node modules.  If you choose not to do this, you will need to prefix node module calls with `npx`, e.g. `npx mocha` instead of just `mocha`
 
-## Set Up Environment Variables
+### Set Up Environment Variables
 
 Harmony uses environment variables for managing much of its configuration. Most of the variables can be defaulted, and harmony provides those defaults suitable for local development in the `env-defaults` file. In order to set up the remaining variables, run the following from the harmony project root:
 
@@ -176,7 +176,7 @@ database, you can create and/or migrate your database by setting `NODE_ENV=produ
 $ npx knex --cwd db migrate:latest
 ```
 
-## Set Up and Run Postgres and Localstack
+### Set Up and Run Postgres and Localstack
 
 In development Harmony uses [Localstack](https://github.com/localstack/localstack) to avoid allocating AWS resources. Postgres is also installed (but not used by default).
 
@@ -190,29 +190,6 @@ This will install Postgres and Localstack and forward their ports to localhost. 
 Localstack has started at http://localhost:4566/
 Postgres has started at localhost:5432
 ```
-
-## Deleting applications and stopping Kubernetes
-
-To delete the postgres and localstack deployment, run:
-
-```
-$ kubectl delete namespaces harmony
-```
-
-`minikube` users can stop Kubernetes by running `minikube stop`.  Docker Desktop users will
-need to close Docker or disable Kubernetes support in the UI.  Note that the latter uninstalls `kubectl`.
-
-## Run Harmony
-
-To run Harmony locally such that it reloads when files change (recommended during development), run
-
-```
-$ npm run start-dev
-```
-
-In production, we use `$ npm run start` which does the same but does not add the file watching and reloading behavior.
-
-You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend application receives requests from users, while the backend application receives callbacks from services.
 
 ## Add A Service
 
@@ -237,11 +214,34 @@ Next run the following command to build and locally install the image:
 
 This may take some time, but ultimately it will produce a local docker image tagged `harmonyservices/service-example:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](adapting-new-services.md).
 
-## Deploy Services
+### Deploy Services
 
 To run service(s) you need to create a k8s deployment for each service. Only services currently listed in `tasks/service-runner/config/*.yaml` can be run. The docker images for each service must be available locally in order for the k8s deployment to succeed. For detailed steps, see [testing services](../testing-services.md).
 
-## Connect A Client
+### Deleting services and stopping Kubernetes
+
+To delete all resources associated with deployed services, postgres and localstack deployment, run:
+
+```
+$ kubectl delete namespaces harmony
+```
+
+`minikube` users can stop Kubernetes by running `minikube stop`.  Docker Desktop users will
+need to close Docker or disable Kubernetes support in the UI.  Note that the latter uninstalls `kubectl`.
+
+## Run Harmony
+
+To run Harmony locally such that it reloads when files change (recommended during development), run
+
+```
+$ npm run start-dev
+```
+
+In production, we use `$ npm run start` which does the same but does not add the file watching and reloading behavior.
+
+You should see messages about the two applications listening on two ports, "frontend" and "backend."  The frontend application receives requests from users, while the backend application receives callbacks from services.
+
+### Connect A Client
 
 You should now be able to view the outputs of performing a simple transformation request.  Harmony has its own test collection
 set up for sanity checking harmony with the harmony-service-example backend.  This will fetch a granule from that collection converted to GeoTIFF:
