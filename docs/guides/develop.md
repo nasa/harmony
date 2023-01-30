@@ -133,29 +133,6 @@ minikube ssh grep host.minikube.internal /etc/hosts | cut -f1
 
 This should print out an IP address. Use this in your .env file to specify the `CALLBACK_URL_ROOT` value, e.g., `CALLBACK_URL_ROOT=http://192.168.65.2:4001`.
 
-## Run Tests
-
-To run the linter, tests, and coverage checks as the CI environment will, run
-
-```
-$ npm test
-```
-
-Harmony uses [eslint](https://eslint.org) as a linter, which can be invoked as `$ npx eslint` (or `$ eslint` if you have set up your `PATH`).  It uses [mocha](https://mochajs.org) for tests, `$ npx mocha`, and [nyc](https://istanbul.js.org) for code coverage, `$ npx nyc mocha`.
-
-### Test Fixtures
-Rather than repeatedly perform the same queries against the CMR, our test suite
-uses [node-replay](https://github.com/assaf/node-replay) to record and play back
-HTTP interactions.  All non-localhost interactions are recorded and placed in files
-in the [fixtures directory](../../fixtures/).
-
-By default, the test suite will playback interactions it has already seen and
-record any new interactions to new files.  This behavior can be changed by setting
-the `REPLAY` environment variable, as described in the
-[node-replay README](https://github.com/assaf/node-replay).
-
-To re-record everything, remove the fixtures directory and run the test suite. This should be done to cull the recordings when a code change makes many of them obsolete, when CMR adds response fields that Harmony needs to make use of, and periodically to ensure no impactful CMR changes or regressions.
-
 ## Set Up A Database
 
 To setup a sqlite3 database with the correct schema for local execution, run
@@ -254,6 +231,7 @@ GetCapabilities call to the test server, and double-clicking a layer should add 
 PNG from the test server.
 
 ## Building and Publishing the Harmony Docker Image
+
 The Harmony Docker image can be built with the following command:
 ```bash
 npm run build
@@ -263,6 +241,31 @@ The image can be deployed to DockerHub using the following commands:
 ```bash
 npm run publish
 ```
+
+## Run Tests
+
+To run the linter, tests, and coverage checks as the CI environment will, run
+
+```
+$ npm test
+```
+
+Harmony uses [eslint](https://eslint.org) as a linter, which can be invoked as `$ npx eslint` (or `$ eslint` if you have set up your `PATH`).  It uses [mocha](https://mochajs.org) for tests, `$ npx mocha`, and [nyc](https://istanbul.js.org) for code coverage, `$ npx nyc mocha`.
+
+### Test Fixtures
+
+Rather than repeatedly perform the same queries against the CMR, our test suite
+uses [node-replay](https://github.com/assaf/node-replay) to record and play back
+HTTP interactions.  All non-localhost interactions are recorded and placed in files
+in the [fixtures directory](../../fixtures/).
+
+By default, the test suite will playback interactions it has already seen and
+record any new interactions to new files.  This behavior can be changed by setting
+the `REPLAY` environment variable, as described in the
+[node-replay README](https://github.com/assaf/node-replay).
+
+To re-record everything, remove the fixtures directory and run the test suite. This should be done to cull the recordings when a code change makes many of them obsolete, when CMR adds response fields that Harmony needs to make use of, and periodically to ensure no impactful CMR changes or regressions.
+
 ## Contributing to Harmony
 
 We welcome Pull Requests from developers not on the Harmony
