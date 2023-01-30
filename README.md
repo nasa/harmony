@@ -68,7 +68,7 @@ curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/
 
 We recommend using [harmony-py](https://github.com/nasa/harmony-py) and its example notebook when working with Harmony.
 
-## Updating the Local Harmony Instance
+### Updating the Local Harmony Instance
 
 You can update Harmony by running the `bin/update-harmony` script. This will pull the latest Harmony Docker images from DockerHub and
 restart Harmony.
@@ -84,7 +84,7 @@ You can include the `-s` flag to update service images as well, e.g.,
 ./bin/update-harmony -s
 ```
 
-## Reloading the Services Configuration
+### Reloading the Services Configuration
 
 If you modify the `services.yml` file Harmony will need to be restarted. You can do this with the following command:
 
@@ -93,6 +93,6 @@ If you modify the `services.yml` file Harmony will need to be restarted. You can
 ```
 **NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
 
-## Testing Services with Harmony
+### Testing Services with Harmony
 
 See the [testing services](docs/testing-services.md) reference.
