@@ -56,6 +56,7 @@ export async function getWork(
   const reqLogger = req.context.logger;
   const { serviceID, podName } = req.query;
 
+  let responded = false;
   await db.transaction(async (tx) => {
     const username = await getNextUsernameForWork(tx, serviceID as string);
     if (username) {
@@ -72,8 +73,10 @@ export async function getWork(
           if (workItem && QUERY_CMR_SERVICE_REGEX.test(workItem.serviceID)){
             const maxCmrGranules = await calculateQueryCmrLimit(tx, workItem, logger);
             res.send({ workItem, maxCmrGranules });
+            responded = true;
           } else {
             res.send({ workItem });
+            responded = true;
           }
         } else {
           reqLogger.warn(`user_work is out of sync for user ${username} and job ${jobID}, could not find ready work item`);
@@ -83,10 +86,11 @@ export async function getWork(
       setTimeout(async () => {
         await getWork(req, res, next, tryCount + 1);
       }, RETRY_DELAY);
-    } else {
-      res.status(404).send();
     }
   });
+  if (!responded) {
+    res.status(404).send();
+  }
 }
 
 /**
