@@ -93,6 +93,6 @@ If you modify the `services.yml` file Harmony will need to be restarted. You can
 ```
 **NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
 
-### Testing Custom Services
+### Testing New Services
 
 See the [testing services](docs/testing-services.md) reference if you are developing a service and wish to test it locally with Harmony.
