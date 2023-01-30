@@ -189,11 +189,18 @@ Next run the following command to build and locally install the image:
 ./bin/build-image
 ```
 
-This may take some time, but ultimately it will produce a local docker image tagged `harmonyservices/service-example:latest`.  You may choose to use another service appropriate to your collection if you have [adapted it to run in Harmony](adapting-new-services.md).
+This may take some time, but ultimately it will produce a local docker image tagged `harmonyservices/service-example:latest`. (The docker images for each service must be available locally in order for the k8s deployment to succeed.)
 
-### Deploy Services
+Create the k8s deployment:
 
-To run service(s) you need to create a k8s deployment for each service. Only services currently listed in `tasks/service-runner/config/*.yaml` can be run. The docker images for each service must be available locally in order for the k8s deployment to succeed. For detailed steps, see [testing services](../testing-services.md).
+```bash
+./bin/deploy-services
+```
+
+If you'd like to build and test a new service for Harmony, 
+
+1. see [Adapting New Services](./adapting-new-services.md)
+2. when you have a service ready to test, read the [Testing Services](../testing-services.md) reference
 
 ### Deleting services and stopping Kubernetes
 
