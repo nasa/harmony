@@ -1,6 +1,6 @@
 # Earthdata Login Application Requirement
 
-To use Earthdata Login with a locally running Harmony, you must first set up a new application in the Earthdata Login UAT environment using the Earthdata Login UI.  https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application.  This is a four step process:
+To use Earthdata Login with a locally running Harmony, you must first [set up a new application](https://wiki.earthdata.nasa.gov/display/EL/How+To+Register+An+Application) in the Earthdata Login UAT environment using the Earthdata Login UI.  This is a four step process:
 
 1. Request and receive permission to be an Application Creator
 2. Create a local/dev Harmony Application in the EDL web interface
