@@ -1,4 +1,4 @@
-# Testing Services
+# Testing New Services
 
 If you are developing a service and wish to test it locally with Harmony then you must
 define the environment variables needed to run the service and execute the local deployment script.
