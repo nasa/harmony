@@ -289,6 +289,8 @@ export default class DataOperation {
 
   ignoreErrors?: boolean;
 
+  destinationUrl: string;
+
   /**
    * Creates an instance of DataOperation.
    *

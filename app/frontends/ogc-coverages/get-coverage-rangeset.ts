@@ -67,6 +67,7 @@ export default function getCoverageRangeset(
   if (query.ignoreerrors) {
     operation.ignoreErrors = true;
   }
+  operation.destinationUrl = query.destinationurl;
   try {
     const subset = parseSubsetParams(wrap(query.subset));
     operation.dimensions = [];
