@@ -95,4 +95,4 @@ If you modify the `services.yml` file Harmony will need to be restarted. You can
 
 ### Testing New Services
 
-See the [testing services](docs/testing-services.md) reference if you are developing a service and wish to test it locally with Harmony.
+If you'd like to build a new service for Harmony, see [Adapting New Services](docs/guides/adapting-new-services.md). If you already have a service ready to test, read the [testing services](docs/testing-services.md) reference.
