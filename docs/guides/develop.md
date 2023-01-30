@@ -237,18 +237,6 @@ dialog when adding a new WMS connection.  Thereafter, expanding the connection s
 GetCapabilities call to the test server, and double-clicking a layer should add it to a map, making a WMS call to retrieve an appropriate
 PNG from the test server.
 
-## Building and Publishing the Harmony Docker Image
-
-The Harmony Docker image can be built with the following command:
-```bash
-npm run build
-```
-
-The image can be deployed to DockerHub using the following commands:
-```bash
-npm run publish
-```
-
 ## Run Tests
 
 To run the linter, tests, and coverage checks as the CI environment will, run
@@ -272,6 +260,18 @@ the `REPLAY` environment variable, as described in the
 [node-replay README](https://github.com/assaf/node-replay).
 
 To re-record everything, remove the fixtures directory and run the test suite. This should be done to cull the recordings when a code change makes many of them obsolete, when CMR adds response fields that Harmony needs to make use of, and periodically to ensure no impactful CMR changes or regressions.
+
+## Building and Publishing the Harmony Docker Image
+
+The Harmony Docker image can be built with the following command:
+```bash
+npm run build
+```
+
+The image can be deployed to DockerHub using the following commands:
+```bash
+npm run publish
+```
 
 ## Contributing to Harmony
 
