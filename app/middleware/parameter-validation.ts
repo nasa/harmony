@@ -41,9 +41,16 @@ function validateLinkTypeParameter(req: HarmonyRequest): void {
  * @param region - The name of the aws region
  */
 async function validateBucketIsInRegion(bucketName: string, region: string): Promise<void> {
-  const bucketRegion = await defaultObjectStore().getBucketRegion(bucketName);
-  if (bucketRegion != region) {
-    throw new RequestValidationError(`Destination bucket '${bucketName}' must be in the '${region}' region, but was in '${bucketRegion}'.`);
+  try {
+    const bucketRegion = await defaultObjectStore().getBucketRegion(bucketName);
+    if (bucketRegion != region) {
+      throw new RequestValidationError(`Destination bucket '${bucketName}' must be in the '${region}' region, but was in '${bucketRegion}'.`);
+    }
+  } catch (e) { 
+    if (e.name === 'NoSuchBucket') {
+      throw new RequestValidationError(`The specified bucket '${bucketName}' does not exist.`);
+    } 
+    throw e;
   }
 }
 

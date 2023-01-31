@@ -42,8 +42,8 @@ describe('when setting destinationUrl on ogc request', function () {
   describe('when making a request with an invalid destinationUrl with invalid S3 url format', function () {
     StubService.hook({ params: { status: 'successful' } });
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 'abcd' } });
-
-    it('returns 400 status code for the job', async function () {
+    
+    it('returns 400 status code for invalid s3 url format', async function () {
       expect(this.res.status).to.equal(400);
       const error = JSON.parse(this.res.text);
       expect(error).to.eql({
@@ -53,12 +53,27 @@ describe('when setting destinationUrl on ogc request', function () {
     });
   });
 
+  describe('when making a request with an invalid destinationUrl with invalid S3 url', function () {
+    hookGetBucketRegion('us-west-2');
+    StubService.hook({ params: { status: 'successful' } });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://non-existent-bucket/abcd' } });
+    
+    it('returns 400 status code for nonexistent s3 bucket', async function () {
+      expect(this.res.status).to.equal(400);
+      const error = JSON.parse(this.res.text);
+      expect(error).to.eql({
+        'code': 'harmony.RequestValidationError',
+        'description': "Error: The specified bucket 'non-existent-bucket' does not exist.",
+      });
+    });
+  });
+
   describe('when making a request with an invalid destinationUrl with bucket in a different region', function () {
     hookGetBucketRegion('us-east-1');
     StubService.hook({ params: { status: 'successful' } });
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://abcd/p1' } });
 
-    it('returns 400 status code for the job', async function () {
+    it('returns 400 status code for bucket in different region', async function () {
       expect(this.res.status).to.equal(400);
       const error = JSON.parse(this.res.text);
       expect(error).to.eql({

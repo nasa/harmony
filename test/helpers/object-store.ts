@@ -100,7 +100,15 @@ export function hookGetBucketRegion(
   before(function () {
     // replace getBucketRegion since getBucketLocation is not supported in mock-aws-s3
     stubGetBucketRegion = stub(S3ObjectStore.prototype, 'getBucketRegion')
-      .callsFake(async (_bucketName) => region);
+      .callsFake(async (bucketName: string) => {
+        if (bucketName === 'non-existent-bucket') {
+          const e = new Error('The specified bucket does not exist');
+          e.name = 'NoSuchBucket';
+          throw e;
+        } else {
+          return region;
+        }
+      });
   });
   
   after(function () {

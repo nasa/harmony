@@ -335,7 +335,8 @@ export class S3ObjectStore {
   async getBucketRegion(bucketName: string): Promise<string> {
     const req : aws.S3.GetBucketLocationRequest = { Bucket: bucketName };
     const result = await this.s3.getBucketLocation(req).promise();
-    return result.LocationConstraint;
+    // aws returns null when the bucket region is us-east-1. We want always return a region name.
+    return result.LocationConstraint ? result.LocationConstraint : 'us-east-1';
   }  
 
   /**
