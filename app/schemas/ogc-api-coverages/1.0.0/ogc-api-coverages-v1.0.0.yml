@@ -916,7 +916,11 @@ components:
     granuleName:
       name: granuleName
       in: query
-      description: passed to the CMR search as the readable_granule_name parameter
+      description: |
+        passed to the CMR search as the readable_granule_name parameter. Supports * and ? wildcards
+        for multiple and single character matches. Wildcards can be used any place in the name,
+        but leading wildcards are discouraged as they require a lot of resources for the underlying
+        search.
       required: false
       schema:
         type: string
