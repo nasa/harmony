@@ -68,6 +68,21 @@ describe('when setting destinationUrl on ogc request', function () {
     });
   });
 
+  describe('when making a request with an invalid destinationUrl with no s3 bucket', function () {
+    hookGetBucketRegion('us-west-2');
+    StubService.hook({ params: { status: 'successful' } });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://' } });
+    
+    it('returns 400 status code for no s3 bucket', async function () {
+      expect(this.res.status).to.equal(400);
+      const error = JSON.parse(this.res.text);
+      expect(error).to.eql({
+        'code': 'harmony.RequestValidationError',
+        'description': 'Error: Invalid destinationUrl, no s3 bucket is provided.',
+      });
+    });
+  });
+
   describe('when making a request with an invalid destinationUrl with bucket in a different region', function () {
     hookGetBucketRegion('us-east-1');
     StubService.hook({ params: { status: 'successful' } });

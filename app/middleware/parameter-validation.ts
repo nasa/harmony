@@ -67,6 +67,9 @@ async function validateDestinationUrlParameter(req: HarmonyRequest): Promise<voi
       throw new RequestValidationError(`Invalid destinationUrl '${destUrl}' must start with s3://`);
     }
     const bucketName = destUrl.substring(5).split('/')[0];
+    if (bucketName === '') {
+      throw new RequestValidationError('Invalid destinationUrl, no s3 bucket is provided.');
+    }
     await validateBucketIsInRegion(bucketName, awsDefaultRegion);
   }
 }
