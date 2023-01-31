@@ -1,18 +1,19 @@
-import * as mustache from 'mustache';
+import { NextFunction } from 'express';
 import * as fs from 'fs';
+import * as mustache from 'mustache';
 import * as path from 'path';
 import { promisify } from 'util';
-import { NextFunction } from 'express';
-import DataOperation from '../models/data-operation';
-import * as urlUtil from '../util/url';
-import { keysToLowerCase } from '../util/object';
-import { RequestValidationError, NotFoundError } from '../util/errors';
-import * as services from '../models/services';
-import { createDecrypter, createEncrypter } from '../util/crypto';
-import { parseMultiValueParameter } from '../util/parameter-parsing';
-import parseCRS from '../util/crs';
 import { validateParameterNames } from '../middleware/parameter-validation';
+import DataOperation from '../models/data-operation';
+import * as services from '../models/services';
+import parseCRS from '../util/crs';
+import { createDecrypter, createEncrypter } from '../util/crypto';
+import { NotFoundError, RequestValidationError } from '../util/errors';
+import { keysToLowerCase } from '../util/object';
+import { parseMultiValueParameter } from '../util/parameter-parsing-helpers';
+import * as urlUtil from '../util/url';
 
+import { handleGranuleNames } from '../util/parameter-parsers';
 import env from '../util/env';
 import { getVariablesForCollection } from '../util/variables';
 
@@ -214,7 +215,7 @@ function getMap(req, res, next: NextFunction): void {
       varInfo.variables, varInfo.coordinateVariables);
   }
 
-  const [crs, srs] = parseCRS({ queryCRS_: query.crs, validate: false });
+  const [crs, srs] = parseCRS(query.crs, false);
   operation.crs = crs || query.crs;
   operation.srs = srs;
 
@@ -237,6 +238,8 @@ function getMap(req, res, next: NextFunction): void {
     // service request.
     operation.granuleIds = parseMultiValueParameter(query.granuleid);
   }
+
+  handleGranuleNames(operation, query);
 
   // WMS requests only support synchronous execution
   operation.requireSynchronous = true;

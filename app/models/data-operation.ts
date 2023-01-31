@@ -269,6 +269,8 @@ export default class DataOperation {
 
   granuleIds: string[];
 
+  granuleNames: string[];
+
   requireSynchronous: boolean;
 
   maxResults?: number;
@@ -290,6 +292,9 @@ export default class DataOperation {
   ignoreErrors?: boolean;
 
   destinationUrl: string;
+
+  // additional query parameters to be sent to the CMR
+  userProvidedCmrQueryParams?: Map<string, string> = new Map<string, string>();
 
   /**
    * Creates an instance of DataOperation.

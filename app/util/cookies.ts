@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { mergeParameters } from './parameter-parsing';
+import { mergeParameters } from './parameter-parsing-helpers';
 import * as urlUtil from './url';
 import HarmonyRequest from '../models/harmony-request';
 
