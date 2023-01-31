@@ -7,7 +7,7 @@ import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
 import { keysToLowerCase } from '../../util/object';
-import { ParameterParseError, parseBoolean } from '../../util/parameter-parsing-helpers';
+import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
 import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal } from './util/subset-parameter-parsing';
 /**

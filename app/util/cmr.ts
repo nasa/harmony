@@ -8,8 +8,6 @@ import { CmrError } from './errors';
 import { defaultObjectStore, objectStoreForProtocol } from './object-store';
 import { cmrEndpoint, cmrMaxPageSize, harmonyClientId, stagingBucket } from './env';
 import logger from './log';
-import wrap from './array';
-import { match } from 'sinon';
 
 const clientIdHeader = {
   'Client-id': `${harmonyClientId}`,
