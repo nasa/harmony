@@ -293,8 +293,6 @@ export default class DataOperation {
 
   destinationUrl: string;
 
-  // additional query parameters to be sent to the CMR
-  userProvidedCmrQueryParams?: Map<string, string> = new Map<string, string>();
 
   /**
    * Creates an instance of DataOperation.
