@@ -320,38 +320,6 @@ function handleWildcards(formData: FormData, form: CmrQuery, field: string): voi
   }
 }
 
-// /**
-//  * Check a field on a CmrQuery to see if it has wildcard values. If so, return an `options`
-//  * parameter that can be added to a URL to indicate that the field has wildcards.
-//  *
-//  * @param form - the form data to be checked
-//  * @param field -the field to check for wildcards
-//  */
-// function handleWildcards(form: CmrQuery, field: string): string {
-//   const re = /(\*|\?)/;
-//   const values = form[field];
-//   let isPattern = false;
-//   if (isArray(values)) {
-//     for (const value of values) {
-//       if (re.test(value.toString())) {
-//         isPattern = true;
-//         break;
-//       }
-//     }
-//   } else {
-//     if (re.test(values.toString())) {
-//       isPattern = true;
-//     }
-//   }
-
-//   if (isPattern) {
-//     return `options[${field}][pattern]=true`;
-//   }
-
-//   return '';
-
-// }
-
 /**
  * Post a query to the CMR with the parameters in the given form
  *
