@@ -2,7 +2,7 @@
 
 1. If you're starting from scratch, and need to know how to build a new service for Harmony, see [Adapting New Services](./guides/adapting-new-services.md). 
 
-2. When you have a service ready to test, read the [Service Configuration](./guides/Configuring%20a%20Harmony%20service.ipynb) notebook. Locally, Harmony communicates with the UAT CMR environment, so any relevant CMR configuration will need to be completed in UAT in order for your local testing to work. You can hold off on submitting any configuration-related Harmony pull requests until you're satisfied with your testing results.
+2. When you have a service ready to test, read the [Service Configuration](./guides/Configuring%20a%20Harmony%20service.ipynb) notebook. In development mode, Harmony communicates with the UAT CMR environment, so any relevant CMR configuration will need to be completed in UAT in order for your local testing to work. You can hold off on submitting any configuration-related Harmony pull requests until you're satisfied with your testing results.
 
 Once your service has been developed and everything is configured, you can deploy it and test it locally alongside your local Harmony instance:
 
