@@ -22,7 +22,7 @@ const readFile = promisify(fs.readFile);
 const wmsGetMapParams = [
   'SERVICE', 'REQUEST', 'VERSION', 'LAYERS', 'CRS', 'BBOX', 'FORMAT', 'STYLES',
   'WIDTH', 'HEIGHT', 'TRANSPARENT', 'DPI', 'MAP_RESOLUTION', 'LAYERS', 'GRANULEID',
-  'SKIPPREVIEW'];
+  'GRANULENAME', 'SKIPPREVIEW'];
 
 /**
  * Validates that the given parameters are present in the map, throwing
@@ -239,6 +239,8 @@ function getMap(req, res, next: NextFunction): void {
     operation.granuleIds = parseMultiValueParameter(query.granuleid);
   }
 
+  // NOTE: will only use the first granule returned by the CMR even if more than one match
+  // `granuleName`
   handleGranuleNames(operation, query);
 
   // WMS requests only support synchronous execution
