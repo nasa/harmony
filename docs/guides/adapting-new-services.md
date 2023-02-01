@@ -44,7 +44,7 @@ For service providers that do not want to use the service library (perhaps becau
 
 ## 2. Accepting Harmony requests
 
-When invoking a service, Harmony provides an input detailing the specific operations the service should perform and the URLs of the data it should perform the operations on. Each new service will need to adapt this message into an actual service invocation, typically transforming the JSON input into method calls, command-line invocations, or HTTP requests. See the latest [Harmony data-operation schema](../app/schemas/) for details on Harmony's JSON input format.
+When invoking a service, Harmony provides an input detailing the specific operations the service should perform and the URLs of the data it should perform the operations on. Each new service will need to adapt this message into an actual service invocation, typically transforming the JSON input into method calls, command-line invocations, or HTTP requests. See the latest [Harmony data-operation schema](../../app/schemas/) for details on Harmony's JSON input format.
 
 Ideally, this adaptation would consist only of necessary complexity peculiar to the service in question. Please let the team know if there are components that can make this process easier and consider sending a pull request or publishing your code if you believe it can help future services.
 
@@ -58,7 +58,7 @@ Canceled requests are handled internally by Harmony. Harmony will prevent furthe
 
 ## 5. Defining environment variables in env-defaults
 
-Add environment variables specific to the service to [env-defaults](../env-defaults). See the harmony-service-example for an example of the environment variables needed:
+Add environment variables specific to the service to [env-defaults](../../env-defaults). See the harmony-service-example for an example of the environment variables needed:
 
 ```
 HARMONY_SERVICE_EXAMPLE_IMAGE=harmonyservices/service-example:latest
@@ -80,15 +80,15 @@ Be sure to prefix the entries with the name of your service. Set the value for t
 
 ## 6. Registering services in services.yml
 
-Add an entry to [services.yml](../config/services.yml) under each CMR environment that has collections / granules appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance.
+Add an entry to [services.yml](../../config/services.yml) under each CMR environment that has collections / granules appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance.
 
-Note that you will need to define 3 environment variables for your service as well. Add the defaults for these environment variables to the [env-defaults](../env-defaults) file with the other service environment variables in the 'Service Config' section.
+Note that you will need to define 3 environment variables for your service as well. Add the defaults for these environment variables to the [env-defaults](../../env-defaults) file with the other service environment variables in the 'Service Config' section.
 
 \<service name\>_IMAGE              # The docker image and tag to use for the service locally. Generally default to using the 'latest' tag.
 
 \<service name\>_IMAGE_PULL_POLICY  # Default this value to 'IfNotPresent' locally. Other values are described in `env-defaults`.
 
-The structure of an entry in the [services.yml](../config/services.yml) file is as follows:
+The structure of an entry in the [services.yml](../../config/services.yml) file is as follows:
 
 ```yaml
 - name: harmony/service-example     # A unique identifier string for the service, conventionally <team>/<service>
@@ -132,7 +132,7 @@ be supplied in one of two ways:
 
 1. directly through the `collections` entry in a service config in `services.yml`
 2. by [creating a UMM-S/UMM-C association](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html#service-association) in the CMR and then adding the UMM-S CMR concept ID to the `umm_s` field
-in a service config in `services.yml`.
+in a service config in `services.yml`. See [this wiki link](https://wiki.earthdata.nasa.gov/display/HARMONY/UMM-S+Guidance+for+Harmony+Services) and the [Service Configuration](./Configuring%20a%20Harmony%20service.ipynb) notebook for further UMM-S guidance with respect to Earthdata Search.
 
 The second method is now the preferred approach to adding collections to a service as it allows
 collections to be added/removed to/from an existing service without requiring a pull request or
