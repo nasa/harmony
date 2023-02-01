@@ -44,6 +44,7 @@ async function validateBucketIsInRegion(bucketName: string, region: string): Pro
   try {
     const bucketRegion = await defaultObjectStore().getBucketRegion(bucketName);
     if (bucketRegion != region) {
+      // TODO: Add reference to the cross account s3 delivery document in the error message below when working on HARMONY-1218.
       throw new RequestValidationError(`Destination bucket '${bucketName}' must be in the '${region}' region, but was in '${bucketRegion}'.`);
     }
   } catch (e) { 
