@@ -1,6 +1,6 @@
 # Adapting New Services to Harmony<!-- omit in toc -->
 
-**IMPORTANT! This documentation concerns features under active development. Additional methods of service integration are currently being implemented and existing ones refined. Please reach out in #harmony-service-providers for the latest, for particular adaptation needs, and especially with any feedback that can help us improve.**
+Please reach out in #harmony-service-providers for additional guidance on any adaptation needs, and especially with any feedback that can help us improve.
 
 ## Table of Contents<!-- omit in toc -->
 - [Requirements for Harmony Services](#requirements-for-harmony-services)
