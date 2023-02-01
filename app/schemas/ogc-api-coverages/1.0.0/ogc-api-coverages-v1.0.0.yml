@@ -909,7 +909,7 @@ components:
     destinationUrl:
       name: destinationUrl
       in: query
-      description: destination url specified by the client, currently only s3 link url is supported
+      description: destination url specified by the client, currently only s3 link url is supported (e.g. s3://my-bucket-name/mypath)
       required: false
       schema:
         type: string

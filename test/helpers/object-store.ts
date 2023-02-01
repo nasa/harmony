@@ -88,3 +88,30 @@ export function hookMockS3(_buckets?: string[]): void {
     dir.removeCallback();
   });
 }
+
+/**
+ * Adds before / after hooks to GetBucketRegion
+ *
+ * @param region - The bucket region to return
+ */
+export function hookGetBucketRegion(
+  region: string): void {
+  let stubGetBucketRegion;
+  before(function () {
+    // replace getBucketRegion since getBucketLocation is not supported in mock-aws-s3
+    stubGetBucketRegion = stub(S3ObjectStore.prototype, 'getBucketRegion')
+      .callsFake(async (bucketName: string) => {
+        if (bucketName === 'non-existent-bucket') {
+          const e = new Error('The specified bucket does not exist');
+          e.name = 'NoSuchBucket';
+          throw e;
+        } else {
+          return region;
+        }
+      });
+  });
+  
+  after(function () {
+    stubGetBucketRegion.restore();
+  });
+}
