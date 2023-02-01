@@ -197,7 +197,7 @@ Create the k8s deployment:
 ./bin/deploy-services
 ```
 
-If you'd like to build and test a new service for Harmony see [this guide](../testing-services.md).
+If you'd like to build and test a new service for Harmony see [this reference](../testing-services.md).
 
 ### Deleting services and stopping Kubernetes
 
