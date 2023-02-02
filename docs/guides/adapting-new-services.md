@@ -118,7 +118,6 @@ The structure of an entry in the [services.yml](../../config/services.yml) file 
       - image/png
       - image/gif
     reprojection: true            # The service supports reprojection
-  # Turbo config
   steps:
       - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE} # The image to use for the first step in the chain
       - image: !Env ${HARMONY_EXAMPLE_IMAGE} # The image to use for the second step in the chain
