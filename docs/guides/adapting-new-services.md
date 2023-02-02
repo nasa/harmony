@@ -82,12 +82,6 @@ Be sure to prefix the entries with the name of your service. Set the value for t
 
 Add an entry to [services.yml](../../config/services.yml) under each CMR environment that has collections / granules appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance.
 
-Note that you will need to define 3 environment variables for your service as well. Add the defaults for these environment variables to the [env-defaults](../../env-defaults) file with the other service environment variables in the 'Service Config' section.
-
-\<service name\>_IMAGE              # The docker image and tag to use for the service locally. Generally default to using the 'latest' tag.
-
-\<service name\>_IMAGE_PULL_POLICY  # Default this value to 'IfNotPresent' locally. Other values are described in `env-defaults`.
-
 The structure of an entry in the [services.yml](../../config/services.yml) file is as follows:
 
 ```yaml
