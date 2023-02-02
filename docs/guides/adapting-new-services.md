@@ -80,7 +80,7 @@ Be sure to prefix the entries with the name of your service. Set the value for t
 
 ## 6. Registering services in services.yml
 
-Add an entry to [services.yml](../../config/services.yml) under each CMR environment that has collections / granules appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance.
+Add an entry to [services.yml](../../config/services.yml) under each CMR environment that has collections / granules appropriate to the service and send a pull request to the Harmony team, or ask a Harmony team member for assistance. It is important to note that the order that service entries are placed in this file can have an impact on service selection. In cases where multiple services are capable of performing the requested transformations, the service that appears first in the file will handle the request.
 
 The structure of an entry in the [services.yml](../../config/services.yml) file is as follows:
 
@@ -118,7 +118,7 @@ The structure of an entry in the [services.yml](../../config/services.yml) file 
       - image/gif
     reprojection: true            # The service supports reprojection
   steps:
-      - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE} # The image to use for the first step in the chain
+      - image: !Env ${QUERY_CMR_IMAGE} # The image to use for the first step in the chain
       - image: !Env ${HARMONY_EXAMPLE_IMAGE}     # The image to use for the second step in the chain
 ```
 
@@ -143,7 +143,7 @@ The following `steps` entry is for a chain of services including the PODAAC L2 S
 
 ```yaml
 steps:
-   - image: !Env ${CMR_GRANULE_LOCATOR_IMAGE}
+   - image: !Env ${QUERY_CMR_IMAGE}
    - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
      operations: ['spatialSubset', 'variableSubset']
      conditional:
