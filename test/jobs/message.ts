@@ -144,7 +144,7 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
       before(async function () {
         this.previewThresholdStub = stub(env, 'previewThreshold').get(() => 5); // ensure initial job state is PREVIEWING
         const requestString = 'http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?maxResults=10';
-        limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;        
+        limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;
         job = (new TestTurboService(config, buildOperation(limitedMessage))).createJob(requestString);
         await job.save(this.trx);
         assert(job.status === JobStatus.PREVIEWING);
@@ -218,11 +218,11 @@ describe('job constructor message handling', function () {
         job = new Job({
           message: JSON.stringify({ 'failed':'something bad happened..' }),
           status: JobStatus.FAILED,
-          jobID, 
-          requestId: jobID, 
-          username: 'jay', 
-          request: '', 
-          numInputGranules: 1, 
+          jobID,
+          requestId: jobID,
+          username: 'jay',
+          request: '',
+          numInputGranules: 1,
           collectionIds: [] });
       });
       it('uses the message from the map as the current status', function () {
@@ -237,11 +237,11 @@ describe('job constructor message handling', function () {
         job = new Job({
           message: JSON.stringify({ 'failed':'something bad happened..' }),
           status: JobStatus.RUNNING,
-          jobID, 
-          requestId: jobID, 
-          username: 'jay', 
-          request: '', 
-          numInputGranules: 1, 
+          jobID,
+          requestId: jobID,
+          username: 'jay',
+          request: '',
+          numInputGranules: 1,
           collectionIds: [] });
       });
       it('uses the default message for that status', function () {
@@ -257,11 +257,11 @@ describe('job constructor message handling', function () {
       job = new Job({
         message: 'something bad happened..',
         status: JobStatus.FAILED,
-        jobID, 
-        requestId: jobID, 
-        username: 'jay', 
-        request: '', 
-        numInputGranules: 1, 
+        jobID,
+        requestId: jobID,
+        username: 'jay',
+        request: '',
+        numInputGranules: 1,
         collectionIds: [] });
     });
     it('uses that message as the current status', function () {
@@ -276,11 +276,11 @@ describe('job constructor message handling', function () {
       job = new Job({
         message: null,
         status: JobStatus.RUNNING,
-        jobID, 
-        requestId: jobID, 
-        username: 'jay', 
-        request: '', 
-        numInputGranules: 1, 
+        jobID,
+        requestId: jobID,
+        username: 'jay',
+        request: '',
+        numInputGranules: 1,
         collectionIds: [] });
     });
     it('uses the default message for the current status', function () {
@@ -295,11 +295,11 @@ describe('job constructor message handling', function () {
       job = new Job({
         message: undefined,
         status: JobStatus.RUNNING,
-        jobID, 
-        requestId: jobID, 
-        username: 'jay', 
-        request: '', 
-        numInputGranules: 1, 
+        jobID,
+        requestId: jobID,
+        username: 'jay',
+        request: '',
+        numInputGranules: 1,
         collectionIds: [] });
     });
     it('uses the default message for the current status', function () {

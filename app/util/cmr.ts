@@ -1,7 +1,7 @@
 import FormData from 'form-data';
 import * as fs from 'fs';
 import { v4 as uuid } from 'uuid';
-import { get } from 'lodash';
+import { get, isArray } from 'lodash';
 import fetch, { Response } from 'node-fetch';
 import * as querystring from 'querystring';
 import { CmrError } from './errors';
@@ -124,6 +124,7 @@ export interface CmrRelatedUrl {
 export interface CmrQuery
   extends NodeJS.Dict<string | string[] | number | number[] | boolean | boolean[] | null> {
   concept_id?: string | string[];
+  readable_granule_name?: string | string[];
   page_size?: number;
   downloadable?: boolean;
   scroll?: string;
@@ -255,12 +256,18 @@ async function _cmrGet(
 export async function fetchPost(
   path: string, formData: FormData | string, headers: { [key: string]: string },
 ): Promise<CmrResponse> {
-  const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}${path}`, {
-    method: 'POST',
-    body: formData,
-    headers,
-  });
-  response.data = await response.json();
+  let response;
+  try {
+    response = await fetch(`${cmrApiConfig.baseURL}${path}`, {
+      method: 'POST',
+      body: formData,
+      headers,
+    });
+    response.data = await response.json();
+  } catch (e) {
+    console.log(JSON.stringify(e));
+  }
+
   return response;
 }
 
@@ -278,6 +285,39 @@ async function processGeoJson(geoJsonUrl: string, formData: FormData): Promise<s
     contentType: 'application/geo+json',
   });
   return tempFile;
+}
+
+/**
+ *  Check a field on a CmrQuery to see if it has wildcard values. If so, add an
+ * `options[fieldName][patter] = true` to the given `FormData` object.
+ *
+ * @param formData - the form data to be altered if the given field has wildcards
+ * @param form - the form data to be checked
+ * @param field -the field to check for wildcards
+ */
+function handleWildcards(formData: FormData, form: CmrQuery, field: string): void {
+  const re = /(\*|\?)/;
+  const values = form[field];
+  if (!values) {
+    return;
+  }
+  let isPattern = false;
+  if (isArray(values)) {
+    for (const value of values) {
+      if (re.test(value.toString())) {
+        isPattern = true;
+        break;
+      }
+    }
+  } else {
+    if (re.test(values.toString())) {
+      isPattern = true;
+    }
+  }
+
+  if (isPattern) {
+    formData.append(`options[${field}][pattern]`, 'true');
+  }
 }
 
 /**
@@ -311,6 +351,9 @@ export async function cmrPostBase(
       }
     }
   }));
+
+  handleWildcards(formData, form as CmrQuery, 'readable_granule_name');
+
   const headers = {
     ...clientIdHeader,
     ..._makeTokenHeader(token),
@@ -540,7 +583,7 @@ export async function getVariablesForCollection(
 
 /**
  * Generate an s3 url to use to store/lookup stored query parameters
- * 
+ *
  * @param sessionKey - The session key
  * @returns An s3 url containing the session key
  */
@@ -557,7 +600,7 @@ function s3UrlForStoredQueryParams(sessionKey: string): string {
  * @param limit - The maximum number of granules to return in this page of results
  * @param sessionKey - Key used to look up query parameters
  * @param searchAfterHeader - Value string to use for the cmr-search-after header
- * @returns A CmrGranuleHits object containing the granules associated with the input collection 
+ * @returns A CmrGranuleHits object containing the granules associated with the input collection
  * and a session key and cmr-search-after header
  */
 export async function queryGranulesWithSearchAfter(

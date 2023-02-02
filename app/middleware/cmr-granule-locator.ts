@@ -173,7 +173,7 @@ async function cmrGranuleLocatorTurbo(
   }
 
   cmrQuery.concept_id = operation.granuleIds;
-
+  cmrQuery.readable_granule_name = operation.granuleNames;
   operation.cmrHits = 0;
   operation.scrollIDs = [];
 
@@ -263,6 +263,7 @@ async function cmrGranuleLocatorNonTurbo(
   }
 
   cmrQuery.concept_id = operation.granuleIds;
+  cmrQuery.readable_granule_name = operation.granuleNames;
 
   operation.cmrHits = 0;
   try {

@@ -3,18 +3,17 @@ import { RequestValidationError } from './errors';
 import { SRS } from '../models/data-operation';
 
 /**
- * Express middleware that responds to OGC API - Coverages coverage
- * rangeset requests.  Responds with the actual coverage data.
+ * Parse a CRS string given as a parameter and return a proj4 string and SRS
  *
- * @param queryCRS - The CRS information to be processed
+ * @param queryCRS_ - The CRS information to be processed
  * @param validate - An optional boolean on whether to throw an exception
  *   on failure
- * @returns The proj4 string and SRS
+ * @returns An array containing the proj4 string and SRS
  * @throws RequestValidationError - Thrown if the request has validation problems and
  *   cannot be performed
  */
 export default function parseCRS(
-  { queryCRS_, validate = true }: { queryCRS_: string; validate?: boolean },
+  queryCRS_: string, validate = true,
 ): [string, SRS] {
   try {
     let queryCRS: string = null;

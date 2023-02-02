@@ -43,6 +43,7 @@ export function buildOperation(message: string): DataOperation {
   operation.requestId = uuid().toString();
   operation.user = 'Bo';
   operation.granuleIds = ['g1'];
+  operation.granuleNames = ['g1foo'];
   operation.requireSynchronous = false;
   operation.maxResults = 10;
   operation.cmrHits = 100;
