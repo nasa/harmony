@@ -24,8 +24,16 @@ const reprojectAndZarrQuery = {
   concatenate: false,
 };
 
+const l2ssAndConciseQuery = {
+  subset: 'lat(0:90)',
+  concatenate: false,
+  maxResults: 1,
+  ignoreErrors: true,
+};
+
 describe('when setting ignoreErrors=true', function () {
   const collection = 'C1233800302-EEDTEST';
+  const l2ssCollection = 'C1243729749-EEDTEST';
   hookServersStartStop();
 
   let sizeOfObjectStub;
@@ -682,7 +690,7 @@ describe('when setting ignoreErrors=true', function () {
 
   describe('When a requesting concatenation for a service that batches aggregation requests', function () {
     describe('when making a request for 3 granules and the first one fails while in progress', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3, concatenate: true } } });
+      hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: { ...l2ssAndConciseQuery, ...{ maxResults: 3, concatenate: true } } });
       hookRedirect('joe');
 
       before(async function () {
@@ -700,75 +708,75 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
       });
 
-      describe('when the first swot-reprojection service work item fails', function () {
-        let firstSwotItem;
+      describe('when the first L2-Subsetter service work item fails', function () {
+        let firstL2SSItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            firstSwotItem = JSON.parse(res.text).workItem;
-            firstSwotItem.status = WorkItemStatus.FAILED;
-            firstSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+            firstL2SSItem = JSON.parse(res.text).workItem;
+            firstL2SSItem.status = WorkItemStatus.FAILED;
+            firstL2SSItem.results = [];
 
-            await updateWorkItem(this.backend, firstSwotItem);
+            await updateWorkItem(this.backend, firstL2SSItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, firstSwotItem.id);
+            const workItem = await getWorkItemById(db, firstL2SSItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const job = await Job.byJobID(db, firstL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        it('does not construct a work item for netcdf-to-zarr when the first item fails', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
+        it('does not construct a work item for PO.DAAC Concise when the first item fails', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
 
-        it('does not construct a work item for netcdf-to-zarr when the second item finishes', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        it('does not construct a work item for PO.DAAC Concise when the second item finishes', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(4);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
 
-        it('constructs a single netcdf-to-zarr work item when the last item succeeds', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        it('constructs a single PO.DAAC Concise work item when the last item succeeds', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
 
-          const currentWorkItems = (await getWorkItemsByJobId(db, firstSwotItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, firstL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
 
-        it('sets the status to COMPLETE_WITH_ERRORS when the netcdf-to-zarr request completes', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+        it('sets the status to COMPLETE_WITH_ERRORS when the PO.DAAC Concise request completes', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -776,13 +784,13 @@ describe('when setting ignoreErrors=true', function () {
           await updateWorkItem(this.backend, workItem);
 
 
-          const job = await Job.byJobID(db, firstSwotItem.jobID);
+          const job = await Job.byJobID(db, firstL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
           expect(job.progress).to.equal(100);
         });
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: firstSwotItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: firstL2SSItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(1);
@@ -793,7 +801,7 @@ describe('when setting ignoreErrors=true', function () {
     });
 
     describe('when making a request for 3 granules with 2 batches and one fails in the middle while in progress', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3, concatenate: true } } });
+      hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: { ...l2ssAndConciseQuery, ...{ maxResults: 3, concatenate: true } } });
       hookRedirect('joe');
 
       let batchSizeStub;
@@ -813,15 +821,15 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
       });
       after(function () {
         batchSizeStub.restore();
       });
 
-      describe('when the first swot-reprojection service work item succeeds', function () {
-        it('constructs a work item for netcdf-to-zarr', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+      describe('when the first PO.DAAC L2SS service work item succeeds', function () {
+        it('constructs a work item for PO.DAAC Concise', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -830,91 +838,89 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
       });
 
-      describe('when the second swot-reprojection service work item fails', function () {
-        let secondSwotItem;
+      describe('when the second PO.DAAC L2SS service work item fails', function () {
+        let secondL2SSItem;
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            secondSwotItem = JSON.parse(res.text).workItem;
-            secondSwotItem.status = WorkItemStatus.FAILED;
-            secondSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+            secondL2SSItem = JSON.parse(res.text).workItem;
+            secondL2SSItem.status = WorkItemStatus.FAILED;
+            secondL2SSItem.results = [];
 
-            await updateWorkItem(this.backend, secondSwotItem);
+            await updateWorkItem(this.backend, secondL2SSItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, secondSwotItem.id);
+            const workItem = await getWorkItemById(db, secondL2SSItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const job = await Job.byJobID(db, secondSwotItem.jobID);
+          const job = await Job.byJobID(db, secondL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        it('does not construct another netcdf-to-zarr work item', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, secondSwotItem.jobID)).workItems;
+        it('does not construct another PO.DAAC Concise work item', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, secondL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
 
-        it('constructs a second netcdf-to-zarr work item when the last item succeeds', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+        it('constructs a second PO.DAAC Concise work item when the last item succeeds', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
 
-          const currentWorkItems = (await getWorkItemsByJobId(db, secondSwotItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, secondL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
 
-        it('leaves the status as RUNNING_WITH_ERRORS when the first netcdf-to-zarr request completes', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+        it('leaves the status as RUNNING_WITH_ERRORS when the first PO.DAAC Concise request completes', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
 
-
-          const job = await Job.byJobID(db, secondSwotItem.jobID);
+          const job = await Job.byJobID(db, secondL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        it('sets the status to COMPLETE_WITH_ERRORS when the second netcdf-to-zarr request completes', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+        it('sets the status to COMPLETE_WITH_ERRORS when the second PO.DAAC Concise request completes', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
 
-
-          const job = await Job.byJobID(db, secondSwotItem.jobID);
+          const job = await Job.byJobID(db, secondL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
           expect(job.progress).to.equal(100);
         });
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: secondSwotItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: secondL2SSItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(1);
@@ -925,7 +931,7 @@ describe('when setting ignoreErrors=true', function () {
     });
 
     describe('when making a request for 3 granules with 2 batches and the last one of the first chain fails', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3, concatenate: true } } });
+      hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: { ...l2ssAndConciseQuery, ...{ maxResults: 3, concatenate: true } } });
       hookRedirect('joe');
 
       let batchSizeStub;
@@ -945,15 +951,15 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
       });
       after(function () {
         batchSizeStub.restore();
       });
 
-      describe('when the first swot-reprojection service work item succeeds', function () {
-        it('constructs a work item for netcdf-to-zarr', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+      describe('when the first PO.DAAC L2SS service work item succeeds', function () {
+        it('constructs a work item for PO.DAAC Concise', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -962,15 +968,15 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
       });
 
-      describe('when the second swot-reprojection service work item succeeds', function () {
-        it('constructs a work item for netcdf-to-zarr', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+      describe('when the second PO.DAAC L2SS service work item succeeds', function () {
+        it('constructs a work item for PO.DAAC Concise', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -979,72 +985,72 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
         });
       });
 
-      describe('when the last swot-reprojection service work item fails', function () {
-        let lastSwotItem;
+      describe('when the last PO.DAAC L2SS service work item fails', function () {
+        let lastL2SSItem;
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            lastSwotItem = JSON.parse(res.text).workItem;
-            lastSwotItem.status = WorkItemStatus.FAILED;
-            lastSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+            lastL2SSItem = JSON.parse(res.text).workItem;
+            lastL2SSItem.status = WorkItemStatus.FAILED;
+            lastL2SSItem.results = [];
 
-            await updateWorkItem(this.backend, lastSwotItem);
+            await updateWorkItem(this.backend, lastL2SSItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, lastSwotItem.id);
+            const workItem = await getWorkItemById(db, lastL2SSItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const job = await Job.byJobID(db, lastSwotItem.jobID);
+          const job = await Job.byJobID(db, lastL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        it('does not construct another netcdf-to-zarr work item', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, lastSwotItem.jobID)).workItems;
+        it('does not construct another PO.DAAC Concise work item', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, lastL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
 
-        it('leaves the status as RUNNING_WITH_ERRORS when the first netcdf-to-zarr request completes', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+        it('leaves the status as RUNNING_WITH_ERRORS when the first PO.DAAC Concise request completes', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
 
-          const job = await Job.byJobID(db, lastSwotItem.jobID);
+          const job = await Job.byJobID(db, lastL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        it('sets the status to COMPLETE_WITH_ERRORS when the second netcdf-to-zarr request completes', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+        it('sets the status to COMPLETE_WITH_ERRORS when the second PO.DAAC Concise request completes', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
 
-          const job = await Job.byJobID(db, lastSwotItem.jobID);
+          const job = await Job.byJobID(db, lastL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
           expect(job.progress).to.equal(100);
         });
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: lastSwotItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: lastL2SSItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(1);
@@ -1055,7 +1061,7 @@ describe('when setting ignoreErrors=true', function () {
     });
 
     describe('when making a request for 3 granules with 2 batches and one item fails prior to aggregation and one aggregation item fails', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 3, concatenate: true } } });
+      hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: { ...l2ssAndConciseQuery, ...{ maxResults: 3, concatenate: true } } });
       hookRedirect('joe');
 
       let batchSizeStub;
@@ -1075,15 +1081,15 @@ describe('when setting ignoreErrors=true', function () {
         await updateWorkItem(this.backend, workItem);
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(4);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(3);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(3);
       });
       after(function () {
         batchSizeStub.restore();
       });
 
-      describe('when the first swot-reprojection service work item succeeds', function () {
-        it('constructs a work item for netcdf-to-zarr', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+      describe('when the first PO.DAAC L2SS service work item succeeds', function () {
+        it('constructs a work item for PO.DAAC Concise', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -1092,15 +1098,15 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
       });
 
-      describe('when the second swot-reprojection service work item succeeds', function () {
-        it('constructs a work item for netcdf-to-zarr', async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+      describe('when the second PO.DAAC L2SS service work item succeeds', function () {
+        it('constructs a work item for PO.DAAC Concise', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
@@ -1109,82 +1115,82 @@ describe('when setting ignoreErrors=true', function () {
           const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
         });
       });
 
-      describe('when the last swot-reprojection service work item fails', function () {
-        let lastSwotItem;
+      describe('when the last PO.DAAC L2SS service work item fails', function () {
+        let lastL2SSItem;
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            lastSwotItem = JSON.parse(res.text).workItem;
-            lastSwotItem.status = WorkItemStatus.FAILED;
-            lastSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+            lastL2SSItem = JSON.parse(res.text).workItem;
+            lastL2SSItem.status = WorkItemStatus.FAILED;
+            lastL2SSItem.results = [];
 
-            await updateWorkItem(this.backend, lastSwotItem);
+            await updateWorkItem(this.backend, lastL2SSItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, lastSwotItem.id);
+            const workItem = await getWorkItemById(db, lastL2SSItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const job = await Job.byJobID(db, lastSwotItem.jobID);
+          const job = await Job.byJobID(db, lastL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        it('does not construct another netcdf-to-zarr work item', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, lastSwotItem.jobID)).workItems;
+        it('does not construct another PO.DAAC Concise work item', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, lastL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(6);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/concise:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
 
-        it('leaves the status as RUNNING_WITH_ERRORS when the first netcdf-to-zarr request completes successfully', async function () {
-          const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
+        it('leaves the status as RUNNING_WITH_ERRORS when the first PO.DAAC Concise request completes successfully', async function () {
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
           const { workItem } = JSON.parse(res.text);
           workItem.status = WorkItemStatus.SUCCESSFUL;
           workItem.results = [getStacLocation(workItem, 'catalog.json')];
           await fakeServiceStacOutput(workItem.jobID, workItem.id);
           await updateWorkItem(this.backend, workItem);
 
-          const job = await Job.byJobID(db, lastSwotItem.jobID);
+          const job = await Job.byJobID(db, lastL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        describe('when the second netcdf-to-zarr-request-fails', async function () {
+        describe('when the second PO.DAAC Concise request fails', async function () {
           before(async function () {
             let shouldLoop = true;
             // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
             while (shouldLoop) {
-              const res = await getWorkForService(this.backend, 'ghcr.io/nasa/harmony-netcdf-to-zarr:latest');
-              const lastZarrItem = JSON.parse(res.text).workItem;
-              lastZarrItem.status = WorkItemStatus.FAILED;
-              lastZarrItem.results = [];
-              lastZarrItem.errorMessage = 'batch failed';
+              const res = await getWorkForService(this.backend, 'ghcr.io/podaac/concise:sit');
+              const lastConciseItem = JSON.parse(res.text).workItem;
+              lastConciseItem.status = WorkItemStatus.FAILED;
+              lastConciseItem.results = [];
+              lastConciseItem.errorMessage = 'batch failed';
 
-              await updateWorkItem(this.backend, lastZarrItem);
+              await updateWorkItem(this.backend, lastConciseItem);
 
               // check to see if the work-item has failed completely
-              const workItem = await getWorkItemById(db, lastZarrItem.id);
+              const workItem = await getWorkItemById(db, lastConciseItem.id);
               shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
             }
           });
           it('sets the status to COMPLETE_WITH_ERRORS', async function () {
-            const job = await Job.byJobID(db, lastSwotItem.jobID);
+            const job = await Job.byJobID(db, lastL2SSItem.jobID);
             expect(job.status).to.equal(JobStatus.COMPLETE_WITH_ERRORS);
             expect(job.progress).to.equal(100);
           });
           it('includes both of the error details in the job status', async function () {
-            const response = await jobStatus(this.frontend, { jobID: lastSwotItem.jobID, username: 'joe' });
+            const response = await jobStatus(this.frontend, { jobID: lastL2SSItem.jobID, username: 'joe' });
             const job = JSON.parse(response.text);
             const { errors } = job;
             expect(errors.length).to.equal(2);
@@ -1198,7 +1204,7 @@ describe('when setting ignoreErrors=true', function () {
     });
 
     describe('when making a request for 4 granules with max allowed errors of 1 and two fail', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 4, concatenate: true } } });
+      hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: { ...l2ssAndConciseQuery, ...{ maxResults: 4, concatenate: true } } });
       hookRedirect('joe');
 
       let maxErrorsStub;
@@ -1221,7 +1227,7 @@ describe('when setting ignoreErrors=true', function () {
         const currentWorkItems = (await getWorkItemsByJobId(db, workItem.jobID)).workItems;
         expect(currentWorkItems.length).to.equal(5);
         expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(4);
+        expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(4);
       });
       after(function () {
         maxErrorsStub.restore();
@@ -1231,7 +1237,7 @@ describe('when setting ignoreErrors=true', function () {
         let firstSwotItem;
 
         before(async function () {
-          const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
+          const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
 
           firstSwotItem = JSON.parse(res.text).workItem;
           firstSwotItem.status = WorkItemStatus.SUCCESSFUL;
@@ -1246,69 +1252,69 @@ describe('when setting ignoreErrors=true', function () {
         });
       });
 
-      describe('when the second swot-reprojection service work item fails (first failure)', function () {
-        let secondSwotItem;
+      describe('when the second PO.DAAC L2SS service work item fails (first failure)', function () {
+        let secondL2SSItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            secondSwotItem = JSON.parse(res.text).workItem;
-            secondSwotItem.status = WorkItemStatus.FAILED;
-            secondSwotItem.results = [];
+            const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+            secondL2SSItem = JSON.parse(res.text).workItem;
+            secondL2SSItem.status = WorkItemStatus.FAILED;
+            secondL2SSItem.results = [];
 
-            await updateWorkItem(this.backend, secondSwotItem);
+            await updateWorkItem(this.backend, secondL2SSItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, secondSwotItem.id);
+            const workItem = await getWorkItemById(db, secondL2SSItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('changes the job status to running_with_errors', async function () {
-          const job = await Job.byJobID(db, secondSwotItem.jobID);
+          const job = await Job.byJobID(db, secondL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.RUNNING_WITH_ERRORS);
         });
 
-        it('does not queue a zarr step for the work item that failed', async function () {
-          const currentWorkItems = (await getWorkItemsByJobId(db, secondSwotItem.jobID)).workItems;
+        it('does not queue a Concise step for the work item that failed', async function () {
+          const currentWorkItems = (await getWorkItemsByJobId(db, secondL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.READY && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
       });
 
-      describe('when the third swot-reprojection service work item fails resulting in a (second failure) for the job', function () {
-        let thirdSwotItem;
+      describe('when the third PO.DAAC L2SS service work item fails resulting in a (second failure) for the job', function () {
+        let thirdL2SSItem;
 
         before(async function () {
           let shouldLoop = true;
           // retrieve and fail work items until one exceeds the retry limit and actually gets marked as failed
           while (shouldLoop) {
-            const res = await getWorkForService(this.backend, 'sds/swot-reproject:latest');
-            thirdSwotItem = JSON.parse(res.text).workItem;
-            thirdSwotItem.status = WorkItemStatus.FAILED;
-            thirdSwotItem.results = [];
-            thirdSwotItem.errorMessage = 'Did not reach 88 MPH.';
+            const res = await getWorkForService(this.backend, 'ghcr.io/podaac/l2ss-py:sit');
+            thirdL2SSItem = JSON.parse(res.text).workItem;
+            thirdL2SSItem.status = WorkItemStatus.FAILED;
+            thirdL2SSItem.results = [];
+            thirdL2SSItem.errorMessage = 'Did not reach 88 MPH.';
 
-            await updateWorkItem(this.backend, thirdSwotItem);
+            await updateWorkItem(this.backend, thirdL2SSItem);
 
             // check to see if the work-item has failed completely
-            const workItem = await getWorkItemById(db, thirdSwotItem.id);
+            const workItem = await getWorkItemById(db, thirdL2SSItem.id);
             shouldLoop = !(workItem.status === WorkItemStatus.FAILED);
           }
         });
 
         it('puts the job in a FAILED state', async function () {
-          const job = await Job.byJobID(db, thirdSwotItem.jobID);
+          const job = await Job.byJobID(db, thirdL2SSItem.jobID);
           expect(job.status).to.equal(JobStatus.FAILED);
         });
 
         it('includes the error details in the job status', async function () {
-          const response = await jobStatus(this.frontend, { jobID: thirdSwotItem.jobID, username: 'joe' });
+          const response = await jobStatus(this.frontend, { jobID: thirdL2SSItem.jobID, username: 'joe' });
           const job = JSON.parse(response.text);
           const { errors } = job;
           expect(errors.length).to.equal(2);
@@ -1320,18 +1326,18 @@ describe('when setting ignoreErrors=true', function () {
 
         it('marks any remaining work items as canceled', async function () {
           // job failure should trigger cancellation of any pending work items
-          const currentWorkItems = (await getWorkItemsByJobId(db, thirdSwotItem.jobID)).workItems;
+          const currentWorkItems = (await getWorkItemsByJobId(db, thirdL2SSItem.jobID)).workItems;
           expect(currentWorkItems.length).to.equal(5);
           expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'harmonyservices/query-cmr:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(2);
-          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'sds/swot-reproject:latest').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.CANCELED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.FAILED && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(2);
+          expect(currentWorkItems.filter((item) => item.status === WorkItemStatus.SUCCESSFUL && item.serviceID === 'ghcr.io/podaac/l2ss-py:sit').length).to.equal(1);
         });
       });
     });
 
     describe('when making a request for 4 granules and query-cmr fails', function () {
-      hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery, ...{ maxResults: 4, concatenate: true } } });
+      hookRangesetRequest('1.0.0', l2ssCollection, 'all', { query: { ...l2ssAndConciseQuery, ...{ maxResults: 4, concatenate: true } } });
       hookRedirect('joe');
 
       before(async function () {
