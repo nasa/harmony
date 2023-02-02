@@ -208,7 +208,7 @@ Harmony will run the Docker image, passing the following command-line parameters
 
 `<action>` is the action Harmony wants the service to perform. Currently, Harmony only uses `invoke`, which requests that the service be run and exit. The service library Harmony provides also supports a `start` action with parameter `--harmony-queue-url <url>`, which requests that the service be started as a long running service that reads requests from an SQS queue. This is likely to be deprecated.
 
-`<input>` is a JSON string containing the details of the service operation to be run. See the latest [Harmony data-operation schema](../app/schemas/) for format details.
+`<input>` is a JSON string containing the details of the service operation to be run. See the latest [Harmony data-operation schema](../../app/schemas/) for format details.
 
 `<sources-file>` file path that contains a STAC catalog with items and metadata to be processed by the service. The intent of this file is to allow Harmony to externalize the potentially very long list of input sources to avoid command line limits while retaining the remainder of the message on the command line for easier manipulation in workflow definitions.
 
@@ -216,7 +216,7 @@ Harmony will run the Docker image, passing the following command-line parameters
 
 The `Dockerfile` in the harmony-service-example project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.
 
-In addition to the defined command-line parameters, Harmony can provide the Docker container with environment variables as set in [services.yml](../config/services.yml) by setting `service.type.params.env` key/value pairs. See the existing services.yml for examples.
+In addition to the defined command-line parameters, Harmony can provide the Docker container with environment variables as set in [services.yml](../../config/services.yml) by setting `service.type.params.env` key/value pairs. See the existing services.yml for examples.
 
 ## 9. Recommendations for service implementations
 
@@ -224,7 +224,7 @@ Note that several of the following are under active discussion and we encourage 
 
 In order to improve user experience, metrics gathering, and to allow compatibility with future development, Harmony strongly encourages service implementations to do the following:
 
-1. Provide provenance information in output files in a manner appropriate to the file format and following EOSDIS guidelines, such that a user can recreate the output file that was generated through Harmony. The following fields are recommended to include in each output file. Note that the current software citation fields include backend service information; information on Harmony workflow is forthcoming. For NetCDF outputs, information specific to the backend service should be added to the `history` global attribute, with all other fields added as additional global attributes. For GeoTIFF outputs, these fields can be included under `metadata` as `TIFFTAG_SOFTWARE`. See the [NASA ESDS Data Product Development Guide for Data Producers](https://earthdata.nasa.gov/files/ESDS-RFC-041.pdf) for more guidance on provenance information.
+1. Provide provenance information in output files in a manner appropriate to the file format and following EOSDIS guidelines, such that a user can recreate the output file that was generated through Harmony. The following fields are recommended to include in each output file. Note that the current software citation fields include backend service information; information on Harmony workflow is forthcoming. For NetCDF outputs, information specific to the backend service should be added to the `history` global attribute, with all other fields added as additional global attributes. For GeoTIFF outputs, these fields can be included under `metadata` as `TIFFTAG_SOFTWARE`. See the [NASA ESDS Data Product Development Guide for Data Producers](https://wiki.earthdata.nasa.gov/display/ESO/ESDS-RFC-041%3A+Data+Product+Development+Guide+for+Data+Producers+Version+1.1) for more guidance on provenance information.
 
 | Field Name               | Field Example                                                                                                                                            | Field Source                         |
 |--------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
@@ -253,7 +253,7 @@ If a service makes use of the Harmony Service Library mentioned above then the s
 
 ## Sending results to Harmony
 
-In addition to the examples below, we provide an [Open API schema](../app/schemas/service-callbacks/0.1.0/service-callbacks-v0.1.0.yml) detailing all of the parameters available and their constraints.
+In addition to the examples below, we provide an [Open API schema](../../app/schemas/service-callbacks/0.1.0/service-callbacks-v0.1.0.yml) detailing all of the parameters available and their constraints.
 
 ### Synchronous responses
 
