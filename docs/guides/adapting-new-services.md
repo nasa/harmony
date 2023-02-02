@@ -34,7 +34,7 @@ Please reach out in #harmony-service-providers for additional guidance on any ad
 
 
 # Requirements for Harmony Services
-In order for a service to run in Harmony several things need to be provided as covered in the following sections. A simple reference service, [harmony-service-example](https://github.com/nasa/harmony-service-example), provides examples of each. This document describes how to fulfill these requirements in depth.
+In order for a service to run in Harmony several things need to be provided as covered in the following sections. A simple reference service, [harmony-service-example](https://github.com/nasa/harmony-service-example), provides examples of each. For examples of services that are being used in production see [harmony-netcdf-to-zarr](https://github.com/nasa/harmony-netcdf-to-zarr) and (podaac-l2ss-py)[https://github.com/podaac/l2ss-py]. This document describes how to fulfill these requirements in depth.
 
 ## 1. Allowing Harmony to invoke services
 
