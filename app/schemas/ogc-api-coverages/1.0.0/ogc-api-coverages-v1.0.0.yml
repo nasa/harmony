@@ -922,5 +922,10 @@ components:
         but leading wildcards are discouraged as they require a lot of resources for the underlying
         search.
       required: false
+      style: form
+      explode: true
       schema:
-        type: string
+        type: array
+        items:
+          type: string
+          minLength: 1
