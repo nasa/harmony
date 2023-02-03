@@ -303,7 +303,7 @@ function handleWildcards(formData: FormData, form: CmrQuery, field: string): voi
   }
   let isPattern = false;
   if (isArray(values)) {
-    for (const value of values) {
+    for (const value of values as Array<unknown>) {
       if (re.test(value.toString())) {
         isPattern = true;
         break;
