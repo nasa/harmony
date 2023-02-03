@@ -1,16 +1,15 @@
-import { Response, NextFunction } from 'express';
+import { NextFunction, Response } from 'express';
 import DataOperation from '../../models/data-operation';
-import { keysToLowerCase } from '../../util/object';
-import { RequestValidationError } from '../../util/errors';
+import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
+import { handleCrs, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
+import { createDecrypter, createEncrypter } from '../../util/crypto';
+import env from '../../util/env';
+import { RequestValidationError } from '../../util/errors';
+import { keysToLowerCase } from '../../util/object';
+import { ParameterParseError } from '../../util/parameter-parsing-helpers';
 import { parseVariables } from '../../util/variables';
 import { parsePointParam, parseSubsetParams, subsetParamsToBbox, subsetParamsToTemporal } from './util/subset-parameter-parsing';
-import { parseAcceptHeader } from '../../util/content-negotiation';
-import { ParameterParseError, parseMultiValueParameter } from '../../util/parameter-parsing';
-import HarmonyRequest from '../../models/harmony-request';
-import { createDecrypter, createEncrypter } from '../../util/crypto';
-import parseCRS from '../../util/crs';
-import env from '../../util/env';
 /**
  * Express middleware that responds to OGC API - Coverages coverage
  * rangeset requests.  Responds with the actual coverage data.
@@ -33,34 +32,16 @@ export default function getCoverageRangeset(
   const decrypter = createDecrypter(env.sharedSecretKey);
   const operation = new DataOperation(null, encrypter, decrypter);
 
-  if (query.format) {
-    operation.outputFormat = query.format;
-  } else if (req.headers.accept) {
-    const acceptedMimeTypes = parseAcceptHeader(req.headers.accept);
-    req.context.requestedMimeTypes = acceptedMimeTypes
-      .map((v: { mimeType: string }) => v.mimeType)
-      .filter((v) => v);
-  }
+  handleFormat(operation, query, req);
+  handleGranuleIds(operation, query);
+  handleGranuleNames(operation, query);
+  handleCrs(operation, query);
+  handleScaleExtent(operation, query);
+  handleScaleSize(operation, query);
 
-  if (query.granuleid) {
-    operation.granuleIds = parseMultiValueParameter(query.granuleid);
-  }
-  if (query.outputcrs) {
-    const [crs, srs] = parseCRS({ queryCRS_: query.outputcrs });
-    operation.crs = crs;
-    operation.srs = srs;
-  }
   operation.interpolationMethod = query.interpolation;
-  if (query.scaleextent) {
-    const [xMin, yMin, xMax, yMax] = query.scaleextent;
-    operation.scaleExtent = { x: { min: xMin, max: xMax }, y: { min: yMin, max: yMax } };
-  }
   operation.outputWidth = query.width;
   operation.outputHeight = query.height;
-  if (query.scalesize) {
-    const [x, y] = query.scalesize;
-    operation.scaleSize = { x, y };
-  }
   if (query.forceasync) {
     operation.isSynchronous = false;
   }
@@ -112,3 +93,5 @@ export default function getCoverageRangeset(
   req.operation = operation;
   next();
 }
+
+

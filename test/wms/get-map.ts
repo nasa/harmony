@@ -148,6 +148,35 @@ describe('WMS GetMap', function () {
     });
   });
 
+  describe('can provide an optional granuleName', function () {
+    const specificGranuleName = '2020_01_01_7f00ff_antimeridian';
+    const query = {
+      service: 'WMS',
+      request: 'GetMap',
+      layers: `${collection}/${variable}`,
+      crs: 'EPSG:4326',
+      format: 'image/tiff',
+      styles: '',
+      width: 128,
+      height: 128,
+      version: '1.3.0',
+      bbox: '-180,-90,180,90',
+      transparent: 'TRUE',
+      granuleName: specificGranuleName,
+    };
+
+    describe('calling the backend service', function () {
+      StubService.hook({ params: { redirect: 'http://example.com' } });
+      hookGetMap(collection, query);
+
+      it('passes the source collection, variables, and granule to the backend', function () {
+        const source = this.service.operation.sources[0];
+        expect(source.collection).to.equal(collection);
+        expect(source.variables[0].id).to.equal(variable);
+      });
+    });
+  });
+
   describe('can specify a short name instead of a CMR concept ID', function () {
     const shortName = 'harmony_example';
     const query = {
