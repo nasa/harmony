@@ -115,11 +115,16 @@ export interface WorkItemQuery {
   };
   whereIn?: {
     status?: { in: boolean, values: string[] };
-  }
+  };
+  dates?: {
+    from?: Date;
+    to?: Date;
+    field: 'createdAt' | 'updatedAt';
+  };
   orderBy?: {
     field: string;
     value: string;
-  }
+  };
 }
 
 /**

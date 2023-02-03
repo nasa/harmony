@@ -21,7 +21,7 @@ const { awsDefaultRegion } = env;
 
 export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
-  'numInputGranules', 'jobID', 'requestId', 'batchesCompleted', 'isAsync', 'ignoreErrors',
+  'numInputGranules', 'jobID', 'requestId', 'batchesCompleted', 'isAsync', 'ignoreErrors', 'destination_url',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -68,6 +68,7 @@ export interface JobRecord {
   updatedAt?: Date | number;
   numInputGranules: number;
   collectionIds: string[];
+  destination_url?: string;
 }
 
 /**
@@ -113,9 +114,12 @@ export interface JobQuery {
     request?: string;
     isAsync?: boolean;
     ignoreErrors?: boolean;
-    createdAt?: number;
-    updatedAt?: number;
   };
+  dates?: {
+    from?: Date;
+    to?: Date;
+    field: 'createdAt' | 'updatedAt';
+  }
   whereIn?: {
     status?: { in: boolean, values: string[] };
     username?: { in: boolean, values: string[] };
@@ -352,6 +356,8 @@ export class Job extends DBRecord implements JobRecord {
   collectionIds: string[];
 
   ignoreErrors: boolean;
+  
+  destination_url?: string;
 
   /**
    * Get the job message for the current status.
@@ -423,6 +429,14 @@ export class Job extends DBRecord implements JobRecord {
             } else {
               void queryBuilder.whereNotIn(jobField, constraint.values);
             }
+          }
+        }
+        if (constraints.dates) {
+          if (constraints.dates.from) {
+            void queryBuilder.where(constraints.dates.field, '>=', constraints.dates.from);
+          }
+          if (constraints.dates.to) {
+            void queryBuilder.where(constraints.dates.field, '<=', constraints.dates.to);
           }
         }
       })

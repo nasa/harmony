@@ -73,7 +73,6 @@ export async function completeJob(
     const failed = isFailureStatus(finalStatus);
     job.updateStatus(finalStatus, message);
     await job.save(tx);
-    await deleteUserWorkForJob(tx, job.jobID);
     if (failed) {
       const numUpdated = await updateWorkItemStatusesByJobId(
         tx, job.jobID, [WorkItemStatus.READY, WorkItemStatus.RUNNING], WorkItemStatus.CANCELED,
@@ -81,6 +80,7 @@ export async function completeJob(
       const itemMeta: WorkItemMeta = { workItemStatus: WorkItemStatus.CANCELED, workItemAmount: numUpdated, workItemEvent: 'statusUpdate' };
       logger.info(`Updated work items to ${WorkItemStatus.CANCELED} for completed job.`, itemMeta);
     }
+    await deleteUserWorkForJob(tx, job.jobID);
 
     // Grab the operation from the first step which will be the full operation
     const initialStep = await getWorkflowStepByJobIdStepIndex(tx, job.jobID, 1);

@@ -321,6 +321,7 @@ export default abstract class BaseService<ServiceParamType> {
       message: message,
       collectionIds: this.operation.collectionIds,
       ignoreErrors: this.operation.ignoreErrors,
+      destination_url: this.operation.destinationUrl,
     });
     if (this.operation.message) {
       job.setMessage(this.operation.message, JobStatus.SUCCESSFUL);

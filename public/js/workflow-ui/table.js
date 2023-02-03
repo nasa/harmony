@@ -7,10 +7,11 @@ function formatDates(selector) {
   const dateTds = document.querySelectorAll(selector);
   [...dateTds].forEach(
     (element) => {
-      const time = parseInt(element.getAttribute('data-time'));
+      const time = parseInt(element.getAttribute('data-time'), 10);
       const formattedDate = (new Date(time)).toLocaleString();
+      // eslint-disable-next-line no-param-reassign
       element.textContent = formattedDate;
-    }
+    },
   );
 }
 
@@ -19,9 +20,7 @@ function formatDates(selector) {
  */
 function initTooltips(querySelector) {
   const tooltipTriggerList = [].slice.call(document.querySelectorAll(querySelector));
-  tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
-  });
+  tooltipTriggerList.map((tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl));
 }
 
 /**
@@ -30,4 +29,4 @@ function initTooltips(querySelector) {
 export {
   formatDates,
   initTooltips,
-}
+};

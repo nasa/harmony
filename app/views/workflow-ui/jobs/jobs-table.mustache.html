@@ -15,12 +15,13 @@
             </th>
             <th scope="col">progress</th>
             <th scope="col">createdAt</th>
+            <th scope="col">updatedAt</th>
         </tr>
     </thead>
     <tbody>
         {{#jobs}}
         <tr clas='job-table-row'>
-            <th scope="row"><a href="workflow-ui/{{jobID}}">{{jobID}}</a></th>
+            <th scope="row"><a href="workflow-ui/{{jobID}}{{dateQuery}}">{{jobID}}</a></th>
             {{#isAdminRoute}}
             <td>{{username}}</td>
             {{/isAdminRoute}}
@@ -34,6 +35,7 @@
             <td>{{numInputGranules}}</td>
             <td>{{progress}}%</td>
             <td class="date-td" data-time="{{jobCreatedAt}}"></td>
+            <td class="date-td" data-time="{{jobUpdatedAt}}"></td>
         </tr>
         {{/jobs}}
     </tbody>
