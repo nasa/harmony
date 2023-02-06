@@ -1,28 +1,17 @@
 # Testing Services
 
-If you are developing a service and wish to test it locally with Harmony then you must
-define the environment variables needed to run the service and execute the local deployment script.
-You can do this with the following steps:
+1. If you're starting from scratch, and need to know how to build a new service for Harmony, see [Adapting New Services](./guides/adapting-new-services.md). 
+
+2. When you have a service ready to test, read the [Service Configuration](./guides/Configuring%20a%20Harmony%20service.ipynb) notebook which will help you understand how to make your collections and variables compatible with Harmony via CMR (Unified Metadata Model) and how to add code to Harmony that will "activate" your service and link it to the relevant collections via `services.yml`. In development mode, Harmony communicates with the UAT CMR environment, so any relevant CMR configuration will need to be completed in UAT in order for your local testing to work.
+
+Once your service has been developed and everything is configured, you can deploy it and test it locally alongside your local Harmony instance. You can hold off on submitting any configuration change (`services.yml`, `env-defaults`) pull requests until you're satisfied with your testing results:
 
 1. Build the image for your service
-2. Add entries into the `env-defaults` file for your service. See the `HARMONY_SERVICE_EXAMPLE`
-   entries for examples. Be sure to prefix the entries with the name of your service.
-   Set the value for the `INVOCATION_ARGS` environment variable. This should be how you would run
-  your service from the command line. For example, if you had a python module named `my-service`
-  in the working directory, then you would run the service using
-  ```bash
-  python -m my-service
-  ```
-  So your entry for `INVOCATION_ARGS` would be
-  ```shell
-  MY_SERVICE_INVOCATION_ARGS='python -m my-service'
-  ```
-3. Add an entry for your service (lowercase) to the `.env` file:
+2. Add an entry for your service (lowercase) to your `.env` file:
 ```shell
 LOCALLY_DEPLOYED_SERVICES=my-service
 ```
-Note that the name used must be the kebab case version of the environment variable prefix used in `env-defaults`.
-4. Run
+3. Run
 ```bash
 ./bin/deploy-services
 ```
