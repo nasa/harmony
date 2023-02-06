@@ -1,6 +1,6 @@
 # Adapting New Services to Harmony<!-- omit in toc -->
 
-Please reach out in #harmony-service-providers for additional guidance on any adaptation needs, and especially with any feedback that can help us improve.
+Please reach out in #harmony-service-providers (EOSDIS Slack) for additional guidance on any adaptation needs, and especially with any feedback that can help us improve.
 
 ## Table of Contents<!-- omit in toc -->
 - [Requirements for Harmony Services](#requirements-for-harmony-services)
