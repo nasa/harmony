@@ -202,9 +202,9 @@ Harmony will run the Docker image, passing the following command-line parameters
 
 `<input>` is a JSON string containing the details of the service operation to be run. See the latest [Harmony data-operation schema](../../app/schemas/) for format details.
 
-`<sources-file>` file path that contains a STAC catalog with items and metadata to be processed by the service. The intent of this file is to allow Harmony to externalize the potentially very long list of input sources to avoid command line limits while retaining the remainder of the message on the command line for easier manipulation in workflow definitions.
+`<harmony-sources>` file path that contains a STAC catalog with items and metadata to be processed by the service. The intent of this file is to allow Harmony to externalize the potentially very long list of input sources to avoid command line limits while retaining the remainder of the message on the command line for easier manipulation in workflow definitions.
 
-`<output-dir>` is the file path where output metadata should be written. The resulting STAC catalog will be written to catalog.json in the supplied dir with child resources in the same directory or a descendant directory.
+`<harmony-metadata-dir>` is the file path where output metadata should be written. The resulting STAC catalog will be written to catalog.json in the supplied dir with child resources in the same directory or a descendant directory.
 
 The `Dockerfile` in the harmony-service-example project serves as a minimal example of how to set up Docker to accept these inputs using the `ENTRYPOINT` declaration.
 
