@@ -331,6 +331,7 @@ paths:
       - $ref: '#/components/parameters/skipPreview'
       - $ref: '#/components/parameters/ignoreErrors'
       - $ref: '#/components/parameters/destinationUrl'
+      - $ref: '#/components/parameters/granuleName'
       responses:
         "200":
           description: A coverage's range set.
@@ -368,6 +369,7 @@ paths:
       - $ref: '#/components/parameters/skipPreview'
       - $ref: '#/components/parameters/ignoreErrors'
       - $ref: '#/components/parameters/destinationUrl'
+      - $ref: '#/components/parameters/granuleName'
       requestBody:
         content:
           multipart/form-data:
@@ -907,7 +909,23 @@ components:
     destinationUrl:
       name: destinationUrl
       in: query
-      description: destination url specified by the client, currently only s3 link url is supported
+      description: destination url specified by the client, currently only s3 link url is supported (e.g. s3://my-bucket-name/mypath)
       required: false
       schema:
         type: string
+    granuleName:
+      name: granuleName
+      in: query
+      description: |
+        passed to the CMR search as the readable_granule_name parameter. Supports * and ? wildcards
+        for multiple and single character matches. Wildcards can be used any place in the name,
+        but leading wildcards are discouraged as they require a lot of resources for the underlying
+        search.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          minLength: 1

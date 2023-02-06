@@ -269,6 +269,8 @@ export default class DataOperation {
 
   granuleIds: string[];
 
+  granuleNames: string[];
+
   requireSynchronous: boolean;
 
   maxResults?: number;
@@ -290,6 +292,7 @@ export default class DataOperation {
   ignoreErrors?: boolean;
 
   destinationUrl: string;
+
 
   /**
    * Creates an instance of DataOperation.
