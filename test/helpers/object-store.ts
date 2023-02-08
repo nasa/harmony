@@ -110,6 +110,10 @@ export function hookGetBucketRegion(
           const e = new Error('Access Denied');
           e.name = 'AccessDenied';
           throw e;
+        } else if (bucketName === 'invalid,bucket') {
+          const e = new Error('The specified bucket is not valid.');
+          e.name = 'InvalidBucketName';
+          throw e;
         } else {
           return region;
         }
