@@ -65,6 +65,15 @@ describe('when setting destinationUrl on ogc request', function () {
     });
   });
 
+  describe('when making a request with an invalid destinationUrl with multiple s3 locations', function () {
+    StubService.hook({ params: { status: 'successful' } });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://abcd,s3://edfg' } });
+    
+    it('returns 400 status code for multiple s3 locations which the middleware will concatenate with comma', async function () {
+      verifyValidationError(this, "Error: Invalid destinationUrl 's3://abcd,s3://edfg', only one s3 location is allowed.");
+    });
+  });
+
   describe('when making a request with an invalid destinationUrl with invalid S3 url', function () {
     hookGetBucketRegion('us-west-2');
     StubService.hook({ params: { status: 'successful' } });
@@ -82,6 +91,16 @@ describe('when setting destinationUrl on ogc request', function () {
     
     it('returns 400 status code for no s3 bucket', async function () {
       verifyValidationError(this, 'Error: Invalid destinationUrl, no s3 bucket is provided.');
+    });
+  });
+
+  describe('when making a request with an invalid destinationUrl with invalid bucket name', function () {
+    hookGetBucketRegion('us-west-2');
+    StubService.hook({ params: { status: 'successful' } });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://invalid,bucket' } });
+    
+    it('returns 400 status code for invalid bucket name', async function () {
+      verifyValidationError(this, "Error: The specified bucket 'invalid,bucket' is not valid.");
     });
   });
 

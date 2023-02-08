@@ -53,6 +53,8 @@ async function validateBucketIsInRegion(bucketName: string, region: string): Pro
       throw new RequestValidationError(`The specified bucket '${bucketName}' does not exist.`);
     } else if (e.name === 'AccessDenied') {
       throw new RequestValidationError(`Do not have permission to get bucket location of the specified bucket '${bucketName}'.`);
+    } else if (e.name === 'InvalidBucketName') {
+      throw new RequestValidationError(`The specified bucket '${bucketName}' is not valid.`);
     }
     throw e;
   }
@@ -90,6 +92,10 @@ async function validateDestinationUrlParameter(req: HarmonyRequest): Promise<voi
   if (destUrl) {
     if (!destUrl.startsWith('s3://')) {
       throw new RequestValidationError(`Invalid destinationUrl '${destUrl}', must start with s3://`);
+    }
+    // this check is added to provide a more user friendly error message when more than one destinationUrl values are provided
+    if (destUrl.includes(',s3://')) {
+      throw new RequestValidationError(`Invalid destinationUrl '${destUrl}', only one s3 location is allowed.`);
     }
     const bucketName = destUrl.substring(5).split('/')[0];
     if (bucketName === '') {
