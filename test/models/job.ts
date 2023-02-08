@@ -266,5 +266,14 @@ describe('Job', function () {
       const job = buildJob({ requestId: uuid().toString(), username: 'jdoe', request: 'foo:not//a-url' } as JobRecord);
       await expect(job.save(trx)).to.eventually.be.rejected;
     });
+
+    it('truncates long error messages', async function () {
+      let job = buildJob(exampleProps);
+      const longFailureMessage = 'x'.repeat(6000);
+      job.setMessage(longFailureMessage, JobStatus.FAILED);
+      await job.save(this.trx);
+      ({ job } = await Job.byRequestId(this.trx, job.requestId));
+      expect(job.getMessage(JobStatus.FAILED).length).lessThan(4096);
+    });
   });
 });
