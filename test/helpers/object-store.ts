@@ -122,7 +122,7 @@ export function hookGetBucketRegion(
 }
 
 /**
- * Adds before / after hooks to Upload
+ * Adds before / after hooks to upload
  */
 export function hookUpload(): void {
   let stubUpload;

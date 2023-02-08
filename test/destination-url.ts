@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { Context } from 'mocha';
 import { Job } from '../app/models/job';
 import { hookTransaction } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
@@ -18,6 +19,22 @@ const reprojectAndZarrQuery = {
   concatenate: false,
   destinationUrl: 's3://dummy/p1',
 };
+
+/**
+ * Verify the test result has a 400 status code and an error message that is the same as the given expectedError.
+ * 
+ * @param context - the test context
+ * @param expectedError - the expected error message
+ * @throws AssertionError: - if the result status is not 400 or the error messaged is not as expected
+ */
+function verifyValidationError(context: Context, expectedError: string): void {
+  expect(context.res.status).to.equal(400);
+  const error = JSON.parse(context.res.text);
+  expect(error).to.eql({
+    'code': 'harmony.RequestValidationError',
+    'description': expectedError,
+  });
+}
 
 describe('when setting destinationUrl on ogc request', function () {
   const collection = 'C1233800302-EEDTEST';
@@ -44,12 +61,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 'abcd' } });
     
     it('returns 400 status code for invalid s3 url format', async function () {
-      expect(this.res.status).to.equal(400);
-      const error = JSON.parse(this.res.text);
-      expect(error).to.eql({
-        'code': 'harmony.RequestValidationError',
-        'description': "Error: Invalid destinationUrl 'abcd', must start with s3://",
-      });
+      verifyValidationError(this, "Error: Invalid destinationUrl 'abcd', must start with s3://");
     });
   });
 
@@ -59,12 +71,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://non-existent-bucket/abcd' } });
     
     it('returns 400 status code for nonexistent s3 bucket', async function () {
-      expect(this.res.status).to.equal(400);
-      const error = JSON.parse(this.res.text);
-      expect(error).to.eql({
-        'code': 'harmony.RequestValidationError',
-        'description': "Error: The specified bucket 'non-existent-bucket' does not exist.",
-      });
+      verifyValidationError(this, "Error: The specified bucket 'non-existent-bucket' does not exist.");
     });
   });
 
@@ -74,12 +81,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://' } });
     
     it('returns 400 status code for no s3 bucket', async function () {
-      expect(this.res.status).to.equal(400);
-      const error = JSON.parse(this.res.text);
-      expect(error).to.eql({
-        'code': 'harmony.RequestValidationError',
-        'description': 'Error: Invalid destinationUrl, no s3 bucket is provided.',
-      });
+      verifyValidationError(this, 'Error: Invalid destinationUrl, no s3 bucket is provided.');
     });
   });
 
@@ -89,12 +91,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://no-permission' } });
     
     it('returns 400 status code when no permission to get bucket location', async function () {
-      expect(this.res.status).to.equal(400);
-      const error = JSON.parse(this.res.text);
-      expect(error).to.eql({
-        'code': 'harmony.RequestValidationError',
-        'description': "Error: Do not have permission to get bucket location of the specified bucket 'no-permission'.",
-      });
+      verifyValidationError(this, "Error: Do not have permission to get bucket location of the specified bucket 'no-permission'.");
     });
   });
 
@@ -105,12 +102,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://no-write-permission' } });
     
     it('returns 400 status code when not writable', async function () {
-      expect(this.res.status).to.equal(400);
-      const error = JSON.parse(this.res.text);
-      expect(error).to.eql({
-        'code': 'harmony.RequestValidationError',
-        'description': "Error: Do not have write permission to the specified s3 location: 's3://no-write-permission'.",
-      });
+      verifyValidationError(this, "Error: Do not have write permission to the specified s3 location: 's3://no-write-permission'.");
     });
   });
 
@@ -120,12 +112,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://abcd/p1' } });
 
     it('returns 400 status code for bucket in different region', async function () {
-      expect(this.res.status).to.equal(400);
-      const error = JSON.parse(this.res.text);
-      expect(error).to.eql({
-        'code': 'harmony.RequestValidationError',
-        'description': "Error: Destination bucket 'abcd' must be in the 'us-west-2' region, but was in 'us-east-1'.",
-      });
+      verifyValidationError(this, "Error: Destination bucket 'abcd' must be in the 'us-west-2' region, but was in 'us-east-1'.");
     });
   });
 });
