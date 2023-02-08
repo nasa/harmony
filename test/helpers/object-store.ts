@@ -1,8 +1,9 @@
+import aws from 'aws-sdk';
 import { stub, SinonStub } from 'sinon';
 import fs from 'fs';
 import mockAws, { S3 } from 'mock-aws-s3';
 import * as tmp from 'tmp';
-import { S3ObjectStore, objectStoreForProtocol } from '../../app/util/object-store';
+import { S3ObjectStore, objectStoreForProtocol, BucketParams } from '../../app/util/object-store';
 
 // Patches mock-aws-s3's mock so that the result of "upload" has an "on" method
 const S3MockPrototype = Object.getPrototypeOf(new mockAws.S3());
@@ -105,6 +106,10 @@ export function hookGetBucketRegion(
           const e = new Error('The specified bucket does not exist');
           e.name = 'NoSuchBucket';
           throw e;
+        } else if (bucketName === 'no-permission') {
+          const e = new Error('Access Denied');
+          e.name = 'AccessDenied';
+          throw e;
         } else {
           return region;
         }
@@ -113,5 +118,31 @@ export function hookGetBucketRegion(
   
   after(function () {
     stubGetBucketRegion.restore();
+  });
+}
+
+/**
+ * Adds before / after hooks to Upload
+ */
+export function hookUpload(): void {
+  let stubUpload;
+  before(function () {
+    stubUpload = stub(S3ObjectStore.prototype, 'upload')
+      .callsFake((stringOrStream: string | NodeJS.ReadableStream,
+        destinationUrl: string | BucketParams,
+        _contentLength: number,
+        _contentType: string) : Promise<aws.S3.ManagedUpload.SendData> => {
+        const destUrl = typeof destinationUrl === 'string' ? destinationUrl : '';
+        if (destUrl.startsWith('s3://no-write-permission')) {
+          const e = new Error('Access Denied');
+          e.name = 'AccessDenied';
+          throw e;
+        } 
+        return null;
+      });
+  });
+  
+  after(function () {
+    stubUpload.restore();
   });
 }

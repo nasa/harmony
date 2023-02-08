@@ -15,7 +15,7 @@ const pipeline = util.promisify(stream.pipeline);
 const createTmpFileName = util.promisify(tmp.tmpName);
 const readFile = util.promisify(fs.readFile);
 
-interface BucketParams {
+export interface BucketParams {
   Bucket: string;
   Key: string;
 }

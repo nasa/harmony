@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { Job } from '../app/models/job';
 import { hookTransaction } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
-import { hookGetBucketRegion } from './helpers/object-store';
+import { hookGetBucketRegion, hookUpload } from './helpers/object-store';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import StubService from './helpers/stub-service';
@@ -48,7 +48,7 @@ describe('when setting destinationUrl on ogc request', function () {
       const error = JSON.parse(this.res.text);
       expect(error).to.eql({
         'code': 'harmony.RequestValidationError',
-        'description': "Error: Invalid destinationUrl 'abcd' must start with s3://",
+        'description': "Error: Invalid destinationUrl 'abcd', must start with s3://",
       });
     });
   });
@@ -79,6 +79,37 @@ describe('when setting destinationUrl on ogc request', function () {
       expect(error).to.eql({
         'code': 'harmony.RequestValidationError',
         'description': 'Error: Invalid destinationUrl, no s3 bucket is provided.',
+      });
+    });
+  });
+
+  describe('when making a request without permission to check bucket location', function () {
+    hookGetBucketRegion('us-west-2');
+    StubService.hook({ params: { status: 'successful' } });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://no-permission' } });
+    
+    it('returns 400 status code when no permission to get bucket location', async function () {
+      expect(this.res.status).to.equal(400);
+      const error = JSON.parse(this.res.text);
+      expect(error).to.eql({
+        'code': 'harmony.RequestValidationError',
+        'description': "Error: Do not have permission to get bucket location of the specified bucket 'no-permission'.",
+      });
+    });
+  });
+
+  describe('when making a request to s3 url that is not writable', function () {
+    hookGetBucketRegion('us-west-2');
+    hookUpload();
+    StubService.hook({ params: { status: 'successful' } });
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://no-write-permission' } });
+    
+    it('returns 400 status code when not writable', async function () {
+      expect(this.res.status).to.equal(400);
+      const error = JSON.parse(this.res.text);
+      expect(error).to.eql({
+        'code': 'harmony.RequestValidationError',
+        'description': "Error: Do not have write permission to the specified s3 location: 's3://no-write-permission'.",
       });
     });
   });

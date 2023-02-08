@@ -6,6 +6,7 @@ import { keysToLowerCase } from '../util/object';
 import { defaultObjectStore } from '../util/object-store';
 import { coverageRangesetGetParams, coverageRangesetPostParams } from '../frontends/ogc-coverages/index';
 import env = require('../util/env');
+import { getRequestRoot } from '../util/url';
 
 const { awsDefaultRegion } = env;
 
@@ -50,11 +51,34 @@ async function validateBucketIsInRegion(bucketName: string, region: string): Pro
   } catch (e) { 
     if (e.name === 'NoSuchBucket') {
       throw new RequestValidationError(`The specified bucket '${bucketName}' does not exist.`);
-    } 
+    } else if (e.name === 'AccessDenied') {
+      throw new RequestValidationError(`Do not have permission to get bucket location of the specified bucket '${bucketName}'.`);
+    }
     throw e;
   }
 }
 
+/**
+ * Validate that the destinationUrl provided is writable
+ *
+ * @param req - The client request
+ * @param destinationUrl - The destinationUrl
+ */
+async function validateDestinationUrlWritable(req: HarmonyRequest, destinationUrl: string): Promise<void> {
+  try {
+    const requestId = req.context.id;
+    const requestUrl = destinationUrl.endsWith('/') ? destinationUrl + requestId : destinationUrl + '/' + requestId;
+    const statusUrl = requestUrl + '/harmony-job-status-link';
+    const statusLink = getRequestRoot(req) + '/jobs/' + requestId;
+    await defaultObjectStore().upload(statusLink, statusUrl, null, 'text/plain');
+  } catch (e) { 
+    if (e.name === 'AccessDenied') {
+      throw new RequestValidationError(`Do not have write permission to the specified s3 location: '${destinationUrl}'.`);
+    } 
+    throw e;
+  }
+}
+  
 /**
  * Validate that the value provided for the `destinationUrl` parameter is an `s3` url in the format of `s3://<bucket>/<path>` is in the same AWS region
  *
@@ -65,13 +89,14 @@ async function validateDestinationUrlParameter(req: HarmonyRequest): Promise<voi
   const destUrl = keys.destinationurl?.toLowerCase();
   if (destUrl) {
     if (!destUrl.startsWith('s3://')) {
-      throw new RequestValidationError(`Invalid destinationUrl '${destUrl}' must start with s3://`);
+      throw new RequestValidationError(`Invalid destinationUrl '${destUrl}', must start with s3://`);
     }
     const bucketName = destUrl.substring(5).split('/')[0];
     if (bucketName === '') {
       throw new RequestValidationError('Invalid destinationUrl, no s3 bucket is provided.');
     }
     await validateBucketIsInRegion(bucketName, awsDefaultRegion);
+    await validateDestinationUrlWritable(req, destUrl);
   }
 }
 
