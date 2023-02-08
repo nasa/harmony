@@ -168,6 +168,8 @@ Localstack has started at http://localhost:4566/
 Postgres has started at localhost:5432
 ```
 
+To use Postgres instead of sqlite set `NODE_ENV=production` in your .env and run `NODE_ENV=production DATABASE_URL=postgresql://postgres:password@localhost:5432  npx knex --cwd db migrate:latest` to create the latest schema.
+
 ## Add A Service
 
 Clone the Harmony service example repository into a peer directory of the main Harmony repo
