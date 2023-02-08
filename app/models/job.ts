@@ -1004,8 +1004,8 @@ export class Job extends DBRecord implements JobRecord {
     // Need to validate the original status before removing it as part of saving to the database
     // May want to change in the future to have a way to have non-database fields on a record.
     this.validateStatus();
-    const tuncatedFailureMessage = truncateString(this.getMessage(JobStatus.FAILED), textLimit - reservedMessageChars);
-    this.setMessage(tuncatedFailureMessage, JobStatus.FAILED);
+    const truncatedFailureMessage = truncateString(this.getMessage(JobStatus.FAILED), textLimit - reservedMessageChars);
+    this.setMessage(truncatedFailureMessage, JobStatus.FAILED);
     this.request = truncateString(this.request, textLimit);
     const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
     dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
