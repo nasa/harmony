@@ -273,7 +273,7 @@ describe('Job', function () {
       job.setMessage(longFailureMessage, JobStatus.FAILED);
       await job.save(this.trx);
       ({ job } = await Job.byRequestId(this.trx, job.requestId));
-      expect(job.getMessage(JobStatus.FAILED).length).lessThan(4096);
+      expect(job.getMessage(JobStatus.FAILED).length).lessThanOrEqual(4096 - 1000);
     });
   });
 });
