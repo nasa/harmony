@@ -999,10 +999,14 @@ export class Job extends DBRecord implements JobRecord {
    * @throws {@link Error} if the job is invalid
    */
   async save(transaction: Transaction): Promise<void> {
+    const textLimit = 4096; // this.request and this.message need to be under the 4,096 char limit
+    const reservedMessageChars = 1000; // reserve 1k chars for non-failure messages (which tend to be smaller)
     // Need to validate the original status before removing it as part of saving to the database
     // May want to change in the future to have a way to have non-database fields on a record.
     this.validateStatus();
-    this.request = truncateString(this.request, 4096);
+    const truncatedFailureMessage = truncateString(this.getMessage(JobStatus.FAILED), textLimit - reservedMessageChars);
+    this.setMessage(truncatedFailureMessage, JobStatus.FAILED);
+    this.request = truncateString(this.request, textLimit);
     const dbRecord: Record<string, unknown> = pick(this, jobRecordFields);
     dbRecord.collectionIds = JSON.stringify(this.collectionIds || []);
     dbRecord.message = JSON.stringify(this.statesToMessages || {});
