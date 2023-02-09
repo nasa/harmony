@@ -56,6 +56,36 @@ const completedJob = buildJob({
   request: 'http://example.com/harmony?job=completedJob',
 });
 
+const completedJobWithDestinationUrl = buildJob({
+  username: 'joe',
+  status: JobStatus.SUCCESSFUL,
+  destination_url: 's3://my-staging-bucket',
+  message: 'it is done',
+  progress: 100,
+  numInputGranules: 1,
+  links: [{
+    href: 's3://example-bucket/public/example/path1.tif',
+    type: 'image/tiff',
+    rel: 'data',
+    bbox: [-10, -10, 10, 10],
+    temporal: {
+      start: new Date('2020-01-01T00:00:00.000Z'),
+      end: new Date('2020-01-01T01:00:00.000Z'),
+    },
+  },
+  {
+    href: 's3://example-bucket/public/example/path2.tif',
+    type: 'image/tiff',
+    rel: 'data',
+    bbox: [-10, -10, 10, 10],
+    temporal: {
+      start: new Date('2020-01-01T00:00:00.000Z'),
+      end: new Date('2020-01-01T01:00:00.000Z'),
+    },
+  }],
+  request: 'http://example.com/harmony?job=completedJob',
+});
+
 const completedNonStacJob = buildJob({
   username: 'joe',
   status: JobStatus.SUCCESSFUL,
@@ -76,6 +106,7 @@ describe('STAC item route', function () {
   before(async function () {
     await runningJob.save(this.trx);
     await completedJob.save(this.trx);
+    await completedJobWithDestinationUrl.save(this.trx);
     await completedNonStacJob.save(this.trx);
     this.trx.commit();
   });
@@ -136,6 +167,19 @@ describe('STAC item route', function () {
         expect(response).to.eql({
           code: 'harmony.ConflictError',
           description: `Error: Job ${jobId} is not complete`,
+        });
+      });
+    });
+
+    describe('When the job is complete and has a destination url set', async function () {
+      const completedJobId = completedJobWithDestinationUrl.requestId;
+
+      describe('when an item is requested', function () {
+        hookStacItem(completedJobId, 0, 'joe');
+
+        it('returns a STAC item without an "expires" field', async function () {
+          const item = JSON.parse(this.res.text);
+          expect(item.properties.expires).to.be.undefined;
         });
       });
     });

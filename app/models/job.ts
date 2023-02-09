@@ -356,7 +356,7 @@ export class Job extends DBRecord implements JobRecord {
   collectionIds: string[];
 
   ignoreErrors: boolean;
-  
+
   destination_url?: string;
 
   /**
@@ -1041,6 +1041,9 @@ export class Job extends DBRecord implements JobRecord {
       numInputGranules: this.numInputGranules,
       jobID: this.jobID,
     };
+    // need this line to prevent null values fro showing up in data expiration field
+    Object.keys(serializedJob).forEach((k) => serializedJob[k] == null && delete serializedJob[k]);
+
     if (urlRoot && linkType !== 'none') {
       serializedJob.links = serializedJob.links.map((link) => {
         const serializedLink = link.serialize();
@@ -1067,12 +1070,17 @@ export class Job extends DBRecord implements JobRecord {
   /**
    *  Computes and returns the date the data produced by the job will expire based on `createdAt`
    *
-   * @returns the date the data produced by the job will expire
+   * @returns the date the data produced by the job will expire, or null if there is no expiration
    */
   getDataExpiration(): Date {
-    const expiration = new Date(this.createdAt);
-    expiration.setUTCDate(expiration.getUTCDate() + EXPIRATION_DAYS);
-    return expiration;
+    let result = null;
+    if (!this.destination_url) {
+      const expiration = new Date(this.createdAt);
+      expiration.setUTCDate(expiration.getUTCDate() + EXPIRATION_DAYS);
+      result = expiration;
+    }
+
+    return result;
   }
 
 
