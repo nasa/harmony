@@ -3,7 +3,7 @@ import { Context } from 'mocha';
 import { Job } from '../app/models/job';
 import { hookTransaction } from './helpers/db';
 import { hookRedirect } from './helpers/hooks';
-import { hookGetBucketRegion, hookUpload } from './helpers/object-store';
+import { getObjectText, hookGetBucketRegion, hookUpload } from './helpers/object-store';
 import { hookRangesetRequest } from './helpers/ogc-api-coverages';
 import hookServersStartStop from './helpers/servers';
 import StubService from './helpers/stub-service';
@@ -48,6 +48,15 @@ describe('when setting destinationUrl on ogc request', function () {
 
     it('returns 200 status code for the job', async function () {
       expect(this.res.status).to.equal(200);
+    });
+
+    it('the job has harmony-job-status-link file created with the job status link', async function () {
+      expect(this.res.status).to.equal(200);
+      const jobId = JSON.parse(this.res.text).jobID;
+      const s3Url = 's3://dummy/p1/' + jobId + '/harmony-job-status-link';
+      const statusLink = await getObjectText(s3Url);
+      // this.res.request.url is the job status link
+      expect(statusLink).to.equal(this.res.request.url);
     });
 
     it('sets the destination_url on the job in db', async function () {
