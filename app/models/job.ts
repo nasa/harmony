@@ -1028,7 +1028,7 @@ export class Job extends DBRecord implements JobRecord {
    * @returns an object with the serialized job fields.
    */
   serialize(urlRoot?: string, linkType?: string): JobForDisplay {
-    const serializedJob: JobForDisplay = {
+    let serializedJob: JobForDisplay = {
       username: this.username,
       status: this.status,
       message: this.message,
@@ -1042,7 +1042,7 @@ export class Job extends DBRecord implements JobRecord {
       jobID: this.jobID,
     };
     // need this line to prevent null values from showing up in data expiration field
-    Object.keys(serializedJob).forEach((k) => serializedJob[k] == null && delete serializedJob[k]);
+    serializedJob = removeEmptyProperties(serializedJob) as JobForDisplay;
 
     if (urlRoot && linkType !== 'none') {
       serializedJob.links = serializedJob.links.map((link) => {
