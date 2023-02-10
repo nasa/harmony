@@ -53,6 +53,31 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         expect(updatedJob.message).to.eq('The job is being processed');
       });
     });
+    describe('with a custom destination', function () {
+      let job: Job;
+      const destinationWarningRunning = 'Once results are sent to the requested destination, any changes to the result files or their location are outside of Harmony\'s control.';
+      const destinationWarningSuccessful = 'The results have been placed in the requested custom destination. Any further changes to the result files or their location are outside of Harmony\'s control.';
+      hookTransaction();
+      before(async function () {
+        this.previewThresholdStub = stub(env, 'previewThreshold').get(() => 100); // ensure initial job state is RUNNING
+        const destinationUrl = 's3://my-bucket';
+        const requestString = `http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?destinationUrl=${destinationUrl}`;
+        const operation = buildOperation(undefined);
+        operation.destinationUrl = destinationUrl;
+        job = (new TestTurboService(config, operation).createJob(requestString));
+        assert(job.status === JobStatus.RUNNING);
+        await job.save(this.trx);
+      });
+      after(async function () {
+        this.previewThresholdStub.restore();
+      });
+      it('sets the appropriate message for the running status', async function () {
+        expect(job.getMessage(JobStatus.RUNNING)).to.eq(`The job is being processed. ${destinationWarningRunning}`);
+      });
+      it('sets the appropriate message for the successful status', async function () {
+        expect(job.getMessage(JobStatus.SUCCESSFUL)).to.eq(`The job has completed successfully. ${destinationWarningSuccessful}`);
+      });
+    });
     describe('with a results limited running message', function () {
       let job: Job;
       let limitedMessage: string;
@@ -79,6 +104,33 @@ describe('skipPreview, pause, resume, and updateStatus job message handling', as
         await job.save(this.trx);
         const updatedJob = await Job.byJobID(this.trx, job.jobID);
         expect(updatedJob.message).to.eq(limitedMessage);
+      });
+    });
+    describe('with a results limited running message and custom destination', function () {
+      let job: Job;
+      let limitedMessage: string;
+      const destinationWarningRunning = 'Once results are sent to the requested destination, any changes to the result files or their location are outside of Harmony\'s control.';
+      const destinationWarningSuccessful = 'The results have been placed in the requested custom destination. Any further changes to the result files or their location are outside of Harmony\'s control.';
+      hookTransaction();
+      before(async function () {
+        this.previewThresholdStub = stub(env, 'previewThreshold').get(() => 100); // ensure initial job state is RUNNING
+        const destinationUrl = 's3://my-bucket';
+        limitedMessage = `${baseResultsLimitedMessage(100, 10)}.`;
+        const requestString = `http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/collections/all/coverage/rangeset?maxResults=10&destinationUrl=${destinationUrl}`;
+        const operation = buildOperation(limitedMessage);
+        operation.destinationUrl = destinationUrl;
+        job = (new TestTurboService(config, operation).createJob(requestString));
+        assert(job.status === JobStatus.RUNNING);
+        await job.save(this.trx);
+      });
+      after(async function () {
+        this.previewThresholdStub.restore();
+      });
+      it('sets the appropriate message for the running status', async function () {
+        expect(job.getMessage(JobStatus.RUNNING)).to.eq(`${limitedMessage} ${destinationWarningRunning}`);
+      });
+      it('sets the appropriate message for the successful status', async function () {
+        expect(job.getMessage(JobStatus.SUCCESSFUL)).to.eq(`${limitedMessage} ${destinationWarningSuccessful}`);
       });
     });
   });
