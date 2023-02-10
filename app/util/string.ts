@@ -39,8 +39,7 @@ export function listToText(items: string[], joinWord = Conjunction.AND): string 
 export function joinTexts(...items: string[]): string {
   const result = [];
   for (const item of items) {
-    let resultItem = item;
-    resultItem = resultItem.trim();
+    let resultItem = item.trim();
     if (!/[.!?]$/m.test(resultItem)) {
       resultItem += '.';
     }
