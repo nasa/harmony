@@ -1041,7 +1041,7 @@ export class Job extends DBRecord implements JobRecord {
       numInputGranules: this.numInputGranules,
       jobID: this.jobID,
     };
-    // need this line to prevent null values fro showing up in data expiration field
+    // need this line to prevent null values from showing up in data expiration field
     Object.keys(serializedJob).forEach((k) => serializedJob[k] == null && delete serializedJob[k]);
 
     if (urlRoot && linkType !== 'none') {
