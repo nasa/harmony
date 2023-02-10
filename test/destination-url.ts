@@ -22,7 +22,7 @@ const reprojectAndZarrQuery = {
 
 /**
  * Verify the test result has a 400 status code and an error message that is the same as the given expectedError.
- * 
+ *
  * @param context - the test context
  * @param expectedError - the expected error message
  * @throws AssertionError: - if the result status is not 400 or the error messaged is not as expected
@@ -39,7 +39,7 @@ function verifyValidationError(context: Context, expectedError: string): void {
 describe('when setting destinationUrl on ogc request', function () {
   const collection = 'C1233800302-EEDTEST';
   hookServersStartStop();
-  
+
   describe('when making a request with a valid destinationUrl', function () {
     hookGetBucketRegion('us-west-2');
     hookRangesetRequest('1.0.0', collection, 'all', { query: { ...reprojectAndZarrQuery } });
@@ -48,6 +48,10 @@ describe('when setting destinationUrl on ogc request', function () {
 
     it('returns 200 status code for the job', async function () {
       expect(this.res.status).to.equal(200);
+    });
+
+    it('does not include the dataExpiration field in the job status', function () {
+      expect(this.res.body.dataExpiration).to.be.undefined;
     });
 
     it('the job has harmony-job-status-link file created with the job status link', async function () {
@@ -68,7 +72,7 @@ describe('when setting destinationUrl on ogc request', function () {
   describe('when making a request with an invalid destinationUrl with invalid S3 url format', function () {
     StubService.hook({ params: { status: 'successful' } });
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 'abcd' } });
-    
+
     it('returns 400 status code for invalid s3 url format', async function () {
       verifyValidationError(this, "Error: Invalid destinationUrl 'abcd', must start with s3://");
     });
@@ -77,7 +81,7 @@ describe('when setting destinationUrl on ogc request', function () {
   describe('when making a request with an invalid destinationUrl with multiple s3 locations', function () {
     StubService.hook({ params: { status: 'successful' } });
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://abcd,s3://edfg' } });
-    
+
     it('returns 400 status code for multiple s3 locations which the middleware will concatenate with comma', async function () {
       verifyValidationError(this, "Error: Invalid destinationUrl 's3://abcd,s3://edfg', only one s3 location is allowed.");
     });
@@ -87,7 +91,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookGetBucketRegion('us-west-2');
     StubService.hook({ params: { status: 'successful' } });
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://non-existent-bucket/abcd' } });
-    
+
     it('returns 400 status code for nonexistent s3 bucket', async function () {
       verifyValidationError(this, "Error: The specified bucket 'non-existent-bucket' does not exist.");
     });
@@ -97,7 +101,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookGetBucketRegion('us-west-2');
     StubService.hook({ params: { status: 'successful' } });
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://' } });
-    
+
     it('returns 400 status code for no s3 bucket', async function () {
       verifyValidationError(this, 'Error: Invalid destinationUrl, no s3 bucket is provided.');
     });
@@ -107,7 +111,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookGetBucketRegion('us-west-2');
     StubService.hook({ params: { status: 'successful' } });
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://invalid,bucket' } });
-    
+
     it('returns 400 status code for invalid bucket name', async function () {
       verifyValidationError(this, "Error: The specified bucket 'invalid,bucket' is not valid.");
     });
@@ -117,7 +121,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookGetBucketRegion('us-west-2');
     StubService.hook({ params: { status: 'successful' } });
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://no-permission' } });
-    
+
     it('returns 400 status code when no permission to get bucket location', async function () {
       verifyValidationError(this, "Error: Do not have permission to get bucket location of the specified bucket 'no-permission'.");
     });
@@ -128,7 +132,7 @@ describe('when setting destinationUrl on ogc request', function () {
     hookUpload();
     StubService.hook({ params: { status: 'successful' } });
     hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://no-write-permission' } });
-    
+
     it('returns 400 status code when not writable', async function () {
       verifyValidationError(this, "Error: Do not have write permission to the specified s3 location: 's3://no-write-permission'.");
     });
