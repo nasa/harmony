@@ -313,6 +313,8 @@ https://cmr.earthdata.nasa.gov:
         env:
           <<: *default-turbo-env
           STAGING_PATH: public/nasa/harmony-gdal-adapter
+    umm_s:
+      - S2606110201-XYZ_PROV
     collections:
       - id: C1595422627-ASF
       - id: C1214354031-ASF
