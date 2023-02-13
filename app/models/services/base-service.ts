@@ -15,7 +15,7 @@ import { getRequestMetric } from '../../util/metrics';
 import { getRequestUrl } from '../../util/url';
 import HarmonyRequest from '../harmony-request';
 import UserWork from '../user-work';
-import { sanitizeImage } from '../../util/string';
+import { joinTexts, sanitizeImage } from '../../util/string';
 
 export interface ServiceCapabilities {
   concatenation?: boolean;
@@ -328,6 +328,12 @@ export default abstract class BaseService<ServiceParamType> {
     }
     if (this.operation.message && !skipPreview) {
       job.setMessage(this.operation.message, JobStatus.RUNNING);
+    }
+    if (this.operation.destinationUrl) {
+      const destinationWarningSuccessful = 'The results have been placed in the requested custom destination. Any further changes to the result files or their location are outside of Harmony\'s control.';
+      const destinationWarningRunning = 'Once results are sent to the requested destination, any changes to the result files or their location are outside of Harmony\'s control.';
+      job.setMessage(joinTexts(job.getMessage(JobStatus.SUCCESSFUL), destinationWarningSuccessful), JobStatus.SUCCESSFUL);
+      job.setMessage(joinTexts(job.getMessage(JobStatus.RUNNING), destinationWarningRunning), JobStatus.RUNNING);
     }
     job.addStagingBucketLink(this.operation.stagingLocation);
     return job;
