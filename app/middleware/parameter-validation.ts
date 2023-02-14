@@ -7,6 +7,7 @@ import { defaultObjectStore } from '../util/object-store';
 import { coverageRangesetGetParams, coverageRangesetPostParams } from '../frontends/ogc-coverages/index';
 import env = require('../util/env');
 import { getRequestRoot } from '../util/url';
+import { validateNoConflictingGridParameters } from '../util/grids';
 
 const { awsDefaultRegion } = env;
 
@@ -48,7 +49,7 @@ async function validateBucketIsInRegion(bucketName: string, region: string): Pro
       // TODO: Add reference to the cross account s3 delivery document in the error message below when working on HARMONY-1218.
       throw new RequestValidationError(`Destination bucket '${bucketName}' must be in the '${region}' region, but was in '${bucketRegion}'.`);
     }
-  } catch (e) { 
+  } catch (e) {
     if (e.name === 'NoSuchBucket') {
       throw new RequestValidationError(`The specified bucket '${bucketName}' does not exist.`);
     } else if (e.name === 'AccessDenied') {
@@ -73,14 +74,14 @@ async function validateDestinationUrlWritable(req: HarmonyRequest, destinationUr
     const statusUrl = requestUrl + '/harmony-job-status-link';
     const statusLink = getRequestRoot(req) + '/jobs/' + requestId;
     await defaultObjectStore().upload(statusLink, statusUrl, null, 'text/plain');
-  } catch (e) { 
+  } catch (e) {
     if (e.name === 'AccessDenied') {
       throw new RequestValidationError(`Do not have write permission to the specified s3 location: '${destinationUrl}'.`);
-    } 
+    }
     throw e;
   }
 }
-  
+
 /**
  * Validate that the value provided for the `destinationUrl` parameter is an `s3` url in the format of `s3://<bucket>/<path>` is in the same AWS region
  *
@@ -109,7 +110,7 @@ async function validateDestinationUrlParameter(req: HarmonyRequest): Promise<voi
 /**
  * Validate that the parameter names are correct.
  *  (Performs case insensitive comparison.)
- * 
+ *
  * @param requestedParams - names of the parameters provided by the user
  * @param allowedParams - names of the allowed parameters
  * @throws RequestValidationError - if disallowed parameters are detected
@@ -133,7 +134,7 @@ export function validateParameterNames(requestedParams: string[], allowedParams:
 
 /**
  * Validate that the req query parameter names are correct according to Harmony implementation of OGC spec.
- * 
+ *
  * @param req - The client request
  * @throws RequestValidationError - if disallowed parameters are detected
  */
@@ -156,11 +157,14 @@ export default async function parameterValidation(
 ): Promise<void> {
   try {
     validateLinkTypeParameter(req);
+    validateNoConflictingGridParameters(req.query);
     await validateDestinationUrlParameter(req);
     if (req.url.match(RANGESET_ROUTE_REGEX)) {
       validateCoverageRangesetParameterNames(req);
     }
   } catch (e) {
+    req.context.logger.warn('Exception was thrown');
+    req.context.logger.warn(e);
     return next(e);
   }
   return next();

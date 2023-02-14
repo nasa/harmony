@@ -7,6 +7,7 @@ import parseCRS from './crs';
 import { parseMultiValueParameter } from './parameter-parsing-helpers';
 import HarmonyRequest from '../models/harmony-request';
 import { parseAcceptHeader } from './content-negotiation';
+// import { parseGrid } from './grids';
 
 /**
  * Handle the granuleName parameter in a Harmony query, adding it to the DataOperation
@@ -107,3 +108,19 @@ export function handleFormat(
       .filter((v) => v);
   }
 }
+
+// /**
+//  * Handle the scaleSize parameter in a Harmony query, adding it to the DataOperation
+//  * if necessary.
+//  *
+//  * @param operation - the DataOperation for the request
+//  * @param query - the query for the request
+//  */
+// export async function handleGrid(
+//   operation: DataOperation,
+//   query: Record<string, string>,
+//   req: HarmonyRequest): Promise<void> {
+//   if (query.grid) {
+//     await parseGrid(operation, query, req);
+//   }
+// }
