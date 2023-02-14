@@ -292,17 +292,12 @@ async function _cmrGet(
 export async function fetchPost(
   path: string, formData: FormData | string, headers: { [key: string]: string },
 ): Promise<CmrResponse> {
-  let response;
-  try {
-    response = await fetch(`${cmrApiConfig.baseURL}${path}`, {
-      method: 'POST',
-      body: formData,
-      headers,
-    });
-    response.data = await response.json();
-  } catch (e) {
-    console.log(JSON.stringify(e));
-  }
+  const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}${path}`, {
+    method: 'POST',
+    body: formData,
+    headers,
+  });
+  response.data = await response.json();
 
   return response;
 }
@@ -499,40 +494,6 @@ export async function getAllVariables(
   return variables;
 }
 
-// /**
-//  * Performs a CMR grids.json search with the given query string. If there are more
-//  * than 2000 Grids, page through the Grid results until all are retrieved.
-//  *
-//  * @param query - The key/value pairs to search
-//  * @param token - Access token for user request
-//  * @returns The Grid search results
-//  */
-//  export async function getAllGrids(
-//   query: CmrQuery, token: string,
-// ): Promise<Array<CmrUmmGrid>> {
-//   const GridsResponse = await _cmrPost('/search/Grids.umm_json_v1_8_1', query, token) as CmrGridsResponse;
-//   const { hits } = GridsResponse.data;
-//   let Grids = GridsResponse.data.items;
-//   let numGridsRetrieved = Grids.length;
-//   let page_num = 1;
-
-//   while (numGridsRetrieved < hits) {
-//     page_num += 1;
-//     logger.debug(`Paging through Grids = ${page_num}, numGridsRetrieved = ${numGridsRetrieved}, total hits ${hits}`);
-//     query.page_num = page_num;
-//     const response = await _cmrPost('/search/Grids.umm_json_v1_8_1', query, token) as CmrGridsResponse;
-//     const pageOfGrids = response.data.items;
-//     Grids = Grids.concat(pageOfGrids);
-//     numGridsRetrieved += pageOfGrids.length;
-//     if (pageOfGrids.length == 0) {
-//       logger.warn(`Expected ${hits} Grids, but only retrieved ${numGridsRetrieved} from CMR.`);
-//       break;
-//     }
-//   }
-
-//   return variables;
-// }
-
 /**
  * Performs a CMR collections.json search with the given query string
  *
@@ -557,9 +518,7 @@ async function queryCollections(
 async function queryGrids(
   query: CmrQuery, token: string,
 ): Promise<Array<CmrUmmGrid>> {
-  console.log(`I am going to query the grids for ${query}`);
   const gridsResponse = await _cmrGet('/search/grids.umm_json', query, token) as CmrGridsResponse;
-  console.log(`I queried the grids and got back ${gridsResponse}`);
   return gridsResponse.data.items;
 }
 
