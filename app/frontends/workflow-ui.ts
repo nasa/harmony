@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { sanitizeImage } from '../util/string';
+import { sanitizeImage, truncateString } from '../util/string';
 import { getJobIfAllowed } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { getWorkItemById, queryAll } from '../models/work-item';
@@ -128,12 +128,18 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
       try {
         const url = new URL(this.request);
         const path = url.pathname + url.search;
-        return path;
+        return truncateString(path, 100);
       } catch (e) {
         logger.error(`Could not form a valid URL from job.request: ${this.request}`);
         logger.error(e);
         return this.request;
       }
+    },
+    jobMessage(): string {
+      if (this.message) {
+        return truncateString(this.message, 100);
+      }
+      return '';
     },
     sortGranulesLinks(): string {
       // return links that lets the user apply or unapply an asc or desc sort

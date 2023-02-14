@@ -322,6 +322,7 @@ export default abstract class BaseService<ServiceParamType> {
       collectionIds: this.operation.collectionIds,
       ignoreErrors: this.operation.ignoreErrors,
       destination_url: this.operation.destinationUrl,
+      service_name: this.config.name,
     });
     if (this.operation.message) {
       job.setMessage(this.operation.message, JobStatus.SUCCESSFUL);

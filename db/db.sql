@@ -16,7 +16,8 @@ CREATE TABLE `jobs` (
   `numInputGranules` integer not null default 0,
   `collectionIds` text not null,
   `ignoreErrors` boolean not null,
-  `destination_url` varchar(8192)
+  `destination_url` varchar(8192),
+  `service_name` varchar(255)
 );
 
 CREATE TABLE `job_links` (

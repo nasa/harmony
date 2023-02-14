@@ -2,15 +2,19 @@
     <thead>
         <tr class="align-middle">
             <th scope="col">jobID</th>
+            <th scope="col">service</th>
             {{#isAdminRoute}}
             <th scope="col">user</th>
             {{/isAdminRoute}}
             <th scope="col">request</th>
             <th scope="col">status</th>
             <th scope="col">message</th>
-            <th scope="col" class="d-flex flex-row align-items-center"><div>granules</div>&nbsp;
-                <div class="d-flex flex-column">
-                {{{sortGranulesLinks}}}
+            <th scope="col">
+                <div class="d-flex flex-row align-items-center">
+                    <div>granules</div>&nbsp;
+                    <div class="d-flex flex-column">
+                    {{{sortGranulesLinks}}}
+                    </div>
                 </div>
             </th>
             <th scope="col">progress</th>
@@ -22,16 +26,17 @@
         {{#jobs}}
         <tr clas='job-table-row'>
             <th scope="row"><a href="workflow-ui/{{jobID}}{{dateQuery}}">{{jobID}}</a></th>
+            <td>{{service_name}}</td>
             {{#isAdminRoute}}
             <td>{{username}}</td>
             {{/isAdminRoute}}
             <td class="mw-40ch">
-                <span class="text-truncate d-block" title="{{request}}" data-bs-toggle="tooltip"
+                <span title="{{request}}" data-bs-toggle="tooltip"
                     data-bs-placement="right">{{jobUrl}}</span>
             </td>
             <td><span class="badge bg-{{jobBadge}}">{{status}}</span></td>
-            <td class="mw-40ch"><span class="text-truncate d-block" title="{{message}}" data-bs-toggle="tooltip"
-                    data-bs-placement="right">{{message}}</span></td>
+            <td class="mw-40ch"><span title="{{message}}" data-bs-toggle="tooltip"
+                    data-bs-placement="right">{{jobMessage}}</span></td>
             <td>{{numInputGranules}}</td>
             <td>{{progress}}%</td>
             <td class="date-td" data-time="{{jobCreatedAt}}"></td>
