@@ -163,8 +163,6 @@ export default async function parameterValidation(
       validateCoverageRangesetParameterNames(req);
     }
   } catch (e) {
-    req.context.logger.warn('Exception was thrown');
-    req.context.logger.warn(e);
     return next(e);
   }
   return next();
