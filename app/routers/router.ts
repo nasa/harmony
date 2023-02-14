@@ -33,6 +33,7 @@ import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
 import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
 import getRequestMetrics from '../frontends/request-metrics';
+import { parseGridMiddleware } from '../util/grids';
 
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
@@ -190,6 +191,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.use(logged(chooseService));
   result.use(logged(postServiceConcatenationHandler));
   result.use(logged(cmrGranuleLocator));
+  result.use(logged(parseGridMiddleware));
   result.use(logged(addRequestContextToOperation));
   result.use(logged(redirectWithoutTrailingSlash));
 

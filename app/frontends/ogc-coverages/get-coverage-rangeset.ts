@@ -3,6 +3,7 @@ import DataOperation from '../../models/data-operation';
 import HarmonyRequest from '../../models/harmony-request';
 import wrap from '../../util/array';
 import { handleCrs, handleFormat, handleGranuleIds, handleGranuleNames, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
+// import { handleCrs, handleFormat, handleGranuleIds, handleGranuleNames, handleGrid, handleScaleExtent, handleScaleSize } from '../../util/parameter-parsers';
 import { createDecrypter, createEncrypter } from '../../util/crypto';
 import env from '../../util/env';
 import { RequestValidationError } from '../../util/errors';
@@ -38,6 +39,7 @@ export default function getCoverageRangeset(
   handleCrs(operation, query);
   handleScaleExtent(operation, query);
   handleScaleSize(operation, query);
+  // handleGrid(operation, query, req);
 
   operation.interpolationMethod = query.interpolation;
   operation.outputWidth = query.width;

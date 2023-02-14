@@ -332,6 +332,7 @@ paths:
       - $ref: '#/components/parameters/ignoreErrors'
       - $ref: '#/components/parameters/destinationUrl'
       - $ref: '#/components/parameters/granuleName'
+      - $ref: '#/components/parameters/grid'
       responses:
         "200":
           description: A coverage's range set.
@@ -370,6 +371,7 @@ paths:
       - $ref: '#/components/parameters/ignoreErrors'
       - $ref: '#/components/parameters/destinationUrl'
       - $ref: '#/components/parameters/granuleName'
+      - $ref: '#/components/parameters/grid'
       requestBody:
         content:
           multipart/form-data:
@@ -929,3 +931,12 @@ components:
         items:
           type: string
           minLength: 1
+    grid:
+      name: grid
+      in: query
+      description: |
+        the name of the output grid to use for regridding requests. The name must match the UMM
+        grid name in the CMR.
+      required: false
+      schema:
+        type: string

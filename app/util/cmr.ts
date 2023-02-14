@@ -111,6 +111,35 @@ export interface CmrUmmVariable {
   };
 }
 
+export interface CmrUmmGrid {
+  meta: {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'concept-id': string;
+  };
+  umm: {
+    Name: string;
+    GridDefinition: {
+      CoordinateReferenceSystemID: {
+        Code: string;
+      };
+      DimensionSize: {
+        Height: number;
+        Width: number;
+      };
+      DimensionScale: {
+        X: {
+          Minimum: number;
+          Maximum: number;
+        };
+        Y: {
+          Minimum: number;
+          Maximum: number;
+        };
+      };
+    };
+  };
+}
+
 export interface CmrRelatedUrl {
   URL: string;
   URLContentType: string;
@@ -159,6 +188,13 @@ export interface CmrGranulesResponse extends CmrResponse {
     feed: {
       entry: CmrGranule[];
     };
+  };
+}
+
+export interface CmrGridsResponse extends CmrResponse {
+  data: {
+    items: CmrUmmGrid[];
+    hits: number;
   };
 }
 
@@ -463,6 +499,40 @@ export async function getAllVariables(
   return variables;
 }
 
+// /**
+//  * Performs a CMR grids.json search with the given query string. If there are more
+//  * than 2000 Grids, page through the Grid results until all are retrieved.
+//  *
+//  * @param query - The key/value pairs to search
+//  * @param token - Access token for user request
+//  * @returns The Grid search results
+//  */
+//  export async function getAllGrids(
+//   query: CmrQuery, token: string,
+// ): Promise<Array<CmrUmmGrid>> {
+//   const GridsResponse = await _cmrPost('/search/Grids.umm_json_v1_8_1', query, token) as CmrGridsResponse;
+//   const { hits } = GridsResponse.data;
+//   let Grids = GridsResponse.data.items;
+//   let numGridsRetrieved = Grids.length;
+//   let page_num = 1;
+
+//   while (numGridsRetrieved < hits) {
+//     page_num += 1;
+//     logger.debug(`Paging through Grids = ${page_num}, numGridsRetrieved = ${numGridsRetrieved}, total hits ${hits}`);
+//     query.page_num = page_num;
+//     const response = await _cmrPost('/search/Grids.umm_json_v1_8_1', query, token) as CmrGridsResponse;
+//     const pageOfGrids = response.data.items;
+//     Grids = Grids.concat(pageOfGrids);
+//     numGridsRetrieved += pageOfGrids.length;
+//     if (pageOfGrids.length == 0) {
+//       logger.warn(`Expected ${hits} Grids, but only retrieved ${numGridsRetrieved} from CMR.`);
+//       break;
+//     }
+//   }
+
+//   return variables;
+// }
+
 /**
  * Performs a CMR collections.json search with the given query string
  *
@@ -475,6 +545,22 @@ async function queryCollections(
 ): Promise<Array<CmrCollection>> {
   const collectionsResponse = await _cmrGet('/search/collections.json', query, token) as CmrCollectionsResponse;
   return collectionsResponse.data.feed.entry;
+}
+
+/**
+ * Performs a CMR grids.umm_json search with the given query string
+ *
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The grid search results
+ */
+async function queryGrids(
+  query: CmrQuery, token: string,
+): Promise<Array<CmrUmmGrid>> {
+  console.log(`I am going to query the grids for ${query}`);
+  const gridsResponse = await _cmrGet('/search/grids.umm_json', query, token) as CmrGridsResponse;
+  console.log(`I queried the grids and got back ${gridsResponse}`);
+  return gridsResponse.data.items;
 }
 
 /**
@@ -582,6 +668,19 @@ export async function getVariablesForCollection(
 }
 
 /**
+ * Queries the CMR grids for grid(s) with the given name. Ideally only one grid should match.
+ *
+ * @param gridName - The name of the grid for which to search
+ * @param token - Access token for user request
+ * @returns an array of UMM Grids matching the passed in name (ideally only one item)
+ */
+export async function getGridsByName(
+  gridName: string, token: string,
+): Promise<Array<CmrUmmGrid>> {
+  return queryGrids({ name: gridName, page_size: ACTUAL_CMR_MAX_PAGE_SIZE }, token);
+}
+
+/**
  * Generate an s3 url to use to store/lookup stored query parameters
  *
  * @param sessionKey - The session key
@@ -672,6 +771,7 @@ export function queryGranulesForCollection(
     ...query,
   }, token);
 }
+
 
 /**
  * Queries and returns the CMR permissions for each concept specified
