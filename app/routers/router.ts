@@ -187,11 +187,11 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   });
   result.use(logged(shapefileConverter));
   result.use(logged(parameterValidation));
+  result.use(logged(parseGridMiddleware));
   result.use(logged(preServiceConcatenationHandler));
   result.use(logged(chooseService));
   result.use(logged(postServiceConcatenationHandler));
   result.use(logged(cmrGranuleLocator));
-  result.use(logged(parseGridMiddleware));
   result.use(logged(addRequestContextToOperation));
   result.use(logged(redirectWithoutTrailingSlash));
 
