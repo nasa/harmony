@@ -51,11 +51,17 @@
                     <input id="sort-granules" type="hidden" name="sortGranules" value="{{sortGranules}}" />
                     <input name="tableFilter" class="table-filter mb-2" placeholder="add a filter"
                         data-value="{{selectedFilters}}" data-current-user="{{currentUser}}"
-                        data-is-admin-route="{{isAdminRoute}}">
+                        data-services="{{serviceNames}}" data-is-admin-route="{{isAdminRoute}}">
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" name="disallowStatus" {{disallowStatusChecked}}>
                         <label class="form-check-label" for="disallowStatus">
                             negate statuses
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="disallowService" {{disallowServiceChecked}}>
+                        <label class="form-check-label" for="disallowService">
+                            negate services
                         </label>
                     </div>
                     {{#isAdminRoute}}

@@ -254,7 +254,7 @@ export async function getJobs(
       currentUser: req.user,
       isAdminRoute,
       jobs,
-      serviceNames,
+      serviceNames: JSON.stringify(serviceNames),
       sortGranules: requestQuery.sortgranules,
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
       disallowServiceChecked: !tableQuery.allowServices ? 'checked' : '',
