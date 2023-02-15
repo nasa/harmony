@@ -96,6 +96,7 @@ export function getServiceConfigs(): ServiceConfig<unknown>[] {
 loadServiceConfigs();
 serviceConfigs.forEach(validateServiceConfig);
 export const harmonyCollections = _.flatten(serviceConfigs.map((c) => c.collections.map((sc) => sc.id)));
+export const serviceNames = serviceConfigs.map((c) => c.name);
 
 const serviceTypesToServiceClasses = {
   http: HttpService,
