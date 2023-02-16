@@ -216,7 +216,7 @@ export default abstract class BaseService<ServiceParamType> {
       destPath = destPath.endsWith('/') ? destPath.slice(0, -1) : destPath;
       return defaultObjectStore().getUrlString(destPath, requestId + '/');
     } 
-    return defaultObjectStore().getUrlString(env.stagingBucket, 'public/' + requestId + '/');
+    return defaultObjectStore().getUrlString(env.stagingBucket, `public/${requestId}/`);
   }
 
   /**
