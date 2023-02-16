@@ -25,9 +25,9 @@ export function validateNoConflictingGridParameters(query: Record<string, unknow
  * Middleware to handle the grid parameter in a Harmony query, adding it to the DataOperation
  * if necessary.
  *
- * @param operation - the DataOperation for the request
- * @param query - the query for the request
- * @param req - the harmony request object
+ * @param req - The client request, containing an operation
+ * @param res - The client response
+ * @param next - The next function in the middleware chain
  * @throws RequestValidationError if the combination of parameters is invalid or no grid can be found matching the grid name.
  */
 export async function parseGridMiddleware(
