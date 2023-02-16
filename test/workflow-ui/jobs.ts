@@ -445,6 +445,35 @@ describe('Workflow UI jobs route', function () {
       });
     });
 
+    describe('who filters by a particular combination of filter types', function () {
+      const tableFilter = '[{"value":"service: harmony/service-example","dbValue":"harmony/service-example","field":"service"},{"value":"status: failed","dbValue":"failed","field":"status"}]';
+      hookWorkflowUIJobs({ username: 'woody', disallowService: 'on', disallowStatus: '', tableFilter });
+      it('returns the harmony/netcdf-to-zarr job', function () {
+        const listing = this.res.text;
+        expect((listing.match(/job-table-row/g) || []).length).to.equal(1);
+        const serviceExampleTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/service-example' });
+        const serviceExampleRegExp = new RegExp(serviceExampleTd, 'g');
+        expect((listing.match(serviceExampleRegExp) || []).length).to.equal(0);
+        const netcdfToZarrTd = mustache.render('<td>{{service}}</td>', { service: 'harmony/netcdf-to-zarr' });
+        const netcdfToZarrRegExp = new RegExp(netcdfToZarrTd, 'g');
+        expect((listing.match(netcdfToZarrRegExp) || []).length).to.equal(1);
+
+        expect(listing).to.contain(`<span class="badge bg-danger">${JobStatus.FAILED.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-success">${JobStatus.SUCCESSFUL.valueOf()}</span>`);
+        expect(listing).to.not.contain(`<span class="badge bg-info">${JobStatus.RUNNING.valueOf()}</span>`);
+      });
+      it('has the appropriate HTML (un)checked', function () {
+        const listing = this.res.text;
+        expect((listing.match(/<input (?=.*name="disallowStatus")(?!.*checked).*>/g) || []).length).to.equal(1);
+        expect((listing.match(/<input (?=.*name="disallowService")(?=.*checked).*>/g) || []).length).to.equal(1);
+      });
+      it('has the appropriate filters selected', function () {
+        const listing = this.res.text;
+        expect(listing).to.contain(mustache.render('{{service}}', { service: 'service: harmony/service-example' }));
+        expect(listing).to.contain(mustache.render('{{status}}', { status: 'status: failed' }));
+      });
+    });
+
     describe('when accessing the admin endpoint', function () {
       describe('when the user is part of the admin group', function () {
         describe('When including a trailing slash on the admin route admin/workflow-ui/', function () {
