@@ -831,5 +831,48 @@ describe('createWorkflowSteps', function () {
     it('creates a third and final workflow step for the shapefile subsetter', function () {
       expect(steps[2].serviceID).to.equal('shapefile subsetter');
     });
+
+    it('uses the artifact bucket as the staging location for the first step', function () {
+      const { stagingLocation } = JSON.parse(steps[0].operation);
+      expect(stagingLocation).to.include('s3://local-artifact-bucket/public/shapefile-tiff-netcdf-service/');
+    });
+
+    it('uses the artifact bucket as the staging location for the second step', function () {
+      const { stagingLocation } = JSON.parse(steps[1].operation);
+      expect(stagingLocation).to.include('s3://local-artifact-bucket/public/shapefile-tiff-netcdf-service/');
+    });
+
+    it('uses the staging bucket as the staging location for the last step', function () {
+      const { stagingLocation } = JSON.parse(steps[2].operation);
+      expect(stagingLocation).to.include('s3://local-staging-bucket/public/');
+    });
+  });
+
+  describe('when operation with destinationUrl', function () {
+    const destUrlOperation = _.cloneDeep(operation);
+    destUrlOperation.boundingRectangle = [1, 2, 3, 4];
+    destUrlOperation.geojson = 'interesting shape';
+    destUrlOperation.destinationUrl = 's3://dummy/p1';
+    const service = new StubService(config, {}, destUrlOperation);
+    const steps = service.createWorkflowSteps();
+
+    it('creates three workflow steps', function () {
+      expect(steps.length).to.equal(3);
+    });
+
+    it('uses the artifact bucket as the staging location for the first step', function () {
+      const { stagingLocation } = JSON.parse(steps[0].operation);
+      expect(stagingLocation).to.include('s3://local-artifact-bucket/public/shapefile-tiff-netcdf-service/');
+    });
+
+    it('uses the artifact bucket as the staging location for the second step', function () {
+      const { stagingLocation } = JSON.parse(steps[1].operation);
+      expect(stagingLocation).to.include('s3://local-artifact-bucket/public/shapefile-tiff-netcdf-service/');
+    });
+
+    it('uses the destinationUrl as the staging location for the last step', function () {
+      const { stagingLocation } = JSON.parse(steps[2].operation);
+      expect(stagingLocation).to.include('s3://dummy/p1');
+    });
   });
 });
