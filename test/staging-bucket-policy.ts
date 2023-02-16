@@ -23,17 +23,22 @@ const simpleBucketPolicy = {
   'Version': '2012-10-17',
   'Statement': [
     {
-      'Sid': 'Example permissions',
+      'Sid': 'write permission',
       'Effect': 'Allow',
       'Principal': {
         'AWS': 'arn:aws:iam::123456789012:role/harmony-sandbox-eks-node-group-role',
       },
-      'Action': [
-        's3:GetObject',
-        's3:PutObject',
-        's3:PutObjectAcl',
-      ],
+      'Action': 's3:PutObject',
       'Resource': 'arn:aws:s3:::my-bucket/*',
+    },
+    {
+      'Sid': 'get bucket location permissions',
+      'Effect': 'Allow',
+      'Principal': {
+        'AWS': 'arn:aws:iam::123456789012:role/harmony-sandbox-eks-node-group-role',
+      },
+      'Action': 's3:GetBucketLocation',
+      'Resource': 'arn:aws:s3:::my-bucket',
     },
   ],
 };
@@ -42,17 +47,22 @@ const withPrefixBucketPolicy = {
   'Version': '2012-10-17',
   'Statement': [
     {
-      'Sid': 'Example permissions',
+      'Sid': 'write permission',
       'Effect': 'Allow',
       'Principal': {
         'AWS': 'arn:aws:iam::123456789012:role/harmony-sandbox-eks-node-group-role',
       },
-      'Action': [
-        's3:GetObject',
-        's3:PutObject',
-        's3:PutObjectAcl',
-      ],
+      'Action': 's3:PutObject',
       'Resource': 'arn:aws:s3:::my-bucket/my-prefix/*',
+    },
+    {
+      'Sid': 'get bucket location permissions',
+      'Effect': 'Allow',
+      'Principal': {
+        'AWS': 'arn:aws:iam::123456789012:role/harmony-sandbox-eks-node-group-role',
+      },
+      'Action': 's3:GetBucketLocation',
+      'Resource': 'arn:aws:s3:::my-bucket',
     },
   ],
 };

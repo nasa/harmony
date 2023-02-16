@@ -5,35 +5,57 @@ const policyTemplate = {
   'Version': '2012-10-17',
   'Statement': [
     {
-      'Sid': 'Example permissions',
+      'Sid': 'write permission',
       'Effect': 'Allow',
       'Principal': {
         'AWS': '',
       },
-      'Action': [
-        's3:GetObject',
-        's3:PutObject',
-        's3:PutObjectAcl',
-      ],
-      'Resource': 'arn:aws:s3:::simple-bucket/*',
+      'Action': 's3:PutObject',
+      'Resource': '',
+    },
+    {
+      'Sid': 'get bucket location permissions',
+      'Effect': 'Allow',
+      'Principal': {
+        'AWS': '',
+      },
+      'Action': 's3:GetBucketLocation',
+      'Resource': '',
     },
   ],
 };
 
 /**
- *  Validate that the bucketPath is of the form `bucket_name/optional_path`
- * where the path may or may not end in '/'
- * @param bucketPath - the bucket name plus optional path
+ * Get the bucket name and key (path) from a bucket path, which may optionally be a full url
+ * that includes the s3:// protocol prefix, a bucket name plus key/path, or just a bucket name
+ *
+ * @param bucketPath - the bucket plus optional path
+ * @returns the bucket name and key (path). The key will be null if bucketPath is just a bucket
+ * with no path. Any trailing / will be removed
  */
-function validateBucketPath(bucketPath: string): void {
-  const regex = /^([^\/]+\/?)+$/;
-  if (!regex.test(bucketPath)) {
+export function bucketKeyFromBucketPath(bucketPath: string): [string, string] {
+  const regex = /^((s|S)3:\/\/)?([^\/]+)(\/?.*?)$/;
+  const matches = bucketPath.match(regex);
+  const bucket = matches[3];
+
+  let key:string = null;
+  if (matches.length > 3) {
+    key = matches[4];
+  }
+
+  if (key?.includes('//')) {
     throw new RequestValidationError(`'${bucketPath}' is not a valid bucket name with optional path`);
   }
+
+  // strip off trailing /
+  if (key.endsWith('/')) {
+    key = key.slice(0, -1);
+  }
+
+  return [bucket, key];
 }
 
 /**
- *
  * Express.js handler that returns a bucket policy that will allow Harmony workers from this
  * deployment to stage data in the given bucket.
  *
@@ -43,11 +65,13 @@ function validateBucketPath(bucketPath: string): void {
  */
 export async function getStagingBucketPolicy(req, res): Promise<void> {
   let { bucketPath } = req.params;
-  // validate the bucket/path
-  validateBucketPath(bucketPath);
 
-  if (bucketPath.endsWith('/')) {
-    bucketPath = bucketPath.slice(0, -1);
+  // get the bucket/key and validate that the given parameter is of the right form
+  const [bucket, key] = bucketKeyFromBucketPath(bucketPath);
+  if (key) {
+    bucketPath = `${bucket}${key}`;
+  } else {
+    bucketPath = bucket;
   }
 
   // get the IAM role for this EC2 instance so we can infer the role for the EKS nodes, which
@@ -66,7 +90,9 @@ export async function getStagingBucketPolicy(req, res): Promise<void> {
   const envName = arn.match(regex)[1];
   const eksRoleArn = arn.replace(envName, `${envName}-eks-node-group`);
   policyTemplate.Statement[0].Principal.AWS = eksRoleArn;
+  policyTemplate.Statement[1].Principal.AWS = eksRoleArn;
   policyTemplate.Statement[0].Resource = `arn:aws:s3:::${bucketPath}/*`;
+  policyTemplate.Statement[1].Resource = `arn:aws:s3:::${bucket}`;
   res.send(policyTemplate);
 
 }
