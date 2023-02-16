@@ -33,6 +33,7 @@ import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
 import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
 import getRequestMetrics from '../frontends/request-metrics';
+import { getStagingBucketPolicy } from 'app/frontends/staging-bucket-policy';
 
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
@@ -241,6 +242,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/admin/workflow-ui/:jobID/work-items/:id', asyncHandler(getWorkItemTableRow));
   result.get('/admin/workflow-ui/:jobID/links', asyncHandler(getJobLinks));
   result.get('/admin/workflow-ui/:jobID/:id/logs', asyncHandler(getWorkItemLogs));
+
+  result.get('/staging-bucket-policy/:bucketPath', asyncHandler(getStagingBucketPolicy));
 
   result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
 
