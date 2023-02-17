@@ -111,6 +111,35 @@ export interface CmrUmmVariable {
   };
 }
 
+export interface CmrUmmGrid {
+  meta: {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    'concept-id': string;
+  };
+  umm: {
+    Name: string;
+    GridDefinition: {
+      CoordinateReferenceSystemID: {
+        Code: string;
+      };
+      DimensionSize: {
+        Height: number;
+        Width: number;
+      };
+      DimensionScale: {
+        X: {
+          Minimum: number;
+          Maximum: number;
+        };
+        Y: {
+          Minimum: number;
+          Maximum: number;
+        };
+      };
+    };
+  };
+}
+
 export interface CmrRelatedUrl {
   URL: string;
   URLContentType: string;
@@ -159,6 +188,13 @@ export interface CmrGranulesResponse extends CmrResponse {
     feed: {
       entry: CmrGranule[];
     };
+  };
+}
+
+export interface CmrGridsResponse extends CmrResponse {
+  data: {
+    items: CmrUmmGrid[];
+    hits: number;
   };
 }
 
@@ -256,17 +292,12 @@ async function _cmrGet(
 export async function fetchPost(
   path: string, formData: FormData | string, headers: { [key: string]: string },
 ): Promise<CmrResponse> {
-  let response;
-  try {
-    response = await fetch(`${cmrApiConfig.baseURL}${path}`, {
-      method: 'POST',
-      body: formData,
-      headers,
-    });
-    response.data = await response.json();
-  } catch (e) {
-    console.log(JSON.stringify(e));
-  }
+  const response: CmrResponse = await fetch(`${cmrApiConfig.baseURL}${path}`, {
+    method: 'POST',
+    body: formData,
+    headers,
+  });
+  response.data = await response.json();
 
   return response;
 }
@@ -478,6 +509,20 @@ async function queryCollections(
 }
 
 /**
+ * Performs a CMR grids.umm_json search with the given query string
+ *
+ * @param query - The key/value pairs to search
+ * @param token - Access token for user request
+ * @returns The grid search results
+ */
+async function queryGrids(
+  query: CmrQuery, token: string,
+): Promise<Array<CmrUmmGrid>> {
+  const gridsResponse = await _cmrGet('/search/grids.umm_json', query, token) as CmrGridsResponse;
+  return gridsResponse.data.items;
+}
+
+/**
  * Performs a CMR granules.json search with the given form data
  *
  * @param form - The key/value pairs to search including a `shapefile` parameter
@@ -582,6 +627,19 @@ export async function getVariablesForCollection(
 }
 
 /**
+ * Queries the CMR grids for grid(s) with the given name. Ideally only one grid should match.
+ *
+ * @param gridName - The name of the grid for which to search
+ * @param token - Access token for user request
+ * @returns an array of UMM Grids matching the passed in name (ideally only one item)
+ */
+export async function getGridsByName(
+  gridName: string, token: string,
+): Promise<Array<CmrUmmGrid>> {
+  return queryGrids({ name: gridName, page_size: ACTUAL_CMR_MAX_PAGE_SIZE }, token);
+}
+
+/**
  * Generate an s3 url to use to store/lookup stored query parameters
  *
  * @param sessionKey - The session key
@@ -672,6 +730,7 @@ export function queryGranulesForCollection(
     ...query,
   }, token);
 }
+
 
 /**
  * Queries and returns the CMR permissions for each concept specified

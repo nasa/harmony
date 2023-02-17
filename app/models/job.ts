@@ -1055,7 +1055,7 @@ export class Job extends DBRecord implements JobRecord {
         let { href } = serializedLink;
         const { title, type, rel, bbox, temporal } = serializedLink;
         // Leave the S3 output staging location as an S3 link
-        if (rel !== 's3-access') {
+        if (rel !== 's3-access' && !this.destination_url) {
           href = createPublicPermalink(href, urlRoot, type, linkType);
         }
         return removeEmptyProperties({ href, title, type, rel, bbox, temporal });

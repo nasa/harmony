@@ -14,7 +14,6 @@ import { S3ObjectStore } from '../../app/util/object-store';
  */
 export function itReturnsUnchangedDataLinksForZarr(
   s3Uri: string,
-  serviceName = 'harmony/example',
 ): void {
   it('returns the S3 URL', function () {
     const job = new Job(JSON.parse(this.res.text));
@@ -26,8 +25,8 @@ export function itReturnsUnchangedDataLinksForZarr(
     const job = new Job(JSON.parse(this.res.text));
     const bucketLinks = job.getRelatedLinks('s3-access');
     expect(bucketLinks.length).to.equal(1);
-    const urlRegex = new RegExp(`^s3://${env.stagingBucket}/public/${serviceName}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/$`);
-    expect(bucketLinks[0].href).to.match(urlRegex);
+    const stagingLocation = `s3://${env.stagingBucket}/public/${job.jobID}/`;
+    expect(bucketLinks[0].href).to.equal(stagingLocation);
     expect(bucketLinks[0].title).to.equal('Results in AWS S3. Access from AWS us-west-2 with keys from /cloud-access.sh');
   });
 

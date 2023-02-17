@@ -34,14 +34,17 @@ function containsS3DirectAccessLink(job: JobForDisplay): boolean {
  * @param job - the serialized job
  * @param urlRoot - the root URL to be used when constructing links
  * @param statusLinkRel - the type of relation (self|item) for the status link
+ * @param destinationUrl - the destinationUrl of the job
  * @returns a list of job links
  */
-function getLinksForDisplay(job: JobForDisplay, urlRoot: string, statusLinkRel: string): JobLink[] {
+function getLinksForDisplay(job: JobForDisplay, urlRoot: string, statusLinkRel: string, destinationUrl: string): JobLink[] {
   let { links } = job;
   const dataLinks = getRelatedLinks('data', job.links);
   if (containsS3DirectAccessLink(job)) {
-    links.unshift(new JobLink(getCloudAccessJsonLink(urlRoot)));
-    links.unshift(new JobLink(getCloudAccessShLink(urlRoot)));
+    if (!destinationUrl) {
+      links.unshift(new JobLink(getCloudAccessJsonLink(urlRoot)));
+      links.unshift(new JobLink(getCloudAccessShLink(urlRoot)));
+    }
   } else {
     // Remove the S3 bucket and prefix link
     links = links.filter((link) => link.rel !== 's3-access');
@@ -90,8 +93,10 @@ function getMessageForDisplay(job: JobForDisplay, urlRoot: string): string {
 function getJobForDisplay(job: Job, urlRoot: string, linkType?: string, errors?: JobError[]): JobForDisplay {
   const serializedJob = job.serialize(urlRoot, linkType);
   const statusLinkRel = linkType === 'none' ? 'item' : 'self';
-  serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel);
-  serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
+  serializedJob.links = getLinksForDisplay(serializedJob, urlRoot, statusLinkRel, job.destination_url);
+  if (!job.destination_url) {
+    serializedJob.message = getMessageForDisplay(serializedJob, urlRoot);
+  }
 
   if (errors.length > 0) {
     serializedJob.errors =  errors.map((e) => _.pick(e, ['url', 'message'])) as JobError[];
