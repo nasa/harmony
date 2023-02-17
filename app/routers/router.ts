@@ -33,7 +33,7 @@ import cmrCollectionReader = require('../middleware/cmr-collection-reader');
 import envVars = require('../util/env');
 import { postServiceConcatenationHandler, preServiceConcatenationHandler } from '../middleware/concatenation';
 import getRequestMetrics from '../frontends/request-metrics';
-import { getStagingBucketPolicy } from 'app/frontends/staging-bucket-policy';
+import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
 
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
