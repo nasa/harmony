@@ -26,16 +26,16 @@ const simpleBucketPolicy = {
       'Sid': 'write permission',
       'Effect': 'Allow',
       'Principal': {
-        'AWS': 'arn:aws:iam::123456789012:role/harmony-sandbox-eks-node-group-role',
+        'AWS': 'arn:aws:iam::123456789012:root',
       },
       'Action': 's3:PutObject',
       'Resource': 'arn:aws:s3:::my-bucket/*',
     },
     {
-      'Sid': 'get bucket location permissions',
+      'Sid': 'get bucket location permission',
       'Effect': 'Allow',
       'Principal': {
-        'AWS': 'arn:aws:iam::123456789012:role/harmony-sandbox-eks-node-group-role',
+        'AWS': 'arn:aws:iam::123456789012:root',
       },
       'Action': 's3:GetBucketLocation',
       'Resource': 'arn:aws:s3:::my-bucket',
@@ -50,16 +50,16 @@ const withPrefixBucketPolicy = {
       'Sid': 'write permission',
       'Effect': 'Allow',
       'Principal': {
-        'AWS': 'arn:aws:iam::123456789012:role/harmony-sandbox-eks-node-group-role',
+        'AWS': 'arn:aws:iam::123456789012:root',
       },
       'Action': 's3:PutObject',
       'Resource': 'arn:aws:s3:::my-bucket/my-prefix/*',
     },
     {
-      'Sid': 'get bucket location permissions',
+      'Sid': 'get bucket location permission',
       'Effect': 'Allow',
       'Principal': {
-        'AWS': 'arn:aws:iam::123456789012:role/harmony-sandbox-eks-node-group-role',
+        'AWS': 'arn:aws:iam::123456789012:root',
       },
       'Action': 's3:GetBucketLocation',
       'Resource': 'arn:aws:s3:::my-bucket',
@@ -160,7 +160,7 @@ describe('staging-bucket-policy route', function () {
 
       it('returns an appropriate error message', function () {
         const error = JSON.parse(this.res.text);
-        expect(error.description).to.eql('Error: Bucket policy generation is only available on AWS Harmony deployments');
+        expect(error.description).to.eql('Error: Failed to generate bucket policy. Bucket policy generation is only available on AWS Harmony deployments');
       });
     });
   });
