@@ -76,7 +76,7 @@ describe('staging-bucket-policy route', function () {
         .returns({
           getCallerIdentity: () => {
             return {
-              promise: () => {
+              promise: (): unknown => {
                 return {
                   Account: '123456789012',
                   Arn: 'arn:aws:iam::123456789012:role/harmony-sandbox-role',
