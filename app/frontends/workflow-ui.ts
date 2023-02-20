@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { sanitizeImage } from '../util/string';
+import { sanitizeImage, truncateString } from '../util/string';
 import { getJobIfAllowed } from '../util/job';
 import { Job, JobStatus, JobQuery } from '../models/job';
 import { getWorkItemById, queryAll } from '../models/work-item';
@@ -17,6 +17,7 @@ import { getAllStateChangeLinks, getJobStateChangeLinks } from '../util/links';
 import { objectStoreForProtocol } from '../util/object-store';
 import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
 import { Logger } from 'winston';
+import { serviceNames } from '../models/services';
 
 /**
  * Maps job status to display class.
@@ -40,11 +41,13 @@ const statusClass = {
 interface TableQuery {
   sortGranules: string,
   statusValues: string[],
+  serviceValues: string[],
   userValues: string[],
   from: Date,
   to: Date,
   dateKind: 'createdAt' | 'updatedAt',
   allowStatuses: boolean,
+  allowServices: boolean,
   allowUsers: boolean,
 }
 
@@ -67,8 +70,10 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
     sortGranules: undefined,
     // tag input
     statusValues: [],
+    serviceValues: [],
     userValues: [],
     allowStatuses: true,
+    allowServices: true,
     allowUsers: true,
     // date controls
     from: undefined,
@@ -78,21 +83,27 @@ function parseQuery( /* eslint-disable @typescript-eslint/no-explicit-any */
   let originalValues = '[]';
   tableQuery.sortGranules = requestQuery.sortgranules;
   tableQuery.allowStatuses = !(requestQuery.disallowstatus === 'on');
+  tableQuery.allowServices = !(requestQuery.disallowservice === 'on');
   tableQuery.allowUsers = !(requestQuery.disallowuser === 'on');
   if (requestQuery.tablefilter) {
     const selectedOptions: { field: string, dbValue: string, value: string }[] = JSON.parse(requestQuery.tablefilter);
     const validStatusSelections = selectedOptions
       .filter(option => option.field === 'status' && Object.values<string>(statusEnum).includes(option.dbValue));
     const statusValues = validStatusSelections.map(option => option.dbValue);
+    const validServiceSelections = selectedOptions
+      .filter(option => option.field === 'service' && serviceNames.includes(option.dbValue));
+    const serviceValues = validServiceSelections.map(option => option.dbValue);
     const validUserSelections = selectedOptions
       .filter(option => isAdminAccess && /^user: [A-Za-z0-9\.\_]{4,30}$/.test(option.value));
     const userValues = validUserSelections.map(option => option.value.split('user: ')[1]);
-    if ((statusValues.length + userValues.length) > maxFilters) {
+    if ((statusValues.length + serviceValues.length + userValues.length) > maxFilters) {
       throw new RequestValidationError(`Maximum amount of filters (${maxFilters}) was exceeded.`);
     }
     originalValues = JSON.stringify(validStatusSelections
+      .concat(validServiceSelections)
       .concat(validUserSelections));
     tableQuery.statusValues = statusValues;
+    tableQuery.serviceValues = serviceValues;
     tableQuery.userValues = userValues;
   }
   tableQuery.dateKind = requestQuery.datekind || 'createdAt';
@@ -128,11 +139,16 @@ function jobRenderingFunctions(logger: Logger, requestQuery: Record<string, any>
       try {
         const url = new URL(this.request);
         const path = url.pathname + url.search;
-        return path;
+        return truncateString(path, 100);
       } catch (e) {
         logger.error(`Could not form a valid URL from job.request: ${this.request}`);
         logger.error(e);
         return this.request;
+      }
+    },
+    jobMessage(): string {
+      if (this.message) {
+        return truncateString(this.message, 100);
       }
     },
     sortGranulesLinks(): string {
@@ -181,6 +197,12 @@ function tableQueryToJobQuery(tableQuery: TableQuery, isAdmin: boolean, user: st
     jobQuery.whereIn.status = {
       values: tableQuery.statusValues,
       in: tableQuery.allowStatuses,
+    };
+  }
+  if (tableQuery.serviceValues.length) {
+    jobQuery.whereIn.service_name = {
+      values: tableQuery.serviceValues,
+      in: tableQuery.allowServices,
     };
   }
   if (tableQuery.userValues.length) {
@@ -232,8 +254,10 @@ export async function getJobs(
       currentUser: req.user,
       isAdminRoute,
       jobs,
+      serviceNames: JSON.stringify(serviceNames),
       sortGranules: requestQuery.sortgranules,
       disallowStatusChecked: !tableQuery.allowStatuses ? 'checked' : '',
+      disallowServiceChecked: !tableQuery.allowServices ? 'checked' : '',
       disallowUserChecked: !tableQuery.allowUsers ? 'checked' : '',
       toDateTime,
       fromDateTime,

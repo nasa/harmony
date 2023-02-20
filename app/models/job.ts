@@ -22,6 +22,7 @@ const { awsDefaultRegion } = env;
 export const jobRecordFields = [
   'username', 'status', 'message', 'progress', 'createdAt', 'updatedAt', 'request',
   'numInputGranules', 'jobID', 'requestId', 'batchesCompleted', 'isAsync', 'ignoreErrors', 'destination_url',
+  'service_name',
 ];
 
 const stagingBucketTitle = `Results in AWS S3. Access from AWS ${awsDefaultRegion} with keys from /cloud-access.sh`;
@@ -69,6 +70,7 @@ export interface JobRecord {
   numInputGranules: number;
   collectionIds: string[];
   destination_url?: string;
+  service_name?: string,
 }
 
 /**
@@ -122,6 +124,7 @@ export interface JobQuery {
   }
   whereIn?: {
     status?: { in: boolean, values: string[] };
+    service_name?: { in: boolean, values: string[] };
     username?: { in: boolean, values: string[] };
   }
   orderBy?: {
@@ -358,6 +361,8 @@ export class Job extends DBRecord implements JobRecord {
   ignoreErrors: boolean;
 
   destination_url?: string;
+
+  service_name?: string;
 
   /**
    * Get the job message for the current status.
@@ -1050,7 +1055,7 @@ export class Job extends DBRecord implements JobRecord {
         let { href } = serializedLink;
         const { title, type, rel, bbox, temporal } = serializedLink;
         // Leave the S3 output staging location as an S3 link
-        if (rel !== 's3-access') {
+        if (rel !== 's3-access' && !this.destination_url) {
           href = createPublicPermalink(href, urlRoot, type, linkType);
         }
         return removeEmptyProperties({ href, title, type, rel, bbox, temporal });

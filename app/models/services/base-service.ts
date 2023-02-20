@@ -190,7 +190,7 @@ export default abstract class BaseService<ServiceParamType> {
 
     if (!this.operation.stagingLocation) {
       const prefix = `public/${config.name || this.constructor.name}/${uuid()}/`;
-      this.operation.stagingLocation = defaultObjectStore().getUrlString(env.stagingBucket, prefix);
+      this.operation.stagingLocation = defaultObjectStore().getUrlString(env.artifactBucket, prefix);
     }
   }
 
@@ -202,6 +202,21 @@ export default abstract class BaseService<ServiceParamType> {
    */
   get capabilities(): ServiceCapabilities {
     return this.config.capabilities;
+  }
+
+  /**
+   * Returns the final staging location of the service.
+   *
+   * @returns the final staging location of the service
+   */
+  finalStagingLocation() : string {
+    const { requestId, destinationUrl } = this.operation;
+    if (destinationUrl) {
+      let destPath = destinationUrl.substring(5);
+      destPath = destPath.endsWith('/') ? destPath.slice(0, -1) : destPath;
+      return defaultObjectStore().getUrlString(destPath, requestId + '/');
+    } 
+    return defaultObjectStore().getUrlString(env.stagingBucket, `public/${requestId}/`);
   }
 
   /**
@@ -322,6 +337,7 @@ export default abstract class BaseService<ServiceParamType> {
       collectionIds: this.operation.collectionIds,
       ignoreErrors: this.operation.ignoreErrors,
       destination_url: this.operation.destinationUrl,
+      service_name: this.config.name,
     });
     if (this.operation.message) {
       job.setMessage(this.operation.message, JobStatus.SUCCESSFUL);
@@ -335,7 +351,9 @@ export default abstract class BaseService<ServiceParamType> {
       job.setMessage(joinTexts(job.getMessage(JobStatus.SUCCESSFUL), destinationWarningSuccessful), JobStatus.SUCCESSFUL);
       job.setMessage(joinTexts(job.getMessage(JobStatus.RUNNING), destinationWarningRunning), JobStatus.RUNNING);
     }
-    job.addStagingBucketLink(this.operation.stagingLocation);
+    if (!this.operation.destinationUrl) {
+      job.addStagingBucketLink(this.finalStagingLocation());
+    }
     return job;
   }
 
@@ -394,10 +412,14 @@ export default abstract class BaseService<ServiceParamType> {
   protected _createWorkflowSteps(): WorkflowStep[] {
     const workflowSteps = [];
     if (this.config.steps) {
+      const numSteps = this.config.steps.length;
       let i = 0;
       this.config.steps.forEach(((step) => {
         if (stepRequired(step, this.operation)) {
           i += 1;
+          if (i === numSteps) {
+            this.operation.stagingLocation = this.finalStagingLocation();
+          }
           workflowSteps.push(new WorkflowStep({
             jobID: this.operation.requestId,
             serviceID: serviceImageToId(step.image),
