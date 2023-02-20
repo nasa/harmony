@@ -14,7 +14,7 @@ const policyTemplate = {
       'Resource': '',
     },
     {
-      'Sid': 'get bucket location permissions',
+      'Sid': 'get bucket location permission',
       'Effect': 'Allow',
       'Principal': {
         'AWS': '',
@@ -75,24 +75,22 @@ export async function getStagingBucketPolicy(req, res): Promise<void> {
   }
 
   // get the IAM role for this EC2 instance so we can infer the role for the EKS nodes, which
-  // is what the workers will use when interacting with the external bucket
-  let identity: aws.STS.GetCallerIdentityResponse;
+  // is what the workers will use when interacting with the external bucket. This will fail
+  // for local (non-AWS) Harmony
   try {
     const sts = new aws.STS();
-    identity = await sts.getCallerIdentity().promise();
-
+    const identity = await sts.getCallerIdentity().promise();
+    const account = identity.Account;
+    // for putObject
+    policyTemplate.Statement[0].Principal.AWS = `arn:aws:iam::${account}:root`;
+    policyTemplate.Statement[0].Resource = `arn:aws:s3:::${bucketPath}/*`;
+    // for getBucketLocation
+    policyTemplate.Statement[1].Principal.AWS = `arn:aws:iam::${account}:root`;
+    policyTemplate.Statement[1].Resource = `arn:aws:s3:::${bucket}`;
+    res.send(policyTemplate);
   } catch (e) {
-    throw new RequestValidationError('Bucket policy generation is only available on AWS Harmony deployments');
+    const { logger } = req.context;
+    logger.error(e);
+    throw new RequestValidationError('Failed to generate bucket policy. Bucket policy generation is only available on AWS Harmony deployments');
   }
-
-  const arn = identity.Arn;
-  const regex = /arn:aws:iam::\d+:role\/harmony-(.+)-role/;
-  const envName = arn.match(regex)[1];
-  const eksRoleArn = arn.replace(envName, `${envName}-eks-node-group`);
-  policyTemplate.Statement[0].Principal.AWS = eksRoleArn;
-  policyTemplate.Statement[1].Principal.AWS = eksRoleArn;
-  policyTemplate.Statement[0].Resource = `arn:aws:s3:::${bucketPath}/*`;
-  policyTemplate.Statement[1].Resource = `arn:aws:s3:::${bucket}`;
-  res.send(policyTemplate);
-
 }
