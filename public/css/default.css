@@ -8,6 +8,7 @@ a .badge-dark {
 
 .mw-40ch {
     max-width: 40ch;
+    word-break: break-word;
 }
 
 .toast-container {
