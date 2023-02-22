@@ -137,6 +137,18 @@ describe('staging-bucket-policy route', function () {
       });
     });
 
+    describe('and the user provides a valid s3 url with a prefix', async function () {
+      hookStagingBucketPolicy({ bucketNamePath: 's3%3A%2F%2Fmy-bucket%2Fmy-prefix' });
+      it('returns a 200 success', function () {
+        expect(this.res.statusCode).to.equal(200);
+      });
+
+      it('returns an appropriate bucket policy', function () {
+        const policy = JSON.parse(this.res.text);
+        expect(policy).to.eql(withPrefixBucketPolicy);
+      });
+    });
+
     describe('and the user provides an invalid bucket path', async function () {
       hookStagingBucketPolicy({ bucketNamePath: 'my-bucket%2F%2Ffoo' });
       it('returns a 400 error', function () {
