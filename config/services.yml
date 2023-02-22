@@ -666,6 +666,32 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${SWOT_REPROJECT_IMAGE}
 
+  - name: sds/harmony-regridder
+    # The Harmony Regridding Service for L3/L4 collections
+    data_operation_version: '0.17.0'
+    type:
+      <<: *default-turbo-config
+      params:
+        <<: *default-turbo-params
+        env:
+          <<: *default-turbo-env
+          STAGING_PATH: public/sds/harmony-regridder
+    umm_s:
+      - S1256563664-EEDTEST
+    collections: []
+    capabilities:
+      subsetting:
+        bbox: false
+        shape: false
+        variable: false
+      output_formats:
+        - application/netcdf # Incorrect mime-type, remove when no longer needed
+        - application/x-netcdf4
+      reprojection: true
+    steps:
+      - image: !Env ${QUERY_CMR_IMAGE}
+      - image: !Env ${HARMONY_REGRIDDER_IMAGE}
+
   - name: sds/variable-subsetter
     # The Variable Subsetter provides _only_ variable subsetting
     data_operation_version: '0.17.0'
