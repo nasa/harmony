@@ -28,6 +28,7 @@ describe('Versions endpoint', function () {
           'podaac/concise',
           'podaac/l2-subsetter-concise',
           'sds/swot-reproject',
+          'sds/harmony-regridder',
           'sds/variable-subsetter',
           'sds/maskfill',
           'sds/trajectory-subsetter',
