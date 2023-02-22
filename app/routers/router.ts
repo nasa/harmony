@@ -245,7 +245,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/admin/workflow-ui/:jobID/links', asyncHandler(getJobLinks));
   result.get('/admin/workflow-ui/:jobID/:id/logs', asyncHandler(getWorkItemLogs));
 
-  result.get('/staging-bucket-policy/:bucketPath', asyncHandler(getStagingBucketPolicy));
+  result.get('/staging-bucket-policy', asyncHandler(getStagingBucketPolicy));
 
   result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
 

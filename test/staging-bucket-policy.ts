@@ -10,11 +10,15 @@ import hookServersStartStop from './helpers/servers';
  * Calls the staging-bucket-policy endpoint to get a bucket policy for the given bucket/path
  *
  * @param app - The express application (typically this.frontend)
- * @param bucketNamePath - the bucket name and optional path (url encoded)
+ * @param bucketPath - the bucket name and optional path (url encoded)
  * @returns the response
  */
-function stagingBucketPolicy(app: Express.Application, { bucketNamePath }): request.Test {
-  return request(app).get(`/staging-bucket-policy/${bucketNamePath}`);
+function stagingBucketPolicy(app: Express.Application, bucketPath): request.Test {
+  let req = request(app).get('/staging-bucket-policy');
+  if (bucketPath) {
+    req = req.query(bucketPath);
+  }
+  return req;
 }
 
 const hookStagingBucketPolicy = hookRequest.bind(this, stagingBucketPolicy);
@@ -90,7 +94,7 @@ describe('staging-bucket-policy route', function () {
       getCallerIdentityStub.restore();
     });
     describe('and the user provides a valid s3 bucket with no prefix', async function () {
-      hookStagingBucketPolicy({ bucketNamePath: 'my-bucket' });
+      hookStagingBucketPolicy({ bucketPath: 'my-bucket' });
       it('returns a 200 success', function () {
         expect(this.res.statusCode).to.equal(200);
       });
@@ -102,7 +106,7 @@ describe('staging-bucket-policy route', function () {
     });
 
     describe('and the user provides a valid s3 bucket with no prefix ending in \'/\'', async function () {
-      hookStagingBucketPolicy({ bucketNamePath: 'my-bucket/' });
+      hookStagingBucketPolicy({ bucketPath: 'my-bucket/' });
       it('returns a 200 success', function () {
         expect(this.res.statusCode).to.equal(200);
       });
@@ -114,7 +118,7 @@ describe('staging-bucket-policy route', function () {
     });
 
     describe('and the user provides a valid s3 bucket with a prefix', async function () {
-      hookStagingBucketPolicy({ bucketNamePath: 'my-bucket%2Fmy-prefix' });
+      hookStagingBucketPolicy({ bucketPath: 'my-bucket/my-prefix' });
       it('returns a 200 success', function () {
         expect(this.res.statusCode).to.equal(200);
       });
@@ -126,7 +130,7 @@ describe('staging-bucket-policy route', function () {
     });
 
     describe('and the user provides a valid s3 bucket with a prefix ending in \'/\'', async function () {
-      hookStagingBucketPolicy({ bucketNamePath: 'my-bucket%2Fmy-prefix%2F' });
+      hookStagingBucketPolicy({ bucketPath: 'my-bucket/my-prefix/' });
       it('returns a 200 success', function () {
         expect(this.res.statusCode).to.equal(200);
       });
@@ -138,7 +142,7 @@ describe('staging-bucket-policy route', function () {
     });
 
     describe('and the user provides a valid s3 url with a prefix', async function () {
-      hookStagingBucketPolicy({ bucketNamePath: 's3%3A%2F%2Fmy-bucket%2Fmy-prefix' });
+      hookStagingBucketPolicy({ bucketPath: 's3://my-bucket/my-prefix' });
       it('returns a 200 success', function () {
         expect(this.res.statusCode).to.equal(200);
       });
@@ -149,8 +153,20 @@ describe('staging-bucket-policy route', function () {
       });
     });
 
+    describe('and the user provides no bucket path', async function () {
+      hookStagingBucketPolicy();
+      it('returns a 400 error', function () {
+        expect(this.res.statusCode).to.equal(400);
+      });
+
+      it('returns an appropriate error message', function () {
+        const error = JSON.parse(this.res.text);
+        expect(error.description).to.eql('Error: `bucketPath` is a required parameter that must consist of one of a bucket name, e.g., `my-bucket`, a bucket name plus path/key, e.g., `my-bucket/my/path`, or a full S3 url, e.g., `s3://my-bucket/my/path`.');
+      });
+    });
+
     describe('and the user provides an invalid bucket path', async function () {
-      hookStagingBucketPolicy({ bucketNamePath: 'my-bucket%2F%2Ffoo' });
+      hookStagingBucketPolicy({ bucketPath: 'my-bucket//foo' });
       it('returns a 400 error', function () {
         expect(this.res.statusCode).to.equal(400);
       });
@@ -165,7 +181,7 @@ describe('staging-bucket-policy route', function () {
   describe('when a user accesses the staging-bucket-policy route on a server not in AWS', function () {
 
     describe('and the user provides a valid s3 bucket path', async function () {
-      hookStagingBucketPolicy({ bucketNamePath: 'my-bucket' });
+      hookStagingBucketPolicy({ bucketPath: 'my-bucket' });
       it('returns a 400 error', function () {
         expect(this.res.statusCode).to.equal(400);
       });
