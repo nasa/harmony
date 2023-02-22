@@ -364,4 +364,14 @@ describe('DataOperation', () => {
       });
     });
   });
+
+  describe('#isSynchronous', () => {
+    describe('when a destinationUrl is supplied', () => {
+      const operation = new DataOperation();
+      operation.destinationUrl = 's3://my-bucket';
+      it('returns false', () => {
+        expect(operation.isSynchronous).is(false);
+      });
+    });
+  });
 });
