@@ -36,6 +36,17 @@ function verifyValidationError(context: Context, expectedError: string): void {
   });
 }
 
+/**
+ * Returns the expected bucket setup instruction for the given destinationUrl.
+ *
+ * @param destinationUrl - the destination url
+ * @returns the expected bucket setup instruction
+ */
+function expectedInstruction(destinationUrl: string): string {
+  const generalInstruction = "The s3 bucket must be created in the us-west-2 region with 'ACL disabled' which is the default Object Ownership setting in AWS S3. The s3 bucket also must have the proper bucket policy in place to allow Harmony to access the bucket. You can retrieve the bucket policy to set on the s3 bucket by calling the Harmony staging-bucket-policy endpoint with the s3 bucket path where the OGC result will be staged in. e.g. http://127.0.0.1:4000/staging-bucket-policy?bucketPath=";
+  return `${generalInstruction}${destinationUrl}`;
+}
+
 describe('when setting destinationUrl on ogc request', function () {
   const collection = 'C1233800302-EEDTEST';
   hookServersStartStop();
@@ -120,10 +131,12 @@ describe('when setting destinationUrl on ogc request', function () {
   describe('when making a request without permission to check bucket location', function () {
     hookGetBucketRegion('us-west-2');
     StubService.hook({ params: { status: 'successful' } });
-    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://no-permission' } });
+    const destUrl = 's3://no-permission';
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: destUrl } });
 
     it('returns 400 status code when no permission to get bucket location', async function () {
-      verifyValidationError(this, "Error: Do not have permission to get bucket location of the specified bucket 'no-permission'.");
+      const expectedError = `Error: Do not have permission to get bucket location of the specified bucket 'no-permission'. ${expectedInstruction(destUrl)}`;
+      verifyValidationError(this, expectedError);
     });
   });
 
@@ -131,10 +144,12 @@ describe('when setting destinationUrl on ogc request', function () {
     hookGetBucketRegion('us-west-2');
     hookUpload();
     StubService.hook({ params: { status: 'successful' } });
-    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://no-write-permission' } });
+    const destUrl = 's3://no-write-permission';
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: destUrl } });
 
     it('returns 400 status code when not writable', async function () {
-      verifyValidationError(this, "Error: Do not have write permission to the specified s3 location: 's3://no-write-permission'.");
+      const expectedError = `Error: Do not have write permission to the specified s3 location: '${destUrl}'. ${expectedInstruction(destUrl)}`;
+      verifyValidationError(this, expectedError);
     });
   });
 
