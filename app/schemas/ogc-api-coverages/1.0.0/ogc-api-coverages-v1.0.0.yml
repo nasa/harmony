@@ -911,8 +911,9 @@ components:
     destinationUrl:
       name: destinationUrl
       in: query
-      description: destination url specified by the client, (currently only s3 link url is supported, 
-      e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously
+      description: |
+        destination url specified by the client, currently only s3 link url is supported
+        (e.g. s3://my-bucket-name/mypath) and will result in the job being run asynchronously
       required: false
       schema:
         type: string
