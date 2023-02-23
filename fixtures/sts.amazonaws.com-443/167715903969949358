@@ -2,15 +2,15 @@ POST /
 content-type: application/x-www-form-urlencoded; charset=utf-8
 x-amz-content-sha256: ab821ae955788b0e33ebd34c208442ccfc2d406e2edc5e7a39bd6458fbb4f843
 host: sts.amazonaws.com
-x-amz-date: 20230222T172655Z
-authorization: AWS4-HMAC-SHA256 Credential=localstack/20230222/us-east-1/sts/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=5e4429a4a54b36ac3717ddf8b29b55daece788da26cbfccde03b05442b348718
+x-amz-date: 20230223T133039Z
+authorization: AWS4-HMAC-SHA256 Credential=localstack/20230223/us-east-1/sts/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=8b91cef111187130fa5942e1283638647eb1c0dec0ee2cf0f3673c6d387f2cb8
 body: Action=GetCallerIdentity&Version=2011-06-15
 
 HTTP/1.1 403 Forbidden
-x-amzn-requestid: 4b236aa6-b135-4151-86c0-e798e30e9f34
+x-amzn-requestid: b479ad0d-3d1c-4e1e-b199-11f47e64796a
 content-type: text/xml
 content-length: 306
-date: Wed, 22 Feb 2023 17:26:55 GMT
+date: Thu, 23 Feb 2023 13:30:38 GMT
 
 <ErrorResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/">
   <Error>
@@ -18,5 +18,5 @@ date: Wed, 22 Feb 2023 17:26:55 GMT
     <Code>InvalidClientTokenId</Code>
     <Message>The security token included in the request is invalid.</Message>
   </Error>
-  <RequestId>4b236aa6-b135-4151-86c0-e798e30e9f34</RequestId>
+  <RequestId>b479ad0d-3d1c-4e1e-b199-11f47e64796a</RequestId>
 </ErrorResponse>
