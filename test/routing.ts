@@ -88,6 +88,16 @@ describe('Routing', function () {
     html: false,
   });
 
+  describeErrorCondition({
+    condition: 'invalid rangeset in the URL path',
+    path: `/${validCollection}/ogc-api-coverages/${version}/collections/all/coverage/rangeset123`,
+    message: {
+      code: 'harmony.NotFoundError',
+      description: 'Error: The requested page was not found.',
+    },
+    html: false,
+  });
+
   describe('/schemas', function () {
     it('serves files from app/schemas', async function () {
       const res = await request(this.frontend).get('/schemas/data-operation/0.10.0/data-operation-v0.10.0.json');
