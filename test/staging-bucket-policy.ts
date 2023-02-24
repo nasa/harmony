@@ -1,4 +1,4 @@
-import AWS from 'aws-sdk';
+import aws from 'aws-sdk';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import request from 'supertest';
@@ -76,7 +76,7 @@ describe('staging-bucket-policy route', function () {
   describe('when a user accesses the staging-bucket-policy route on a server in AWS', function () {
     let getCallerIdentityStub: SinonStub;
     before(function () {
-      getCallerIdentityStub = stub(AWS, 'STS')
+      getCallerIdentityStub = stub(aws, 'STS')
         .returns({
           getCallerIdentity: () => {
             return {
@@ -179,7 +179,14 @@ describe('staging-bucket-policy route', function () {
   });
 
   describe('when a user accesses the staging-bucket-policy route on a server not in AWS', function () {
-
+    let getCallerIdentityStub: SinonStub;
+    before(function () {
+      getCallerIdentityStub = stub(aws, 'STS')
+        .throws('This is not AWS');
+    });
+    after(function (){
+      getCallerIdentityStub.restore();
+    });
     describe('and the user provides a valid s3 bucket path', async function () {
       hookStagingBucketPolicy({ bucketPath: 'my-bucket' });
       it('returns a 400 error', function () {
