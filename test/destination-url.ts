@@ -43,7 +43,7 @@ function verifyValidationError(context: Context, expectedError: string): void {
  * @returns the expected bucket setup instruction
  */
 function expectedInstruction(destinationUrl: string): string {
-  const generalInstruction = "The s3 bucket must be created in the us-west-2 region with 'ACL disabled' which is the default Object Ownership setting in AWS S3. The s3 bucket also must have the proper bucket policy in place to allow Harmony to access the bucket. You can retrieve the bucket policy to set on the s3 bucket by calling the Harmony staging-bucket-policy endpoint with the s3 bucket path where the OGC result will be staged in. e.g. http://127.0.0.1:4000/staging-bucket-policy?bucketPath=";
+  const generalInstruction = "The s3 bucket must be created in the us-west-2 region with 'ACL disabled' which is the default Object Ownership setting in AWS S3. The s3 bucket also must have the proper bucket policy in place to allow Harmony to access the bucket. You can retrieve the bucket policy to set on your s3 bucket by calling: http://127.0.0.1:4000/staging-bucket-policy?bucketPath=";
   return `${generalInstruction}${destinationUrl}`;
 }
 
@@ -156,10 +156,12 @@ describe('when setting destinationUrl on ogc request', function () {
   describe('when making a request with an invalid destinationUrl with bucket in a different region', function () {
     hookGetBucketRegion('us-east-1');
     StubService.hook({ params: { status: 'successful' } });
-    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: 's3://abcd/p1' } });
+    const destUrl = 's3://abcd/p1';
+    hookRangesetRequest('1.0.0', collection, 'all', { query: { destinationUrl: destUrl } });
 
     it('returns 400 status code for bucket in different region', async function () {
-      verifyValidationError(this, "Error: Destination bucket 'abcd' must be in the 'us-west-2' region, but was in 'us-east-1'.");
+      const expectedError = `Error: Destination bucket 'abcd' must be in the 'us-west-2' region, but was in 'us-east-1'. ${expectedInstruction(destUrl)}`;
+      verifyValidationError(this, expectedError);
     });
   });
 });
