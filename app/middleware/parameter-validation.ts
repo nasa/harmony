@@ -33,7 +33,7 @@ function bucketInstruction(req: HarmonyRequest, destinationUrl: string): string 
   const bucketPolicyUrl = `${getRequestRoot(req)}/staging-bucket-policy?bucketPath=${destinationUrl}`;
   const instructions = [`The s3 bucket must be created in the ${awsDefaultRegion} region with 'ACL disabled' which is the default Object Ownership setting in AWS S3.`,
     'The s3 bucket also must have the proper bucket policy in place to allow Harmony to access the bucket.',
-    'You can retrieve the bucket policy to set on the s3 bucket by calling the Harmony staging-bucket-policy endpoint with the s3 bucket path where the OGC result will be staged in. e.g.',
+    'You can retrieve the bucket policy to set on your s3 bucket by calling:',
     bucketPolicyUrl];
   return instructions.join(' ');
 }
@@ -68,7 +68,7 @@ async function validateBucketIsInRegion(req: HarmonyRequest, destinationUrl: str
   try {
     const bucketRegion = await defaultObjectStore().getBucketRegion(bucketName);
     if (bucketRegion != awsDefaultRegion) {
-      throw new RequestValidationError(`Destination bucket '${bucketName}' must be in the '${awsDefaultRegion}' region, but was in '${bucketRegion}'.`);
+      throw new RequestValidationError(`Destination bucket '${bucketName}' must be in the '${awsDefaultRegion}' region, but was in '${bucketRegion}'. ${(bucketInstruction(req, destinationUrl))}`);
     }
   } catch (e) {
     if (e.name === 'NoSuchBucket') {
