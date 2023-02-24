@@ -23,6 +23,22 @@ const RANGESET_ROUTE_REGEX = /^\/.*\/ogc-api-coverages\/.*\/collections\/.*\/cov
 const validLinkTypeValues = ['http', 'https', 's3'];
 
 /**
+ * Returns the bucket setup instruction 
+ *
+ * @param req - The client request
+ * @param destinationUrl - The destinationUrl
+ * @returns the bucket setup instruction
+ */
+function bucketInstruction(req: HarmonyRequest, destinationUrl: string): string {
+  const bucketPolicyUrl = `${getRequestRoot(req)}/staging-bucket-policy?bucketPath=${destinationUrl}`;
+  return `The S3 bucket must be created in the ${awsDefaultRegion} region with 'ACLs disabled' `
+  + 'which is the default Object Ownership setting in AWS S3. '
+  + 'The S3 bucket also must have the proper bucket policy in place to allow Harmony to access the bucket. '
+  + 'You can retrieve the bucket policy to set on your S3 bucket by calling: '
+  + bucketPolicyUrl;
+}
+
+/**
  * Validate that the value provided for the `linkType` parameter is one of 'http', 'https', or 's3'
  *
  * @param req - The client request
@@ -39,23 +55,28 @@ function validateLinkTypeParameter(req: HarmonyRequest): void {
 /**
  * Validate that the bucket name provided is in the same AWS region as the given region
  *
- * @param bucketName - The name of the s3 bucket
- * @param region - The name of the aws region
+ * @param req - The client request
+ * @param destinationUrl - The destinationUrl
  */
-async function validateBucketIsInRegion(bucketName: string, region: string): Promise<void> {
+async function validateBucketIsInRegion(req: HarmonyRequest, destinationUrl: string): Promise<void> {
+  // previous validation has guaranteed that destinationUrl must start with 's3://'
+  const bucketName = destinationUrl.substring(5).split('/')[0];
+  if (bucketName === '') {
+    throw new RequestValidationError('Invalid destinationUrl, no S3 bucket is provided.');
+  }
+
   try {
     const bucketRegion = await defaultObjectStore().getBucketRegion(bucketName);
-    if (bucketRegion != region) {
-      // TODO: Add reference to the cross account s3 delivery document in the error message below when working on HARMONY-1218.
-      throw new RequestValidationError(`Destination bucket '${bucketName}' must be in the '${region}' region, but was in '${bucketRegion}'.`);
+    if (bucketRegion != awsDefaultRegion) {
+      throw new RequestValidationError(`Destination bucket '${bucketName}' must be in the '${awsDefaultRegion}' region, but was in '${bucketRegion}'. ${(bucketInstruction(req, destinationUrl))}`);
     }
   } catch (e) {
     if (e.name === 'NoSuchBucket') {
       throw new RequestValidationError(`The specified bucket '${bucketName}' does not exist.`);
-    } else if (e.name === 'AccessDenied') {
-      throw new RequestValidationError(`Do not have permission to get bucket location of the specified bucket '${bucketName}'.`);
     } else if (e.name === 'InvalidBucketName') {
       throw new RequestValidationError(`The specified bucket '${bucketName}' is not valid.`);
+    } else if (e.name === 'AccessDenied') {
+      throw new RequestValidationError(`Do not have permission to get bucket location of the specified bucket '${bucketName}'. ${(bucketInstruction(req, destinationUrl))}`);
     }
     throw e;
   }
@@ -76,14 +97,14 @@ async function validateDestinationUrlWritable(req: HarmonyRequest, destinationUr
     await defaultObjectStore().upload(statusLink, statusUrl, null, 'text/plain');
   } catch (e) {
     if (e.name === 'AccessDenied') {
-      throw new RequestValidationError(`Do not have write permission to the specified s3 location: '${destinationUrl}'.`);
+      throw new RequestValidationError(`Do not have write permission to the specified S3 location: '${destinationUrl}'. ${bucketInstruction(req, destinationUrl)}`);
     }
     throw e;
   }
 }
 
 /**
- * Validate that the value provided for the `destinationUrl` parameter is an `s3` url in the format of `s3://<bucket>/<path>` is in the same AWS region
+ * Validate that the value provided for the `destinationUrl` parameter is an `S3` url in the format of `s3://<bucket>/<path>` is in the same AWS region
  *
  * @param req - The client request
  */
@@ -96,13 +117,10 @@ async function validateDestinationUrlParameter(req: HarmonyRequest): Promise<voi
     }
     // this check is added to provide a more user friendly error message when more than one destinationUrl values are provided
     if (destUrl.includes(',s3://')) {
-      throw new RequestValidationError(`Invalid destinationUrl '${destUrl}', only one s3 location is allowed.`);
+      throw new RequestValidationError(`Invalid destinationUrl '${destUrl}', only one S3 location is allowed.`);
     }
-    const bucketName = destUrl.substring(5).split('/')[0];
-    if (bucketName === '') {
-      throw new RequestValidationError('Invalid destinationUrl, no s3 bucket is provided.');
-    }
-    await validateBucketIsInRegion(bucketName, awsDefaultRegion);
+    
+    await validateBucketIsInRegion(req, destUrl);
     await validateDestinationUrlWritable(req, destUrl);
   }
 }

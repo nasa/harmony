@@ -544,6 +544,9 @@ export default abstract class BaseService<ServiceParamType> {
     if (operation.requireSynchronous) {
       return true;
     }
+    if (operation.destinationUrl) {
+      return false;
+    }
     if (operation.isSynchronous !== undefined) {
       return operation.isSynchronous;
     }
