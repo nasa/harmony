@@ -856,6 +856,11 @@ describe('createWorkflowSteps', function () {
     const service = new StubService(config, {}, destUrlOperation);
     const steps = service.createWorkflowSteps();
 
+    it('is not synchronous', function () {
+      expect(service.isSynchronous).to.equal(false);
+      expect(service.operation.isSynchronous).to.equal(false);
+    });
+
     it('creates three workflow steps', function () {
       expect(steps.length).to.equal(3);
     });
