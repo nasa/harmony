@@ -29,7 +29,7 @@ describe('Landing page', function () {
     });
 
     it('links to notebook example', function () {
-      expect(this.res.text).to.match(/<a[^>]* href="\/notebook-example.html"[^>]*>View Jupyter Notebook Demo<\/a>/);
+      expect(this.res.text).to.match(/<a[^>]* href="https:\/\/github\.com\/nasa\/harmony\/blob\/main\/docs\/Harmony%20API%20introduction\.ipynb"[^>]*>View Jupyter Notebook Demo<\/a>/);
     });
 
     it('links to a Swagger UI for the coverages API', function () {
