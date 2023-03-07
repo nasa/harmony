@@ -8,6 +8,8 @@ export interface SerializableCatalog {
 
   title: string;
 
+  type: string;
+
   description: string;
 
   links: JobLink[];
@@ -36,6 +38,8 @@ class HarmonyCatalog implements SerializableCatalog {
 
   title: string;
 
+  type: string;
+
   description: string;
 
   links: JobLink[];
@@ -50,6 +54,7 @@ class HarmonyCatalog implements SerializableCatalog {
     this.id = id;
     this.stac_version = '1.0.0';
     this.title = title;
+    this.type = 'Catalog';
     this.description = description;
     this.links = [];
   }
@@ -78,7 +83,7 @@ class HarmonyCatalog implements SerializableCatalog {
    * @returns - STAC Catalog JSON
    */
   toJSON(): SerializableCatalog {
-    const paths = ['id', 'stac_version', 'title', 'description', 'links'];
+    const paths = ['id', 'stac_version', 'title', 'type', 'description', 'links'];
     return pick(this, paths) as SerializableCatalog;
   }
 }
