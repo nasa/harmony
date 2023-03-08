@@ -1,0 +1,76 @@
+h1, h2, h3 {
+  text-align: center!important;
+  font-weight: 300;
+}
+h2 {
+  background-color: rgb(172, 202, 237);
+}
+h2 .header-anchor {
+  visibility:hidden
+}
+
+h2:hover .header-anchor {
+  visibility:visible
+}
+pre.hljs {
+  border-style: solid;
+  border-color: #aaa;
+  padding: 1em;
+}
+ol {
+  margin-left: 3em;
+}
+
+a:link { text-decoration: none; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table td, table th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+table tr:nth-child(even){background-color: #f2f2f2;}
+
+/* table tr:hover {background-color: #ddd;} */
+
+table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #216B9F;
+  color: white;
+}
+
+table.service_table tr:nth-child(even){background-color: #ffffff;}
+
+table.service_table {
+  margin-bottom: 2em;
+}
+
+table.service_table td, table.service_table th {
+  text-align: center;
+}
+
+td.filler_data {
+  background-color: #d2d3d3;
+}
+
+th.subheader {
+  background-color: #64a6d5;
+}
+
+.service_name {
+  font-weight: bold;
+}
+
+th.table_title {
+  background-color: #063d64;
+  text-align: center;
+}
+
+/* table tr:hover {background-color: rgb(255, 255, 255);} */
+

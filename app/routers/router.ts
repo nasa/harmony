@@ -35,6 +35,7 @@ import { postServiceConcatenationHandler, preServiceConcatenationHandler } from 
 import getRequestMetrics from '../frontends/request-metrics';
 import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
 import { parseGridMiddleware } from '../util/grids';
+import docsPage from '../frontends/docs';
 
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
@@ -198,6 +199,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.get('/', asyncHandler(landingPage));
   result.get('/versions', asyncHandler(getVersions));
+  result.get('/docs', asyncHandler(docsPage));
   result.use('/docs/api', swaggerUi.serve, swaggerUi.setup(yaml.load(ogcCoverageApi.openApiContent), { customJs: '/js/docs/analytics-tag.js' }));
   result.get(collectionPrefix('wms'), asyncHandler(service(serviceInvoker)));
   result.get(/^.*?\/ogc-api-coverages\/.*?\/collections\/.*?\/coverage\/rangeset\/?$/, asyncHandler(service(serviceInvoker)));
