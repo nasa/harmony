@@ -46,7 +46,7 @@
                 {{^isAdminRoute}}
                 <li class="breadcrumb-item"><a href="/workflow-ui">Jobs</a></li>
                 {{/isAdminRoute}}
-                <li class="breadcrumb-item active" aria-current="page">{{job.jobID}}</li>
+                <li class="breadcrumb-item active" aria-current="page"><a href="/jobs/{{job.jobID}}">{{job.jobID}}</a></li>
             </ol>
             <div id="job-state-links-container" data-is-admin-or-owner="{{isAdminOrOwner}}">
                 <!-- job state change links will go here -->
