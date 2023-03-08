@@ -186,7 +186,7 @@ https://cmr.earthdata.nasa.gov:
       Outputs netcdf4.
 
       #### PODAAC concise services
-      ervice capabale of "concatenating" multiple netCDF files into a single netCDF files.
+      Service capabale of "concatenating" multiple netCDF files into a single netCDF files.
       The resulting file has an extra dimension with size equal to the number of input files where each slice in that dimension corresponds to the data from one of the inputs.
     data_operation_version: '0.17.0'
     type:
@@ -679,7 +679,7 @@ https://cmr.uat.earthdata.nasa.gov:
       Outputs netcdf4.
 
       #### PODAAC concise service
-      ervice capabale of "concatenating" multiple netCDF files into a single netCDF files.
+      Service capabale of "concatenating" multiple netCDF files into a single netCDF files.
       The resulting file has an extra dimension with size equal to the number of input files where each slice in that dimension corresponds to the data from one of the inputs.
     data_operation_version: '0.17.0'
     type:
