@@ -391,7 +391,7 @@ https://cmr.earthdata.nasa.gov:
   - name: harmony/netcdf-to-zarr
     description: |
       Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
-      Currently also preserves the original chunking scheme, though this may be amended in the future to better optimize output for cloud use.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -1001,7 +1001,7 @@ https://cmr.uat.earthdata.nasa.gov:
   - name: harmony/netcdf-to-zarr
     description: |
       Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
-      Currently also preserves the original chunking scheme, though this may be amended in the future to better optimize output for cloud use.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -1056,7 +1056,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
       #### Harmony netcdf-to-zarr service
       Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
-      Currently also preserves the original chunking scheme, though this may be amended in the future to better optimize output for cloud use.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -1105,7 +1105,7 @@ https://cmr.uat.earthdata.nasa.gov:
 
       #### Harmony netcdf-to-zarr service
       Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
-      Currently also preserves the original chunking scheme, though this may be amended in the future to better optimize output for cloud use.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
 
     data_operation_version: '0.17.0'
     type:
