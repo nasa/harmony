@@ -69,7 +69,7 @@ describe('Workflow UI job route', function () {
         });
         it('returns HTML with the job ID included', function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{req}}', { req: nonShareableJob.jobID }));
+          expect(listing).to.contain(mustache.render('{{req}} (<a href="/jobs/{{req}}">Job Status</a>)', { req: nonShareableJob.jobID }));
         });
         it('returns a breadcrumb that includes the non-admin path', async function () {
           const listing = this.res.text;
@@ -133,7 +133,7 @@ describe('Workflow UI job route', function () {
         hookAdminWorkflowUIJob({ jobID: nonShareableJob.jobID, username: 'adam' });
         it('returns a job for any user', async function () {
           const listing = this.res.text;
-          expect(listing).to.contain(mustache.render('{{req}}', { req: nonShareableJob.jobID }));
+          expect(listing).to.contain(mustache.render('{{req}} (<a href="/admin/jobs/{{req}}">Job Status</a>)', { req: nonShareableJob.jobID }));
         });
         it('returns a breadcrumb that includes the admin path', async function () {
           const listing = this.res.text;
