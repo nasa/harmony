@@ -4,11 +4,11 @@
 
 !!!include(apis.md)!!!
 
+!!!include(user-bucket.md)!!!
+
 !!!include(services.md)!!!
 
 !!!include(jobs.md)!!!
-
-!!!include(user-bucket.md)!!!
 
 !!!include(endpoints.md)!!!
 

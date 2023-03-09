@@ -9,7 +9,7 @@ capabilities are, and which services can work together.
 
 The following services are available.
 
-{servicesInfo}
+{{servicesInfo}}
 
 Harmony services run in containers in pods in a Kubernetes cluster. The specific docker image and
 tag for each service can be retrieved from the [versions](/versions) route.
