@@ -24,6 +24,9 @@ x-turbo-config: &default-turbo-config
 https://cmr.earthdata.nasa.gov:
 
   - name: gesdisc/giovanni
+    description: |
+      A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,
+      and access vast amounts of Earth science remote sensing data without having to download the data.
     data_operation_version: '0.17.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     has_granule_limit: false
@@ -62,6 +65,9 @@ https://cmr.earthdata.nasa.gov:
         operations: ['concatenate', 'variableSubset']
 
   - name: harmony/service-example
+    description: |
+      Reference service that can be used to perform most operations supported by Harmony.
+      Useful for testing new API features end-to-end on example data but not meant for production use.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -87,6 +93,14 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
+    description: |
+      Implementation of the L2 swath subsetter based on python, xarray and netcdf4.
+
+      * Works with Trajectory (1D) and Along track/across track data.
+      * Works with NetCDF and HDF5 inputfiles
+      * Variable subsetting supported
+      * works with hierarchical groups
+      Outputs netcdf4.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -132,6 +146,9 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
   - name: podaac/concise
+    description: |
+      Service capabale of "concatenating" multiple netCDF files into a single netCDF files.
+      The resulting file has an extra dimension with size equal to the number of input files where each slice in that dimension corresponds to the data from one of the inputs.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -158,6 +175,19 @@ https://cmr.earthdata.nasa.gov:
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
+    description: |
+      ### Chained Service of the PODAAC L2 swath subsetter and PODAAC concise services.
+
+      #### PODAAC L2 swath subsetter
+      * Works with Trajectory (1D) and Along track/across track data.
+      * Works with NetCDF and HDF5 inputfiles
+      * Variable subsetting supported
+      * works with hierarchical groups
+      Outputs netcdf4.
+
+      #### PODAAC concise services
+      Service capabale of "concatenating" multiple netCDF files into a single netCDF files.
+      The resulting file has an extra dimension with size equal to the number of input files where each slice in that dimension corresponds to the data from one of the inputs.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -215,6 +245,10 @@ https://cmr.earthdata.nasa.gov:
           exists: ['concatenate']
 
   - name: sds/trajectory-subsetter
+    description: |
+      A service that supports L2 segmented trajectory (**not swath**) data.
+      Currently uses the same C++ binary as is on-premises in SDPS, to offer variable, temporal, bounding box spatial and polygon spatial subsetting.
+      **This subsetter also ensures valid segment indices and sizes following transformation.**
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -239,8 +273,13 @@ https://cmr.earthdata.nasa.gov:
         operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
 
   - name: sds/HOSS-geographic
-    # Provides variable, temporal, bounding box spatial and polygon spatial
-    # subsetting for geographically gridded collections hosted in OPeNDAP.
+    description: |
+      A service that currently supports L3/L4 geographically gridded collections, offering variable, temporal, named dimension, bounding box spatial and shape file spatial subsetting.
+
+      Accesses NetCDF-4 files hosted in Hyrax cloud service (OPeNDAP), and retrieves the requested list of variables,
+      plus all those that are required to support meaningful downstream operations upon those data (e.g. associated coordinate variables).
+
+      This service is currently operated from the same Docker image as the sds/variable-subsetter service.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -272,8 +311,13 @@ https://cmr.earthdata.nasa.gov:
           exists: ['shapefileSubset']
 
   - name: sds/HOSS-projection-gridded
-    # Provides variable, temporal, bounding box spatial and polygon spatial
-    # subsetting for projection gridded collections hosted in OPeNDAP.
+    description: |
+      A service that currently supports L3/L4 projection-gridded collections, offering variable, temporal, named dimension, bounding box spatial and shape file spatial subsetting.
+
+      Accesses NetCDF-4 files hosted in Hyrax cloud service (OPeNDAP), and retrieves the requested list of variables,
+      plus all those that are required to support meaningful downstream operations upon those data (e.g. associated coordinate variables).
+
+      This service is currently operated from the same Docker image as the sds/variable-subsetter service.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -305,6 +349,12 @@ https://cmr.earthdata.nasa.gov:
 
   # OPS GDAL
   - name: nasa/harmony-gdal-adapter
+    description: |
+      Service translating Harmony operations to GDAL commands.
+      Supports spatial bounding box, temporal, variable, and shapefile, reprojection,
+      and output to NetCDF4, COG, PNG, and GIF.
+      Operates on input file types supported by GDAL (most EOSDIS data).
+      Most operations assume L3 data, though it is likely that some work on L2.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -339,6 +389,9 @@ https://cmr.earthdata.nasa.gov:
       - image: !Env ${HARMONY_GDAL_ADAPTER_IMAGE}
 
   - name: harmony/netcdf-to-zarr
+    description: |
+      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -457,6 +510,9 @@ https://cmr.earthdata.nasa.gov:
 https://cmr.uat.earthdata.nasa.gov:
 
   - name: gesdisc/giovanni
+    description: |
+      A service to compose the Giovanni URL and invoke Giovanni service to produce output file to visualize, analyze,
+      and access vast amounts of Earth science remote sensing data without having to download the data.
     data_operation_version: '0.17.0'
     has_granule_limit: false
     default_sync: true
@@ -494,6 +550,9 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate', 'variableSubset']
 
   - name: harmony/service-example
+    description: |
+      Reference service that can be used to perform most operations supported by Harmony.
+      Useful for testing new API features end-to-end on example data but not meant for production use.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -523,6 +582,14 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_SERVICE_EXAMPLE_IMAGE}
 
   - name: podaac/l2-subsetter
+    description: |
+      Implementation of the L2 swath subsetter based on python, xarray and netcdf4.
+
+      * Works with Trajectory (1D) and Along track/across track data.
+      * Works with NetCDF and HDF5 inputfiles
+      * Variable subsetting supported
+      * works with hierarchical groups
+      Outputs netcdf4.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -601,6 +668,19 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['concatenate']
 
   - name: podaac/l2-subsetter-concise
+    description: |
+      ### Chained Service of the PODAAC L2 swath subsetter and PODAAC concise services.
+
+      #### PODAAC L2 swath subsetter
+      * Works with Trajectory (1D) and Along track/across track data.
+      * Works with NetCDF and HDF5 inputfiles
+      * Variable subsetting supported
+      * works with hierarchical groups
+      Outputs netcdf4.
+
+      #### PODAAC concise service
+      Service capabale of "concatenating" multiple netCDF files into a single netCDF files.
+      The resulting file has an extra dimension with size equal to the number of input files where each slice in that dimension corresponds to the data from one of the inputs.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -643,6 +723,9 @@ https://cmr.uat.earthdata.nasa.gov:
           exists: ['concatenate']
 
   - name: sds/swot-reproject
+    description: |
+      Takes NetCDF-4 input files and projects input swath variables to an output grid.
+      Target CRS, output grid dimensions, extents and/or resolutions can be specified in the Harmony request.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -667,7 +750,8 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${SWOT_REPROJECT_IMAGE}
 
   - name: sds/harmony-regridder
-    # The Harmony Regridding Service for L3/L4 collections
+    description: |
+      The Harmony Regridding Service for L3/L4 collections
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -693,7 +777,10 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${HARMONY_REGRIDDER_IMAGE}
 
   - name: sds/variable-subsetter
-    # The Variable Subsetter provides _only_ variable subsetting
+    description: |
+      The Variable Subsetter provides _only_ variable subsetting.
+      Accesses NetCDF-4 files hosted in Hyrax cloud service (OPeNDAP), and retrieves the requested list of variables,
+      plus all those that are required to support meaningful downstream operations upon those data (e.g. associated coordinate variables).
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -738,6 +825,10 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${SDS_MASKFILL_IMAGE}
 
   - name: sds/trajectory-subsetter
+    description: |
+      A service that supports L2 segmented trajectory (**not swath**) data.
+      Currently uses the same C++ binary as is on-premises in SDPS, to offer variable, temporal, bounding box spatial and polygon spatial subsetting.
+      **This subsetter also ensures valid segment indices and sizes following transformation.**
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -766,6 +857,8 @@ https://cmr.uat.earthdata.nasa.gov:
   # the frontend callback server.
   # EOSS Example: curl -Lnbj 'http://localhost:3000/C1104-PVC_TS2/eoss/0.2.0/items/G1216319051-PVC_TS2'
   - name: harmony/example
+    description: |
+      An example service and backend from example/http-backend.js mounted by the frontend callback server.
     data_operation_version: '0.17.0'
     enabled: !Env ${EXAMPLE_SERVICES}
     type:
@@ -787,6 +880,12 @@ https://cmr.uat.earthdata.nasa.gov:
 
   # UAT GDAL
   - name: nasa/harmony-gdal-adapter
+    description: |
+      Service translating Harmony operations to GDAL commands.
+      Supports spatial bounding box, temporal, variable, and shapefile, reprojection,
+      and output to NetCDF4, COG, PNG, and GIF.
+      Operates on input file types supported by GDAL (most EOSDIS data).
+      Most operations assume L3 data, though it is likely that some work on L2.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -825,8 +924,13 @@ https://cmr.uat.earthdata.nasa.gov:
 
   # CHAINED SERVICES BELOW HERE
   - name: sds/HOSS-geographic
-    # Provides variable, temporal, bounding box spatial and polygon spatial
-    # subsetting for geographically gridded collections hosted in OPeNDAP.
+    description: |
+      A service that currently supports L3/L4 geographically gridded collections, offering variable, temporal, named dimension, bounding box spatial and shape file spatial subsetting.
+
+      Accesses NetCDF-4 files hosted in Hyrax cloud service (OPeNDAP), and retrieves the requested list of variables,
+      plus all those that are required to support meaningful downstream operations upon those data (e.g. associated coordinate variables).
+
+      This service is currently operated from the same Docker image as the sds/variable-subsetter service.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -858,8 +962,13 @@ https://cmr.uat.earthdata.nasa.gov:
           exists: ['shapefileSubset']
 
   - name: sds/HOSS-projection-gridded
-    # Provides variable, temporal, bounding box spatial and polygon spatial
-    # subsetting for projection gridded collections hosted in OPeNDAP.
+    description: |
+      A service that currently supports L3/L4 projection-gridded collections, offering variable, temporal, named dimension, bounding box spatial and shape file spatial subsetting.
+
+      Accesses NetCDF-4 files hosted in Hyrax cloud service (OPeNDAP), and retrieves the requested list of variables,
+      plus all those that are required to support meaningful downstream operations upon those data (e.g. associated coordinate variables).
+
+      This service is currently operated from the same Docker image as the sds/variable-subsetter service.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -890,6 +999,9 @@ https://cmr.uat.earthdata.nasa.gov:
           exists: ['shapefileSubset', 'spatialSubset']
 
   - name: harmony/netcdf-to-zarr
+    description: |
+      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -932,6 +1044,19 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['reformat', 'concatenate']
 
   - name: harmony/podaac-l2-subsetter-netcdf-to-zarr
+    description: |
+      ### Chained Service of the PODAAC L2 swath subsetter and Harmony netcdf-to-zarr services.
+
+      #### PODAAC L2 swath subsetter
+      * Works with Trajectory (1D) and Along track/across track data.
+      * Works with NetCDF and HDF5 inputfiles
+      * Variable subsetting supported
+      * works with hierarchical groups
+      Outputs netcdf4.
+
+      #### Harmony netcdf-to-zarr service
+      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -971,6 +1096,17 @@ https://cmr.uat.earthdata.nasa.gov:
           format: ['application/x-zarr']
 
   - name: harmony/swot-repr-netcdf-to-zarr
+    description: |
+      ### Chained Service of the SDS SWOT reprojection and Harmony netcdf-to-zarr services.
+
+      #### SDS SWOT reprojection service
+      Takes NetCDF-4 input files and projects input swath variables to an output grid.
+      Target CRS, output grid dimensions, extents and/or resolutions can be specified in the Harmony request.
+
+      #### Harmony netcdf-to-zarr service
+      Converts NetCDF4 files to the Zarr format as faithfully as possible, preserving metadata.
+      The service attempts to optimize chunking in both time and space via heuristic algorithm in the output Zarr store.
+
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config

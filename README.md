@@ -47,8 +47,7 @@ Linux Only (Handled automatically by Docker Desktop)
 kubectl port-forward service/harmony 3000:3000 -n harmony
 ```
 
-**NOTE** The workflow listener will fail repeatedly (restarts every 30 seconds) when Harmony is run
-in Kubernetes on Linux. This is a known bug and is to addressed in Jira ticket HARMONY-849.
+End of Linux Only
 
 Harmony should now be running in your Kubernetes cluster as the `harmony` service in the `harmony` namespace.
 

@@ -21,8 +21,8 @@ const readFile = promisify(fs.readFile);
 
 const wmsGetMapParams = [
   'SERVICE', 'REQUEST', 'VERSION', 'LAYERS', 'CRS', 'BBOX', 'FORMAT', 'STYLES',
-  'WIDTH', 'HEIGHT', 'TRANSPARENT', 'DPI', 'MAP_RESOLUTION', 'LAYERS', 'GRANULEID',
-  'GRANULENAME', 'SKIPPREVIEW'];
+  'WIDTH', 'HEIGHT', 'TRANSPARENT', 'DPI', 'MAP_RESOLUTION', 'SRS', 'BGCOLOR', 'EXCEPTIONS',
+  'GRANULEID', 'GRANULENAME', 'SKIPPREVIEW'];
 
 /**
  * Validates that the given parameters are present in the map, throwing
