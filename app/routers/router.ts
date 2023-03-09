@@ -36,6 +36,7 @@ import getRequestMetrics from '../frontends/request-metrics';
 import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
 import { parseGridMiddleware } from '../util/grids';
 import docsPage from '../frontends/docs/docs';
+import { getCollectionCapabilities } from '../frontends/capabilities';
 
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
@@ -251,6 +252,7 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
 
+  result.get('/capabilities', asyncHandler(getCollectionCapabilities));
   result.get('/cloud-access', asyncHandler(cloudAccessJson));
   result.get('/cloud-access.sh', asyncHandler(cloudAccessSh));
   result.get('/stac/:jobId', asyncHandler(getStacCatalog));
