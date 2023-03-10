@@ -17,8 +17,12 @@ pre.hljs {
   border-color: #aaa;
   padding: 1em;
 }
-ol {
-  margin-left: 3em;
+ul, ol {
+  margin-left: 6em;
+}
+
+nav.table-of-contents ul {
+  margin-left: 0em;
 }
 
 a:link { text-decoration: none; }
@@ -45,14 +49,29 @@ table th {
   color: white;
 }
 
-table.service_table tr:nth-child(even){background-color: #ffffff;}
-
-table.service_table {
-  margin-bottom: 2em;
+div.service_container {
+  border: solid;
+  border-color: #aaa;
+  padding: 20px;
+  margin-bottom: 20px;
 }
+
+div.service_container ul, ol {
+  margin-left: 1em;
+}
+
+div.service_container p {
+  margin-bottom: 0em;
+}
+
+table.service_table tr:nth-child(even){background-color: #ffffff;}
 
 table.service_table td, table.service_table th {
   text-align: center;
+}
+
+table.service_table {
+  margin-top: 1em;
 }
 
 td.filler_data {
@@ -65,6 +84,11 @@ th.subheader {
 
 .service_name {
   font-weight: bold;
+}
+
+.service_description {
+  font-weight: bold;
+  margin-bottom: 2em;
 }
 
 th.table_title {

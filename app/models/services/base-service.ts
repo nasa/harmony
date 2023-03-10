@@ -50,6 +50,7 @@ export interface ServiceCollection {
 
 export interface ServiceConfig<ServiceParamType> {
   name?: string;
+  description?: string;
   data_operation_version?: string;
   granule_limit?: number;
   has_granule_limit?: boolean;
@@ -215,7 +216,7 @@ export default abstract class BaseService<ServiceParamType> {
       let destPath = destinationUrl.substring(5);
       destPath = destPath.endsWith('/') ? destPath.slice(0, -1) : destPath;
       return defaultObjectStore().getUrlString(destPath, requestId + '/');
-    } 
+    }
     return defaultObjectStore().getUrlString(env.stagingBucket, `public/${requestId}/`);
   }
 

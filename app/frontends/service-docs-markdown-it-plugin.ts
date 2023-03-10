@@ -3,6 +3,20 @@ import { ServiceCapabilities } from '../models/services/base-service';
 import { getServiceConfigs } from '../models/services/index';
 
 /**
+ * takes a markdown string and returns an array of tokens
+ * @param markdown - The markdown string to be parsed.
+ * @returns An array of tokens.
+ */
+function renderDescription(markdown: string): unknown[] {
+  const md = new MarkDownIt(
+    {
+      html: true,
+    },
+  );
+  return md.parse(markdown, {});
+}
+
+/**
  * Generates an array of tokens that represent a table of the service's capabilities
  * @param md - MarkDownIt - the markdown parser
  * @param serviceCaps - the service capabilities object
@@ -203,14 +217,10 @@ export function generateServicesDocs(md: MarkDownIt, _options: Record<string, un
     const { Token } = md.core.State.prototype;
     const serviceTokens = [];
 
-    for (const { name, capabilities } of getServiceConfigs()) {
-      // serviceTokens.push(new Token('heading_open', 'h3', 1));
-      // let inlineToken = new Token('inline', '', 0);
-      // inlineToken.content = name;
-      // inlineToken.type = 'text';
-      // inlineToken.children = [];
-      // serviceTokens.push(inlineToken);
-      // serviceTokens.push(new Token('heading_close', 'h3', -1));
+    for (const { name, description, capabilities } of getServiceConfigs()) {
+      const containerToken = new Token('div_open', 'div', 1);
+      containerToken.attrPush(['class', 'service_container']);
+      serviceTokens.push(containerToken);
       serviceTokens.push(new Token('paragraph_open', 'p', 1));
       let spanToken = new Token('span_open', 'span', 1);
       spanToken.attrPush(['class', 'service_name']);
@@ -240,18 +250,18 @@ export function generateServicesDocs(md: MarkDownIt, _options: Record<string, un
       inlineToken.children = [];
       serviceTokens.push(inlineToken);
       serviceTokens.push(new Token('span_close', 'span', -1));
-      inlineToken = new Token('inline', 'br', 0);
-      inlineToken.type = 'hardbreak';
-      inlineToken.children = [];
-      serviceTokens.push(inlineToken);
-      inlineToken = new Token('inline', '', 0);
-      inlineToken.content = 'DESCRIPTION';
-      inlineToken.type = 'text';
-      inlineToken.children = [];
-      serviceTokens.push(inlineToken);
+
+      let normalizedDescription = 'N/A';
+      if (description) {
+        // push headings down by one so that they become sub-headings of our section
+        normalizedDescription = description.replaceAll(/(####|###|##|#)/g, (_a, b) => `##${b}`);
+      }
+      serviceTokens.push(...renderDescription(normalizedDescription));
+
       serviceTokens.push(new Token('paragraph_close', 'p', -1));
       const tableTokens = getServiceTable(md, capabilities) as (typeof Token)[];
       serviceTokens.push(...tableTokens);
+      serviceTokens.push(new Token('div_close', 'div', -1));
     }
 
     let markToken = null;

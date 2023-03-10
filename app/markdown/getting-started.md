@@ -15,3 +15,5 @@ machine {{edl}} login my-edl-user-name password my-edl-password
 **Example {{exampleCounter}}** - Sample .netrc file
 
 </figcaption>
+
+For `curl`, use the `-n` or equivalent `--netrc` flags to use your `.netrc` file.
