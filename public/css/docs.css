@@ -4,20 +4,68 @@ h1, h2, h3 {
 }
 h2 {
   background-color: rgb(172, 202, 237);
+  margin-top: 20em;
+  /* padding-top: 20em; */
 }
 h2 .header-anchor {
   visibility:hidden
 }
-
 h2:hover .header-anchor {
   visibility:visible
 }
+
+h3 .header-anchor {
+  visibility:hidden
+}
+
+h3:hover .header-anchor {
+  visibility:visible
+}
+
+h4 .header-anchor {
+  visibility:hidden
+}
+h4:hover .header-anchor {
+  visibility:visible
+}
+hr {
+  margin: 0px;
+}
+
+h5 .header-anchor {
+  visibility:hidden
+}
+h5:hover .header-anchor {
+  visibility:visible
+}
+
+div.m-mdic-copy-wrapper {
+  position:absolute;
+  top: 0;
+  /* right: 0; */
+  /* min-width: 5em;
+  width: 5em; */
+  /* float:right; */
+}
+
+code {
+  /* position: relative; */
+  /* overflow: scroll; */
+  /* float: left; */
+  width: auto;
+}
+
 pre.hljs {
   border-style: solid;
   border-color: #aaa;
-  padding: 1em;
+  /* padding: 1em; */
 }
-ul, ol {
+
+div.pt-5 ol {
+  margin-left: 6em;
+}
+
+div.pt-5 ul {
   margin-left: 6em;
 }
 
@@ -26,6 +74,10 @@ nav.table-of-contents ul {
 }
 
 a:link { text-decoration: none; }
+
+span.caption {
+  margin-top: -3em;
+}
 
 table {
   border-collapse: collapse;
@@ -94,6 +146,10 @@ th.subheader {
 th.table_title {
   background-color: #063d64;
   text-align: center;
+}
+
+pre.hljs {
+  margin-bottom: 0;
 }
 
 /* table tr:hover {background-color: rgb(255, 255, 255);} */

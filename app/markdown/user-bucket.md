@@ -2,7 +2,12 @@
 Users may store Harmony output directly in their own S3 buckets by specifying the bucket/path
 in their requests with the `destinationUrl` parameter. For example
 
-[{{root}}/C1234088182-EEDTEST/ogc-api-coverages/1.0.0/collections/blue_var/coverage/rangeset?format=image%2Fpng&maxResults=1&granuleID=G1256340898-EEDTEST&destinationUrl=s3%3A%3A%2F%2Fmy-example-bucket]({{root}}/C1234088182-EEDTEST/ogc-api-coverages/1.0.0/collections/blue_var/coverage/rangeset?format=image%2Fpng&maxResults=1&granuleID=G1256340898-EEDTEST&destinationUrl=s3%3A%3A%2F%2Fmy-example-bucket)
+```
+
+{{root}}/C1234088182-EEDTEST/ogc-api-coverages/1.0.0/collections/blue_var/coverage/rangeset?format=image%2Fpng&maxResults=1&granuleID=G1256340898-EEDTEST&destinationUrl=s3%3A%3A%2F%2Fmy-example-bucket
+
+```
+**Example {{exampleCounter}}** - Request to store output in user owned S3 bucket
 
 would place the output in `s3://my-example-bucket`. Note that ==the value of `destinationUrl` must be a full S3 path and
 must be URL encoded.==
@@ -30,6 +35,7 @@ The third option is compatible with the `destinationUrl` parameter for requests.
 
 
 ```json
+
 {
   'Version': '2012-10-17',
   'Statement': [
@@ -53,9 +59,9 @@ The third option is compatible with the `destinationUrl` parameter for requests.
     },
   ]
 }
-```
-<figcaption>
 
+```
 **Example {{exampleCounter}}** - Sample bucket policy to enable writing Harmony output
 
-</figcaption>
+<br/>
+<br/>

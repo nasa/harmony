@@ -30,7 +30,7 @@ let docsHtml;
  * `{{tableCounter}}` and `{{exampleCounter}}` placeholders appear, then return an object with the
  * counts.
  * NOTE: this is kind of over the top, but is needed for the automatic labeling of tables/examples
- * because they get rendered in reverse order (last->first). So we can't just increment counters
+ * because they get rendered in reverse order (last-\>first). So we can't just increment counters
  * as we go, we need to decrement, which means we need to know what values to initialize the
  * counters with.
  * @returns An object with two properties: tableCount and exampleCount.
@@ -79,9 +79,9 @@ export default async function docsPage(req: HarmonyRequest, res: Response): Prom
     // let exampleCount = 2;
     // let tableCount = 2;
     let { tableCount, exampleCount } = await getTableAndExampleCounts();
-    let edlHost = 'https://uat.urs.earthdata.nasa.gov/';
+    let edlHost = 'https://uat.urs.earthdata.nasa.gov';
     if (root === 'https://harmony.earthdata.nasa.gov/') {
-      edlHost = 'https://urs.earthdata.nasa.gov/';
+      edlHost = 'https://urs.earthdata.nasa.gov';
     }
     // markdown parser
     const md = new MarkDownIt(
@@ -111,6 +111,7 @@ export default async function docsPage(req: HarmonyRequest, res: Response): Prom
       // interpolate values in non-inline tags
       .use(interpolate, {
         edl: () => edlHost.slice(8),
+        root: () => root,
       })
       // add 'copy' button to code blocks
       .use(copy, {
