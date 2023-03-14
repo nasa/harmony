@@ -868,6 +868,36 @@ describe('createWorkflowSteps', function () {
     });
   });
 
+  describe('when operation with destinationUrl and optional step', function () {
+    const destUrlOperation = _.cloneDeep(operation);
+    destUrlOperation.boundingRectangle = [1, 2, 3, 4];
+    destUrlOperation.destinationUrl = 's3://dummy/p1';
+    const service = new StubService(config, {}, destUrlOperation);
+    const steps = service.createWorkflowSteps();
+
+    it('creates two workflow steps', function () {
+      expect(steps.length).to.equal(2);
+    });
+
+    it('creates a first workflow step for query cmr', function () {
+      expect(steps[0].serviceID).to.equal('query cmr');
+    });
+
+    it('creates a second and final workflow step for the var and bbox subsetter', function () {
+      expect(steps[1].serviceID).to.equal('var and bbox subsetter');
+    });
+
+    it('uses the artifact bucket as the staging location for the first step', function () {
+      const { stagingLocation } = JSON.parse(steps[0].operation);
+      expect(stagingLocation).to.include('s3://local-artifact-bucket/public/shapefile-tiff-netcdf-service/');
+    });
+
+    it('uses the staging bucket as the staging location for the second (last) step', function () {
+      const { stagingLocation } = JSON.parse(steps[1].operation);
+      expect(stagingLocation).to.include('s3://dummy/p1');
+    });
+  });
+
   describe('when operation with destinationUrl', function () {
     const destUrlOperation = _.cloneDeep(operation);
     destUrlOperation.boundingRectangle = [1, 2, 3, 4];
