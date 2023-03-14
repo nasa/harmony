@@ -788,6 +788,16 @@ describe('createWorkflowSteps', function () {
     it('creates a second and final workflow step for the shapefile subsetter', function () {
       expect(steps[1].serviceID).to.equal('shapefile subsetter');
     });
+
+    it('uses the artifact bucket as the staging location for the first step', function () {
+      const { stagingLocation } = JSON.parse(steps[0].operation);
+      expect(stagingLocation).to.include('s3://local-artifact-bucket/public/shapefile-tiff-netcdf-service/');
+    });
+
+    it('uses the staging bucket as the staging location for the second (last) step', function () {
+      const { stagingLocation } = JSON.parse(steps[1].operation);
+      expect(stagingLocation).to.include('s3://local-staging-bucket/public/');
+    });
   });
 
   describe('when an operation has only bbox subsetting', function () {
@@ -806,6 +816,16 @@ describe('createWorkflowSteps', function () {
 
     it('creates a second and final workflow step for the var and bbox subsetter', function () {
       expect(steps[1].serviceID).to.equal('var and bbox subsetter');
+    });
+
+    it('uses the artifact bucket as the staging location for the first step', function () {
+      const { stagingLocation } = JSON.parse(steps[0].operation);
+      expect(stagingLocation).to.include('s3://local-artifact-bucket/public/shapefile-tiff-netcdf-service/');
+    });
+
+    it('uses the staging bucket as the staging location for the second (last) step', function () {
+      const { stagingLocation } = JSON.parse(steps[1].operation);
+      expect(stagingLocation).to.include('s3://local-staging-bucket/public/');
     });
   });
 
