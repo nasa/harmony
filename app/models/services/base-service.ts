@@ -405,6 +405,23 @@ export default abstract class BaseService<ServiceParamType> {
   }
 
   /**
+   * Return the number of actual workflow steps for this request
+   *
+   * @returns  the number of actual workflow steps
+   */
+  protected _numActualSteps(): number {
+    let totalSteps = 0;
+    if (this.config.steps) {
+      this.config.steps.forEach(((step) => {
+        if (stepRequired(step, this.operation)) {
+          totalSteps += 1;
+        }
+      }));
+    }
+    return totalSteps;
+  }
+
+  /**
    * Creates the workflow steps objects for this request
    *
    * @returns The created WorkItem for the query CMR job
@@ -413,7 +430,7 @@ export default abstract class BaseService<ServiceParamType> {
   protected _createWorkflowSteps(): WorkflowStep[] {
     const workflowSteps = [];
     if (this.config.steps) {
-      const numSteps = this.config.steps.length;
+      const numSteps = this._numActualSteps();
       let i = 0;
       this.config.steps.forEach(((step) => {
         if (stepRequired(step, this.operation)) {
