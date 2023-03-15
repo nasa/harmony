@@ -1,8 +1,6 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import request from 'supertest';
 import hookServersStartStop from './helpers/servers';
-import { hookRequest } from './helpers/hooks';
 import { hookLandingPage } from './helpers/landing-page';
 import env from '../app/util/env';
 import version from '../app/util/version';
