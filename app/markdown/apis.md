@@ -2,19 +2,19 @@
 This section provides an introduction to the Harmony service APIs. For more details on the OGC Coverages API see the [API Documentation](/docs/api).
 
 Each API requires a CMR collection concept ID or short name, and transformations can be performed using
-one of the following endpoints (\<collection-id\> and \<variable\> are placeholders):
+one of the following endpoints ({collectionId} and {variable} are placeholders):
 
 
 ```
 
-{{root}}/<collection-id>/ogc-api-coverages/1.0.0/<variable>/coverage/rangeset
+{{root}}/{collectionId}/ogc-api-coverages/1.0.0/{variable}/coverage/rangeset
 
 ```
 **Example {{exampleCounter}}** - OCG Coverages endpoint
 
 ```
 
-{{root}}/<collection-id>/wms
+{{root}}/{collectionId}/wms
 
 ```
 **Example {{exampleCounter}}** - WMS endpoint
