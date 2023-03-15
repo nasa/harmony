@@ -7,12 +7,17 @@ on behalf of the user. All of which is to say ==the user does not request specif
 Despite this, it can be useful for a user to know what services are available, what their
 capabilities are, and which services can work together.
 
-The following services are available.
+#### Service Versions
+Harmony services run in containers in pods in a Kubernetes cluster. It is not possible for users
+to interact directly with these pods, but it may be useful to know some of the details about
+the running versions. The specific docker image and
+tag for each service can be retrieved from the [versions](/versions) route.
+
+#### Service Capabilities
+The following tables provide an overview of the deployed services with a description of
+each and what capabilities they provide.
 
 {{servicesInfo}}
-
-Harmony services run in containers in pods in a Kubernetes cluster. The specific docker image and
-tag for each service can be retrieved from the [versions](/versions) route.
 
 <br/>
 <br/>

@@ -127,7 +127,8 @@ table.service_table {
 }
 
 td.filler_data {
-  background-color: #d2d3d3;
+  background-color: #ffffff;
+  border-style: none;
 }
 
 th.subheader {

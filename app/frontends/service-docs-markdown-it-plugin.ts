@@ -124,7 +124,9 @@ function getServiceTable(md: MarkDownIt, serviceCaps: ServiceCapabilities): unkn
   tableTokens.push(new Token('table_header_close', 'td', -1));
 
   // non-subsetting values
-  tableTokens.push(new Token('table_data_open', 'td', 1));
+  itemToken = new Token('table_data_open', 'td', 1);
+  itemToken.attrPush(['rowspan', '2']);
+  tableTokens.push(itemToken);
   itemToken = new Token('inline', '', 0);
   let concatSetting = serviceCaps.concatenation ? 'Y' : 'N';
   if (serviceCaps.concatenate_by_default) {
@@ -135,14 +137,18 @@ function getServiceTable(md: MarkDownIt, serviceCaps: ServiceCapabilities): unkn
   itemToken.children = [];
   tableTokens.push(itemToken);
   tableTokens.push(new Token('table_data_close', 'td', -1));
-  tableTokens.push(new Token('table_data_open', 'td', 1));
+  itemToken = new Token('table_data_open', 'td', 1);
+  itemToken.attrPush(['rowspan', '2']);
+  tableTokens.push(itemToken);
   itemToken = new Token('inline', '', 0);
   itemToken.content = 'N';
   itemToken.type = 'text';
   itemToken.children = [];
   tableTokens.push(itemToken);
   tableTokens.push(new Token('table_data_close', 'td', -1));
-  tableTokens.push(new Token('table_data_open', 'td', 1));
+  itemToken = new Token('table_data_open', 'td', 1);
+  itemToken.attrPush(['rowspan', '2']);
+  tableTokens.push(itemToken);
   itemToken = new Token('inline', '', 0);
   itemToken.content = serviceCaps.output_formats?.join() || '';
   itemToken.type = 'text';

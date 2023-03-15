@@ -1,24 +1,25 @@
 ## Summary of Available Endpoints
 
-All of the public endpoints for Harmony users other than the OGC and WMS APIs are listed in the following table.
+All of the public endpoints for Harmony users other than the OCG Coverages and WMS APIs are listed in the following table. The Coverages and WMS APIs are described in the next section.
 
-| route                  | description                                                         |
-|------------------------|---------------------------------------------------------------------|
-| /                      | The Harmony landing page
-| /capabilities          | Get the list of capabilities available for a given collection |                                        |
-| /cloud-access          | Generates JSON with temporary credentials for accessing staged data |
-| /cloud-access.sh       | Generates shell scripts that can be run to access staged data       |
-| /docs                  | These documentation pages                                           |
-| /docs/api              | The Swagger documentation for the request APIs                      |
-| /jobs                  | The jobs API for getting job status, pausing/continuing/stopping jobs           |
-| /stac                  | The API for retrieving STAC catalogs and catalog items for processed data           |
-| /staging-bucket-policy | The policy generator for external (user) bucket storage             |
+| route                  | description                                                                       |
+|------------------------|-----------------------------------------------------------------------------------|
+| /                      | The Harmony landing page                                                          |
+| /cloud-access          | Generates JSON with temporary credentials for accessing processed data in S3      |
+| /cloud-access.sh       | Generates shell scripts that can be run to access processed data in S3             |
+| /docs                  | These documentation pages                                                         |
+| /docs/api              | The Swagger documentation for the OGC Coverages API                               |
+| /jobs                  | The jobs API for getting job status, pausing/continuing/canceling jobs            |
+| /stac                  | The API for retrieving STAC catalogs and catalog items for processed data         |
+| /staging-bucket-policy | The policy generator for external (user) bucket storage                           |
 | /versions              | Returns JSON indicating what version (image tag) each deployed service is running |
-| /workflow-ui           | The Workflow UI                                                     |
+| /workflow-ui           | The Workflow UI for monitoring and interacting with running jobs                                                                   |
 ---
-**Table {{tableCounter}}** - Harmony routes other than OGC and WMS
+**Table {{tableCounter}}** - Harmony routes other than OCG Coverages and WMS
 
-The remaining routes are for launching services for collections using either OGC or WMS and
+
+
+The remaining routes are for launching services for collections using either OCG Coverages or WMS and
 are discussed in the next section.
 
 <br/>

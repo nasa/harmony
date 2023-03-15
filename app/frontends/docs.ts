@@ -23,6 +23,12 @@ const readDir = promisify(fs.readdir);
 
 const MARKDOWN_DIR = './app/markdown';
 
+const PROD_ROOT = 'https://harmony.earthdata.nasa.gov/';
+const UAT_EDL = 'https://uat.urs.earthdata.nasa.gov';
+const PROD_EDL = 'https://urs.earthdata.nasa.gov';
+const PROD_COLLECTION_ID = 'C1940472420-POCLOUD';
+const UAT_COLLECTION_ID = 'C1234208438-POCLOUD';
+
 let docsHtml;
 
 /**
@@ -76,12 +82,12 @@ export default async function docsPage(req: HarmonyRequest, res: Response): Prom
   const root = getRequestRoot(req);
   docsHtml = null;
   if (!docsHtml) {
-    // let exampleCount = 2;
-    // let tableCount = 2;
     let { tableCount, exampleCount } = await getTableAndExampleCounts();
-    let edlHost = 'https://uat.urs.earthdata.nasa.gov';
-    if (root === 'https://harmony.earthdata.nasa.gov/') {
-      edlHost = 'https://urs.earthdata.nasa.gov';
+    let edlHost = UAT_EDL;
+    let exampleCollectionId = UAT_COLLECTION_ID;
+    if (root === PROD_ROOT) {
+      edlHost = PROD_EDL;
+      exampleCollectionId = PROD_COLLECTION_ID;
     }
     // markdown parser
     const md = new MarkDownIt(
@@ -111,6 +117,7 @@ export default async function docsPage(req: HarmonyRequest, res: Response): Prom
       // interpolate values in non-inline tags
       .use(interpolate, {
         edl: () => edlHost.slice(8),
+        exampleCollection: () => exampleCollectionId,
         root: () => root,
       })
       // add 'copy' button to code blocks

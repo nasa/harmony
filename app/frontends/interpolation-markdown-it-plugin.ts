@@ -13,11 +13,7 @@ export function interpolate(md: MarkDownIt, options: Record<string, () => string
     const { tokens } = state;
     if (!tokens) return;
 
-    let tokenIndex = 0;
     for (const token of tokens) {
-      if (tokenIndex++ == 111) {
-        console.log('OK');
-      }
       for (const key of Object.keys(options)) {
         token.content = token.content.replace(`{{${key}}}`, options[key]());
       }

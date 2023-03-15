@@ -26,12 +26,13 @@ Alternatively users can generate an EDL [bearer token]({{edl}}/users/my-user-nam
 
 #### Passing credentials with curl
 
-To use a .netrc file with `curl`, use the `-n` flag to use your `.netrc` file. You will
-also need to pass the `-L` flag (to handle the redirect form Harmony to EDL and back) and
+Use the `-n` flag to use your `.netrc` file with `curl`. You will
+also need to pass the `-L` flag (to handle the redirect from Harmony to EDL and back) and
 the `-b` and `-j` flags to properly handle cookies used during the authentication.
+
 ```
 
-curl -Lnbj {{root}}/C1234208438-POCLOUD/ogc-api-coverages/1.0.0/collections/bathymetry/coverage/rangeset
+curl -Lnbj {{root}}/{{exampleCollection}}/ogc-api-coverages/1.0.0/collections/bathymetry/coverage/rangeset
 
 ```
 **Example {{exampleCounter}}** - Curl flags to handle EDL authentication when using a .netrc file
@@ -40,14 +41,14 @@ To work directly with a bearer token from EDL you can use an `Authorization: Bea
 
 ```
 
-curl -H "Authorization: Bearer <my-bearer-token>" {{root}}/C1234208438-POCLOUD/ogc-api-coverages/1.0.0/collections/bathymetry/coverage/rangeset
+curl -H "Authorization: Bearer <my-bearer-token>" {{root}}/{{exampleCollection}}/ogc-api-coverages/1.0.0/collections/bathymetry/coverage/rangeset
 
 ```
 **Example {{exampleCounter}}** - Using a bearer token with curl
 
 #### Passing credentials in code
 
-The following example uses the `netrc`, `request`, and `cookiejar` libraries to set up authentication with EDL.
+The following Python example uses the `netrc`, `request`, and `cookiejar` libraries to set up authentication with EDL.
 ==No error handling is included in this example.==
 
 ```python
@@ -89,10 +90,10 @@ from harmony import Client
 harmony_client = Client() # defaults to Harmony production endpoint
 
 ```
-**Example {{exampleCounter}}** - Using `hamony-py` to create a client with `.netrc` EDL authentication
+**Example {{exampleCounter}}** - Using `harmony-py` to create a client with `.netrc` EDL authentication
 
 `harmony-py` provides many other conveniences when using Harmony services. For these reasons
-==`harmony-py` is the suggested way to access Harmony.== For complete details see the
+==`harmony-py` is the suggested way to access Harmony in code.== For complete details see the
 [documentation](https://harmony-py.readthedocs.io/en/latest/).
 
 <br/>
