@@ -127,6 +127,9 @@ async function generateDocumentation(root: string): Promise<string> {
         if (link === 'edl') {
           return edlHost;
         }
+        if (link.includes('%7B%7Bedl%7D%7D')) {
+          return link.replace('%7B%7Bedl%7D%7D', edlHost);
+        }
         if (link.startsWith('%7B%7Broot%7D%7D')) {
           return link.replace('%7B%7Broot%7D%7D', root);
         }
