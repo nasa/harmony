@@ -10,7 +10,7 @@ import { hookDocumentationPage } from './helpers/documentation-page';
 describe('Documentation page', function () {
   hookServersStartStop();
 
-  describe('when hitting the root Harmony URL', function () {
+  describe('when hitting the Harmony documentation page URL', function () {
     hookDocumentationPage();
 
     it('returns a 200 success', function () {
