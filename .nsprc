@@ -1,2 +1,7 @@
 {
+ "1091410": {
+    "active": true,
+    "notes": "Ignored since we don't expose the vunlerability and their is no fix",
+    "expiry": "2023-09-01"
+  }
 }
