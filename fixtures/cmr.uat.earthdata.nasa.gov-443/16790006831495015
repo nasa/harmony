@@ -1,0 +1,23 @@
+GET /search/collections.json?concept_id=harmony_example&page_size=100
+accept: application/json
+accept-encoding: gzip,deflate
+
+HTTP/1.1 400 Bad Request
+content-type: application/json
+content-length: 57
+connection: close
+date: Thu, 16 Mar 2023 21:04:42 GMT
+access-control-allow-origin: *
+cmr-request-id: bd300f73-c160-4ef3-8f64-cc84644f2732
+x-request-id: Jp73Ohk-Ob9GlVK_E3kXpICOGslQQgehrFWjY_JAQt5vb7p2pzoPwQ==
+strict-transport-security: max-age=31536000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+server: ServerTokens ProductOnly
+x-cache: Error from cloudfront
+via: 1.1 0723cad4db45c70ca1c99b94320c170e.cloudfront.net (CloudFront)
+x-amz-cf-pop: MCI50-P2
+x-amz-cf-id: Jp73Ohk-Ob9GlVK_E3kXpICOGslQQgehrFWjY_JAQt5vb7p2pzoPwQ==
+
+{"errors":["Concept-id [harmony_example] is not valid."]}

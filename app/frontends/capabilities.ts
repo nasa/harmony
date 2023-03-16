@@ -32,7 +32,7 @@ interface CollectionCapabilities {
   shortName: string;
   variableSubset: boolean;
   bboxSubset: boolean;
-  shapefileSubset: boolean;
+  shapeSubset: boolean;
   concatenate: boolean;
   reproject: boolean;
   outputFormats: string[];
@@ -60,14 +60,14 @@ async function getCollectionCapabilities(
   const variableSubset = variables.length > 0
       && matchingServices.some((s) => s.capabilities.subsetting.variable === true);
   const bboxSubset = matchingServices.some((s) => s.capabilities.subsetting.bbox === true);
-  const shapefileSubset = matchingServices.some((s) => s.capabilities.subsetting.shape === true);
+  const shapeSubset = matchingServices.some((s) => s.capabilities.subsetting.shape === true);
   const concatenate = matchingServices.some((s) => s.capabilities.concatenation === true);
   const reproject = matchingServices.some((s) => s.capabilities.reprojection === true);
   const outputFormats = new Set(matchingServices.flatMap((s) => s.capabilities.output_formats));
   const conceptId = collection.id;
   const shortName = collection.short_name;
   const services = matchingServices.map((s) => _.pick(s, ['name', 'capabilities']));
-  const capabilities = { conceptId, shortName, variableSubset, bboxSubset, shapefileSubset,
+  const capabilities = { conceptId, shortName, variableSubset, bboxSubset, shapeSubset,
     concatenate, reproject, outputFormats: Array.from(outputFormats), services, variables,
   };
   return capabilities;
