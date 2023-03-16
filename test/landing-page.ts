@@ -1,8 +1,6 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import request from 'supertest';
 import hookServersStartStop from './helpers/servers';
-import { hookRequest } from './helpers/hooks';
 import { hookLandingPage } from './helpers/landing-page';
 import env from '../app/util/env';
 import version from '../app/util/version';
@@ -28,12 +26,8 @@ describe('Landing page', function () {
       expect(this.res.text).to.include(`<a href="${env.oauthHost}">Earthdata Login</a>`);
     });
 
-    it('links to notebook example', function () {
-      expect(this.res.text).to.match(/<a[^>]* href="https:\/\/github\.com\/nasa\/harmony\/blob\/main\/docs\/Harmony%20API%20introduction\.ipynb"[^>]*>View Jupyter Notebook Demo<\/a>/);
-    });
-
-    it('links to a Swagger UI for the coverages API', function () {
-      expect(this.res.text).to.match(/<a[^>]* href="\/docs\/api\/"[^>]*>API Documentation<\/a>/);
+    it('links to the documentation', function () {
+      expect(this.res.text).to.match(/<a[^>]* href="\/docs"[^>]*>Documentation<\/a>/);
     });
 
     it('displays the current Harmony version', function () {
@@ -46,26 +40,6 @@ describe('Landing page', function () {
 
     it('provides an absolute URL template for the WMS endpoint', function () {
       expect(this.res.text).to.match(/http:&#x2F;&#x2F;[^/]+\/{collectionId}\/wms/);
-    });
-
-    describe('opening the notebook example link', function () {
-      // URL's existence verified above
-      hookRequest((app) => request(app).get('/notebook-example.html'));
-
-      it('provides an HTML representation of the Harmony Introduction notebook', function () {
-        expect(this.res.statusCode).to.equal(200);
-        expect(this.res.text).to.include('Harmony API Introduction');
-      });
-    });
-
-    describe('opening the API documentation link', function () {
-      // URL's existence verified above
-      hookRequest((app) => request(app).get('/docs/api/'));
-
-      it('provides a swagger UI representation of the Harmony API', function () {
-        expect(this.res.statusCode).to.equal(200);
-        expect(this.res.text).to.include('Swagger UI');
-      });
     });
   });
 });

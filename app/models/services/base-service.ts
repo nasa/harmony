@@ -50,6 +50,7 @@ export interface ServiceCollection {
 
 export interface ServiceConfig<ServiceParamType> {
   name?: string;
+  description?: string;
   data_operation_version?: string;
   granule_limit?: number;
   has_granule_limit?: boolean;

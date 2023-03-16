@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{> header}}
+    <link rel="stylesheet" href="css/docs.css">
+    <link rel="stylesheet" href="css/markdown-it-copy.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/default.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>
+    <title>Harmony Documentation</title>
+</head>
+<body>
+    {{> banner}}
+    <div class="hero-callout" style="background-color: #2276ac;">
+        <div class="container-lg">
+            <div class="row docs-title">
+                <h1 class="text-center text-light">Documentation</h1>
+            </div>
+            <!-- <div class="row pt-4 justify-content-center cta">
+            </div> -->
+        </div>
+    </div>
+    <div class="container-lg">
+        <div class="row pt-5 justify-content-center">
+            {{{docsHtml}}}
+        </div>
+    </div>
+    {{> footer}}
+    <script type="text/javascript">new ClipboardJS('.btn');</script>
+</body>
+</html>

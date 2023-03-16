@@ -1,0 +1,165 @@
+h1, h2, h3 {
+  text-align: center!important;
+  font-weight: 300;
+}
+h1 {
+  font-size: 2.4em;
+}
+div.docs-title {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  margin-bottom: -0.5em;
+}
+h2 {
+  background-color: rgb(172, 202, 237);
+  margin-top: 20em;
+  /* padding-top: 20em; */
+}
+h2 .header-anchor {
+  visibility:hidden
+}
+h2:hover .header-anchor {
+  visibility:visible
+}
+
+h3 .header-anchor {
+  visibility:hidden
+}
+
+h3:hover .header-anchor {
+  visibility:visible
+}
+
+h4 .header-anchor {
+  visibility:hidden
+}
+h4:hover .header-anchor {
+  visibility:visible
+}
+hr {
+  margin: 0px;
+}
+
+h5 .header-anchor {
+  visibility:hidden
+}
+h5:hover .header-anchor {
+  visibility:visible
+}
+
+div.m-mdic-copy-wrapper {
+  position:absolute;
+  top: 0;
+  /* right: 0; */
+  /* min-width: 5em;
+  width: 5em; */
+  /* float:right; */
+}
+
+code {
+  /* position: relative; */
+  /* overflow: scroll; */
+  /* float: left; */
+  width: auto;
+}
+
+pre.hljs {
+  border-style: solid;
+  border-color: #aaa;
+  /* padding: 1em; */
+}
+
+div.pt-5 ol {
+  margin-left: 6em;
+}
+
+div.pt-5 ul {
+  margin-left: 6em;
+}
+
+nav.table-of-contents ul {
+  margin-left: 0em;
+}
+
+a:link { text-decoration: none; }
+
+span.caption {
+  margin-top: -3em;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table td, table th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+table tr:nth-child(even){background-color: #f2f2f2;}
+
+/* table tr:hover {background-color: #ddd;} */
+
+table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #216B9F;
+  color: white;
+}
+
+div.service_container {
+  border: solid;
+  border-color: #aaa;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+div.service_container ul, ol {
+  margin-left: 1em;
+}
+
+div.service_container p {
+  margin-bottom: 0em;
+}
+
+table.service_table tr:nth-child(even){background-color: #ffffff;}
+
+table.service_table td, table.service_table th {
+  text-align: center;
+}
+
+table.service_table {
+  margin-top: 1em;
+}
+
+td.filler_data {
+  background-color: #ffffff;
+  border-style: none;
+}
+
+th.subheader {
+  background-color: #64a6d5;
+}
+
+.service_name {
+  font-weight: bold;
+}
+
+.service_description {
+  font-weight: bold;
+  margin-bottom: 2em;
+}
+
+th.table_title {
+  background-color: #063d64;
+  text-align: center;
+}
+
+pre.hljs {
+  margin-bottom: 0;
+}
+
+/* table tr:hover {background-color: rgb(255, 255, 255);} */
+
