@@ -1,6 +1,6 @@
 import MarkDownIt from 'markdown-it';
-import { ServiceCapabilities } from '../models/services/base-service';
-import { getServiceConfigs } from '../models/services/index';
+import { ServiceCapabilities } from '../../models/services/base-service';
+import { getServiceConfigs } from '../../models/services/index';
 
 /**
  * takes a markdown string and returns an array of tokens

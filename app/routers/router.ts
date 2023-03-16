@@ -35,7 +35,7 @@ import { postServiceConcatenationHandler, preServiceConcatenationHandler } from 
 import getRequestMetrics from '../frontends/request-metrics';
 import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
 import { parseGridMiddleware } from '../util/grids';
-import docsPage from '../frontends/docs';
+import docsPage from '../frontends/docs/docs';
 
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
