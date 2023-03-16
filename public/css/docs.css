@@ -2,6 +2,14 @@ h1, h2, h3 {
   text-align: center!important;
   font-weight: 300;
 }
+h1 {
+  font-size: 2.4em;
+}
+div.docs-title {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  margin-bottom: -0.5em;
+}
 h2 {
   background-color: rgb(172, 202, 237);
   margin-top: 20em;

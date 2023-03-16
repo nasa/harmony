@@ -167,6 +167,7 @@ async function generateDocumentation(root: string): Promise<string> {
  */
 export default async function docsPage(req: HarmonyRequest, res: Response): Promise<void> {
   const root = getRequestRoot(req);
+  docsHtml = null;
   if (!docsHtml) {
     docsHtml = await generateDocumentation(root);
   }
