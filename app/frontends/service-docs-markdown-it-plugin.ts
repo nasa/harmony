@@ -259,7 +259,7 @@ export function generateServicesDocs(md: MarkDownIt, _options: Record<string, un
 
       let normalizedDescription = 'N/A';
       if (description) {
-        // push headings down by one so that they become sub-headings of our section
+        // push headings down by two so that they become sub-headings of our section
         normalizedDescription = description.replaceAll(/(####|###|##|#)/g, (_a, b) => `##${b}`);
       }
       serviceTokens.push(...renderDescription(normalizedDescription));
