@@ -24,8 +24,6 @@ const readDir = promisify(fs.readdir);
 const MARKDOWN_DIR = './app/markdown';
 
 const PROD_ROOT = 'https://harmony.earthdata.nasa.gov/';
-const UAT_EDL = 'https://uat.urs.earthdata.nasa.gov';
-const PROD_EDL = 'https://urs.earthdata.nasa.gov';
 const PROD_COLLECTION_ID = 'C1940472420-POCLOUD';
 const UAT_COLLECTION_ID = 'C1234208438-POCLOUD';
 
@@ -80,12 +78,11 @@ function markdownInterpolate(token: string, mappings: { [key: string]: () => str
  */
 async function generateDocumentation(root: string): Promise<string> {
   let { tableCount, exampleCount } = await getTableAndExampleCounts();
-  let edlHost = UAT_EDL;
   let exampleCollectionId = UAT_COLLECTION_ID;
   if (root === PROD_ROOT) {
-    edlHost = PROD_EDL;
     exampleCollectionId = PROD_COLLECTION_ID;
   }
+  const edlHost = env.oauthHost;
   // markdown parser
   const md = new MarkDownIt(
     {
@@ -129,6 +126,9 @@ async function generateDocumentation(root: string): Promise<string> {
       replaceLink: function (link: string, _env: string, _token: string, _htmlToken: string) {
         if (link === 'edl') {
           return edlHost;
+        }
+        if (link.includes('%7B%7Bedl%7D%7D')) {
+          return link.replace('%7B%7Bedl%7D%7D', edlHost);
         }
         if (link.startsWith('%7B%7Broot%7D%7D')) {
           return link.replace('%7B%7Broot%7D%7D', root);
