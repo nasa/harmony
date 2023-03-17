@@ -91,10 +91,25 @@ describe('Testing collection capabilities', function () {
       it('returns a 400 status code', function () {
         expect(this.res.status).to.equal(400);
       });
+
       it('returns an error message indicating the collection could not be found', function () {
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.RequestValidationError',
           description: 'Error: C0000-EEDTEST must be a CMR collection identifier, but we could not find a matching collection. Please make sure the collection IDis correct and that you have access to it.',
+        });
+      });
+    });
+
+    describe('with a shortName that does not exist in CMR', function () {
+      hookGetCollectionCapabilities({ shortName: 'YouCallThatAShortName?' });
+      it('returns a 400 status code', function () {
+        expect(this.res.status).to.equal(400);
+      });
+
+      it('returns an error message indicating the collection could not be found', function () {
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: Unable to find collection short name YouCallThatAShortName? in the CMR. Please  make sure the short name is correct and that you have access to the collection.',
         });
       });
     });
@@ -104,10 +119,25 @@ describe('Testing collection capabilities', function () {
       it('returns a 400 status code', function () {
         expect(this.res.status).to.equal(400);
       });
+
       it('returns an error message indicating the collection could not be found', function () {
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.RequestValidationError',
           description: 'Error: Must specify either collectionId or shortName',
+        });
+      });
+    });
+
+    describe('specifying both a collectionId and shortName', function () {
+      hookGetCollectionCapabilities({ collectionId: 'C1234088182-EEDTEST', shortName: 'harmony_example' });
+      it('returns a 400 status code', function () {
+        expect(this.res.status).to.equal(400);
+      });
+
+      it('returns an error message indicating the collection could not be found', function () {
+        expect(JSON.parse(this.res.text)).to.eql({
+          code: 'harmony.RequestValidationError',
+          description: 'Error: Must specify only one of collectionId or shortName, not both',
         });
       });
     });
