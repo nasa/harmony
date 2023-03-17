@@ -36,17 +36,13 @@
     </nav>
     <div class="container-fluid">
         <div class="row pb-4">
+            {{#capabilities}}
             <div class="col-10">
-                {{> capabilities/capabilities-table}}
-                <nav aria-label="Page navigation" class="d-flex flex-column align-items-center">
-                    <ul class="pagination px-0 mx-auto">
-                        {{#links}}
-                        <li class="page-item {{linkDisabled}}">
-                            <a class="page-link" href="{{linkHref}}" title="{{linkTitle}}">{{linkTitle}}</a>
-                        </li>
-                        {{/links}}
-                    </ul>
-                </nav>
+                <h3>{{shortName}}({{conceptId}}) capabilities</h3>
+            </div>
+            {{/capabilities}}
+            <div class="col-10">
+               {{> capabilities/capabilities-table}}
             </div>
         </div>
     </div>
