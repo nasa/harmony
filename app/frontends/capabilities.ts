@@ -42,7 +42,7 @@ async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
     collections = await getCollectionsByIds([collectionid], req.accessToken);
     if (collections.length === 0) {
       const message = `${collectionid} must be a CMR collection identifier, but `
-      + 'we could not find a matching collection. Please make sure the collection ID'
+      + 'we could not find a matching collection. Please make sure the collection ID '
       + 'is correct and that you have access to it.';
       throw new NotFoundError(message);
     }
