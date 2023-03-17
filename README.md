@@ -67,30 +67,36 @@ curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/
 
 We recommend using [harmony-py](https://github.com/nasa/harmony-py) and its example notebook when working with Harmony.
 
+### Configuration of Services and Supported Collections
+
+Harmony configures each backend service along with its supported collections and their associated UMM-S, UMM-Var records in a file named `services.yml`.
+
+### Reloading the Services Configuration
+
+If you modify the `services.yml` file, Harmony will need to be restarted to pick up the changes. You can do this with the following command:
+
+```bash
+./bin/reload-services-config
+```
+**NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
+
 ### Updating the Local Harmony Instance
 
-You can update Harmony by running the `bin/update-harmony` script. This will pull the latest Harmony Docker images from DockerHub and
-restart Harmony.
+You can update Harmony by running the `bin/update-harmony` script. This will pull the latest Harmony Docker images from their defined container registry locations and restart Harmony. By default, only basic components of Harmony will be updated, i.e. harmony, query-cmr and service-runner.
 
 **NOTE** This will recreate the jobs database, so old links to job statuses will no longer work. Also, since it
 pulls the harmony image from DockerHub it will overwrite any local changes you have made to the image. This is also
 true for the query-cmr image. This script is intended for service developers not working directly on the harmony
 source code.
 
-You can include the `-s` flag to update service images as well, e.g.,
+If you want to also update the images of harmony backend services, you can include the `-s` flag when updating harmony, e.g.,
 
 ```bash
 ./bin/update-harmony -s
 ```
 
-### Reloading the Services Configuration
-
-If you modify the `services.yml` file Harmony will need to be restarted. You can do this with the following command:
-
-```bash
-./bin/reload-services-config
-```
-**NOTE** This will recreate the jobs database, so old links to job statuses will no longer work.
+### Restart Harmony Services
+You can restart all Harmony services including backend services by calling the `bin/restart-services` script. This will restart all Harmony services with their current local Docker images.
 
 ### Testing New Services
 

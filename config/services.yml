@@ -638,6 +638,9 @@ https://cmr.uat.earthdata.nasa.gov:
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
 
   - name: podaac/concise
+    description: |
+      Service capabale of "concatenating" multiple netCDF files into a single netCDF files.
+      The resulting file has an extra dimension with size equal to the number of input files where each slice in that dimension corresponds to the data from one of the inputs.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
@@ -806,6 +809,9 @@ https://cmr.uat.earthdata.nasa.gov:
         operations: ['variableSubset']
 
   - name: sds/maskfill
+    description: |
+      The service takes input HDF-5 or GeoTIFF file and GeoJSON shape file,
+      masks science (non-coordinate) variables such that pixel values outside of the GeoJSON shape are set to a fill value.
     data_operation_version: '0.17.0'
     type:
       <<: *default-turbo-config
