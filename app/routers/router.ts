@@ -253,6 +253,8 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
   result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
 
   result.get('/capabilities', asyncHandler(getCollectionCapabilitiesJson));
+  // Enable HTML view with HARMONY-1393
+  // result.get('/capabilities.html', asyncHandler(getCollectionCapabilitiesHtml));
   result.get('/cloud-access', asyncHandler(cloudAccessJson));
   result.get('/cloud-access.sh', asyncHandler(cloudAccessSh));
   result.get('/stac/:jobId', asyncHandler(getStacCatalog));

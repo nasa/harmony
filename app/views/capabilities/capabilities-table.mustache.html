@@ -1,34 +1,8 @@
-<!-- <table class="table table-sm">
-  <thead>
-      <tr class="align-middle">
-          <th scope="col">Variable Subset</th>
-          <th scope="col">Bounding Box Subset</th>
-          <th scope="col">Shapefile Subset</th>
-          <th scope="col">Concatenate</th>
-          <th scope="col">Reproject</th>
-      </tr>
-  </thead>
-  <tbody>
-      {{#capabilities}}
-      <tr clas='job-table-row'>
-          <td>{{variableSubset}}</td>
-          <td>{{bboxSubset}}</td>
-          <td>{{shapefileSubset}}</td>
-          <td>{{concatenate}}</td>
-          <td>{{reproject}}</td>
-      </tr>
-      {{/capabilities}}
-  </tbody>
-</table> -->
-
 <table class="table table-sm">
   {{#capabilities}}
   <thead>
-      <tr class="align middle">
-          <th scope="col">{{conceptId}}</th>
-      </tr>
       <tr class="align-middle">
-          <th scope="col">{{shortName}} capabilities</th>
+          <th scope="col"></th>
           <th scope="col"></th>
       </tr>
   </thead>
@@ -43,7 +17,7 @@
       </tr>
       <tr clas='job-table-row'>
         <th scope="row">Shape Subset</th>
-        <td>{{shapefileSubset}}</td>
+        <td>{{shapeSubset}}</td>
       </tr>
       <tr clas='job-table-row'>
         <th scope="row">Concatenate</th>
@@ -58,11 +32,11 @@
         <td>{{outputFormats}}</td>
       </tr>
       <tr clas='job-table-row'>
-        <th scope="row">Services</th>
+        <th scope="row">Services ({{services.length}})</th>
         <td>{{services}}</td>
       </tr>
       <tr clas='job-table-row'>
-        <th scope="row">Variables</th>
+        <th scope="row">Variables ({{variables.length}})</th>
         <td>{{variables}}</td>
       </tr>
   </tbody>

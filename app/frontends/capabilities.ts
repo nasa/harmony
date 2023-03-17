@@ -127,7 +127,7 @@ export async function getCollectionCapabilitiesJson(
  * @param next - The next function in the call chain
  * @returns The job links (pause, resume, etc.)
  */
-export async function displayCollectionCapabilitiesHtml(
+export async function getCollectionCapabilitiesHtml(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const collection = await loadCollectionInfo(req);
