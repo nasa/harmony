@@ -88,13 +88,13 @@ describe('Testing collection capabilities', function () {
 
     describe('with a collectionId that does not exist in CMR', function () {
       hookGetCollectionCapabilities({ collectionId: 'C0000-EEDTEST' });
-      it('returns a 400 status code', function () {
-        expect(this.res.status).to.equal(400);
+      it('returns a 404 status code', function () {
+        expect(this.res.status).to.equal(404);
       });
 
       it('returns an error message indicating the collection could not be found', function () {
         expect(JSON.parse(this.res.text)).to.eql({
-          code: 'harmony.RequestValidationError',
+          code: 'harmony.NotFoundError',
           description: 'Error: C0000-EEDTEST must be a CMR collection identifier, but we could not find a matching collection. Please make sure the collection IDis correct and that you have access to it.',
         });
       });
@@ -102,13 +102,13 @@ describe('Testing collection capabilities', function () {
 
     describe('with a shortName that does not exist in CMR', function () {
       hookGetCollectionCapabilities({ shortName: 'YouCallThatAShortName?' });
-      it('returns a 400 status code', function () {
-        expect(this.res.status).to.equal(400);
+      it('returns a 404 status code', function () {
+        expect(this.res.status).to.equal(404);
       });
 
       it('returns an error message indicating the collection could not be found', function () {
         expect(JSON.parse(this.res.text)).to.eql({
-          code: 'harmony.RequestValidationError',
+          code: 'harmony.NotFoundError',
           description: 'Error: Unable to find collection short name YouCallThatAShortName? in the CMR. Please  make sure the short name is correct and that you have access to the collection.',
         });
       });
