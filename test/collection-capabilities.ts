@@ -7,10 +7,10 @@ describe('Testing collection capabilities', function () {
   describe('requesting JSON format', function () {
     const tests = [{
       description: 'with a valid collectionId configured for harmony',
-      query: { collectionId: 'C1233800302-EEDTEST' },
+      query: { collectionId: 'C1234088182-EEDTEST' },
     }, {
       description: 'with a valid shortName configured for harmony',
-      query: { collectionId: 'harmony_example' },
+      query: { shortName: 'harmony_example' },
     }];
     for (const test of tests) {
       describe(test.description, function () {
@@ -30,7 +30,7 @@ describe('Testing collection capabilities', function () {
 
         it('sets the conceptId field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
-          expect(capabilities.conceptId).to.equal('C1233800302-EEDTEST');
+          expect(capabilities.conceptId).to.equal('C1234088182-EEDTEST');
         });
 
         it('sets the shortName field correctly', function () {
@@ -50,7 +50,7 @@ describe('Testing collection capabilities', function () {
 
         it('sets the shapeSubset field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
-          expect(capabilities.shapeSubset).to.equal(false);
+          expect(capabilities.shapeSubset).to.equal(true);
         });
 
         it('sets the concatenate field correctly', function () {
@@ -66,8 +66,7 @@ describe('Testing collection capabilities', function () {
         it('sets the outputFormats field correctly', function () {
           const capabilities = JSON.parse(this.res.text);
           const expectedFormats = [
-            'image/tiff', 'image/png', 'image/gif', 'application/netcdf',
-            'application/x-netcdf4', 'application/x-zarr',
+            'image/tiff', 'image/png', 'image/gif', 'application/x-netcdf4', 'application/x-zarr',
           ];
           expect(capabilities.outputFormats).to.eql(expectedFormats);
         });
@@ -75,7 +74,7 @@ describe('Testing collection capabilities', function () {
         it('includes the correct services', function () {
           const capabilities = JSON.parse(this.res.text);
           const serviceNames = capabilities.services.map((s) => s.name);
-          const expectedServices = ['harmony/service-example', 'harmony/swot-repr-netcdf-to-zarr'];
+          const expectedServices = ['harmony/service-example', 'nasa/harmony-gdal-adapter', 'harmony/netcdf-to-zarr'];
           expect(serviceNames).to.eql(expectedServices);
         });
 
@@ -108,7 +107,7 @@ describe('Testing collection capabilities', function () {
       it('returns an error message indicating the collection could not be found', function () {
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.RequestValidationError',
-          description: 'Error: Missing required parameter collectionId',
+          description: 'Error: Must specify either collectionId or shortName',
         });
       });
     });
