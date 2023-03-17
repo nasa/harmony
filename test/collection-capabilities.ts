@@ -95,7 +95,7 @@ describe('Testing collection capabilities', function () {
       it('returns an error message indicating the collection could not be found', function () {
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.NotFoundError',
-          description: 'Error: C0000-EEDTEST must be a CMR collection identifier, but we could not find a matching collection. Please make sure the collection IDis correct and that you have access to it.',
+          description: 'Error: C0000-EEDTEST must be a CMR collection identifier, but we could not find a matching collection. Please make sure the collection ID is correct and that you have access to it.',
         });
       });
     });
