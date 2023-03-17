@@ -2,30 +2,11 @@ import HarmonyRequest from '../models/harmony-request';
 import { Response, NextFunction } from 'express';
 import { keysToLowerCase } from '../util/object';
 import { RequestValidationError } from '../util/errors';
-import { CmrCollection, getCollectionsByIds, getVariablesForCollection } from '../util/cmr';
+import { CmrCollection, getCollectionsByIds, getCollectionsByShortName, getVariablesForCollection } from '../util/cmr';
 import { addCollectionsToServicesByAssociation } from '../middleware/service-selection';
 import _ from 'lodash';
 import { ServiceConfig } from '../models/services/base-service';
-
-/**
- * Loads the collection info from CMR
- *
- * @param collectionId - the CMR concept ID for the collection
- * @returns the collection info
- */
-async function loadCollectionInfo(collectionId: string, token: string): Promise<CmrCollection> {
-  const collections = await getCollectionsByIds([collectionId], token);
-  // Could not find the collection
-  if (collections.length === 0) {
-    const message = `${collectionId} must be a CMR collection identifier, but `
-    + 'we could not find a matching collection. Please make sure the collection ID'
-    + 'is correct and that you have access to it.';
-    throw new RequestValidationError(message);
-  }
-  const collection = collections[0];
-  collection.variables = await getVariablesForCollection(collection, token);
-  return collection;
-}
+import { harmonyCollections } from '../models/services';
 
 interface CollectionCapabilities {
   conceptId: string;
@@ -41,19 +22,61 @@ interface CollectionCapabilities {
 }
 
 /**
+ * Loads the collection info from CMR using short name or concept ID passed into the harmony
+ * request
+ *
+ * @param req - The request sent by the client
+ * @returns the collection info
+ * @throws RequestValidationError if no collection is found or parameters are invalid
+ */
+async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
+  const query = keysToLowerCase(req.query);
+  const { collectionid, shortname } = query;
+  let collections;
+  let pickedCollection;
+  if (!collectionid && !shortname) {
+    throw new RequestValidationError('Must specify either collectionId or shortName');
+  } else if (collectionid && shortname) {
+    throw new RequestValidationError('Must specify only one of collectionId or shortName, not both');
+  } else if (collectionid) {
+    collections = await getCollectionsByIds([collectionid], req.accessToken);
+    if (collections.length === 0) {
+      const message = `${collectionid} must be a CMR collection identifier, but `
+      + 'we could not find a matching collection. Please make sure the collection ID'
+      + 'is correct and that you have access to it.';
+      throw new RequestValidationError(message);
+    }
+    pickedCollection = collections[0];
+  } else {
+    collections = await getCollectionsByShortName(shortname, req.accessToken);
+    if (collections.length === 0) {
+      const message = `Unable to find collection short name ${shortname} in the CMR. Please `
+      + ' make sure the short name is correct and that you have access to the collection.';
+      throw new RequestValidationError(message);
+    }
+    pickedCollection = collections[0];
+    if (collections.length > 1) {
+      // If there are multiple collections matching prefer a collection that is configured
+      // for use in harmony
+      const harmonyCollection = collections.find((c) => harmonyCollections.includes(c.id));
+      pickedCollection = harmonyCollection || pickedCollection;
+    }
+  }
+  pickedCollection.variables = await getVariablesForCollection(pickedCollection, req.accessToken);
+  return pickedCollection;
+}
+
+/**
  * Resolves to a CollectionCapabilities object detailing the harmony transformation capabilities
  * for the given collection.
  *
- * @param collectionId - the CMR collection concept ID
+ * @param collection - the CMR collection
  * @param cmrCollections - a list of CMR collections relevant to the user request
  * @param token - the user's EDL access token
  * @returns a promise resolving to the collection capabilities
  */
-async function getCollectionCapabilities(
-  collectionId: string, token: string, cmrCollections: CmrCollection[],
-) : Promise<CollectionCapabilities> {
-  const collection = await loadCollectionInfo(collectionId, token);
-  const allServiceConfigs = addCollectionsToServicesByAssociation(cmrCollections);
+async function getCollectionCapabilities(collection: CmrCollection): Promise<CollectionCapabilities> {
+  const allServiceConfigs = addCollectionsToServicesByAssociation([collection]);
   const matchingServices = allServiceConfigs.filter((config) =>
     config.collections.map((c) => c.id).includes(collection.id));
   const variables = collection.variables.map((v) => v.umm.Name);
@@ -82,17 +105,12 @@ async function getCollectionCapabilities(
  * @param next - The next function in the call chain
  * @returns The job links (pause, resume, etc.)
  */
-export async function displayCollectionCapabilities(
+export async function getCollectionCapabilitiesJson(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  const query = keysToLowerCase(req.query);
-  const { collectionid } = query;
-  if (!collectionid) {
-    throw new RequestValidationError('Missing required parameter collectionId');
-  } try {
-    const capabilities = await getCollectionCapabilities(
-      collectionid, req.accessToken, req.collections,
-    );
+  const collection = await loadCollectionInfo(req);
+  try {
+    const capabilities = await getCollectionCapabilities(collection);
     res.send(capabilities);
   } catch (e) {
     req.context.logger.error(e);
@@ -112,14 +130,9 @@ export async function displayCollectionCapabilities(
 export async function displayCollectionCapabilitiesHtml(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
-  const query = keysToLowerCase(req.query);
-  const { collectionid } = query;
-  if (!collectionid) {
-    throw new RequestValidationError('Missing required parameter collectionId');
-  } try {
-    const capabilities = await getCollectionCapabilities(
-      collectionid, req.accessToken, req.collections,
-    );
+  const collection = await loadCollectionInfo(req);
+  try {
+    const capabilities = await getCollectionCapabilities(collection);
     res.render('capabilities/index', { capabilities });
   } catch (e) {
     req.context.logger.error(e);
