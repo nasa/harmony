@@ -1,7 +1,7 @@
 import HarmonyRequest from '../models/harmony-request';
 import { Response, NextFunction } from 'express';
 import { keysToLowerCase } from '../util/object';
-import { RequestValidationError } from '../util/errors';
+import { NotFoundError, RequestValidationError } from '../util/errors';
 import { CmrCollection, getCollectionsByIds, getCollectionsByShortName, getVariablesForCollection } from '../util/cmr';
 import { addCollectionsToServicesByAssociation } from '../middleware/service-selection';
 import _ from 'lodash';
@@ -27,7 +27,7 @@ interface CollectionCapabilities {
  *
  * @param req - The request sent by the client
  * @returns the collection info
- * @throws RequestValidationError if no collection is found or parameters are invalid
+ * @throws NotFoundError if no collection is found or parameters are invalid
  */
 async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
   const query = keysToLowerCase(req.query);
@@ -44,7 +44,7 @@ async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
       const message = `${collectionid} must be a CMR collection identifier, but `
       + 'we could not find a matching collection. Please make sure the collection ID'
       + 'is correct and that you have access to it.';
-      throw new RequestValidationError(message);
+      throw new NotFoundError(message);
     }
     pickedCollection = collections[0];
   } else {
@@ -52,7 +52,7 @@ async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
     if (collections.length === 0) {
       const message = `Unable to find collection short name ${shortname} in the CMR. Please `
       + ' make sure the short name is correct and that you have access to the collection.';
-      throw new RequestValidationError(message);
+      throw new NotFoundError(message);
     }
     pickedCollection = collections[0];
     if (collections.length > 1) {
@@ -71,8 +71,6 @@ async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
  * for the given collection.
  *
  * @param collection - the CMR collection
- * @param cmrCollections - a list of CMR collections relevant to the user request
- * @param token - the user's EDL access token
  * @returns a promise resolving to the collection capabilities
  */
 async function getCollectionCapabilities(collection: CmrCollection): Promise<CollectionCapabilities> {
