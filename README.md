@@ -96,7 +96,7 @@ If you want to also update the images of harmony backend services, you can inclu
 ```
 
 ### Restart Harmony Services
-You can restart all Harmony services including backend services by calling the `bin/restart-services` script. This will restart all Harmony services with their current local Docker images.
+You can restart all Harmony services including backend services by calling the `bin/restart-services` script. This will restart all Harmony services as they are configured in your environment. It will not attempt to pull and update any existing service images in your environment.
 
 ### Testing New Services
 
