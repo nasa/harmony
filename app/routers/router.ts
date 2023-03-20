@@ -36,7 +36,7 @@ import getRequestMetrics from '../frontends/request-metrics';
 import { getStagingBucketPolicy } from '../frontends/staging-bucket-policy';
 import { parseGridMiddleware } from '../util/grids';
 import docsPage from '../frontends/docs/docs';
-
+import { getCollectionCapabilitiesJson } from '../frontends/capabilities';
 export interface RouterConfig {
   PORT?: string | number; // The port to run the frontend server on
   BACKEND_PORT?: string | number; // The port to run the backend server on
@@ -126,12 +126,13 @@ function collectionPrefix(path: string): RegExp {
 const authorizedRoutes = [
   cmrCollectionReader.collectionRegex,
   '/admin*',
+  '/capabilities*',
+  '/cloud-access*',
+  '/configuration*',
   '/jobs*',
   '/service-results/*',
-  '/cloud-access*',
   '/stac*',
   '/workflow-ui*',
-  '/configuration*',
 ];
 
 /**
@@ -251,6 +252,9 @@ export default function router({ skipEarthdataLogin = 'false' }: RouterConfig): 
 
   result.get('/admin/configuration/log-level', asyncHandler(setLogLevel));
 
+  result.get('/capabilities', asyncHandler(getCollectionCapabilitiesJson));
+  // Enable HTML view with HARMONY-1393
+  // result.get('/capabilities.html', asyncHandler(getCollectionCapabilitiesHtml));
   result.get('/cloud-access', asyncHandler(cloudAccessJson));
   result.get('/cloud-access.sh', asyncHandler(cloudAccessSh));
   result.get('/stac/:jobId', asyncHandler(getStacCatalog));
