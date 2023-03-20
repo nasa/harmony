@@ -67,9 +67,9 @@ curl -Ln -bj "http://localhost:3000/C1233800302-EEDTEST/ogc-api-coverages/1.0.0/
 
 We recommend using [harmony-py](https://github.com/nasa/harmony-py) and its example notebook when working with Harmony.
 
-### Configuration of Services and Supported Collections
+### Configuration of Backend Services
 
-Harmony configures each backend service along with its supported collections and their associated UMM-S, UMM-Var records in a file named `services.yml`.
+Harmony configures backend services in a file named `services.yml`.
 
 ### Reloading the Services Configuration
 
