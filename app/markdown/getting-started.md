@@ -22,7 +22,7 @@ $ chmod 0600 ~/.netrc
 ```
 **Example {{exampleCounter}}** - Setting permissions on the .netrc file (Unix/macOS)
 
-Alternatively users can generate an EDL [bearer token]({{edl}}/users/my-user-name/user_tokens) directly and pass this to Harmony using an `Authorization: Bearer` header.
+Alternatively users can generate an EDL [bearer token]({{edl}}/documentation/for_users/user_token) directly and pass this to Harmony using an `Authorization: Bearer` header.
 
 #### Passing credentials with curl
 
