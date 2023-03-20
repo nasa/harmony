@@ -10,7 +10,7 @@ one of the following endpoints ({collectionId} and {variable} are placeholders):
 {{root}}/{collectionId}/ogc-api-coverages/1.0.0/{variable}/coverage/rangeset
 
 ```
-**Example {{exampleCounter}}** - OCG Coverages endpoint
+**Example {{exampleCounter}}** - OGC Coverages endpoint
 
 ```
 
@@ -19,7 +19,7 @@ one of the following endpoints ({collectionId} and {variable} are placeholders):
 ```
 **Example {{exampleCounter}}** - WMS endpoint
 
-#### OCG Coverages Request Parameters
+#### OGC Coverages Request Parameters
 
 The primary Harmony services REST API conforms to the OGC Coverages API version 1.0.0.
 As such it accepts parameters in the URL path as well as query parameters.
@@ -39,7 +39,7 @@ As such it accepts parameters in the URL path as well as query parameters.
 | parameter | description |
 |-----------|-------------|
 | subset | get a subset of the coverage by slicing or trimming along one axis. Harmony supports  the axes "lat" and "lon" for spatial subsetting, and "time" for temporal, regardless of the names of those axes in the data files. Harmony also supports arbitrary dimension names for subsetting on numeric ranges for that dimension. |
-| outputCrs | reproject the output coverage to the given CRS. Recognizes CRS types that can be  |inferred by gdal, including EPSG codes, Proj4 strings, and OCG Coverages URLs (http://www.opengis.net/def/crs/...) |
+| outputCrs | reproject the output coverage to the given CRS. Recognizes CRS types that can be  |inferred by gdal, including EPSG codes, Proj4 strings, and OGC Coverages URLs (http://www.opengis.net/def/crs/...) |
 | interpolation | specify the interpolation method used during reprojection and scaling |
 | scaleExtent | scale the resulting coverage along one axis to a given extent |
 | scaleSize | scale the resulting coverage along one axis to a given size |
@@ -47,7 +47,7 @@ As such it accepts parameters in the URL path as well as query parameters.
 | granuleId | the CMR Granule ID for the granule which should be retrieved |
 | granuleName | passed to the CMR search as the readable_granule_name parameter. Supports * and ?  wildcards for multiple and single character matches. Wildcards can be used any place in the name, but leading wildcards are discouraged as they require a lot of resources for the underlying search |
 | grid | the name of the output grid to use for regridding requests. The name must match the UMM  |grid name in the CMR.
-| point | only collections that have a geometry that contains a spatial point are selected. The spatial point is provided as two numbers:<br/>* Longitude, coordinate axis 1<br/>* Latitude, coordinate axis 2<br/>The coordinate reference system of the values is [WGS84 longitude/latitude](http://www.opengis.net/def/crs/OCG/1.3/CRS84). |
+| point | only collections that have a geometry that contains a spatial point are selected. The spatial point is provided as two numbers:<br/>* Longitude, coordinate axis 1<br/>* Latitude, coordinate axis 2<br/>The coordinate reference system of the values is [WGS84 longitude/latitude](http://www.opengis.net/def/crs/OGC/1.3/CRS84). |
 | width | number of columns to return in the output coverage |
 | height | number of rows to return in the output coverage |
 | forceAsync | if "true", override the default API behavior and always treat the request as asynchronous |
