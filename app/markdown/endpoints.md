@@ -1,6 +1,6 @@
 ## Summary of Available Endpoints
 
-All of the public endpoints for Harmony users other than the OCG Coverages and WMS APIs are listed in the following table. The Coverages and WMS APIs are described in the next section.
+All of the public endpoints for Harmony users other than the OGC Coverages and WMS APIs are listed in the following table. The Coverages and WMS APIs are described in the next section.
 
 | route                  | description                                                                       |
 |------------------------|-----------------------------------------------------------------------------------|
@@ -16,11 +16,11 @@ All of the public endpoints for Harmony users other than the OCG Coverages and W
 | /versions              | Returns JSON indicating what version (image tag) each deployed service is running |
 | /workflow-ui           | The Workflow UI for monitoring and interacting with running jobs                                                                   |
 ---
-**Table {{tableCounter}}** - Harmony routes other than OCG Coverages and WMS
+**Table {{tableCounter}}** - Harmony routes other than OGC Coverages and WMS
 
 
 
-The remaining routes are for launching services for collections using either OCG Coverages or WMS and
+The remaining routes are for launching services for collections using either OGC Coverages or WMS and
 are discussed in the next section.
 
 <br/>
