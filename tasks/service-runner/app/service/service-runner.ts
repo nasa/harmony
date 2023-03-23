@@ -99,19 +99,36 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
 }
 
 /**
+ * Get the error message based on the given status and default error message.
+ *
+ * @param status - A kubernetes V1Status
+ * @param msg - A default error message
+ * @returns An error message for the status
+ */
+function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): string {
+  const exitCode = status.details?.causes?.find(i => i.reason === 'ExitCode');
+  let errorMsg = null;
+  if (exitCode?.message === '137') {
+    errorMsg = 'Service failed due to running out of memory';
+  }
+  return (errorMsg ? errorMsg : msg);
+}
+
+/**
  * Parse an error message out of an error log. First check for error.json, and
  * extract the message from the entry there. Otherwise, parse the full STDOUT
  * error logs for any ERROR level message. Note, the current regular expression
  * for the latter option has issues handling error messages containing curly
  * braces.
  *
+ * @param status - A kubernetes V1Status
  * @param logStr - A string that contains error logging
  * @param catalogDir - A string path for the outputs directory of the WorkItem
  * (e.g. s3://artifacts/requestId/workItemId/outputs/).
  * @param workItemLogger - Logger for logging messages
  * @returns An error message parsed from the log
  */
-async function _getErrorMessage(logStr: string, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
+async function _getErrorMessage(status: k8s.V1Status, logStr: string, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
   // expect JSON logs entries
   try {
     const s3 = objectStoreForProtocol('s3');
@@ -129,11 +146,11 @@ async function _getErrorMessage(logStr: string, catalogDir: string, workItemLogg
         return logEntry.message;
       }
     }
-    return 'Unknown error';
+    return _getErrorMessageOfStatus(status);
   } catch (e) {
     workItemLogger.error(`Caught exception: ${e}`);
     workItemLogger.error(`Unable to parse out error from catalog location: ${catalogDir} and log message: ${logStr}`);
-    return 'Service terminated without error message';
+    return _getErrorMessageOfStatus(status, 'Service terminated without error message');
   }
 }
 
@@ -264,7 +281,7 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(stdOut.aggregateLogStr, catalogDir, workItemLogger);
+              const logErr = await _getErrorMessage(status, stdOut.aggregateLogStr, catalogDir, workItemLogger);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }
