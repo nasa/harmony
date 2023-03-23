@@ -32,14 +32,14 @@ const { workerTimeout } = env;
  * Captures, logs and stores the logs of the worker container's execution.
  */
 export class LogStream extends stream.Writable {
-  
+
   // logs each chunk received
   streamLogger: Logger;
 
   // all of the logs (JSON or text) that are written
   // to this stream (gets uploaded to s3)
   logStrArr: (string | object)[] = [];
-  
+
   aggregateLogStr = '';
 
   /**
@@ -63,7 +63,7 @@ export class LogStream extends stream.Writable {
 
   /**
    * Parse the log chunk (if JSON), push it to the logs array, and log it.
-   * @param logStr - the string to log (could emanate from a text or JSON logger) 
+   * @param logStr - the string to log (could emanate from a text or JSON logger)
    */
   _handleLogString(logStr: string): void {
     this.aggregateLogStr += logStr;
@@ -106,7 +106,7 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
  * braces.
  *
  * @param logStr - A string that contains error logging
- * @param catalogDir - A string path for the outputs directory of the WorkItem 
+ * @param catalogDir - A string path for the outputs directory of the WorkItem
  * (e.g. s3://artifacts/requestId/workItemId/outputs/).
  * @param workItemLogger - Logger for logging messages
  * @returns An error message parsed from the log
@@ -131,8 +131,9 @@ async function _getErrorMessage(logStr: string, catalogDir: string, workItemLogg
     }
     return 'Unknown error';
   } catch (e) {
-    workItemLogger.error(e.message);
-    return e.message;
+    workItemLogger.error(`Caught exception: ${e}`);
+    workItemLogger.error(`Unable to parse out error from catalog location: ${catalogDir} and log message: ${logStr}`);
+    return 'Service terminated without error message';
   }
 }
 
@@ -144,7 +145,7 @@ async function _getErrorMessage(logStr: string, catalogDir: string, workItemLogg
   * @param workItemLogger - The logger to use
   */
 export async function runQueryCmrFromPull(
-  workItem: WorkItemRecord, 
+  workItem: WorkItemRecord,
   maxCmrGranules?: number,
   workItemLogger = logger,
 ): Promise<ServiceResponse> {
@@ -268,16 +269,18 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
               resolve({ error: errMsg });
             }
           } catch (e) {
+            workItemLogger.error(`Unable to upload logs. Caught exception: ${e}`);
             resolve({ error: e.message });
           }
         },
       ).catch((e) => {
         clearTimeout(timeout);
-        workItemLogger.error(e.message);
+        workItemLogger.error(`Kubernetes client exec caught exception: ${e}`);
         resolve({ error: e.message });
       });
     });
   } catch (e) {
+    workItemLogger.error(`runServiceFromPull caught exception: ${e}`);
     return { error: e.message };
   }
 }
