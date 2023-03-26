@@ -27,6 +27,9 @@ export interface ServiceResponse {
 // how long to let a worker run before giving up
 const { workerTimeout } = env;
 
+// service exist code for Out Of Memory error
+const OOM_EXIT_CODE = '137';
+
 /**
  * A writable stream that is passed to the k8s exec call for the worker container.
  * Captures, logs and stores the logs of the worker container's execution.
@@ -108,7 +111,7 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
 function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): string {
   const exitCode = status.details?.causes?.find(i => i.reason === 'ExitCode');
   let errorMsg = null;
-  if (exitCode?.message === '137') {
+  if (exitCode?.message === OOM_EXIT_CODE) {
     errorMsg = 'Service failed due to running out of memory';
   }
   return (errorMsg ? errorMsg : msg);
