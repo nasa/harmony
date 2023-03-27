@@ -27,7 +27,7 @@ export interface ServiceResponse {
 // how long to let a worker run before giving up
 const { workerTimeout } = env;
 
-// service exist code for Out Of Memory error
+// service exit code for Out Of Memory error
 const OOM_EXIT_CODE = '137';
 
 /**
