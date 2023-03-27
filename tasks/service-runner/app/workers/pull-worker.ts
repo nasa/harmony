@@ -105,7 +105,7 @@ async function _doWork(
   const newWorkItem = workItem;
   workItemLogger.debug('Calling work function');
   // work items with a scrollID are only for the query-cmr service
-  const serviceResponse = newWorkItem.scrollID ? 
+  const serviceResponse = newWorkItem.scrollID ?
     await runQueryCmrFromPull(newWorkItem, maxCmrGranules, workItemLogger) :
     await runServiceFromPull(newWorkItem, workItemLogger);
   workItemLogger.debug('Finished work');

@@ -27,19 +27,22 @@ export interface ServiceResponse {
 // how long to let a worker run before giving up
 const { workerTimeout } = env;
 
+// service exit code for Out Of Memory error
+const OOM_EXIT_CODE = '137';
+
 /**
  * A writable stream that is passed to the k8s exec call for the worker container.
  * Captures, logs and stores the logs of the worker container's execution.
  */
 export class LogStream extends stream.Writable {
-  
+
   // logs each chunk received
   streamLogger: Logger;
 
   // all of the logs (JSON or text) that are written
   // to this stream (gets uploaded to s3)
   logStrArr: (string | object)[] = [];
-  
+
   aggregateLogStr = '';
 
   /**
@@ -63,7 +66,7 @@ export class LogStream extends stream.Writable {
 
   /**
    * Parse the log chunk (if JSON), push it to the logs array, and log it.
-   * @param logStr - the string to log (could emanate from a text or JSON logger) 
+   * @param logStr - the string to log (could emanate from a text or JSON logger)
    */
   _handleLogString(logStr: string): void {
     this.aggregateLogStr += logStr;
@@ -99,19 +102,36 @@ async function _getStacCatalogs(dir: string): Promise<string[]> {
 }
 
 /**
+ * Get the error message based on the given status and default error message.
+ *
+ * @param status - A kubernetes V1Status
+ * @param msg - A default error message
+ * @returns An error message for the status
+ */
+function _getErrorMessageOfStatus(status: k8s.V1Status, msg = 'Unknown error'): string {
+  const exitCode = status.details?.causes?.find(i => i.reason === 'ExitCode');
+  let errorMsg = null;
+  if (exitCode?.message === OOM_EXIT_CODE) {
+    errorMsg = 'Service failed due to running out of memory';
+  }
+  return (errorMsg ? errorMsg : msg);
+}
+
+/**
  * Parse an error message out of an error log. First check for error.json, and
  * extract the message from the entry there. Otherwise, parse the full STDOUT
  * error logs for any ERROR level message. Note, the current regular expression
  * for the latter option has issues handling error messages containing curly
  * braces.
  *
+ * @param status - A kubernetes V1Status
  * @param logStr - A string that contains error logging
- * @param catalogDir - A string path for the outputs directory of the WorkItem 
+ * @param catalogDir - A string path for the outputs directory of the WorkItem
  * (e.g. s3://artifacts/requestId/workItemId/outputs/).
  * @param workItemLogger - Logger for logging messages
  * @returns An error message parsed from the log
  */
-async function _getErrorMessage(logStr: string, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
+async function _getErrorMessage(status: k8s.V1Status, logStr: string, catalogDir: string, workItemLogger: Logger = logger): Promise<string> {
   // expect JSON logs entries
   try {
     const s3 = objectStoreForProtocol('s3');
@@ -129,10 +149,11 @@ async function _getErrorMessage(logStr: string, catalogDir: string, workItemLogg
         return logEntry.message;
       }
     }
-    return 'Unknown error';
+    return _getErrorMessageOfStatus(status);
   } catch (e) {
-    workItemLogger.error(e.message);
-    return e.message;
+    workItemLogger.error(`Caught exception: ${e}`);
+    workItemLogger.error(`Unable to parse out error from catalog location: ${catalogDir} and log message: ${logStr}`);
+    return _getErrorMessageOfStatus(status, 'Service terminated without error message');
   }
 }
 
@@ -144,7 +165,7 @@ async function _getErrorMessage(logStr: string, catalogDir: string, workItemLogg
   * @param workItemLogger - The logger to use
   */
 export async function runQueryCmrFromPull(
-  workItem: WorkItemRecord, 
+  workItem: WorkItemRecord,
   maxCmrGranules?: number,
   workItemLogger = logger,
 ): Promise<ServiceResponse> {
@@ -263,21 +284,23 @@ export async function runServiceFromPull(workItem: WorkItemRecord, workItemLogge
               resolve({ batchCatalogs: catalogs });
             } else {
               clearTimeout(timeout);
-              const logErr = await _getErrorMessage(stdOut.aggregateLogStr, catalogDir, workItemLogger);
+              const logErr = await _getErrorMessage(status, stdOut.aggregateLogStr, catalogDir, workItemLogger);
               const errMsg = `${sanitizeImage(env.harmonyService)}: ${logErr}`;
               resolve({ error: errMsg });
             }
           } catch (e) {
+            workItemLogger.error(`Unable to upload logs. Caught exception: ${e}`);
             resolve({ error: e.message });
           }
         },
       ).catch((e) => {
         clearTimeout(timeout);
-        workItemLogger.error(e.message);
+        workItemLogger.error(`Kubernetes client exec caught exception: ${e}`);
         resolve({ error: e.message });
       });
     });
   } catch (e) {
+    workItemLogger.error(`runServiceFromPull caught exception: ${e}`);
     return { error: e.message };
   }
 }
