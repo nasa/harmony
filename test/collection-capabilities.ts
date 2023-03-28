@@ -19,7 +19,7 @@ describe('Testing collection capabilities', function () {
           expect(this.res.status).to.equal(200);
         });
 
-        it('includes all of the expected fields in the response', function () {
+        it('includes all of the expected fields in the response according to the default version', function () {
           const expectedFields = [
             'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset',
             'concatenate', 'reproject', 'outputFormats', 'services', 'variables',
@@ -138,6 +138,38 @@ describe('Testing collection capabilities', function () {
         expect(JSON.parse(this.res.text)).to.eql({
           code: 'harmony.RequestValidationError',
           description: 'Error: Must specify only one of collectionId or shortName, not both',
+        });
+      });
+    });
+
+    describe('specifying a version parameter', function () {
+      describe('specifying version 1', function () {
+        hookGetCollectionCapabilities({ collectionId: 'C1234088182-EEDTEST', version: 1 });
+        it('returns a 200 success status code', function () {
+          expect(this.res.status).to.equal(200);
+        });
+
+        it('includes all of the expected fields in the version 1 response', function () {
+          const expectedFields = [
+            'conceptId', 'shortName', 'variableSubset', 'bboxSubset', 'shapeSubset',
+            'concatenate', 'reproject', 'outputFormats', 'services', 'variables',
+          ];
+          const capabilities = JSON.parse(this.res.text);
+          expect(Object.keys(capabilities)).to.eql(expectedFields);
+        });
+      });
+
+      describe('specifying a version that does not exist', function () {
+        hookGetCollectionCapabilities({ collectionId: 'C1234088182-EEDTEST', version: 'bad_version' });
+        it('returns a 400 status code', function () {
+          expect(this.res.status).to.equal(400);
+        });
+
+        it('returns an error message indicating the version was invalid', function () {
+          expect(JSON.parse(this.res.text)).to.eql({
+            code: 'harmony.RequestValidationError',
+            description: 'Error: Invalid API version bad_version, supported versions: 1',
+          });
         });
       });
     });
