@@ -7,8 +7,12 @@ import { addCollectionsToServicesByAssociation } from '../middleware/service-sel
 import _ from 'lodash';
 import { ServiceConfig } from '../models/services/base-service';
 import { harmonyCollections } from '../models/services';
+import { listToText } from '../util/string';
 
-interface CollectionCapabilities {
+const currentApiVersion = '1';
+const supportedApiVersions = ['1'];
+
+interface CollectionCapabilitiesV1 {
   conceptId: string;
   shortName: string;
   variableSubset: boolean;
@@ -20,6 +24,8 @@ interface CollectionCapabilities {
   services: ServiceConfig<unknown>[];
   variables: string[];
 }
+
+type CollectionCapabilities = CollectionCapabilitiesV1;
 
 /**
  * Loads the collection info from CMR using short name or concept ID passed into the harmony
@@ -67,19 +73,20 @@ async function loadCollectionInfo(req: HarmonyRequest): Promise<CmrCollection> {
 }
 
 /**
- * Resolves to a CollectionCapabilities object detailing the harmony transformation capabilities
- * for the given collection.
+ * Resolves to a CollectionCapabilitiesV1 object detailing the harmony transformation capabilities
+ * for the given collection in version 1 of the JSON format.
  *
  * @param collection - the CMR collection
- * @returns a promise resolving to the collection capabilities
+ * @returns a promise resolving to the version 1 collection capabilities
  */
-async function getCollectionCapabilities(collection: CmrCollection): Promise<CollectionCapabilities> {
+async function getCollectionCapabilitiesV1(collection: CmrCollection)
+  : Promise<CollectionCapabilitiesV1> {
   const allServiceConfigs = addCollectionsToServicesByAssociation([collection]);
   const matchingServices = allServiceConfigs.filter((config) =>
     config.collections.map((c) => c.id).includes(collection.id));
   const variables = collection.variables.map((v) => v.umm.Name);
   const variableSubset = variables.length > 0
-      && matchingServices.some((s) => s.capabilities.subsetting.variable === true);
+     && matchingServices.some((s) => s.capabilities.subsetting.variable === true);
   const bboxSubset = matchingServices.some((s) => s.capabilities.subsetting.bbox === true);
   const shapeSubset = matchingServices.some((s) => s.capabilities.subsetting.shape === true);
   const concatenate = matchingServices.some((s) => s.capabilities.concatenation === true);
@@ -95,6 +102,38 @@ async function getCollectionCapabilities(collection: CmrCollection): Promise<Col
 }
 
 /**
+ * Returns the function to use to generate the JSON capabilities response
+ *
+ * @param version - the version of the capabilities JSON to return
+ * @returns the capabilities function to use
+ *
+ * @throws RequestValidationError if the version is invalid
+ */
+function chooseCapabilitiesFunction(version: string): ((string) => Promise<CollectionCapabilities>) {
+  if (version === '1') {
+    return getCollectionCapabilitiesV1;
+  }
+
+  const message = `Invalid API version ${version}, supported versions: ` +
+    + listToText(supportedApiVersions);
+  throw new RequestValidationError(message);
+}
+
+/**
+ * Resolves to a CollectionCapabilities object detailing the harmony transformation capabilities
+ * for the given collection and version of the API.
+ *
+ * @param collection - the CMR collection
+ * @param version - the version of the capabilities JSON to return
+ * @returns a promise resolving to the collection capabilities
+ */
+async function getCollectionCapabilities(collection: CmrCollection, version = currentApiVersion)
+  : Promise<CollectionCapabilities> {
+  const capabilitiesFn = chooseCapabilitiesFunction(version);
+  return capabilitiesFn(collection);
+}
+
+/**
  * Endpoint to display information related to what harmony operations are supported for a
  * given collection in JSON format.
  *
@@ -107,8 +146,9 @@ export async function getCollectionCapabilitiesJson(
   req: HarmonyRequest, res: Response, next: NextFunction,
 ): Promise<void> {
   const collection = await loadCollectionInfo(req);
+  const query = keysToLowerCase(req.query);
   try {
-    const capabilities = await getCollectionCapabilities(collection);
+    const capabilities = await getCollectionCapabilities(collection, query.version);
     res.send(capabilities);
   } catch (e) {
     req.context.logger.error(e);
