@@ -55,7 +55,12 @@ export async function parseGridMiddleware(
         x: { min: gridInfo.DimensionScale.X.Minimum, max: gridInfo.DimensionScale.X.Maximum },
         y: { min: gridInfo.DimensionScale.Y.Minimum, max: gridInfo.DimensionScale.Y.Maximum },
       };
-      operation.scaleSize = { x: gridInfo.DimensionSize.Width, y: gridInfo.DimensionSize.Height };
+      operation.outputWidth = gridInfo.DimensionSize.Width;
+      operation.outputHeight = gridInfo.DimensionSize.Height;
+      operation.scaleSize = {
+        x: gridInfo.DimensionScale.X.Resolution,
+        y: gridInfo.DimensionScale.Y.Resolution,
+      };
     } catch (e) {
       next(e);
     }
