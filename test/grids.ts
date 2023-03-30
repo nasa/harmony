@@ -32,7 +32,15 @@ describe('testing grids', function () {
       });
 
       it('translates the UMM grid DimensionSize and passes the scaleSize parameter to the backend', function () {
-        expect(this.service.operation.scaleSize).to.eql({ x: 6000, y: 6000 });
+        expect(this.service.operation.scaleSize).to.eql({ x: 20, y: 30 });
+      });
+
+      it('translates the UMM grid DimensionSize and passes the scaleSize parameter to the backend', function () {
+        expect(this.service.operation.outputHeight).to.eql(4000);
+      });
+
+      it('translates the UMM grid DimensionSize and passes the scaleSize parameter to the backend', function () {
+        expect(this.service.operation.outputWidth).to.eql(6000);
       });
 
       it('returns a redirect to the job status page', function () {

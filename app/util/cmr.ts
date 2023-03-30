@@ -130,10 +130,12 @@ export interface CmrUmmGrid {
         X: {
           Minimum: number;
           Maximum: number;
+          Resolution: number;
         };
         Y: {
           Minimum: number;
           Maximum: number;
+          Resolution: number;
         };
       };
     };
