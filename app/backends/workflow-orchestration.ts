@@ -558,11 +558,13 @@ async function updateWorkItemCounts(
  * handled in this function and no exceptions should be thrown since nothing will catch
  * them.
  *
+ * @param jobId - job id
  * @param update - information about the work item update
  * @param operation - the DataOperation for the user's request
  * @param logger - the Logger for the request
  */
-export async function handleWorkItemUpdate(
+export async function handleWorkItemUpdateWithJobId(
+  jobID: string,
   update: WorkItemUpdate,
   operation: object,
   logger: Logger): Promise<void> {
@@ -572,9 +574,6 @@ export async function handleWorkItemUpdate(
   if (status === WorkItemStatus.SUCCESSFUL) {
     logger.info(`Updating work item ${workItemID} to ${status}`);
   }
-
-  // get the jobID for the work item
-  const jobID = await getJobIdForWorkItem(workItemID);
 
   // Get the sizes of all the data items/granules returned for the WorkItem and STAC item links
   // when batching.
@@ -734,6 +733,26 @@ export async function handleWorkItemUpdate(
     logger.error(`Work item update failed for work item ${workItemID} and status ${status}`);
     logger.error(e);
   }
+}
+
+/**
+ * Update job status/progress in response to a service provided work item update
+ * IMPORTANT: This asynchronous function is called without awaiting, so any errors must be
+ * handled in this function and no exceptions should be thrown since nothing will catch
+ * them.
+ *
+ * @param update - information about the work item update
+ * @param operation - the DataOperation for the user's request
+ * @param logger - the Logger for the request
+ */
+export async function handleWorkItemUpdate(
+  update: WorkItemUpdate,
+  operation: object,
+  logger: Logger): Promise<void> {
+  const { workItemID } = update;
+  // get the jobID for the work item
+  const jobID = await getJobIdForWorkItem(workItemID);
+  await handleWorkItemUpdateWithJobId(jobID, update, operation, logger);
 }
 
 /**

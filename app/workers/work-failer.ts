@@ -1,12 +1,12 @@
 import { Logger } from 'winston';
-import { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../models/work-item';
+import WorkItem, { computeWorkItemDurationOutlierThresholdForJobService, getWorkItemsByUpdateAgeAndStatus } from '../models/work-item';
 import env from '../util/env';
 import { Worker } from './worker';
 import db from '../util/db';
 import sleep from '../util/sleep';
 import { JobStatus } from '../models/job';
 import { WorkItemStatus } from '../models/work-item-interface';
-import { handleWorkItemUpdate } from '../backends/workflow-orchestration';
+import { handleWorkItemUpdateWithJobId } from '../backends/workflow-orchestration';
 
 export interface WorkFailerConfig {
   logger: Logger;
@@ -14,10 +14,10 @@ export interface WorkFailerConfig {
 
 /**
  * Construct a message indicating that the given work item has exceeded the given duration
- * 
+ *
  * @param item - the work item that is being failed
  * @param duration - the duration threshold that the work item has exceeded
- * @returns 
+ * @returns the failure message
  */
 function failedMessage(itemId: number, duration: number): string {
   return `Work item ${itemId} has exceeded the ${duration} ms duration threshold.`;
@@ -38,82 +38,121 @@ export default class WorkFailer implements Worker {
   }
 
   /**
-   * Find work items that're older than lastUpdateOlderThanMinutes and call handleWorkItemUpdate.
+   * Get expired work items that are older than lastUpdateOlderThanMinutes.
    * @param lastUpdateOlderThanMinutes - upper limit on the duration since the last update
-   * @returns The ids of items and jobs that were processed: \{ workItemIds: number[], jobIds: string[] \}
+   * @param startingId - the starting work item id to query with
+   * @param batchSize - the batch size
+   * @returns The expired work items and jobServiceThresholds and maxId for bookkeeping purpose
    */
-  async handleWorkItemUpdates(lastUpdateOlderThanMinutes: number): Promise<{ workItemIds: number[], jobIds: string[] }> {
-    let response: {
-      workItemIds: number[],
-      jobIds: string[]
-    } = { workItemIds: [], jobIds: [] };
+  async getExpiredWorkItems(lastUpdateOlderThanMinutes: number, startingId: number, batchSize: number)
+    : Promise<{ workItems: WorkItem[], jobServiceThresholds: Record<string, number>, maxId: number }> {
+    let expiredWorkItems = [];
+    let maxId = startingId;
     const jobServiceThresholds = {};
+
     const workItems = await getWorkItemsByUpdateAgeAndStatus(
       db, lastUpdateOlderThanMinutes, [WorkItemStatus.RUNNING],
       [JobStatus.RUNNING, JobStatus.RUNNING_WITH_ERRORS],
       ['w.id', 'w.jobID', 'serviceID', 'startedAt', 'workflowStepIndex'],
+      startingId,
+      batchSize,
     );
+
     if (workItems?.length > 0) {
       // compute duration thresholds for each job/service
       for (const workItem of workItems) {
-        const { jobID, serviceID, workflowStepIndex } = workItem;
+        const { id, jobID, serviceID, workflowStepIndex } = workItem;
+        maxId = Math.max(maxId, id);
         const key = `${jobID}${serviceID}`;
         if (!jobServiceThresholds[key]) {
           const outlierThreshold = await computeWorkItemDurationOutlierThresholdForJobService(jobID, serviceID, workflowStepIndex);
           jobServiceThresholds[key] = outlierThreshold;
         }
       }
-      const expiredWorkItems = workItems.filter((item) => {
+      expiredWorkItems = workItems.filter((item) => {
         const { jobID, serviceID } = item;
         const key = `${jobID}${serviceID}`;
         const threshold = jobServiceThresholds[key];
         const runningTime = Date.now() - item.startedAt.valueOf();
         return runningTime > threshold;
       });
-      const workItemIds = expiredWorkItems.map((item) => item.id);
-      for (const workItem of expiredWorkItems) {
-        this.logger.warn(`expiring work item ${workItem.id}`, { workItemId: workItem.id });
-      }
-      const jobIds = new Set(workItems.map((item) => item.jobID));
-      for (const jobId of jobIds) {
-        try {
-          const itemsForJob = expiredWorkItems.filter((item) => item.jobID === jobId);
-          await Promise.all(itemsForJob.map((item) => {
-            const workItemLogger = this.logger.child({ workItemId: item.id });
-            const key = `${jobId}${item.serviceID}`;
-            const message = failedMessage(item.id, jobServiceThresholds[key]);
-            workItemLogger.debug(message);
-            return handleWorkItemUpdate(
-              { workItemID: item.id, status: WorkItemStatus.FAILED,
-                scrollID: item.scrollID, hits: null, results: [], totalItemsSize: item.totalItemsSize,
-                errorMessage: message,
-              },
-              null,
-              workItemLogger);
-          }));
-        } catch (e) {
-          this.logger.error(`Error attempting to process work item updates for job ${jobId}.`);
-          this.logger.error(e);
-        }
-      }
-      response = {
-        jobIds: Array.from(jobIds.values()),
-        workItemIds,
-      };
-      this.logger.info('Work failer processed work item updates for ' +
-        `${jobIds.size} jobs and ${workItemIds.length} work items.`);
     }
-    return response;
+
+    return {
+      workItems: expiredWorkItems,
+      jobServiceThresholds: jobServiceThresholds,
+      maxId: maxId,
+    };
+  }
+
+  /**
+   * Find work items that're older than lastUpdateOlderThanMinutes and call handleWorkItemUpdate.
+   * @param lastUpdateOlderThanMinutes - upper limit on the duration since the last update
+   * @returns Resolves when the request is complete
+   */
+  async handleWorkItemUpdates(lastUpdateOlderThanMinutes: number): Promise<void> {
+    let done = false;
+    let startingId = 0;
+    const batchSize = env.workFailerBatchSize || 1000;
+    this.logger.info('Work failer processing started.');
+
+    while (!done) {
+      const { workItems, jobServiceThresholds, maxId: newId } = await this.getExpiredWorkItems(lastUpdateOlderThanMinutes,  startingId, batchSize);
+
+      if (newId > startingId) {
+        if (workItems.length > 0) {
+          for (const workItem of workItems) {
+            this.logger.warn(`expiring work item ${workItem.id}`, { workItemId: workItem.id });
+          }
+          const jobIds = new Set(workItems.map((item) => item.jobID));
+          for (const jobId of jobIds) {
+            jobIds.add(jobId);
+            try {
+              const itemsForJob = workItems.filter((item) => item.jobID === jobId);
+              await Promise.all(itemsForJob.map((item) => {
+                const workItemLogger = this.logger.child({ workItemId: item.id });
+                const key = `${jobId}${item.serviceID}`;
+                const message = failedMessage(item.id, jobServiceThresholds[key]);
+                workItemLogger.debug(message);
+                return handleWorkItemUpdateWithJobId(
+                  jobId,
+                  {
+                    workItemID: item.id, status: WorkItemStatus.FAILED,
+                    scrollID: item.scrollID, hits: null, results: [], totalItemsSize: item.totalItemsSize,
+                    errorMessage: message,
+                  },
+                  null,
+                  workItemLogger);
+              }));
+            } catch (e) {
+              this.logger.error(`Error attempting to process work item updates for job ${jobId}.`);
+              this.logger.error(e);
+            }
+          }
+
+          if (newId < (startingId + batchSize)) {
+            done = true;
+          }
+
+          this.logger.info('Work failer processed work item updates for ' +
+            `${jobIds.size} jobs and ${workItems.length} work items, starting id: ${startingId}.`);
+        }
+        startingId = newId;
+      } else {
+        done = true;
+      }
+    }
+    this.logger.info('Work failer processing completed.');
   }
 
   async start(): Promise<void> {
     this.isRunning = true;
     let firstRun = true;
+    this.logger.info('Starting work failer');
     while (this.isRunning) {
       if (!firstRun) {
         await sleep(env.workFailerPeriodSec * 1000);
       }
-      this.logger.info('Starting work failer');
       try {
         await this.handleWorkItemUpdates(
           env.failableWorkAgeMinutes,

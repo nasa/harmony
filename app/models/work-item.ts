@@ -435,14 +435,19 @@ export async function getWorkItemsByUpdateAgeAndStatus(
   workItemStatuses: WorkItemStatus[],
   jobStatuses: JobStatus[],
   fields = tableFields,
+  startingId = 0,
+  batchSize = 1000,
 ): Promise<WorkItem[]> {
   const pastDate = subMinutes(new Date(), lastUpdateOlderThanMinutes);
   const workItems = (await tx(`${WorkItem.table} as w`)
     .innerJoin(Job.table, 'w.jobID', '=', `${Job.table}.jobID`)
     .select(...fields)
     .whereIn(`${Job.table}.status`, jobStatuses)
-    .where('w.updatedAt', '<', pastDate)
-    .whereIn('w.status', workItemStatuses))
+    .where('w.id', '>', startingId)
+    .andWhere('w.updatedAt', '<', pastDate)
+    .whereIn('w.status', workItemStatuses)
+    .orderBy('w.id', 'asc')
+    .limit(batchSize))
     .map((item) => new WorkItem(item));
 
   return workItems;
