@@ -929,6 +929,9 @@ export default class DataOperation {
       if (!fieldsToInclude.includes('dimensionSubset')) {
         delete toWrite.subset.dimensions;
       }
+      if (!fieldsToInclude.includes('temporalSubset')) {
+        delete toWrite.temporal;
+      }
     }
 
     return JSON.stringify(toWrite);

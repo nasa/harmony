@@ -55,6 +55,7 @@ https://cmr.earthdata.nasa.gov:
       concatenation: true
       concatenate_by_default: true
       subsetting:
+        temporal: true
         bbox: true
         variable: true
         multiple_variable: false
@@ -62,7 +63,7 @@ https://cmr.earthdata.nasa.gov:
         - text/csv
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
-        operations: ['concatenate', 'variableSubset']
+        operations: ['concatenate', 'variableSubset', 'temporalSubset']
 
   - name: harmony/service-example
     description: |
@@ -135,6 +136,7 @@ https://cmr.earthdata.nasa.gov:
       - id: C1996881752-POCLOUD
     capabilities:
       subsetting:
+        temporal: true
         bbox: true
         variable: true
         shape: true
@@ -227,6 +229,7 @@ https://cmr.earthdata.nasa.gov:
     capabilities:
       concatenation: true
       subsetting:
+        temporal: true
         bbox: true
         variable: true
       output_formats:
@@ -235,9 +238,9 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'variableSubset']
+        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
         conditional:
-          exists: ['spatialSubset', 'variableSubset']
+          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         is_batched: true
         operations: ['concatenate']
@@ -260,8 +263,9 @@ https://cmr.earthdata.nasa.gov:
     umm_s:
       - S2232210365-ORNL_CLOUD
     collections: []
-    capabilities:  # The Trajectory Subsetter also supports temporal subsetting
+    capabilities:
       subsetting:
+        temporal: true
         bbox: true
         shape: true
         variable: true
@@ -270,7 +274,7 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
+        operations: ['variableSubset', 'spatialSubset', 'shapefileSubset', 'temporalSubset']
 
   - name: sds/HOSS-geographic
     description: |
@@ -294,6 +298,7 @@ https://cmr.earthdata.nasa.gov:
     collections: []
     capabilities:
       subsetting:
+        temporal: true
         bbox: true
         dimension: true
         shape: true
@@ -304,7 +309,7 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset']
         conditional:
@@ -331,6 +336,7 @@ https://cmr.earthdata.nasa.gov:
     collections: []
     capabilities:
       subsetting:
+        temporal: true
         bbox: true
         dimension: true
         shape: true
@@ -341,7 +347,7 @@ https://cmr.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
         conditional:
@@ -374,6 +380,7 @@ https://cmr.earthdata.nasa.gov:
       - id: C1996881146-POCLOUD
     capabilities:
       subsetting:
+        temporal: true
         shape: true
         bbox: true
         variable: true
@@ -540,6 +547,7 @@ https://cmr.uat.earthdata.nasa.gov:
       concatenation: true
       concatenate_by_default: true
       subsetting:
+        temporal: true
         bbox: true
         variable: true
         multiple_variable: false
@@ -547,7 +555,7 @@ https://cmr.uat.earthdata.nasa.gov:
         - text/csv
     steps:
       - image: !Env ${GIOVANNI_ADAPTER_IMAGE}
-        operations: ['concatenate', 'variableSubset']
+        operations: ['concatenate', 'variableSubset', 'temporalSubset']
 
   - name: harmony/service-example
     description: |
@@ -627,6 +635,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1245508858-LARC_ASDC
     capabilities:
       subsetting:
+        temporal: true
         bbox: true
         variable: true
         shape: true
@@ -708,6 +717,7 @@ https://cmr.uat.earthdata.nasa.gov:
     capabilities:
       concatenation: true
       subsetting:
+        temporal: true
         bbox: true
         variable: true
       output_formats:
@@ -716,9 +726,9 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'variableSubset']
+        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
         conditional:
-          exists: ['spatialSubset', 'variableSubset']
+          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
       - image: !Env ${PODAAC_CONCISE_IMAGE}
         is_batched: true
         operations: ['concatenate']
@@ -846,8 +856,9 @@ https://cmr.uat.earthdata.nasa.gov:
     umm_s:
       - S1242315633-EEDTEST
     collections: []
-    capabilities:  # The Trajectory Subsetter also supports temporal subsetting
+    capabilities:
       subsetting:
+        temporal: true
         bbox: true
         shape: true
         variable: true
@@ -856,7 +867,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${TRAJECTORY_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'shapefileSubset']
+        operations: ['variableSubset', 'spatialSubset', 'shapefileSubset', 'temporalSubset']
 
   # This is an example service and backend from example/http-backend.js mounted by
   # the frontend callback server.
@@ -912,6 +923,7 @@ https://cmr.uat.earthdata.nasa.gov:
       - id: C1238621141-POCLOUD
     capabilities:
       subsetting:
+        temporal: true
         shape: true
         bbox: true
         variable: true
@@ -948,6 +960,7 @@ https://cmr.uat.earthdata.nasa.gov:
     collections: []
     capabilities:
       subsetting:
+        temporal: true
         bbox: true
         dimension: true
         shape: true
@@ -958,7 +971,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset']
         conditional:
@@ -985,6 +998,7 @@ https://cmr.uat.earthdata.nasa.gov:
     collections: []
     capabilities:
       subsetting:
+        temporal: true
         bbox: true
         dimension: true
         shape: true
@@ -995,7 +1009,7 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${VAR_SUBSETTER_IMAGE}
-        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset']
+        operations: ['variableSubset', 'spatialSubset', 'dimensionSubset', 'shapefileSubset', 'temporalSubset']
       - image: !Env ${SDS_MASKFILL_IMAGE}
         operations: ['shapefileSubset', 'spatialSubset']
         conditional:
@@ -1082,6 +1096,7 @@ https://cmr.uat.earthdata.nasa.gov:
       concatenation: true
       concatenate_by_default: false
       subsetting:
+        temporal: true
         bbox: true
         variable: true
       output_formats:
@@ -1089,9 +1104,9 @@ https://cmr.uat.earthdata.nasa.gov:
     steps:
       - image: !Env ${QUERY_CMR_IMAGE}
       - image: !Env ${PODAAC_L2_SUBSETTER_IMAGE}
-        operations: ['spatialSubset', 'variableSubset']
+        operations: ['spatialSubset', 'variableSubset', 'temporalSubset']
         conditional:
-          exists: ['spatialSubset', 'variableSubset']
+          exists: ['spatialSubset', 'variableSubset', 'temporalSubset']
       - image: !Env ${HARMONY_NETCDF_TO_ZARR_IMAGE}
         is_batched: false
         operations: ['reformat', 'concatenate']

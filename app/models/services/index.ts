@@ -318,6 +318,24 @@ function supportsShapefileSubsetting(configs: ServiceConfig<unknown>[]): Service
 }
 
 /**
+ * Returns true if the operation requires temporal subsetting
+ * @param operation - The operation to perform.
+ * @returns true if the provided operation requires temporal subsetting and false otherwise
+ */
+function requiresTemporalSubsetting(operation: DataOperation): boolean {
+  return operation.shouldTemporalSubset;
+}
+
+/**
+ * Returns any services that support temporal subsetting from the list of configs
+ * @param configs - The potential matching service configurations
+ * @returns Any configurations that support temporal subsetting
+ */
+function supportsTemporalSubsetting(configs: ServiceConfig<unknown>[]): ServiceConfig<unknown>[] {
+  return configs.filter((config) => getIn(config, 'capabilities.subsetting.temporal', false));
+}
+
+/**
  * Returns true if the operation requires dimension subsetting
  * @param operation - The operation to perform.
  * @returns true if the provided operation requires dimension subsetting and false otherwise
@@ -448,7 +466,7 @@ function filterVariableSubsettingMatches(
  * @param configs - All service configurations that have matched up to this call
  * @param requestedOperations - Operations that have been considered in filtering out services up to
  *     this call
- * @returns Any service configurations that support the requested output format
+ * @returns Any service configurations that could still support the request
  */
 function filterOutputFormatMatches(
   operation: DataOperation,
@@ -483,7 +501,7 @@ function filterOutputFormatMatches(
  * @param configs - All service configurations that have matched up to this call
  * @param requestedOperations - Operations that have been considered in filtering out services up to
  *     this call
- * @returns Any service configurations that support the requested output format
+ * @returns Any service configurations that could still support the request
  */
 function filterSpatialSubsettingMatches(
   operation: DataOperation,
@@ -512,7 +530,7 @@ function filterSpatialSubsettingMatches(
  * @param configs - All service configurations that have matched up to this call
  * @param requestedOperations - Operations that have been considered in filtering out services up to
  *     this call
- * @returns Any service configurations that support the requested output format
+ * @returns Any service configurations that could still support the request
  */
 function filterReprojectionMatches(
   operation: DataOperation,
@@ -541,7 +559,7 @@ function filterReprojectionMatches(
  * @param configs - All service configurations that have matched up to this call
  * @param requestedOperations - Operations that have been considered in filtering out services up to
  *     this call
- * @returns Any service configurations that support the requested output format
+ * @returns Any service configurations that could still support the request
  */
 function filterShapefileSubsettingMatches(
   operation: DataOperation,
@@ -562,6 +580,35 @@ function filterShapefileSubsettingMatches(
 }
 
 /**
+ * Returns any services that support temporal subsetting from the list of configs if the
+ * operation requires temporal subsetting.
+ * @param operation - The operation to perform.
+ * @param context - Additional context that's not part of the operation, but influences the
+ *     choice regarding the service to use
+ * @param configs - All service configurations that have matched up to this call
+ * @param requestedOperations - Operations that have been considered in filtering out services up to
+ *     this call
+ * @returns Any service configurations that could still support the request
+ */
+function filterTemporalSubsettingMatches(
+  operation: DataOperation,
+  context: RequestContext,
+  configs: ServiceConfig<unknown>[],
+  requestedOperations: string[],
+): ServiceConfig<unknown>[] {
+  let services = configs;
+  if (requiresTemporalSubsetting(operation)) {
+    requestedOperations.push('temporal subsetting');
+    services = supportsTemporalSubsetting(configs);
+  }
+
+  if (services.length === 0) {
+    throw new UnsupportedOperation(operation, requestedOperations);
+  }
+  return services;
+}
+
+/**
  * Returns any services that support arbitrary dimension subsetting from the list of configs
  * if the operation requires dimension subsetting.
  * @param operation - The operation to perform.
@@ -570,7 +617,7 @@ function filterShapefileSubsettingMatches(
  * @param configs - All service configurations that have matched up to this call
  * @param requestedOperations - Operations that have been considered in filtering out services up to
  *     this call
- * @returns Any service configurations that support the requested output format
+ * @returns Any service configurations that could still support the request
  */
 function filterDimensionSubsettingMatches(
   operation: DataOperation,
@@ -631,6 +678,7 @@ const allFilterFns = [
   filterVariableSubsettingMatches,
   filterSpatialSubsettingMatches,
   filterShapefileSubsettingMatches,
+  filterTemporalSubsettingMatches,
   filterDimensionSubsettingMatches,
   filterReprojectionMatches,
   // This filter must be last because it chooses a format based on the accepted MimeTypes and
@@ -722,13 +770,35 @@ function requiresStrictCapabilitiesMatching(
   operation: DataOperation,
   context: RequestContext,
 ): boolean {
-  let strictMatching = false;
-  if ((!requiresSpatialSubsetting(operation) && !requiresShapefileSubsetting(operation))
-      || (!requiresVariableSubsetting(operation) && !requiresReprojection(operation)
-      && !requiresReformatting(operation, context))) {
-    strictMatching = true;
+  const wantsSpatialSubsetting = requiresSpatialSubsetting(operation)
+    || requiresShapefileSubsetting(operation);
+  const wantsTemporalSubsetting = requiresTemporalSubsetting(operation);
+
+  if (!wantsSpatialSubsetting && !wantsTemporalSubsetting) {
+    // Request is not asking for any of the potential operations that we can ignore
+    // in best effort matching, so we can make matching strict
+    return true;
   }
-  return strictMatching;
+
+  if (wantsSpatialSubsetting && wantsTemporalSubsetting) {
+    // Request wants both optional operations so do not make matching strict
+    return false;
+  }
+
+  if (
+    // Request is only asking for one of temporal or spatial subsetting and
+    // is not asking for any other operation, so force making matching strict
+    !requiresVariableSubsetting(operation)
+      && !requiresReprojection(operation)
+      && !requiresReformatting(operation, context)
+      && !requiresConcatenation(operation)
+      && !requiresDimensionSubsetting(operation)
+  ) {
+    return true;
+  }
+
+  // Any other scenario
+  return false;
 }
 
 /**
