@@ -40,7 +40,7 @@ export default class WorkFailer implements Worker {
   /**
    * Get expired work items that are older than lastUpdateOlderThanMinutes.
    * @param lastUpdateOlderThanMinutes - upper limit on the duration since the last update
-   * @param startingId - the starting work item id to query with
+   * @param startingId - the work item id to begin the query with, i.e. query work items with id greater than startingId
    * @param batchSize - the batch size
    * @returns The expired work items and jobServiceThresholds and maxId for bookkeeping purpose
    */
@@ -93,7 +93,8 @@ export default class WorkFailer implements Worker {
   async handleWorkItemUpdates(lastUpdateOlderThanMinutes: number): Promise<void> {
     let done = false;
     let startingId = 0;
-    const batchSize = env.workFailerBatchSize || 1000;
+    let numExpired = 0;
+    const batchSize = env.workFailerBatchSize;
     this.logger.info('Work failer processing started.');
 
     while (!done) {
@@ -101,8 +102,9 @@ export default class WorkFailer implements Worker {
 
       if (newId > startingId) {
         if (workItems.length > 0) {
+          numExpired += workItems.length;
           for (const workItem of workItems) {
-            this.logger.warn(`expiring work item ${workItem.id}`, { workItemId: workItem.id });
+            this.logger.warn(`expiring work item ${workItem.id}`, { jobId: workItem.jobID, workItemId: workItem.id });
           }
           const jobIds = new Set(workItems.map((item) => item.jobID));
           for (const jobId of jobIds) {
@@ -142,7 +144,7 @@ export default class WorkFailer implements Worker {
         done = true;
       }
     }
-    this.logger.info('Work failer processing completed.');
+    this.logger.info(`Work failer processing completed. Total work items updated: ${numExpired}`);
   }
 
   async start(): Promise<void> {
